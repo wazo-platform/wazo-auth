@@ -27,10 +27,12 @@ import os
 
 @click.command()
 @click.option('--config', default='/etc/xivo-auth/config.yml', help='Configuration file.')
-def main(config):
+@click.option('--user', default=None)
+def main(config, user):
     logger = logging.getLogger(__name__)
 
-    change_user('www-data')
+    if user:
+        change_user('www-data')
 
     application = create_app()
     application.config.update(load_config(config))
