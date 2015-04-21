@@ -27,7 +27,7 @@ import os
 
 @click.command()
 @click.option('--config', default='/etc/xivo-auth/config.yml', help='Configuration file.')
-@click.option('--user', default=None)
+@click.option('--user', default='root', help='User to run daemon.')
 def main(config, user):
     logger = logging.getLogger(__name__)
 

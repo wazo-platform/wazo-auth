@@ -9,3 +9,4 @@ flask-celery-helper==1.1.0
 python-consul
 flask-httpauth
 git+https://github.com/xivo-pbx/xivo-dao.git
+git+https://github.com/xivo-pbx/xivo-lib-python.git
