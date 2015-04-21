@@ -42,8 +42,8 @@ def authenticate():
     uuid = user_dao.get_uuid_by_username_password(data['login'], data['passwd'])
     print 'uuid', uuid
     token = create_token(uuid)
-    task = clean_token.apply_async(args=[token], countdown=5)
-    return jsonify({'data': {'task': task.id, 'token': token}})
+    clean_token.apply_async(args=[token], countdown=5)
+    return jsonify({'data': {'token': token}})
 
 
 @httpauth.verify_password
