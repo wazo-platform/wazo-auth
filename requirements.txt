@@ -8,4 +8,4 @@ celery
 flask-celery-helper==1.1.0
 python-consul
 flask-httpauth
-psycopg2
+git+https://github.com/xivo-pbx/xivo-dao.git

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2014 Avencall
+# Copyright (C) 2015 Avencall
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ import click
 from pwd import getpwnam
 import os
 
+
 @click.command()
 @click.option('--config', default='/etc/xivo-auth/config.yml', help='Configuration file.')
 def main(config):
@@ -33,32 +34,32 @@ def main(config):
 
     application = create_app()
     application.config.update(load_config(config))
-    celery = make_celery(application)
+    make_celery(application)
 
     plugin_manager.load_plugins(application)
 
     celery_interface = CeleryInterface()
     celery_interface.start()
 
-    application.run(application.config["APP_LISTEN"], 
+    application.run(application.config["APP_LISTEN"],
                     application.config["APP_PORT"])
 
     celery_interface.join()
+
 
 def change_user(user):
     try:
         uid = getpwnam(user).pw_uid
         gid = getpwnam(user).pw_gid
     except KeyError:
-        raise('Unknown user {user}'.format(user=user))
+        raise Exception('Unknown user {user}'.format(user=user))
 
     try:
         os.setgid(gid)
         os.setuid(uid)
     except OSError as e:
-        raise('Could not change owner to user {user}: {error}'.format(user=user, error=e))
+        raise Exception('Could not change owner to user {user}: {error}'.format(user=user, error=e))
 
 
 if __name__ == '__main__':
     main()
-
