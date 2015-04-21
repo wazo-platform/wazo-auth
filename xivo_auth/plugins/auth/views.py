@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import json
+from datetime import datetime, timedelta
 
 from sqlalchemy import and_
 from flask import Blueprint, jsonify, request
@@ -40,10 +41,14 @@ def _new_user_token_rule(uuid):
 def authenticate():
     data = json.loads(request.data)
     uuid = user_dao.get_uuid_by_username_password(data['login'], data['passwd'])
-    print 'uuid', uuid
     token = create_token(uuid)
-    clean_token.apply_async(args=[token], countdown=5)
-    return jsonify({'data': {'token': token}})
+    seconds = 5
+    clean_token.apply_async(args=[token], countdown=seconds)
+    now = datetime.now()
+    expire = datetime.now() + timedelta(seconds=seconds)
+    return jsonify({'data': {'token': token,
+                             'issued_at': now.isoformat(),
+                             'expires_at': expire.isoformat()}})
 
 
 @httpauth.verify_password
