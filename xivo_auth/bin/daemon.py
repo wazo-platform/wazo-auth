@@ -32,7 +32,7 @@ def main(config, user):
     logger = logging.getLogger(__name__)
 
     if user:
-        change_user('www-data')
+        change_user(user)
 
     application = create_app()
     application.config.update(load_config(config))
