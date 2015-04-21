@@ -17,7 +17,6 @@ setup(
     url='https://github.com/sboily/xivo-auth',
 
     packages=find_packages(),
-    install_requires=[open('requirements.txt').read()],
     include_package_data = True,
     zip_safe = False,
 
