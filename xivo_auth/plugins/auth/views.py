@@ -35,7 +35,7 @@ def _new_user_token_rule(uuid):
     return json.dumps(rules)
 
 
-@auth.route("/api/user")
+@auth.route("/0.1/auth/tokens", methods=['POST'])
 @httpauth.login_required
 def authenticate():
     data = json.loads(request.data)
