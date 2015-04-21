@@ -58,7 +58,6 @@ def verify_password(login, passwd):
              UserFeatures.passwdclient == passwd))
 
     for row in rows.all():
-        print row
         return True
 
     return False
