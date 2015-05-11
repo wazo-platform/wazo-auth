@@ -1,0 +1,3 @@
+# see: dh_installdeb(1)
+
+mv_conffile /etc/xivo-dird/xivo-dird.yml /etc/xivo-dird/config.yml 14.23
