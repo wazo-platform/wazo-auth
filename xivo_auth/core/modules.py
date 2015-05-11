@@ -1,6 +1,7 @@
 import abc
 
 class BasePlugin(object):
+
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod

@@ -1,4 +1,5 @@
 import logging
+
 from flask import Flask, redirect, url_for, render_template
 
 def create_app():

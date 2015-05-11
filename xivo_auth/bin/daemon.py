@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import logging
+
 from xivo_auth.main import create_app
 from xivo_auth.core import plugin_manager
 from xivo_auth.core.celery_interface import make_celery, CeleryInterface
