@@ -1,6 +1,6 @@
 # xivo-auth
 
-xivo identity service (need consul)
+A thin layer of business logic above consul to create tokens, create acl and delete expired tokens
 
 # Usage
 
