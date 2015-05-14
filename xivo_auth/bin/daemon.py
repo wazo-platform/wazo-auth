@@ -15,28 +15,58 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
+import argparse
 import logging
+import sys
+
+from xivo.chain_map import ChainMap
+from xivo.config_helper import read_config_file_hierarchy
 
 from xivo_auth.main import create_app
 from xivo_auth.core import plugin_manager
 from xivo_auth.core.celery_interface import make_celery, CeleryInterface
 from xivo_auth.config import load_config
-import click
 from pwd import getpwnam
 import os
 
 logger = logging.getLogger(__name__)
 
+_DEFAULT_CONFIG = {
+    'user': 'www-data',
+    'config_file': '/etc/xivo-auth/config.yml',
+}
 
-@click.command()
-@click.option('--config', default='/etc/xivo-auth/config.yml', help='Configuration file.')
-@click.option('--user', default='root', help='User to run daemon.')
-def main(config, user):
+
+def _parse_cli_args(argv):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--config-file', action='store', help='The path to the config file')
+    parser.add_argument('-u', '--user', help='User to run the daemon')
+    parsed_args = parser.parse_args(argv)
+
+    result = {}
+    if parsed_args.config_file:
+        result['config_file'] = parsed_args.config_file
+    if parsed_args.user:
+        result['user'] = parsed_args.user
+
+    return result
+
+
+def _get_config():
+    cli_config = _parse_cli_args(sys.argv[1:])
+    file_config = read_config_file_hierarchy(ChainMap(cli_config, _DEFAULT_CONFIG))
+    return ChainMap(cli_config, file_config, _DEFAULT_CONFIG)
+
+
+def main():
+    config = _get_config()
+    user = config['user']
+
     if user:
         change_user(user)
 
     application = create_app()
-    application.config.update(load_config(config))
+    application.config.update(config)
     make_celery(application)
 
     plugin_manager.load_plugins(application)
