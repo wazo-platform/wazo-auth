@@ -25,7 +25,6 @@ from xivo.config_helper import read_config_file_hierarchy
 from xivo_auth.main import create_app
 from xivo_auth.core import plugin_manager
 from xivo_auth.core.celery_interface import make_celery, CeleryInterface
-from xivo_auth.config import load_config
 from pwd import getpwnam
 import os
 
