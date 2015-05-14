@@ -2,6 +2,7 @@ from xivo_auth.extensions import celery
 from celery.utils import LOG_LEVELS
 from multiprocessing import Process
 
+
 def make_celery(app):
     app.config.update(
         CELERY_BROKER_URL=app.config["AMQP_URI"],
