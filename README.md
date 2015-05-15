@@ -14,12 +14,13 @@ Getting a token
 
 # Using docker
 
-Consul
-
-    docker run -p 8400:8400 -p 8500:8500 -p 8600:53/udp -h node1 quintana/consul -server -bootstrap
-
 XiVO auth
 
     docker build -t xivo-auth .
     docker run -p 6000:6000 -v /conf/xivo-auth:/etc/xivo-auth/conf.d/ -it xivo-auth bash
     xivo-auth [--user <user>] [--config <path/to/config/file>]
+
+Configuration
+-------------
+
+The default config is /etc/xivo-auth/config.yml, you could override in /etc/xivo-auth/conf.d/
