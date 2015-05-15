@@ -1,12 +1,19 @@
 general:
   listen: 0.0.0.0
-  port: 8080
+  port: 6000
   debug: true
 
 plugins:
   - auth
 
 amqp:
-  uri: amqp://sylvain:sylvain@192.168.32.41:5672/
+  uri: amqp://guest:guest@localhost:5672/
   exchange_name: xivo
   exchange_type: topic
+
+consul:
+  host: localhost
+  token: 'the_one_ring'
+
+# Database connection informations.
+db_uri: postgresql://asterisk:proformatique@localhost/asterisk

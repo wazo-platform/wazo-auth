@@ -18,15 +18,11 @@
 import xivo_dao
 
 from xivo_auth import BasePlugin
-from xivo_auth.extensions import sqlalchemy as db
 from views import auth
 
 
 class XiVOAuth(BasePlugin):
 
     def load(self, app):
-        pg_url = "postgresql://asterisk:proformatique@10.37.0.254/asterisk"
-        app.config['SQLALCHEMY_DATABASE_URI'] = pg_url
         app.register_blueprint(auth)
-        xivo_dao.init_db_from_config({'db_uri': pg_url})
-        db.init_app(app)
+        xivo_dao.init_db_from_config(app.config)

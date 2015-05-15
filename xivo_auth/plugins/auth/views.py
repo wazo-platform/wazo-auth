@@ -18,14 +18,10 @@
 import json
 from datetime import datetime, timedelta
 
-from sqlalchemy import and_
-from flask import Blueprint, jsonify, request
-from xivo_auth.extensions import sqlalchemy as db
+from flask import Blueprint, jsonify
 from xivo_dao import user_dao
-from xivo_dao.alchemy.userfeatures import UserFeatures
-from xivo_auth.extensions import httpauth
+from xivo_auth.extensions import httpauth, consul
 from tasks import clean_token
-from factory import consul
 
 auth = Blueprint('auth', __name__, template_folder='templates')
 
@@ -39,8 +35,7 @@ def _new_user_token_rule(uuid):
 @auth.route("/0.1/auth/tokens", methods=['POST'])
 @httpauth.login_required
 def authenticate():
-    data = json.loads(request.data)
-    uuid = user_dao.get_uuid_by_username_password(data['login'], data['passwd'])
+    uuid = user_dao.get_uuid_by_username(httpauth.username())
     token = create_token(uuid)
     seconds = 5
     clean_token.apply_async(args=[token], countdown=seconds)
@@ -53,14 +48,7 @@ def authenticate():
 
 @httpauth.verify_password
 def verify_password(login, passwd):
-    rows = db.session.query(UserFeatures).filter(
-        and_(UserFeatures.loginclient == login,
-             UserFeatures.passwdclient == passwd))
-
-    for row in rows.all():
-        return True
-
-    return False
+    return user_dao.check_username_password(login, passwd)
 
 
 def create_token(uuid):

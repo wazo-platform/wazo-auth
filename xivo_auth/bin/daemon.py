@@ -22,6 +22,8 @@ import sys
 from xivo.chain_map import ChainMap
 from xivo.config_helper import read_config_file_hierarchy
 
+from consul import Consul
+from xivo_auth import extensions
 from xivo_auth.main import create_app
 from xivo_auth.core import plugin_manager
 from xivo_auth.core.celery_interface import make_celery, CeleryInterface
@@ -33,6 +35,7 @@ logger = logging.getLogger(__name__)
 _DEFAULT_CONFIG = {
     'user': 'www-data',
     'config_file': '/etc/xivo-auth/config.yml',
+    'extra_config_files': '/etc/xivo-auth/conf.d',
 }
 
 
@@ -66,15 +69,19 @@ def main():
 
     application = create_app()
     application.config.update(config)
-    make_celery(application)
+    extensions.celery = make_celery(application)
+    extensions.consul = Consul(host=config['consul']['host'],
+                               port=config['consul']['port'],
+                               token=config['consul']['token'])
 
     plugin_manager.load_plugins(application)
 
-    celery_interface = CeleryInterface()
+    sys.argv = [sys.argv[0]]
+    celery_interface = CeleryInterface(extensions.celery)
     celery_interface.start()
 
-    application.run(application.config["APP_LISTEN"],
-                    application.config["APP_PORT"])
+    application.run(config['general']['listen'],
+                    config['general']['port'])
 
     celery_interface.join()
 

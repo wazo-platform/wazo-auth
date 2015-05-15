@@ -17,9 +17,7 @@
 
 import json
 
-from xivo_auth.extensions import celery
-
-from factory import consul
+from xivo_auth.extensions import celery, consul
 
 
 @celery.task(bind=True)

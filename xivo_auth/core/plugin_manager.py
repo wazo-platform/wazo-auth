@@ -24,8 +24,7 @@ def load_plugins(application):
                                            on_load_failure_callback=plugins_load_fail,
                                            verify_requirements=True,
                                            propagate_map_exceptions=True,
-                                           invoke_on_load=True
-    )
+                                           invoke_on_load=True)
 
     plugs = application.config['plugins']
     plugins.map(plugs, launch_plugin, application)
@@ -35,9 +34,9 @@ def check_plugin(plugin):
     return True
 
 
-def launch_plugin(ext, args):
+def launch_plugin(ext, application):
     print "Loading dynamic plugin : %s" % ext.name
-    ext.obj.load(args)
+    ext.obj.load(application)
 
 
 def plugins_load_fail(manager, entrypoint, exception):
