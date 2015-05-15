@@ -42,6 +42,7 @@ def authenticate():
     now = datetime.now()
     expire = datetime.now() + timedelta(seconds=seconds)
     return jsonify({'data': {'token': token,
+                             'uuid': uuid,
                              'issued_at': now.isoformat(),
                              'expires_at': expire.isoformat()}})
 
