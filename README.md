@@ -15,8 +15,6 @@ Getting a token
 
 # Using docker
 
-XiVO auth
-
     docker build -t xivo-auth .
     docker run -p 6000:6000 -v /conf/xivo-auth:/etc/xivo-auth/conf.d/ -it xivo-auth bash
     xivo-auth [--user <user>] [--config <path/to/config/file>]
