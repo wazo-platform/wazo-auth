@@ -10,7 +10,8 @@ Launching xivo-auth
 
 Getting a token
 
-    curl -i -X POST -H 'Content-Type: application/json' -u "alice:alice" localhost:6000/0.1/auth/tokens
+    curl -i -X POST -H 'Content-Type: application/json' \
+            -u "alice:alice" localhost:6000/0.1/auth/tokens
 
 # Using docker
 
