@@ -27,6 +27,7 @@ from xivo_auth import extensions
 from xivo_auth.main import create_app
 from xivo_auth.core import plugin_manager
 from xivo_auth.core.celery_interface import make_celery, CeleryInterface
+from flask.ext.cors import CORS
 from pwd import getpwnam
 import os
 
@@ -69,6 +70,7 @@ def main():
 
     application = create_app()
     application.config.update(config)
+    load_cors(application, config)
     extensions.celery = make_celery(application)
     extensions.consul = Consul(host=config['consul']['host'],
                                port=config['consul']['port'],
@@ -98,6 +100,12 @@ def change_user(user):
         os.setuid(uid)
     except OSError as e:
         raise Exception('Could not change owner to user {user}: {error}'.format(user=user, error=e))
+
+def load_cors(app, config):
+    cors_config = dict(config.get('cors', {}))
+    enabled = cors_config.pop('enabled', False)
+    if enabled:
+        CORS(app, **cors_config)
 
 
 if __name__ == '__main__':

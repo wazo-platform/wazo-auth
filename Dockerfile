@@ -7,9 +7,11 @@ RUN apt-get -yq update \
 
 ADD . /usr/src/auth
 WORKDIR /usr/src/auth
+RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 RUN python setup.py install
+RUN mkdir /etc/xivo-auth/conf.d
 
-EXPOSE 80
+EXPOSE 6000
 
-CMD python run.py
+CMD xivo-auth --user www-data
