@@ -70,7 +70,7 @@ def main():
 
     application = create_app()
     application.config.update(config)
-    load_cors(application, config)
+    load_cors(application, config['general'])
     extensions.celery = make_celery(application)
     extensions.consul = Consul(host=config['consul']['host'],
                                port=config['consul']['port'],
