@@ -7,5 +7,6 @@ flask-celery-helper==1.1.0
 python-consul==0.3.18
 flask-httpauth==2.5.0
 sqlalchemy==1.0.4
+psycopg2
 git+https://github.com/xivo-pbx/xivo-dao.git
 git+https://github.com/xivo-pbx/xivo-lib-python.git
