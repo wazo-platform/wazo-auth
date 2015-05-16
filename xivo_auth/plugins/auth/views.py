@@ -37,7 +37,7 @@ def _new_user_token_rule(uuid):
 def authenticate():
     uuid = user_dao.get_uuid_by_username(httpauth.username())
     token = create_token(uuid)
-    seconds = 5
+    seconds = 120
     clean_token.apply_async(args=[token], countdown=seconds)
     now = datetime.now()
     expire = datetime.now() + timedelta(seconds=seconds)
