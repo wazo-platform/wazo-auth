@@ -20,7 +20,7 @@ from datetime import datetime, timedelta
 
 from flask import Blueprint, jsonify
 from xivo_dao import user_dao
-from xivo_auth.extensions import httpauth, consul
+from xivo_auth.extensions import httpauth, consul, celery
 from tasks import clean_token
 
 auth = Blueprint('auth', __name__, template_folder='templates')
@@ -46,6 +46,15 @@ def authenticate():
                              'issued_at': now.isoformat(),
                              'expires_at': expire.isoformat()}})
 
+@auth.route("/0.1/logout", methods=['POST'])
+@httpauth.login_required
+def logout():
+    data = request.get_json()
+    token = data['token']
+    task_id = consul.kv.get('xivo/session/%s' % token)
+    celery.control.revoke(task_id, terminate=True)
+    consul.acl.destroy(token)
+    return jsonify({'data': {'message': 'success'})
 
 @httpauth.verify_password
 def verify_password(login, passwd):
