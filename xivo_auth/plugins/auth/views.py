@@ -16,6 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import json
+import hashlib
+
 from datetime import datetime, timedelta
 
 from flask import Blueprint, jsonify
@@ -32,13 +34,14 @@ def _new_user_token_rule(uuid):
     return json.dumps(rules)
 
 
-@auth.route("/0.1/auth/tokens", methods=['POST'])
+@auth.route("/0.1/token", methods=['POST'])
 @httpauth.login_required
 def authenticate():
     uuid = user_dao.get_uuid_by_username(httpauth.username())
     token = create_token(uuid)
     seconds = 120
-    clean_token.apply_async(args=[token], countdown=seconds)
+    task_id = hashlib.sha256('{username}{token}').hexdigest()
+    clean_token.apply_async(args=[token], countdown=seconds, task_id=task_id)
     now = datetime.now()
     expire = datetime.now() + timedelta(seconds=seconds)
     return jsonify({'data': {'token': token,
@@ -46,15 +49,15 @@ def authenticate():
                              'issued_at': now.isoformat(),
                              'expires_at': expire.isoformat()}})
 
-@auth.route("/0.1/logout", methods=['POST'])
+
+@auth.route("/0.1/token/<token>", methods=['DELETE'])
 @httpauth.login_required
-def logout():
-    data = request.get_json()
-    token = data['token']
-    task_id = consul.kv.get('xivo/session/%s' % token)
+def revoke_token(token):
+    task_id = hashlib.sha256('{username}{token}').hexdigest()
     celery.control.revoke(task_id, terminate=True)
     consul.acl.destroy(token)
-    return jsonify({'data': {'message': 'success'})
+    return jsonify({'data': {'message': 'success'}})
+
 
 @httpauth.verify_password
 def verify_password(login, passwd):
