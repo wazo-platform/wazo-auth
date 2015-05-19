@@ -40,7 +40,8 @@ def authenticate():
     uuid = user_dao.get_uuid_by_username(httpauth.username())
     token = create_token(uuid)
     seconds = 120
-    task_id = hashlib.sha256('{username}{token}').hexdigest()
+    task_id = hashlib.sha256('{username}{token}'.format(username=httpauth.username(),
+                                                        token=token)).hexdigest()
     clean_token.apply_async(args=[token], countdown=seconds, task_id=task_id)
     now = datetime.now()
     expire = datetime.now() + timedelta(seconds=seconds)
@@ -53,7 +54,8 @@ def authenticate():
 @auth.route("/0.1/token/<token>", methods=['DELETE'])
 @httpauth.login_required
 def revoke_token(token):
-    task_id = hashlib.sha256('{username}{token}').hexdigest()
+    task_id = hashlib.sha256('{username}{token}'.format(username=httpauth.username(),
+                                                        token=token)).hexdigest()
     celery.control.revoke(task_id)
     print "Removing token: %s" % token
     consul.acl.destroy(token)
