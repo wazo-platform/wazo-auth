@@ -54,7 +54,8 @@ def authenticate():
 @httpauth.login_required
 def revoke_token(token):
     task_id = hashlib.sha256('{username}{token}').hexdigest()
-    celery.control.revoke(task_id, terminate=True)
+    celery.control.revoke(task_id)
+    print "Removing token: %s" % token
     consul.acl.destroy(token)
     return jsonify({'data': {'message': 'success'}})
 
