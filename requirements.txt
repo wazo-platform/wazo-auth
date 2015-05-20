@@ -9,3 +9,4 @@ sqlalchemy==0.9.4
 psycopg2==2.4.5
 git+https://github.com/xivo-pbx/xivo-dao.git
 git+https://github.com/xivo-pbx/xivo-lib-python.git
+blinker
