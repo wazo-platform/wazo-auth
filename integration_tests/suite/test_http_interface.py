@@ -78,5 +78,8 @@ class TestTokenCreation(unittest.TestCase):
 
     def test_that_the_right_credentials_return_a_token(self):
         response = self._post_token('foo', 'bar')
+        content = response.json()['data']
+        token = content['token']
 
         assert_that(response.status_code, equal_to(200))
+        assert_that(token is not None)
