@@ -12,9 +12,11 @@ auth:
      - "9497:9497"
    volumes:
      - "./etc/xivo-auth:/etc/xivo-auth"
+     - "./logs:/tmp"
    links:
      - "rabbitmq"
      - "consul"
+   command: "sh -c 'xivo-auth -u www-data 2>&1 | tee /tmp/xivo-auth.log'"
 rabbitmq:
   image: rabbitmq
   expose:
