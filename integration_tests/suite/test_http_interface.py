@@ -48,12 +48,13 @@ class TestTokenCreation(unittest.TestCase):
         cls._run_cmd('{} kill'.format(cls.launcher))
         cls._run_cmd('{} rm --force'.format(cls.launcher))
         os.chdir(cls.cur_dir)
+        time.sleep(1)
 
     @staticmethod
     def _run_cmd(cmd):
         process = subprocess.Popen(cmd.split(' '), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         out, _ = process.communicate()
-        logger.info(out)
+        logger.info('%s', out)
 
     @classmethod
     def setUpClass(cls):
@@ -78,20 +79,19 @@ class TestTokenCreation(unittest.TestCase):
             time.sleep(1)
         print 'Failed'
 
-    def test_that_the_wrong_password_returns_401(self):
+    def _post_token(self, username, password):
         s = requests.Session()
         s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
-        s.auth = requests.auth.HTTPBasicAuth('foo', 'not_bar')
+        s.auth = requests.auth.HTTPBasicAuth(username, password)
         payload = json.dumps({'type': 'mock'})
-        response = s.post('http://localhost:9497/0.1/token', data=payload)
+        return s.post('http://localhost:9497/0.1/token', data=payload)
+
+    def test_that_the_wrong_password_returns_401(self):
+        response = self._post_token('foo', 'not_bar')
 
         assert_that(response.status_code, equal_to(401))
 
     def test_that_the_right_credentials_return_a_token(self):
-        s = requests.Session()
-        s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
-        s.auth = requests.auth.HTTPBasicAuth('foo', 'bar')
-        payload = json.dumps({'type': 'mock'})
-        response = s.post('http://localhost:9497/0.1/token', data=payload)
+        response = self._post_token('foo', 'bar')
 
         assert_that(response.status_code, equal_to(200))
