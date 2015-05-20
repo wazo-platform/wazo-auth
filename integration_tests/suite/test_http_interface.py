@@ -64,21 +64,6 @@ class TestTokenCreation(unittest.TestCase):
     def tearDownClass(cls):
         cls.stop_services()
 
-    def setUp(self):
-        self._wait_for_xivo_auth()
-
-    def _wait_for_xivo_auth(self):
-        print 'Waiting for xivo-auth.'
-        for _ in xrange(10):
-            s = requests.Session()
-            s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
-            response = s.get('http://localhost:9497/0.1/status')
-            if response.status_code == 200:
-                print 'Started'
-                return
-            time.sleep(1)
-        print 'Failed'
-
     def _post_token(self, username, password):
         s = requests.Session()
         s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
