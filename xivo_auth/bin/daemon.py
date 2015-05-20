@@ -61,6 +61,11 @@ def _get_config():
     return ChainMap(cli_config, file_config, _DEFAULT_CONFIG)
 
 
+def remove_token(app, data, **extra):
+    print 'In the handler'
+    return 'lol'
+
+
 def main():
     config = _get_config()
     user = config['user']
@@ -70,13 +75,16 @@ def main():
 
     application = create_app()
     application.config.update(config)
+
     load_cors(application, config['general'])
+    extensions.auth_token.connect(remove_token, application)
     extensions.celery = make_celery(application)
     extensions.consul = Consul(host=config['consul']['host'],
                                port=config['consul']['port'],
                                token=config['consul']['token'])
 
-    plugin_manager.load_plugins(application)
+    backends = plugin_manager.load_plugins(application, config)
+    application.config['backends'] = backends
 
     sys.argv = [sys.argv[0]]
     celery_interface = CeleryInterface(extensions.celery)

@@ -20,10 +20,9 @@ import hashlib
 
 from datetime import datetime, timedelta
 
-from flask import Blueprint, jsonify
-from xivo_dao import user_dao
-from xivo_auth.extensions import httpauth, consul, celery
 from tasks import clean_token
+from flask import Blueprint, jsonify, current_app, request
+from xivo_auth.extensions import httpauth, consul, celery, auth_token
 
 auth = Blueprint('auth', __name__, template_folder='templates')
 
@@ -37,17 +36,21 @@ def _new_user_token_rule(uuid):
 @auth.route("/0.1/token", methods=['POST'])
 @httpauth.login_required
 def authenticate():
-    uuid = user_dao.get_uuid_by_username(httpauth.username())
+    backend = [request.get_json()['type']]
+    uuid = current_app.config['backends'].map_method(backend, 'get_uuid', httpauth.username())[0]
     token = create_token(uuid)
     seconds = 120
     task_id = hashlib.sha256('{token}'.format(token=token)).hexdigest()
     clean_token.apply_async(args=[token], countdown=seconds, task_id=task_id)
     now = datetime.now()
     expire = datetime.now() + timedelta(seconds=seconds)
-    return jsonify({'data': {'token': token,
-                             'uuid': uuid,
-                             'issued_at': now.isoformat(),
-                             'expires_at': expire.isoformat()}})
+    data = {'data': {'token': token,
+                     'uuid': uuid,
+                     'issued_at': now.isoformat(),
+                     'expires_at': expire.isoformat()}}
+    c = current_app._get_current_object()
+    print auth_token.send(c, data=data)
+    return jsonify(data)
 
 
 @auth.route("/0.1/token/<token>", methods=['DELETE'])
@@ -66,7 +69,9 @@ def status():
 
 @httpauth.verify_password
 def verify_password(login, passwd):
-    return user_dao.check_username_password(login, passwd)
+    backend = [request.get_json()['type']]
+    result = current_app.config['backends'].map_method(backend, 'verify_password', login, passwd)
+    return result[0]
 
 
 def create_token(uuid):

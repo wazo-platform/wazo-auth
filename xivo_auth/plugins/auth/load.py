@@ -15,8 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-import xivo_dao
-
 from xivo_auth import BasePlugin
 from views import auth
 
@@ -24,5 +22,5 @@ from views import auth
 class XiVOAuth(BasePlugin):
 
     def load(self, app):
+        print 'Loading...'
         app.register_blueprint(auth)
-        xivo_dao.init_db_from_config(app.config)

@@ -18,7 +18,14 @@
 from stevedore.dispatch import NameDispatchExtensionManager
 
 
-def load_plugins(application):
+def load_plugins(application, config):
+    backends = NameDispatchExtensionManager(namespace='xivo_auth.backends',
+                                            check_func=check_plugin,
+                                            on_load_failure_callback=plugins_load_fail,
+                                            verify_requirements=False,
+                                            propagate_map_exceptions=True,
+                                            invoke_on_load=True,
+                                            invoke_args=(config,))
     plugins = NameDispatchExtensionManager(namespace='xivo_auth.plugins',
                                            check_func=check_plugin,
                                            on_load_failure_callback=plugins_load_fail,
@@ -28,6 +35,7 @@ def load_plugins(application):
 
     plugs = application.config['plugins']
     plugins.map(plugs, launch_plugin, application)
+    return backends
 
 
 def check_plugin(plugin):
