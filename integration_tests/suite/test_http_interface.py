@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
+import json
 import logging
 import requests
 import subprocess
@@ -62,12 +63,35 @@ class TestTokenCreation(unittest.TestCase):
     def tearDownClass(cls):
         cls.stop_services()
 
+    def setUp(self):
+        self._wait_for_xivo_auth()
+
+    def _wait_for_xivo_auth(self):
+        print 'Waiting for xivo-auth.'
+        for _ in xrange(10):
+            s = requests.Session()
+            s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+            response = s.get('http://localhost:9497/0.1/status')
+            if response.status_code == 200:
+                print 'Started'
+                return
+            time.sleep(1)
+        print 'Failed'
+
     def test_that_the_wrong_password_returns_401(self):
-        params = dict(
-            username='foo',
-            password='not_bar',
-            type='mock',
-        )
-        response = requests.post('http://localhost:9497/0.1/token', params=params)
+        s = requests.Session()
+        s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+        s.auth = requests.auth.HTTPBasicAuth('foo', 'not_bar')
+        payload = json.dumps({'type': 'mock'})
+        response = s.post('http://localhost:9497/0.1/token', data=payload)
 
         assert_that(response.status_code, equal_to(401))
+
+    def test_that_the_right_credentials_return_a_token(self):
+        s = requests.Session()
+        s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+        s.auth = requests.auth.HTTPBasicAuth('foo', 'bar')
+        payload = json.dumps({'type': 'mock'})
+        response = s.post('http://localhost:9497/0.1/token', data=payload)
+
+        assert_that(response.status_code, equal_to(200))
