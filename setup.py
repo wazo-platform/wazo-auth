@@ -17,13 +17,17 @@ setup(
     url='https://github.com/sboily/xivo-auth',
 
     packages=find_packages(),
-    include_package_data = True,
-    zip_safe = False,
+    include_package_data=True,
+    zip_safe=False,
 
     scripts=['bin/xivo-auth'],
-    data_files = [('/etc/xivo-auth', ['etc/xivo-auth/config.yml'])],
+    data_files=[('/etc/xivo-auth', ['etc/xivo-auth/config.yml'])],
 
     entry_points={
+        'xivo_auth.backends': [
+            'xivo_user = xivo_auth.plugins.backends:XiVOUser',
+            'mock = xivo_auth.plugins.backends:BackendMock',
+        ],
         'xivo_auth.plugins': [
             'auth = xivo_auth.plugins.auth:XiVOAuth',
         ],

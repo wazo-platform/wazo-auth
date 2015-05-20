@@ -15,5 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-from .xivo_user import XiVOUser  # noqa
-from .mock import BackendMock  # noqa
+from xivo_auth import BaseAuthenticationBackend
+
+
+class BackendMock(BaseAuthenticationBackend):
+
+    def get_uuid(self, username):
+        return 'a-mocked-uuid'
+
+    def verify_password(self, username, password):
+        print 'Checking {} {}'.format(username, password)
+        return username == 'foo' and password == 'bar'

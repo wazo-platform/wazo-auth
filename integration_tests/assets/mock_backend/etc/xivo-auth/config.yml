@@ -1,0 +1,21 @@
+general:
+  listen: 0.0.0.0
+  port: 9497
+  debug: False
+  cors:
+    enabled: True
+    allow_headers: Content-Type, authorization
+
+plugins:
+  - mock
+  - auth
+
+amqp:
+  uri: amqp://guest:guest@rabbitmq:5672/
+  exchange_name: xivo
+  exchange_type: topic
+
+consul:
+  host: consul
+  port: 8500
+  token: 'the_one_ring'
