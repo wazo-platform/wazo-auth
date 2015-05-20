@@ -1,3 +1,11 @@
+sync:
+  image: n3llyb0y/wait
+  links:
+    - auth
+    - consul
+    - rabbitmq
+  environment:
+    PORTS: "9497 5672 8500"
 auth:
    image: xivo/xivo-auth
    ports:
