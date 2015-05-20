@@ -59,6 +59,11 @@ def revoke_token(token):
     return jsonify({'data': {'message': 'success'}})
 
 
+@auth.route("/0.1/status", methods=['GET'])
+def status():
+    return jsonify({'data': {'status': 'running'}})
+
+
 @httpauth.verify_password
 def verify_password(login, passwd):
     return user_dao.check_username_password(login, passwd)
