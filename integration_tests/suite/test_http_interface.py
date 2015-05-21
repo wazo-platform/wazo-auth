@@ -25,6 +25,7 @@ import os
 
 from hamcrest import assert_that
 from hamcrest import equal_to
+from hamcrest import has_length
 
 logger = logging.getLogger(__name__)
 
@@ -82,4 +83,4 @@ class TestTokenCreation(unittest.TestCase):
         token = content['token']
 
         assert_that(response.status_code, equal_to(200))
-        assert_that(token is not None)
+        assert_that(token, has_length(36))
