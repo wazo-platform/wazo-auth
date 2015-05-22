@@ -21,7 +21,7 @@ import hashlib
 from datetime import datetime, timedelta
 
 from tasks import clean_token
-from flask import Blueprint, jsonify, current_app, request
+from flask import Blueprint, jsonify, current_app, request, make_response
 from xivo_auth.extensions import httpauth, consul, celery, auth_token
 
 auth = Blueprint('auth', __name__, template_folder='templates')
@@ -69,9 +69,12 @@ def status():
 
 @httpauth.verify_password
 def verify_password(login, passwd):
-    backend = [request.get_json()['type']]
-    result = current_app.config['backends'].map_method(backend, 'verify_password', login, passwd)
-    return result[0]
+    try:
+        backend_names = [request.get_json()['type']]
+        results = current_app.config['backends'].map_method(backend_names, 'verify_password', login, passwd)
+        return results[0]
+    except Exception:
+        return False
 
 
 def create_token(uuid):

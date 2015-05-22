@@ -65,11 +65,13 @@ class TestTokenCreation(unittest.TestCase):
     def tearDownClass(cls):
         cls.stop_services()
 
-    def _post_token(self, username, password):
+    def _post_token(self, username, password, backend=None):
+        if not backend:
+            backend = 'mock'
         s = requests.Session()
         s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         s.auth = requests.auth.HTTPBasicAuth(username, password)
-        payload = json.dumps({'type': 'mock'})
+        payload = json.dumps({'type': backend})
         return s.post('http://localhost:9497/0.1/token', data=payload)
 
     def test_that_the_wrong_password_returns_401(self):
@@ -84,3 +86,8 @@ class TestTokenCreation(unittest.TestCase):
 
         assert_that(response.status_code, equal_to(200))
         assert_that(token, has_length(36))
+
+    def test_that_an_unknown_type_returns_a_401(self):
+        response = self._post_token('foo', 'not_bar', 'unexistant_backend')
+
+        assert_that(response.status_code, equal_to(401))
