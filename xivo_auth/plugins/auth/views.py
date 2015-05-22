@@ -21,7 +21,7 @@ import hashlib
 from datetime import datetime, timedelta
 
 from tasks import clean_token
-from flask import Blueprint, jsonify, current_app, request, make_response
+from flask import Blueprint, jsonify, current_app, request
 from xivo_auth.extensions import httpauth, consul, celery, auth_token
 
 auth = Blueprint('auth', __name__, template_folder='templates')
