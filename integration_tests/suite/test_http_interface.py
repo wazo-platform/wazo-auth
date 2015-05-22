@@ -93,7 +93,7 @@ class TestTokenCreation(unittest.TestCase):
         assert_that(response.status_code, equal_to(401))
 
     def test_that_an_broken_backend_returns_a_401(self):
-        response = self._post_token('foo', 'not_bar', 'broken')
+        response = self._post_token('foo', 'not_bar', 'broken_verify_password')
 
         assert_that(response.status_code, equal_to(401))
 

@@ -17,4 +17,5 @@
 
 from .xivo_user import XiVOUser  # noqa
 from .mock import BackendMock  # noqa
-from .broken import BrokenBackend  # noqa
+from .broken import BrokenInitBackend  # noqa
+from .broken import BrokenVerifyPasswordBackend  # noqa

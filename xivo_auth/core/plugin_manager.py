@@ -50,4 +50,4 @@ def launch_plugin(ext, application):
 def plugins_load_fail(manager, entrypoint, exception):
     print "There is an error with this module: ", manager
     print "The entry point is: ", entrypoint
-    print "The exception is: ", exception
+    print "The exception is: ", exception.__repr__()

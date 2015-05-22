@@ -8,6 +8,8 @@ general:
 
 plugins:
   - mock
+  - broken_init
+  - broken_verify_password
   - auth
 
 amqp:

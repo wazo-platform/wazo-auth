@@ -18,10 +18,22 @@
 from xivo_auth import BaseAuthenticationBackend
 
 
-class BrokenBackend(BaseAuthenticationBackend):
+class BrokenVerifyPasswordBackend(BaseAuthenticationBackend):
 
     def get_uuid(self, username):
-        return list()[1]
+        pass
 
     def verify_password(self, username, password):
         return 0 / 1
+
+
+class BrokenInitBackend(BaseAuthenticationBackend):
+
+    def __init__(self, config):
+        return dict()['foo']['bar']
+
+    def get_uuid(self, username):
+        pass
+
+    def verify_password(self, username, password):
+        pass
