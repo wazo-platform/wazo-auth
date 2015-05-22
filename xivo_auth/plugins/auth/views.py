@@ -69,12 +69,9 @@ def status():
 
 @httpauth.verify_password
 def verify_password(login, passwd):
-    try:
-        backend_names = [request.get_json()['type']]
-        results = current_app.config['backends'].map_method(backend_names, 'verify_password', login, passwd)
-        return results[0]
-    except Exception:
-        return False
+    backend_names = [request.get_json()['type']]
+    results = current_app.config['backends'].map_method(backend_names, 'verify_password', login, passwd)
+    return results[0] if results else False
 
 
 def create_token(uuid):

@@ -91,3 +91,17 @@ class TestTokenCreation(unittest.TestCase):
         response = self._post_token('foo', 'not_bar', 'unexistant_backend')
 
         assert_that(response.status_code, equal_to(401))
+
+    def test_that_an_broken_backend_returns_a_401(self):
+        response = self._post_token('foo', 'not_bar', 'broken')
+
+        assert_that(response.status_code, equal_to(401))
+
+    def test_that_no_type_returns_400(self):
+        s = requests.Session()
+        s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+        s.auth = requests.auth.HTTPBasicAuth('foo', 'bar')
+
+        response = s.post('http://localhost:9497/0.1/token')
+
+        assert_that(response.status_code, equal_to(400))
