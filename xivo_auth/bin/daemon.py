@@ -16,8 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import argparse
+import hashlib
+import json
 import logging
 import sys
+import os
+
+from datetime import datetime, timedelta
 
 from xivo.chain_map import ChainMap
 from xivo.config_helper import read_config_file_hierarchy
@@ -27,9 +32,9 @@ from xivo_auth import extensions
 from xivo_auth.main import create_app
 from xivo_auth.core import plugin_manager
 from xivo_auth.core.celery_interface import make_celery, CeleryInterface
+from xivo_auth import successful_auth_signal
 from flask.ext.cors import CORS
 from pwd import getpwnam
-import os
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +71,33 @@ def remove_token(app, data, **extra):
     return 'lol'
 
 
+def _new_user_token_rule(uuid):
+    rules = {'key': {'': {'policy': 'deny'},
+                     'xivo/private/{uuid}'.format(uuid=uuid): {'policy': 'write'}}}
+    return json.dumps(rules)
+
+
+def create_token(uuid):
+    rules = _new_user_token_rule(uuid)
+    return extensions.consul.acl.create(rules=rules)
+
+
+def _on_auth_success(app, **extra):
+    from xivo_auth import tasks
+    uuid = extra['uuid']
+    print 'Auth success ', uuid
+    token = create_token(uuid)
+    seconds = 120
+    task_id = hashlib.sha256('{token}'.format(token=token)).hexdigest()
+    tasks.clean_token.apply_async(args=[token], countdown=seconds, task_id=task_id)
+    now = datetime.now()
+    expire = datetime.now() + timedelta(seconds=seconds)
+    return {'token': token,
+            'uuid': uuid,
+            'issued_at': now.isoformat(),
+            'expires_at': expire.isoformat()}
+
+
 def main():
     config = _get_config()
     user = config['user']
@@ -77,7 +109,7 @@ def main():
     application.config.update(config)
 
     load_cors(application, config['general'])
-    extensions.auth_token.connect(remove_token, application)
+    successful_auth_signal.connect(_on_auth_success, application)
     extensions.celery = make_celery(application)
     extensions.consul = Consul(host=config['consul']['host'],
                                port=config['consul']['port'],
@@ -108,6 +140,7 @@ def change_user(user):
         os.setuid(uid)
     except OSError as e:
         raise Exception('Could not change owner to user {user}: {error}'.format(user=user, error=e))
+
 
 def load_cors(app, config):
     cors_config = dict(config.get('cors', {}))
