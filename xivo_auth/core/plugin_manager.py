@@ -19,32 +19,13 @@ from stevedore.dispatch import NameDispatchExtensionManager
 
 
 def load_plugins(application, config):
-    backends = NameDispatchExtensionManager(namespace='xivo_auth.backends',
-                                            check_func=check_plugin,
-                                            on_load_failure_callback=plugins_load_fail,
-                                            verify_requirements=False,
-                                            propagate_map_exceptions=True,
-                                            invoke_on_load=True,
-                                            invoke_args=(config,))
-    plugins = NameDispatchExtensionManager(namespace='xivo_auth.plugins',
-                                           check_func=check_plugin,
-                                           on_load_failure_callback=plugins_load_fail,
-                                           verify_requirements=True,
-                                           propagate_map_exceptions=True,
-                                           invoke_on_load=True)
-
-    plugs = application.config['plugins']
-    plugins.map(plugs, launch_plugin, application)
-    return backends
-
-
-def check_plugin(plugin):
-    return True
-
-
-def launch_plugin(ext, application):
-    print "Loading dynamic plugin : %s" % ext.name
-    ext.obj.load(application)
+    return NameDispatchExtensionManager(namespace='xivo_auth.backends',
+                                        check_func=lambda plugin: plugin.name in config['plugins'],
+                                        on_load_failure_callback=plugins_load_fail,
+                                        verify_requirements=False,
+                                        propagate_map_exceptions=True,
+                                        invoke_on_load=True,
+                                        invoke_args=(config,))
 
 
 def plugins_load_fail(manager, entrypoint, exception):

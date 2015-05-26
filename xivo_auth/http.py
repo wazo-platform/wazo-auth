@@ -15,11 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-import hashlib
-
 from flask import Blueprint, jsonify, current_app, request
-from xivo_auth.extensions import httpauth, consul, celery
-from xivo_auth import successful_auth_signal
+from xivo_auth.extensions import httpauth
+from xivo_auth import successful_auth_signal, token_removal_signal
 
 auth = Blueprint('auth', __name__, template_folder='templates')
 
@@ -27,28 +25,31 @@ auth = Blueprint('auth', __name__, template_folder='templates')
 @auth.route("/0.1/token", methods=['POST'])
 @httpauth.login_required
 def authenticate():
-    backend = [request.get_json()['type']]
-    uuid = current_app.config['backends'].map_method(backend, 'get_uuid', httpauth.username())[0]
-    _, data = successful_auth_signal.send(current_app._get_current_object(), uuid=uuid)[0]
+    uuid = _call_backend('get_uuid', httpauth.username())
+    data = _first_signal_result(successful_auth_signal, uuid=uuid)
     return jsonify({'data': data})
 
 
 @auth.route("/0.1/token/<token>", methods=['DELETE'])
 def revoke_token(token):
-    task_id = hashlib.sha256('{token}'.format(token=token)).hexdigest()
-    celery.control.revoke(task_id)
-    print "Removing token: %s" % token
-    consul.acl.destroy(token)
-    return jsonify({'data': {'message': 'success'}})
-
-
-@auth.route("/0.1/status", methods=['GET'])
-def status():
-    return jsonify({'data': {'status': 'running'}})
+    data = _first_signal_result(token_removal_signal, token=token)
+    return jsonify({'data': data})
 
 
 @httpauth.verify_password
 def verify_password(login, passwd):
+    try:
+        return _call_backend('verify_password', login, passwd)
+    except IndexError:
+        return False
+
+
+def _first_signal_result(signal, **kwargs):
+    _, data = signal.send(current_app._get_current_object(), **kwargs)[0]
+    return data
+
+
+def _call_backend(fn, *args, **kwargs):
     backend_names = [request.get_json()['type']]
-    results = current_app.config['backends'].map_method(backend_names, 'verify_password', login, passwd)
-    return results[0] if results else False
+    results = current_app.config['backends'].map_method(backend_names, fn, *args, **kwargs)
+    return results[0]

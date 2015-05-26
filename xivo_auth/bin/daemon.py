@@ -16,23 +16,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import argparse
-import hashlib
-import json
 import logging
 import sys
 import os
-
-from datetime import datetime, timedelta
 
 from xivo.chain_map import ChainMap
 from xivo.config_helper import read_config_file_hierarchy
 
 from consul import Consul
 from xivo_auth import extensions
+from xivo_auth import http
 from xivo_auth.main import create_app
 from xivo_auth.core import plugin_manager
 from xivo_auth.core.celery_interface import make_celery, CeleryInterface
-from xivo_auth import successful_auth_signal
+from xivo_auth import successful_auth_signal, token_removal_signal
 from flask.ext.cors import CORS
 from pwd import getpwnam
 
@@ -66,38 +63,6 @@ def _get_config():
     return ChainMap(cli_config, file_config, _DEFAULT_CONFIG)
 
 
-def remove_token(app, data, **extra):
-    print 'In the handler'
-    return 'lol'
-
-
-def _new_user_token_rule(uuid):
-    rules = {'key': {'': {'policy': 'deny'},
-                     'xivo/private/{uuid}'.format(uuid=uuid): {'policy': 'write'}}}
-    return json.dumps(rules)
-
-
-def create_token(uuid):
-    rules = _new_user_token_rule(uuid)
-    return extensions.consul.acl.create(rules=rules)
-
-
-def _on_auth_success(app, **extra):
-    from xivo_auth import tasks
-    uuid = extra['uuid']
-    print 'Auth success ', uuid
-    token = create_token(uuid)
-    seconds = 120
-    task_id = hashlib.sha256('{token}'.format(token=token)).hexdigest()
-    tasks.clean_token.apply_async(args=[token], countdown=seconds, task_id=task_id)
-    now = datetime.now()
-    expire = datetime.now() + timedelta(seconds=seconds)
-    return {'token': token,
-            'uuid': uuid,
-            'issued_at': now.isoformat(),
-            'expires_at': expire.isoformat()}
-
-
 def main():
     config = _get_config()
     user = config['user']
@@ -109,14 +74,17 @@ def main():
     application.config.update(config)
 
     load_cors(application, config['general'])
-    successful_auth_signal.connect(_on_auth_success, application)
+
     extensions.celery = make_celery(application)
     extensions.consul = Consul(host=config['consul']['host'],
                                port=config['consul']['port'],
                                token=config['consul']['token'])
 
+    register_signal_handlers(application)
+
     backends = plugin_manager.load_plugins(application, config)
     application.config['backends'] = backends
+    application.register_blueprint(http.auth)
 
     sys.argv = [sys.argv[0]]
     celery_interface = CeleryInterface(extensions.celery)
@@ -126,6 +94,12 @@ def main():
                     config['general']['port'])
 
     celery_interface.join()
+
+
+def register_signal_handlers(application):
+    from xivo_auth.events import on_auth_success, remove_token
+    successful_auth_signal.connect(on_auth_success, application)
+    token_removal_signal.connect(remove_token, application)
 
 
 def change_user(user):
@@ -147,7 +121,3 @@ def load_cors(app, config):
     enabled = cors_config.pop('enabled', False)
     if enabled:
         CORS(app, **cors_config)
-
-
-if __name__ == '__main__':
-    main()

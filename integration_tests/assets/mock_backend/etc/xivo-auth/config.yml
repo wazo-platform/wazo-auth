@@ -10,7 +10,6 @@ plugins:
   - mock
   - broken_init
   - broken_verify_password
-  - auth
 
 amqp:
   uri: amqp://guest:guest@rabbitmq:5672/
