@@ -29,7 +29,7 @@ from xivo_auth import http
 from xivo_auth.main import create_app
 from xivo_auth.core import plugin_manager
 from xivo_auth.core.celery_interface import make_celery, CeleryInterface
-from xivo_auth import successful_auth_signal, token_removal_signal
+from xivo_auth import successful_auth_signal, token_removal_signal, get_token_data_signal
 from flask.ext.cors import CORS
 from pwd import getpwnam
 
@@ -97,7 +97,8 @@ def main():
 
 
 def register_signal_handlers(application):
-    from xivo_auth.events import on_auth_success, remove_token
+    from xivo_auth.events import on_auth_success, remove_token, fetch_token_data
+    get_token_data_signal.connect(fetch_token_data, application)
     successful_auth_signal.connect(on_auth_success, application)
     token_removal_signal.connect(remove_token, application)
 

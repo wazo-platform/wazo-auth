@@ -15,11 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-from flask import Blueprint, jsonify, current_app, request
+from datetime import datetime
+
+from flask import Blueprint, jsonify, current_app, request, make_response
 from xivo_auth.extensions import httpauth
-from xivo_auth import successful_auth_signal, token_removal_signal
+from xivo_auth import successful_auth_signal, token_removal_signal, get_token_data_signal
 
 auth = Blueprint('auth', __name__, template_folder='templates')
+
+THE_PAST = '2000-01-01'
 
 
 @auth.route("/0.1/token", methods=['POST'])
@@ -36,12 +40,27 @@ def revoke_token(token):
     return jsonify({'data': data})
 
 
+@auth.route("/0.1/token/<token>", methods=['HEAD'])
+def check_token(token):
+    try:
+        token_data = _get_token_data(token)
+        if token_data.get('expires_at', THE_PAST) > datetime.now().isoformat():
+            return make_response('', 204)
+    except LookupError:
+        'fallthrough'
+    return make_response('', 403)
+
+
 @httpauth.verify_password
 def verify_password(login, passwd):
     try:
         return _call_backend('verify_password', login, passwd)
     except IndexError:
         return False
+
+
+def _get_token_data(token):
+    return _first_signal_result(get_token_data_signal, token=token)
 
 
 def _first_signal_result(signal, **kwargs):

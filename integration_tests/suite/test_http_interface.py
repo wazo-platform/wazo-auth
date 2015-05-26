@@ -105,3 +105,15 @@ class TestTokenCreation(unittest.TestCase):
         response = s.post('http://localhost:9497/0.1/token')
 
         assert_that(response.status_code, equal_to(400))
+
+    def test_that_head_with_a_valid_token_returns_204(self):
+        token = self._post_token('foo', 'bar').json()['data']['token']
+
+        response = requests.head('http://localhost:9497/0.1/token/{}'.format(token))
+
+        assert_that(response.status_code, equal_to(204))
+
+    def test_that_head_with_an_invalid_token_returns_403(self):
+        response = requests.head('http://localhost:9497/0.1/token/{}'.format('abcdef'))
+
+        assert_that(response.status_code, equal_to(403))

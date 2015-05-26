@@ -20,6 +20,7 @@ import hashlib
 
 from datetime import datetime, timedelta
 from extensions import celery, consul
+from xivo_auth.helpers import values_to_dict
 
 
 def remove_token(app, **extra):
@@ -40,10 +41,12 @@ def on_auth_success(app, **extra):
     _clean_token.apply_async(args=[token], countdown=seconds, task_id=task_id)
     now = datetime.now()
     expire = datetime.now() + timedelta(seconds=seconds)
-    return {'token': token,
-            'uuid': uuid,
-            'issued_at': now.isoformat(),
-            'expires_at': expire.isoformat()}
+    token_data = {'token': token,
+                  'uuid': uuid,
+                  'issued_at': now.isoformat(),
+                  'expires_at': expire.isoformat()}
+    _add_token_data(token, token_data)
+    return token_data
 
 
 def _new_user_token_rule(uuid):
@@ -57,8 +60,25 @@ def create_token(uuid):
     return consul.acl.create(rules=rules)
 
 
+def fetch_token_data(app, token, **extra):
+    key = 'xivo/xivo-auth/tokens/{}'.format(token)
+    index, values = consul.kv.get(key, recurse=True)
+    if not values:
+        raise LookupError('No such token {}'.format(token))
+
+    return values_to_dict(values)['xivo']['xivo-auth']['tokens'][token]
+
+
+def _add_token_data(token, token_data):
+    key_tpl = 'xivo/xivo-auth/tokens/{token}/{key}'
+    for key, value in token_data.iteritems():
+        complete_key = key_tpl.format(token=token, key=key)
+        consul.kv.put(complete_key, value)
+
+
 @celery.task()
 def _clean_token(token):
     print "Removing token: %s" % token
     consul.acl.destroy(token)
+    consul.kv.delete('xivo/xivo-auth/tokens/{}'.format(token), recurse=True)
     return json.dumps({'data': 'Token cleaned...'})
