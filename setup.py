@@ -30,8 +30,5 @@ setup(
             'broken_init = xivo_auth.plugins.backends:BrokenInitBackend',
             'broken_verify_password = xivo_auth.plugins.backends:BrokenVerifyPasswordBackend',
         ],
-        'xivo_auth.plugins': [
-            'auth = xivo_auth.plugins.auth:XiVOAuth',
-        ],
     }
 )
