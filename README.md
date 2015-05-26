@@ -24,3 +24,22 @@ Configuration
 -------------
 
 The default config is /etc/xivo-auth/config.yml, you could override in /etc/xivo-auth/conf.d/
+
+
+Integration tests
+-----------------
+
+Executing integration tests require docker, the docker image is located in the
+integration_tests directory.
+
+Before starting build the xivo/xivo-auth image
+
+```sh
+docker build -t xivo/xivo-auth .
+```
+
+To run the tests from the integration_tests directory
+
+```sh
+docker build -t xivo/xivo-auth-tests --file=../Dockerfile-test .. && nosetests
+```

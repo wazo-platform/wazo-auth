@@ -12,6 +12,9 @@ RUN pip install -r requirements.txt
 RUN python setup.py install
 RUN mkdir /etc/xivo-auth/conf.d
 
+ONBUILD ADD . /usr/src/auth
+ONBUILD RUN python setup.py install
+
 EXPOSE 9497
 
 CMD xivo-auth --user www-data
