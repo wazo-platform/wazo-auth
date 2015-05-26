@@ -1,5 +1,7 @@
 # xivo-auth
 
+[![Build Status](https://travis-ci.org/xivo-pbx/xivo-auth.svg)](https://travis-ci.org/xivo-pbx/xivo-auth)
+
 A thin layer of business logic above consul to create tokens, create acl and delete expired tokens
 
 # Usage
