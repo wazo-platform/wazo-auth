@@ -69,6 +69,6 @@ def _first_signal_result(signal, **kwargs):
 
 
 def _call_backend(fn, *args, **kwargs):
-    backend_names = [request.get_json()['type']]
+    backend_names = [request.get_json(force=True)['type']]
     results = current_app.config['backends'].map_method(backend_names, fn, *args, **kwargs)
     return results[0]

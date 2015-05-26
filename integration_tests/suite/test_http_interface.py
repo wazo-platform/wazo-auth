@@ -87,6 +87,17 @@ class TestTokenCreation(unittest.TestCase):
         assert_that(response.status_code, equal_to(200))
         assert_that(token, has_length(36))
 
+    def test_that_the_right_credentials_no_headers(self):
+        s = requests.Session()
+        s.auth = requests.auth.HTTPBasicAuth('foo', 'bar')
+        payload = json.dumps({'type': 'mock'})
+        response = s.post('http://localhost:9497/0.1/token', data=payload)
+        content = response.json()['data']
+        token = content['token']
+
+        assert_that(response.status_code, equal_to(200))
+        assert_that(token, has_length(36))
+
     def test_that_an_unknown_type_returns_a_401(self):
         response = self._post_token('foo', 'not_bar', 'unexistant_backend')
 
