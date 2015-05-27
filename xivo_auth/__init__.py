@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 from blinker import Namespace
-from core.modules import BasePlugin  # noqa
 from core.modules import BaseAuthenticationBackend  # noqa
 
 _signals = Namespace()
