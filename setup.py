@@ -11,10 +11,10 @@ setup(
 
     description='XiVO auth',
 
-    author='Sylvain Boily',
-    author_email='sboily@avencall.com',
+    author='Avencall',
+    author_email='dev@avencall.com',
 
-    url='https://github.com/sboily/xivo-auth',
+    url='https://github.com/xivo-pbx/xivo-auth',
 
     packages=find_packages(),
     include_package_data=True,
