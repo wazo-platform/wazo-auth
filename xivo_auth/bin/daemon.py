@@ -24,6 +24,8 @@ from xivo.chain_map import ChainMap
 from xivo.config_helper import read_config_file_hierarchy
 
 from consul import Consul
+from xivo.xivo_logging import setup_logging
+from xivo.xivo_logging import get_log_level_by_name
 from xivo_auth import extensions
 from xivo_auth import http
 from xivo_auth.main import create_app
@@ -39,6 +41,8 @@ _DEFAULT_CONFIG = {
     'user': 'www-data',
     'config_file': '/etc/xivo-auth/config.yml',
     'extra_config_files': '/etc/xivo-auth/conf.d',
+    'log_level': 'info',
+    'log_filename': '/var/log/xivo-auth.log',
 }
 
 
@@ -48,6 +52,11 @@ def _parse_cli_args(argv):
     parser.add_argument('-u', '--user', help='User to run the daemon')
     parser.add_argument('-d', '--debug', action='store_true', help='Log debug messages')
     parser.add_argument('-f', '--foreground', action='store_true', help="Foreground, don't daemonize")
+    parser.add_argument('-l',
+                        '--log-level',
+                        action='store',
+                        help="Logs messages with LOG_LEVEL details. Must be one of:\n"
+                             "critical, error, warning, info, debug. Default: %(default)s")
     parsed_args = parser.parse_args(argv)
 
     result = {}
@@ -59,6 +68,18 @@ def _parse_cli_args(argv):
         result['debug'] = parsed_args.debug
     if parsed_args.foreground:
         result['foreground'] = parsed_args.foreground
+    if parsed_args.log_level:
+        result['log_level'] = parsed_args.log_level
+
+    return result
+
+
+def _get_reinterpreted_raw_values(config):
+    result = {}
+
+    log_level = config.get('log_level')
+    if log_level:
+        result['log_level'] = get_log_level_by_name(log_level)
 
     return result
 
@@ -66,11 +87,14 @@ def _parse_cli_args(argv):
 def _get_config():
     cli_config = _parse_cli_args(sys.argv[1:])
     file_config = read_config_file_hierarchy(ChainMap(cli_config, _DEFAULT_CONFIG))
-    return ChainMap(cli_config, file_config, _DEFAULT_CONFIG)
+    reinterpreted_config = _get_reinterpreted_raw_values(ChainMap(cli_config, file_config, _DEFAULT_CONFIG))
+    return ChainMap(reinterpreted_config, cli_config, file_config, _DEFAULT_CONFIG)
 
 
 def main():
     config = _get_config()
+
+    setup_logging(config['log_filename'], config['foreground'], config['debug'], config['log_level'])
     user = config['user']
 
     if user:

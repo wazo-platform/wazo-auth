@@ -1,5 +1,6 @@
 debug: True
-foreground: True
+foreground: False
+log_filename: /tmp/xivo-auth.log
 
 rest_api:
   listen: 0.0.0.0

@@ -8,7 +8,7 @@ extra_config_files: /etc/xivo-auth/conf.d/
 
 log_filename: /var/log/xivo-auth.log
 foreground: False
-debug: true
+debug: False
 
 # REST API server
 rest_api:
