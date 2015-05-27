@@ -15,12 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
+import logging
+
 from stevedore.dispatch import NameDispatchExtensionManager
+
+logger = logging.getLogger(__name__)
 
 
 def load_plugins(application, config):
+    enabled = config['enabled_plugins']
     return NameDispatchExtensionManager(namespace='xivo_auth.backends',
-                                        check_func=lambda plugin: plugin.name in config['enabled_plugins'],
+                                        check_func=lambda plugin: plugin.name in enabled,
                                         on_load_failure_callback=plugins_load_fail,
                                         verify_requirements=False,
                                         propagate_map_exceptions=True,
@@ -29,6 +34,7 @@ def load_plugins(application, config):
 
 
 def plugins_load_fail(manager, entrypoint, exception):
-    print "There is an error with this module: ", manager
-    print "The entry point is: ", entrypoint
-    print "The exception is: ", exception.__repr__()
+    try:
+        raise exception
+    except Exception:
+        logger.exception('Failed to load {}'.format(entrypoint))

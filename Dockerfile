@@ -11,6 +11,8 @@ RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 RUN python setup.py install
 RUN mkdir /etc/xivo-auth/conf.d
+RUN mkdir -p /var/run/xivo-auth
+RUN chown -R www-data:www-data /var/run/xivo-auth
 
 ONBUILD ADD . /usr/src/auth
 ONBUILD RUN python setup.py install

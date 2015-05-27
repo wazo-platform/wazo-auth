@@ -24,6 +24,7 @@ from xivo.chain_map import ChainMap
 from xivo.config_helper import read_config_file_hierarchy
 
 from consul import Consul
+from xivo.daemonize import pidfile_context
 from xivo.xivo_logging import setup_logging
 from xivo.xivo_logging import get_log_level_by_name
 from xivo_auth import extensions
@@ -43,6 +44,7 @@ _DEFAULT_CONFIG = {
     'extra_config_files': '/etc/xivo-auth/conf.d',
     'log_level': 'info',
     'log_filename': '/var/log/xivo-auth.log',
+    'pid_filename': '/var/run/xivo-auth/xivo-auth.pid',
 }
 
 
@@ -97,6 +99,7 @@ class _Controller(object):
         try:
             self._listen_addr = config['rest_api']['listen']
             self._listen_port = config['rest_api']['port']
+            self._foreground = config['foreground']
         except KeyError:
             logger.error('Missing configuration to start the HTTP application')
 
@@ -118,11 +121,13 @@ class _Controller(object):
 
         sys.argv = [sys.argv[0]]  # For the celery process
         self._celery_iface = CeleryInterface(extensions.celery)
+        self._celery_iface.daemon = not self._foreground
+        self._celery_iface.start()
 
     def run(self):
-        self._celery_iface.start()
         self._app.run(self._listen_addr, self._listen_port)
-        self._celery_iface.join()
+        if self._foreground:
+            self._celery_iface.join()
 
 
 def main():
@@ -135,7 +140,8 @@ def main():
         change_user(user)
 
     controller = _Controller(config)
-    controller.run()
+    with pidfile_context(config['pid_filename'], config['foreground']):
+        controller.run()
 
 
 def register_signal_handlers(application):

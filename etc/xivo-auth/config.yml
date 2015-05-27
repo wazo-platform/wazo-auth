@@ -7,6 +7,7 @@
 extra_config_files: /etc/xivo-auth/conf.d/
 
 log_filename: /var/log/xivo-auth.log
+pid_filename: /var/run/xivo-auth/xivo-auth.pid
 foreground: False
 debug: False
 
