@@ -51,6 +51,11 @@ def check_token(token):
     return make_response('', 403)
 
 
+@auth.route('/0.1/backends', methods=['GET'])
+def enabled_backends():
+    return jsonify({'data': current_app.config['enabled_plugins']})
+
+
 @httpauth.verify_password
 def verify_password(login, passwd):
     try:

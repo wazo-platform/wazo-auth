@@ -24,6 +24,7 @@ import time
 import os
 
 from hamcrest import assert_that
+from hamcrest import contains_inanyorder
 from hamcrest import equal_to
 from hamcrest import has_length
 
@@ -128,3 +129,9 @@ class TestTokenCreation(unittest.TestCase):
         response = requests.head('http://localhost:9497/0.1/token/{}'.format('abcdef'))
 
         assert_that(response.status_code, equal_to(403))
+
+    def test_backends(self):
+        response = requests.get('http://localhost:9497/0.1/backends')
+
+        assert_that(response.json()['data'],
+                    contains_inanyorder('mock', 'broken_init', 'broken_verify_password'))
