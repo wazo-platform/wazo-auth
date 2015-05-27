@@ -40,7 +40,7 @@ def on_auth_success(app, **extra):
     uuid = extra['uuid']
     logger.debug('Authentication succesfull for %s', uuid)
     token = create_token(uuid)
-    seconds = 10
+    seconds = app.config['default_token_lifetime']
     task_id = hashlib.sha256('{token}'.format(token=token)).hexdigest()
     _clean_token.apply_async(args=[token], countdown=seconds, task_id=task_id)
     now = datetime.now()

@@ -11,6 +11,9 @@ pid_filename: /var/run/xivo-auth/xivo-auth.pid
 foreground: False
 debug: False
 
+# The lifetime of tokens in seconds
+default_token_lifetime: 7200
+
 # REST API server
 rest_api:
 
