@@ -135,3 +135,11 @@ class TestTokenCreation(unittest.TestCase):
 
         assert_that(response.json()['data'],
                     contains_inanyorder('mock', 'broken_init', 'broken_verify_password'))
+
+    def test_that_get_returns_the_uuid(self):
+        token = self._post_token('foo', 'bar').json()['data']['token']
+
+        response = requests.get('http://localhost:9497/0.1/token/{}'.format(token), )
+
+        assert_that(response.status_code, equal_to(200))
+        assert_that(response.json()['data']['uuid'], equal_to('a-mocked-uuid'))

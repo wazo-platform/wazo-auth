@@ -40,14 +40,18 @@ def revoke_token(token):
     return jsonify({'data': data})
 
 
-@auth.route("/0.1/token/<token>", methods=['HEAD'])
+@auth.route("/0.1/token/<token>", methods=['HEAD', 'GET'])
 def check_token(token):
     try:
         token_data = _get_token_data(token)
         if token_data.get('expires_at', THE_PAST) > datetime.now().isoformat():
-            return make_response('', 204)
+            if request.method == 'HEAD':
+                return make_response('', 204)
+            else:
+                return jsonify({'data': token_data})
     except LookupError:
         'fallthrough'
+
     return make_response('', 403)
 
 
