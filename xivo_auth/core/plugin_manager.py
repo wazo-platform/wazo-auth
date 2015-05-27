@@ -24,13 +24,18 @@ logger = logging.getLogger(__name__)
 
 def load_plugins(application, config):
     enabled = config['enabled_plugins']
-    return NameDispatchExtensionManager(namespace='xivo_auth.backends',
-                                        check_func=lambda plugin: plugin.name in enabled,
-                                        on_load_failure_callback=plugins_load_fail,
-                                        verify_requirements=False,
-                                        propagate_map_exceptions=True,
-                                        invoke_on_load=True,
-                                        invoke_args=(config,))
+    backends = NameDispatchExtensionManager(namespace='xivo_auth.backends',
+                                            check_func=lambda plugin: plugin.name in enabled,
+                                            on_load_failure_callback=plugins_load_fail,
+                                            verify_requirements=False,
+                                            propagate_map_exceptions=True,
+                                            invoke_on_load=False)
+    backends.map(enabled, _load_plugin, config)
+    return backends
+
+
+def _load_plugin(extension, config):
+    extension.obj = extension.plugin(config)
 
 
 def plugins_load_fail(manager, entrypoint, exception):
