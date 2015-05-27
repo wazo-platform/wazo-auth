@@ -46,6 +46,8 @@ def _parse_cli_args(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config-file', action='store', help='The path to the config file')
     parser.add_argument('-u', '--user', help='User to run the daemon')
+    parser.add_argument('-d', '--debug', action='store_true', help='Log debug messages')
+    parser.add_argument('-f', '--foreground', action='store_true', help="Foreground, don't daemonize")
     parsed_args = parser.parse_args(argv)
 
     result = {}
@@ -53,6 +55,10 @@ def _parse_cli_args(argv):
         result['config_file'] = parsed_args.config_file
     if parsed_args.user:
         result['user'] = parsed_args.user
+    if parsed_args.debug:
+        result['debug'] = parsed_args.debug
+    if parsed_args.foreground:
+        result['foreground'] = parsed_args.foreground
 
     return result
 
@@ -73,7 +79,7 @@ def main():
     application = create_app()
     application.config.update(config)
 
-    load_cors(application, config['general'])
+    load_cors(application, config['rest_api'])
 
     extensions.celery = make_celery(application)
     extensions.consul = Consul(host=config['consul']['host'],
@@ -90,8 +96,8 @@ def main():
     celery_interface = CeleryInterface(extensions.celery)
     celery_interface.start()
 
-    application.run(config['general']['listen'],
-                    config['general']['port'])
+    application.run(config['rest_api']['listen'],
+                    config['rest_api']['port'])
 
     celery_interface.join()
 

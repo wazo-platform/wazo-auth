@@ -20,7 +20,7 @@ from stevedore.dispatch import NameDispatchExtensionManager
 
 def load_plugins(application, config):
     return NameDispatchExtensionManager(namespace='xivo_auth.backends',
-                                        check_func=lambda plugin: plugin.name in config['plugins'],
+                                        check_func=lambda plugin: plugin.name in config['enabled_plugins'],
                                         on_load_failure_callback=plugins_load_fail,
                                         verify_requirements=False,
                                         propagate_map_exceptions=True,
