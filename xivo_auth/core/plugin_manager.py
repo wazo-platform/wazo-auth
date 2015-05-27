@@ -34,7 +34,4 @@ def load_plugins(application, config):
 
 
 def plugins_load_fail(manager, entrypoint, exception):
-    try:
-        raise exception
-    except Exception:
-        logger.exception('Failed to load {}'.format(entrypoint))
+    logger.info('Failed to load %s: %s', entrypoint, repr(exception))
