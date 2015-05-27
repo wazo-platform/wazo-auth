@@ -38,6 +38,7 @@ from pwd import getpwnam
 
 logger = logging.getLogger(__name__)
 
+TWO_HOURS = 60 * 60 * 2
 _DEFAULT_CONFIG = {
     'user': 'www-data',
     'config_file': '/etc/xivo-auth/config.yml',
@@ -45,6 +46,7 @@ _DEFAULT_CONFIG = {
     'log_level': 'info',
     'log_filename': '/var/log/xivo-auth.log',
     'pid_filename': '/var/run/xivo-auth/xivo-auth.pid',
+    'default_token_lifetime': TWO_HOURS,
 }
 
 
