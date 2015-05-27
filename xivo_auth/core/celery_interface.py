@@ -18,7 +18,6 @@
 import logging
 
 from celery import Celery
-from celery.utils import LOG_LEVELS
 from multiprocessing import Process
 
 logger = logging.getLogger(__name__)
@@ -34,8 +33,8 @@ def make_celery(app):
         CELERY_RESULT_SERIALIZER='json',
         CELERY_ALWAYS_EAGER=False,
         CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
-        CELERYD_LOG_LEVEL=LOG_LEVELS['DEBUG'],  # TODO fix setup_logging to work with string and use the string here
         CELERY_DEFAULT_EXCHANGE_TYPE='topic',
+        CELERYD_HIJACK_ROOT_LOGGER=False,
     )
 
     TaskBase = celery.Task
