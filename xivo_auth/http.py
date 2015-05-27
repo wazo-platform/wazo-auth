@@ -52,7 +52,7 @@ def check_token(token):
     except LookupError:
         'fallthrough'
 
-    return make_response('', 403)
+    return make_response('', 404)
 
 
 @auth.route('/0.1/backends', methods=['GET'])

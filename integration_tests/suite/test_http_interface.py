@@ -128,7 +128,7 @@ class TestTokenCreation(unittest.TestCase):
     def test_that_head_with_an_invalid_token_returns_403(self):
         response = requests.head('http://localhost:9497/0.1/token/{}'.format('abcdef'))
 
-        assert_that(response.status_code, equal_to(403))
+        assert_that(response.status_code, equal_to(404))
 
     def test_backends(self):
         response = requests.get('http://localhost:9497/0.1/backends')
@@ -139,7 +139,15 @@ class TestTokenCreation(unittest.TestCase):
     def test_that_get_returns_the_uuid(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
-        response = requests.get('http://localhost:9497/0.1/token/{}'.format(token), )
+        response = requests.get('http://localhost:9497/0.1/token/{}'.format(token))
 
         assert_that(response.status_code, equal_to(200))
         assert_that(response.json()['data']['uuid'], equal_to('a-mocked-uuid'))
+
+    def test_that_get_does_not_work_after_delete(self):
+        token = self._post_token('foo', 'bar').json()['data']['token']
+
+        requests.delete('http://localhost:9497/0.1/token/{}'.format(token))
+        response = requests.get('http://localhost:9497/0.1/token/{}'.format(token))
+
+        assert_that(response.status_code, equal_to(404))

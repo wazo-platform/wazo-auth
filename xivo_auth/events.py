@@ -27,12 +27,10 @@ logger = logging.getLogger(__name__)
 
 
 def remove_token(app, **extra):
-    # TODO: refactor with clean_token
     token = extra['token']
     task_id = hashlib.sha256('{token}'.format(token=token)).hexdigest()
     celery.control.revoke(task_id)
-    logger.debug('Removing token: %s', token)
-    consul.acl.destroy(token)
+    _clean_consul_data(token)
     return {'message': 'success'}
 
 
@@ -80,9 +78,13 @@ def _add_token_data(token, token_data):
         consul.kv.put(complete_key, value)
 
 
-@celery.task()
-def _clean_token(token):
+def _clean_consul_data(token):
     logger.debug("Removing token: %s", token)
     consul.acl.destroy(token)
     consul.kv.delete('xivo/xivo-auth/tokens/{}'.format(token), recurse=True)
+
+
+@celery.task()
+def _clean_token(token):
+    _clean_consul_data(token)
     return json.dumps({'data': 'Token cleaned...'})
