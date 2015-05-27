@@ -23,7 +23,6 @@ from flask import Flask
 def create_app():
     app = Flask(__name__)
     configure_logging(app)
-    print 'App created'
     return app
 
 

@@ -15,10 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
+import logging
 
 from celery import Celery
 from celery.utils import LOG_LEVELS
 from multiprocessing import Process
+
+logger = logging.getLogger(__name__)
 
 
 def make_celery(app):
@@ -55,5 +58,5 @@ class CeleryInterface(Process):
         super(CeleryInterface, self).__init__()
 
     def run(self):
-        print "Running celery interfaces"
+        logger.debug('Running celery worker')
         self.celery.worker_main()

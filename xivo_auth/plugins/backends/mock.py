@@ -24,5 +24,4 @@ class BackendMock(BaseAuthenticationBackend):
         return 'a-mocked-uuid'
 
     def verify_password(self, username, password):
-        print 'Checking {} {}'.format(username, password)
         return username == 'foo' and password == 'bar'

@@ -17,24 +17,28 @@
 
 import json
 import hashlib
+import logging
 
 from datetime import datetime, timedelta
 from extensions import celery, consul
 from xivo_auth.helpers import values_to_dict
 
+logger = logging.getLogger(__name__)
+
 
 def remove_token(app, **extra):
+    # TODO: refactor with clean_token
     token = extra['token']
     task_id = hashlib.sha256('{token}'.format(token=token)).hexdigest()
     celery.control.revoke(task_id)
-    print "Removing token: %s" % token
+    logger.debug('Removing token: %s', token)
     consul.acl.destroy(token)
     return {'message': 'success'}
 
 
 def on_auth_success(app, **extra):
     uuid = extra['uuid']
-    print 'Auth success ', uuid
+    logger.debug('Authentication succesfull for %s', uuid)
     token = create_token(uuid)
     seconds = 10
     task_id = hashlib.sha256('{token}'.format(token=token)).hexdigest()
@@ -78,7 +82,7 @@ def _add_token_data(token, token_data):
 
 @celery.task()
 def _clean_token(token):
-    print "Removing token: %s" % token
+    logger.debug("Removing token: %s", token)
     consul.acl.destroy(token)
     consul.kv.delete('xivo/xivo-auth/tokens/{}'.format(token), recurse=True)
     return json.dumps({'data': 'Token cleaned...'})
