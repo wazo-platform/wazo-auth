@@ -35,7 +35,10 @@ def load_plugins(application, config):
 
 
 def _load_plugin(extension, config):
-    extension.obj = extension.plugin(config)
+    try:
+        extension.obj = extension.plugin(config)
+    except Exception:
+        logger.exception('Failed to load plugin %s', extension.name)
 
 
 def plugins_load_fail(manager, entrypoint, exception):
