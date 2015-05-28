@@ -23,12 +23,15 @@ import unittest
 import time
 import os
 
+from datetime import datetime
 from hamcrest import assert_that
 from hamcrest import contains_inanyorder
 from hamcrest import equal_to
 from hamcrest import has_length
 
 logger = logging.getLogger(__name__)
+
+ISO_DATETIME = '%Y-%m-%dT%H:%M:%S.%f'
 
 
 class TestTokenCreation(unittest.TestCase):
@@ -67,14 +70,16 @@ class TestTokenCreation(unittest.TestCase):
     def tearDownClass(cls):
         cls.stop_services()
 
-    def _post_token(self, username, password, backend=None):
+    def _post_token(self, username, password, backend=None, expiration=None):
         if not backend:
             backend = 'mock'
         s = requests.Session()
         s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         s.auth = requests.auth.HTTPBasicAuth(username, password)
-        payload = json.dumps({'type': backend})
-        return s.post(self.url, data=payload)
+        data = {'type': backend}
+        if expiration:
+            data['expiration'] = expiration
+        return s.post(self.url, data=json.dumps(data))
 
     def test_that_the_wrong_password_returns_401(self):
         response = self._post_token('foo', 'not_bar')
@@ -118,6 +123,16 @@ class TestTokenCreation(unittest.TestCase):
         response = s.post(self.url)
 
         assert_that(response.status_code, equal_to(400))
+
+    def test_the_expiration_argument(self):
+        token_data = self._post_token('foo', 'bar', expiration=2).json()['data']
+
+        creation_time = datetime.strptime(token_data['issued_at'], ISO_DATETIME)
+        expiration_time = datetime.strptime(token_data['expires_at'], ISO_DATETIME)
+
+        expiration = expiration_time - creation_time
+
+        assert_that(1 < expiration.seconds < 3)
 
     def test_that_head_with_a_valid_token_returns_204(self):
         token = self._post_token('foo', 'bar').json()['data']['token']

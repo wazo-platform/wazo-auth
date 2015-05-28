@@ -29,8 +29,13 @@ THE_PAST = '2000-01-01'
 @auth.route("/0.1/token", methods=['POST'])
 @httpauth.login_required
 def authenticate():
+    data = request.get_json()
+    args = {}
+    if 'expiration' in data:
+        args['expiration'] = data['expiration']
+
     uuid = _call_backend('get_uuid', httpauth.username())
-    data = _first_signal_result(successful_auth_signal, uuid=uuid)
+    data = _first_signal_result(successful_auth_signal, uuid=uuid, **args)
     return jsonify({'data': data})
 
 
