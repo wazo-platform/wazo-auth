@@ -152,3 +152,8 @@ class TestTokenCreation(unittest.TestCase):
         response = requests.get('{}/{}'.format(self.url, token))
 
         assert_that(response.status_code, equal_to(404))
+
+    def test_that_deleting_unexistant_token_returns_200(self):
+        response = requests.delete('{}/{}'.format(self.url, 'not-a-valid-token'))
+
+        assert_that(response.status_code, equal_to(200))
