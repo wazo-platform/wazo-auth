@@ -172,3 +172,12 @@ class TestTokenCreation(unittest.TestCase):
         response = requests.delete('{}/{}'.format(self.url, 'not-a-valid-token'))
 
         assert_that(response.status_code, equal_to(200))
+
+    def test_that_expired_tokens_are_not_valid(self):
+        token = self._post_token('foo', 'bar', expiration=1).json()['data']['token']
+
+        time.sleep(2)
+
+        response = requests.head('{}/{}'.format(self.url, token))
+
+        assert_that(response.status_code, equal_to(404))
