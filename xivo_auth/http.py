@@ -32,6 +32,9 @@ def authenticate():
     data = request.get_json()
     args = {}
     if 'expiration' in data:
+        if not data['expiration'] > 0:
+            return make_response('Invalid expiration', 400)
+
         args['expiration'] = data['expiration']
 
     uuid = _call_backend('get_uuid', httpauth.username())

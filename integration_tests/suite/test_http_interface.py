@@ -134,6 +134,11 @@ class TestTokenCreation(unittest.TestCase):
 
         assert_that(1 < expiration.seconds < 3)
 
+    def test_negative_expiration(self):
+        response = self._post_token('foo', 'bar', expiration=-1)
+
+        assert_that(response.status_code, equal_to(400))
+
     def test_that_head_with_a_valid_token_returns_204(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
