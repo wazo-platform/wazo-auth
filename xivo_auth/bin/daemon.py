@@ -20,6 +20,7 @@ import logging
 import sys
 import os
 
+from flask import Flask
 from xivo.chain_map import ChainMap
 from xivo.config_helper import read_config_file_hierarchy
 
@@ -29,7 +30,6 @@ from xivo.xivo_logging import setup_logging
 from xivo.xivo_logging import get_log_level_by_name
 from xivo_auth import extensions
 from xivo_auth import http
-from xivo_auth.main import create_app
 from xivo_auth.core import plugin_manager
 from xivo_auth.core.celery_interface import make_celery, CeleryInterface
 from xivo_auth import successful_auth_signal, token_removal_signal, get_token_data_signal
@@ -105,7 +105,7 @@ class _Controller(object):
         except KeyError:
             logger.error('Missing configuration to start the HTTP application')
 
-        self._app = create_app()
+        self._app = Flask(__name__)
         self._app.config.update(config)
 
         load_cors(self._app, config['rest_api'])
