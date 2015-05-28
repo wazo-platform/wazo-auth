@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
+import signal
 import argparse
 import logging
 import sys
@@ -123,13 +124,17 @@ class _Controller(object):
 
         sys.argv = [sys.argv[0]]  # For the celery process
         self._celery_iface = CeleryInterface(extensions.celery)
-        self._celery_iface.daemon = not self._foreground
+        self._celery_iface.daemon = True
         self._celery_iface.start()
+        signal.signal(signal.SIGTERM, self.sigterm_handler)
 
     def run(self):
         self._app.run(self._listen_addr, self._listen_port)
-        if self._foreground:
-            self._celery_iface.join()
+        self._celery_iface.join()
+
+    def sigterm_handler(self, _signo, _stack_frame):
+        logger.info('SIGTERM received, leaving')
+        sys.exit(0)
 
 
 def main():
