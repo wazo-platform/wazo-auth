@@ -35,6 +35,7 @@ class TestTokenCreation(unittest.TestCase):
 
     asset = 'mock_backend'
     launcher = 'docker-compose'
+    url = 'http://localhost:9497/0.1/token'
 
     @classmethod
     def launch_services(cls):
@@ -73,7 +74,7 @@ class TestTokenCreation(unittest.TestCase):
         s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         s.auth = requests.auth.HTTPBasicAuth(username, password)
         payload = json.dumps({'type': backend})
-        return s.post('http://localhost:9497/0.1/token', data=payload)
+        return s.post(self.url, data=payload)
 
     def test_that_the_wrong_password_returns_401(self):
         response = self._post_token('foo', 'not_bar')
@@ -92,7 +93,7 @@ class TestTokenCreation(unittest.TestCase):
         s = requests.Session()
         s.auth = requests.auth.HTTPBasicAuth('foo', 'bar')
         payload = json.dumps({'type': 'mock'})
-        response = s.post('http://localhost:9497/0.1/token', data=payload)
+        response = s.post(self.url, data=payload)
         content = response.json()['data']
         token = content['token']
 
@@ -114,19 +115,19 @@ class TestTokenCreation(unittest.TestCase):
         s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         s.auth = requests.auth.HTTPBasicAuth('foo', 'bar')
 
-        response = s.post('http://localhost:9497/0.1/token')
+        response = s.post(self.url)
 
         assert_that(response.status_code, equal_to(400))
 
     def test_that_head_with_a_valid_token_returns_204(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
-        response = requests.head('http://localhost:9497/0.1/token/{}'.format(token))
+        response = requests.head('{}/{}'.format(self.url, token))
 
         assert_that(response.status_code, equal_to(204))
 
     def test_that_head_with_an_invalid_token_returns_403(self):
-        response = requests.head('http://localhost:9497/0.1/token/{}'.format('abcdef'))
+        response = requests.head('{}/{}'.format(self.url, 'abcdef'))
 
         assert_that(response.status_code, equal_to(404))
 
@@ -139,7 +140,7 @@ class TestTokenCreation(unittest.TestCase):
     def test_that_get_returns_the_uuid(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
-        response = requests.get('http://localhost:9497/0.1/token/{}'.format(token))
+        response = requests.get('{}/{}'.format(self.url, token))
 
         assert_that(response.status_code, equal_to(200))
         assert_that(response.json()['data']['uuid'], equal_to('a-mocked-uuid'))
@@ -147,7 +148,7 @@ class TestTokenCreation(unittest.TestCase):
     def test_that_get_does_not_work_after_delete(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
-        requests.delete('http://localhost:9497/0.1/token/{}'.format(token))
-        response = requests.get('http://localhost:9497/0.1/token/{}'.format(token))
+        requests.delete('{}/{}'.format(self.url, token))
+        response = requests.get('{}/{}'.format(self.url, token))
 
         assert_that(response.status_code, equal_to(404))
