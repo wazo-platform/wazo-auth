@@ -43,5 +43,5 @@ docker build -t xivo/xivo-auth .
 To run the tests from the integration_tests directory
 
 ```sh
-docker build -t xivo/xivo-auth-tests --file=../Dockerfile-test .. && nosetests
+docker build -t xivo/xivo-auth-tests -f Dockerfile .. && nosetests
 ```
