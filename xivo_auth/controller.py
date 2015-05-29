@@ -22,11 +22,11 @@ import sys
 from consul import Consul
 from flask import Flask
 from flask.ext.cors import CORS
+from stevedore.dispatch import NameDispatchExtensionManager
 
 from xivo_auth import extensions
 from xivo_auth import http
 from xivo_auth import successful_auth_signal, token_removal_signal, get_token_data_signal
-from xivo_auth import plugin_loader
 from xivo_auth.core.celery_interface import make_celery, CeleryInterface
 
 
@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 class Controller(object):
 
     def __init__(self, config):
+        self._config = config
         try:
             self._listen_addr = config['rest_api']['listen']
             self._listen_port = config['rest_api']['port']
@@ -43,6 +44,7 @@ class Controller(object):
             self._cors_config = config['rest_api']['cors']
             self._cors_enabled = self._cors_config['enabled']
             self._consul_config = config['consul']
+            self._plugins = config['enabled_plugins']
         except KeyError:
             logger.error('Missing configuration to start the HTTP application')
 
@@ -56,8 +58,7 @@ class Controller(object):
 
         self.register_signal_handlers()
 
-        backends = plugin_loader.load_plugins(self._app, config)
-        self._app.config['backends'] = backends
+        self._app.config['backends'] = self._get_backends()
         self._app.register_blueprint(http.auth)
 
         sys.argv = [sys.argv[0]]  # For the celery process
@@ -83,3 +84,34 @@ class Controller(object):
     def load_cors(self):
         if self._cors_enabled:
             CORS(self._app, **self._cors_config)
+
+    def _get_backends(self):
+        loader = _PluginLoader(self._config)
+        return loader.load()
+
+
+class _PluginLoader(object):
+
+    namespace = 'xivo_auth.backends'
+
+    def __init__(self, config):
+        self._enabled_plugins = config['enabled_plugins']
+        self._config = config
+        self._backends = NameDispatchExtensionManager(namespace=self.namespace,
+                                                      check_func=self._check,
+                                                      verify_requirements=False,
+                                                      propagate_map_exceptions=True,
+                                                      invoke_on_load=False)
+
+    def load(self):
+        self._backends.map(self._enabled_plugins, self._load)
+        return self._backends
+
+    def _check(self, plugin):
+        return plugin.name in self._enabled_plugins
+
+    def _load(self, extension):
+        try:
+            extension.obj = extension.plugin(self._config)
+        except Exception:
+            logger.exception('Failed to load %s', extension.name)
