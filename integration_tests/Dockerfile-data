@@ -7,6 +7,3 @@ ADD assets/mock_backend/etc/ /data
 
 VOLUME /data
 VOLUME /logs
-
-CMD /usr/bin/yes
-
