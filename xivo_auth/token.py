@@ -51,14 +51,14 @@ class Manager(object):
         self._celery = celery
 
     def new_token(self, uuid, expiration=None):
-        from xivo_auth import events
+        from xivo_auth import tasks
         rules = self._acl_generator.create(uuid)
         consul_token = self._consul.acl.create(rules=rules)
         expiration = expiration or self._default_expiration
         token = Token(consul_token, uuid, now(), later(expiration))
         task_id = self._get_token_hash(token)
         self._push_token_data(token)
-        events.clean_token.apply_async(args=[consul_token], countdown=expiration, task_id=task_id)
+        tasks.clean_token.apply_async(args=[consul_token], countdown=expiration, task_id=task_id)
         return token
 
     def remove_token(self, token):
