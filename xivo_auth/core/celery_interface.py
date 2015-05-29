@@ -18,7 +18,6 @@
 import logging
 
 from celery import Celery
-from multiprocessing import Process
 
 logger = logging.getLogger(__name__)
 
@@ -48,14 +47,3 @@ def make_celery(app):
 
     celery.Task = ContextTask
     return celery
-
-
-class CeleryInterface(Process):
-
-    def __init__(self, celery):
-        self.celery = celery
-        super(CeleryInterface, self).__init__()
-
-    def run(self):
-        logger.debug('Running celery worker')
-        self.celery.worker_main()

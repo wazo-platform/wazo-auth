@@ -19,6 +19,8 @@ import logging
 import signal
 import sys
 
+from multiprocessing import Process
+
 from consul import Consul
 from flask import Flask
 from flask.ext.cors import CORS
@@ -27,7 +29,7 @@ from stevedore.dispatch import NameDispatchExtensionManager
 from xivo_auth import extensions
 from xivo_auth import http
 from xivo_auth import successful_auth_signal, token_removal_signal, get_token_data_signal
-from xivo_auth.core.celery_interface import make_celery, CeleryInterface
+from xivo_auth.core.celery_interface import make_celery
 
 
 logger = logging.getLogger(__name__)
@@ -62,8 +64,7 @@ class Controller(object):
         self._app.register_blueprint(http.auth)
 
         sys.argv = [sys.argv[0]]  # For the celery process
-        self._celery_iface = CeleryInterface(extensions.celery)
-        self._celery_iface.daemon = True
+        self._celery_iface = _CeleryInterface(extensions.celery)
         self._celery_iface.start()
         signal.signal(signal.SIGTERM, self._sigterm_handler)
 
@@ -88,6 +89,18 @@ class Controller(object):
     def _get_backends(self):
         loader = _PluginLoader(self._config)
         return loader.load()
+
+
+class _CeleryInterface(Process):
+
+    def __init__(self, celery):
+        self.celery = celery
+        super(_CeleryInterface, self).__init__()
+        self.daemon = True
+
+    def run(self):
+        logger.debug('Running celery worker')
+        self.celery.worker_main()
 
 
 class _PluginLoader(object):
