@@ -18,10 +18,10 @@
 import signal
 import logging
 import sys
-import os
 
 from flask import Flask
 from consul import Consul
+from xivo.user_rights import change_user
 from xivo.daemonize import pidfile_context
 from xivo.xivo_logging import setup_logging
 from xivo_auth import extensions
@@ -31,7 +31,6 @@ from xivo_auth.core import plugin_manager
 from xivo_auth.core.celery_interface import make_celery, CeleryInterface
 from xivo_auth import successful_auth_signal, token_removal_signal, get_token_data_signal
 from flask.ext.cors import CORS
-from pwd import getpwnam
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +80,6 @@ def main():
     config = get_config(sys.argv[1:])
 
     setup_logging(config['log_filename'], config['foreground'], config['debug'], config['log_level'])
-
     user = config.get('user')
     if user:
         change_user(user)
@@ -96,20 +94,6 @@ def register_signal_handlers(application):
     get_token_data_signal.connect(fetch_token_data, application)
     successful_auth_signal.connect(on_auth_success, application)
     token_removal_signal.connect(remove_token, application)
-
-
-def change_user(user):
-    try:
-        uid = getpwnam(user).pw_uid
-        gid = getpwnam(user).pw_gid
-    except KeyError:
-        raise Exception('Unknown user {user}'.format(user=user))
-
-    try:
-        os.setgid(gid)
-        os.setuid(uid)
-    except OSError as e:
-        raise Exception('Could not change owner to user {user}: {error}'.format(user=user, error=e))
 
 
 def load_cors(app, conf):
