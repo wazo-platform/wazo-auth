@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 from blinker import Namespace
-from core.modules import BaseAuthenticationBackend  # noqa
+from xivo_auth.interfaces import BaseAuthenticationBackend  # noqa
 
 _signals = Namespace()
 
