@@ -16,21 +16,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import signal
-import argparse
 import logging
 import sys
 import os
 
 from flask import Flask
-from xivo.chain_map import ChainMap
-from xivo.config_helper import read_config_file_hierarchy
-
 from consul import Consul
 from xivo.daemonize import pidfile_context
 from xivo.xivo_logging import setup_logging
-from xivo.xivo_logging import get_log_level_by_name
 from xivo_auth import extensions
 from xivo_auth import http
+from xivo_auth.config import get_config
 from xivo_auth.core import plugin_manager
 from xivo_auth.core.celery_interface import make_celery, CeleryInterface
 from xivo_auth import successful_auth_signal, token_removal_signal, get_token_data_signal
@@ -38,62 +34,6 @@ from flask.ext.cors import CORS
 from pwd import getpwnam
 
 logger = logging.getLogger(__name__)
-
-TWO_HOURS = 60 * 60 * 2
-_DEFAULT_CONFIG = {
-    'user': 'www-data',
-    'config_file': '/etc/xivo-auth/config.yml',
-    'extra_config_files': '/etc/xivo-auth/conf.d',
-    'log_level': 'info',
-    'log_filename': '/var/log/xivo-auth.log',
-    'pid_filename': '/var/run/xivo-auth/xivo-auth.pid',
-    'default_token_lifetime': TWO_HOURS,
-}
-
-
-def _parse_cli_args(argv):
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config-file', action='store', help='The path to the config file')
-    parser.add_argument('-u', '--user', help='User to run the daemon')
-    parser.add_argument('-d', '--debug', action='store_true', help='Log debug messages')
-    parser.add_argument('-f', '--foreground', action='store_true', help="Foreground, don't daemonize")
-    parser.add_argument('-l',
-                        '--log-level',
-                        action='store',
-                        help="Logs messages with LOG_LEVEL details. Must be one of:\n"
-                             "critical, error, warning, info, debug. Default: %(default)s")
-    parsed_args = parser.parse_args(argv)
-
-    result = {}
-    if parsed_args.config_file:
-        result['config_file'] = parsed_args.config_file
-    if parsed_args.user:
-        result['user'] = parsed_args.user
-    if parsed_args.debug:
-        result['debug'] = parsed_args.debug
-    if parsed_args.foreground:
-        result['foreground'] = parsed_args.foreground
-    if parsed_args.log_level:
-        result['log_level'] = parsed_args.log_level
-
-    return result
-
-
-def _get_reinterpreted_raw_values(config):
-    result = {}
-
-    log_level = config.get('log_level')
-    if log_level:
-        result['log_level'] = get_log_level_by_name(log_level)
-
-    return result
-
-
-def _get_config():
-    cli_config = _parse_cli_args(sys.argv[1:])
-    file_config = read_config_file_hierarchy(ChainMap(cli_config, _DEFAULT_CONFIG))
-    reinterpreted_config = _get_reinterpreted_raw_values(ChainMap(cli_config, file_config, _DEFAULT_CONFIG))
-    return ChainMap(reinterpreted_config, cli_config, file_config, _DEFAULT_CONFIG)
 
 
 class _Controller(object):
@@ -138,7 +78,7 @@ class _Controller(object):
 
 
 def main():
-    config = _get_config()
+    config = get_config(sys.argv[1:])
 
     setup_logging(config['log_filename'], config['foreground'], config['debug'], config['log_level'])
 
@@ -172,8 +112,6 @@ def change_user(user):
         raise Exception('Could not change owner to user {user}: {error}'.format(user=user, error=e))
 
 
-def load_cors(app, config):
-    cors_config = dict(config.get('cors', {}))
-    enabled = cors_config.pop('enabled', False)
-    if enabled:
-        CORS(app, **cors_config)
+def load_cors(app, conf):
+    if conf['cors']['enabled']:
+        CORS(app, **conf['cors'])
