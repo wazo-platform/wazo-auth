@@ -21,6 +21,7 @@ import sys
 
 from multiprocessing import Process
 
+from celery import Celery
 from consul import Consul
 from flask import Flask
 from flask.ext.cors import CORS
@@ -29,7 +30,6 @@ from stevedore.dispatch import NameDispatchExtensionManager
 from xivo_auth import extensions
 from xivo_auth import http
 from xivo_auth import successful_auth_signal, token_removal_signal, get_token_data_signal
-from xivo_auth.core.celery_interface import make_celery
 
 
 logger = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ class Controller(object):
 
         self._load_cors()
 
-        extensions.celery = make_celery(self._app)
+        celery = self._configure_celery()
         extensions.consul = Consul(**self._consul_config)
 
         self._register_signal_handlers()
@@ -64,7 +64,7 @@ class Controller(object):
         self._app.register_blueprint(http.auth)
 
         sys.argv = [sys.argv[0]]  # For the celery process
-        self._celery_iface = _CeleryInterface(extensions.celery)
+        self._celery_iface = _CeleryInterface(celery)
         self._celery_iface.start()
         signal.signal(signal.SIGTERM, self._sigterm_handler)
 
@@ -89,6 +89,33 @@ class Controller(object):
     def _get_backends(self):
         loader = _PluginLoader(self._config)
         return loader.load()
+
+    def _configure_celery(self):
+        celery = Celery(self._app.import_name, broker=self._config['amqp']['uri'])
+        celery.conf.update(self._app.config)
+        celery.conf.update(
+            CELERY_RESULT_BACKEND=self._app.config['amqp']['uri'],
+            CELERY_ACCEPT_CONTENT=['json'],
+            CELERY_TASK_SERIALIZER='json',
+            CELERY_RESULT_SERIALIZER='json',
+            CELERY_ALWAYS_EAGER=False,
+            CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
+            CELERY_DEFAULT_EXCHANGE_TYPE='topic',
+            CELERYD_HIJACK_ROOT_LOGGER=False,
+        )
+
+        TaskBase = celery.Task
+
+        class ContextTask(TaskBase):
+            abstract = True
+
+            def __call__(self, *args, **kwargs):
+                with self._app.app_context():
+                    return TaskBase.__call__(self, *args, **kwargs)
+
+        celery.Task = ContextTask
+        extensions.celery = celery
+        return celery
 
 
 class _CeleryInterface(Process):
