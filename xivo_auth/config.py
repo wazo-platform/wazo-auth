@@ -31,7 +31,7 @@ _DEFAULT_CONFIG = {
     'log_filename': '/var/log/xivo-auth.log',
     'pid_filename': '/var/run/xivo-auth/xivo-auth.pid',
     'default_token_lifetime': TWO_HOURS,
-    'cors': {'enabled': False},
+    'rest_api': {'cors': {'enabled': False}},
 }
 
 

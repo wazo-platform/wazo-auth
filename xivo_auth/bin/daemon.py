@@ -42,20 +42,21 @@ class _Controller(object):
             self._listen_addr = config['rest_api']['listen']
             self._listen_port = config['rest_api']['port']
             self._foreground = config['foreground']
+            self._cors_config = config['rest_api']['cors']
+            self._cors_enabled = self._cors_config['enabled']
+            self._consul_config = config['consul']
         except KeyError:
             logger.error('Missing configuration to start the HTTP application')
 
         self._app = Flask(__name__)
         self._app.config.update(config)
 
-        load_cors(self._app, config['rest_api'])
+        self.load_cors()
 
         extensions.celery = make_celery(self._app)
-        extensions.consul = Consul(host=config['consul']['host'],
-                                   port=config['consul']['port'],
-                                   token=config['consul']['token'])
+        extensions.consul = Consul(**self._consul_config)
 
-        register_signal_handlers(self._app)
+        self.register_signal_handlers()
 
         backends = plugin_manager.load_plugins(self._app, config)
         self._app.config['backends'] = backends
@@ -75,6 +76,16 @@ class _Controller(object):
         logger.info('SIGTERM received, leaving')
         sys.exit(0)
 
+    def register_signal_handlers(self):
+        from xivo_auth.events import on_auth_success, remove_token, fetch_token_data
+        get_token_data_signal.connect(fetch_token_data, self._app)
+        successful_auth_signal.connect(on_auth_success, self._app)
+        token_removal_signal.connect(remove_token, self._app)
+
+    def load_cors(self):
+        if self._cors_enabled:
+            CORS(self._app, **self._cors_config)
+
 
 def main():
     config = get_config(sys.argv[1:])
@@ -87,15 +98,3 @@ def main():
     controller = _Controller(config)
     with pidfile_context(config['pid_filename'], config['foreground']):
         controller.run()
-
-
-def register_signal_handlers(application):
-    from xivo_auth.events import on_auth_success, remove_token, fetch_token_data
-    get_token_data_signal.connect(fetch_token_data, application)
-    successful_auth_signal.connect(on_auth_success, application)
-    token_removal_signal.connect(remove_token, application)
-
-
-def load_cors(app, conf):
-    if conf['cors']['enabled']:
-        CORS(app, **conf['cors'])
