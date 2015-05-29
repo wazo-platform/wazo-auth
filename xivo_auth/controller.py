@@ -26,7 +26,7 @@ from flask.ext.cors import CORS
 from xivo_auth import extensions
 from xivo_auth import http
 from xivo_auth import successful_auth_signal, token_removal_signal, get_token_data_signal
-from xivo_auth.core import plugin_manager
+from xivo_auth import plugin_loader
 from xivo_auth.core.celery_interface import make_celery, CeleryInterface
 
 
@@ -56,7 +56,7 @@ class Controller(object):
 
         self.register_signal_handlers()
 
-        backends = plugin_manager.load_plugins(self._app, config)
+        backends = plugin_loader.load_plugins(self._app, config)
         self._app.config['backends'] = backends
         self._app.register_blueprint(http.auth)
 
