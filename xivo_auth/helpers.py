@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
+from datetime import datetime, timedelta
+
 
 def values_to_dict(values):
     tree = {}
@@ -29,3 +31,13 @@ def values_to_dict(values):
             t = t.setdefault(part, default)
 
     return tree
+
+
+def now():
+    return datetime.now().isoformat()
+
+
+def later(seconds):
+    delta = timedelta(seconds=seconds)
+    t = datetime.now() + delta
+    return t.isoformat()

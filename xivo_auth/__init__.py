@@ -15,11 +15,4 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-from blinker import Namespace
 from xivo_auth.interfaces import BaseAuthenticationBackend  # noqa
-
-_signals = Namespace()
-
-successful_auth_signal = _signals.signal('successful_auth')
-token_removal_signal = _signals.signal('remove_token')
-get_token_data_signal = _signals.signal('get_token_data')

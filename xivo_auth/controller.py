@@ -27,9 +27,7 @@ from flask import Flask
 from flask.ext.cors import CORS
 from stevedore.dispatch import NameDispatchExtensionManager
 
-from xivo_auth import extensions
-from xivo_auth import http
-from xivo_auth import successful_auth_signal, token_removal_signal, get_token_data_signal
+from xivo_auth import http, token, extensions
 
 
 logger = logging.getLogger(__name__)
@@ -56,9 +54,8 @@ class Controller(object):
         self._load_cors()
 
         celery = self._configure_celery()
-        extensions.consul = Consul(**self._consul_config)
-
-        self._register_signal_handlers()
+        self._token_manager = token.Manager(config, Consul(**self._consul_config), celery)
+        self._app.token_manager = self._token_manager
 
         self._app.config['backends'] = self._get_backends()
         self._app.register_blueprint(http.auth)
@@ -74,12 +71,6 @@ class Controller(object):
     def _sigterm_handler(self, _signo, _stack_frame):
         logger.info('SIGTERM received, leaving')
         sys.exit(0)
-
-    def _register_signal_handlers(self):
-        from xivo_auth.events import on_auth_success, remove_token, fetch_token_data
-        get_token_data_signal.connect(fetch_token_data, self._app)
-        successful_auth_signal.connect(on_auth_success, self._app)
-        token_removal_signal.connect(remove_token, self._app)
 
     def _load_cors(self):
         if self._cors_enabled:
@@ -104,16 +95,18 @@ class Controller(object):
         )
 
         TaskBase = celery.Task
+        app = self._app
 
         class ContextTask(TaskBase):
             abstract = True
 
             def __call__(self, *args, **kwargs):
-                with self._app.app_context():
-                    return TaskBase.__call__(self, *args, **kwargs)
+                with app.app_context():
+                    return TaskBase.__call__(self, app, *args, **kwargs)
 
         celery.Task = ContextTask
         extensions.celery = celery
+        from xivo_auth import events  # noqa
         return celery
 
 

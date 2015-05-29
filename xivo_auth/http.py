@@ -15,11 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-from datetime import datetime
-
 from flask import Blueprint, jsonify, current_app, request, make_response
 from xivo_auth.extensions import httpauth
-from xivo_auth import successful_auth_signal, token_removal_signal, get_token_data_signal
 
 auth = Blueprint('auth', __name__, template_folder='templates')
 
@@ -38,25 +35,25 @@ def authenticate():
         args['expiration'] = data['expiration']
 
     uuid = _call_backend('get_uuid', httpauth.username())
-    data = _first_signal_result(successful_auth_signal, uuid=uuid, **args)
-    return jsonify({'data': data})
+    token = current_app.token_manager.new_token(uuid, **args)
+    return jsonify({'data': token.to_dict()})
 
 
 @auth.route("/0.1/token/<token>", methods=['DELETE'])
 def revoke_token(token):
-    data = _first_signal_result(token_removal_signal, token=token)
-    return jsonify({'data': data})
+    current_app.token_manager.remove_token(token)
+    return jsonify({'data': {'message': 'success'}})
 
 
 @auth.route("/0.1/token/<token>", methods=['HEAD', 'GET'])
 def check_token(token):
     try:
-        token_data = _get_token_data(token)
-        if token_data.get('expires_at', THE_PAST) > datetime.now().isoformat():
+        token = current_app.token_manager.get(token)
+        if not token.is_expired():
             if request.method == 'HEAD':
                 return make_response('', 204)
             else:
-                return jsonify({'data': token_data})
+                return jsonify({'data': token.to_dict()})
     except LookupError:
         'fallthrough'
 
@@ -74,15 +71,6 @@ def verify_password(login, passwd):
         return _call_backend('verify_password', login, passwd)
     except IndexError:
         return False
-
-
-def _get_token_data(token):
-    return _first_signal_result(get_token_data_signal, token=token)
-
-
-def _first_signal_result(signal, **kwargs):
-    _, data = signal.send(current_app._get_current_object(), **kwargs)[0]
-    return data
 
 
 def _call_backend(fn, *args, **kwargs):
