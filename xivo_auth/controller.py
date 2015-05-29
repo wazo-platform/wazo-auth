@@ -63,7 +63,6 @@ class Controller(object):
         self._app.config['backends'] = self._get_backends()
         self._app.register_blueprint(http.auth)
 
-        sys.argv = [sys.argv[0]]  # For the celery process
         self._celery_iface = _CeleryInterface(celery)
         self._celery_iface.start()
         signal.signal(signal.SIGTERM, self._sigterm_handler)
@@ -124,6 +123,7 @@ class _CeleryInterface(Process):
         self.celery = celery
         super(_CeleryInterface, self).__init__()
         self.daemon = True
+        sys.argv = [sys.argv[0]]  # celery does not like our command line arguments
 
     def run(self):
         logger.debug('Running celery worker')
