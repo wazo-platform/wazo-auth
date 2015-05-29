@@ -51,12 +51,12 @@ class Controller(object):
         self._app = Flask(__name__)
         self._app.config.update(config)
 
-        self.load_cors()
+        self._load_cors()
 
         extensions.celery = make_celery(self._app)
         extensions.consul = Consul(**self._consul_config)
 
-        self.register_signal_handlers()
+        self._register_signal_handlers()
 
         self._app.config['backends'] = self._get_backends()
         self._app.register_blueprint(http.auth)
@@ -65,23 +65,23 @@ class Controller(object):
         self._celery_iface = CeleryInterface(extensions.celery)
         self._celery_iface.daemon = True
         self._celery_iface.start()
-        signal.signal(signal.SIGTERM, self.sigterm_handler)
+        signal.signal(signal.SIGTERM, self._sigterm_handler)
 
     def run(self):
         self._app.run(self._listen_addr, self._listen_port)
         self._celery_iface.join()
 
-    def sigterm_handler(self, _signo, _stack_frame):
+    def _sigterm_handler(self, _signo, _stack_frame):
         logger.info('SIGTERM received, leaving')
         sys.exit(0)
 
-    def register_signal_handlers(self):
+    def _register_signal_handlers(self):
         from xivo_auth.events import on_auth_success, remove_token, fetch_token_data
         get_token_data_signal.connect(fetch_token_data, self._app)
         successful_auth_signal.connect(on_auth_success, self._app)
         token_removal_signal.connect(remove_token, self._app)
 
-    def load_cors(self):
+    def _load_cors(self):
         if self._cors_enabled:
             CORS(self._app, **self._cors_config)
 
