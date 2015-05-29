@@ -106,7 +106,7 @@ class Controller(object):
 
         celery.Task = ContextTask
         extensions.celery = celery
-        from xivo_auth import events  # noqa
+        from xivo_auth import tasks  # noqa
         return celery
 
 
