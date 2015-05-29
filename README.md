@@ -20,7 +20,7 @@ curl -i -X POST -H 'Content-Type: application/json' -u "alice:alice" "localhost:
 
     docker build -t xivo-auth .
     docker run -p 9497:9497 -v /conf/xivo-auth:/etc/xivo-auth/conf.d/ -it xivo-auth bash
-    xivo-auth [--user <user>] [--config <path/to/config/file>]
+    xivo-auth [-df] [-u <user>] [-c <path/to/config/file>]
 
 Configuration
 -------------

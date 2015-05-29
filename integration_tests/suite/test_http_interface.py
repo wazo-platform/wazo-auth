@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 ISO_DATETIME = '%Y-%m-%dT%H:%M:%S.%f'
 
+HOST = os.getenv('XIVO_AUTH_TEST_HOST', 'localhost')
 
 class AssetRunner(object):
 
@@ -85,7 +86,7 @@ class AssetRunner(object):
 
 class _BaseTestCase(unittest.TestCase):
 
-    url = 'http://localhost:9497/0.1/token'
+    url = 'http://{}:9497/0.1/token'.format(HOST)
 
     @classmethod
     def setUpClass(cls):
@@ -126,7 +127,7 @@ class TestGETBackends(_BaseTestCase):
     asset = 'mock_backend'
 
     def test_backends(self):
-        response = requests.get('http://localhost:9497/0.1/backends')
+        response = requests.get('http://{}:9497/0.1/backends').format(HOST)
 
         assert_that(response.json()['data'],
                     contains_inanyorder('mock', 'broken_init', 'broken_verify_password'))
