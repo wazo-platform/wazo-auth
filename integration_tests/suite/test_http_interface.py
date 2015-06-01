@@ -153,6 +153,35 @@ class TestMissingServices(_BaseTestCase):
         assert_that(response.status_code, equal_to(500))
         assert_that(response.text, equal_to('Connection to consul timedout'))
 
+    def test_GET_when_consul_is_down(self):
+        token = self._post_token('foo', 'bar').json()['data']['token']
+
+        start = time.time()
+        self._asset_runner.pause_services('consul')
+
+        response = requests.get('{}/{}'.format(self.url, token))
+
+        self._asset_runner.resume_services('consul')
+
+        end = time.time()
+        assert_that(end - start, less_than(5))
+        assert_that(response.status_code, equal_to(500))
+        assert_that(response.text, equal_to('Connection to consul timedout'))
+
+    def test_HEAD_when_consul_is_down(self):
+        token = self._post_token('foo', 'bar').json()['data']['token']
+
+        start = time.time()
+        self._asset_runner.pause_services('consul')
+
+        response = requests.head('{}/{}'.format(self.url, token))
+
+        self._asset_runner.resume_services('consul')
+
+        end = time.time()
+        assert_that(end - start, less_than(5))
+        assert_that(response.status_code, equal_to(500))
+
 
 class TestHEADToken(_BaseTestCase):
 

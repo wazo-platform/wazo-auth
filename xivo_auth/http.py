@@ -62,6 +62,8 @@ def check_token(token):
                 return make_response('', 204)
             else:
                 return jsonify({'data': token.to_dict()})
+    except current_app.token_manager.Timeout:
+        return make_response('Connection to consul timedout', 500)
     except LookupError:
         'fallthrough'
 
