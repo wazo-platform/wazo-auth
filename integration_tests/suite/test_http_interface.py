@@ -28,6 +28,7 @@ from hamcrest import assert_that
 from hamcrest import contains_inanyorder
 from hamcrest import equal_to
 from hamcrest import has_length
+from hamcrest import less_than
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,20 @@ class AssetRunner(object):
         elif self._running_asset != asset:
             self._stop(asset)
         self._start(asset)
+
+    def pause_services(self, *services):
+        cmd = 'docker pause {}'
+        for service in services:
+            self._run_cmd(cmd.format(self._container_name(service)))
+
+    def resume_services(self, *services):
+        cmd = 'docker unpause {}'
+        for service in services:
+            self._run_cmd(cmd.format(self._container_name(service)))
+
+    def _container_name(self, service):
+        contracted_asset_name = self._running_asset.replace('_', '')
+        return '{asset}_{service}_1'.format(asset=contracted_asset_name, service=service)
 
     def _start(self, asset):
         self._running_asset = asset
@@ -104,6 +119,24 @@ class _BaseTestCase(unittest.TestCase):
         if expiration:
             data['expiration'] = expiration
         return s.post(self.url, data=json.dumps(data))
+
+
+class TestMissingServices(_BaseTestCase):
+
+    asset = 'mock_backend'
+
+    def test_when_consul_is_down(self):
+        start = time.time()
+        self._asset_runner.pause_services('consul')
+
+        response = self._post_token('foo', 'bar')
+
+        self._asset_runner.resume_services('consul')
+
+        end = time.time()
+        assert_that(end - start, less_than(5))
+        assert_that(response.status_code, equal_to(500))
+        assert_that(response.text, equal_to('Connection to consul timedout'))
 
 
 class TestHEADToken(_BaseTestCase):

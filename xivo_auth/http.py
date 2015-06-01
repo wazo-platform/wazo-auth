@@ -35,7 +35,11 @@ def authenticate():
         args['expiration'] = data['expiration']
 
     uuid = _call_backend('get_uuid', httpauth.username())
-    token = current_app.token_manager.new_token(uuid, **args)
+    try:
+        token = current_app.token_manager.new_token(uuid, **args)
+    except current_app.token_manager.Timeout:
+        return make_response('Connection to consul timedout', 500)
+
     return jsonify({'data': token.to_dict()})
 
 
