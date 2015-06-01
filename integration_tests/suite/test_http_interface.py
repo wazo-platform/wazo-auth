@@ -121,11 +121,11 @@ class _BaseTestCase(unittest.TestCase):
         return s.post(self.url, data=json.dumps(data))
 
 
-class TestMissingServices(_BaseTestCase):
+class TestSlowServices(_BaseTestCase):
 
     asset = 'mock_backend'
 
-    def test_POST_when_consul_is_down(self):
+    def test_POST_when_consul_is_slow(self):
         start = time.time()
         self._asset_runner.pause_services('consul')
 
@@ -138,7 +138,7 @@ class TestMissingServices(_BaseTestCase):
         assert_that(response.status_code, equal_to(500))
         assert_that(response.text, equal_to('Connection to consul timedout'))
 
-    def test_DELETE_when_consul_is_down(self):
+    def test_DELETE_when_consul_is_slow(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
         start = time.time()
@@ -153,7 +153,7 @@ class TestMissingServices(_BaseTestCase):
         assert_that(response.status_code, equal_to(500))
         assert_that(response.text, equal_to('Connection to consul timedout'))
 
-    def test_GET_when_consul_is_down(self):
+    def test_GET_when_consul_is_slow(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
         start = time.time()
@@ -168,7 +168,7 @@ class TestMissingServices(_BaseTestCase):
         assert_that(response.status_code, equal_to(500))
         assert_that(response.text, equal_to('Connection to consul timedout'))
 
-    def test_HEAD_when_consul_is_down(self):
+    def test_HEAD_when_consul_is_slow(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
         start = time.time()
