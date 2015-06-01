@@ -125,11 +125,26 @@ class TestMissingServices(_BaseTestCase):
 
     asset = 'mock_backend'
 
-    def test_when_consul_is_down(self):
+    def test_POST_when_consul_is_down(self):
         start = time.time()
         self._asset_runner.pause_services('consul')
 
         response = self._post_token('foo', 'bar')
+
+        self._asset_runner.resume_services('consul')
+
+        end = time.time()
+        assert_that(end - start, less_than(5))
+        assert_that(response.status_code, equal_to(500))
+        assert_that(response.text, equal_to('Connection to consul timedout'))
+
+    def test_DELETE_when_consul_is_down(self):
+        token = self._post_token('foo', 'bar').json()['data']['token']
+
+        start = time.time()
+        self._asset_runner.pause_services('consul')
+
+        response = requests.delete('{}/{}'.format(self.url, token))
 
         self._asset_runner.resume_services('consul')
 

@@ -45,7 +45,11 @@ def authenticate():
 
 @auth.route("/0.1/token/<token>", methods=['DELETE'])
 def revoke_token(token):
-    current_app.token_manager.remove_token(token)
+    try:
+        current_app.token_manager.remove_token(token)
+    except current_app.token_manager.Timeout:
+        return make_response('Connection to consul timedout', 500)
+
     return jsonify({'data': {'message': 'success'}})
 
 
