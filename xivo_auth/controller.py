@@ -43,7 +43,8 @@ class Controller(object):
             self._foreground = config['foreground']
             self._cors_config = config['rest_api']['cors']
             self._cors_enabled = self._cors_config['enabled']
-            self._consul_config = config['consul']
+            self._consul_config = dict(config['consul'])
+            self._consul_config.pop('timeout')
             self._plugins = config['enabled_plugins']
         except KeyError:
             logger.error('Missing configuration to start the HTTP application')

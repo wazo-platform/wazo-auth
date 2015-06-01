@@ -10,8 +10,7 @@ data:
   image: xivo/xivo-auth-tests-data
   volumes:
     - "/data/consul/"
-    - "/data/auth/"
-    - "/logs/auth/"
+    - "/data/xivo-auth/"
   command: "sh -c 'while true; do sleep 10; done'"
 auth:
    image: xivo/xivo-auth-tests

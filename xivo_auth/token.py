@@ -66,17 +66,19 @@ class Manager(object):
 
     consul_token_kv = 'xivo/xivo-auth/tokens/{}'
     Timeout = _ConsulTimeoutException
+    default_timeout = 4
 
     def __init__(self, config, consul, celery, acl_generator=None):
         self._acl_generator = acl_generator or _ACLGenerator()
         self._default_expiration = config['default_token_lifetime']
         self._consul = consul
         self._celery = celery
+        self._timeout = config['consul'].get('timeout', self.default_timeout)
 
     def new_token(self, uuid, expiration=None):
         from xivo_auth import tasks
         rules = self._acl_generator.create(uuid)
-        with timeout():
+        with timeout(self._timeout):
             consul_token = self._consul.acl.create(rules=rules)
         expiration = expiration or self._default_expiration
         token = Token(consul_token, uuid, now(), later(expiration))
@@ -91,12 +93,13 @@ class Manager(object):
         self.remove_expired_token(token)
 
     def remove_expired_token(self, token):
-        with timeout():
+        logger.debug('Removing token, timeout %s', self._timeout)
+        with timeout(self._timeout):
             self._consul.acl.destroy(token)
             self._consul.kv.delete('xivo/xivo-auth/tokens/{}'.format(token), recurse=True)
 
     def get(self, consul_token):
-        with timeout():
+        with timeout(self._timeout):
             key = self.consul_token_kv.format(consul_token)
             index, values = self._consul.kv.get(key, recurse=True)
 
@@ -108,7 +111,7 @@ class Manager(object):
     def _push_token_data(self, token):
         consul_token = token.token
         key_tpl = 'xivo/xivo-auth/tokens/{token}/{key}'
-        with timeout():
+        with timeout(self._timeout):
             for key, value in token.to_dict().iteritems():
                 complete_key = key_tpl.format(token=consul_token, key=key)
                 self._consul.kv.put(complete_key, value)

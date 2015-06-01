@@ -134,7 +134,7 @@ class TestMissingServices(_BaseTestCase):
         self._asset_runner.resume_services('consul')
 
         end = time.time()
-        assert_that(end - start, less_than(5))
+        assert_that(end - start, less_than(3))
         assert_that(response.status_code, equal_to(500))
         assert_that(response.text, equal_to('Connection to consul timedout'))
 
@@ -149,7 +149,7 @@ class TestMissingServices(_BaseTestCase):
         self._asset_runner.resume_services('consul')
 
         end = time.time()
-        assert_that(end - start, less_than(5))
+        assert_that(end - start, less_than(3))
         assert_that(response.status_code, equal_to(500))
         assert_that(response.text, equal_to('Connection to consul timedout'))
 
@@ -164,7 +164,7 @@ class TestMissingServices(_BaseTestCase):
         self._asset_runner.resume_services('consul')
 
         end = time.time()
-        assert_that(end - start, less_than(5))
+        assert_that(end - start, less_than(3))
         assert_that(response.status_code, equal_to(500))
         assert_that(response.text, equal_to('Connection to consul timedout'))
 
@@ -179,7 +179,7 @@ class TestMissingServices(_BaseTestCase):
         self._asset_runner.resume_services('consul')
 
         end = time.time()
-        assert_that(end - start, less_than(5))
+        assert_that(end - start, less_than(3))
         assert_that(response.status_code, equal_to(500))
 
 

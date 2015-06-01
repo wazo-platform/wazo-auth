@@ -23,3 +23,4 @@ consul:
   host: consul
   port: 8500
   token: 'the_one_ring'
+  timeout: 2
