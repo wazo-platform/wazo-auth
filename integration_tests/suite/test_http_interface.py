@@ -79,7 +79,7 @@ class AssetRunner(object):
         self.cur_dir = os.getcwd()
         os.chdir(asset_path)
         self._run_cmd('{} rm --force'.format(self._launcher))
-        self._run_cmd('{} up -d'.format(self._launcher))
+        self._run_cmd('{} run sync'.format(self._launcher))
         time.sleep(1)
 
     def _stop(self, asset):
@@ -312,3 +312,20 @@ class TestNoConsul(_BaseTestCase):
         response = requests.head('{}/{}'.format(self.url, 'foobar'))
 
         assert_that(response.status_code, equal_to(500))
+
+
+class TestNoRabbitMQ(_BaseTestCase):
+
+    asset = 'no_rabbitmq'
+
+    def test_POST_with_no_rabbitmq_running(self):
+        response = self._post_token('foo', 'bar')
+
+        assert_that(response.status_code, equal_to(500))
+        assert_that(response.text, equal_to('Connection to rabbitmq failed'))
+
+    def test_DELETE_with_no_rabbitmq_running(self):
+        response = requests.delete('{}/{}'.format(self.url, 'foobar'))
+
+        assert_that(response.status_code, equal_to(500))
+        assert_that(response.text, equal_to('Connection to rabbitmq failed'))

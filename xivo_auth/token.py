@@ -19,6 +19,7 @@ import hashlib
 import json
 import logging
 import signal
+import socket
 
 from contextlib import contextmanager
 from requests.exceptions import ConnectionError
@@ -28,22 +29,26 @@ from xivo_auth.helpers import now, later, values_to_dict
 logger = logging.getLogger(__name__)
 
 
-class _ConsulException(Exception):
+class _ClientException(Exception):
+    pass
+
+
+class _ConsulTimeoutException(_ClientException):
 
     def __str__(self):
-        return 'Connection to consul {}'.format(self.message)
+        return 'Connection to consul timedout'
 
 
-class _ConsulTimeoutException(_ConsulException):
+class _ConsulConnectionException(_ClientException):
 
-    def __init__(self):
-        super(_ConsulTimeoutException, self).__init__('timedout')
+    def __str__(self):
+        return 'Connection to consul failed'
 
 
-class _ConsulConnectionException(_ConsulException):
+class _RabbitMQConnectionException(_ClientException):
 
-    def __init__(self):
-        super(_ConsulConnectionException, self).__init__('failed')
+    def __str__(self):
+        return 'Connection to rabbitmq failed'
 
 
 @contextmanager
@@ -80,7 +85,7 @@ class Token(object):
 class Manager(object):
 
     consul_token_kv = 'xivo/xivo-auth/tokens/{}'
-    Exception = _ConsulException
+    Exception = _ClientException
     default_timeout = 4
 
     def __init__(self, config, consul, celery, acl_generator=None):
@@ -102,12 +107,18 @@ class Manager(object):
         token = Token(consul_token, uuid, now(), later(expiration))
         task_id = self._get_token_hash(token)
         self._push_token_data(token)
-        tasks.clean_token.apply_async(args=[consul_token], countdown=expiration, task_id=task_id)
+        try:
+            tasks.clean_token.apply_async(args=[consul_token], countdown=expiration, task_id=task_id)
+        except socket.error:
+            raise _RabbitMQConnectionException()
         return token
 
     def remove_token(self, token):
         task_id = self._get_token_hash(token)
-        self._celery.control.revoke(task_id)
+        try:
+            self._celery.control.revoke(task_id)
+        except socket.error:
+            raise _RabbitMQConnectionException()
         self.remove_expired_token(token)
 
     def remove_expired_token(self, token):
