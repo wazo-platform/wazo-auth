@@ -194,8 +194,7 @@ class TestCoreMockBackend(_BaseTestCase):
 
         end = time.time()
         assert_that(end - start, less_than(3))
-        assert_that(response.status_code, equal_to(500))
-        assert_that(response.text, equal_to('Connection to consul timedout'))
+        assert_that(response, is_(http_error(500, 'Connection to consul timedout')))
 
     def test_GET_when_consul_is_slow(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
@@ -206,8 +205,7 @@ class TestCoreMockBackend(_BaseTestCase):
 
         end = time.time()
         assert_that(end - start, less_than(3))
-        assert_that(response.status_code, equal_to(500))
-        assert_that(response.text, equal_to('Connection to consul timedout'))
+        assert_that(response, is_(http_error(500, 'Connection to consul timedout')))
 
     def test_HEAD_when_consul_is_slow(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
@@ -328,14 +326,12 @@ class TestNoConsul(_BaseTestCase):
     def test_DELETE_with_no_consul_running(self):
         response = requests.delete('{}/{}'.format(self.url, 'foobar'))
 
-        assert_that(response.status_code, equal_to(500))
-        assert_that(response.text, equal_to('Connection to consul failed'))
+        assert_that(response, is_(http_error(500, 'Connection to consul failed')))
 
     def test_GET_with_no_consul_running(self):
         response = requests.get('{}/{}'.format(self.url, 'foobar'))
 
-        assert_that(response.status_code, equal_to(500))
-        assert_that(response.text, equal_to('Connection to consul failed'))
+        assert_that(response, is_(http_error(500, 'Connection to consul failed')))
 
     def test_HEAD_with_no_consul_running(self):
         response = requests.head('{}/{}'.format(self.url, 'foobar'))
@@ -355,5 +351,4 @@ class TestNoRabbitMQ(_BaseTestCase):
     def test_DELETE_with_no_rabbitmq_running(self):
         response = requests.delete('{}/{}'.format(self.url, 'foobar'))
 
-        assert_that(response.status_code, equal_to(500))
-        assert_that(response.text, equal_to('Connection to rabbitmq failed'))
+        assert_that(response, is_(http_error(500, 'Connection to rabbitmq failed')))

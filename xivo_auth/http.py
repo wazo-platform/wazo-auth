@@ -23,7 +23,7 @@ from xivo_auth.extensions import httpauth
 auth = Blueprint('auth', __name__, template_folder='templates')
 
 
-def _error(msg, code):
+def _error(code, msg):
     return jsonify({'reason': [msg],
                     'timestamp': [time.time()],
                     'status_code': code}), code
@@ -44,7 +44,7 @@ def authenticate():
     try:
         token = current_app.token_manager.new_token(uuid, **args)
     except current_app.token_manager.Exception as e:
-        return _error(str(e), 500)
+        return _error(500, str(e))
 
     return jsonify({'data': token.to_dict()})
 
@@ -54,7 +54,7 @@ def revoke_token(token):
     try:
         current_app.token_manager.remove_token(token)
     except current_app.token_manager.Exception as e:
-        return make_response(str(e), 500)
+        return _error(500, str(e))
 
     return jsonify({'data': {'message': 'success'}})
 
@@ -69,7 +69,7 @@ def check_token(token):
             else:
                 return jsonify({'data': token.to_dict()})
     except current_app.token_manager.Exception as e:
-        return make_response(str(e), 500)
+        return _error(500, str(e))
     except LookupError:
         'fallthrough'
 
