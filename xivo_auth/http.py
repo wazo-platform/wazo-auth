@@ -15,10 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
+import time
+
 from flask import Blueprint, jsonify, current_app, request, make_response
 from xivo_auth.extensions import httpauth
 
 auth = Blueprint('auth', __name__, template_folder='templates')
+
+
+def _error(msg, code):
+    return jsonify({'reason': [msg],
+                    'timestamp': [time.time()],
+                    'status_code': code}), code
 
 
 @auth.route("/0.1/token", methods=['POST'])
@@ -36,7 +44,7 @@ def authenticate():
     try:
         token = current_app.token_manager.new_token(uuid, **args)
     except current_app.token_manager.Exception as e:
-        return make_response(str(e), 500)
+        return _error(str(e), 500)
 
     return jsonify({'data': token.to_dict()})
 

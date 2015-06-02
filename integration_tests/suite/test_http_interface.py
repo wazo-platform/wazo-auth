@@ -29,13 +29,48 @@ from hamcrest import assert_that
 from hamcrest import contains_inanyorder
 from hamcrest import equal_to
 from hamcrest import has_length
+from hamcrest import is_
 from hamcrest import less_than
+from hamcrest.core.base_matcher import BaseMatcher
 
 logger = logging.getLogger(__name__)
 
 ISO_DATETIME = '%Y-%m-%dT%H:%M:%S.%f'
 
 HOST = os.getenv('XIVO_AUTH_TEST_HOST', 'localhost')
+
+
+class HTTPErrorMatcher(BaseMatcher):
+
+    def __init__(self, code, msg):
+        self._code = code
+        self._msg = msg
+        self._description = None
+
+    def _matches(self, item):
+        data = item.json()
+
+        for key in ['status_code', 'timestamp', 'reason']:
+            if key not in data:
+                self._description = 'error should have a key {}'.format(key)
+                return False
+
+        if self._code != item.status_code or self._code != data['status_code']:
+            self._description = 'expected status code is {}, got {} and {} in the body'.format(
+                self._code, item.status_code, data['status_code'])
+            return False
+
+        assert_that(data['reason'], contains_inanyorder(self._msg),
+                    'Error message should be {}'.format(self._msg))
+        return True
+
+    def describe_to(self, description):
+        if self._description:
+            description.append_text(self._description)
+
+
+def http_error(code, msg):
+    return HTTPErrorMatcher(code, msg)
 
 
 class AssetRunner(object):
@@ -148,8 +183,7 @@ class TestCoreMockBackend(_BaseTestCase):
 
         end = time.time()
         assert_that(end - start, less_than(3))
-        assert_that(response.status_code, equal_to(500))
-        assert_that(response.text, equal_to('Connection to consul timedout'))
+        assert_that(response, is_(http_error(500, 'Connection to consul timedout')))
 
     def test_DELETE_when_consul_is_slow(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
@@ -289,8 +323,7 @@ class TestNoConsul(_BaseTestCase):
     def test_POST_with_no_consul_running(self):
         response = self._post_token('foo', 'bar')
 
-        assert_that(response.status_code, equal_to(500))
-        assert_that(response.text, equal_to('Connection to consul failed'))
+        assert_that(response, is_(http_error(500, 'Connection to consul failed')))
 
     def test_DELETE_with_no_consul_running(self):
         response = requests.delete('{}/{}'.format(self.url, 'foobar'))
@@ -317,8 +350,7 @@ class TestNoRabbitMQ(_BaseTestCase):
     def test_POST_with_no_rabbitmq_running(self):
         response = self._post_token('foo', 'bar')
 
-        assert_that(response.status_code, equal_to(500))
-        assert_that(response.text, equal_to('Connection to rabbitmq failed'))
+        assert_that(response, is_(http_error(500, 'Connection to rabbitmq failed')))
 
     def test_DELETE_with_no_rabbitmq_running(self):
         response = requests.delete('{}/{}'.format(self.url, 'foobar'))
