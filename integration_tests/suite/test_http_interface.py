@@ -225,7 +225,7 @@ class TestCoreMockBackend(_BaseTestCase):
 
         assert_that(response.status_code, equal_to(204))
 
-    def test_that_head_with_an_invalid_token_returns_403(self):
+    def test_that_head_with_an_invalid_token_returns_404(self):
         response = requests.head('{}/{}'.format(self.url, 'abcdef'))
 
         assert_that(response.status_code, equal_to(404))
@@ -250,7 +250,7 @@ class TestCoreMockBackend(_BaseTestCase):
         requests.delete('{}/{}'.format(self.url, token))
         response = requests.get('{}/{}'.format(self.url, token))
 
-        assert_that(response.status_code, equal_to(404))
+        assert_that(response, is_(http_error(404, 'No such token')))
 
     def test_that_deleting_unexistant_token_returns_200(self):
         response = requests.delete('{}/{}'.format(self.url, 'not-a-valid-token'))

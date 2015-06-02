@@ -73,7 +73,10 @@ def check_token(token):
     except LookupError:
         'fallthrough'
 
-    return make_response('', 404)
+    if request.method == 'HEAD':
+        return make_response('', 404)
+    else:
+        return _error(404, 'No such token')
 
 
 @auth.route('/0.1/backends', methods=['GET'])
