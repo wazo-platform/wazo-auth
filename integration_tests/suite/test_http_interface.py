@@ -302,7 +302,7 @@ class TestCoreMockBackend(_BaseTestCase):
     def test_negative_expiration(self):
         response = self._post_token('foo', 'bar', expiration=-1)
 
-        assert_that(response.status_code, equal_to(400))
+        assert_that(response, is_(http_error(400, 'Invalid expiration')))
 
     def test_that_expired_tokens_are_not_valid(self):
         token = self._post_token('foo', 'bar', expiration=1).json()['data']['token']

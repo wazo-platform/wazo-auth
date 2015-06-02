@@ -36,7 +36,7 @@ class Token(Resource):
         args = {}
         if 'expiration' in data:
             if not data['expiration'] > 0:
-                return make_response('Invalid expiration', 400)
+                return _error(400, 'Invalid expiration')
 
             args['expiration'] = data['expiration']
 
