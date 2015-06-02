@@ -17,71 +17,75 @@
 
 import time
 
-from flask import Blueprint, jsonify, current_app, request, make_response
+from flask import current_app, request, make_response
+from flask_restful import Resource
 from xivo_auth.extensions import httpauth
-
-auth = Blueprint('auth', __name__, template_folder='templates')
 
 
 def _error(code, msg):
-    return jsonify({'reason': [msg],
-                    'timestamp': [time.time()],
-                    'status_code': code}), code
+    return {'reason': [msg],
+            'timestamp': [time.time()],
+            'status_code': code}, code
 
 
-@auth.route("/0.1/token", methods=['POST'])
-@httpauth.login_required
-def authenticate():
-    data = request.get_json()
-    args = {}
-    if 'expiration' in data:
-        if not data['expiration'] > 0:
-            return make_response('Invalid expiration', 400)
+class Token(Resource):
 
-        args['expiration'] = data['expiration']
+    @httpauth.login_required
+    def post(self):
+        data = request.get_json()
+        args = {}
+        if 'expiration' in data:
+            if not data['expiration'] > 0:
+                return make_response('Invalid expiration', 400)
 
-    uuid = _call_backend('get_uuid', httpauth.username())
-    try:
-        token = current_app.token_manager.new_token(uuid, **args)
-    except current_app.token_manager.Exception as e:
-        return _error(500, str(e))
+            args['expiration'] = data['expiration']
 
-    return jsonify({'data': token.to_dict()})
+        uuid = _call_backend('get_uuid', httpauth.username())
+        try:
+            token = current_app.token_manager.new_token(uuid, **args)
+        except current_app.token_manager.Exception as e:
+            return _error(500, str(e))
 
+        response = {'data': token.to_dict()}
+        return response, 200
 
-@auth.route("/0.1/token/<token>", methods=['DELETE'])
-def revoke_token(token):
-    try:
-        current_app.token_manager.remove_token(token)
-    except current_app.token_manager.Exception as e:
-        return _error(500, str(e))
+    def delete(self, token):
+        try:
+            current_app.token_manager.remove_token(token)
+        except current_app.token_manager.Exception as e:
+            return _error(500, str(e))
 
-    return jsonify({'data': {'message': 'success'}})
+        return {'data': {'message': 'success'}}
 
+    def get(self, token):
+        try:
+            token = current_app.token_manager.get(token)
+            if not token.is_expired():
+                return {'data': token.to_dict()}
+        except current_app.token_manager.Exception as e:
+            return _error(500, str(e))
+        except LookupError:
+            'fallthrough'
 
-@auth.route("/0.1/token/<token>", methods=['HEAD', 'GET'])
-def check_token(token):
-    try:
-        token = current_app.token_manager.get(token)
-        if not token.is_expired():
-            if request.method == 'HEAD':
-                return make_response('', 204)
-            else:
-                return jsonify({'data': token.to_dict()})
-    except current_app.token_manager.Exception as e:
-        return _error(500, str(e))
-    except LookupError:
-        'fallthrough'
-
-    if request.method == 'HEAD':
-        return make_response('', 404)
-    else:
         return _error(404, 'No such token')
 
+    def head(self, token):
+        try:
+            token = current_app.token_manager.get(token)
+            if not token.is_expired():
+                return make_response('', 204)
+        except current_app.token_manager.Exception as e:
+            return _error(500, str(e))
+        except LookupError:
+            'fallthrough'
 
-@auth.route('/0.1/backends', methods=['GET'])
-def enabled_backends():
-    return jsonify({'data': current_app.config['enabled_plugins']})
+        return make_response('', 404)
+
+
+class Backends(Resource):
+
+    def get(self):
+        return {'data': current_app.config['enabled_plugins']}
 
 
 @httpauth.verify_password

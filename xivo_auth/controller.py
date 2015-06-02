@@ -24,6 +24,7 @@ from multiprocessing import Process
 from celery import Celery
 from consul import Consul
 from flask import Flask
+from flask_restful import Api
 from flask.ext.cors import CORS
 from stevedore.dispatch import NameDispatchExtensionManager
 
@@ -50,6 +51,11 @@ class Controller(object):
             logger.error('Missing configuration to start the HTTP application')
 
         self._app = Flask(__name__)
+        api = Api(self._app)
+        api.add_resource(http.Token,
+                         '/0.1/token',
+                         '/0.1/token/<string:token>')
+        api.add_resource(http.Backends, '/0.1/backends')
         self._app.config.update(config)
 
         self._load_cors()
@@ -59,7 +65,6 @@ class Controller(object):
         self._app.token_manager = self._token_manager
 
         self._app.config['backends'] = self._get_backends()
-        self._app.register_blueprint(http.auth)
 
         self._celery_iface = _CeleryInterface(celery)
         self._celery_iface.start()
