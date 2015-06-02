@@ -46,15 +46,17 @@ class AssetRunner(object):
         self._running_asset = None
 
     def __del__(self):
-        if self._running_asset:
-            self._stop(self._running_asset)
+        self.stop()
 
     def start(self, asset):
         if asset == self._running_asset:
             return
         elif self._running_asset != asset:
-            self._stop(asset)
+            self._stop(self._running_asset)
         self._start(asset)
+
+    def stop(self):
+        self._stop(self._running_asset)
 
     def pause_services(self, *services):
         cmd = 'docker pause {}'
@@ -71,10 +73,12 @@ class AssetRunner(object):
         return '{asset}_{service}_1'.format(asset=contracted_asset_name, service=service)
 
     def _start(self, asset):
+        print 'Starting {}'.format(asset)
         self._running_asset = asset
         asset_path = os.path.join(os.path.dirname(__file__), '..', 'assets', asset)
         self.cur_dir = os.getcwd()
         os.chdir(asset_path)
+        self._run_cmd('{} rm --force'.format(self._launcher))
         self._run_cmd('{} up -d'.format(self._launcher))
         time.sleep(1)
 
@@ -82,8 +86,8 @@ class AssetRunner(object):
         if not asset or asset != self._running_asset:
             return
 
+        print 'Stoping {}'.format(asset)
         self._run_cmd('{} kill'.format(self._launcher))
-        self._run_cmd('{} rm --force'.format(self._launcher))
         os.chdir(self.cur_dir)
         time.sleep(1)
 
@@ -109,6 +113,10 @@ class _BaseTestCase(unittest.TestCase):
         cls._asset_runner = AssetRunner.get_instance()
         cls._asset_runner.start(cls.asset)
 
+    @classmethod
+    def tearDownClass(cls):
+        cls._asset_runner.stop()
+
     def _post_token(self, username, password, backend=None, expiration=None):
         if not backend:
             backend = 'mock'
@@ -121,7 +129,7 @@ class _BaseTestCase(unittest.TestCase):
         return s.post(self.url, data=json.dumps(data))
 
 
-class TestSlowServices(_BaseTestCase):
+class TestCoreMockBackend(_BaseTestCase):
 
     asset = 'mock_backend'
 
@@ -182,11 +190,6 @@ class TestSlowServices(_BaseTestCase):
         assert_that(end - start, less_than(3))
         assert_that(response.status_code, equal_to(500))
 
-
-class TestHEADToken(_BaseTestCase):
-
-    asset = 'mock_backend'
-
     def test_that_head_with_a_valid_token_returns_204(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
@@ -199,21 +202,11 @@ class TestHEADToken(_BaseTestCase):
 
         assert_that(response.status_code, equal_to(404))
 
-
-class TestGETBackends(_BaseTestCase):
-
-    asset = 'mock_backend'
-
     def test_backends(self):
         response = requests.get('http://{}:9497/0.1/backends'.format(HOST))
 
         assert_that(response.json()['data'],
                     contains_inanyorder('mock', 'broken_init', 'broken_verify_password'))
-
-
-class TestGETToken(_BaseTestCase):
-
-    asset = 'mock_backend'
 
     def test_that_get_returns_the_uuid(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
@@ -222,11 +215,6 @@ class TestGETToken(_BaseTestCase):
 
         assert_that(response.status_code, equal_to(200))
         assert_that(response.json()['data']['uuid'], equal_to('a-mocked-uuid'))
-
-
-class TestDELETEToken(_BaseTestCase):
-
-    asset = 'mock_backend'
 
     def test_that_get_does_not_work_after_delete(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
@@ -240,11 +228,6 @@ class TestDELETEToken(_BaseTestCase):
         response = requests.delete('{}/{}'.format(self.url, 'not-a-valid-token'))
 
         assert_that(response.status_code, equal_to(200))
-
-
-class TestTokenPost(_BaseTestCase):
-
-    asset = 'mock_backend'
 
     def test_that_the_wrong_password_returns_401(self):
         response = self._post_token('foo', 'not_bar')
@@ -301,3 +284,31 @@ class TestTokenPost(_BaseTestCase):
         response = requests.head('{}/{}'.format(self.url, token))
 
         assert_that(response.status_code, equal_to(404))
+
+
+class TestNoConsul(_BaseTestCase):
+
+    asset = 'no_consul'
+
+    def test_POST_with_no_consul_running(self):
+        response = self._post_token('foo', 'bar')
+
+        assert_that(response.status_code, equal_to(500))
+        assert_that(response.text, equal_to('Connection to consul failed'))
+
+    def test_DELETE_with_no_consul_running(self):
+        response = requests.delete('{}/{}'.format(self.url, 'foobar'))
+
+        assert_that(response.status_code, equal_to(500))
+        assert_that(response.text, equal_to('Connection to consul failed'))
+
+    def test_GET_with_no_consul_running(self):
+        response = requests.get('{}/{}'.format(self.url, 'foobar'))
+
+        assert_that(response.status_code, equal_to(500))
+        assert_that(response.text, equal_to('Connection to consul failed'))
+
+    def test_HEAD_with_no_consul_running(self):
+        response = requests.head('{}/{}'.format(self.url, 'foobar'))
+
+        assert_that(response.status_code, equal_to(500))

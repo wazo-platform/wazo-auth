@@ -3,7 +3,7 @@ from busybox
 
 RUN mkdir /data/
 RUN mkdir /logs
-ADD assets/mock_backend/etc/ /data
+ADD assets/ /data
 
 VOLUME /data
 VOLUME /logs

@@ -20,8 +20,6 @@ from xivo_auth.extensions import httpauth
 
 auth = Blueprint('auth', __name__, template_folder='templates')
 
-THE_PAST = '2000-01-01'
-
 
 @auth.route("/0.1/token", methods=['POST'])
 @httpauth.login_required
@@ -37,8 +35,8 @@ def authenticate():
     uuid = _call_backend('get_uuid', httpauth.username())
     try:
         token = current_app.token_manager.new_token(uuid, **args)
-    except current_app.token_manager.Timeout:
-        return make_response('Connection to consul timedout', 500)
+    except current_app.token_manager.Exception as e:
+        return make_response(str(e), 500)
 
     return jsonify({'data': token.to_dict()})
 
@@ -47,8 +45,8 @@ def authenticate():
 def revoke_token(token):
     try:
         current_app.token_manager.remove_token(token)
-    except current_app.token_manager.Timeout:
-        return make_response('Connection to consul timedout', 500)
+    except current_app.token_manager.Exception as e:
+        return make_response(str(e), 500)
 
     return jsonify({'data': {'message': 'success'}})
 
@@ -62,8 +60,8 @@ def check_token(token):
                 return make_response('', 204)
             else:
                 return jsonify({'data': token.to_dict()})
-    except current_app.token_manager.Timeout:
-        return make_response('Connection to consul timedout', 500)
+    except current_app.token_manager.Exception as e:
+        return make_response(str(e), 500)
     except LookupError:
         'fallthrough'
 

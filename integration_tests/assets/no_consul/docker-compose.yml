@@ -2,10 +2,9 @@ sync:
   image: n3llyb0y/wait
   links:
     - auth
-    - consul
     - rabbitmq
   environment:
-    PORTS: "9497 5672 8500"
+    PORTS: "9497 5672"
 data:
   image: xivo/xivo-auth-tests-data
   volumes:
@@ -19,16 +18,8 @@ auth:
      - data
    links:
      - "rabbitmq"
-     - "consul"
-   command: "xivo-auth -u www-data -c /data/mock_backend/etc/xivo-auth/config.yml"
+   command: "xivo-auth -u www-data -c /data/no_consul/etc/xivo-auth/config.yml"
 rabbitmq:
   image: rabbitmq
   expose:
     - "5672"
-consul:
-  image: progrium/consul
-  expose:
-    - "8500"
-  volumes_from:
-    - data
-  command: "-client 0.0.0.0 -config-dir /data/mock_backend/etc/consul/"
