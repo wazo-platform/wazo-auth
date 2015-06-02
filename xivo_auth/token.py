@@ -18,10 +18,8 @@
 import hashlib
 import json
 import logging
-import signal
 import socket
 
-from contextlib import contextmanager
 from requests.exceptions import ConnectionError
 
 from xivo_auth.helpers import now, later, values_to_dict
@@ -31,12 +29,6 @@ logger = logging.getLogger(__name__)
 
 class _ClientException(Exception):
     pass
-
-
-class _ConsulTimeoutException(_ClientException):
-
-    def __str__(self):
-        return 'Connection to consul timedout'
 
 
 class _ConsulConnectionException(_ClientException):
@@ -49,18 +41,6 @@ class _RabbitMQConnectionException(_ClientException):
 
     def __str__(self):
         return 'Connection to rabbitmq failed'
-
-
-@contextmanager
-def timeout(t=4):
-    def signal_handler(signum, frame):
-        raise _ConsulTimeoutException()
-    signal.signal(signal.SIGALRM, signal_handler)
-    signal.alarm(t)
-    try:
-        yield
-    finally:
-        signal.alarm(0)
 
 
 class Token(object):
@@ -98,11 +78,10 @@ class Manager(object):
     def new_token(self, uuid, expiration=None):
         from xivo_auth import tasks
         rules = self._acl_generator.create(uuid)
-        with timeout(self._timeout):
-            try:
-                consul_token = self._consul.acl.create(rules=rules)
-            except ConnectionError:
-                raise _ConsulConnectionException()
+        try:
+            consul_token = self._consul.acl.create(rules=rules)
+        except ConnectionError:
+            raise _ConsulConnectionException()
         expiration = expiration or self._default_expiration
         token = Token(consul_token, uuid, now(), later(expiration))
         task_id = self._get_token_hash(token)
@@ -122,20 +101,18 @@ class Manager(object):
         self.remove_expired_token(token)
 
     def remove_expired_token(self, token):
-        with timeout(self._timeout):
-            try:
-                self._consul.acl.destroy(token)
-                self._consul.kv.delete('xivo/xivo-auth/tokens/{}'.format(token), recurse=True)
-            except ConnectionError:
-                raise _ConsulConnectionException()
+        try:
+            self._consul.acl.destroy(token)
+            self._consul.kv.delete('xivo/xivo-auth/tokens/{}'.format(token), recurse=True)
+        except ConnectionError:
+            raise _ConsulConnectionException()
 
     def get(self, consul_token):
-        with timeout(self._timeout):
-            try:
-                key = self.consul_token_kv.format(consul_token)
-                index, values = self._consul.kv.get(key, recurse=True)
-            except ConnectionError:
-                raise _ConsulConnectionException()
+        try:
+            key = self.consul_token_kv.format(consul_token)
+            index, values = self._consul.kv.get(key, recurse=True)
+        except ConnectionError:
+            raise _ConsulConnectionException()
 
         if not values:
             raise LookupError('No such token {}'.format(consul_token))
@@ -145,13 +122,12 @@ class Manager(object):
     def _push_token_data(self, token):
         consul_token = token.token
         key_tpl = 'xivo/xivo-auth/tokens/{token}/{key}'
-        with timeout(self._timeout):
-            try:
-                for key, value in token.to_dict().iteritems():
-                    complete_key = key_tpl.format(token=consul_token, key=key)
-                    self._consul.kv.put(complete_key, value)
-            except ConnectionError:
-                raise _ConsulConnectionException()
+        try:
+            for key, value in token.to_dict().iteritems():
+                complete_key = key_tpl.format(token=consul_token, key=key)
+                self._consul.kv.put(complete_key, value)
+        except ConnectionError:
+            raise _ConsulConnectionException()
 
     def _get_token_hash(self, token):
         return hashlib.sha256('{token}'.format(token=token)).hexdigest()

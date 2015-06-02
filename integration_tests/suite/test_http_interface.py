@@ -171,7 +171,8 @@ class _BaseTestCase(unittest.TestCase):
         return s.post(self.url, data=json.dumps(data))
 
 
-class TestCoreMockBackend(_BaseTestCase):
+@unittest.skip('Skipped until python-consul implement a timeout')
+class TestSlowConsul(_BaseTestCase):
 
     asset = 'mock_backend'
 
@@ -217,6 +218,11 @@ class TestCoreMockBackend(_BaseTestCase):
         end = time.time()
         assert_that(end - start, less_than(3))
         assert_that(response.status_code, equal_to(500))
+
+
+class TestCoreMockBackend(_BaseTestCase):
+
+    asset = 'mock_backend'
 
     def test_that_head_with_a_valid_token_returns_204(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
