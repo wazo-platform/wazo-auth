@@ -23,6 +23,7 @@ import unittest
 import time
 import os
 
+from contextlib import contextmanager
 from datetime import datetime
 from hamcrest import assert_that
 from hamcrest import contains_inanyorder
@@ -58,15 +59,21 @@ class AssetRunner(object):
     def stop(self):
         self._stop(self._running_asset)
 
-    def pause_services(self, *services):
+    def _pause_services(self, *services):
         cmd = 'docker pause {}'
         for service in services:
             self._run_cmd(cmd.format(self._container_name(service)))
 
-    def resume_services(self, *services):
+    def _resume_services(self, *services):
         cmd = 'docker unpause {}'
         for service in services:
             self._run_cmd(cmd.format(self._container_name(service)))
+
+    @contextmanager
+    def paused_service(self, service):
+        self._pause_services(service)
+        yield
+        self._resume_services(service)
 
     def _container_name(self, service):
         contracted_asset_name = self._running_asset.replace('_', '')
@@ -135,11 +142,9 @@ class TestCoreMockBackend(_BaseTestCase):
 
     def test_POST_when_consul_is_slow(self):
         start = time.time()
-        self._asset_runner.pause_services('consul')
 
-        response = self._post_token('foo', 'bar')
-
-        self._asset_runner.resume_services('consul')
+        with self._asset_runner.paused_service('consul'):
+            response = self._post_token('foo', 'bar')
 
         end = time.time()
         assert_that(end - start, less_than(3))
@@ -150,11 +155,8 @@ class TestCoreMockBackend(_BaseTestCase):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
         start = time.time()
-        self._asset_runner.pause_services('consul')
-
-        response = requests.delete('{}/{}'.format(self.url, token))
-
-        self._asset_runner.resume_services('consul')
+        with self._asset_runner.paused_service('consul'):
+            response = requests.delete('{}/{}'.format(self.url, token))
 
         end = time.time()
         assert_that(end - start, less_than(3))
@@ -165,11 +167,8 @@ class TestCoreMockBackend(_BaseTestCase):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
         start = time.time()
-        self._asset_runner.pause_services('consul')
-
-        response = requests.get('{}/{}'.format(self.url, token))
-
-        self._asset_runner.resume_services('consul')
+        with self._asset_runner.paused_service('consul'):
+            response = requests.get('{}/{}'.format(self.url, token))
 
         end = time.time()
         assert_that(end - start, less_than(3))
@@ -180,11 +179,8 @@ class TestCoreMockBackend(_BaseTestCase):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
         start = time.time()
-        self._asset_runner.pause_services('consul')
-
-        response = requests.head('{}/{}'.format(self.url, token))
-
-        self._asset_runner.resume_services('consul')
+        with self._asset_runner.paused_service('consul'):
+            response = requests.head('{}/{}'.format(self.url, token))
 
         end = time.time()
         assert_that(end - start, less_than(3))
