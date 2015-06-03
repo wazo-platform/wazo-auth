@@ -13,7 +13,7 @@ Launching xivo-auth
 Getting a token
 
 ```sh
-curl -i -X POST -H 'Content-Type: application/json' -u "alice:alice" "localhost:9497/0.1/token" -d '{"type": "xivo_user"}'
+curl -i -X POST -H 'Content-Type: application/json' -u "alice:alice" "localhost:9497/0.1/token" -d '{"backend": "xivo_user"}'
 ```
 
 # Using docker
