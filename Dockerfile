@@ -19,4 +19,4 @@ ONBUILD RUN python setup.py install
 
 EXPOSE 9497
 
-CMD xivo-auth --user www-data
+CMD xivo-auth -fd --user www-data
