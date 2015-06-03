@@ -66,14 +66,12 @@ class Manager(object):
 
     consul_token_kv = 'xivo/xivo-auth/tokens/{}'
     Exception = _ClientException
-    default_timeout = 4
 
     def __init__(self, config, consul, celery, acl_generator=None):
         self._acl_generator = acl_generator or _ACLGenerator()
         self._default_expiration = config['default_token_lifetime']
         self._consul = consul
         self._celery = celery
-        self._timeout = config['consul'].get('timeout', self.default_timeout)
 
     def new_token(self, uuid, expiration=None):
         from xivo_auth import tasks

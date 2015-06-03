@@ -26,5 +26,5 @@ logger = logging.getLogger(__name__)
 @celery.task()
 def clean_token(app, token):
     logger.debug('Removing expired token %s', token)
-    app.token_manager.remove_expired_token(token)
+    app.config['token_manager'].remove_expired_token(token)
     return json.dumps({'data': 'Token cleaned...'})

@@ -29,7 +29,6 @@ from stevedore.dispatch import NameDispatchExtensionManager
 
 from xivo_auth import http, token, extensions
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -43,48 +42,36 @@ class Controller(object):
             self._foreground = config['foreground']
             self._cors_config = config['rest_api']['cors']
             self._cors_enabled = self._cors_config['enabled']
-            self._consul_config = dict(config['consul'])
-            self._consul_config.pop('timeout')
+            self._consul_config = config['consul']
             self._plugins = config['enabled_plugins']
+            self._bus_uri = config['amqp']['uri']
         except KeyError:
-            logger.error('Missing configuration to start the HTTP application')
+            logger.error('Missing configuration to start the application')
 
-        self._app = Flask(__name__)
-        api = Api(self._app)
-        api.add_resource(http.Token,
-                         '/0.1/token',
-                         '/0.1/token/<string:token>')
-        api.add_resource(http.Backends, '/0.1/backends')
-        self._app.config.update(config)
-
-        self._load_cors()
-
-        celery = self._configure_celery()
-        self._token_manager = token.Manager(config, Consul(**self._consul_config), celery)
-        self._app.token_manager = self._token_manager
-
-        self._app.config['backends'] = self._get_backends()
-
-        self._celery_thread = Thread(target=celery.worker_main, args=(sys.argv[:1],))
-        self._celery_thread.daemon = True
+        backends = self._load_backends()
+        self._celery = self._configure_celery()
+        consul_client = Consul(**self._consul_config)
+        token_manager = token.Manager(config, consul_client, self._celery)
+        self._flask_app = self._configure_flask_app(backends, token_manager)
+        self._override_celery_task()
 
     def run(self):
-        self._celery_thread.start()
-        self._app.run(self._listen_addr, self._listen_port)
+        self._start_celery_worker()
+        self._flask_app.run(self._listen_addr, self._listen_port)
 
-    def _load_cors(self):
-        if self._cors_enabled:
-            CORS(self._app, **self._cors_config)
+    def _start_celery_worker(self):
+        celery_thread = Thread(target=self._celery.worker_main, args=(sys.argv[:1],))
+        celery_thread.daemon = True
+        celery_thread.start()
 
-    def _get_backends(self):
-        loader = _PluginLoader(self._config)
-        return loader.load()
+    def _load_backends(self):
+        return _PluginLoader(self._config).load()
 
     def _configure_celery(self):
-        celery = Celery(self._app.import_name, broker=self._config['amqp']['uri'])
-        celery.conf.update(self._app.config)
+        celery = Celery('xivo-auth', broker=self._bus_uri)
+        celery.conf.update(self._config)
         celery.conf.update(
-            CELERY_RESULT_BACKEND=self._app.config['amqp']['uri'],
+            CELERY_RESULT_BACKEND=self._bus_uri,
             CELERY_ACCEPT_CONTENT=['json'],
             CELERY_TASK_SERIALIZER='json',
             CELERY_RESULT_SERIALIZER='json',
@@ -93,9 +80,11 @@ class Controller(object):
             CELERY_DEFAULT_EXCHANGE_TYPE='topic',
             CELERYD_HIJACK_ROOT_LOGGER=False,
         )
+        return celery
 
-        TaskBase = celery.Task
-        app = self._app
+    def _override_celery_task(self):
+        TaskBase = self._celery.Task
+        app = self._flask_app
 
         class ContextTask(TaskBase):
             abstract = True
@@ -104,10 +93,25 @@ class Controller(object):
                 with app.app_context():
                     return TaskBase.__call__(self, app, *args, **kwargs)
 
-        celery.Task = ContextTask
-        extensions.celery = celery
+        self._celery.Task = ContextTask
+        extensions.celery = self._celery
         from xivo_auth import tasks  # noqa
-        return celery
+
+    def _configure_flask_app(self, backends, token_manager):
+        app = Flask(__name__)
+        api = Api(app)
+        api.add_resource(http.Token,
+                         '/0.1/token',
+                         '/0.1/token/<string:token>')
+        api.add_resource(http.Backends, '/0.1/backends')
+        app.config.update(self._config)
+        if self._cors_enabled:
+            CORS(app, **self._cors_config)
+
+        app.config['token_manager'] = token_manager
+        app.config['backends'] = backends
+
+        return app
 
 
 class _PluginLoader(object):

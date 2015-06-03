@@ -42,8 +42,8 @@ class Token(Resource):
 
         uuid = _call_backend('get_uuid', httpauth.username())
         try:
-            token = current_app.token_manager.new_token(uuid, **args)
-        except current_app.token_manager.Exception as e:
+            token = current_app.config['token_manager'].new_token(uuid, **args)
+        except current_app.config['token_manager'].Exception as e:
             return _error(500, str(e))
 
         response = {'data': token.to_dict()}
@@ -51,18 +51,18 @@ class Token(Resource):
 
     def delete(self, token):
         try:
-            current_app.token_manager.remove_token(token)
-        except current_app.token_manager.Exception as e:
+            current_app.config['token_manager'].remove_token(token)
+        except current_app.config['token_manager'].Exception as e:
             return _error(500, str(e))
 
         return {'data': {'message': 'success'}}
 
     def get(self, token):
         try:
-            token = current_app.token_manager.get(token)
+            token = current_app.config['token_manager'].get(token)
             if not token.is_expired():
                 return {'data': token.to_dict()}
-        except current_app.token_manager.Exception as e:
+        except current_app.config['token_manager'].Exception as e:
             return _error(500, str(e))
         except LookupError:
             'fallthrough'
@@ -71,10 +71,10 @@ class Token(Resource):
 
     def head(self, token):
         try:
-            token = current_app.token_manager.get(token)
+            token = current_app.config['token_manager'].get(token)
             if not token.is_expired():
                 return make_response('', 204)
-        except current_app.token_manager.Exception as e:
+        except current_app.config['token_manager'].Exception as e:
             return _error(500, str(e))
         except LookupError:
             'fallthrough'
