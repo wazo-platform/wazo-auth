@@ -16,10 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import logging
-import signal
 import sys
 
-from multiprocessing import Process
+from threading import Thread
 
 from celery import Celery
 from consul import Consul
@@ -66,17 +65,12 @@ class Controller(object):
 
         self._app.config['backends'] = self._get_backends()
 
-        self._celery_iface = _CeleryInterface(celery)
-        self._celery_iface.start()
-        signal.signal(signal.SIGTERM, self._sigterm_handler)
+        self._celery_thread = Thread(target=celery.worker_main, args=(sys.argv[:1],))
+        self._celery_thread.daemon = True
 
     def run(self):
+        self._celery_thread.start()
         self._app.run(self._listen_addr, self._listen_port)
-        self._celery_iface.join()
-
-    def _sigterm_handler(self, _signo, _stack_frame):
-        logger.info('SIGTERM received, leaving')
-        sys.exit(0)
 
     def _load_cors(self):
         if self._cors_enabled:
@@ -114,19 +108,6 @@ class Controller(object):
         extensions.celery = celery
         from xivo_auth import tasks  # noqa
         return celery
-
-
-class _CeleryInterface(Process):
-
-    def __init__(self, celery):
-        self.celery = celery
-        super(_CeleryInterface, self).__init__()
-        self.daemon = True
-        sys.argv = [sys.argv[0]]  # celery does not like our command line arguments
-
-    def run(self):
-        logger.debug('Running celery worker')
-        self.celery.worker_main()
 
 
 class _PluginLoader(object):
