@@ -45,6 +45,7 @@ class Controller(object):
             self._consul_config = config['consul']
             self._plugins = config['enabled_plugins']
             self._bus_uri = config['amqp']['uri']
+            self._log_level = config['log_level']
         except KeyError:
             logger.error('Missing configuration to start the application')
 
@@ -78,6 +79,7 @@ class Controller(object):
             CELERY_ALWAYS_EAGER=False,
             CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
             CELERY_DEFAULT_EXCHANGE_TYPE='topic',
+            CELERYD_LOG_LEVEL=self._log_level,
             CELERYD_HIJACK_ROOT_LOGGER=False,
         )
         return celery
