@@ -16,6 +16,12 @@ Getting a token
 curl -i -X POST -H 'Content-Type: application/json' -u "alice:alice" "localhost:9497/0.1/token" -d '{"backend": "xivo_user"}'
 ```
 
+Retrieving token data
+
+```sh
+curl -i -X GET -H 'Content-Type: application/json' "localhost:9497/0.1/token/${TOKEN}"
+```
+
 # Using docker
 
     docker build -t xivo-auth .
