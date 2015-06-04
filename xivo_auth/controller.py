@@ -60,9 +60,7 @@ class Controller(object):
         self._flask_app.run(self._listen_addr, self._listen_port)
 
     def _start_celery_worker(self):
-        celery_thread = Thread(target=self._celery.worker_main,
-                               args=(sys.argv[:1]),
-                               kwargs={'log_level': self._config['log_level']})
+        celery_thread = Thread(target=self._celery.worker_main, args=(sys.argv[:1],))
         celery_thread.daemon = True
         celery_thread.start()
 
