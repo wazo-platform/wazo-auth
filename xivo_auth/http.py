@@ -19,7 +19,9 @@ import time
 
 from flask import current_app, request, make_response
 from flask_restful import Resource
-from xivo_auth.extensions import httpauth
+from flask.ext.httpauth import HTTPBasicAuth
+
+httpauth = HTTPBasicAuth()
 
 
 def _error(code, msg):
