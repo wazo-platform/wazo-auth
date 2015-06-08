@@ -31,13 +31,25 @@ class ManagerException(Exception):
     pass
 
 
+class UnknownTokenException(ManagerException):
+
+    code = 404
+
+    def __str__(self):
+        return 'No such token'
+
+
 class _ConsulConnectionException(ManagerException):
+
+    code = 500
 
     def __str__(self):
         return 'Connection to consul failed'
 
 
 class _RabbitMQConnectionException(ManagerException):
+
+    code = 500
 
     def __str__(self):
         return 'Connection to rabbitmq failed'
@@ -112,9 +124,14 @@ class Manager(object):
             raise _ConsulConnectionException()
 
         if not values:
-            raise LookupError('No such token {}'.format(consul_token))
+            raise UnknownTokenException()
 
-        return Token.from_dict(values_to_dict(values)['xivo']['xivo-auth']['tokens'][consul_token])
+        token = Token.from_dict(values_to_dict(values)['xivo']['xivo-auth']['tokens'][consul_token])
+
+        if token.is_expired():
+            raise UnknownTokenException()
+
+        return token
 
     def _push_token_data(self, token):
         consul_token = token.token

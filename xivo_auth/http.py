@@ -48,7 +48,7 @@ class Token(Resource):
         try:
             token = current_app.config['token_manager'].new_token(uuid, **args)
         except ManagerException as e:
-            return _error(500, str(e))
+            return _error(e.code, str(e))
 
         response = {'data': token.to_dict()}
         return response, 200
@@ -57,33 +57,23 @@ class Token(Resource):
         try:
             current_app.config['token_manager'].remove_token(token)
         except ManagerException as e:
-            return _error(500, str(e))
+            return _error(e.code, str(e))
 
         return {'data': {'message': 'success'}}
 
     def get(self, token):
         try:
             token = current_app.config['token_manager'].get(token)
-            if not token.is_expired():
-                return {'data': token.to_dict()}
+            return {'data': token.to_dict()}
         except ManagerException as e:
-            return _error(500, str(e))
-        except LookupError:
-            'fallthrough'
-
-        return _error(404, 'No such token')
+            return _error(e.code, str(e))
 
     def head(self, token):
         try:
             token = current_app.config['token_manager'].get(token)
-            if not token.is_expired():
-                return make_response('', 204)
+            return make_response('', 204)
         except ManagerException as e:
-            return _error(500, str(e))
-        except LookupError:
-            'fallthrough'
-
-        return make_response('', 404)
+            return _error(e.code, str(e))
 
 
 class Backends(Resource):
