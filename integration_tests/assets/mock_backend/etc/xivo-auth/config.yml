@@ -6,7 +6,7 @@ rest_api:
   listen: 0.0.0.0
   port: 9497
   cors:
-    enabled: True
+    enabled: False
     allow_headers: Content-Type, authorization
 
 enabled_plugins:
