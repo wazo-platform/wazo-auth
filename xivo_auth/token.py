@@ -27,17 +27,17 @@ from xivo_auth.helpers import now, later, values_to_dict
 logger = logging.getLogger(__name__)
 
 
-class _ClientException(Exception):
+class ManagerException(Exception):
     pass
 
 
-class _ConsulConnectionException(_ClientException):
+class _ConsulConnectionException(ManagerException):
 
     def __str__(self):
         return 'Connection to consul failed'
 
 
-class _RabbitMQConnectionException(_ClientException):
+class _RabbitMQConnectionException(ManagerException):
 
     def __str__(self):
         return 'Connection to rabbitmq failed'
@@ -65,7 +65,6 @@ class Token(object):
 class Manager(object):
 
     consul_token_kv = 'xivo/xivo-auth/tokens/{}'
-    Exception = _ClientException
 
     def __init__(self, config, consul, celery, acl_generator=None):
         self._acl_generator = acl_generator or _ACLGenerator()

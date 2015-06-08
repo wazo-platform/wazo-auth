@@ -21,6 +21,8 @@ from flask import current_app, request, make_response
 from flask_restful import Resource
 from flask.ext.httpauth import HTTPBasicAuth
 
+from xivo_auth.token import ManagerException
+
 httpauth = HTTPBasicAuth()
 
 
@@ -45,7 +47,7 @@ class Token(Resource):
         uuid = _call_backend('get_uuid', httpauth.username())
         try:
             token = current_app.config['token_manager'].new_token(uuid, **args)
-        except current_app.config['token_manager'].Exception as e:
+        except ManagerException as e:
             return _error(500, str(e))
 
         response = {'data': token.to_dict()}
@@ -54,7 +56,7 @@ class Token(Resource):
     def delete(self, token):
         try:
             current_app.config['token_manager'].remove_token(token)
-        except current_app.config['token_manager'].Exception as e:
+        except ManagerException as e:
             return _error(500, str(e))
 
         return {'data': {'message': 'success'}}
@@ -64,7 +66,7 @@ class Token(Resource):
             token = current_app.config['token_manager'].get(token)
             if not token.is_expired():
                 return {'data': token.to_dict()}
-        except current_app.config['token_manager'].Exception as e:
+        except ManagerException as e:
             return _error(500, str(e))
         except LookupError:
             'fallthrough'
@@ -76,7 +78,7 @@ class Token(Resource):
             token = current_app.config['token_manager'].get(token)
             if not token.is_expired():
                 return make_response('', 204)
-        except current_app.config['token_manager'].Exception as e:
+        except ManagerException as e:
             return _error(500, str(e))
         except LookupError:
             'fallthrough'
