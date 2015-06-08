@@ -114,6 +114,7 @@ class Controller(object):
                          '/0.1/token',
                          '/0.1/token/<string:token>')
         api.add_resource(http.Backends, '/0.1/backends')
+        api.add_resource(http.Api, '/api/api.json')
         app.config.update(self._config)
         if self._cors_enabled:
             CORS(app, **self._cors_config)
