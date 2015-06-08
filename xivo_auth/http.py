@@ -17,7 +17,7 @@
 
 import time
 
-from flask import current_app, request, make_response
+from flask import current_app, request
 from flask_restful import Resource
 from flask.ext.httpauth import HTTPBasicAuth
 
@@ -71,7 +71,7 @@ class Token(Resource):
     def head(self, token):
         try:
             token = current_app.config['token_manager'].get(token)
-            return make_response('', 204)
+            return '', 204
         except ManagerException as e:
             return _error(e.code, str(e))
 
