@@ -109,11 +109,11 @@ class Controller(object):
 
     def _configure_flask_app(self, backends, token_manager):
         app = Flask(__name__)
-        api = Api(app)
+        api = Api(app, prefix='/0.1')
         api.add_resource(http.Token,
-                         '/0.1/token',
-                         '/0.1/token/<string:token>')
-        api.add_resource(http.Backends, '/0.1/backends')
+                         '/token',
+                         '/token/<string:token>')
+        api.add_resource(http.Backends, '/backends')
         api.add_resource(http.Api, '/api/api.json')
         app.config.update(self._config)
         if self._cors_enabled:
