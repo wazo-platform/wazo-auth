@@ -85,8 +85,8 @@ class Backends(Resource):
 
 class Api(Resource):
 
-    api_package = "xivo_auth"
-    api_filename = "swagger.json"
+    api_package = "xivo_auth.swagger"
+    api_filename = "api.json"
     api_path = "/api/api.json"
 
     @classmethod

@@ -1,0 +1,143 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "version": "0.1",
+        "title": "XiVO auth",
+        "description": "XiVO's authentication service",
+        "contact": {
+            "name": "XiVO dev team",
+            "url": "http://xivo.io",
+            "email": "dev@avencall.com"
+        },
+        "license": {
+            "name": "GPLv3",
+            "url": "http://www.gnu.org/licenses/gpl-3.0.html"
+        }
+    },
+    "x-xivo-port": 9497,
+    "x-xivo-name": "auth",
+    "basePath": "/0.1",
+    "schemes": [
+        "http"
+    ],
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
+    "securityDefinitions": {
+        "xivo_auth_basic": {
+            "type": "basic"
+        }
+    },
+    "paths": {
+        "/token": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Creates a token",
+                "description": "Creates a valid token for the supplied username and password combination unsing the specified backend.",
+                "operationId": "createToken",
+                "tags": [
+                    "token"
+                ],
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "description": "The token creation parameters",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "backend": {
+                                    "type": "string"
+                                },
+                                "expiration": {
+                                    "type": "integer"
+                                }
+                            },
+                            "required": [
+                                "backend"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The created token's data",
+                        "schema": {
+                            "$ref": "#/definitions/Token"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid expiration",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    },
+                    "500": {
+                        "description": "System related token generation error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "xivo_auth_basic": []
+                    }
+                ]
+            }
+        }
+    },
+    "definitions": {
+        "Token": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "token": {
+                            "type": "string"
+                        },
+                        "expires_at": {
+                            "type": "string"
+                        },
+                        "issued_at": {
+                            "type": "string"
+                        },
+                        "uuid": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "Error": {
+            "type": "object",
+            "properties": {
+                "reason": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "timestamp": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "status_code": {
+                    "type": "integer"
+                }
+            }
+        }
+    }
+}
