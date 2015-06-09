@@ -12,6 +12,7 @@ info:
     url: http://www.gnu.org/licenses/gpl-3.0.html
 x-xivo-port: 9497
 x-xivo-name: "auth"
+host: 10.37.0.254:9497
 basePath: /0.1
 schemes:
   - http
@@ -63,7 +64,66 @@ paths:
             $ref: '#/definitions/Error'
       security:
         - xivo_auth_basic: []
+  /token/{token}:
+    parameters:
+      - name: token
+        in: path
+        type: string
+        description: The token to query
+        required: true
+    get:
+      summary: Retrieves token data
+      responses:
+        200:
+          description: The token's data
+          schema:
+            $ref: '#/definitions/Token'
+        404:
+          description: Token not found
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: System related token error
+          schema:
+            $ref: '#/definitions/Error'
+    head:
+      summary: Checks if a token is valid
+      responses:
+        204:
+          description: No data
+        404:
+          description: Token not found
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: System related token error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      summary: Revoke a token
+      responses:
+        200:
+          description: Success message
+        500:
+          description: System related token error
+          schema:
+            $ref: '#/definitions/Error'
+  /backends:
+    get:
+      description: Retrieves the list of activated backends
+      responses:
+        200:
+          description: The list of activated backends
+          schema:
+            $ref: '#/definitions/BackendList'
 definitions:
+  BackendList:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          type: string 
   Token:
     type: object
     properties:
@@ -91,5 +151,3 @@ definitions:
           type: string
       status_code:
         type: integer
-
-
