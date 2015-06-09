@@ -16,7 +16,6 @@
     },
     "x-xivo-port": 9497,
     "x-xivo-name": "auth",
-    "host": "10.37.0.254:9497",
     "basePath": "/0.1",
     "schemes": [
         "http"
