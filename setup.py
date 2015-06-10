@@ -25,6 +25,10 @@ setup(
     include_package_data=True,
     zip_safe=False,
 
+    package_data={
+        'xivo_auth.swagger': ['*.json'],
+    },
+
     scripts=['bin/xivo-auth'],
     data_files=data_files,
 
