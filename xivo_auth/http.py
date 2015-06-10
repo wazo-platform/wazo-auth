@@ -17,9 +17,10 @@
 
 import time
 
-from flask import current_app, request
+from flask import current_app, request, make_response
 from flask_restful import Resource
 from flask.ext.httpauth import HTTPBasicAuth
+from pkg_resources import resource_string
 
 from xivo_auth.token import ManagerException
 
@@ -80,6 +81,25 @@ class Backends(Resource):
 
     def get(self):
         return {'data': current_app.config['enabled_plugins']}
+
+
+class Api(Resource):
+
+    api_package = "xivo_auth.swagger"
+    api_filename = "api.json"
+    api_path = "/api/api.json"
+
+    @classmethod
+    def add_resource(cls, api):
+        api.add_resource(cls, cls.api_path)
+
+    def get(self):
+        try:
+            api_spec = resource_string(self.api_package, self.api_filename)
+        except IOError:
+            return {'error': "API spec does not exist"}, 404
+
+        return make_response(api_spec, 200, {'Content-Type': 'application/json'})
 
 
 @httpauth.verify_password
