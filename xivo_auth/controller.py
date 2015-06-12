@@ -69,7 +69,9 @@ class Controller(object):
             server.stop()
 
     def _start_celery_worker(self):
-        celery_thread = Thread(target=self._celery.worker_main, args=(sys.argv[:1],))
+        celery_thread = Thread(target=self._celery.worker_main,
+                               args=(sys.argv[:1],),
+                               kwargs={'pool_cls': 'threads'})
         celery_thread.daemon = True
         celery_thread.start()
 
