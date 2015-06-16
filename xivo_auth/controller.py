@@ -16,9 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import logging
-import sys
-
-from threading import Thread
 
 from cherrypy import wsgiserver
 from celery import Celery
@@ -60,20 +57,12 @@ class Controller(object):
         self._override_celery_task()
 
     def run(self):
-        self._start_celery_worker()
         wsgi_app = wsgiserver.WSGIPathInfoDispatcher({'/': self._flask_app})
         server = wsgiserver.CherryPyWSGIServer(bind_addr=self._bind_addr, wsgi_app=wsgi_app)
         try:
             server.start()
         except KeyboardInterrupt:
             server.stop()
-
-    def _start_celery_worker(self):
-        celery_thread = Thread(target=self._celery.worker_main,
-                               args=(sys.argv[:1],),
-                               kwargs={'pool_cls': 'threads'})
-        celery_thread.daemon = True
-        celery_thread.start()
 
     def _load_backends(self):
         return _PluginLoader(self._config).load()
