@@ -21,6 +21,7 @@ import sys
 from threading import Thread
 
 from cherrypy import wsgiserver
+from cherrypy.wsgiserver.ssl_builtin import BuiltinSSLAdapter
 from celery import Celery
 from consul import Consul
 from flask import Flask
@@ -49,6 +50,8 @@ class Controller(object):
             self._log_level = config['log_level']
             self._debug = config['debug']
             self._bind_addr = (self._listen_addr, self._listen_port)
+            self._ssl_cert_file = config['ssl']['cert_file']
+            self._ssl_key_file = config['ssl']['key_file']
         except KeyError:
             logger.error('Missing configuration to start the application')
 
@@ -61,8 +64,10 @@ class Controller(object):
 
     def run(self):
         self._start_celery_worker()
+        ssl_adapter = BuiltinSSLAdapter(self._ssl_cert_file, self._ssl_key_file)
         wsgi_app = wsgiserver.WSGIPathInfoDispatcher({'/': self._flask_app})
         server = wsgiserver.CherryPyWSGIServer(bind_addr=self._bind_addr, wsgi_app=wsgi_app)
+        server.ssl_adapter = ssl_adapter
         try:
             server.start()
         except KeyboardInterrupt:

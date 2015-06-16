@@ -148,7 +148,7 @@ class AssetRunner(object):
 
 class _BaseTestCase(unittest.TestCase):
 
-    url = 'http://{}:9497/0.1/token'.format(HOST)
+    url = 'https://{}:9497/0.1/token'.format(HOST)
 
     @classmethod
     def setUpClass(cls):
@@ -168,7 +168,7 @@ class _BaseTestCase(unittest.TestCase):
         data = {'backend': backend}
         if expiration:
             data['expiration'] = expiration
-        return s.post(self.url, data=json.dumps(data))
+        return s.post(self.url, data=json.dumps(data), verify=False)
 
 
 @unittest.skip('Skipped until python-consul implement a timeout')
@@ -191,7 +191,7 @@ class TestSlowConsul(_BaseTestCase):
 
         start = time.time()
         with self._asset_runner.paused_service('consul'):
-            response = requests.delete('{}/{}'.format(self.url, token))
+            response = requests.delete('{}/{}'.format(self.url, token), verify=False)
 
         end = time.time()
         assert_that(end - start, less_than(3))
@@ -202,7 +202,7 @@ class TestSlowConsul(_BaseTestCase):
 
         start = time.time()
         with self._asset_runner.paused_service('consul'):
-            response = requests.get('{}/{}'.format(self.url, token))
+            response = requests.get('{}/{}'.format(self.url, token), verify=False)
 
         end = time.time()
         assert_that(end - start, less_than(3))
@@ -213,7 +213,7 @@ class TestSlowConsul(_BaseTestCase):
 
         start = time.time()
         with self._asset_runner.paused_service('consul'):
-            response = requests.head('{}/{}'.format(self.url, token))
+            response = requests.head('{}/{}'.format(self.url, token), verify=False)
 
         end = time.time()
         assert_that(end - start, less_than(3))
@@ -227,17 +227,17 @@ class TestCoreMockBackend(_BaseTestCase):
     def test_that_head_with_a_valid_token_returns_204(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
-        response = requests.head('{}/{}'.format(self.url, token))
+        response = requests.head('{}/{}'.format(self.url, token), verify=False)
 
         assert_that(response.status_code, equal_to(204))
 
     def test_that_head_with_an_invalid_token_returns_404(self):
-        response = requests.head('{}/{}'.format(self.url, 'abcdef'))
+        response = requests.head('{}/{}'.format(self.url, 'abcdef'), verify=False)
 
         assert_that(response.status_code, equal_to(404))
 
     def test_backends(self):
-        response = requests.get('http://{}:9497/0.1/backends'.format(HOST))
+        response = requests.get('https://{}:9497/0.1/backends'.format(HOST), verify=False)
 
         assert_that(response.json()['data'],
                     contains_inanyorder('mock', 'broken_init', 'broken_verify_password'))
@@ -245,7 +245,7 @@ class TestCoreMockBackend(_BaseTestCase):
     def test_that_get_returns_the_uuid(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
-        response = requests.get('{}/{}'.format(self.url, token))
+        response = requests.get('{}/{}'.format(self.url, token), verify=False)
 
         assert_that(response.status_code, equal_to(200))
         assert_that(response.json()['data']['uuid'], equal_to('a-mocked-uuid'))
@@ -253,13 +253,13 @@ class TestCoreMockBackend(_BaseTestCase):
     def test_that_get_does_not_work_after_delete(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
-        requests.delete('{}/{}'.format(self.url, token))
-        response = requests.get('{}/{}'.format(self.url, token))
+        requests.delete('{}/{}'.format(self.url, token), verify=False)
+        response = requests.get('{}/{}'.format(self.url, token), verify=False)
 
         assert_that(response, is_(http_error(404, 'No such token')))
 
     def test_that_deleting_unexistant_token_returns_200(self):
-        response = requests.delete('{}/{}'.format(self.url, 'not-a-valid-token'))
+        response = requests.delete('{}/{}'.format(self.url, 'not-a-valid-token'), verify=False)
 
         assert_that(response.status_code, equal_to(200))
 
@@ -291,7 +291,7 @@ class TestCoreMockBackend(_BaseTestCase):
         s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         s.auth = requests.auth.HTTPBasicAuth('foo', 'bar')
 
-        response = s.post(self.url)
+        response = s.post(self.url, verify=False)
 
         assert_that(response.status_code, equal_to(400))
 
@@ -315,7 +315,7 @@ class TestCoreMockBackend(_BaseTestCase):
 
         time.sleep(2)
 
-        response = requests.head('{}/{}'.format(self.url, token))
+        response = requests.head('{}/{}'.format(self.url, token), verify=False)
 
         assert_that(response.status_code, equal_to(404))
 
@@ -330,17 +330,17 @@ class TestNoConsul(_BaseTestCase):
         assert_that(response, is_(http_error(500, 'Connection to consul failed')))
 
     def test_DELETE_with_no_consul_running(self):
-        response = requests.delete('{}/{}'.format(self.url, 'foobar'))
+        response = requests.delete('{}/{}'.format(self.url, 'foobar'), verify=False)
 
         assert_that(response, is_(http_error(500, 'Connection to consul failed')))
 
     def test_GET_with_no_consul_running(self):
-        response = requests.get('{}/{}'.format(self.url, 'foobar'))
+        response = requests.get('{}/{}'.format(self.url, 'foobar'), verify=False)
 
         assert_that(response, is_(http_error(500, 'Connection to consul failed')))
 
     def test_HEAD_with_no_consul_running(self):
-        response = requests.head('{}/{}'.format(self.url, 'foobar'))
+        response = requests.head('{}/{}'.format(self.url, 'foobar'), verify=False)
 
         assert_that(response.status_code, equal_to(500))
 
@@ -355,6 +355,6 @@ class TestNoRabbitMQ(_BaseTestCase):
         assert_that(response, is_(http_error(500, 'Connection to rabbitmq failed')))
 
     def test_DELETE_with_no_rabbitmq_running(self):
-        response = requests.delete('{}/{}'.format(self.url, 'foobar'))
+        response = requests.delete('{}/{}'.format(self.url, 'foobar'), verify=False)
 
         assert_that(response, is_(http_error(500, 'Connection to rabbitmq failed')))
