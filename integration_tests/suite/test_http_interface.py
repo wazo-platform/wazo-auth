@@ -33,6 +33,7 @@ from hamcrest import is_
 from hamcrest import less_than
 from hamcrest.core.base_matcher import BaseMatcher
 
+requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)
 
 ISO_DATETIME = '%Y-%m-%dT%H:%M:%S.%f'
