@@ -128,7 +128,7 @@ class AssetRunner(object):
         if not asset or asset != self._running_asset:
             return
 
-        print 'Stoping {}'.format(asset)
+        print 'Stopping {}'.format(asset)
         self._run_cmd('{} kill'.format(self._launcher))
         os.chdir(self.cur_dir)
         time.sleep(1)
