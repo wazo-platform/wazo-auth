@@ -5,10 +5,15 @@ set -e
 DAEMONNAME='xivo-auth'
 USER='xivo-auth'
 GROUP=$USER
-LOG_FILENAME='/var/log/${DAEMONNAME}.log'
+LOG_FILENAME="/var/log/${DAEMONNAME}.log"
 
 case "$1" in
 	configure)
+		# remove the /var/log/${DAEMONNAME}.log file created before 15.12
+		if [ -e '/var/log/${DAEMONNAME}.log' ]; then
+			rm -f '/var/log/${DAEMONNAME}.log'
+		fi
+
 		# add the group consul if it does not exists
 		groupadd -f consul
 
