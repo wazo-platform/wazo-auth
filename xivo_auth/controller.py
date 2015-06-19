@@ -52,8 +52,10 @@ class Controller(object):
             self._bind_addr = (self._listen_addr, self._listen_port)
             self._ssl_cert_file = config['rest_api']['certificate']
             self._ssl_key_file = config['rest_api']['private_key']
-        except KeyError:
-            logger.error('Missing configuration to start the application')
+            logger.debug('private key: %s', config['rest_api']['private_key'])
+        except KeyError as e:
+            logger.error('Missing configuration to start the application: %s', e)
+            sys.exit(1)
 
         backends = self._load_backends()
         self._celery = self._configure_celery()
