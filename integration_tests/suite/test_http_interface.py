@@ -266,13 +266,13 @@ class TestCoreMockBackend(_BaseTestCase):
         assert_that(response.json()['data'],
                     contains_inanyorder('mock', 'broken_init', 'broken_verify_password'))
 
-    def test_that_get_returns_the_uuid(self):
+    def test_that_get_returns_the_auth_id(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
         response = requests.get('{}/{}'.format(self.url, token), verify=False)
 
         assert_that(response.status_code, equal_to(200))
-        assert_that(response.json()['data']['uuid'], equal_to('a-mocked-uuid'))
+        assert_that(response.json()['data']['auth_id'], equal_to('a-mocked-uuid'))
 
     def test_that_get_does_not_work_after_delete(self):
         token = self._post_token('foo', 'bar').json()['data']['token']

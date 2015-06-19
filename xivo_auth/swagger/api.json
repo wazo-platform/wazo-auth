@@ -204,8 +204,9 @@
                         "issued_at": {
                             "type": "string"
                         },
-                        "uuid": {
-                            "type": "string"
+                        "auth_id": {
+                            "type": "string",
+                            "description": "The unique identifier retrieved from the backend"
                         }
                     }
                 }
