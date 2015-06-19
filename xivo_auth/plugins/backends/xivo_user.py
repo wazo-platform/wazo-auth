@@ -27,8 +27,9 @@ class XiVOUser(BaseAuthenticationBackend):
     def __init__(self, config):
         xivo_dao.init_db_from_config(config)
 
-    def get_uuid(self, username):
-        return user_dao.get_uuid_by_username(username)
+    def get_ids(self, username):
+        user_uuid = user_dao.get_uuid_by_username(username)
+        return user_uuid, user_uuid
 
-    def verify_password(self, username, password):
-        return user_dao.check_username_password(username, password)
+    def verify_password(self, login, password):
+        return user_dao.check_username_password(login, password)

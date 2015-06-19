@@ -20,8 +20,8 @@ from xivo_auth import BaseAuthenticationBackend
 
 class BackendMock(BaseAuthenticationBackend):
 
-    def get_uuid(self, username):
-        return 'a-mocked-uuid'
+    def get_ids(self, login):
+        return 'a-mocked-uuid', None
 
-    def verify_password(self, username, password):
-        return username == 'foo' and password == 'bar'
+    def verify_password(self, login, password):
+        return login == 'foo' and password == 'bar'

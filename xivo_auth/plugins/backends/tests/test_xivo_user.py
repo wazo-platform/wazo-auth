@@ -25,22 +25,22 @@ from xivo_auth.plugins import backends
 
 @patch('xivo_auth.plugins.backends.xivo_user.xivo_dao', Mock())
 @patch('xivo_auth.plugins.backends.xivo_user.user_dao')
-class TestGetUUID(unittest.TestCase):
+class TestGetIDS(unittest.TestCase):
 
-    def test_that_get_uuid_calls_the_dao(self, user_dao_mock):
+    def test_that_get_ids_calls_the_dao(self, user_dao_mock):
         user_dao_mock.get_uuid_by_username.return_value = 'foobars-uuid'
         backend = backends.XiVOUser('config')
 
-        result = backend.get_uuid('foobar')
+        result = backend.get_ids('foobar')
 
-        assert_that(result, equal_to('foobars-uuid'))
+        assert_that(result, equal_to(('foobars-uuid', 'foobars-uuid')))
         user_dao_mock.get_uuid_by_username.assert_called_once_with('foobar')
 
-    def test_that_get_uuid_raises_if_no_user(self, user_dao_mock):
+    def test_that_get_ids_raises_if_no_user(self, user_dao_mock):
         user_dao_mock.get_uuid_by_username.side_effect = LookupError
         backend = backends.XiVOUser('config')
 
-        self.assertRaises(Exception, backend.get_uuid, 'foobar')
+        self.assertRaises(Exception, backend.get_ids, 'foobar')
 
 
 @patch('xivo_auth.plugins.backends.xivo_user.xivo_dao', Mock())
