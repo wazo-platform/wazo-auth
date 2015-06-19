@@ -27,12 +27,14 @@ from contextlib import contextmanager
 from datetime import datetime
 from hamcrest import assert_that
 from hamcrest import contains_inanyorder
+from hamcrest import contains_string
 from hamcrest import equal_to
 from hamcrest import has_length
 from hamcrest import is_
 from hamcrest import less_than
 from hamcrest.core.base_matcher import BaseMatcher
 
+requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)
 
 ISO_DATETIME = '%Y-%m-%dT%H:%M:%S.%f'
@@ -84,6 +86,16 @@ class AssetRunner(object):
     def __del__(self):
         self.stop()
 
+    def is_running(self, service):
+        service_id = self._get_service_id(service)
+        status = self._run_cmd('docker inspect {container}'.format(container=service_id))
+        return json.loads(status)[0]['State']['Running']
+
+    def service_logs(self, service):
+        service_id = self._get_service_id(service)
+        status = self._run_cmd('docker logs {container}'.format(container=service_id))
+        return status
+
     def start(self, asset):
         if asset == self._running_asset:
             return
@@ -93,6 +105,9 @@ class AssetRunner(object):
 
     def stop(self):
         self._stop(self._running_asset)
+
+    def _get_service_id(self, service):
+        return self._run_cmd('docker-compose ps -q {}'.format(service)).strip()
 
     def _pause_services(self, *services):
         cmd = 'docker pause {}'
@@ -121,7 +136,7 @@ class AssetRunner(object):
         self.cur_dir = os.getcwd()
         os.chdir(asset_path)
         self._run_cmd('{} rm --force'.format(self._launcher))
-        self._run_cmd('{} run sync'.format(self._launcher))
+        self._run_cmd('{} run --rm sync'.format(self._launcher))
         time.sleep(1)
 
     def _stop(self, asset):
@@ -138,6 +153,7 @@ class AssetRunner(object):
         process = subprocess.Popen(cmd.split(' '), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         out, _ = process.communicate()
         logger.info('%s', out)
+        return out
 
     @classmethod
     def get_instance(cls):
@@ -148,7 +164,7 @@ class AssetRunner(object):
 
 class _BaseTestCase(unittest.TestCase):
 
-    url = 'http://{}:9497/0.1/token'.format(HOST)
+    url = 'https://{}:9497/0.1/token'.format(HOST)
 
     @classmethod
     def setUpClass(cls):
@@ -168,7 +184,15 @@ class _BaseTestCase(unittest.TestCase):
         data = {'backend': backend}
         if expiration:
             data['expiration'] = expiration
-        return s.post(self.url, data=json.dumps(data))
+        return s.post(self.url, data=json.dumps(data), verify=False)
+
+    def _assert_that_xivo_auth_is_stopping(self):
+        for _ in range(5):
+            if not self._asset_runner.is_running('auth'):
+                break
+            time.sleep(0.2)
+        else:
+            self.fail('xivo-auth did not stop')
 
 
 @unittest.skip('Skipped until python-consul implement a timeout')
@@ -191,7 +215,7 @@ class TestSlowConsul(_BaseTestCase):
 
         start = time.time()
         with self._asset_runner.paused_service('consul'):
-            response = requests.delete('{}/{}'.format(self.url, token))
+            response = requests.delete('{}/{}'.format(self.url, token), verify=False)
 
         end = time.time()
         assert_that(end - start, less_than(3))
@@ -202,7 +226,7 @@ class TestSlowConsul(_BaseTestCase):
 
         start = time.time()
         with self._asset_runner.paused_service('consul'):
-            response = requests.get('{}/{}'.format(self.url, token))
+            response = requests.get('{}/{}'.format(self.url, token), verify=False)
 
         end = time.time()
         assert_that(end - start, less_than(3))
@@ -213,7 +237,7 @@ class TestSlowConsul(_BaseTestCase):
 
         start = time.time()
         with self._asset_runner.paused_service('consul'):
-            response = requests.head('{}/{}'.format(self.url, token))
+            response = requests.head('{}/{}'.format(self.url, token), verify=False)
 
         end = time.time()
         assert_that(end - start, less_than(3))
@@ -227,17 +251,17 @@ class TestCoreMockBackend(_BaseTestCase):
     def test_that_head_with_a_valid_token_returns_204(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
-        response = requests.head('{}/{}'.format(self.url, token))
+        response = requests.head('{}/{}'.format(self.url, token), verify=False)
 
         assert_that(response.status_code, equal_to(204))
 
     def test_that_head_with_an_invalid_token_returns_404(self):
-        response = requests.head('{}/{}'.format(self.url, 'abcdef'))
+        response = requests.head('{}/{}'.format(self.url, 'abcdef'), verify=False)
 
         assert_that(response.status_code, equal_to(404))
 
     def test_backends(self):
-        response = requests.get('http://{}:9497/0.1/backends'.format(HOST))
+        response = requests.get('https://{}:9497/0.1/backends'.format(HOST), verify=False)
 
         assert_that(response.json()['data'],
                     contains_inanyorder('mock', 'broken_init', 'broken_verify_password'))
@@ -245,7 +269,7 @@ class TestCoreMockBackend(_BaseTestCase):
     def test_that_get_returns_the_uuid(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
-        response = requests.get('{}/{}'.format(self.url, token))
+        response = requests.get('{}/{}'.format(self.url, token), verify=False)
 
         assert_that(response.status_code, equal_to(200))
         assert_that(response.json()['data']['uuid'], equal_to('a-mocked-uuid'))
@@ -253,13 +277,13 @@ class TestCoreMockBackend(_BaseTestCase):
     def test_that_get_does_not_work_after_delete(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
-        requests.delete('{}/{}'.format(self.url, token))
-        response = requests.get('{}/{}'.format(self.url, token))
+        requests.delete('{}/{}'.format(self.url, token), verify=False)
+        response = requests.get('{}/{}'.format(self.url, token), verify=False)
 
         assert_that(response, is_(http_error(404, 'No such token')))
 
     def test_that_deleting_unexistant_token_returns_200(self):
-        response = requests.delete('{}/{}'.format(self.url, 'not-a-valid-token'))
+        response = requests.delete('{}/{}'.format(self.url, 'not-a-valid-token'), verify=False)
 
         assert_that(response.status_code, equal_to(200))
 
@@ -291,7 +315,7 @@ class TestCoreMockBackend(_BaseTestCase):
         s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         s.auth = requests.auth.HTTPBasicAuth('foo', 'bar')
 
-        response = s.post(self.url)
+        response = s.post(self.url, verify=False)
 
         assert_that(response.status_code, equal_to(400))
 
@@ -315,7 +339,7 @@ class TestCoreMockBackend(_BaseTestCase):
 
         time.sleep(2)
 
-        response = requests.head('{}/{}'.format(self.url, token))
+        response = requests.head('{}/{}'.format(self.url, token), verify=False)
 
         assert_that(response.status_code, equal_to(404))
 
@@ -330,17 +354,17 @@ class TestNoConsul(_BaseTestCase):
         assert_that(response, is_(http_error(500, 'Connection to consul failed')))
 
     def test_DELETE_with_no_consul_running(self):
-        response = requests.delete('{}/{}'.format(self.url, 'foobar'))
+        response = requests.delete('{}/{}'.format(self.url, 'foobar'), verify=False)
 
         assert_that(response, is_(http_error(500, 'Connection to consul failed')))
 
     def test_GET_with_no_consul_running(self):
-        response = requests.get('{}/{}'.format(self.url, 'foobar'))
+        response = requests.get('{}/{}'.format(self.url, 'foobar'), verify=False)
 
         assert_that(response, is_(http_error(500, 'Connection to consul failed')))
 
     def test_HEAD_with_no_consul_running(self):
-        response = requests.head('{}/{}'.format(self.url, 'foobar'))
+        response = requests.head('{}/{}'.format(self.url, 'foobar'), verify=False)
 
         assert_that(response.status_code, equal_to(500))
 
@@ -355,6 +379,28 @@ class TestNoRabbitMQ(_BaseTestCase):
         assert_that(response, is_(http_error(500, 'Connection to rabbitmq failed')))
 
     def test_DELETE_with_no_rabbitmq_running(self):
-        response = requests.delete('{}/{}'.format(self.url, 'foobar'))
+        response = requests.delete('{}/{}'.format(self.url, 'foobar'), verify=False)
 
         assert_that(response, is_(http_error(500, 'Connection to rabbitmq failed')))
+
+
+class TestNoSSLCertificate(_BaseTestCase):
+
+    asset = 'no_ssl_certificate'
+
+    def test_that_xivo_auth_stops_if_not_readable_ssl_certificate(self):
+        self._assert_that_xivo_auth_is_stopping()
+
+        log = self._asset_runner.service_logs('auth')
+        assert_that(log, contains_string("No such file or directory: '/data/ssl/no_server.crt'"))
+
+
+class TestNoSSLKey(_BaseTestCase):
+
+    asset = 'no_ssl_key'
+
+    def test_that_xivo_auth_stops_if_not_readable_ssl_key(self):
+        self._assert_that_xivo_auth_is_stopping()
+
+        log = self._asset_runner.service_logs('auth')
+        assert_that(log, contains_string("No such file or directory: '/data/ssl/no_server.key'"))

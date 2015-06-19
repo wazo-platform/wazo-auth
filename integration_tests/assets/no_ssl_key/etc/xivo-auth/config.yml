@@ -9,12 +9,10 @@ rest_api:
     enabled: False
     allow_headers: Content-Type, authorization
   certificate: /data/ssl/server.crt
-  private_key: /data/ssl/server.key
+  private_key: /data/ssl/no_server.key
 
 enabled_plugins:
   - mock
-  - broken_init
-  - broken_verify_password
 
 amqp:
   uri: amqp://guest:guest@rabbitmq:5672/
