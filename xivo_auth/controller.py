@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import logging
+import sys
 
 from cherrypy import wsgiserver
 from cherrypy.wsgiserver.ssl_builtin import BuiltinSSLAdapter
