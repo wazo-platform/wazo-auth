@@ -27,6 +27,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from hamcrest import assert_that
 from hamcrest import contains_inanyorder
+from hamcrest import contains_string
 from hamcrest import equal_to
 from hamcrest import has_length
 from hamcrest import is_
@@ -85,6 +86,16 @@ class AssetRunner(object):
     def __del__(self):
         self.stop()
 
+    def is_running(self, service):
+        service_id = self._get_service_id(service)
+        status = self._run_cmd('docker inspect {container}'.format(container=service_id))
+        return json.loads(status)[0]['State']['Running']
+
+    def service_logs(self, service):
+        service_id = self._get_service_id(service)
+        status = self._run_cmd('docker logs {container}'.format(container=service_id))
+        return status
+
     def start(self, asset):
         if asset == self._running_asset:
             return
@@ -94,6 +105,9 @@ class AssetRunner(object):
 
     def stop(self):
         self._stop(self._running_asset)
+
+    def _get_service_id(self, service):
+        return self._run_cmd('docker-compose ps -q {}'.format(service)).strip()
 
     def _pause_services(self, *services):
         cmd = 'docker pause {}'
@@ -139,6 +153,7 @@ class AssetRunner(object):
         process = subprocess.Popen(cmd.split(' '), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         out, _ = process.communicate()
         logger.info('%s', out)
+        return out
 
     @classmethod
     def get_instance(cls):
@@ -170,6 +185,14 @@ class _BaseTestCase(unittest.TestCase):
         if expiration:
             data['expiration'] = expiration
         return s.post(self.url, data=json.dumps(data), verify=False)
+
+    def _assert_that_xivo_auth_is_stopping(self):
+        for _ in range(5):
+            if not self._asset_runner.is_running('auth'):
+                break
+            time.sleep(0.2)
+        else:
+            self.fail('xivo-auth did not stop')
 
 
 @unittest.skip('Skipped until python-consul implement a timeout')
@@ -359,3 +382,25 @@ class TestNoRabbitMQ(_BaseTestCase):
         response = requests.delete('{}/{}'.format(self.url, 'foobar'), verify=False)
 
         assert_that(response, is_(http_error(500, 'Connection to rabbitmq failed')))
+
+
+class TestNoSSLCertificate(_BaseTestCase):
+
+    asset = 'no_ssl_certificate'
+
+    def test_that_xivo_auth_stops_if_not_readable_ssl_certificate(self):
+        self._assert_that_xivo_auth_is_stopping()
+
+        log = self._asset_runner.service_logs('auth')
+        assert_that(log, contains_string("No such file or directory: '/data/ssl/no_server.crt'"))
+
+
+class TestNoSSLKey(_BaseTestCase):
+
+    asset = 'no_ssl_key'
+
+    def test_that_xivo_auth_stops_if_not_readable_ssl_key(self):
+        self._assert_that_xivo_auth_is_stopping()
+
+        log = self._asset_runner.service_logs('auth')
+        assert_that(log, contains_string("No such file or directory: '/data/ssl/no_server.key'"))

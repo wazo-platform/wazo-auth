@@ -66,6 +66,8 @@ class Controller(object):
 
     def run(self):
         self._start_celery_worker()
+        self._check_file_readable(self._ssl_key_file)
+        self._check_file_readable(self._ssl_cert_file)
         ssl_adapter = BuiltinSSLAdapter(self._ssl_cert_file, self._ssl_key_file)
         wsgi_app = wsgiserver.WSGIPathInfoDispatcher({'/': self._flask_app})
         server = wsgiserver.CherryPyWSGIServer(bind_addr=self._bind_addr, wsgi_app=wsgi_app)
@@ -74,6 +76,10 @@ class Controller(object):
             server.start()
         except KeyboardInterrupt:
             server.stop()
+
+    def _check_file_readable(self, file_path):
+        with open(file_path, 'r'):
+            pass
 
     def _start_celery_worker(self):
         celery_thread = Thread(target=self._celery.worker_main,

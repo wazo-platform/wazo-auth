@@ -1,0 +1,25 @@
+debug: True
+foreground: True
+log_filename: /tmp/xivo-auth.log
+
+rest_api:
+  listen: 0.0.0.0
+  port: 9497
+  cors:
+    enabled: False
+    allow_headers: Content-Type, authorization
+  certificate: /data/ssl/no_server.crt
+  private_key: /data/ssl/server.key
+
+enabled_plugins:
+  - mock
+
+amqp:
+  uri: amqp://guest:guest@rabbitmq:5672/
+  exchange_name: xivo
+  exchange_type: topic
+
+consul:
+  host: consul
+  port: 8500
+  token: 'the_one_ring'

@@ -1,0 +1,10 @@
+ {
+    "acl_default_policy": "deny",
+    "acl_master_token": "the_one_ring",
+    "acl_datacenter": "consul",
+    "datacenter": "consul",
+    "server": true,
+    "bootstrap": true,
+    "data_dir": "/usr/lib/consul",
+    "log_level": "INFO"
+}
