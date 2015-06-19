@@ -122,14 +122,14 @@ class AssetRunner(object):
         self.cur_dir = os.getcwd()
         os.chdir(asset_path)
         self._run_cmd('{} rm --force'.format(self._launcher))
-        self._run_cmd('{} run sync'.format(self._launcher))
+        self._run_cmd('{} run --rm sync'.format(self._launcher))
         time.sleep(1)
 
     def _stop(self, asset):
         if not asset or asset != self._running_asset:
             return
 
-        print 'Stoping {}'.format(asset)
+        print 'Stopping {}'.format(asset)
         self._run_cmd('{} kill'.format(self._launcher))
         os.chdir(self.cur_dir)
         time.sleep(1)
