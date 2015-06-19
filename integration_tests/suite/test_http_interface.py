@@ -29,6 +29,7 @@ from hamcrest import assert_that
 from hamcrest import contains_inanyorder
 from hamcrest import contains_string
 from hamcrest import equal_to
+from hamcrest import has_key
 from hamcrest import has_length
 from hamcrest import is_
 from hamcrest import less_than
@@ -264,7 +265,7 @@ class TestCoreMockBackend(_BaseTestCase):
         response = requests.get('https://{}:9497/0.1/backends'.format(HOST), verify=False)
 
         assert_that(response.json()['data'],
-                    contains_inanyorder('mock', 'broken_init', 'broken_verify_password'))
+                    contains_inanyorder('mock', 'mock_with_uuid', 'broken_init', 'broken_verify_password'))
 
     def test_that_get_returns_the_auth_id(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
@@ -273,6 +274,14 @@ class TestCoreMockBackend(_BaseTestCase):
 
         assert_that(response.status_code, equal_to(200))
         assert_that(response.json()['data']['auth_id'], equal_to('a-mocked-uuid'))
+
+    def test_that_get_returns_the_xivo_user_uuid(self):
+        token = self._post_token('foo', 'bar').json()['data']['token']
+
+        response = requests.get('{}/{}'.format(self.url, token), verify=False)
+
+        assert_that(response.status_code, equal_to(200))
+        assert_that(response.json()['data'], has_key('xivo_user_uuid'))
 
     def test_that_get_does_not_work_after_delete(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
@@ -292,13 +301,17 @@ class TestCoreMockBackend(_BaseTestCase):
 
         assert_that(response.status_code, equal_to(401))
 
-    def test_that_the_right_credentials_return_a_token(self):
-        response = self._post_token('foo', 'bar')
+    def test_that_the_right_credentials_return_a_token_with_datas(self):
+        response = self._post_token('foo', 'bar', backend='mock_with_uuid')
         content = response.json()['data']
         token = content['token']
+        auth_id = content['auth_id']
+        xivo_user_uuid = content['xivo_user_uuid']
 
         assert_that(response.status_code, equal_to(200))
         assert_that(token, has_length(36))
+        assert_that(auth_id, equal_to('a-mocked-auth-id'))
+        assert_that(xivo_user_uuid, equal_to('a-mocked-xivo-user-uuid'))
 
     def test_that_an_unknown_type_returns_a_401(self):
         response = self._post_token('foo', 'not_bar', 'unexistant_backend')

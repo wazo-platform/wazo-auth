@@ -207,6 +207,10 @@
                         "auth_id": {
                             "type": "string",
                             "description": "The unique identifier retrieved from the backend"
+                        },
+                        "xivo_user_uuid": {
+                            "type": "string",
+                            "description": "The UUID of the XiVO user matching these credentials, this field can be None"
                         }
                     }
                 }

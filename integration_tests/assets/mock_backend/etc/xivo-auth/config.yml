@@ -13,6 +13,7 @@ rest_api:
 
 enabled_plugins:
   - mock
+  - mock_with_uuid
   - broken_init
   - broken_verify_password
 

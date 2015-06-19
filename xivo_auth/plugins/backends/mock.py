@@ -25,3 +25,12 @@ class BackendMock(BaseAuthenticationBackend):
 
     def verify_password(self, login, password):
         return login == 'foo' and password == 'bar'
+
+
+class BackendMockWithUUID(BaseAuthenticationBackend):
+
+    def get_ids(self, login):
+        return 'a-mocked-auth-id', 'a-mocked-xivo-user-uuid'
+
+    def verify_password(self, login, password):
+        return login == 'foo' and password == 'bar'
