@@ -43,14 +43,14 @@ integration_tests directory.
 Before starting build the xivo/xivo-auth image
 
 ```sh
-docker build -t xivo/xivo-auth .
+make test-setup
 ```
 
 To run the tests from the integration_tests directory
 
 ```sh
-docker build -t xivo/xivo-auth-tests-data -f Dockerfile-data .
-docker build -t xivo/xivo-auth-tests -f Dockerfile .. && nosetests
+make test-image
+nosetests
 ```
 
 If you are using docker-machine you can change your ip address with the variable XIVO_AUTH_TEST_HOST.
