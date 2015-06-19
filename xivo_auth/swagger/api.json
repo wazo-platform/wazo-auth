@@ -18,7 +18,7 @@
     "x-xivo-name": "auth",
     "basePath": "/0.1",
     "schemes": [
-        "http"
+        "https"
     ],
     "consumes": [
         "application/json"
