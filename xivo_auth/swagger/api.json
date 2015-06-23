@@ -48,20 +48,6 @@
                 ],
                 "parameters": [
                     {
-                        "name": "username",
-                        "description": "The username of your backend",
-                        "type": "string",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "name": "password",
-                        "description": "The password of your backend",
-                        "type": "string",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
                         "name": "body",
                         "in": "body",
                         "description": "The token creation parameters",
@@ -113,7 +99,7 @@
             "parameters": [
                 {
                     "name": "token",
-                    "in": "query",
+                    "in": "path",
                     "type": "string",
                     "description": "The token to query",
                     "required": true
