@@ -2,7 +2,7 @@
     "swagger": "2.0",
     "info": {
         "version": "0.1",
-        "title": "XiVO auth",
+        "title": "XiVO Auth",
         "description": "XiVO's authentication service",
         "contact": {
             "name": "XiVO dev team",
