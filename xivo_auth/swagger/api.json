@@ -87,25 +87,23 @@
                             "$ref": "#/definitions/Error"
                         }
                     }
-                },
-                "security": [
-                    {
-                        "xivo_auth_basic": []
-                    }
-                ]
+                }
             }
         },
         "/token/{token}": {
-            "parameters": [
-                {
-                    "name": "token",
-                    "in": "path",
-                    "type": "string",
-                    "description": "The token to query",
-                    "required": true
-                }
-            ],
             "get": {
+                "tags": [
+                    "token"
+                ],
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "type": "string",
+                        "description": "The token to query",
+                        "required": true
+                    }
+                ],
                 "summary": "Retrieves token data",
                 "responses": {
                     "200": {
@@ -129,6 +127,18 @@
                 }
             },
             "head": {
+                "tags": [
+                    "token"
+                ],
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "type": "string",
+                        "description": "The token to query",
+                        "required": true
+                    }
+                ],
                 "summary": "Checks if a token is valid",
                 "responses": {
                     "204": {
@@ -149,6 +159,18 @@
                 }
             },
             "delete": {
+                "tags": [
+                    "token"
+                ],
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "type": "string",
+                        "description": "The token to query",
+                        "required": true
+                    }
+                ],
                 "summary": "Revoke a token",
                 "responses": {
                     "200": {
@@ -165,6 +187,9 @@
         },
         "/backends": {
             "get": {
+                "tags": [
+                    "backends"
+                ],
                 "description": "Retrieves the list of activated backends",
                 "responses": {
                     "200": {
