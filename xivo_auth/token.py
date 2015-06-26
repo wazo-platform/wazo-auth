@@ -57,9 +57,10 @@ class _RabbitMQConnectionException(ManagerException):
 
 class Token(object):
 
-    def __init__(self, token, uuid, now_, later_):
+    def __init__(self, token, auth_id, xivo_user_uuid, now_, later_):
         self.token = token
-        self.uuid = uuid
+        self.auth_id = auth_id
+        self.xivo_user_uuid = xivo_user_uuid
         self.issued_at = now_
         self.expires_at = later_
 
@@ -71,7 +72,8 @@ class Token(object):
 
     @classmethod
     def from_dict(cls, d):
-        return Token(d['token'], d['uuid'], d['issued_at'], d['expires_at'])
+        return Token(d['token'], d['auth_id'], d['xivo_user_uuid'],
+                     d['issued_at'], d['expires_at'])
 
 
 class Manager(object):
@@ -84,15 +86,15 @@ class Manager(object):
         self._consul = consul
         self._celery = celery
 
-    def new_token(self, uuid, expiration=None):
+    def new_token(self, auth_id, xivo_user_uuid, expiration=None):
         from xivo_auth import tasks
-        rules = self._acl_generator.create(uuid)
+        rules = self._acl_generator.create(auth_id)
         try:
             consul_token = self._consul.acl.create(rules=rules)
         except ConnectionError:
             raise _ConsulConnectionException()
         expiration = expiration or self._default_expiration
-        token = Token(consul_token, uuid, now(), later(expiration))
+        token = Token(consul_token, auth_id, xivo_user_uuid, now(), later(expiration))
         task_id = self._get_token_hash(token)
         self._push_token_data(token)
         try:
@@ -149,7 +151,7 @@ class Manager(object):
 
 class _ACLGenerator(object):
 
-    def create(self, uuid):
+    def create(self, auth_id):
         rules = {'key': {'': {'policy': 'deny'},
-                         'xivo/private/{uuid}'.format(uuid=uuid): {'policy': 'write'}}}
+                         'xivo/private/{auth_id}'.format(auth_id=auth_id): {'policy': 'write'}}}
         return json.dumps(rules)

@@ -47,7 +47,7 @@ class TestValuesToDict(unittest.TestCase):
                    u'ModifyIndex': 10,
                    u'Value': 'a-mocked-uuid',
                    u'Flags': 0,
-                   u'Key': u'xivo/xivo-auth/tokens/a01c036d-54e5-9095-e4ab-5fd1edc232f1/uuid',
+                   u'Key': u'xivo/xivo-auth/tokens/a01c036d-54e5-9095-e4ab-5fd1edc232f1/auth_id',
                    u'CreateIndex': 10}]
 
         result = values_to_dict(values)
@@ -59,6 +59,6 @@ class TestValuesToDict(unittest.TestCase):
                             'expires_at': '2015-05-26T17:17:36.149121',
                             'issued_at': '2015-05-26T17:17:26.149083',
                             'token': 'a01c036d-54e5-9095-e4ab-5fd1edc232f1',
-                            'uuid': 'a-mocked-uuid'}}}}}
+                            'auth_id': 'a-mocked-uuid'}}}}}
 
         assert_that(result, equal_to(expected))

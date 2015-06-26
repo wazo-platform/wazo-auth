@@ -16,6 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 from .xivo_user import XiVOUser  # noqa
-from .mock import BackendMock  # noqa
+from .mock import BackendMock, BackendMockWithUUID  # noqa
 from .broken import BrokenInitBackend  # noqa
 from .broken import BrokenVerifyPasswordBackend  # noqa

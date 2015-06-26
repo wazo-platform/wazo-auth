@@ -36,6 +36,7 @@ setup(
         'xivo_auth.backends': [
             'xivo_user = xivo_auth.plugins.backends:XiVOUser',
             'mock = xivo_auth.plugins.backends:BackendMock',
+            'mock_with_uuid = xivo_auth.plugins.backends:BackendMockWithUUID',
             'broken_init = xivo_auth.plugins.backends:BrokenInitBackend',
             'broken_verify_password = xivo_auth.plugins.backends:BrokenVerifyPasswordBackend',
         ],

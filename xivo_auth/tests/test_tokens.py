@@ -37,21 +37,22 @@ class TestManager(unittest.TestCase):
     def test_new_token(self, mocked_later):
         self.manager._push_token_data = Mock()
 
-        token = self.manager.new_token(sentinel.uuid)
+        token = self.manager.new_token(sentinel.auth_id, sentinel.uuid)
 
-        assert_that(token.uuid, equal_to(sentinel.uuid))
+        assert_that(token.auth_id, equal_to(sentinel.auth_id))
+        assert_that(token.xivo_user_uuid, equal_to(sentinel.uuid))
         assert_that(token.issued_at, equal_to(sentinel.now))
         assert_that(token.expires_at, equal_to(mocked_later.return_value))
         assert_that(token.token, equal_to(self.consul.acl.create.return_value))
         mocked_later.assert_called_once_with(sentinel.default_expiration_delay)
-        self.acl_generator.create.assert_called_once_with(sentinel.uuid)
+        self.acl_generator.create.assert_called_once_with(sentinel.auth_id)
         self.manager._push_token_data.assert_called_once_with(token)
 
     @patch('xivo_auth.token.later')
     def test_now_token_with_expiration(self, mocked_later):
         self.manager._push_token_data = Mock()
 
-        token = self.manager.new_token(sentinel.uuid, expiration=sentinel.expiration_delay)
+        token = self.manager.new_token(sentinel.auth_id, sentinel.uuid, expiration=sentinel.expiration_delay)
 
         assert_that(token.expires_at, equal_to(mocked_later.return_value))
         mocked_later.assert_called_once_with(sentinel.expiration_delay)
@@ -70,12 +71,13 @@ class TestManager(unittest.TestCase):
 class TestToken(unittest.TestCase):
 
     def test_to_dict(self):
-        t = token.Token('the-token', 'the-uuid', 'now', 'later')
+        t = token.Token('the-token', 'the-auth-id', None, 'now', 'later')
 
         expected = {
             'token': 'the-token',
-            'uuid': 'the-uuid',
+            'auth_id': 'the-auth-id',
             'issued_at': 'now',
             'expires_at': 'later',
+            'xivo_user_uuid': None,
         }
         assert_that(t.to_dict(), equal_to(expected))

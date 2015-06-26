@@ -23,12 +23,16 @@ class BaseAuthenticationBackend(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, config):
-        pass
+        """Initialize this backend instance from the given configuration"""
 
     @abc.abstractmethod
-    def get_uuid(self, identifier):
-        """Returns the uuid of the given user's identifier"""
+    def get_ids(self, login):
+        """Find the identifiers for a given login.
+
+        Returns a tuple containing the unique identifier for this backend and
+        the xivo user uuid for the the given login.
+        """
 
     @abc.abstractmethod
-    def verify_password(self, identifier, passwd):
-        """Returns True or False for the given user's identifier/password combination"""
+    def verify_password(self, login, passwd):
+        """Checks if a login/password combination is correct, returns True or False."""
