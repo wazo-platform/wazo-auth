@@ -131,7 +131,6 @@ class AssetRunner(object):
         return '{asset}_{service}_1'.format(asset=contracted_asset_name, service=service)
 
     def _start(self, asset):
-        print 'Starting {}'.format(asset)
         self._running_asset = asset
         asset_path = os.path.join(os.path.dirname(__file__), '..', 'assets', asset)
         self.cur_dir = os.getcwd()
@@ -144,7 +143,6 @@ class AssetRunner(object):
         if not asset or asset != self._running_asset:
             return
 
-        print 'Stopping {}'.format(asset)
         self._run_cmd('{} kill'.format(self._launcher))
         os.chdir(self.cur_dir)
         time.sleep(1)
