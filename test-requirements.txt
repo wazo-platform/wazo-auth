@@ -2,3 +2,4 @@ nose
 mock
 pyhamcrest
 docker-compose
+requests[security]
