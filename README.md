@@ -56,5 +56,5 @@ nosetests
 If you are using docker-machine you can change your ip address with the variable XIVO_AUTH_TEST_HOST.
 
 ```sh
-export XIVO_AUTH_TEST_HOST=$(docker-machine ip)
+export XIVO_AUTH_TEST_HOST=$(docker-machine ip <your-docker-machine>)
 ```
