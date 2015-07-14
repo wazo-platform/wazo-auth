@@ -17,6 +17,8 @@ auth:
      - "9497:9497"
    volumes_from:
      - data
+   volumes:  # delete-on-docker-machine
+     - "../../..:/usr/src/xivo-auth"  # delete-on-docker-machine
    links:
      - "rabbitmq"
      - "consul"

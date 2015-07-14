@@ -1,0 +1,4 @@
+FROM xivo/xivo-auth
+
+ADD . /usr/src/xivo-auth
+RUN python setup.py develop
