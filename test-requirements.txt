@@ -1,5 +1,3 @@
-nose
 mock
+nose
 pyhamcrest
-docker-compose
-requests[security]<2.7  # docker-compose refuses requests>=2.7

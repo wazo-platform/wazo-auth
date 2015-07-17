@@ -43,13 +43,14 @@ integration_tests directory.
 Before starting build the xivo/xivo-auth image
 
 ```sh
+cd integration_tests
 make test-setup
+pip install -r test-requirements.txt
 ```
 
 To run the tests from the integration_tests directory
 
 ```sh
-make test-image
 nosetests
 ```
 
