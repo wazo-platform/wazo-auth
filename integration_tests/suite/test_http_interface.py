@@ -28,6 +28,7 @@ from datetime import datetime
 from hamcrest import assert_that
 from hamcrest import contains_inanyorder
 from hamcrest import contains_string
+from hamcrest import empty
 from hamcrest import equal_to
 from hamcrest import has_key
 from hamcrest import has_length
@@ -353,6 +354,22 @@ class TestCoreMockBackend(_BaseTestCase):
         response = requests.head('{}/{}'.format(self.url, token), verify=False)
 
         assert_that(response.status_code, equal_to(404))
+
+    def test_that_expired_tokens_are_removed(self):
+        from consul import Consul
+        consul = Consul(token='the_one_ring', host='localhost', port=8500)
+
+        token = self._post_token('foo', 'bar', expiration=1).json()['data']['token']
+        key = 'xivo/xivo-auth/tokens/{}'.format(token)
+        _, values = consul.kv.get(key, recurse=True)
+
+        assert_that(values, not empty())
+
+        time.sleep(2)
+
+        _, values = consul.kv.get(key, recurse=True)
+
+        assert_that(values, equal_to(None))
 
 
 class TestNoConsul(_BaseTestCase):

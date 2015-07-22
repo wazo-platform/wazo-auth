@@ -31,6 +31,8 @@ consul:
   image: progrium/consul
   expose:
     - "8500"
+  ports:
+    - "8500:8500"
   volumes_from:
     - data
   command: "-client 0.0.0.0 -config-dir /data/mock_backend/etc/consul/"
