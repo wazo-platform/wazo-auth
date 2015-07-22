@@ -26,6 +26,7 @@ from flask import Flask
 from flask_restful import Api
 from flask.ext.cors import CORS
 from stevedore.dispatch import NameDispatchExtensionManager
+from threading import Thread
 
 from xivo_auth import http, token, extensions
 
@@ -66,6 +67,7 @@ class Controller(object):
         self._check_file_readable(self._ssl_key_file)
         self._check_file_readable(self._ssl_cert_file)
         ssl_adapter = BuiltinSSLAdapter(self._ssl_cert_file, self._ssl_key_file)
+        self._start_celery_worker()
         wsgi_app = wsgiserver.WSGIPathInfoDispatcher({'/': self._flask_app})
         server = wsgiserver.CherryPyWSGIServer(bind_addr=self._bind_addr, wsgi_app=wsgi_app)
         server.ssl_adapter = ssl_adapter
@@ -77,6 +79,15 @@ class Controller(object):
     def _check_file_readable(self, file_path):
         with open(file_path, 'r'):
             pass
+
+    def _start_celery_worker(self):
+        args = sys.argv[:1]
+        args.append('-P')
+        args.append('threads')
+        celery_thread = Thread(target=self._celery.worker_main,
+                               args=(args,))
+        celery_thread.daemon = True
+        celery_thread.start()
 
     def _load_backends(self):
         return _PluginLoader(self._config).load()

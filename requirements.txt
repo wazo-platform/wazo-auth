@@ -11,3 +11,5 @@ psycopg2==2.4.5
 git+https://github.com/xivo-pbx/xivo-dao.git
 git+https://github.com/xivo-pbx/xivo-lib-python.git
 cherrypy==3.2.2
+threadpool==1.2.7
+requests==2.0.0
