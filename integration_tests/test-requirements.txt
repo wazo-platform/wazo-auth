@@ -1,3 +1,4 @@
 docker-compose
-pyhamcrest
 nose
+pyhamcrest
+python-consul
