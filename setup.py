@@ -1,14 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
-
 from setuptools import find_packages
 from setuptools import setup
-
-on_travis = os.getenv('TRAVIS_RUN', '0') == '1'
-data_files = [] if on_travis else [('/etc/xivo-auth', ['etc/xivo-auth/config.yml'])]
-
 
 setup(
     name='xivo_auth',
@@ -30,7 +24,6 @@ setup(
     },
 
     scripts=['bin/xivo-auth'],
-    data_files=data_files,
 
     entry_points={
         'xivo_auth.backends': [

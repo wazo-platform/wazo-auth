@@ -5,14 +5,18 @@ RUN apt-get -yq update \
    && apt-get -yqq dist-upgrade \
    && apt-get -yq autoremove
 
+# Install
 ADD . /usr/src/xivo-auth
 WORKDIR /usr/src/xivo-auth
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 RUN python setup.py install
-RUN mkdir /etc/xivo-auth/conf.d
-RUN mkdir -p /var/run/xivo-auth
-RUN chown -R www-data:www-data /var/run/xivo-auth
+
+#Configure environment
+RUN touch /var/log/xivo-auth.log
+RUN mkdir -p /etc/xivo-auth /etc/xivo-auth/conf.d
+RUN cp /usr/src/xivo-auth/etc/xivo-auth/*.yml /etc/xivo-auth/
+RUN install -d -o www-data -g www-data /var/run/xivo-auth/
 
 EXPOSE 9497
 
