@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import time
+import logging
 
 from flask import current_app, request, make_response
 from flask_restful import Resource
@@ -25,6 +26,7 @@ from pkg_resources import resource_string
 from xivo_auth.token import ManagerException
 
 httpauth = HTTPBasicAuth()
+logger = logging.getLogger(__name__)
 
 
 def _error(code, msg):
