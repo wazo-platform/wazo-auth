@@ -116,7 +116,3 @@ def _call_backend(fn, *args, **kwargs):
     backend_names = [request.get_json()['backend']]
     results = current_app.config['backends'].map_method(backend_names, fn, *args, **kwargs)
     return results[0]
-
-
-def log_request():
-    logger.info('(%s) %s %s', request.remote_addr, request.method, request.url)

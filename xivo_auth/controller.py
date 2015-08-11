@@ -27,6 +27,7 @@ from flask_restful import Api
 from flask.ext.cors import CORS
 from stevedore.dispatch import NameDispatchExtensionManager
 from threading import Thread
+from xivo import http_helpers
 
 from xivo_auth import http, token, extensions
 
@@ -124,7 +125,8 @@ class Controller(object):
         from xivo_auth import tasks  # noqa
 
     def _configure_flask_app(self, backends, token_manager):
-        app = Flask(__name__)
+        app = Flask('xivo-auth')
+        http_helpers.add_logger(app, logger)
         api = Api(app, prefix='/0.1')
         api.add_resource(http.Token,
                          '/token',
@@ -137,7 +139,7 @@ class Controller(object):
 
         app.config['token_manager'] = token_manager
         app.config['backends'] = backends
-        app.before_request(http.log_request)
+        app.after_request(http_helpers.log_request)
 
         return app
 
