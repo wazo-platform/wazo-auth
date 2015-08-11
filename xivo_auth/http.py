@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import time
+import logging
 
 from flask import current_app, request, make_response
 from flask_restful import Resource
@@ -25,6 +26,7 @@ from pkg_resources import resource_string
 from xivo_auth.token import ManagerException
 
 httpauth = HTTPBasicAuth()
+logger = logging.getLogger(__name__)
 
 
 def _error(code, msg):
@@ -114,3 +116,7 @@ def _call_backend(fn, *args, **kwargs):
     backend_names = [request.get_json()['backend']]
     results = current_app.config['backends'].map_method(backend_names, fn, *args, **kwargs)
     return results[0]
+
+
+def log_request():
+    logger.info('(%s) %s %s', request.remote_addr, request.method, request.url)

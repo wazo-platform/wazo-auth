@@ -137,6 +137,7 @@ class Controller(object):
 
         app.config['token_manager'] = token_manager
         app.config['backends'] = backends
+        app.before_request(http.log_request)
 
         return app
 
