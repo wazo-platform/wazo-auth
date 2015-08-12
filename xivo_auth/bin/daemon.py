@@ -24,9 +24,7 @@ from xivo import xivo_logging
 from xivo_auth.config import get_config
 from xivo_auth.controller import Controller
 
-SPAMMY_LOGGERS = ['urllib3', 'Flask-Cors', 'amqp', 'kombu.common',
-                  'kombu.pidbox', 'celery.worker.strategy', 'celery.bootsteps',
-                  'celery.redirected', 'celery.worker.consumer', 'celery.pool']
+SPAMMY_LOGGERS = ['urllib3', 'Flask-Cors', 'amqp', 'kombu', 'celery']
 
 
 def main():
