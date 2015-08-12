@@ -24,10 +24,13 @@ from xivo.xivo_logging import setup_logging
 from xivo_auth.config import get_config
 from xivo_auth.controller import Controller
 
+SPAMMY_LOGGERS = ['urllib3', 'Flask-Cors', 'amqp', 'kombu.common',
+                  'kombu.pidbox', 'celery.worker.strategy', 'celery.bootsteps',
+                  'celery.redirected', 'celery.worker.consumer', 'celery.pool']
+
 
 def main():
-    spamming_loggers = ['urllib3', 'Flask-Cors', 'amqp', 'kombu.common', 'kombu.pidbox', 'celery.worker.strategy', 'celery.bootsteps', 'celery.redirected', 'celery.worker.consumer', 'celery.pool']
-    for logger_name in spamming_loggers:
+    for logger_name in SPAMMY_LOGGERS:
         logger = logging.getLogger(logger_name)
         logger.setLevel(logging.WARNING)
 
