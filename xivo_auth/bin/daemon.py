@@ -26,10 +26,10 @@ from xivo_auth.controller import Controller
 
 
 def main():
-    spamming_loggers = ['urllib3', 'Flask-Cors', 'amqp', 'kombu.common', 'kombu.pidbox', 'celery.worker.strategy', 'celery.bootsteps']
+    spamming_loggers = ['urllib3', 'Flask-Cors', 'amqp', 'kombu.common', 'kombu.pidbox', 'celery.worker.strategy', 'celery.bootsteps', 'celery.redirected', 'celery.worker.consumer', 'celery.pool']
     for logger_name in spamming_loggers:
         logger = logging.getLogger(logger_name)
-        logger.setLevel(logging.CRITICAL)
+        logger.setLevel(logging.WARNING)
 
     config = get_config(sys.argv[1:])
 
