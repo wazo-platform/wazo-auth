@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import sys
+import logging
 
 from xivo.daemonize import pidfile_context
 from xivo.user_rights import change_user
@@ -25,6 +26,11 @@ from xivo_auth.controller import Controller
 
 
 def main():
+    spamming_loggers = ['urllib3', 'Flask-Cors', 'amqp', 'kombu.common', 'kombu.pidbox', 'celery.worker.strategy', 'celery.bootsteps']
+    for logger_name in spamming_loggers:
+        logger = logging.getLogger(logger_name)
+        logger.setLevel(logging.CRITICAL)
+
     config = get_config(sys.argv[1:])
 
     setup_logging(config['log_filename'], config['foreground'], config['debug'], config['log_level'])
