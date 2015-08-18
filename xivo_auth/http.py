@@ -47,7 +47,7 @@ class Token(Resource):
 
             args['expiration'] = data['expiration']
 
-        identifier, xivo_user_uuid = _call_backend('get_ids', httpauth.username())
+        identifier, xivo_user_uuid = _call_backend('get_ids', httpauth.username(), data)
         try:
             token = current_app.config['token_manager'].new_token(identifier, xivo_user_uuid, **args)
         except ManagerException as e:

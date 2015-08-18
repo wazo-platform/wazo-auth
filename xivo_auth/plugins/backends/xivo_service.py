@@ -15,21 +15,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-import xivo_dao
-
 from xivo_auth import BaseAuthenticationBackend
 
-from xivo_dao import user_dao
 
-
-class XiVOUser(BaseAuthenticationBackend):
+class XiVOService(BaseAuthenticationBackend):
 
     def __init__(self, config):
-        xivo_dao.init_db_from_config(config)
+        self.xivo_service = config.get('services', {})
 
     def get_ids(self, username, args):
-        user_uuid = user_dao.get_uuid_by_username(username)
+        user_uuid = args.get('xivo_user_uuid', None)
         return user_uuid, user_uuid
 
     def verify_password(self, login, password):
-        return user_dao.check_username_password(login, password)
+        if self.xivo_service.get(login, None) == password:
+            return True
+        return False
