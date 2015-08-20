@@ -16,18 +16,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import sys
+import logging
 
 from xivo.daemonize import pidfile_context
 from xivo.user_rights import change_user
-from xivo.xivo_logging import setup_logging
+from xivo import xivo_logging
 from xivo_auth.config import get_config
 from xivo_auth.controller import Controller
 
+SPAMMY_LOGGERS = ['urllib3', 'Flask-Cors', 'amqp', 'kombu', 'celery']
+
 
 def main():
+    xivo_logging.silence_loggers(SPAMMY_LOGGERS, logging.WARNING)
+
     config = get_config(sys.argv[1:])
 
-    setup_logging(config['log_filename'], config['foreground'], config['debug'], config['log_level'])
+    xivo_logging.setup_logging(config['log_filename'], config['foreground'],
+                               config['debug'], config['log_level'])
     user = config.get('user')
     if user:
         change_user(user)
