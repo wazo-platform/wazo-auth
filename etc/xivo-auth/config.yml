@@ -30,8 +30,12 @@ rest_api:
         #Allow JSON preflight requests
         allow_headers: Content-Type, authorization
 
+    # SSL files
     certificate: /usr/share/xivo-certs/server.crt
     private_key: /usr/share/xivo-certs/server.key
+
+    # SSL ciphers
+    ciphers: "ALL:!aNULL:!eNULL:!LOW:!EXP:!RC4:!3DES:!SEED:+HIGH:+MEDIUM"
 
 enabled_plugins:
   - xivo_user
