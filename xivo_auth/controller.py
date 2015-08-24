@@ -19,7 +19,6 @@ import logging
 import sys
 
 from cherrypy import wsgiserver
-from cherrypy.wsgiserver.ssl_builtin import BuiltinSSLAdapter
 from celery import Celery
 from consul import Consul
 from flask import Flask
@@ -52,6 +51,7 @@ class Controller(object):
             self._bind_addr = (self._listen_addr, self._listen_port)
             self._ssl_cert_file = config['rest_api']['certificate']
             self._ssl_key_file = config['rest_api']['private_key']
+            self._ssl_ciphers = config['rest_api']['ciphers']
             logger.debug('private key: %s', config['rest_api']['private_key'])
         except KeyError as e:
             logger.error('Missing configuration to start the application: %s', e)
@@ -67,11 +67,12 @@ class Controller(object):
     def run(self):
         self._check_file_readable(self._ssl_key_file)
         self._check_file_readable(self._ssl_cert_file)
-        ssl_adapter = BuiltinSSLAdapter(self._ssl_cert_file, self._ssl_key_file)
         self._start_celery_worker()
         wsgi_app = wsgiserver.WSGIPathInfoDispatcher({'/': self._flask_app})
         server = wsgiserver.CherryPyWSGIServer(bind_addr=self._bind_addr, wsgi_app=wsgi_app)
-        server.ssl_adapter = ssl_adapter
+        server.ssl_adapter = http_helpers.ssl_adapter(self._ssl_cert_file,
+                                                      self._ssl_key_file,
+                                                      self._ssl_ciphers)
         try:
             server.start()
         except KeyboardInterrupt:
