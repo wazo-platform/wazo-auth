@@ -18,7 +18,7 @@
 import argparse
 
 from xivo.chain_map import ChainMap
-from xivo.config_helper import read_config_file_hierarchy
+from xivo.config_helper import parse_config_dir, read_config_file_hierarchy
 from xivo.xivo_logging import get_log_level_by_name
 
 
@@ -26,6 +26,7 @@ TWO_HOURS = 60 * 60 * 2
 _DEFAULT_CONFIG = {
     'user': 'www-data',
     'config_file': '/etc/xivo-auth/config.yml',
+    'service_config_dir': '/etc/xivo-auth/services.d',
     'extra_config_files': '/etc/xivo-auth/conf.d',
     'log_level': 'info',
     'log_filename': '/var/log/xivo-auth.log',
@@ -75,8 +76,25 @@ def _get_reinterpreted_raw_values(config):
     return result
 
 
+def _load_service_config_dir(config):
+    service_config_dir = config.get('service_config_dir')
+    if not service_config_dir:
+        return {}
+
+    service_configs = parse_config_dir(service_config_dir)
+    services = {}
+    for service_config in service_configs:
+        service_name = service_config.get('name')
+        if not service_name:
+            continue
+        services[service_name] = service_config
+
+    return {'services': services}
+
+
 def get_config(argv):
     cli_config = _parse_cli_args(argv)
     file_config = read_config_file_hierarchy(ChainMap(cli_config, _DEFAULT_CONFIG))
     reinterpreted_config = _get_reinterpreted_raw_values(ChainMap(cli_config, file_config, _DEFAULT_CONFIG))
-    return ChainMap(reinterpreted_config, cli_config, file_config, _DEFAULT_CONFIG)
+    service_dir_configuration = _load_service_config_dir(ChainMap(cli_config, file_config, _DEFAULT_CONFIG))
+    return ChainMap(reinterpreted_config, service_dir_configuration,  cli_config, file_config, _DEFAULT_CONFIG)

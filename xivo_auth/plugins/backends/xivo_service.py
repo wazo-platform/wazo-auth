@@ -21,13 +21,17 @@ from xivo_auth import BaseAuthenticationBackend
 class XiVOService(BaseAuthenticationBackend):
 
     def __init__(self, config):
-        self.xivo_service = config.get('services', {})
+        self.services = config.get('services', {})
 
     def get_ids(self, username, args):
         user_uuid = args.get('xivo_user_uuid', None)
         return user_uuid, user_uuid
 
     def verify_password(self, login, password):
-        if self.xivo_service.get(login, None) == password:
+        service = self.services.get(login, None)
+        if not service:
+            return False
+
+        if service.get('secret', None) == password:
             return True
         return False
