@@ -60,6 +60,9 @@
                                 },
                                 "expiration": {
                                     "type": "integer"
+                                },
+                                "backend_args": {
+                                    "type": "object"
                                 }
                             },
                             "required": [
