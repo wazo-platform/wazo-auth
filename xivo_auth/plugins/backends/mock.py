@@ -20,6 +20,9 @@ from xivo_auth import BaseAuthenticationBackend
 
 class BackendMock(BaseAuthenticationBackend):
 
+    def get_acls(self, login, args):
+        return [{'rule': 'a-mock-rule', 'policy': 'write'}]
+
     def get_ids(self, login, agrs):
         return 'a-mocked-uuid', None
 
@@ -28,6 +31,9 @@ class BackendMock(BaseAuthenticationBackend):
 
 
 class BackendMockWithUUID(BaseAuthenticationBackend):
+
+    def get_acls(self, login, args):
+        return [{'rule': 'a-mock-rule', 'policy': 'write'}]
 
     def get_ids(self, login, args):
         return 'a-mocked-auth-id', 'a-mocked-xivo-user-uuid'

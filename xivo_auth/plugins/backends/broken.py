@@ -20,6 +20,9 @@ from xivo_auth import BaseAuthenticationBackend
 
 class BrokenVerifyPasswordBackend(BaseAuthenticationBackend):
 
+    def get_acls(self, login, args):
+        pass
+
     def get_ids(self, login, args):
         pass
 
@@ -31,6 +34,9 @@ class BrokenInitBackend(BaseAuthenticationBackend):
 
     def __init__(self, config):
         return dict()['foo']['bar']
+
+    def get_acls(self, login, args):
+        pass
 
     def get_ids(self, login, args):
         pass

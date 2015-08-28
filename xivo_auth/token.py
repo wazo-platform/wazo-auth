@@ -86,9 +86,10 @@ class Manager(object):
         self._consul = consul
         self._celery = celery
 
-    def new_token(self, auth_id, xivo_user_uuid, expiration=None):
+    def new_token(self, auth_id, xivo_user_uuid, acls, expiration=None):
         from xivo_auth import tasks
-        rules = self._acl_generator.create(auth_id)
+
+        rules = self._acl_generator.create(acls, auth_id)
         try:
             consul_token = self._consul.acl.create(rules=rules)
         except ConnectionError:
@@ -151,7 +152,9 @@ class Manager(object):
 
 class _ACLGenerator(object):
 
-    def create(self, auth_id):
-        rules = {'key': {'': {'policy': 'deny'},
-                         'xivo/private/{auth_id}'.format(auth_id=auth_id): {'policy': 'write'}}}
+    def create(self, acls, auth_id):
+        rules = {'key': {'': {'policy': 'deny'}}}
+        for rule_policy in acls:
+            rules['key'][rule_policy['rule']] = {'policy': rule_policy['policy']}
+
         return json.dumps(rules)

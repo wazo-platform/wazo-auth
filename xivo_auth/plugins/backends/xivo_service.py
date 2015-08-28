@@ -23,7 +23,17 @@ class XiVOService(BaseAuthenticationBackend):
     def __init__(self, config):
         self.services = config.get('services', {})
 
-    def get_ids(self, username, args):
+    def get_acls(self, login, args):
+        service = self.services.get(login, {})
+        acls = service.get('acls', [])
+
+        identifier, _ = self.get_ids(login, args)
+        for acl in acls:
+            acl['rule'] = acl['rule'].format(identifier=identifier)
+
+        return acls
+
+    def get_ids(self, login, args):
         user_uuid = args.get('xivo_user_uuid', None)
         return user_uuid, user_uuid
 

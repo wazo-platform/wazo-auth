@@ -24,8 +24,25 @@ from xivo_auth.plugins import backends
 
 class TestXiVOServicePlugin(unittest.TestCase):
 
+    def test_that_get_acls_return_acls_from_config(self):
+        config = {'services': {'xivo_service1': {'acls': [{'rule': 'xivo/{identifier}', 'policy': 'read'}]}}}
+        backend = backends.XiVOService(config)
+
+        args = {'xivo_user_uuid': 'user_uuid'}
+        result = backend.get_acls('xivo_service1', args)
+
+        assert_that(result, equal_to([{'rule': 'xivo/user_uuid', 'policy': 'read'}]))
+
+    def test_that_get_ids_return_xivo_user_uuid(self):
+        backend = backends.XiVOService({})
+
+        args = {'xivo_user_uuid': 'user_uuid'}
+        result = backend.get_ids('xivo_service1', args)
+
+        assert_that(result, equal_to(('user_uuid', 'user_uuid')))
+
     def test_that_verify_password_return_true_when_username_pwd_match(self):
-        config = {'services': {'xivo_service1': 'xivo_service1_pwd'}}
+        config = {'services': {'xivo_service1': {'secret': 'xivo_service1_pwd'}}}
         backend = backends.XiVOService(config)
 
         result = backend.verify_password('xivo_service1', 'xivo_service1_pwd')
@@ -33,7 +50,7 @@ class TestXiVOServicePlugin(unittest.TestCase):
         assert_that(result, equal_to(True))
 
     def test_that_verify_password_return_false_when_username_pwd_not_match(self):
-        config = {'services': {'xivo_service1': 'xivo_service1_pwd'}}
+        config = {'services': {'xivo_service1': {'secret': 'xivo_service1_pwd'}}}
         backend = backends.XiVOService(config)
 
         result = backend.verify_password('wrong_xivo_service_name', 'xivo_service1_pwd')
