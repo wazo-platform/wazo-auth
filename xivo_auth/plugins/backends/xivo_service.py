@@ -15,27 +15,33 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-import xivo_dao
-
 from xivo_auth import BaseAuthenticationBackend
 
-from xivo_dao import user_dao
 
-
-class XiVOUser(BaseAuthenticationBackend):
+class XiVOService(BaseAuthenticationBackend):
 
     def __init__(self, config):
-        xivo_dao.init_db_from_config(config)
+        self.services = config.get('services', {})
 
-    def get_acls(self, username, args):
-        identifier, _ = self.get_ids(username, args)
-        rules = [{'rule': '/xivo/private/{identifier}'.format(identifier=identifier),
-                  'policy': 'write'}]
-        return rules
+    def get_acls(self, login, args):
+        service = self.services.get(login, {})
+        acls = service.get('acls', [])
 
-    def get_ids(self, username, args):
-        user_uuid = user_dao.get_uuid_by_username(username)
+        identifier, _ = self.get_ids(login, args)
+        for acl in acls:
+            acl['rule'] = acl['rule'].format(identifier=identifier)
+
+        return acls
+
+    def get_ids(self, login, args):
+        user_uuid = args.get('xivo_user_uuid', None)
         return user_uuid, user_uuid
 
     def verify_password(self, login, password):
-        return user_dao.check_username_password(login, password)
+        service = self.services.get(login, None)
+        if not service:
+            return False
+
+        if service.get('secret', None) == password:
+            return True
+        return False

@@ -26,8 +26,19 @@ class BaseAuthenticationBackend(object):
         """Initialize this backend instance from the given configuration"""
 
     @abc.abstractmethod
-    def get_ids(self, login):
-        """Find the identifiers for a given login.
+    def get_acls(self, login, args):
+        """Make ACLs from the given args or configuration file.
+
+        {'rule': '', 'policy': 'deny'} is applied by default.
+
+        Returns a list of dictionaries containing the rules and policies for this login.
+        [{'rule':'/xivo/consul/path/', 'policy': 'write'}]
+        Note: The ACLs are applied by order.
+        """
+
+    @abc.abstractmethod
+    def get_ids(self, login, args):
+        """Find the identifiers for a given login and arguments in the body request.
 
         Returns a tuple containing the unique identifier for this backend and
         the xivo user uuid for the the given login.

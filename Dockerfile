@@ -14,7 +14,7 @@ RUN python setup.py install
 
 #Configure environment
 RUN touch /var/log/xivo-auth.log
-RUN mkdir -p /etc/xivo-auth /etc/xivo-auth/conf.d
+RUN mkdir -p /etc/xivo-auth/{conf.d,services.d}
 RUN cp /usr/src/xivo-auth/etc/xivo-auth/*.yml /etc/xivo-auth/
 RUN install -d -o www-data -g www-data /var/run/xivo-auth/
 
