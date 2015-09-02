@@ -40,6 +40,7 @@ rest_api:
 
 enabled_plugins:
   - xivo_user
+  - xivo_service
 
 amqp:
   uri: amqp://guest:guest@localhost:5672/
