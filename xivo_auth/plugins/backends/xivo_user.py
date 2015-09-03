@@ -29,7 +29,7 @@ class XiVOUser(BaseAuthenticationBackend):
 
     def get_acls(self, username, args):
         identifier, _ = self.get_ids(username, args)
-        rules = [{'rule': '/xivo/private/{identifier}'.format(identifier=identifier),
+        rules = [{'rule': 'xivo/private/{identifier}'.format(identifier=identifier),
                   'policy': 'write'}]
         return rules
 
