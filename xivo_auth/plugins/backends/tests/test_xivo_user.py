@@ -55,7 +55,7 @@ class TestGetACLS(unittest.TestCase):
 
         result = backend.get_acls('foobar', args)
 
-        acls = [{'rule': '/xivo/private/foobars-uuid', 'policy': 'write'}]
+        acls = [{'rule': 'xivo/private/foobars-uuid', 'policy': 'write'}]
         assert_that(result, equal_to((acls)))
         user_dao_mock.get_uuid_by_username.assert_called_once_with('foobar')
 
