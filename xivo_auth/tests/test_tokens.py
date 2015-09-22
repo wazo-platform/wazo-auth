@@ -28,9 +28,9 @@ class TestManager(unittest.TestCase):
     def setUp(self):
         self.config = {'default_token_lifetime': sentinel.default_expiration_delay}
         self.consul = Mock()
-        self.acl_generator = Mock(token._ACLGenerator)
+        self.consul_acl_generator = Mock(token._ConsulACLGenerator)
         extensions.celery = self.celery = Mock()
-        self.manager = token.Manager(self.config, self.consul, self.celery, self.acl_generator)
+        self.manager = token.Manager(self.config, self.consul, self.celery, self.consul_acl_generator)
 
     def _new_backend_mock(self, auth_id=None, uuid=None):
         get_ids = Mock(return_value=(auth_id or sentinel.auth_id,
@@ -53,7 +53,7 @@ class TestManager(unittest.TestCase):
         assert_that(token.expires_at, equal_to(mocked_later.return_value))
         assert_that(token.token, equal_to(self.consul.acl.create.return_value))
         mocked_later.assert_called_once_with(sentinel.default_expiration_delay)
-        self.acl_generator.create_from_backend.assert_called_once_with(backend, login, args)
+        self.consul_acl_generator.create_from_backend.assert_called_once_with(backend, login, args)
         self.manager._push_token_data.assert_called_once_with(token)
 
     @patch('xivo_auth.token.later')
@@ -81,7 +81,7 @@ class TestManager(unittest.TestCase):
 class TestToken(unittest.TestCase):
 
     def test_to_dict(self):
-        t = token.Token('the-token', 'the-auth-id', None, 'now', 'later')
+        t = token.Token('the-token', 'the-auth-id', None, 'now', 'later', ['acl:confd'])
 
         expected = {
             'token': 'the-token',
@@ -89,5 +89,45 @@ class TestToken(unittest.TestCase):
             'issued_at': 'now',
             'expires_at': 'later',
             'xivo_user_uuid': None,
+            'acls': {'acl:confd': 'acl:confd'},
         }
         assert_that(t.to_dict(), equal_to(expected))
+
+    def test_to_dict_with_no_acl(self):
+        t = token.Token('the-token', 'the-auth-id', None, 'now', 'later', [])
+
+        expected = {
+            'token': 'the-token',
+            'auth_id': 'the-auth-id',
+            'issued_at': 'now',
+            'expires_at': 'later',
+            'xivo_user_uuid': None,
+            'acls': None,
+        }
+        assert_that(t.to_dict(), equal_to(expected))
+
+    def test_from_dict(self):
+        d = {'token': 'the-token',
+             'auth_id': 'the-auth-id',
+             'issued_at': 'now',
+             'expires_at': 'later',
+             'xivo_user_uuid': None,
+             'acls': {'acl:confd': 'acl:confd'}}
+
+        t = token.Token.from_dict(d)
+
+        assert_that(t.token, equal_to('the-token'))
+        assert_that(t.acls, equal_to(['acl:confd']))
+
+    def test_from_dict_no_Acl(self):
+        d = {'token': 'the-token',
+             'auth_id': 'the-auth-id',
+             'issued_at': 'now',
+             'expires_at': 'later',
+             'xivo_user_uuid': None,
+             'acls': None}
+
+        t = token.Token.from_dict(d)
+
+        assert_that(t.token, equal_to('the-token'))
+        assert_that(t.acls, equal_to([]))

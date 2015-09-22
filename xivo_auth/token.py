@@ -57,31 +57,40 @@ class _RabbitMQConnectionException(ManagerException):
 
 class Token(object):
 
-    def __init__(self, token, auth_id, xivo_user_uuid, now_, later_):
+    def __init__(self, token, auth_id, xivo_user_uuid, now_, later_, acls):
         self.token = token
         self.auth_id = auth_id
         self.xivo_user_uuid = xivo_user_uuid
         self.issued_at = now_
         self.expires_at = later_
+        self.acls = acls
 
     def to_dict(self):
-        return self.__dict__
+        acls = {acl: acl for acl in self.acls}
+        return {'token': self.token,
+                'auth_id': self.auth_id,
+                'xivo_user_uuid': self.xivo_user_uuid,
+                'issued_at': self.issued_at,
+                'expires_at': self.expires_at,
+                'acls': acls or None}
 
     def is_expired(self):
         return now() > self.expires_at
 
     @classmethod
     def from_dict(cls, d):
+        acls = d.get('acls', {}) or {}
+
         return Token(d['token'], d['auth_id'], d['xivo_user_uuid'],
-                     d['issued_at'], d['expires_at'])
+                     d['issued_at'], d['expires_at'], acls.keys())
 
 
 class Manager(object):
 
     consul_token_kv = 'xivo/xivo-auth/tokens/{}'
 
-    def __init__(self, config, consul, celery, acl_generator=None):
-        self._acl_generator = acl_generator or _ACLGenerator()
+    def __init__(self, config, consul, celery, consul_acl_generator=None):
+        self._consul_acl_generator = consul_acl_generator or _ConsulACLGenerator()
         self._default_expiration = config['default_token_lifetime']
         self._consul = consul
         self._celery = celery
@@ -90,14 +99,14 @@ class Manager(object):
         from xivo_auth import tasks
 
         auth_id, xivo_user_uuid = backend.get_ids(login, args)
-        rules = self._acl_generator.create_from_backend(backend, login, args)
+        rules = self._consul_acl_generator.create_from_backend(backend, login, args)
         try:
             consul_token = self._consul.acl.create(rules=rules)
         except ConnectionError:
             raise _ConsulConnectionException()
 
         expiration = args.get('expiration', self._default_expiration)
-        token = Token(consul_token, auth_id, xivo_user_uuid, now(), later(expiration))
+        token = Token(consul_token, auth_id, xivo_user_uuid, now(), later(expiration), [])
         task_id = self._get_token_hash(token)
         self._push_token_data(token)
         try:
@@ -152,7 +161,7 @@ class Manager(object):
         return hashlib.sha256('{token}'.format(token=token)).hexdigest()
 
 
-class _ACLGenerator(object):
+class _ConsulACLGenerator(object):
 
     def create_from_backend(self, backend, login, args):
         backend_specific_acls = backend.get_consul_acls(login, args)
