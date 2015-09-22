@@ -23,7 +23,7 @@ class XiVOService(BaseAuthenticationBackend):
     def __init__(self, config):
         self.services = config.get('services', {})
 
-    def get_acls(self, login, args):
+    def get_consul_acls(self, login, args):
         service = self.services.get(login, {})
         acls = service.get('acls', [])
 

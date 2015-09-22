@@ -27,7 +27,7 @@ class XiVOUser(BaseAuthenticationBackend):
     def __init__(self, config):
         xivo_dao.init_db_from_config(config)
 
-    def get_acls(self, username, args):
+    def get_consul_acls(self, username, args):
         identifier, _ = self.get_ids(username, args)
         rules = [{'rule': 'xivo/private/{identifier}'.format(identifier=identifier),
                   'policy': 'write'}]

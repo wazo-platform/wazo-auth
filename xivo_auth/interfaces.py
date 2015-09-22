@@ -26,7 +26,7 @@ class BaseAuthenticationBackend(object):
         """Initialize this backend instance from the given configuration"""
 
     @abc.abstractmethod
-    def get_acls(self, login, args):
+    def get_consul_acls(self, login, args):
         """Make ACLs from the given args or configuration file.
 
         {'rule': '', 'policy': 'deny'} is applied by default.

@@ -50,7 +50,7 @@ class Token(Resource):
         backend_args = data.get('backend_args', {})
         login = httpauth.username()
         identifier, xivo_user_uuid = _call_backend('get_ids', login, backend_args)
-        rules = _call_backend('get_acls', login, backend_args)
+        rules = _call_backend('get_consul_acls', login, backend_args)
 
         try:
             token = current_app.config['token_manager'].new_token(identifier, xivo_user_uuid, rules, **args)
