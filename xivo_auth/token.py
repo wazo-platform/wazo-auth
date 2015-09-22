@@ -86,15 +86,17 @@ class Manager(object):
         self._consul = consul
         self._celery = celery
 
-    def new_token(self, auth_id, xivo_user_uuid, acls, expiration=None):
+    def new_token(self, backend, login, args):
         from xivo_auth import tasks
 
-        rules = self._acl_generator.create(acls, auth_id)
+        auth_id, xivo_user_uuid = backend.get_ids(login, args)
+        rules = self._acl_generator.create_from_backend(backend, login, args)
         try:
             consul_token = self._consul.acl.create(rules=rules)
         except ConnectionError:
             raise _ConsulConnectionException()
-        expiration = expiration or self._default_expiration
+
+        expiration = args.get('expiration', self._default_expiration)
         token = Token(consul_token, auth_id, xivo_user_uuid, now(), later(expiration))
         task_id = self._get_token_hash(token)
         self._push_token_data(token)
@@ -152,7 +154,11 @@ class Manager(object):
 
 class _ACLGenerator(object):
 
-    def create(self, acls, auth_id):
+    def create_from_backend(self, backend, login, args):
+        backend_specific_acls = backend.get_consul_acls(login, args)
+        return self.create(backend_specific_acls)
+
+    def create(self, acls):
         rules = {'key': {'': {'policy': 'deny'}}}
         for rule_policy in acls:
             rules['key'][rule_policy['rule']] = {'policy': rule_policy['policy']}

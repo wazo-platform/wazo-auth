@@ -20,7 +20,7 @@ import unittest
 from hamcrest import assert_that, equal_to
 from mock import Mock, patch, sentinel
 
-from xivo_auth import token, extensions
+from xivo_auth import token, extensions, BaseAuthenticationBackend
 
 
 class TestManager(unittest.TestCase):
@@ -32,12 +32,20 @@ class TestManager(unittest.TestCase):
         extensions.celery = self.celery = Mock()
         self.manager = token.Manager(self.config, self.consul, self.celery, self.acl_generator)
 
+    def _new_backend_mock(self, auth_id=None, uuid=None):
+        get_ids = Mock(return_value=(auth_id or sentinel.auth_id,
+                                     uuid or sentinel.uuid))
+        return Mock(BaseAuthenticationBackend, get_ids=get_ids)
+
     @patch('xivo_auth.token.now', Mock(return_value=sentinel.now))
     @patch('xivo_auth.token.later')
     def test_new_token(self, mocked_later):
         self.manager._push_token_data = Mock()
+        backend = self._new_backend_mock()
+        login = sentinel.login
+        args = {}
 
-        token = self.manager.new_token(sentinel.auth_id, sentinel.uuid, sentinel.rules)
+        token = self.manager.new_token(backend, login, args)
 
         assert_that(token.auth_id, equal_to(sentinel.auth_id))
         assert_that(token.xivo_user_uuid, equal_to(sentinel.uuid))
@@ -45,17 +53,16 @@ class TestManager(unittest.TestCase):
         assert_that(token.expires_at, equal_to(mocked_later.return_value))
         assert_that(token.token, equal_to(self.consul.acl.create.return_value))
         mocked_later.assert_called_once_with(sentinel.default_expiration_delay)
-        self.acl_generator.create.assert_called_once_with(sentinel.rules, sentinel.auth_id)
+        self.acl_generator.create_from_backend.assert_called_once_with(backend, login, args)
         self.manager._push_token_data.assert_called_once_with(token)
 
     @patch('xivo_auth.token.later')
     def test_now_token_with_expiration(self, mocked_later):
         self.manager._push_token_data = Mock()
+        backend = self._new_backend_mock()
+        args = {'expiration': sentinel.expiration_delay}
 
-        token = self.manager.new_token(sentinel.auth_id,
-                                       sentinel.uuid,
-                                       sentinel.rules,
-                                       expiration=sentinel.expiration_delay)
+        token = self.manager.new_token(backend, sentinel.login, args)
 
         assert_that(token.expires_at, equal_to(mocked_later.return_value))
         mocked_later.assert_called_once_with(sentinel.expiration_delay)
