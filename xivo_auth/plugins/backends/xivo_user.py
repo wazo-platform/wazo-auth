@@ -33,6 +33,9 @@ class XiVOUser(BaseAuthenticationBackend):
                   'policy': 'write'}]
         return rules
 
+    def get_acls(self, login, args):
+        return ['acl:dird']
+
     def get_ids(self, username, args):
         user_uuid = user_dao.get_uuid_by_username(username)
         return user_uuid, user_uuid

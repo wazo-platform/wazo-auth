@@ -36,6 +36,10 @@ class BaseAuthenticationBackend(object):
         Note: The ACLs are applied by order.
         """
 
+    def get_acls(self, login, args):
+        """returns a list of XiVO acls"""
+        return []
+
     @abc.abstractmethod
     def get_ids(self, login, args):
         """Find the identifiers for a given login and arguments in the body request.
