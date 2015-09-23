@@ -24,12 +24,12 @@ from xivo_auth.plugins import backends
 
 class TestXiVOServicePlugin(unittest.TestCase):
 
-    def test_that_get_acls_return_acls_from_config(self):
+    def test_that_get_consul_acls_return_acls_from_config(self):
         config = {'services': {'xivo_service1': {'acls': [{'rule': 'xivo/{identifier}', 'policy': 'read'}]}}}
         backend = backends.XiVOService(config)
 
         args = {'xivo_user_uuid': 'user_uuid'}
-        result = backend.get_acls('xivo_service1', args)
+        result = backend.get_consul_acls('xivo_service1', args)
 
         assert_that(result, equal_to([{'rule': 'xivo/user_uuid', 'policy': 'read'}]))
 

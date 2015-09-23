@@ -15,7 +15,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
+from UserDict import UserDict
 from datetime import datetime, timedelta
+
+
+class FlatDict(UserDict):
+
+    def __init__(self, original):
+        self.data = {}
+        for key, value in self.get_pairs('', original):
+            self.data[key] = value
+
+    def get_pairs(self, prefix, d):
+        for key, value in d.iteritems():
+            new_key = '{}{}'.format(prefix, key)
+            if not isinstance(value, dict):
+                yield new_key, value
+            else:
+                next_prefix = '{}/'.format(new_key)
+                for nested_key, nested_value in self.get_pairs(next_prefix, value):
+                    yield nested_key, nested_value
 
 
 def values_to_dict(values):

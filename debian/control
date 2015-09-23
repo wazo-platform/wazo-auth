@@ -20,6 +20,7 @@ Depends: ${python:Depends},
          python-cherrypy3,
          python-flask-cors,
          python-celery,
+         python-unidecode,
          python-threadpool
 Description: XIVO PBX's authentication service
  XIVO is a system based on a powerful IPBX, to bring an easy to

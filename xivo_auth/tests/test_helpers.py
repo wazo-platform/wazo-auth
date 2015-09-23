@@ -17,9 +17,25 @@
 
 import unittest
 
-from ..helpers import values_to_dict
+from ..helpers import values_to_dict, FlatDict
 
 from hamcrest import assert_that, equal_to
+
+
+class TestFlatDict(unittest.TestCase):
+
+    def test(self):
+        original = {'xivo': {'private': {'one': 1, 'two': 2},
+                             'other': {'one': 'one', 'foo': {'bar': 'foobar', 'baz': 'foobar'}}}}
+        expected = {'xivo/private/one': 1,
+                    'xivo/private/two': 2,
+                    'xivo/other/one': 'one',
+                    'xivo/other/foo/bar': 'foobar',
+                    'xivo/other/foo/baz': 'foobar'}
+
+        flat_dict = FlatDict(original)
+
+        assert_that(flat_dict, equal_to(expected))
 
 
 class TestValuesToDict(unittest.TestCase):

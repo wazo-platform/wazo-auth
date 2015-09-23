@@ -40,20 +40,19 @@ class Token(Resource):
     @httpauth.login_required
     def post(self):
         data = request.get_json()
-        args = {}
+        args = {'backend_args': data.get('backend_args', {})}
         if 'expiration' in data:
             if not data['expiration'] > 0:
                 return _error(400, 'Invalid expiration')
 
             args['expiration'] = data['expiration']
 
-        backend_args = data.get('backend_args', {})
         login = httpauth.username()
-        identifier, xivo_user_uuid = _call_backend('get_ids', login, backend_args)
-        rules = _call_backend('get_acls', login, backend_args)
+        backend_name = request.get_json()['backend']
+        backend = current_app.config['backends'][backend_name].obj
 
         try:
-            token = current_app.config['token_manager'].new_token(identifier, xivo_user_uuid, rules, **args)
+            token = current_app.config['token_manager'].new_token(backend, login, args)
         except ManagerException as e:
             return _error(e.code, str(e))
 
@@ -69,15 +68,17 @@ class Token(Resource):
         return {'data': {'message': 'success'}}
 
     def get(self, token):
+        required_acl = request.args.get('scope')
         try:
-            token = current_app.config['token_manager'].get(token)
+            token = current_app.config['token_manager'].get(token, required_acl)
             return {'data': token.to_dict()}
         except ManagerException as e:
             return _error(e.code, str(e))
 
     def head(self, token):
+        required_acl = request.args.get('scope')
         try:
-            token = current_app.config['token_manager'].get(token)
+            token = current_app.config['token_manager'].get(token, required_acl)
             return '', 204
         except ManagerException as e:
             return _error(e.code, str(e))

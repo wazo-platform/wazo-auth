@@ -13,3 +13,4 @@ git+https://github.com/xivo-pbx/xivo-lib-python.git
 cherrypy==3.2.2
 threadpool==1.2.7
 requests==2.0.0
+unidecode==0.04.9

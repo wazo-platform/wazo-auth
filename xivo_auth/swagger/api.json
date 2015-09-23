@@ -105,6 +105,13 @@
                         "type": "string",
                         "description": "The token to query",
                         "required": true
+                    },
+                    {
+                        "name": "scope",
+                        "in": "query",
+                        "type": "string",
+                        "description": "The required ACL",
+                        "required": false
                     }
                 ],
                 "summary": "Retrieves token data",
@@ -113,6 +120,12 @@
                         "description": "The token's data",
                         "schema": {
                             "$ref": "#/definitions/Token"
+                        }
+                    },
+                    "403": {
+                        "description": "This token cannot acces the required ACL",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
                         }
                     },
                     "404": {
@@ -140,12 +153,25 @@
                         "type": "string",
                         "description": "The token to query",
                         "required": true
+                    },
+                    {
+                        "name": "scope",
+                        "in": "query",
+                        "type": "string",
+                        "description": "The required ACL",
+                        "required": false
                     }
                 ],
                 "summary": "Checks if a token is valid",
                 "responses": {
                     "204": {
                         "description": "No data"
+                    },
+                    "403": {
+                        "description": "This token cannot acces the required ACL",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
                     },
                     "404": {
                         "description": "Token not found",
@@ -239,6 +265,11 @@
                         "xivo_user_uuid": {
                             "type": "string",
                             "description": "The UUID of the XiVO user matching these credentials, this field can be None"
+                        },
+                        "acls" :{
+                            "type": "array",
+                            "items": "string",
+                            "description": "The list of allowed ACLs for this token"
                         }
                     }
                 }
