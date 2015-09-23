@@ -80,7 +80,7 @@ class TestManager(unittest.TestCase):
 
 class TestToken(unittest.TestCase):
 
-    def test_to_dict(self):
+    def test_to_consul(self):
         t = token.Token('the-token', 'the-auth-id', None, 'now', 'later', ['acl:confd'])
 
         expected = {
@@ -91,9 +91,9 @@ class TestToken(unittest.TestCase):
             'xivo_user_uuid': None,
             'acls': {'acl:confd': 'acl:confd'},
         }
-        assert_that(t.to_dict(), equal_to(expected))
+        assert_that(t.to_consul(), equal_to(expected))
 
-    def test_to_dict_with_no_acl(self):
+    def test_to_consul_with_no_acl(self):
         t = token.Token('the-token', 'the-auth-id', None, 'now', 'later', [])
 
         expected = {
@@ -104,7 +104,7 @@ class TestToken(unittest.TestCase):
             'xivo_user_uuid': None,
             'acls': None,
         }
-        assert_that(t.to_dict(), equal_to(expected))
+        assert_that(t.to_consul(), equal_to(expected))
 
     def test_from_dict(self):
         d = {'token': 'the-token',
@@ -112,7 +112,7 @@ class TestToken(unittest.TestCase):
              'issued_at': 'now',
              'expires_at': 'later',
              'xivo_user_uuid': None,
-             'acls': {'acl:confd': 'acl:confd'}}
+             'acls': ['acl:confd']}
 
         t = token.Token.from_dict(d)
 
