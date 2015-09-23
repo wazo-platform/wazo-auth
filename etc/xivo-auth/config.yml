@@ -39,6 +39,7 @@ rest_api:
     ciphers: "ALL:!aNULL:!eNULL:!LOW:!EXP:!RC4:!3DES:!SEED:+HIGH:+MEDIUM"
 
 enabled_plugins:
+  - xivo_admin
   - xivo_user
   - xivo_service
 

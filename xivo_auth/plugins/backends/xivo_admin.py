@@ -15,9 +15,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-from .xivo_admin import XiVOAdmin  # noqa
-from .xivo_user import XiVOUser  # noqa
-from .xivo_service import XiVOService  # noqa
-from .mock import BackendMock, BackendMockWithUUID  # noqa
-from .broken import BrokenInitBackend  # noqa
-from .broken import BrokenVerifyPasswordBackend  # noqa
+import xivo_dao
+
+from xivo_auth import BaseAuthenticationBackend
+
+from xivo_dao import admin_dao
+
+
+class XiVOAdmin(BaseAuthenticationBackend):
+
+    def __init__(self, config):
+        xivo_dao.init_db_from_config(config)
+
+    def get_consul_acls(self, username, args):
+        return []
+
+    def get_acls(self, login, args):
+        return ['acl:confd']
+
+    def get_ids(self, username, args):
+        auth_id = str(admin_dao.get_admin_id(username))
+        user_uuid = None
+        return auth_id, user_uuid
+
+    def verify_password(self, login, password):
+        return admin_dao.check_username_password(login, password)

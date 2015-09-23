@@ -27,6 +27,7 @@ setup(
 
     entry_points={
         'xivo_auth.backends': [
+            'xivo_admin = xivo_auth.plugins.backends:XiVOAdmin',
             'xivo_user = xivo_auth.plugins.backends:XiVOUser',
             'xivo_service = xivo_auth.plugins.backends:XiVOService',
             'mock = xivo_auth.plugins.backends:BackendMock',
