@@ -105,6 +105,13 @@
                         "type": "string",
                         "description": "The token to query",
                         "required": true
+                    },
+                    {
+                        "name": "scope",
+                        "in": "path",
+                        "type": "string",
+                        "description": "The required ACL",
+                        "required": False
                     }
                 ],
                 "summary": "Retrieves token data",
@@ -113,6 +120,12 @@
                         "description": "The token's data",
                         "schema": {
                             "$ref": "#/definitions/Token"
+                        }
+                    },
+                    "403": {
+                        "description": "This token cannot acces the required ACL",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
                         }
                     },
                     "404": {
@@ -140,12 +153,25 @@
                         "type": "string",
                         "description": "The token to query",
                         "required": true
+                    },
+                    {
+                        "name": "scope",
+                        "in": "path",
+                        "type": "string",
+                        "description": "The required ACL",
+                        "required": False
                     }
                 ],
                 "summary": "Checks if a token is valid",
                 "responses": {
                     "204": {
                         "description": "No data"
+                    },
+                    "403": {
+                        "description": "This token cannot acces the required ACL",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
                     },
                     "404": {
                         "description": "Token not found",
