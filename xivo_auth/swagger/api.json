@@ -268,7 +268,9 @@
                         },
                         "acls" :{
                             "type": "array",
-                            "items": "string",
+                            "items": {
+                                "type": "string"
+                            },
                             "description": "The list of allowed ACLs for this token"
                         }
                     }
