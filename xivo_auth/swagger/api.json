@@ -265,6 +265,11 @@
                         "xivo_user_uuid": {
                             "type": "string",
                             "description": "The UUID of the XiVO user matching these credentials, this field can be None"
+                        },
+                        "acls" :{
+                            "type": "array",
+                            "items": "string",
+                            "description": "The list of allowed ACLs for this token"
                         }
                     }
                 }
