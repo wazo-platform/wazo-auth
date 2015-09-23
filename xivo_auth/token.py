@@ -20,6 +20,7 @@ import json
 import logging
 import socket
 
+from unidecode import unidecode
 from requests.exceptions import ConnectionError
 
 from xivo_auth.helpers import now, later, values_to_dict, FlatDict
@@ -43,12 +44,12 @@ class MissingACLTokenException(ManagerException):
 
     code = 403
 
-    def __init__(self, required_acls):
+    def __init__(self, required_acl):
         super(MissingACLTokenException, self).__init__()
-        self._required_acls = required_acls
+        self._required_acl = required_acl
 
     def __str__(self):
-        return 'Unauthorized for {}'.format(self._required_acls)
+        return 'Unauthorized for {}'.format(unidecode(self._required_acl))
 
 
 class _ConsulConnectionException(ManagerException):

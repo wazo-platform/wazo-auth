@@ -371,6 +371,13 @@ class TestCoreMockBackend(_BaseTestCase):
 
         assert_that(values, equal_to(None))
 
+    def test_that_invalid_unicode_acl_returns_403(self):
+        token = self._post_token('foo', 'bar').json()['data']['token']
+
+        response = requests.head('{}/{}'.format(self.url, token), verify=False, params={'scope': 'éric'})
+
+        assert_that(response.status_code, equal_to(403))
+
     def test_that_unauthorized_acls_on_HEAD_return_403(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
