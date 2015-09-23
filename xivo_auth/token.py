@@ -22,7 +22,7 @@ import socket
 
 from requests.exceptions import ConnectionError
 
-from xivo_auth.helpers import now, later, values_to_dict
+from xivo_auth.helpers import now, later, values_to_dict, FlatDict
 
 logger = logging.getLogger(__name__)
 
@@ -169,16 +169,10 @@ class Manager(object):
         return token
 
     def _push_token_data(self, token):
-        consul_token = token.token
-        key_tpl = 'xivo/xivo-auth/tokens/{token}/{key}'
+        flat_dict = FlatDict({'xivo': {'xivo-auth': {'tokens': {token.token: token.to_dict()}}}})
         try:
-            for key, value in token.to_dict().iteritems():
-                key_prefix = key_tpl.format(token=consul_token, key=key)
-                if isinstance(value, dict):
-                    for subkey, subvalue in value.iteritems():
-                        self._consul.kv.put('{}/{}'.format(key_prefix, subkey), subvalue)
-                else:
-                    self._consul.kv.put(key_prefix, value)
+            for key, value in flat_dict.iteritems():
+                self._consul.kv.put(key, value)
         except ConnectionError:
             raise _ConsulConnectionException()
 
