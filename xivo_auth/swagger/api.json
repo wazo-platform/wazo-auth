@@ -108,10 +108,10 @@
                     },
                     {
                         "name": "scope",
-                        "in": "path",
+                        "in": "query",
                         "type": "string",
                         "description": "The required ACL",
-                        "required": False
+                        "required": false
                     }
                 ],
                 "summary": "Retrieves token data",
@@ -156,10 +156,10 @@
                     },
                     {
                         "name": "scope",
-                        "in": "path",
+                        "in": "query",
                         "type": "string",
                         "description": "The required ACL",
-                        "required": False
+                        "required": false
                     }
                 ],
                 "summary": "Checks if a token is valid",
