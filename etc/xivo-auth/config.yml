@@ -40,8 +40,9 @@ rest_api:
 
 enabled_plugins:
   - xivo_admin
-  - xivo_user
   - xivo_service
+  - xivo_user
+  - xivo_ws
 
 services:
     xivo-dird-phoned:

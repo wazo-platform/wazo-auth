@@ -30,6 +30,7 @@ setup(
             'xivo_admin = xivo_auth.plugins.backends:XiVOAdmin',
             'xivo_user = xivo_auth.plugins.backends:XiVOUser',
             'xivo_service = xivo_auth.plugins.backends:XiVOService',
+            'xivo_ws = xivo_auth.plugins.backends:XiVOWS',
             'mock = xivo_auth.plugins.backends:BackendMock',
             'mock_with_uuid = xivo_auth.plugins.backends:BackendMockWithUUID',
             'broken_init = xivo_auth.plugins.backends:BrokenInitBackend',
