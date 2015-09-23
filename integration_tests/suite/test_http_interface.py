@@ -371,6 +371,34 @@ class TestCoreMockBackend(_BaseTestCase):
 
         assert_that(values, equal_to(None))
 
+    def test_that_unauthorized_acls_on_HEAD_return_403(self):
+        token = self._post_token('foo', 'bar').json()['data']['token']
+
+        response = requests.head('{}/{}'.format(self.url, token), verify=False, params={'scope': 'acl:confd'})
+
+        assert_that(response.status_code, equal_to(403))
+
+    def test_that_unauthorized_acls_on_GET_return_403(self):
+        token = self._post_token('foo', 'bar').json()['data']['token']
+
+        response = requests.get('{}/{}'.format(self.url, token), verify=False, params={'scope': 'acl:confd'})
+
+        assert_that(response.status_code, equal_to(403))
+
+    def test_that_authorized_acls_on_HEAD_return_204(self):
+        token = self._post_token('foo', 'bar').json()['data']['token']
+
+        response = requests.head('{}/{}'.format(self.url, token), verify=False, params={'scope': 'acl:foo'})
+
+        assert_that(response.status_code, equal_to(204))
+
+    def test_that_authorized_acls_on_GET_return_200(self):
+        token = self._post_token('foo', 'bar').json()['data']['token']
+
+        response = requests.get('{}/{}'.format(self.url, token), verify=False, params={'scope': 'acl:foo'})
+
+        assert_that(response.status_code, equal_to(200))
+
 
 class TestNoConsul(_BaseTestCase):
 

@@ -39,6 +39,18 @@ class UnknownTokenException(ManagerException):
         return 'No such token'
 
 
+class MissingACLTokenException(ManagerException):
+
+    code = 403
+
+    def __init__(self, required_acls):
+        super(MissingACLTokenException, self).__init__()
+        self._required_acls = required_acls
+
+    def __str__(self):
+        return 'Unauthorized for {}'.format(self._required_acls)
+
+
 class _ConsulConnectionException(ManagerException):
 
     code = 500
@@ -77,6 +89,10 @@ class Token(object):
     def is_expired(self):
         return now() > self.expires_at
 
+    def matches_required_acl(self, required_acl):
+        # TODO: add pattern matching
+        return required_acl is None or required_acl in self.acls
+
     @classmethod
     def from_dict(cls, d):
         acls = d.get('acls', {}) or {}
@@ -100,13 +116,14 @@ class Manager(object):
 
         auth_id, xivo_user_uuid = backend.get_ids(login, args)
         rules = self._consul_acl_generator.create_from_backend(backend, login, args)
+        acls = backend.get_acls(login, args)
         try:
             consul_token = self._consul.acl.create(rules=rules)
         except ConnectionError:
             raise _ConsulConnectionException()
 
         expiration = args.get('expiration', self._default_expiration)
-        token = Token(consul_token, auth_id, xivo_user_uuid, now(), later(expiration), [])
+        token = Token(consul_token, auth_id, xivo_user_uuid, now(), later(expiration), acls)
         task_id = self._get_token_hash(token)
         self._push_token_data(token)
         try:
@@ -130,7 +147,7 @@ class Manager(object):
         except ConnectionError:
             raise _ConsulConnectionException()
 
-    def get(self, consul_token):
+    def get(self, consul_token, required_acl):
         try:
             key = self.consul_token_kv.format(consul_token)
             index, values = self._consul.kv.get(key, recurse=True)
@@ -145,6 +162,10 @@ class Manager(object):
         if token.is_expired():
             raise UnknownTokenException()
 
+        if not token.matches_required_acl(required_acl):
+            logger.debug('%r not in %r', required_acl, token.acls)
+            raise MissingACLTokenException(required_acl)
+
         return token
 
     def _push_token_data(self, token):
@@ -152,8 +173,12 @@ class Manager(object):
         key_tpl = 'xivo/xivo-auth/tokens/{token}/{key}'
         try:
             for key, value in token.to_dict().iteritems():
-                complete_key = key_tpl.format(token=consul_token, key=key)
-                self._consul.kv.put(complete_key, value)
+                key_prefix = key_tpl.format(token=consul_token, key=key)
+                if isinstance(value, dict):
+                    for subkey, subvalue in value.iteritems():
+                        self._consul.kv.put('{}/{}'.format(key_prefix, subkey), subvalue)
+                else:
+                    self._consul.kv.put(key_prefix, value)
         except ConnectionError:
             raise _ConsulConnectionException()
 

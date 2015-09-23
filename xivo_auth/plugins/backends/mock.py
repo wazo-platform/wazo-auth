@@ -23,6 +23,9 @@ class BackendMock(BaseAuthenticationBackend):
     def get_consul_acls(self, login, args):
         return [{'rule': 'a-mock-rule', 'policy': 'write'}]
 
+    def get_acls(self, login, args):
+        return ['acl:foo', 'acl:bar']
+
     def get_ids(self, login, agrs):
         return 'a-mocked-uuid', None
 

@@ -68,15 +68,17 @@ class Token(Resource):
         return {'data': {'message': 'success'}}
 
     def get(self, token):
+        required_acl = request.args.get('scope')
         try:
-            token = current_app.config['token_manager'].get(token)
+            token = current_app.config['token_manager'].get(token, required_acl)
             return {'data': token.to_dict()}
         except ManagerException as e:
             return _error(e.code, str(e))
 
     def head(self, token):
+        required_acl = request.args.get('scope')
         try:
-            token = current_app.config['token_manager'].get(token)
+            token = current_app.config['token_manager'].get(token, required_acl)
             return '', 204
         except ManagerException as e:
             return _error(e.code, str(e))

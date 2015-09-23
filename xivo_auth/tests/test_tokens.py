@@ -131,3 +131,16 @@ class TestToken(unittest.TestCase):
 
         assert_that(t.token, equal_to('the-token'))
         assert_that(t.acls, equal_to([]))
+
+    def test_matches_required_acls(self):
+        t = self._new_token(acls=['acl:foobar'])
+        assert_that(t.matches_required_acl('acl:foobar'))
+        assert_that(t.matches_required_acl('acl:other'), equal_to(False))
+
+    def _new_token(self, consul_token='the-token', auth_id='the-auth-id',
+                   issued_at='now', expires_at='later',
+                   xivo_user_uuid=None, acls=None):
+        if not acls:
+            acls = []
+
+        return token.Token(consul_token, auth_id, issued_at, expires_at, xivo_user_uuid, acls)
