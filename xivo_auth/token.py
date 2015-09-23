@@ -78,7 +78,7 @@ class Token(object):
         self.expires_at = later_
         self.acls = acls
 
-    def to_dict(self):
+    def to_consul(self):
         acls = {acl: acl for acl in self.acls}
         return {'token': self.token,
                 'auth_id': self.auth_id,
@@ -86,6 +86,14 @@ class Token(object):
                 'issued_at': self.issued_at,
                 'expires_at': self.expires_at,
                 'acls': acls or None}
+
+    def to_dict(self):
+        return {'token': self.token,
+                'auth_id': self.auth_id,
+                'xivo_user_uuid': self.xivo_user_uuid,
+                'issued_at': self.issued_at,
+                'expires_at': self.expires_at,
+                'acls': self.acls}
 
     def is_expired(self):
         return now() > self.expires_at
@@ -95,11 +103,16 @@ class Token(object):
         return required_acl is None or required_acl in self.acls
 
     @classmethod
-    def from_dict(cls, d):
+    def from_consul(cls, d):
         acls = d.get('acls', {}) or {}
 
         return Token(d['token'], d['auth_id'], d['xivo_user_uuid'],
                      d['issued_at'], d['expires_at'], acls.keys())
+
+    @classmethod
+    def from_dict(cls, d):
+        return Token(d['token'], d['auth_id'], d['xivo_user_uuid'],
+                     d['issued_at'], d['expires_at'], d['acls'])
 
 
 class Manager(object):
@@ -158,19 +171,18 @@ class Manager(object):
         if not values:
             raise UnknownTokenException()
 
-        token = Token.from_dict(values_to_dict(values)['xivo']['xivo-auth']['tokens'][consul_token])
+        token = Token.from_consul(values_to_dict(values)['xivo']['xivo-auth']['tokens'][consul_token])
 
         if token.is_expired():
             raise UnknownTokenException()
 
         if not token.matches_required_acl(required_acl):
-            logger.debug('%r not in %r', required_acl, token.acls)
             raise MissingACLTokenException(required_acl)
 
         return token
 
     def _push_token_data(self, token):
-        flat_dict = FlatDict({'xivo': {'xivo-auth': {'tokens': {token.token: token.to_dict()}}}})
+        flat_dict = FlatDict({'xivo': {'xivo-auth': {'tokens': {token.token: token.to_consul()}}}})
         try:
             for key, value in flat_dict.iteritems():
                 self._consul.kv.put(key, value)

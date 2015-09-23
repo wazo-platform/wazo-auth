@@ -306,11 +306,13 @@ class TestCoreMockBackend(_BaseTestCase):
         token = content['token']
         auth_id = content['auth_id']
         xivo_user_uuid = content['xivo_user_uuid']
+        acls = content['acls']
 
         assert_that(response.status_code, equal_to(200))
         assert_that(token, has_length(36))
         assert_that(auth_id, equal_to('a-mocked-auth-id'))
         assert_that(xivo_user_uuid, equal_to('a-mocked-xivo-user-uuid'))
+        assert_that(acls, contains_inanyorder('acl:foo', 'acl:bar'))
 
     def test_that_an_unknown_type_returns_a_401(self):
         response = self._post_token('foo', 'not_bar', 'unexistant_backend')
