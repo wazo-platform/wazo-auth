@@ -28,7 +28,7 @@ class TestXiVOServicePlugin(unittest.TestCase):
         config = {'services': {'xivo_service1': {'acls': [{'rule': 'xivo/{identifier}', 'policy': 'read'}]}}}
         backend = backends.XiVOService(config)
 
-        args = {'xivo_user_uuid': 'user_uuid'}
+        args = {'backend_args': {'xivo_user_uuid': 'user_uuid'}}
         result = backend.get_consul_acls('xivo_service1', args)
 
         assert_that(result, equal_to([{'rule': 'xivo/user_uuid', 'policy': 'read'}]))
@@ -36,7 +36,7 @@ class TestXiVOServicePlugin(unittest.TestCase):
     def test_that_get_ids_return_xivo_user_uuid(self):
         backend = backends.XiVOService({})
 
-        args = {'xivo_user_uuid': 'user_uuid'}
+        args = {'backend_args': {'xivo_user_uuid': 'user_uuid'}}
         result = backend.get_ids('xivo_service1', args)
 
         assert_that(result, equal_to(('user_uuid', 'user_uuid')))
