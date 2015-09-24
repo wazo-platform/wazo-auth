@@ -37,7 +37,7 @@ class XiVOService(BaseAuthenticationBackend):
         return ['acl:dird']
 
     def get_ids(self, login, args):
-        user_uuid = args.get('xivo_user_uuid', None)
+        user_uuid = args.get('backend_args', {}).get('xivo_user_uuid', None)
         return user_uuid, user_uuid
 
     def verify_password(self, login, password):
