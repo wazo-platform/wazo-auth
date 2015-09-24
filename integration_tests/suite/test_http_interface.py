@@ -175,7 +175,7 @@ class _BaseTestCase(unittest.TestCase):
     def tearDownClass(cls):
         cls._asset_runner.stop()
 
-    def _post_token(self, username, password, backend=None, expiration=None):
+    def _post_token(self, username, password, backend=None, expiration=None, backend_args=None):
         if not backend:
             backend = 'mock'
         s = requests.Session()
@@ -184,6 +184,8 @@ class _BaseTestCase(unittest.TestCase):
         data = {'backend': backend}
         if expiration:
             data['expiration'] = expiration
+        if backend_args:
+            data['backend_args'] = backend_args
         return s.post(self.url, data=json.dumps(data), verify=False)
 
     def _assert_that_xivo_auth_is_stopping(self):
@@ -193,6 +195,22 @@ class _BaseTestCase(unittest.TestCase):
             time.sleep(0.2)
         else:
             self.fail('xivo-auth did not stop')
+
+
+class TestServiceBackend(_BaseTestCase):
+
+    asset = 'service'
+
+    def test_POST_with_a_xivo_user_uuid(self):
+        response = self._post_token('test-service', 'foobar', backend='xivo_service',
+                                    backend_args={'xivo_user_uuid': '123-abc'})
+        content = response.json()['data']
+        auth_id = content['auth_id']
+        xivo_user_uuid = content['xivo_user_uuid']
+
+        assert_that(response.status_code, equal_to(200))
+        assert_that(auth_id, equal_to('123-abc'))
+        assert_that(xivo_user_uuid, equal_to('123-abc'))
 
 
 @unittest.skip('Skipped until python-consul implement a timeout')

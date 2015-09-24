@@ -1,0 +1,38 @@
+sync:
+  image: n3llyb0y/wait
+  links:
+    - auth
+    - consul
+    - rabbitmq
+  environment:
+    PORTS: "9497 5672 8500"
+data:
+  image: xivo/xivo-auth-tests-data
+  volumes:
+    - "/data/"
+  command: "sh -c 'while true; do sleep 10; done'"
+auth:
+   image: xivo/xivo-auth-tests
+   ports:
+     - "9497:9497"
+   volumes_from:
+     - data
+   volumes:  # delete-on-docker-machine
+     - "../../..:/usr/src/xivo-auth"  # delete-on-docker-machine
+   links:
+     - "rabbitmq"
+     - "consul"
+   command: "xivo-auth -u www-data -c /data/service/etc/xivo-auth/config.yml"
+rabbitmq:
+  image: rabbitmq
+  expose:
+    - "5672"
+consul:
+  image: progrium/consul
+  expose:
+    - "8500"
+  ports:
+    - "8500:8500"
+  volumes_from:
+    - data
+  command: "-client 0.0.0.0 -config-dir /data/service/etc/consul/"
