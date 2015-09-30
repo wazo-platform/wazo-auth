@@ -1,6 +1,6 @@
 flask==0.10.1
 flask-cors==1.10.3
-flask-restful==0.2.12
+flask-restful==0.3.4
 stevedore==0.14.1
 pyyaml==3.10
 celery==3.1.18
