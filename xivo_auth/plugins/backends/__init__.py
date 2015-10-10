@@ -19,6 +19,7 @@ from .xivo_admin import XiVOAdmin  # noqa
 from .xivo_user import XiVOUser  # noqa
 from .xivo_service import XiVOService  # noqa
 from .xivo_ws import XiVOWS  # noqa
+from .ldap_user import LDAPUser  # noqa
 from .mock import BackendMock, BackendMockWithUUID  # noqa
 from .broken import BrokenInitBackend  # noqa
 from .broken import BrokenVerifyPasswordBackend  # noqa
