@@ -3,7 +3,9 @@ MAINTAINER Sylvain Boily "sboily@avencall.com"
 
 RUN apt-get -yq update \
    && apt-get -yqq dist-upgrade \
-   && apt-get -yq autoremove
+   && apt-get -yq autoremove \
+   && apt-get install libldap2-dev \
+                      libsasl2-dev
 
 # Install
 ADD . /usr/src/xivo-auth
