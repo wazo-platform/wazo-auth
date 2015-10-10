@@ -20,6 +20,8 @@ RUN mkdir -p /etc/xivo-auth/{conf.d,services.d}
 RUN cp /usr/src/xivo-auth/etc/xivo-auth/*.yml /etc/xivo-auth/
 RUN install -d -o www-data -g www-data /var/run/xivo-auth/
 
+ADD ./contribs/docker/certs /usr/share/xivo-certs
+
 EXPOSE 9497
 
 CMD xivo-auth -fd --user www-data
