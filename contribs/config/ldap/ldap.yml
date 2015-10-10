@@ -1,0 +1,7 @@
+enabled_plugins:
+  - ldap_user
+ldap:
+  uri: ldap://127.0.0.1
+  basedn: dc=users,dc=organisation,dc=com
+  prefix: uid
+  domain: organisation.com

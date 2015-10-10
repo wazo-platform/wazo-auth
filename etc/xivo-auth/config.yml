@@ -43,7 +43,6 @@ enabled_plugins:
   - xivo_service
   - xivo_user
   - xivo_ws
-  - ldap_user
 
 services:
     xivo-dird-phoned:
