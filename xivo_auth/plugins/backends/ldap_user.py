@@ -30,6 +30,7 @@ class LDAPUser(BaseAuthenticationBackend):
     def __init__(self, config):
         self.config = config['ldap']
         self.domain = self.config['domain']
+        self.bind_dn_format = self.config['bind_dn_format']
         self.ldap = XivoLDAP(self.config)
         xivo_dao.init_db_from_config(config)
 
@@ -67,9 +68,7 @@ class LDAPUser(BaseAuthenticationBackend):
         return username
 
     def _set_username_dn(self, username):
-        return '{prefix}={username},{basedn}'.format(prefix=self.config['prefix'],
-                                                     username=self._get_username(username),
-                                                     basedn=self.config['basedn'])
+        return self.bind_dn_format.format(username=self._get_username(username))
 
     def _set_username_with_domain(self, username):
         if '@' not in username:

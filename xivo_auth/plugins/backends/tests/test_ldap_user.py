@@ -32,9 +32,8 @@ class TestGetConsulACLS(unittest.TestCase):
         config = {
             'ldap': {
                 'uri': 'ldap://host:389',
-                'basedn': 'cn=User,dc=example,dc=com',
+                'bind_dn_format': 'uid={username},dc=example,dc=com',
                 'domain': 'example.com',
-                'prefix': 'uid',
             }
         }
         self.args = None
@@ -59,9 +58,8 @@ class TestGetACLS(unittest.TestCase):
         config = {
             'ldap': {
                 'uri': 'ldap://host:389',
-                'basedn': 'cn=User,dc=example,dc=com',
+                'bind_dn_format': 'uid={username},dc=example,dc=com',
                 'domain': 'example.com',
-                'prefix': 'uid',
             }
         }
         self.args = None
@@ -83,9 +81,8 @@ class TestGetIDS(unittest.TestCase):
         config = {
             'ldap': {
                 'uri': 'ldap://host:389',
-                'basedn': 'cn=User,dc=example,dc=com',
+                'bind_dn_format': 'uid={username},dc=example,dc=com',
                 'domain': 'example.com',
-                'prefix': 'uid',
             }
         }
         self.args = None
@@ -115,9 +112,8 @@ class TestVerifyPassword(unittest.TestCase):
         config = {
             'ldap': {
                 'uri': 'ldap://host:389',
-                'basedn': 'cn=User,dc=example,dc=com',
+                'bind_dn_format': 'uid={username},dc=example,dc=com',
                 'domain': 'example.com',
-                'prefix': 'uid',
             }
         }
         backend = LDAPUser(config)
@@ -127,15 +123,14 @@ class TestVerifyPassword(unittest.TestCase):
         result = backend.verify_password('foo', 'bar')
 
         assert_that(result, equal_to(True))
-        backend.ldap.perform_bind.assert_called_once_with('uid=foo,cn=User,dc=example,dc=com', 'bar')
+        backend.ldap.perform_bind.assert_called_once_with('uid=foo,dc=example,dc=com', 'bar')
 
     def test_that_verify_password_calls_return_False_when_no_email_associated(self, user_dao_mock):
         config = {
             'ldap': {
                 'uri': 'ldap://host:389',
-                'basedn': 'cn=User,dc=example,dc=com',
+                'bind_dn_format': 'uid={username},dc=example,dc=com',
                 'domain': 'example.com',
-                'prefix': 'uid',
             }
         }
         backend = LDAPUser(config)

@@ -27,17 +27,18 @@ class XivoLDAP(object):
 
     def __init__(self, config):
         self.config = config
+        self.uri = self.config['uri']
         self.ldapobj = None
 
         try:
             logger.info('LDAP config requested: %s', self.config)
-            self.ldapobj = self._create_ldap_obj(self.config)
+            self.ldapobj = self._create_ldap_obj(self.uri)
         except ldap.LDAPError, exc:
             logger.exception('__init__: ldap.LDAPError (%r, %r, %r)', self.ldapobj, self.config, exc)
             self.ldapobj = None
 
-    def _create_ldap_obj(self, config):
-        ldapobj = ldap.initialize(config['uri'], 0)
+    def _create_ldap_obj(self, uri):
+        ldapobj = ldap.initialize(uri, 0)
         ldapobj.set_option(ldap.OPT_REFERRALS, 0)
         ldapobj.set_option(ldap.OPT_NETWORK_TIMEOUT, 2)
         ldapobj.set_option(ldap.OPT_TIMEOUT, 2)
@@ -50,12 +51,12 @@ class XivoLDAP(object):
 
         try:
             self.ldapobj.simple_bind_s(username, password)
-            logger.info('LDAP : simple bind done with %s on %s', username, self.config['uri'])
+            logger.info('LDAP : simple bind done with %s on %s', username, self.uri)
         except ldap.INVALID_CREDENTIALS:
-            logger.info('LDAP : simple bind failed with %s on %s : invalid credentials!', username, self.config['uri'])
+            logger.info('LDAP : simple bind failed with %s on %s : invalid credentials!', username, self.uri)
             return False
         except ldap.SERVER_DOWN:
-            logger.warning('LDAP : SERVER not responding on %s', self.config['uri'])
+            logger.warning('LDAP : SERVER not responding on %s', self.uri)
             return False
 
         return True

@@ -29,9 +29,8 @@ class TestXivoLDAP(unittest.TestCase):
 
         config = {
             'uri': 'ldap://host:389',
-            'basedn': 'cn=User,dc=example,dc=com',
+            'bind_dn_format': 'uid={username},dc=example,dc=com',
             'domain': 'example.com',
-            'prefix': 'uid',
         }
 
         XivoLDAP(config)
@@ -45,9 +44,8 @@ class TestXivoLDAP(unittest.TestCase):
     def test_that_perform_bind(self):
         config = {
             'uri': 'ldap://host:389',
-            'basedn': 'cn=User,dc=example,dc=com',
+            'bind_dn_format': 'uid={username},dc=example,dc=com',
             'domain': 'example.com',
-            'prefix': 'uid',
         }
 
         xivo_ldap = XivoLDAP(config)
@@ -71,9 +69,8 @@ class TestXivoLDAP(unittest.TestCase):
 
         config = {
             'uri': 'ldap://host:389',
-            'basedn': 'cn=User,dc=example,dc=com',
+            'bind_dn_format': 'uid={username},dc=example,dc=com',
             'domain': 'example.com',
-            'prefix': 'uid',
         }
 
         xivo_ldap = XivoLDAP(config)
