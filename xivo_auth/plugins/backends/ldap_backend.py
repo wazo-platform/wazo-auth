@@ -48,10 +48,6 @@ class XivoLDAP(object):
             logger.warning('LDAP SERVER not responding')
             return False
 
-        # usetls = False
-        # if usetls:
-        #     self.ldapobj.set_option(ldap.OPT_X_TLS, 1)
-
         try:
             self.ldapobj.simple_bind_s(username, password)
             logger.info('LDAP : simple bind done with %s on %s', username, self.config['uri'])
