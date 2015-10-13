@@ -15,11 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
+import logging
 import xivo_dao
 
 from ldap_backend import XivoLDAP
 from xivo_auth import BaseAuthenticationBackend
 from xivo_dao import user_dao
+
+logger = logging.getLogger(__name__)
 
 
 class LDAPUser(BaseAuthenticationBackend):
@@ -40,11 +43,23 @@ class LDAPUser(BaseAuthenticationBackend):
         return ['acl:dird']
 
     def get_ids(self, username, args):
-        user_uuid = user_dao.get_uuid_by_email(self._set_username_with_domain(username))
+        user_uuid = self._get_xivo_user_uuid_by_ldap_username(username)
         return user_uuid, user_uuid
 
     def verify_password(self, username, password):
-        return self.ldap.perform_bind(self._set_username_dn(username), password)
+        if not self.ldap.perform_bind(self._set_username_dn(username), password):
+            return False
+        if self._get_xivo_user_uuid_by_ldap_username(username) is None:
+            return False
+        return True
+
+    def _get_xivo_user_uuid_by_ldap_username(self, username):
+        email = self._set_username_with_domain(username)
+        try:
+            return user_dao.get_uuid_by_email(email)
+        except LookupError:
+            logger.warning('%s does not have an email associated with a XiVO user', username)
+            return None
 
     def _get_username(self, username):
         if '@' in username:

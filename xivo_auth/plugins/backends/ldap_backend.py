@@ -58,4 +58,8 @@ class XivoLDAP(object):
         except ldap.INVALID_CREDENTIALS:
             logger.info('LDAP : simple bind failed with %s on %s : invalid credentials!', username, self.config['uri'])
             return False
+        except ldap.SERVER_DOWN:
+            logger.warning('LDAP : SERVER not responding on %s', self.config['uri'])
+            return False
+
         return True

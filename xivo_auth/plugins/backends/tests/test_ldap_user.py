@@ -107,11 +107,11 @@ class TestGetIDS(unittest.TestCase):
 
 
 @patch('xivo_auth.plugins.backends.ldap_user.xivo_dao', Mock())
-@patch('xivo_auth.plugins.backends.ldap_user.user_dao', Mock())
 @patch('xivo_auth.plugins.backends.ldap_user.XivoLDAP', Mock())
+@patch('xivo_auth.plugins.backends.ldap_user.user_dao')
 class TestVerifyPassword(unittest.TestCase):
 
-    def test_that_verify_password_calls_perform_bind(self):
+    def test_that_verify_password_calls_perform_bind(self, user_dao_mock):
         config = {
             'ldap': {
                 'uri': 'ldap://host:389',
@@ -122,8 +122,27 @@ class TestVerifyPassword(unittest.TestCase):
         }
         backend = LDAPUser(config)
         backend.ldap.perform_bind.return_value = True
+        user_dao_mock.get_uuid_by_email.return_value = True
 
         result = backend.verify_password('foo', 'bar')
 
         assert_that(result, equal_to(True))
         backend.ldap.perform_bind.assert_called_once_with('uid=foo,cn=User,dc=example,dc=com', 'bar')
+
+    def test_that_verify_password_calls_return_False_when_no_email_associated(self, user_dao_mock):
+        config = {
+            'ldap': {
+                'uri': 'ldap://host:389',
+                'basedn': 'cn=User,dc=example,dc=com',
+                'domain': 'example.com',
+                'prefix': 'uid',
+            }
+        }
+        backend = LDAPUser(config)
+        backend.ldap.perform_bind.return_value = True
+        user_dao_mock.get_uuid_by_email.return_value = True
+        user_dao_mock.get_uuid_by_email.side_effect = LookupError
+
+        result = backend.verify_password('foo', 'bar')
+
+        assert_that(result, equal_to(False))
