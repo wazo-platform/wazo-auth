@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2007-2014 Avencall
+# Copyright (C) 2015 Avencall
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,8 @@ from __future__ import absolute_import
 import ldap
 import logging
 
-logger = logging.getLogger('ldap')
+logger = logging.getLogger(__name__)
+
 
 class XivoLDAP(object):
 
@@ -43,19 +44,18 @@ class XivoLDAP(object):
         return ldapobj
 
     def perform_bind(self, username, password):
-        if not self.ldapobj:
+        if self.ldapobj is None:
             logger.warning('LDAP SERVER not responding')
-            self.ldapobj = None
-            return
+            return False
 
-        usetls = False
-        if usetls:
-            self.ldapobj.set_option(ldap.OPT_X_TLS, 1)
+        # usetls = False
+        # if usetls:
+        #     self.ldapobj.set_option(ldap.OPT_X_TLS, 1)
 
         try:
             self.ldapobj.simple_bind_s(username, password)
-            logger.info('LDAP : simple bind done on %(uri)s', self.config)
-            return True
+            logger.info('LDAP : simple bind done with %s on %s', username, self.config['uri'])
         except ldap.INVALID_CREDENTIALS:
-            logger.info('LDAP : simple bind failed on %(uri)s : invalid credentials!', self.config)
-        return False
+            logger.info('LDAP : simple bind failed with %s on %s : invalid credentials!', username, self.config['uri'])
+            return False
+        return True
