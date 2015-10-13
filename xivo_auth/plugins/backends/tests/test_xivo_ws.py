@@ -23,7 +23,6 @@ from hamcrest import assert_that, contains_inanyorder, equal_to, empty
 from xivo_auth.plugins import backends
 
 
-@patch('xivo_auth.plugins.backends.xivo_ws.xivo_dao', Mock())
 class TestVerifyPassword(unittest.TestCase):
 
     @patch('xivo_auth.plugins.backends.xivo_ws.accesswebservice_dao.check_username_password')

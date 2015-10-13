@@ -17,13 +17,12 @@
 
 import unittest
 
-from mock import patch, Mock
+from mock import patch
 from hamcrest import assert_that, equal_to
 
 from xivo_auth.plugins import backends
 
 
-@patch('xivo_auth.plugins.backends.xivo_user.xivo_dao', Mock())
 @patch('xivo_auth.plugins.backends.xivo_user.user_dao')
 class TestGetIDS(unittest.TestCase):
 
@@ -44,7 +43,6 @@ class TestGetIDS(unittest.TestCase):
         self.assertRaises(Exception, backend.get_ids, 'foobar')
 
 
-@patch('xivo_auth.plugins.backends.xivo_user.xivo_dao', Mock())
 @patch('xivo_auth.plugins.backends.xivo_user.user_dao')
 class TestGetACLS(unittest.TestCase):
 
@@ -60,7 +58,6 @@ class TestGetACLS(unittest.TestCase):
         user_dao_mock.get_uuid_by_username.assert_called_once_with('foobar')
 
 
-@patch('xivo_auth.plugins.backends.xivo_user.xivo_dao', Mock())
 @patch('xivo_auth.plugins.backends.xivo_user.user_dao')
 class TestVerifyPassword(unittest.TestCase):
 
@@ -72,14 +69,3 @@ class TestVerifyPassword(unittest.TestCase):
 
         assert_that(result, equal_to('a_return_value'))
         user_dao_mock.check_username_password.assert_called_once_with('foo', 'bar')
-
-
-class TestConstructor(unittest.TestCase):
-
-    @patch('xivo_auth.plugins.backends.xivo_user.xivo_dao')
-    def test_that_the_dao_is_initialized(self, xivo_dao_mock):
-        config = {'my': 'config'}
-
-        backends.XiVOUser(config)
-
-        xivo_dao_mock.init_db_from_config.assert_called_once_with(config)

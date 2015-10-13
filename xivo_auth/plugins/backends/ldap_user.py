@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import logging
-import xivo_dao
 
 from ldap_backend import XivoLDAP
 from xivo_auth import BaseAuthenticationBackend
@@ -32,7 +31,6 @@ class LDAPUser(BaseAuthenticationBackend):
         self.domain = self.config['domain']
         self.bind_dn_format = self.config['bind_dn_format']
         self.ldap = XivoLDAP(self.config)
-        xivo_dao.init_db_from_config(config)
 
     def get_consul_acls(self, username, args):
         identifier, _ = self.get_ids(username, args)

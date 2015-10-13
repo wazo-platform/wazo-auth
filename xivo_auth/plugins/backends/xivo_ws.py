@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import logging
-import xivo_dao
 
 from xivo_auth import BaseAuthenticationBackend
 
@@ -26,9 +25,6 @@ logger = logging.getLogger(__name__)
 
 
 class XiVOWS(BaseAuthenticationBackend):
-
-    def __init__(self, config):
-        xivo_dao.init_db_from_config(config)
 
     def get_consul_acls(self, username, args):
         return []

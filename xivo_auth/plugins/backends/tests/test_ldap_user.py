@@ -24,7 +24,6 @@ from xivo_auth.plugins.backends.ldap_user import LDAPUser
 
 
 @patch('xivo_auth.plugins.backends.ldap_user.XivoLDAP', Mock())
-@patch('xivo_auth.plugins.backends.ldap_user.xivo_dao', Mock())
 @patch('xivo_auth.plugins.backends.ldap_user.user_dao')
 class TestGetConsulACLS(unittest.TestCase):
 
@@ -50,7 +49,6 @@ class TestGetConsulACLS(unittest.TestCase):
 
 
 @patch('xivo_auth.plugins.backends.ldap_user.XivoLDAP', Mock())
-@patch('xivo_auth.plugins.backends.ldap_user.xivo_dao', Mock())
 @patch('xivo_auth.plugins.backends.ldap_user.user_dao')
 class TestGetACLS(unittest.TestCase):
 
@@ -73,7 +71,6 @@ class TestGetACLS(unittest.TestCase):
 
 
 @patch('xivo_auth.plugins.backends.ldap_user.XivoLDAP', Mock())
-@patch('xivo_auth.plugins.backends.ldap_user.xivo_dao', Mock())
 @patch('xivo_auth.plugins.backends.ldap_user.user_dao')
 class TestGetIDS(unittest.TestCase):
 
@@ -103,7 +100,6 @@ class TestGetIDS(unittest.TestCase):
         self.assertRaises(Exception, self.backend.get_ids, 'alice')
 
 
-@patch('xivo_auth.plugins.backends.ldap_user.xivo_dao', Mock())
 @patch('xivo_auth.plugins.backends.ldap_user.XivoLDAP', Mock())
 @patch('xivo_auth.plugins.backends.ldap_user.user_dao')
 class TestVerifyPassword(unittest.TestCase):

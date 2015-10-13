@@ -17,6 +17,7 @@
 
 import sys
 import logging
+import xivo_dao
 
 from xivo.daemonize import pidfile_context
 from xivo.user_rights import change_user
@@ -37,6 +38,8 @@ def main():
     user = config.get('user')
     if user:
         change_user(user)
+
+    xivo_dao.init_db_from_config(config)
 
     controller = Controller(config)
     with pidfile_context(config['pid_filename'], config['foreground']):
