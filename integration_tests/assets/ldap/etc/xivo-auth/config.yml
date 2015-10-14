@@ -1,0 +1,43 @@
+# This file should not be modified as it may get changed by the maintainer.
+# Add extra configuration files in the extra_config_files directory to override
+# the content from this file
+
+log_filename: /tmp/xivo-auth.log
+foreground: True
+debug: True
+
+rest_api:
+    listen: 0.0.0.0
+    port: 9497
+    cors:
+        enabled: False
+        allow_headers: Content-Type, authorization
+    certificate: /data/ssl/server.crt
+    private_key: /data/ssl/server.key
+
+enabled_plugins:
+  - ldap_user
+
+services:
+    xivo-dird-phoned:
+        acls:
+          -
+            rule: 'xivo/private/{identifier}/contacts/personal'
+            policy: 'read'
+
+amqp:
+  uri: amqp://guest:guest@rabbitmq:5672/
+  exchange_name: xivo
+  exchange_type: topic
+
+consul:
+  host: consul
+  port: 8500
+  token: 'the_one_ring'
+
+ldap:
+  uri: ldap://slapd
+  bind_dn_format: "uid={username},dc=xivo-auth,dc=xivo,dc=io"
+  domain: xivo-auth.com
+
+db_uri: postgresql://asterisk:proformatique@postgres/asterisk

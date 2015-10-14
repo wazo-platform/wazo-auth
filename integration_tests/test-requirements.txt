@@ -2,3 +2,4 @@ docker-compose
 nose
 pyhamcrest
 python-consul
+python-ldap
