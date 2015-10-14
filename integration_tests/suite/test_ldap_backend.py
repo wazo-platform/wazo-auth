@@ -86,7 +86,7 @@ class TestLDAP(_BaseTestCase):
             raise
 
     def test_ldap_authentication(self):
-        response = self._post_token('awonderland', 'awonderland_password', backend='ldap_user')
+        response = self._post_token('awonderland', 'awonderland_password', backend='ldap_user_voicemail')
 
         assert_that(response.status_code, equal_to(200))
 
@@ -94,6 +94,6 @@ class TestLDAP(_BaseTestCase):
         assert_that(xivo_user_uuid, equal_to('1'))
 
     def test_ldap_authentication_fail_when_wrong_password(self):
-        response = self._post_token('awonderland', 'wrong_password', backend='ldap_user')
+        response = self._post_token('awonderland', 'wrong_password', backend='ldap_user_voicemail')
 
         assert_that(response.status_code, equal_to(401))

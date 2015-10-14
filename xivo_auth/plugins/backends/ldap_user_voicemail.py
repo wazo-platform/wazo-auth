@@ -24,7 +24,7 @@ from xivo_dao import user_dao
 logger = logging.getLogger(__name__)
 
 
-class LDAPUser(BaseAuthenticationBackend):
+class LDAPUserVoicemail(BaseAuthenticationBackend):
 
     def __init__(self, config):
         self.config = config['ldap']

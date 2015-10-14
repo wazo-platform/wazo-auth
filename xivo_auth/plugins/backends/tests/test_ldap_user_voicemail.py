@@ -20,11 +20,11 @@ import unittest
 from mock import patch, Mock
 from hamcrest import assert_that, equal_to
 
-from xivo_auth.plugins.backends.ldap_user import LDAPUser
+from xivo_auth.plugins.backends.ldap_user_voicemail import LDAPUserVoicemail
 
 
-@patch('xivo_auth.plugins.backends.ldap_user.XivoLDAP', Mock())
-@patch('xivo_auth.plugins.backends.ldap_user.user_dao')
+@patch('xivo_auth.plugins.backends.ldap_user_voicemail.XivoLDAP', Mock())
+@patch('xivo_auth.plugins.backends.ldap_user_voicemail.user_dao')
 class TestGetConsulACLS(unittest.TestCase):
 
     def setUp(self):
@@ -36,7 +36,7 @@ class TestGetConsulACLS(unittest.TestCase):
             }
         }
         self.args = None
-        self.backend = LDAPUser(config)
+        self.backend = LDAPUserVoicemail(config)
 
     def test_that_get_consul_acls_calls_get_ids(self, user_dao_mock):
         user_dao_mock.get_uuid_by_email.return_value = 'alice-uuid'
@@ -48,8 +48,8 @@ class TestGetConsulACLS(unittest.TestCase):
         user_dao_mock.get_uuid_by_email.assert_called_once_with('alice@example.com')
 
 
-@patch('xivo_auth.plugins.backends.ldap_user.XivoLDAP', Mock())
-@patch('xivo_auth.plugins.backends.ldap_user.user_dao')
+@patch('xivo_auth.plugins.backends.ldap_user_voicemail.XivoLDAP', Mock())
+@patch('xivo_auth.plugins.backends.ldap_user_voicemail.user_dao')
 class TestGetACLS(unittest.TestCase):
 
     def setUp(self):
@@ -61,7 +61,7 @@ class TestGetACLS(unittest.TestCase):
             }
         }
         self.args = None
-        self.backend = LDAPUser(config)
+        self.backend = LDAPUserVoicemail(config)
 
     def test_that_get_consul_acls_calls_get_ids(self, user_dao_mock):
         result = self.backend.get_acls('alice', self.args)
@@ -70,8 +70,8 @@ class TestGetACLS(unittest.TestCase):
         assert_that(result, equal_to((acls)))
 
 
-@patch('xivo_auth.plugins.backends.ldap_user.XivoLDAP', Mock())
-@patch('xivo_auth.plugins.backends.ldap_user.user_dao')
+@patch('xivo_auth.plugins.backends.ldap_user_voicemail.XivoLDAP', Mock())
+@patch('xivo_auth.plugins.backends.ldap_user_voicemail.user_dao')
 class TestGetIDS(unittest.TestCase):
 
     def setUp(self):
@@ -83,7 +83,7 @@ class TestGetIDS(unittest.TestCase):
             }
         }
         self.args = None
-        self.backend = LDAPUser(config)
+        self.backend = LDAPUserVoicemail(config)
 
     def test_that_get_ids_calls_the_dao(self, user_dao_mock):
         user_dao_mock.get_uuid_by_email.return_value = 'alice-uuid'
@@ -100,8 +100,8 @@ class TestGetIDS(unittest.TestCase):
         self.assertRaises(Exception, self.backend.get_ids, 'alice')
 
 
-@patch('xivo_auth.plugins.backends.ldap_user.XivoLDAP', Mock())
-@patch('xivo_auth.plugins.backends.ldap_user.user_dao')
+@patch('xivo_auth.plugins.backends.ldap_user_voicemail.XivoLDAP', Mock())
+@patch('xivo_auth.plugins.backends.ldap_user_voicemail.user_dao')
 class TestVerifyPassword(unittest.TestCase):
 
     def test_that_verify_password_calls_perform_bind(self, user_dao_mock):
@@ -112,7 +112,7 @@ class TestVerifyPassword(unittest.TestCase):
                 'domain': 'example.com',
             }
         }
-        backend = LDAPUser(config)
+        backend = LDAPUserVoicemail(config)
         backend.ldap.perform_bind.return_value = True
         user_dao_mock.get_uuid_by_email.return_value = True
 
@@ -129,7 +129,7 @@ class TestVerifyPassword(unittest.TestCase):
                 'domain': 'example.com',
             }
         }
-        backend = LDAPUser(config)
+        backend = LDAPUserVoicemail(config)
         backend.ldap.perform_bind.return_value = True
         user_dao_mock.get_uuid_by_email.return_value = True
         user_dao_mock.get_uuid_by_email.side_effect = LookupError

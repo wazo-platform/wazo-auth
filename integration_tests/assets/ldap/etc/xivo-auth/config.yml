@@ -16,7 +16,7 @@ rest_api:
     private_key: /data/ssl/server.key
 
 enabled_plugins:
-  - ldap_user
+  - ldap_user_voicemail
 
 services:
     xivo-dird-phoned:
