@@ -20,6 +20,7 @@ import logging
 from xivo_auth import BaseAuthenticationBackend
 
 from xivo_dao import accesswebservice_dao
+from xivo_dao.helpers.db_utils import session_scope
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +34,11 @@ class XiVOWS(BaseAuthenticationBackend):
         return ['acl:confd']
 
     def get_ids(self, username, args):
-        auth_id = str(accesswebservice_dao.get_user_id(username))
+        with session_scope():
+            auth_id = str(accesswebservice_dao.get_user_id(username))
         user_uuid = None
         return auth_id, user_uuid
 
     def verify_password(self, login, password):
-        return accesswebservice_dao.check_username_password(login, password)
+        with session_scope():
+            return accesswebservice_dao.check_username_password(login, password)

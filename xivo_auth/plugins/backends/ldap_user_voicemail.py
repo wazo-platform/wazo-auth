@@ -20,6 +20,7 @@ import logging
 from ldap_backend import XivoLDAP
 from xivo_auth import BaseAuthenticationBackend
 from xivo_dao import user_dao
+from xivo_dao.helpers.db_utils import session_scope
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +56,8 @@ class LDAPUserVoicemail(BaseAuthenticationBackend):
     def _get_xivo_user_uuid_by_ldap_username(self, username):
         email = self._set_username_with_domain(username)
         try:
-            return user_dao.get_uuid_by_email(email)
+            with session_scope():
+                return user_dao.get_uuid_by_email(email)
         except LookupError:
             logger.warning('%s does not have an email associated with a XiVO user', username)
             return None

@@ -18,6 +18,7 @@
 from xivo_auth import BaseAuthenticationBackend
 
 from xivo_dao import admin_dao
+from xivo_dao.helpers.db_utils import session_scope
 
 
 class XiVOAdmin(BaseAuthenticationBackend):
@@ -29,9 +30,11 @@ class XiVOAdmin(BaseAuthenticationBackend):
         return ['acl:confd']
 
     def get_ids(self, username, args):
-        auth_id = str(admin_dao.get_admin_id(username))
+        with session_scope():
+            auth_id = str(admin_dao.get_admin_id(username))
         user_uuid = None
         return auth_id, user_uuid
 
     def verify_password(self, login, password):
-        return admin_dao.check_username_password(login, password)
+        with session_scope():
+            return admin_dao.check_username_password(login, password)
