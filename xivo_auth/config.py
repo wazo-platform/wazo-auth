@@ -37,6 +37,12 @@ _DEFAULT_CONFIG = {
                  'certificate': '/usr/share/xivo-certs/server.crt',
                  'private_key': '/usr/share/xivo-certs/server.key',
                  'ciphers': DEFAULT_CIPHERS},
+    'consul': {
+        'scheme': 'https',
+        'host': 'localhost',
+        'port': 8500,
+        'verify': '/usr/share/xivo-certs/server.crt',
+    },
 }
 
 
