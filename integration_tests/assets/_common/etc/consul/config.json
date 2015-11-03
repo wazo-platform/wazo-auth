@@ -4,7 +4,16 @@
     "acl_datacenter": "consul",
     "datacenter": "consul",
     "server": true,
-    "bootstrap": true,
+    "bind_addr": "127.0.0.1",
+    "client_addr": "0.0.0.0",
+    "bootstrap_expect": 1,
     "data_dir": "/usr/lib/consul",
-    "log_level": "INFO"
+    "log_level": "INFO",
+    "ports": {
+        "dns": -1,
+        "http": -1,
+        "https": 8500
+    },
+    "cert_file": "/data/_common/ssl/server.crt",
+    "key_file": "/data/_common/ssl/server.key"
 }

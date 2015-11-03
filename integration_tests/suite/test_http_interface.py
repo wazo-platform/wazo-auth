@@ -377,7 +377,7 @@ class TestCoreMockBackend(_BaseTestCase):
 
     def test_that_expired_tokens_are_removed(self):
         from consul import Consul
-        consul = Consul(token='the_one_ring', host='localhost', port=8500)
+        consul = Consul(token='the_one_ring', host='localhost', port=8500, scheme='https', verify=False)
 
         token = self._post_token('foo', 'bar', expiration=1).json()['data']['token']
         key = 'xivo/xivo-auth/tokens/{}'.format(token)

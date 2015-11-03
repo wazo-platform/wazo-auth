@@ -32,6 +32,8 @@ amqp:
   exchange_type: topic
 
 consul:
+  scheme: https
   host: consul
   port: 8500
   token: 'the_one_ring'
+  verify: /data/_common/ssl/server.crt
