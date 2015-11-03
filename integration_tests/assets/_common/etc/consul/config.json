@@ -14,6 +14,6 @@
         "http": -1,
         "https": 8500
     },
-    "cert_file": "/data/_common/ssl/server.crt",
-    "key_file": "/data/_common/ssl/server.key"
+    "cert_file": "/data/_common/ssl/consul/server.crt",
+    "key_file": "/data/_common/ssl/consul/server.key"
 }
