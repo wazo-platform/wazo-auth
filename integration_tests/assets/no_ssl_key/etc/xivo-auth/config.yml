@@ -8,8 +8,8 @@ rest_api:
   cors:
     enabled: False
     allow_headers: Content-Type, authorization
-  certificate: /data/ssl/server.crt
-  private_key: /data/ssl/no_server.key
+  certificate: /data/_common/ssl/server.crt
+  private_key: /data/_common/ssl/no_server.key
 
 enabled_plugins:
   - mock

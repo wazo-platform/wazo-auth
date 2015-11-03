@@ -475,7 +475,7 @@ class TestNoSSLCertificate(_BaseTestCase):
         self._assert_that_xivo_auth_is_stopping()
 
         log = self._asset_runner.service_logs('auth')
-        assert_that(log, contains_string("No such file or directory: '/data/ssl/no_server.crt'"))
+        assert_that(log, contains_string("No such file or directory: '/data/_common/ssl/no_server.crt'"))
 
 
 class TestNoSSLKey(_BaseTestCase):
@@ -486,4 +486,4 @@ class TestNoSSLKey(_BaseTestCase):
         self._assert_that_xivo_auth_is_stopping()
 
         log = self._asset_runner.service_logs('auth')
-        assert_that(log, contains_string("No such file or directory: '/data/ssl/no_server.key'"))
+        assert_that(log, contains_string("No such file or directory: '/data/_common/ssl/no_server.key'"))
