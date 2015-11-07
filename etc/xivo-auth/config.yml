@@ -29,7 +29,7 @@ rest_api:
         enabled: True
 
         #Allow JSON preflight requests
-        allow_headers: Content-Type, authorization
+        allow_headers: Content-Type, authorization, x-auth-token
 
     # SSL files
     certificate: /usr/share/xivo-certs/server.crt
