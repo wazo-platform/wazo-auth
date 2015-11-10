@@ -113,11 +113,6 @@ class Token(object):
         return Token(d['token'], d['auth_id'], d['xivo_user_uuid'],
                      d['issued_at'], d['expires_at'], acls.keys(), name)
 
-    @classmethod
-    def from_dict(cls, d):
-        return Token(d['token'], d['auth_id'], d['xivo_user_uuid'],
-                     d['issued_at'], d['expires_at'], d['acls'] or [])
-
 
 class Manager(object):
 

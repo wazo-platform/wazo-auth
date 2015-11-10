@@ -119,32 +119,6 @@ class TestToken(unittest.TestCase):
 
         assert_that(t.to_dict(), is_not(has_key('name')))
 
-    def test_from_dict(self):
-        d = {'token': 'the-token',
-             'auth_id': 'the-auth-id',
-             'issued_at': 'now',
-             'expires_at': 'later',
-             'xivo_user_uuid': None,
-             'acls': ['acl:confd']}
-
-        t = token.Token.from_dict(d)
-
-        assert_that(t.token, equal_to('the-token'))
-        assert_that(t.acls, equal_to(['acl:confd']))
-
-    def test_from_dict_no_acl(self):
-        d = {'token': 'the-token',
-             'auth_id': 'the-auth-id',
-             'issued_at': 'now',
-             'expires_at': 'later',
-             'xivo_user_uuid': None,
-             'acls': None}
-
-        t = token.Token.from_dict(d)
-
-        assert_that(t.token, equal_to('the-token'))
-        assert_that(t.acls, equal_to([]))
-
     def test_matches_required_acls(self):
         t = self._new_token(acls=['acl:foobar'])
         assert_that(t.matches_required_acl('acl:foobar'))
