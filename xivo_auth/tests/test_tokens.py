@@ -178,15 +178,13 @@ class TestStorage(unittest.TestCase):
 
         assert_that(t.token, equal_to('foo'))
         self.consul.acl.create.assert_called_once_with(rules=rules)
-        assert_that(self.consul.kv.put.call_args_list, contains_inanyorder(
-                        call('xivo/xivo-auth/tokens/foo/token', 'foo'),
-                        call('xivo/xivo-auth/tokens/foo/auth_id', None),
-                        call('xivo/xivo-auth/tokens/foo/xivo_user_uuid', None),
-                        call('xivo/xivo-auth/tokens/foo/issued_at', None),
-                        call('xivo/xivo-auth/tokens/foo/expires_at', None),
-                        call('xivo/xivo-auth/tokens/foo/acls', None),
-                        call('xivo/xivo-auth/tokens/foo/name', None)
-                    ))
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/foo/token', 'foo')
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/foo/auth_id', None)
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/foo/xivo_user_uuid', None)
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/foo/issued_at', None)
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/foo/expires_at', None)
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/foo/acls', None)
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/foo/name', None)
 
     def test_put_token_with_name(self):
         t = token.Token(None, None, None, None, None, [], 'foo-name')
@@ -198,11 +196,9 @@ class TestStorage(unittest.TestCase):
 
         assert_that(t.token, equal_to('foo'))
         self.consul.kv.get.assert_called_once_with('xivo/xivo-auth/token-names/foo-name')
-        assert_that(self.consul.kv.put.call_args_list, has_items(
-                        call('xivo/xivo-auth/tokens/foo/token', 'foo'),
-                        call('xivo/xivo-auth/tokens/foo/name', 'foo-name'),
-                        call('xivo/xivo-auth/token-names/foo-name', 'foo')
-                    ))
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/foo/token', 'foo')
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/foo/name', 'foo-name')
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/token-names/foo-name', 'foo')
 
     def test_put_token_with_id(self):
         t = token.Token('foo', None, None, None, None, [], None)
@@ -213,9 +209,7 @@ class TestStorage(unittest.TestCase):
 
         assert_that(t.token, equal_to('foo'))
         self.consul.acl.update.assert_called_once_with('foo', rules=rules)
-        assert_that(self.consul.kv.put.call_args_list, has_items(
-                        call('xivo/xivo-auth/tokens/foo/token', 'foo'),
-                    ))
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/foo/token', 'foo')
 
     def test_put_token_with_name_and_indexed_id(self):
         t = token.Token(None, None, None, None, None, [], 'foo-name')
@@ -226,9 +220,7 @@ class TestStorage(unittest.TestCase):
 
         assert_that(t.token, equal_to('foo'))
         self.consul.acl.update.assert_called_once_with('foo', rules=rules)
-        assert_that(self.consul.kv.put.call_args_list, has_items(
-                        call('xivo/xivo-auth/token-names/foo-name', 'foo')
-                    ))
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/token-names/foo-name', 'foo')
 
     def test_remove_token(self):
         token_id = '12345678-1234-5678-1234-567812345678'
@@ -248,7 +240,5 @@ class TestStorage(unittest.TestCase):
         self.storage.remove_token(token_id)
 
         self.consul.acl.destroy.assert_called_once_with('12345678-1234-5678-1234-567812345678')
-        assert_that(self.consul.kv.delete.call_args_list, equal_to([
-                        call('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678', recurse=True),
-                        call('xivo/xivo-auth/token-names/foo-name')
-                    ]))
+        self.consul.kv.delete.assert_any_call('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678', recurse=True)
+        self.consul.kv.delete.assert_any_call('xivo/xivo-auth/token-names/foo-name')
