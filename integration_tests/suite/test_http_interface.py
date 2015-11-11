@@ -22,6 +22,7 @@ import subprocess
 import unittest
 import time
 import os
+import uuid
 
 from contextlib import contextmanager
 from datetime import datetime
@@ -42,6 +43,10 @@ logger = logging.getLogger(__name__)
 ISO_DATETIME = '%Y-%m-%dT%H:%M:%S.%f'
 
 HOST = os.getenv('XIVO_AUTH_TEST_HOST', 'localhost')
+
+
+def _new_token_id():
+    return uuid.uuid4()
 
 
 class HTTPErrorMatcher(BaseMatcher):
@@ -309,7 +314,7 @@ class TestCoreMockBackend(_BaseTestCase):
         assert_that(response, is_(http_error(404, 'No such token')))
 
     def test_that_deleting_unexistant_token_returns_200(self):
-        response = requests.delete('{}/{}'.format(self.url, 'not-a-valid-token'), verify=False)
+        response = requests.delete('{}/{}'.format(self.url, _new_token_id()), verify=False)
 
         assert_that(response.status_code, equal_to(200))
 
@@ -359,7 +364,7 @@ class TestCoreMockBackend(_BaseTestCase):
 
         expiration = expiration_time - creation_time
 
-        assert_that(1 < expiration.seconds < 3)
+        assert_that(1 <= expiration.seconds < 3)
 
     def test_negative_expiration(self):
         response = self._post_token('foo', 'bar', expiration=-1)
@@ -439,17 +444,17 @@ class TestNoConsul(_BaseTestCase):
         assert_that(response, is_(http_error(500, 'Connection to consul failed')))
 
     def test_DELETE_with_no_consul_running(self):
-        response = requests.delete('{}/{}'.format(self.url, 'foobar'), verify=False)
+        response = requests.delete('{}/{}'.format(self.url, _new_token_id()), verify=False)
 
         assert_that(response, is_(http_error(500, 'Connection to consul failed')))
 
     def test_GET_with_no_consul_running(self):
-        response = requests.get('{}/{}'.format(self.url, 'foobar'), verify=False)
+        response = requests.get('{}/{}'.format(self.url, _new_token_id()), verify=False)
 
         assert_that(response, is_(http_error(500, 'Connection to consul failed')))
 
     def test_HEAD_with_no_consul_running(self):
-        response = requests.head('{}/{}'.format(self.url, 'foobar'), verify=False)
+        response = requests.head('{}/{}'.format(self.url, _new_token_id()), verify=False)
 
         assert_that(response.status_code, equal_to(500))
 
