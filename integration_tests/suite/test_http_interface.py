@@ -385,11 +385,13 @@ class TestCoreMockBackend(_BaseTestCase):
 
         assert_that(values, not empty())
 
-        time.sleep(2)
-
-        _, values = consul.kv.get(key, recurse=True)
-
-        assert_that(values, equal_to(None))
+        for _ in range(10):
+            _, values = consul.kv.get(key, recurse=True)
+            if values is None:
+                break
+            time.sleep(1)
+        else:
+            self.fail('Keys are not removed')
 
     def test_that_invalid_unicode_acl_returns_403(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
