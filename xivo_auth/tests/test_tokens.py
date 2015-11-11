@@ -18,7 +18,7 @@
 import unittest
 
 from hamcrest import assert_that, contains_inanyorder, equal_to, has_items, has_key, is_not, none
-from mock import Mock, call, patch, sentinel
+from mock import ANY, Mock, call, patch, sentinel
 
 from xivo_auth import token, extensions, BaseAuthenticationBackend
 from xivo_auth.helpers import later
@@ -41,30 +41,30 @@ class TestManager(unittest.TestCase):
     @patch('xivo_auth.token.now', Mock(return_value=sentinel.now))
     @patch('xivo_auth.token.later')
     def test_new_token(self, mocked_later):
-        self.manager._push_token_data = Mock()
         backend = self._new_backend_mock()
         login = sentinel.login
         args = {}
 
         token = self.manager.new_token(backend, login, args)
 
-        assert_that(token.auth_id, equal_to(sentinel.auth_id))
-        assert_that(token.xivo_user_uuid, equal_to(sentinel.uuid))
-        assert_that(token.issued_at, equal_to(sentinel.now))
-        assert_that(token.expires_at, equal_to(mocked_later.return_value))
+        token_payload = self.storage.create_token.call_args[0][0]
+        assert_that(token_payload.auth_id, equal_to(sentinel.auth_id))
+        assert_that(token_payload.xivo_user_uuid, equal_to(sentinel.uuid))
+        assert_that(token_payload.issued_at, equal_to(sentinel.now))
+        assert_that(token_payload.expires_at, equal_to(mocked_later.return_value))
         mocked_later.assert_called_once_with(sentinel.default_expiration_delay)
         self.consul_acl_generator.create_from_backend.assert_called_once_with(backend, login, args)
-        self.storage.put_token.assert_called_once_with(token, self.consul_acl_generator.create_from_backend.return_value)
+        self.storage.create_token.assert_called_once_with(ANY, self.consul_acl_generator.create_from_backend.return_value)
 
     @patch('xivo_auth.token.later')
     def test_now_token_with_expiration(self, mocked_later):
-        self.manager._push_token_data = Mock()
         backend = self._new_backend_mock()
         args = {'expiration': sentinel.expiration_delay}
 
         token = self.manager.new_token(backend, sentinel.login, args)
 
-        assert_that(token.expires_at, equal_to(mocked_later.return_value))
+        token_payload = self.storage.create_token.call_args[0][0]
+        assert_that(token_payload.expires_at, equal_to(mocked_later.return_value))
         mocked_later.assert_called_once_with(sentinel.expiration_delay)
 
     def test_remove_token(self):
@@ -79,80 +79,79 @@ class TestManager(unittest.TestCase):
 
 class TestToken(unittest.TestCase):
 
-    def test_to_consul(self):
-        t = token.Token('the-token', 'the-auth-id', None, 'now', 'later', ['acl:confd'], 'the-name')
+    def setUp(self):
+        self.id_ = 'the-token-id'
+        self.name = 'the-token-name'
+        self.auth_id = 'the-auth-id'
+        self.xivo_user_uuid = 'the-user-uuid'
+        self.issued_at = 'the-issued-at'
+        self.expires_at = 'the-expires-at'
+        self.acls = ['acl:confd']
+        self.token = token.Token(self.id_, self.name, self.auth_id, self.xivo_user_uuid,
+                                 self.issued_at, self.expires_at, self.acls)
 
+    def test_to_consul(self):
         expected = {
-            'token': 'the-token',
-            'auth_id': 'the-auth-id',
-            'issued_at': 'now',
-            'expires_at': 'later',
-            'xivo_user_uuid': None,
+            'token': self.id_,
+            'name': self.name,
+            'auth_id': self.auth_id,
+            'issued_at': self.issued_at,
+            'expires_at': self.expires_at,
+            'xivo_user_uuid': self.xivo_user_uuid,
             'acls': {'acl:confd': 'acl:confd'},
-            'name': 'the-name',
         }
-        assert_that(t.to_consul(), equal_to(expected))
+
+        assert_that(self.token.to_consul(), equal_to(expected))
 
     def test_to_consul_with_no_acl(self):
-        t = token.Token('the-token', 'the-auth-id', None, 'now', 'later', [], 'the-name')
+        self.token.acls = []
 
-        expected = {
-            'token': 'the-token',
-            'auth_id': 'the-auth-id',
-            'issued_at': 'now',
-            'expires_at': 'later',
-            'xivo_user_uuid': None,
-            'acls': None,
-            'name': 'the-name',
-        }
-        assert_that(t.to_consul(), equal_to(expected))
+        assert_that(self.token.to_consul()['acls'], none())
 
     def test_to_consul_with_no_name(self):
-        t = token.Token('the-token', 'the-auth-id', None, 'now', 'later', [])
+        self.token.name = None
 
-        assert_that(t.to_consul()['name'], none())
+        assert_that(self.token.to_consul()['name'], none())
 
     def test_to_dict_doesnt_show_name(self):
         # token name is only used internally in XiVO, and it should not be part of xivo-auth
         # HTTP API until we have a good reason to do so
-        t = token.Token('the-token', 'the-auth-id', None, 'now', 'later', [])
+        self.token.name = self.name
 
-        assert_that(t.to_dict(), is_not(has_key('name')))
+        assert_that(self.token.to_dict(), is_not(has_key('name')))
 
     def test_matches_required_acls(self):
-        t = self._new_token(acls=['acl:foobar'])
-        assert_that(t.matches_required_acl('acl:foobar'))
-        assert_that(t.matches_required_acl('acl:other'), equal_to(False))
+        self.token.acls = ['acl:foobar']
+
+        assert_that(self.token.matches_required_acl('acl:foobar'))
+        assert_that(self.token.matches_required_acl('acl:other'), equal_to(False))
 
     def test_is_expired_when_time_is_in_the_future(self):
         time_in_the_future = later(60)
-        t = self._new_token(expires_at=time_in_the_future)
+        self.token.expires_at = time_in_the_future
 
-        self.assertFalse(t.is_expired())
+        self.assertFalse(self.token.is_expired())
 
     def test_is_expired_when_time_is_in_the_past(self):
         time_in_the_past = later(-60)
-        t = self._new_token(expires_at=time_in_the_past)
+        self.token.expires_at = time_in_the_past
 
-        self.assertTrue(t.is_expired())
+        self.assertTrue(self.token.is_expired())
 
     def test_is_expired_when_no_expiration(self):
-        t = self._new_token(expires_at=None)
+        self.token.expires_at = None
 
-        self.assertFalse(t.is_expired())
-
-    def _new_token(self, consul_token='the-token', auth_id='the-auth-id',
-                   issued_at='now', expires_at='later',
-                   xivo_user_uuid=None, acls=None):
-        if not acls:
-            acls = []
-
-        return token.Token(consul_token, auth_id, xivo_user_uuid, issued_at, expires_at, acls)
+        self.assertFalse(self.token.is_expired())
 
 
 class TestStorage(unittest.TestCase):
 
     def setUp(self):
+        self.token_id = 'tok-id'
+        self.token_name = 'tok-name'
+        self.auth_id = 'the-auth-id'
+        self.issued_at = 'the-issued-at'
+        self.rules = None
         self.consul = Mock()
         self.storage = token.Storage(self.consul)
 
@@ -171,58 +170,50 @@ class TestStorage(unittest.TestCase):
         assert_that(token.token, equal_to(token_id))
         self.consul.kv.get.assert_called_once_with('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678', recurse=True)
 
-    def test_put_token(self):
-        t = token.Token(None, None, None, None, None, [], None)
-        rules = None
-        self.consul.acl.create.return_value = 'foo'
+    def test_create_token(self):
+        token_payload = token.TokenPayload(self.auth_id, issued_at=self.issued_at)
+        self.consul.acl.create.return_value = self.token_id
 
-        self.storage.put_token(t, rules)
+        t = self.storage.create_token(token_payload, self.rules)
 
-        assert_that(t.token, equal_to('foo'))
-        self.consul.acl.create.assert_called_once_with(rules=rules)
-        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/foo/token', 'foo')
-        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/foo/auth_id', None)
-        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/foo/xivo_user_uuid', None)
-        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/foo/issued_at', None)
-        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/foo/expires_at', None)
-        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/foo/acls', None)
-        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/foo/name', None)
+        assert_that(t.token, equal_to(self.token_id))
+        assert_that(t.name, none())
+        self.consul.acl.create.assert_called_once_with(rules=self.rules)
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/tok-id/token', self.token_id)
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/tok-id/auth_id', self.auth_id)
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/tok-id/xivo_user_uuid', None)
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/tok-id/issued_at', self.issued_at)
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/tok-id/expires_at', None)
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/tok-id/acls', None)
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/tok-id/name', None)
 
-    def test_put_token_with_name(self):
-        t = token.Token(None, None, None, None, None, [], 'foo-name')
-        rules = None
+    def test_upsert_named_token_as_insert(self):
+        token_payload = token.TokenPayload(self.auth_id)
         self.consul.kv.get.return_value = (42, None)
-        self.consul.acl.create.return_value = 'foo'
+        self.consul.acl.create.return_value = self.token_id
 
-        self.storage.put_token(t, rules)
+        t = self.storage.upsert_named_token(self.token_name, token_payload, self.rules)
 
-        assert_that(t.token, equal_to('foo'))
-        self.consul.kv.get.assert_called_once_with('xivo/xivo-auth/token-names/foo-name')
-        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/foo/token', 'foo')
-        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/foo/name', 'foo-name')
-        self.consul.kv.put.assert_any_call('xivo/xivo-auth/token-names/foo-name', 'foo')
+        assert_that(t.token, equal_to(self.token_id))
+        assert_that(t.name, equal_to(self.token_name))
+        self.consul.acl.create.assert_called_once_with(rules=self.rules)
+        self.consul.kv.get.assert_called_once_with('xivo/xivo-auth/token-names/tok-name')
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/tok-id/token', self.token_id)
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/tok-id/name', self.token_name)
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/token-names/tok-name', self.token_id)
 
-    def test_put_token_with_id(self):
-        t = token.Token('foo', None, None, None, None, [], None)
-        rules = None
-        self.consul.kv.get.return_value = (42, None)
+    def test_upsert_named_token_as_update(self):
+        token_payload = token.TokenPayload(self.auth_id)
+        self.consul.kv.get.return_value = (42, {'Value': self.token_id})
 
-        self.storage.put_token(t, rules)
+        t = self.storage.upsert_named_token(self.token_name, token_payload, self.rules)
 
-        assert_that(t.token, equal_to('foo'))
-        self.consul.acl.update.assert_called_once_with('foo', rules=rules)
-        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/foo/token', 'foo')
-
-    def test_put_token_with_name_and_indexed_id(self):
-        t = token.Token(None, None, None, None, None, [], 'foo-name')
-        rules = None
-        self.consul.kv.get.return_value = (42, {'Value': 'foo'})
-
-        self.storage.put_token(t, None)
-
-        assert_that(t.token, equal_to('foo'))
-        self.consul.acl.update.assert_called_once_with('foo', rules=rules)
-        self.consul.kv.put.assert_any_call('xivo/xivo-auth/token-names/foo-name', 'foo')
+        assert_that(t.token, equal_to(self.token_id))
+        assert_that(t.name, equal_to(self.token_name))
+        self.consul.acl.update.assert_called_once_with(self.token_id, rules=self.rules)
+        self.consul.kv.get.assert_called_once_with('xivo/xivo-auth/token-names/tok-name')
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/tok-id/token', self.token_id)
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/tok-id/name', self.token_name)
 
     def test_remove_token(self):
         token_id = '12345678-1234-5678-1234-567812345678'

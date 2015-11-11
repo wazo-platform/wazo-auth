@@ -71,24 +71,24 @@ class _RabbitMQConnectionException(ManagerException):
 
 class Token(object):
 
-    def __init__(self, token, auth_id, xivo_user_uuid, now_, later_, acls, name=None):
-        self.token = token
+    def __init__(self, id_, name, auth_id, xivo_user_uuid, issued_at, expires_at, acls):
+        self.token = id_
+        self.name = name
         self.auth_id = auth_id
         self.xivo_user_uuid = xivo_user_uuid
-        self.issued_at = now_
-        self.expires_at = later_
+        self.issued_at = issued_at
+        self.expires_at = expires_at
         self.acls = acls
-        self.name = name
 
     def to_consul(self):
         acls = {acl: acl for acl in self.acls}
         return {'token': self.token,
+                'name': self.name,
                 'auth_id': self.auth_id,
                 'xivo_user_uuid': self.xivo_user_uuid,
                 'issued_at': self.issued_at,
                 'expires_at': self.expires_at,
-                'acls': acls or None,
-                'name': self.name}
+                'acls': acls or None}
 
     def to_dict(self):
         return {'token': self.token,
@@ -108,10 +108,27 @@ class Token(object):
     @classmethod
     def from_consul(cls, d):
         acls = d.get('acls', {}) or {}
-        name = d.get('name', '')
+        return Token(d['token'], d.get('name'), d['auth_id'], d['xivo_user_uuid'],
+                     d['issued_at'], d['expires_at'], acls.keys())
 
-        return Token(d['token'], d['auth_id'], d['xivo_user_uuid'],
-                     d['issued_at'], d['expires_at'], acls.keys(), name)
+    @classmethod
+    def from_payload(cls, id_, name, payload):
+        return Token(id_, name, payload.auth_id, payload.xivo_user_uuid,
+                     payload.issued_at, payload.expires_at, payload.acls)
+
+
+class TokenPayload(object):
+
+    def __init__(self, auth_id, xivo_user_uuid=None, issued_at=None, expires_at=None, acls=None):
+        if not issued_at:
+            issued_at = now()
+        if not acls:
+            acls = []
+        self.auth_id = auth_id
+        self.xivo_user_uuid = xivo_user_uuid
+        self.issued_at = issued_at
+        self.expires_at = expires_at
+        self.acls = acls
 
 
 class Manager(object):
@@ -129,9 +146,10 @@ class Manager(object):
         rules = self._consul_acl_generator.create_from_backend(backend, login, args)
         acls = backend.get_acls(login, args)
         expiration = args.get('expiration', self._default_expiration)
-        token = Token(None, auth_id, xivo_user_uuid, now(), later(expiration), acls)
+        token_payload = TokenPayload(auth_id=auth_id, xivo_user_uuid=xivo_user_uuid,
+                                     expires_at=later(expiration), acls=acls)
 
-        self._storage.put_token(token, rules)
+        token = self._storage.create_token(token_payload, rules)
 
         task_id = self._get_token_hash(token)
         try:
@@ -204,30 +222,30 @@ class Storage(object):
 
         return Token.from_consul(values_to_dict(values)['xivo']['xivo-auth']['tokens'][token_id])
 
-    def put_token(self, token, rules):
+    def create_token(self, token_payload, rules):
         try:
-            if token.name:
-                indexed_token_id = self._get_token_id_by_name(token.name)
-                if indexed_token_id:
-                    if token.token and indexed_token_id != token.token:
-                        logger.warning('Ignoring provided token ID for token named "%s"', token.name)
-                    token.token = indexed_token_id
-            elif token.token:
-                token.name = self._get_token_name(token.token)
-
-            if token.token:
-                self._consul.acl.update(token.token, rules=rules)
-            else:
-                token.token = self._consul.acl.create(rules=rules)
-
-            if token.name:
-                key = self._NAME_INDEX_KEY_FORMAT.format(token.name)
-                self._consul.kv.put(key, token.token)
-
-            self._push_token_data(token)
+            token_id = self._consul.acl.create(rules=rules)
+            token = Token.from_payload(token_id, None, token_payload)
+            self._store_token(token)
         except ConnectionError as e:
             logger.error('Connection to consul failed: %s', e)
             raise _ConsulConnectionException()
+        return token
+
+    def upsert_named_token(self, token_name, token_payload, rules):
+        try:
+            token_id = self._get_token_id_by_name(token_name)
+            if token_id:
+                self._consul.acl.update(token_id, rules=rules)
+            else:
+                token_id = self._consul.acl.create(rules=rules)
+                self._consul.kv.put(self._NAME_INDEX_KEY_FORMAT.format(token_name), token_id)
+            token = Token.from_payload(token_id, token_name, token_payload)
+            self._store_token(token)
+        except ConnectionError as e:
+            logger.error('Connection to consul failed: %s', e)
+            raise _ConsulConnectionException()
+        return token
 
     def remove_token(self, token_id):
         self._check_valid_token_id(token_id)
@@ -255,7 +273,7 @@ class Storage(object):
             return None
         return value['Value']
 
-    def _push_token_data(self, token):
+    def _store_token(self, token):
         flat_dict = FlatDict({'xivo': {'xivo-auth': {'tokens': {token.token: token.to_consul()}}}})
         for key, value in flat_dict.iteritems():
             self._consul.kv.put(key, value)
