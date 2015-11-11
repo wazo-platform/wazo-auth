@@ -124,13 +124,15 @@ class TestToken(unittest.TestCase):
         assert_that(t.matches_required_acl('acl:foobar'))
         assert_that(t.matches_required_acl('acl:other'), equal_to(False))
 
-    def test_is_expired_when_not_expired(self):
-        t = self._new_token(expires_at=later(60))
+    def test_is_expired_when_time_is_in_the_future(self):
+        time_in_the_future = later(60)
+        t = self._new_token(expires_at=time_in_the_future)
 
         self.assertFalse(t.is_expired())
 
-    def test_is_expired_when_expired(self):
-        t = self._new_token(expires_at=later(-60))
+    def test_is_expired_when_time_is_in_the_past(self):
+        time_in_the_past = later(-60)
+        t = self._new_token(expires_at=time_in_the_past)
 
         self.assertTrue(t.is_expired())
 
