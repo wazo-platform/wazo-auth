@@ -60,7 +60,8 @@ class Controller(object):
         backends = self._load_backends()
         self._celery = self._configure_celery()
         consul_client = Consul(**self._consul_config)
-        token_manager = token.Manager(config, consul_client, self._celery)
+        token_storage = token.Storage(consul_client)
+        token_manager = token.Manager(config, token_storage, self._celery)
         self._flask_app = self._configure_flask_app(backends, token_manager)
         self._override_celery_task()
 

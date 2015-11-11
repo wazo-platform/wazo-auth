@@ -21,6 +21,7 @@ import logging
 import socket
 
 from unidecode import unidecode
+from uuid import UUID
 from requests.exceptions import ConnectionError
 
 from xivo_auth.helpers import now, later, values_to_dict, FlatDict
@@ -70,17 +71,19 @@ class _RabbitMQConnectionException(ManagerException):
 
 class Token(object):
 
-    def __init__(self, token, auth_id, xivo_user_uuid, now_, later_, acls):
-        self.token = token
+    def __init__(self, id_, name, auth_id, xivo_user_uuid, issued_at, expires_at, acls):
+        self.token = id_
+        self.name = name
         self.auth_id = auth_id
         self.xivo_user_uuid = xivo_user_uuid
-        self.issued_at = now_
-        self.expires_at = later_
+        self.issued_at = issued_at
+        self.expires_at = expires_at
         self.acls = acls
 
     def to_consul(self):
         acls = {acl: acl for acl in self.acls}
         return {'token': self.token,
+                'name': self.name,
                 'auth_id': self.auth_id,
                 'xivo_user_uuid': self.xivo_user_uuid,
                 'issued_at': self.issued_at,
@@ -96,7 +99,7 @@ class Token(object):
                 'acls': self.acls}
 
     def is_expired(self):
-        return now() > self.expires_at
+        return self.expires_at and now() > self.expires_at
 
     def matches_required_acl(self, required_acl):
         # TODO: add pattern matching
@@ -105,24 +108,35 @@ class Token(object):
     @classmethod
     def from_consul(cls, d):
         acls = d.get('acls', {}) or {}
-
-        return Token(d['token'], d['auth_id'], d['xivo_user_uuid'],
+        return Token(d['token'], d.get('name'), d['auth_id'], d['xivo_user_uuid'],
                      d['issued_at'], d['expires_at'], acls.keys())
 
     @classmethod
-    def from_dict(cls, d):
-        return Token(d['token'], d['auth_id'], d['xivo_user_uuid'],
-                     d['issued_at'], d['expires_at'], d['acls'] or [])
+    def from_payload(cls, id_, name, payload):
+        return Token(id_, name, payload.auth_id, payload.xivo_user_uuid,
+                     payload.issued_at, payload.expires_at, payload.acls)
+
+
+class TokenPayload(object):
+
+    def __init__(self, auth_id, xivo_user_uuid=None, issued_at=None, expires_at=None, acls=None):
+        if not issued_at:
+            issued_at = now()
+        if not acls:
+            acls = []
+        self.auth_id = auth_id
+        self.xivo_user_uuid = xivo_user_uuid
+        self.issued_at = issued_at
+        self.expires_at = expires_at
+        self.acls = acls
 
 
 class Manager(object):
 
-    consul_token_kv = 'xivo/xivo-auth/tokens/{}'
-
-    def __init__(self, config, consul, celery, consul_acl_generator=None):
+    def __init__(self, config, storage, celery, consul_acl_generator=None):
         self._consul_acl_generator = consul_acl_generator or _ConsulACLGenerator()
         self._default_expiration = config['default_token_lifetime']
-        self._consul = consul
+        self._storage = storage
         self._celery = celery
 
     def new_token(self, backend, login, args):
@@ -131,17 +145,15 @@ class Manager(object):
         auth_id, xivo_user_uuid = backend.get_ids(login, args)
         rules = self._consul_acl_generator.create_from_backend(backend, login, args)
         acls = backend.get_acls(login, args)
-        try:
-            consul_token = self._consul.acl.create(rules=rules)
-        except ConnectionError:
-            raise _ConsulConnectionException()
-
         expiration = args.get('expiration', self._default_expiration)
-        token = Token(consul_token, auth_id, xivo_user_uuid, now(), later(expiration), acls)
+        token_payload = TokenPayload(auth_id=auth_id, xivo_user_uuid=xivo_user_uuid,
+                                     expires_at=later(expiration), acls=acls)
+
+        token = self._storage.create_token(token_payload, rules)
+
         task_id = self._get_token_hash(token)
-        self._push_token_data(token)
         try:
-            tasks.clean_token.apply_async(args=[consul_token], countdown=expiration, task_id=task_id)
+            tasks.clean_token.apply_async(args=[token.token], countdown=expiration, task_id=task_id)
         except socket.error:
             raise _RabbitMQConnectionException()
         return token
@@ -152,26 +164,13 @@ class Manager(object):
             self._celery.control.revoke(task_id)
         except socket.error:
             raise _RabbitMQConnectionException()
-        self.remove_expired_token(token)
+        self._storage.remove_token(token)
 
     def remove_expired_token(self, token):
-        try:
-            self._consul.acl.destroy(token)
-            self._consul.kv.delete('xivo/xivo-auth/tokens/{}'.format(token), recurse=True)
-        except ConnectionError:
-            raise _ConsulConnectionException()
+        self._storage.remove_token(token)
 
     def get(self, consul_token, required_acl):
-        try:
-            key = self.consul_token_kv.format(consul_token)
-            index, values = self._consul.kv.get(key, recurse=True)
-        except ConnectionError:
-            raise _ConsulConnectionException()
-
-        if not values:
-            raise UnknownTokenException()
-
-        token = Token.from_consul(values_to_dict(values)['xivo']['xivo-auth']['tokens'][consul_token])
+        token = self._storage.get_token(consul_token)
 
         if token.is_expired():
             raise UnknownTokenException()
@@ -180,14 +179,6 @@ class Manager(object):
             raise MissingACLTokenException(required_acl)
 
         return token
-
-    def _push_token_data(self, token):
-        flat_dict = FlatDict({'xivo': {'xivo-auth': {'tokens': {token.token: token.to_consul()}}}})
-        try:
-            for key, value in flat_dict.iteritems():
-                self._consul.kv.put(key, value)
-        except ConnectionError:
-            raise _ConsulConnectionException()
 
     def _get_token_hash(self, token):
         return hashlib.sha256('{token}'.format(token=token)).hexdigest()
@@ -205,3 +196,91 @@ class _ConsulACLGenerator(object):
             rules['key'][rule_policy['rule']] = {'policy': rule_policy['policy']}
 
         return json.dumps(rules)
+
+
+class Storage(object):
+
+    _TOKEN_KEY_FORMAT = 'xivo/xivo-auth/tokens/{}'
+    _TOKEN_NAME_KEY_FORMAT = 'xivo/xivo-auth/tokens/{}/name'
+    _NAME_INDEX_KEY_FORMAT = 'xivo/xivo-auth/token-names/{}'
+
+    def __init__(self, consul):
+        self._consul = consul
+
+    def get_token(self, token_id):
+        self._check_valid_token_id(token_id)
+
+        key = self._TOKEN_KEY_FORMAT.format(token_id)
+        try:
+            _, values = self._consul.kv.get(key, recurse=True)
+        except ConnectionError as e:
+            logger.error('Connection to consul failed: %s', e)
+            raise _ConsulConnectionException()
+
+        if not values:
+            raise UnknownTokenException()
+
+        return Token.from_consul(values_to_dict(values)['xivo']['xivo-auth']['tokens'][token_id])
+
+    def create_token(self, token_payload, rules):
+        try:
+            token_id = self._consul.acl.create(rules=rules)
+            token = Token.from_payload(token_id, None, token_payload)
+            self._store_token(token)
+        except ConnectionError as e:
+            logger.error('Connection to consul failed: %s', e)
+            raise _ConsulConnectionException()
+        return token
+
+    def upsert_named_token(self, token_name, token_payload, rules):
+        try:
+            token_id = self._get_token_id_by_name(token_name)
+            if token_id:
+                self._consul.acl.update(token_id, rules=rules)
+            else:
+                token_id = self._consul.acl.create(rules=rules)
+                self._consul.kv.put(self._NAME_INDEX_KEY_FORMAT.format(token_name), token_id)
+            token = Token.from_payload(token_id, token_name, token_payload)
+            self._store_token(token)
+        except ConnectionError as e:
+            logger.error('Connection to consul failed: %s', e)
+            raise _ConsulConnectionException()
+        return token
+
+    def remove_token(self, token_id):
+        self._check_valid_token_id(token_id)
+
+        try:
+            token_name = self._get_token_name(token_id)
+            self._consul.acl.destroy(token_id)
+            self._consul.kv.delete(self._TOKEN_KEY_FORMAT.format(token_id), recurse=True)
+            if token_name:
+                self._consul.kv.delete(self._NAME_INDEX_KEY_FORMAT.format(token_name))
+        except ConnectionError as e:
+            logger.error('Connection to consul failed: %s', e)
+            raise _ConsulConnectionException()
+
+    def _get_token_name(self, token_id):
+        _, value = self._consul.kv.get(self._TOKEN_NAME_KEY_FORMAT.format(token_id))
+        if not value:
+            return None
+        return value['Value']
+
+    def _get_token_id_by_name(self, token_name):
+        key = self._NAME_INDEX_KEY_FORMAT.format(token_name)
+        _, value = self._consul.kv.get(key)
+        if not value:
+            return None
+        return value['Value']
+
+    def _store_token(self, token):
+        flat_dict = FlatDict({'xivo': {'xivo-auth': {'tokens': {token.token: token.to_consul()}}}})
+        for key, value in flat_dict.iteritems():
+            self._consul.kv.put(key, value)
+
+    def _check_valid_token_id(self, token_id):
+        try:
+            UUID(hex=token_id)
+        except ValueError as e:
+            logger.warning('Invalid token ID: %s', e)
+            raise UnknownTokenException()
