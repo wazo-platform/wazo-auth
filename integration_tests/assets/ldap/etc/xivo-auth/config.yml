@@ -7,13 +7,15 @@ foreground: True
 debug: True
 
 rest_api:
-    listen: 0.0.0.0
+  https:
+    host: 0.0.0.0
     port: 9497
-    cors:
-        enabled: False
-        allow_headers: Content-Type, authorization
     certificate: /data/_common/ssl/server.crt
     private_key: /data/_common/ssl/server.key
+  cors:
+    enabled: False
+    allow_headers: Content-Type, authorization, x-auth-token
+  ciphers: "ALL:!aNULL:!eNULL:!LOW:!EXP:!RC4:!3DES:!SEED:+HIGH:+MEDIUM"
 
 enabled_plugins:
   - ldap_user_voicemail

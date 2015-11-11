@@ -38,8 +38,8 @@ class Controller(object):
     def __init__(self, config):
         self._config = config
         try:
-            self._listen_addr = config['rest_api']['listen']
-            self._listen_port = config['rest_api']['port']
+            self._listen_addr = config['rest_api']['https']['host']
+            self._listen_port = config['rest_api']['https']['port']
             self._foreground = config['foreground']
             self._cors_config = config['rest_api']['cors']
             self._cors_enabled = self._cors_config['enabled']
@@ -49,10 +49,10 @@ class Controller(object):
             self._log_level = config['log_level']
             self._debug = config['debug']
             self._bind_addr = (self._listen_addr, self._listen_port)
-            self._ssl_cert_file = config['rest_api']['certificate']
-            self._ssl_key_file = config['rest_api']['private_key']
+            self._ssl_cert_file = config['rest_api']['https']['certificate']
+            self._ssl_key_file = config['rest_api']['https']['private_key']
             self._ssl_ciphers = config['rest_api']['ciphers']
-            logger.debug('private key: %s', config['rest_api']['private_key'])
+            logger.debug('private key: %s', self._ssl_key_file)
         except KeyError as e:
             logger.error('Missing configuration to start the application: %s', e)
             sys.exit(1)
