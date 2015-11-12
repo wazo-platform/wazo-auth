@@ -38,7 +38,7 @@ class Controller(object):
     def __init__(self, config):
         self._config = config
         try:
-            self._listen_addr = config['rest_api']['https']['host']
+            self._listen_addr = config['rest_api']['https']['listen']
             self._listen_port = config['rest_api']['https']['port']
             self._foreground = config['foreground']
             self._cors_config = config['rest_api']['cors']

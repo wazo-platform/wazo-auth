@@ -4,7 +4,7 @@ log_filename: /tmp/xivo-auth.log
 
 rest_api:
   https:
-    host: 0.0.0.0
+    listen: 0.0.0.0
     port: 9497
     certificate: /data/_common/ssl/server.crt
     private_key: /data/_common/ssl/no_server.key

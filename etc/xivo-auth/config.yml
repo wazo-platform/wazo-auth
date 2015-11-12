@@ -19,7 +19,7 @@ default_token_lifetime: 7200
 rest_api:
 
   https:
-    host: 0.0.0.0
+    listen: 0.0.0.0
     port: 9497
     certificate: /usr/share/xivo-certs/server.crt
     private_key: /usr/share/xivo-certs/server.key
