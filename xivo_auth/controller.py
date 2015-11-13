@@ -51,7 +51,7 @@ class Controller(object):
             self._bind_addr = (self._listen_addr, self._listen_port)
             self._ssl_cert_file = config['rest_api']['https']['certificate']
             self._ssl_key_file = config['rest_api']['https']['private_key']
-            self._ssl_ciphers = config['rest_api']['ciphers']
+            self._ssl_ciphers = config['rest_api']['https']['ciphers']
             logger.debug('private key: %s', self._ssl_key_file)
         except KeyError as e:
             logger.error('Missing configuration to start the application: %s', e)

@@ -12,7 +12,6 @@ rest_api:
   cors:
     enabled: False
     allow_headers: Content-Type, authorization, x-auth-token
-  ciphers: "ALL:!aNULL:!eNULL:!LOW:!EXP:!RC4:!3DES:!SEED:+HIGH:+MEDIUM"
 
 enabled_plugins:
   - mock
