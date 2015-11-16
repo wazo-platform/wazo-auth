@@ -17,7 +17,10 @@
 
 import unittest
 
-from mock import patch
+from xivo_dao.alchemy.userfeatures import UserFeatures as User
+from xivo_dao.helpers.exception import InputError
+
+from mock import patch, Mock
 from hamcrest import assert_that, equal_to
 
 from xivo_auth.plugins import backends
@@ -27,17 +30,17 @@ from xivo_auth.plugins import backends
 class TestGetIDS(unittest.TestCase):
 
     def test_that_get_ids_calls_the_dao(self, user_dao_mock):
-        user_dao_mock.get_uuid_by_username.return_value = 'foobars-uuid'
+        user_dao_mock.get_by.return_value = Mock(User, uuid='foobars-uuid')
         backend = backends.XiVOUser('config')
         args = None
 
         result = backend.get_ids('foobar', args)
 
         assert_that(result, equal_to(('foobars-uuid', 'foobars-uuid')))
-        user_dao_mock.get_uuid_by_username.assert_called_once_with('foobar')
+        user_dao_mock.get_by.assert_called_once_with(username='foobar', enableclient=1)
 
     def test_that_get_ids_raises_if_no_user(self, user_dao_mock):
-        user_dao_mock.get_uuid_by_username.side_effect = LookupError
+        user_dao_mock.get_by.side_effect = InputError
         backend = backends.XiVOUser('config')
 
         self.assertRaises(Exception, backend.get_ids, 'foobar')
@@ -47,7 +50,7 @@ class TestGetIDS(unittest.TestCase):
 class TestGetACLS(unittest.TestCase):
 
     def test_that_get_consul_acls_calls_get_ids(self, user_dao_mock):
-        user_dao_mock.get_uuid_by_username.return_value = 'foobars-uuid'
+        user_dao_mock.get_by.return_value = Mock(User, uuid='foobars-uuid')
         backend = backends.XiVOUser('config')
         args = None
 
@@ -55,17 +58,19 @@ class TestGetACLS(unittest.TestCase):
 
         acls = [{'rule': 'xivo/private/foobars-uuid', 'policy': 'write'}]
         assert_that(result, equal_to((acls)))
-        user_dao_mock.get_uuid_by_username.assert_called_once_with('foobar')
+        user_dao_mock.get_by.assert_called_once_with(username='foobar', enableclient=1)
 
 
 @patch('xivo_auth.plugins.backends.xivo_user.user_dao')
 class TestVerifyPassword(unittest.TestCase):
 
-    def test_that_get_uuid_calls_the_dao(self, user_dao_mock):
-        user_dao_mock.check_username_password.return_value = 'a_return_value'
+    def test_that_verify_password_calls_the_dao(self, user_dao_mock):
+        user_dao_mock.find_by.return_value = Mock(User)
         backend = backends.XiVOUser('config')
 
         result = backend.verify_password('foo', 'bar')
 
-        assert_that(result, equal_to('a_return_value'))
-        user_dao_mock.check_username_password.assert_called_once_with('foo', 'bar')
+        assert_that(result, equal_to(True))
+        user_dao_mock.find_by.assert_called_once_with(username='foo',
+                                                      password='bar',
+                                                      enableclient=1)

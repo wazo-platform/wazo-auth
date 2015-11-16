@@ -17,7 +17,7 @@
 
 from xivo_auth import BaseAuthenticationBackend
 
-from xivo_dao import user_dao
+from xivo_dao.resources.user import dao as user_dao
 from xivo_dao.helpers.db_utils import session_scope
 
 
@@ -34,9 +34,10 @@ class XiVOUser(BaseAuthenticationBackend):
 
     def get_ids(self, username, args):
         with session_scope():
-            user_uuid = user_dao.get_uuid_by_username(username)
-        return user_uuid, user_uuid
+            user = user_dao.get_by(username=username, enableclient=1)
+            return user.uuid, user.uuid
 
     def verify_password(self, login, password):
         with session_scope():
-            return user_dao.check_username_password(login, password)
+            user = user_dao.find_by(username=login, password=password, enableclient=1)
+            return user is not None
