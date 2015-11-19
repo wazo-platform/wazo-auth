@@ -15,8 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-import copy
-
 from xivo_auth import BaseAuthenticationBackend
 
 
@@ -27,26 +25,17 @@ class XiVOService(BaseAuthenticationBackend):
 
     def get_consul_acls(self, login, args):
         service = self.services.get(login, {})
-        acls = copy.deepcopy(service.get('acls', []))
-
-        identifier, _ = self.get_ids(login, args)
-        for acl in acls:
-            acl['rule'] = acl['rule'].format(identifier=identifier)
-
+        acls = service.get('acls', [])
         return acls
 
     def get_acls(self, login, args):
         return ['acl:dird']
 
     def get_ids(self, login, args):
-        user_uuid = args.get('backend_args', {}).get('xivo_user_uuid', None)
-        return user_uuid, user_uuid
+        return login, login
 
     def verify_password(self, login, password):
-        service = self.services.get(login, None)
-        if not service:
-            return False
-
+        service = self.services.get(login, {})
         if service.get('secret', None) == password:
             return True
         return False
