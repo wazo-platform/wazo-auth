@@ -38,4 +38,6 @@ class XiVOService(BaseAuthenticationBackend):
         service = self.services.get(login, {})
         if service.get('secret', None) == password:
             return True
+        if service.get('service_key', None) == password:
+            return True
         return False
