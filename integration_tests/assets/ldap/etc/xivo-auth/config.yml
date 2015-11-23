@@ -19,13 +19,6 @@ rest_api:
 enabled_plugins:
   - ldap_user_voicemail
 
-services:
-    xivo-dird-phoned:
-        acls:
-          -
-            rule: 'xivo/private/{identifier}/contacts/personal'
-            policy: 'read'
-
 amqp:
   uri: amqp://guest:guest@rabbitmq:5672/
   exchange_name: xivo
