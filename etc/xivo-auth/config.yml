@@ -50,7 +50,7 @@ services:
         policy: 'read'
 
   xivo-agid:
-    key_file: '/var/lib/xivo-auth-keys/xivo-dird-phoned-key.yml'
+    key_file: '/var/lib/xivo-auth-keys/xivo-agid-key.yml'
     acls:
       -
         rule: 'xivo/private'
