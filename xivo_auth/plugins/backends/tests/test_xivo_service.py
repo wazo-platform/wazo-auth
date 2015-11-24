@@ -40,7 +40,7 @@ class TestXiVOServicePlugin(unittest.TestCase):
         assert_that(result, equal_to(('xivo_service1', 'xivo_service1')))
 
     def test_that_verify_password_return_true_when_username_pwd_match(self):
-        config = {'services': {'xivo_service1': {'secret': 'xivo_service1_pwd'}}}
+        config = {'services': {'xivo_service1': {'service_key': 'xivo_service1_pwd'}}}
         backend = backends.XiVOService(config)
 
         result = backend.verify_password('xivo_service1', 'xivo_service1_pwd')
@@ -48,7 +48,7 @@ class TestXiVOServicePlugin(unittest.TestCase):
         assert_that(result, equal_to(True))
 
     def test_that_verify_password_return_false_when_username_pwd_not_match(self):
-        config = {'services': {'xivo_service1': {'secret': 'xivo_service1_pwd'}}}
+        config = {'services': {'xivo_service1': {'service_key': 'xivo_service1_pwd'}}}
         backend = backends.XiVOService(config)
 
         result = backend.verify_password('wrong_xivo_service_name', 'xivo_service1_pwd')
