@@ -1,7 +1,6 @@
 debug: True
 foreground: True
 log_filename: /tmp/xivo-auth.log
-service_config_dir: "/data/service/etc/xivo-auth/services.d"
 
 rest_api:
   https:
