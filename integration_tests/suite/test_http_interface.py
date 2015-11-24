@@ -180,7 +180,7 @@ class _BaseTestCase(unittest.TestCase):
     def tearDownClass(cls):
         cls._asset_runner.stop()
 
-    def _post_token(self, username, password, backend=None, expiration=None, backend_args=None):
+    def _post_token(self, username, password, backend=None, expiration=None):
         if not backend:
             backend = 'mock'
         s = requests.Session()
@@ -189,8 +189,6 @@ class _BaseTestCase(unittest.TestCase):
         data = {'backend': backend}
         if expiration:
             data['expiration'] = expiration
-        if backend_args:
-            data['backend_args'] = backend_args
         return s.post(self.url, data=json.dumps(data), verify=False)
 
     def _assert_that_xivo_auth_is_stopping(self):
