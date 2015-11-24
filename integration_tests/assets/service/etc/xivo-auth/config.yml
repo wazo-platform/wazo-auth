@@ -24,7 +24,7 @@ services:
   test-service:
     acls:
       -
-        rule: 'xivo/private/{identifier}/contacts/personal'
+        rule: 'xivo/private'
         policy: 'read'
     key_file: '/data/service/service_keys/xivo-test-service-key.yml'
 
