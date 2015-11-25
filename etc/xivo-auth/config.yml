@@ -46,7 +46,7 @@ services:
     key_file: /var/lib/xivo-auth-keys/xivo-dird-phoned-key.yml
     acls:
       -
-        rule: 'xivo/private/{identifier}/contacts/personal'
+        rule: 'xivo/private'
         policy: 'read'
 
   xivo-agid:
