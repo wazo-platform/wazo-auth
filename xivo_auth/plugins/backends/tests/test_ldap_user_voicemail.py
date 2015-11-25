@@ -20,6 +20,9 @@ import unittest
 from mock import patch, Mock
 from hamcrest import assert_that, equal_to
 
+from xivo_dao.alchemy.userfeatures import UserFeatures as User
+from xivo_dao.helpers.exception import NotFoundError
+
 from xivo_auth.plugins.backends.ldap_user_voicemail import LDAPUserVoicemail
 
 
@@ -39,13 +42,13 @@ class TestGetConsulACLS(unittest.TestCase):
         self.backend = LDAPUserVoicemail(config)
 
     def test_that_get_consul_acls_calls_get_ids(self, user_dao_mock):
-        user_dao_mock.get_uuid_by_email.return_value = 'alice-uuid'
+        user_dao_mock.get_by.return_value = Mock(User, uuid='alice-uuid')
 
         result = self.backend.get_consul_acls('alice', self.args)
 
         acls = [{'rule': 'xivo/private/alice-uuid', 'policy': 'write'}]
         assert_that(result, equal_to((acls)))
-        user_dao_mock.get_uuid_by_email.assert_called_once_with('alice@example.com')
+        user_dao_mock.get_by.assert_called_once_with(email='alice@example.com')
 
 
 @patch('xivo_auth.plugins.backends.ldap_user_voicemail.XivoLDAP', Mock())
@@ -86,16 +89,16 @@ class TestGetIDS(unittest.TestCase):
         self.backend = LDAPUserVoicemail(config)
 
     def test_that_get_ids_calls_the_dao(self, user_dao_mock):
-        user_dao_mock.get_uuid_by_email.return_value = 'alice-uuid'
+        user_dao_mock.get_by.return_value = Mock(User, uuid='alice-uuid')
         expected_result = ('alice-uuid', 'alice-uuid')
 
         result = self.backend.get_ids('alice', self.args)
 
         assert_that(result, equal_to(expected_result))
-        user_dao_mock.get_uuid_by_email.assert_called_once_with('alice@example.com')
+        user_dao_mock.get_by.assert_called_once_with(email='alice@example.com')
 
     def test_that_get_ids_raises_if_no_user(self, user_dao_mock):
-        user_dao_mock.get_uuid_by_email.side_effect = LookupError
+        user_dao_mock.get_by.side_effect = NotFoundError
 
         self.assertRaises(Exception, self.backend.get_ids, 'alice')
 
@@ -114,7 +117,7 @@ class TestVerifyPassword(unittest.TestCase):
         }
         backend = LDAPUserVoicemail(config)
         backend.ldap.perform_bind.return_value = True
-        user_dao_mock.get_uuid_by_email.return_value = True
+        user_dao_mock.get_by.return_value = Mock(User)
 
         result = backend.verify_password('foo', 'bar')
 
@@ -132,7 +135,7 @@ class TestVerifyPassword(unittest.TestCase):
         backend = LDAPUserVoicemail(config)
         backend.ldap.perform_bind.return_value = True
         user_dao_mock.get_uuid_by_email.return_value = True
-        user_dao_mock.get_uuid_by_email.side_effect = LookupError
+        user_dao_mock.get_by.side_effect = NotFoundError
 
         result = backend.verify_password('foo', 'bar')
 
