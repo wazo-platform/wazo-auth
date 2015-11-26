@@ -20,7 +20,7 @@ import logging
 from ldap_backend import XivoLDAP
 from xivo_auth import BaseAuthenticationBackend
 
-from xivo_dao import user_dao
+from xivo_dao.resources.user import dao as user_dao
 from xivo_dao.helpers.db_utils import session_scope
 from xivo_dao.helpers.exception import NotFoundError
 
