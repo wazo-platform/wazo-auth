@@ -42,11 +42,19 @@ enabled_plugins:
   - xivo_ws
 
 services:
-    xivo-dird-phoned:
-        acls:
-          -
-            rule: 'xivo/private/{identifier}/contacts/personal'
-            policy: 'read'
+  xivo-dird-phoned:
+    key_file: /var/lib/xivo-auth-keys/xivo-dird-phoned-key.yml
+    acls:
+      -
+        rule: 'xivo/private'
+        policy: 'read'
+
+  xivo-agid:
+    key_file: /var/lib/xivo-auth-keys/xivo-agid-key.yml
+    acls:
+      -
+        rule: 'xivo/private'
+        policy: 'read'
 
 amqp:
   uri: amqp://guest:guest@localhost:5672/

@@ -207,15 +207,14 @@ class TestServiceBackend(_BaseTestCase):
     asset = 'service'
 
     def test_POST_with_a_xivo_user_uuid(self):
-        response = self._post_token('test-service', 'foobar', backend='xivo_service',
-                                    backend_args={'xivo_user_uuid': '123-abc'})
+        response = self._post_token('test-service', 'foobar', backend='xivo_service')
         content = response.json()['data']
         auth_id = content['auth_id']
         xivo_user_uuid = content['xivo_user_uuid']
 
         assert_that(response.status_code, equal_to(200))
-        assert_that(auth_id, equal_to('123-abc'))
-        assert_that(xivo_user_uuid, equal_to('123-abc'))
+        assert_that(auth_id, equal_to('test-service'))
+        assert_that(xivo_user_uuid, equal_to('test-service'))
 
 
 @unittest.skip('Skipped until python-consul implement a timeout')

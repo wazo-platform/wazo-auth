@@ -25,21 +25,19 @@ from xivo_auth.plugins import backends
 class TestXiVOServicePlugin(unittest.TestCase):
 
     def test_that_get_consul_acls_return_acls_from_config(self):
-        config = {'services': {'xivo_service1': {'acls': [{'rule': 'xivo/{identifier}', 'policy': 'read'}]}}}
+        config = {'services': {'xivo_service1': {'acls': [{'rule': 'xivo/private', 'policy': 'read'}]}}}
         backend = backends.XiVOService(config)
 
-        args = {'backend_args': {'xivo_user_uuid': 'user_uuid'}}
-        result = backend.get_consul_acls('xivo_service1', args)
+        result = backend.get_consul_acls('xivo_service1', {})
 
-        assert_that(result, equal_to([{'rule': 'xivo/user_uuid', 'policy': 'read'}]))
+        assert_that(result, equal_to([{'rule': 'xivo/private', 'policy': 'read'}]))
 
-    def test_that_get_ids_return_xivo_user_uuid(self):
+    def test_that_get_ids_return_login(self):
         backend = backends.XiVOService({})
 
-        args = {'backend_args': {'xivo_user_uuid': 'user_uuid'}}
-        result = backend.get_ids('xivo_service1', args)
+        result = backend.get_ids('xivo_service1', {})
 
-        assert_that(result, equal_to(('user_uuid', 'user_uuid')))
+        assert_that(result, equal_to(('xivo_service1', 'xivo_service1')))
 
     def test_that_verify_password_return_true_when_username_pwd_match(self):
         config = {'services': {'xivo_service1': {'secret': 'xivo_service1_pwd'}}}
