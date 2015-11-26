@@ -41,15 +41,14 @@ enabled_plugins:
   - xivo_ws
 
 services:
-  xivo-dird-phoned:
-    key_file: /var/lib/xivo-auth-keys/xivo-dird-phoned-key.yml
+  xivo-agid:
+    key_file: /var/lib/xivo-auth-keys/xivo-agid-key.yml
     acls:
       -
         rule: 'xivo/private'
         policy: 'read'
-
-  xivo-agid:
-    key_file: /var/lib/xivo-auth-keys/xivo-agid-key.yml
+  xivo-dird-phoned:
+    key_file: /var/lib/xivo-auth-keys/xivo-dird-phoned-key.yml
     acls:
       -
         rule: 'xivo/private'
