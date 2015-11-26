@@ -6,7 +6,6 @@ DAEMONNAME='xivo-auth'
 USER='xivo-auth'
 GROUP=$USER
 LOG_FILENAME="/var/log/${DAEMONNAME}.log"
-SERVICE_DIRD_PHONED_FILENAME='/etc/xivo-auth/services.d/xivo_dird_phoned.yml'
 
 
 case "$1" in
@@ -14,6 +13,11 @@ case "$1" in
 		# remove the /var/log/${DAEMONNAME}.log file created before 15.12
 		if [ -e '/var/log/${DAEMONNAME}.log' ]; then
 			rm -f '/var/log/${DAEMONNAME}.log'
+		fi
+
+		# remove the /etc/xivo-auth/services.d/xivo_dird_phoned.yml file created before 15.19
+		if [ -e '/etc/xivo-auth/services.d/xivo_dird_phoned.yml' ]; then
+			rm -f '/etc/xivo-auth/services.d/xivo_dird_phoned.yml'
 		fi
 
 		# add the group consul if it does not exists
@@ -34,15 +38,6 @@ case "$1" in
 			touch "$LOG_FILENAME"
 		fi
 		chown $USER:$GROUP "$LOG_FILENAME"
-
-		# Generate secret for services
-		if [ ! -e "$SERVICE_DIRD_PHONED_FILENAME" ]; then
-			xivo_dird_phoned_secret=$(od -An -tx4 -N32 -w /dev/urandom | tr -d " ")
-			cat > "$SERVICE_DIRD_PHONED_FILENAME" <<EOF
-name: xivo-dird-phoned
-secret: ${xivo_dird_phoned_secret}
-EOF
-		fi
 
 	;;
 

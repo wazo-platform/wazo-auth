@@ -40,7 +40,7 @@ class Token(Resource):
     @httpauth.login_required
     def post(self):
         data = request.get_json()
-        args = {'backend_args': data.get('backend_args', {})}
+        args = {}
         if 'expiration' in data:
             if not data['expiration'] > 0:
                 return _error(400, 'Invalid expiration')
