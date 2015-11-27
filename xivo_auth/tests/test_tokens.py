@@ -17,8 +17,15 @@
 
 import unittest
 
-from hamcrest import assert_that, contains_inanyorder, equal_to, has_items, has_key, is_not, none
-from mock import ANY, Mock, call, patch, sentinel
+from hamcrest import (assert_that,
+                      equal_to,
+                      has_key,
+                      is_not,
+                      none)
+from mock import (ANY,
+                  Mock,
+                  patch,
+                  sentinel)
 
 from xivo_auth import token, extensions, BaseAuthenticationBackend
 from xivo_auth.helpers import later
@@ -45,7 +52,7 @@ class TestManager(unittest.TestCase):
         login = sentinel.login
         args = {}
 
-        token = self.manager.new_token(backend, login, args)
+        self.manager.new_token(backend, login, args)
 
         token_payload = self.storage.create_token.call_args[0][0]
         assert_that(token_payload.auth_id, equal_to(sentinel.auth_id))
@@ -54,14 +61,15 @@ class TestManager(unittest.TestCase):
         assert_that(token_payload.expires_at, equal_to(mocked_later.return_value))
         mocked_later.assert_called_once_with(sentinel.default_expiration_delay)
         self.consul_acl_generator.create_from_backend.assert_called_once_with(backend, login, args)
-        self.storage.create_token.assert_called_once_with(ANY, self.consul_acl_generator.create_from_backend.return_value)
+        self.storage.create_token.assert_called_once_with(ANY,
+                                                          self.consul_acl_generator.create_from_backend.return_value)
 
     @patch('xivo_auth.token.later')
     def test_now_token_with_expiration(self, mocked_later):
         backend = self._new_backend_mock()
         args = {'expiration': sentinel.expiration_delay}
 
-        token = self.manager.new_token(backend, sentinel.login, args)
+        self.manager.new_token(backend, sentinel.login, args)
 
         token_payload = self.storage.create_token.call_args[0][0]
         assert_that(token_payload.expires_at, equal_to(mocked_later.return_value))
@@ -168,7 +176,8 @@ class TestStorage(unittest.TestCase):
         token = self.storage.get_token(token_id)
 
         assert_that(token.token, equal_to(token_id))
-        self.consul.kv.get.assert_called_once_with('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678', recurse=True)
+        self.consul.kv.get.assert_called_once_with('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678',
+                                                   recurse=True)
 
     def test_create_token(self):
         token_payload = token.TokenPayload(self.auth_id, issued_at=self.issued_at)
@@ -223,7 +232,8 @@ class TestStorage(unittest.TestCase):
 
         self.consul.kv.get.assert_called_once_with('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678/name')
         self.consul.acl.destroy.assert_called_once_with('12345678-1234-5678-1234-567812345678')
-        self.consul.kv.delete.assert_called_once_with('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678', recurse=True)
+        self.consul.kv.delete.assert_called_once_with('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678',
+                                                      recurse=True)
 
     def test_remove_named_token(self):
         token_id = '12345678-1234-5678-1234-567812345678'
@@ -233,5 +243,6 @@ class TestStorage(unittest.TestCase):
         self.storage.remove_token(token_id)
 
         self.consul.acl.destroy.assert_called_once_with('12345678-1234-5678-1234-567812345678')
-        self.consul.kv.delete.assert_any_call('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678', recurse=True)
+        self.consul.kv.delete.assert_any_call('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678',
+                                              recurse=True)
         self.consul.kv.delete.assert_any_call('xivo/xivo-auth/token-names/foo-name')
