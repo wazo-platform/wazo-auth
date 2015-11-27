@@ -18,6 +18,7 @@
 import hashlib
 import json
 import logging
+import re
 import socket
 
 from unidecode import unidecode
@@ -102,8 +103,23 @@ class Token(object):
         return self.expires_at and now() > self.expires_at
 
     def matches_required_acl(self, required_acl):
-        # TODO: add pattern matching
-        return required_acl is None or required_acl in self.acls
+        if required_acl is None:
+            return True
+
+        for user_acl in self.acls:
+            if user_acl.endswith('.me'):
+                user_acl = '{}.{}'.format(user_acl[:-3], self.auth_id)
+            else:
+                user_acl = user_acl.replace('.me.', '.{}.'.format(self.auth_id))
+
+            user_acl_regex = self._transform_acl_to_regex(user_acl)
+            if re.match(user_acl_regex, required_acl):
+                return True
+        return False
+
+    def _transform_acl_to_regex(self, acl):
+        acl_regex = re.escape(acl).replace('\*', '[^.]*?').replace('\#', '.*?')
+        return re.compile('^{}$'.format(acl_regex))
 
     @classmethod
     def from_consul(cls, d):
