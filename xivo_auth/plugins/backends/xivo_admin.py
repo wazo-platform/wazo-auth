@@ -27,7 +27,7 @@ class XiVOAdmin(BaseAuthenticationBackend):
         return []
 
     def get_acls(self, login, args):
-        return ['confd']
+        return ['confd.#']
 
     def get_ids(self, username, args):
         with session_scope():
