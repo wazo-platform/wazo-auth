@@ -94,7 +94,7 @@ class TestToken(unittest.TestCase):
         self.xivo_user_uuid = 'the-user-uuid'
         self.issued_at = 'the-issued-at'
         self.expires_at = 'the-expires-at'
-        self.acls = ['acl:confd']
+        self.acls = ['confd']
         self.token = token.Token(self.id_, self.name, self.auth_id, self.xivo_user_uuid,
                                  self.issued_at, self.expires_at, self.acls)
 
@@ -106,7 +106,7 @@ class TestToken(unittest.TestCase):
             'issued_at': self.issued_at,
             'expires_at': self.expires_at,
             'xivo_user_uuid': self.xivo_user_uuid,
-            'acls': {'acl:confd': 'acl:confd'},
+            'acls': {'confd': 'confd'},
         }
 
         assert_that(self.token.to_consul(), equal_to(expected))
@@ -129,61 +129,61 @@ class TestToken(unittest.TestCase):
         assert_that(self.token.to_dict(), is_not(has_key('name')))
 
     def test_matches_required_acls_when_user_acl_ends_with_hashtag(self):
-        self.token.acls = ['acl:foo.bar.#']
+        self.token.acls = ['foo.bar.#']
 
-        assert_that(self.token.matches_required_acl('acl:foo.bar'), equal_to(False))
-        assert_that(self.token.matches_required_acl('acl:foo.bar.toto'))
-        assert_that(self.token.matches_required_acl('acl:foo.bar.toto.tata'))
-        assert_that(self.token.matches_required_acl('acl:other.bar.toto'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar.toto'))
+        assert_that(self.token.matches_required_acl('foo.bar.toto.tata'))
+        assert_that(self.token.matches_required_acl('other.bar.toto'), equal_to(False))
 
     def test_matches_required_acls_when_user_acl_has_not_special_character(self):
-        self.token.acls = ['acl:foo.bar.toto']
+        self.token.acls = ['foo.bar.toto']
 
-        assert_that(self.token.matches_required_acl('acl:foo.bar.toto'))
-        assert_that(self.token.matches_required_acl('acl:foo.bar.toto.tata'), equal_to(False))
-        assert_that(self.token.matches_required_acl('acl:other.bar.toto'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar.toto'))
+        assert_that(self.token.matches_required_acl('foo.bar.toto.tata'), equal_to(False))
+        assert_that(self.token.matches_required_acl('other.bar.toto'), equal_to(False))
 
     def test_matches_required_acls_when_user_acl_has_asterisks(self):
-        self.token.acls = ['acl:foo.*.*']
+        self.token.acls = ['foo.*.*']
 
-        assert_that(self.token.matches_required_acl('acl:foo.bar.toto'))
-        assert_that(self.token.matches_required_acl('acl:foo.bar.toto.tata'), equal_to(False))
-        assert_that(self.token.matches_required_acl('acl:other.bar.toto'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar.toto'))
+        assert_that(self.token.matches_required_acl('foo.bar.toto.tata'), equal_to(False))
+        assert_that(self.token.matches_required_acl('other.bar.toto'), equal_to(False))
 
     def test_matches_required_acls_with_multiple_acls(self):
-        self.token.acls = ['acl:foo', 'acl:foo.bar.toto', 'acl:other.#']
+        self.token.acls = ['foo', 'foo.bar.toto', 'other.#']
 
-        assert_that(self.token.matches_required_acl('acl:foo'))
-        assert_that(self.token.matches_required_acl('acl:foo.bar'), equal_to(False))
-        assert_that(self.token.matches_required_acl('acl:foo.bar.toto'))
-        assert_that(self.token.matches_required_acl('acl:foo.bar.toto.tata'), equal_to(False))
-        assert_that(self.token.matches_required_acl('acl:other.bar.toto'))
+        assert_that(self.token.matches_required_acl('foo'))
+        assert_that(self.token.matches_required_acl('foo.bar'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar.toto'))
+        assert_that(self.token.matches_required_acl('foo.bar.toto.tata'), equal_to(False))
+        assert_that(self.token.matches_required_acl('other.bar.toto'))
 
     def test_matches_required_acls_when_user_acl_has_hashtag_in_middle(self):
-        self.token.acls = ['acl:foo.bar.#.titi']
+        self.token.acls = ['foo.bar.#.titi']
 
-        assert_that(self.token.matches_required_acl('acl:foo.bar'), equal_to(False))
-        assert_that(self.token.matches_required_acl('acl:foo.bar.toto'), equal_to(False))
-        assert_that(self.token.matches_required_acl('acl:foo.bar.toto.tata'), equal_to(False))
-        assert_that(self.token.matches_required_acl('acl:foo.bar.toto.tata.titi'))
+        assert_that(self.token.matches_required_acl('foo.bar'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar.toto'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar.toto.tata'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar.toto.tata.titi'))
 
     def test_matches_required_acls_when_user_acl_ends_with_me(self):
-        self.token.acls = ['acl:foo.#.me']
+        self.token.acls = ['foo.#.me']
         self.token.auth_id = '123'
 
-        assert_that(self.token.matches_required_acl('acl:foo.bar'), equal_to(False))
-        assert_that(self.token.matches_required_acl('acl:foo.bar.123'))
-        assert_that(self.token.matches_required_acl('acl:foo.bar.toto.123'))
-        assert_that(self.token.matches_required_acl('acl:foo.bar.toto.123.titi'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar.123'))
+        assert_that(self.token.matches_required_acl('foo.bar.toto.123'))
+        assert_that(self.token.matches_required_acl('foo.bar.toto.123.titi'), equal_to(False))
 
     def test_matches_required_acls_when_user_acl_has_me_in_middle(self):
-        self.token.acls = ['acl:foo.#.me.bar']
+        self.token.acls = ['foo.#.me.bar']
         self.token.auth_id = '123'
 
-        assert_that(self.token.matches_required_acl('acl:foo.bar.me.bar'), equal_to(False))
-        assert_that(self.token.matches_required_acl('acl:foo.bar.123'), equal_to(False))
-        assert_that(self.token.matches_required_acl('acl:foo.bar.123.bar'))
-        assert_that(self.token.matches_required_acl('acl:foo.bar.toto.123.bar'))
+        assert_that(self.token.matches_required_acl('foo.bar.me.bar'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar.123'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar.123.bar'))
+        assert_that(self.token.matches_required_acl('foo.bar.toto.123.bar'))
 
     def test_is_expired_when_time_is_in_the_future(self):
         time_in_the_future = later(60)

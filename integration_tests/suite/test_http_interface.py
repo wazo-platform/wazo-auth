@@ -332,7 +332,7 @@ class TestCoreMockBackend(_BaseTestCase):
         assert_that(token, has_length(36))
         assert_that(auth_id, equal_to('a-mocked-auth-id'))
         assert_that(xivo_user_uuid, equal_to('a-mocked-xivo-user-uuid'))
-        assert_that(acls, contains_inanyorder('acl:foo', 'acl:bar'))
+        assert_that(acls, contains_inanyorder('foo', 'bar'))
 
     def test_that_an_unknown_type_returns_a_401(self):
         response = self._post_token('foo', 'not_bar', 'unexistant_backend')
@@ -405,28 +405,28 @@ class TestCoreMockBackend(_BaseTestCase):
     def test_that_unauthorized_acls_on_HEAD_return_403(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
-        response = requests.head('{}/{}'.format(self.url, token), verify=False, params={'scope': 'acl:confd'})
+        response = requests.head('{}/{}'.format(self.url, token), verify=False, params={'scope': 'confd'})
 
         assert_that(response.status_code, equal_to(403))
 
     def test_that_unauthorized_acls_on_GET_return_403(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
-        response = requests.get('{}/{}'.format(self.url, token), verify=False, params={'scope': 'acl:confd'})
+        response = requests.get('{}/{}'.format(self.url, token), verify=False, params={'scope': 'confd'})
 
         assert_that(response.status_code, equal_to(403))
 
     def test_that_authorized_acls_on_HEAD_return_204(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
-        response = requests.head('{}/{}'.format(self.url, token), verify=False, params={'scope': 'acl:foo'})
+        response = requests.head('{}/{}'.format(self.url, token), verify=False, params={'scope': 'foo'})
 
         assert_that(response.status_code, equal_to(204))
 
     def test_that_authorized_acls_on_GET_return_200(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
-        response = requests.get('{}/{}'.format(self.url, token), verify=False, params={'scope': 'acl:foo'})
+        response = requests.get('{}/{}'.format(self.url, token), verify=False, params={'scope': 'foo'})
 
         assert_that(response.status_code, equal_to(200))
 

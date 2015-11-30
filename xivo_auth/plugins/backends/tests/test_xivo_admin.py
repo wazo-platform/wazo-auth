@@ -40,7 +40,7 @@ class TestVerifyPassword(unittest.TestCase):
 
         acls = backend.get_acls('foo', None)
 
-        assert_that(acls, contains_inanyorder('acl:confd'))
+        assert_that(acls, contains_inanyorder('confd'))
 
     def test_that_an_admin_as_no_kv_available(self):
         backend = backends.XiVOAdmin({})

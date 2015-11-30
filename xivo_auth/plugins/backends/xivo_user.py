@@ -30,7 +30,7 @@ class XiVOUser(BaseAuthenticationBackend):
         return rules
 
     def get_acls(self, login, args):
-        return ['acl:dird']
+        return ['dird.#.me']
 
     def get_ids(self, username, args):
         with session_scope():
