@@ -292,7 +292,7 @@ class Storage(object):
     def _store_token(self, token):
         flat_dict = FlatDict({'xivo': {'xivo-auth': {'tokens': {token.token: token.to_consul()}}}})
         for key, value in flat_dict.iteritems():
-            self._consul.kv.put(key, value)
+            self._consul.kv.put(key.replace('#', '%23').replace('*', '%2A'), value)
 
     def _check_valid_token_id(self, token_id):
         try:
