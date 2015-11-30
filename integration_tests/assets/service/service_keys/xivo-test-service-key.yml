@@ -1,2 +1,2 @@
-service_id: 'xivo-test-service'
+service_id: 'test-service'
 service_key: 'foobar'
