@@ -17,8 +17,15 @@
 
 import unittest
 
-from hamcrest import assert_that, contains_inanyorder, equal_to, has_items, has_key, is_not, none
-from mock import ANY, Mock, call, patch, sentinel
+from hamcrest import (assert_that,
+                      equal_to,
+                      has_key,
+                      is_not,
+                      none)
+from mock import (ANY,
+                  Mock,
+                  patch,
+                  sentinel)
 
 from xivo_auth import token, extensions, BaseAuthenticationBackend
 from xivo_auth.helpers import later
@@ -45,7 +52,7 @@ class TestManager(unittest.TestCase):
         login = sentinel.login
         args = {}
 
-        token = self.manager.new_token(backend, login, args)
+        self.manager.new_token(backend, login, args)
 
         token_payload = self.storage.create_token.call_args[0][0]
         assert_that(token_payload.auth_id, equal_to(sentinel.auth_id))
@@ -54,14 +61,15 @@ class TestManager(unittest.TestCase):
         assert_that(token_payload.expires_at, equal_to(mocked_later.return_value))
         mocked_later.assert_called_once_with(sentinel.default_expiration_delay)
         self.consul_acl_generator.create_from_backend.assert_called_once_with(backend, login, args)
-        self.storage.create_token.assert_called_once_with(ANY, self.consul_acl_generator.create_from_backend.return_value)
+        self.storage.create_token.assert_called_once_with(ANY,
+                                                          self.consul_acl_generator.create_from_backend.return_value)
 
     @patch('xivo_auth.token.later')
     def test_now_token_with_expiration(self, mocked_later):
         backend = self._new_backend_mock()
         args = {'expiration': sentinel.expiration_delay}
 
-        token = self.manager.new_token(backend, sentinel.login, args)
+        self.manager.new_token(backend, sentinel.login, args)
 
         token_payload = self.storage.create_token.call_args[0][0]
         assert_that(token_payload.expires_at, equal_to(mocked_later.return_value))
@@ -86,7 +94,7 @@ class TestToken(unittest.TestCase):
         self.xivo_user_uuid = 'the-user-uuid'
         self.issued_at = 'the-issued-at'
         self.expires_at = 'the-expires-at'
-        self.acls = ['acl:confd']
+        self.acls = ['confd']
         self.token = token.Token(self.id_, self.name, self.auth_id, self.xivo_user_uuid,
                                  self.issued_at, self.expires_at, self.acls)
 
@@ -98,7 +106,7 @@ class TestToken(unittest.TestCase):
             'issued_at': self.issued_at,
             'expires_at': self.expires_at,
             'xivo_user_uuid': self.xivo_user_uuid,
-            'acls': {'acl:confd': 'acl:confd'},
+            'acls': {'confd': 'confd'},
         }
 
         assert_that(self.token.to_consul(), equal_to(expected))
@@ -120,11 +128,62 @@ class TestToken(unittest.TestCase):
 
         assert_that(self.token.to_dict(), is_not(has_key('name')))
 
-    def test_matches_required_acls(self):
-        self.token.acls = ['acl:foobar']
+    def test_matches_required_acls_when_user_acl_ends_with_hashtag(self):
+        self.token.acls = ['foo.bar.#']
 
-        assert_that(self.token.matches_required_acl('acl:foobar'))
-        assert_that(self.token.matches_required_acl('acl:other'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar.toto'))
+        assert_that(self.token.matches_required_acl('foo.bar.toto.tata'))
+        assert_that(self.token.matches_required_acl('other.bar.toto'), equal_to(False))
+
+    def test_matches_required_acls_when_user_acl_has_not_special_character(self):
+        self.token.acls = ['foo.bar.toto']
+
+        assert_that(self.token.matches_required_acl('foo.bar.toto'))
+        assert_that(self.token.matches_required_acl('foo.bar.toto.tata'), equal_to(False))
+        assert_that(self.token.matches_required_acl('other.bar.toto'), equal_to(False))
+
+    def test_matches_required_acls_when_user_acl_has_asterisks(self):
+        self.token.acls = ['foo.*.*']
+
+        assert_that(self.token.matches_required_acl('foo.bar.toto'))
+        assert_that(self.token.matches_required_acl('foo.bar.toto.tata'), equal_to(False))
+        assert_that(self.token.matches_required_acl('other.bar.toto'), equal_to(False))
+
+    def test_matches_required_acls_with_multiple_acls(self):
+        self.token.acls = ['foo', 'foo.bar.toto', 'other.#']
+
+        assert_that(self.token.matches_required_acl('foo'))
+        assert_that(self.token.matches_required_acl('foo.bar'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar.toto'))
+        assert_that(self.token.matches_required_acl('foo.bar.toto.tata'), equal_to(False))
+        assert_that(self.token.matches_required_acl('other.bar.toto'))
+
+    def test_matches_required_acls_when_user_acl_has_hashtag_in_middle(self):
+        self.token.acls = ['foo.bar.#.titi']
+
+        assert_that(self.token.matches_required_acl('foo.bar'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar.toto'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar.toto.tata'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar.toto.tata.titi'))
+
+    def test_matches_required_acls_when_user_acl_ends_with_me(self):
+        self.token.acls = ['foo.#.me']
+        self.token.auth_id = '123'
+
+        assert_that(self.token.matches_required_acl('foo.bar'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar.123'))
+        assert_that(self.token.matches_required_acl('foo.bar.toto.123'))
+        assert_that(self.token.matches_required_acl('foo.bar.toto.123.titi'), equal_to(False))
+
+    def test_matches_required_acls_when_user_acl_has_me_in_middle(self):
+        self.token.acls = ['foo.#.me.bar']
+        self.token.auth_id = '123'
+
+        assert_that(self.token.matches_required_acl('foo.bar.me.bar'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar.123'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar.123.bar'))
+        assert_that(self.token.matches_required_acl('foo.bar.toto.123.bar'))
 
     def test_is_expired_when_time_is_in_the_future(self):
         time_in_the_future = later(60)
@@ -168,7 +227,8 @@ class TestStorage(unittest.TestCase):
         token = self.storage.get_token(token_id)
 
         assert_that(token.token, equal_to(token_id))
-        self.consul.kv.get.assert_called_once_with('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678', recurse=True)
+        self.consul.kv.get.assert_called_once_with('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678',
+                                                   recurse=True)
 
     def test_create_token(self):
         token_payload = token.TokenPayload(self.auth_id, issued_at=self.issued_at)
@@ -223,7 +283,8 @@ class TestStorage(unittest.TestCase):
 
         self.consul.kv.get.assert_called_once_with('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678/name')
         self.consul.acl.destroy.assert_called_once_with('12345678-1234-5678-1234-567812345678')
-        self.consul.kv.delete.assert_called_once_with('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678', recurse=True)
+        self.consul.kv.delete.assert_called_once_with('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678',
+                                                      recurse=True)
 
     def test_remove_named_token(self):
         token_id = '12345678-1234-5678-1234-567812345678'
@@ -233,5 +294,6 @@ class TestStorage(unittest.TestCase):
         self.storage.remove_token(token_id)
 
         self.consul.acl.destroy.assert_called_once_with('12345678-1234-5678-1234-567812345678')
-        self.consul.kv.delete.assert_any_call('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678', recurse=True)
+        self.consul.kv.delete.assert_any_call('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678',
+                                              recurse=True)
         self.consul.kv.delete.assert_any_call('xivo/xivo-auth/token-names/foo-name')

@@ -41,7 +41,7 @@ class LDAPUserVoicemail(BaseAuthenticationBackend):
         return rules
 
     def get_acls(self, login, args):
-        return ['acl:dird']
+        return ['dird']
 
     def get_ids(self, username, args):
         user_uuid = self._get_xivo_user_uuid_by_ldap_username(username)

@@ -69,7 +69,7 @@ class TestGetACLS(unittest.TestCase):
     def test_that_get_consul_acls_calls_get_ids(self, user_dao_mock):
         result = self.backend.get_acls('alice', self.args)
 
-        acls = ['acl:dird']
+        acls = ['dird']
         assert_that(result, equal_to((acls)))
 
 

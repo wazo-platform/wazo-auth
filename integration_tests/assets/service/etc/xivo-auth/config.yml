@@ -25,7 +25,7 @@ services:
       -
         rule: 'xivo/private'
         policy: 'read'
-    key_file: '/data/service/service_keys/xivo-test-service-key.yml'
+    key_file: /data/service/service_keys/xivo-test-service-key.yml
 
 amqp:
   uri: amqp://guest:guest@rabbitmq:5672/
