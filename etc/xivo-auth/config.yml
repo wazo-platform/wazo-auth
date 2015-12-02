@@ -41,12 +41,16 @@ enabled_plugins:
   - xivo_ws
 
 services:
+  xivo-agentd-cli:
+    key_file: /var/lib/xivo-auth-keys/xivo-agentd-cli-key.yml
   xivo-agid:
     key_file: /var/lib/xivo-auth-keys/xivo-agid-key.yml
     acls:
       -
         rule: 'xivo/private'
         policy: 'read'
+  xivo-ctid:
+    key_file: /var/lib/xivo-auth-keys/xivo-ctid-key.yml
   xivo-dird-phoned:
     key_file: /var/lib/xivo-auth-keys/xivo-dird-phoned-key.yml
     acls:

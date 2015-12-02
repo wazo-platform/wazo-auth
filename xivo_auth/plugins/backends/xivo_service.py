@@ -29,7 +29,7 @@ class XiVOService(BaseAuthenticationBackend):
         return acls
 
     def get_acls(self, login, args):
-        return ['dird.#']
+        return ['agentd.#', 'dird.#']
 
     def get_ids(self, login, args):
         return login, login
