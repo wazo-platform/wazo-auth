@@ -1,4 +1,4 @@
-FROM python:2.7
+FROM python:2.7.9
 MAINTAINER Sylvain Boily "sboily@avencall.com"
 
 RUN apt-get -yq update \
