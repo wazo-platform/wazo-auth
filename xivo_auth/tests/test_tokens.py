@@ -247,6 +247,14 @@ class TestStorage(unittest.TestCase):
         self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/tok-id/acls', None)
         self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/tok-id/name', None)
 
+    def test_that_create_token_does_not_send_unicode_to_consul(self):
+        token_payload = token.TokenPayload(self.auth_id, issued_at=u'é')
+        self.consul.acl.create.return_value = self.token_id
+
+        self.storage.create_token(token_payload, self.rules)
+
+        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/tok-id/issued_at', 'é')
+
     def test_upsert_named_token_as_insert(self):
         token_payload = token.TokenPayload(self.auth_id)
         self.consul.kv.get.return_value = (42, None)

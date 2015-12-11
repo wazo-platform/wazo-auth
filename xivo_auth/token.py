@@ -293,7 +293,13 @@ class Storage(object):
     def _store_token(self, token):
         flat_dict = FlatDict({'xivo': {'xivo-auth': {'tokens': {token.token: token.to_consul()}}}})
         for key, value in flat_dict.iteritems():
+            value = self._ensure_bytes_type(value)
             self._consul.kv.put(urllib.quote(key), value)
+
+    def _ensure_bytes_type(self, value):
+        if isinstance(value, unicode):
+            return value.encode('utf-8')
+        return value
 
     def _check_valid_token_id(self, token_id):
         try:
