@@ -51,6 +51,8 @@ services:
         policy: 'read'
   xivo-ctid:
     key_file: /var/lib/xivo-auth-keys/xivo-ctid-key.yml
+  xivo-ctid-ng:
+    key_file: /var/lib/xivo-auth-keys/xivo-ctid-ng-key.yml
   xivo-dird-phoned:
     key_file: /var/lib/xivo-auth-keys/xivo-dird-phoned-key.yml
     acls:
