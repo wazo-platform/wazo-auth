@@ -1,0 +1,2 @@
+rm_conffile /etc/default/xivo-auth 15.20
+rm_conffile /etc/init.d/xivo-auth 15.20
