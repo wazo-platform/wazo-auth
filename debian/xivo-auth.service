@@ -1,6 +1,6 @@
 [Unit]
 Description=xivo-auth server
-ConditionPathExists=!/tmp/xivo-disabled
+ConditionPathExists=!/var/lib/xivo/disabled
 After=network.target consul.service
 
 [Service]
