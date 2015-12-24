@@ -13,6 +13,7 @@ Architecture: all
 Depends: ${python:Depends},
          ${misc:Depends},
          xivo-lib-python,
+         xivo-libdao,
          python-flask,
          python-flask-restful,
          python-stevedore,
