@@ -21,7 +21,6 @@ DAEMON=/usr/bin/$DAEMONNAME
 PIDDIR=/var/run/$DAEMONNAME
 PIDFILE=$PIDDIR/$DAEMONNAME.pid
 XIVO_DEFAULT_FILE="/etc/default/xivo"
-XIVO_AUTH_DEFAULT_FILE="/etc/default/${DAEMONNAME}"
 
 . /lib/lsb/init-functions
 
@@ -30,13 +29,6 @@ test -x $DAEMON || exit 0
 is_enabled() {
     # Check if startup variable is set to 1, if not we exit.
     startup=yes
-    if [ -r $XIVO_AUTH_DEFAULT_FILE ]; then
-        . $XIVO_AUTH_DEFAULT_FILE
-    fi
-    if [ "$startup" != "yes" ]; then
-        echo "$DAEMONNAME startup is disabled in $XIVO_AUTH_DEFAULT_FILE"
-        exit 0
-    fi
     if [ -r $XIVO_DEFAULT_FILE ]; then
         . $XIVO_DEFAULT_FILE
     fi

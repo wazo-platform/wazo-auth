@@ -1,0 +1,13 @@
+[Unit]
+Description=xivo-auth server
+ConditionPathExists=!/var/lib/xivo/disabled
+After=network.target consul.service
+
+[Service]
+Type=forking
+ExecStartPre=/usr/bin/install -d -o xivo-auth -g xivo-auth /var/run/xivo-auth
+ExecStart=/usr/bin/xivo-auth --user xivo-auth
+PIDFile=/var/run/xivo-auth/xivo-auth.pid
+
+[Install]
+WantedBy=multi-user.target
