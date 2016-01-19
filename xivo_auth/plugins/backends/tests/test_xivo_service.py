@@ -44,12 +44,25 @@ class TestVerifyPassword(unittest.TestCase):
 
         assert_that(acls, equal_to(['confd.#', 'dird.#']))
 
-    def test_that_an_service_as_no_kv_available(self):
+    @patch('xivo_auth.plugins.backends.xivo_service.accesswebservice_dao.get_user_acl',
+           Mock(return_value=['confd.#', 'dird.#']))
+    def test_that_get_consul_acls_return_acl_for_dird(self):
+        backend = backends.XiVOService({})
+        expected_result = [{'rule': 'xivo/private',
+                            'policy': 'read'}]
+
+        consul_acl = backend.get_consul_acls('foo', None)
+
+        assert_that(consul_acl, equal_to(expected_result))
+
+    @patch('xivo_auth.plugins.backends.xivo_service.accesswebservice_dao.get_user_acl',
+           Mock(return_value=['confd.#', '#.dird']))
+    def test_that_get_consul_acls_return_empty_list(self):
         backend = backends.XiVOService({})
 
-        rules = backend.get_consul_acls('foo', None)
+        consul_acl = backend.get_consul_acls('foo', None)
 
-        assert_that(rules, empty())
+        assert_that(consul_acl, empty())
 
     @patch('xivo_auth.plugins.backends.xivo_service.accesswebservice_dao.get_user_id', Mock(return_value=42))
     def test_that_get_ids_returns_the_id_and_None(self):
