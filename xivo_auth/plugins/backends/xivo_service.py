@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Avencall
+# Copyright (C) 2015-2016 Avencall
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,27 +15,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
+import logging
+
 from xivo_auth import BaseAuthenticationBackend
+
+from xivo_dao import accesswebservice_dao
+from xivo_dao.helpers.db_utils import session_scope
+
+logger = logging.getLogger(__name__)
 
 
 class XiVOService(BaseAuthenticationBackend):
 
-    def __init__(self, config):
-        self.services = config.get('services', {})
-
-    def get_consul_acls(self, login, args):
-        service = self.services.get(login, {})
-        acls = service.get('acls', [])
-        return acls
+    def get_consul_acls(self, username, args):
+        return []
 
     def get_acls(self, login, args):
-        return ['agentd.#', 'dird.#', 'confd.#', 'ctid-ng.#']
+        with session_scope():
+            return accesswebservice_dao.get_user_acl(login)
 
     def get_ids(self, login, args):
-        return login, login
+        with session_scope():
+            auth_id = str(accesswebservice_dao.get_user_id(login))
+        user_uuid = None
+        return auth_id, user_uuid
 
     def verify_password(self, login, password):
-        service = self.services.get(login, {})
-        if service.get('service_key', None) == password:
-            return True
-        return False
+        with session_scope():
+            return accesswebservice_dao.check_username_password(login, password)

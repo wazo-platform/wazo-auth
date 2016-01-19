@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Avencall
+# Copyright (C) 2015-2016 Avencall
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,9 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 from .xivo_admin import XiVOAdmin  # noqa
-from .xivo_user import XiVOUser  # noqa
 from .xivo_service import XiVOService  # noqa
-from .xivo_ws import XiVOWS  # noqa
+from .xivo_user import XiVOUser  # noqa
 from .ldap_user_voicemail import LDAPUserVoicemail  # noqa
 from .mock import BackendMock, BackendMockWithUUID  # noqa
 from .broken import BrokenInitBackend  # noqa

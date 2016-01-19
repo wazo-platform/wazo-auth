@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Avencall
+# Copyright (C) 2015-2016 Avencall
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,8 +19,7 @@ import argparse
 
 from xivo.chain_map import ChainMap
 from xivo.http_helpers import DEFAULT_CIPHERS
-from xivo.config_helper import (parse_config_file,
-                                read_config_file_hierarchy)
+from xivo.config_helper import read_config_file_hierarchy
 from xivo.xivo_logging import get_log_level_by_name
 
 
@@ -92,21 +91,8 @@ def _get_reinterpreted_raw_values(config):
     return result
 
 
-def _load_key_files(config):
-    key_configs = {'services': {}}
-    for service_id, service_config in config.get('services', {}).iteritems():
-        key_configs['services'][service_id] = {'service_key': _load_key_file(service_config)}
-    return key_configs
-
-
-def _load_key_file(service_config):
-    key_file = parse_config_file(service_config['key_file'])
-    return key_file['service_key']
-
-
 def get_config(argv):
     cli_config = _parse_cli_args(argv)
     file_config = read_config_file_hierarchy(ChainMap(cli_config, _DEFAULT_CONFIG))
     reinterpreted_config = _get_reinterpreted_raw_values(ChainMap(cli_config, file_config, _DEFAULT_CONFIG))
-    key_configs = _load_key_files(ChainMap(cli_config, file_config, _DEFAULT_CONFIG))
-    return ChainMap(reinterpreted_config, key_configs, cli_config, file_config, _DEFAULT_CONFIG)
+    return ChainMap(reinterpreted_config, cli_config, file_config, _DEFAULT_CONFIG)
