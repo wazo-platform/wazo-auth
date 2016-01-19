@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Avencall
+# Copyright (C) 2015-2016 Avencall
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 import unittest
 
 from mock import Mock, patch
-from hamcrest import assert_that, contains_inanyorder, equal_to, empty
+from hamcrest import assert_that, equal_to, empty
 
 from xivo_auth.plugins import backends
 
@@ -35,12 +35,14 @@ class TestVerifyPassword(unittest.TestCase):
         assert_that(result, equal_to('a_return_value'))
         dao_mock.assert_called_once_with('foo', 'bar')
 
+    @patch('xivo_auth.plugins.backends.xivo_ws.accesswebservice_dao.get_user_acl',
+           Mock(return_value=['confd.#', 'dird.#']))
     def test_that_get_acls_return_acl_for_confd(self):
         backend = backends.XiVOWS({})
 
         acls = backend.get_acls('foo', None)
 
-        assert_that(acls, contains_inanyorder('confd.#'))
+        assert_that(acls, equal_to(['confd.#', 'dird.#']))
 
     def test_that_an_ws_as_no_kv_available(self):
         backend = backends.XiVOWS({})

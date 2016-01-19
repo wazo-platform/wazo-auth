@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Avencall
+# Copyright (C) 2015-2016 Avencall
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,11 +31,12 @@ class XiVOWS(BaseAuthenticationBackend):
         return []
 
     def get_acls(self, login, args):
-        return ['confd.#']
-
-    def get_ids(self, username, args):
         with session_scope():
-            auth_id = str(accesswebservice_dao.get_user_id(username))
+            return accesswebservice_dao.get_user_acl(login)
+
+    def get_ids(self, login, args):
+        with session_scope():
+            auth_id = str(accesswebservice_dao.get_user_id(login))
         user_uuid = None
         return auth_id, user_uuid
 
