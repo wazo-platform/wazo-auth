@@ -7,6 +7,7 @@ flask==0.10.1
 git+https://github.com/xivo-pbx/xivo-dao.git
 git+https://github.com/xivo-pbx/xivo-lib-python.git
 psycopg2==2.5.4
+pyopenssl==0.14  # from xivo-lib-python
 python-consul==0.4.7
 python-ldap==2.4.10
 pyyaml==3.11
