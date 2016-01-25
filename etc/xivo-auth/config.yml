@@ -38,27 +38,6 @@ enabled_plugins:
   - xivo_admin
   - xivo_service
   - xivo_user
-  - xivo_ws
-
-services:
-  xivo-agentd-cli:
-    key_file: /var/lib/xivo-auth-keys/xivo-agentd-cli-key.yml
-  xivo-agid:
-    key_file: /var/lib/xivo-auth-keys/xivo-agid-key.yml
-    acls:
-      -
-        rule: 'xivo/private'
-        policy: 'read'
-  xivo-ctid:
-    key_file: /var/lib/xivo-auth-keys/xivo-ctid-key.yml
-  xivo-ctid-ng:
-    key_file: /var/lib/xivo-auth-keys/xivo-ctid-ng-key.yml
-  xivo-dird-phoned:
-    key_file: /var/lib/xivo-auth-keys/xivo-dird-phoned-key.yml
-    acls:
-      -
-        rule: 'xivo/private'
-        policy: 'read'
 
 amqp:
   uri: amqp://guest:guest@localhost:5672/

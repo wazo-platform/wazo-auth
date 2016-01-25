@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Avencall
+# Copyright (C) 2015-2016 Avencall
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -198,21 +198,6 @@ class _BaseTestCase(unittest.TestCase):
             time.sleep(0.2)
         else:
             self.fail('xivo-auth did not stop')
-
-
-class TestServiceBackend(_BaseTestCase):
-
-    asset = 'service'
-
-    def test_POST_with_a_xivo_user_uuid(self):
-        response = self._post_token('test-service', 'foobar', backend='xivo_service')
-        content = response.json()['data']
-        auth_id = content['auth_id']
-        xivo_user_uuid = content['xivo_user_uuid']
-
-        assert_that(response.status_code, equal_to(200))
-        assert_that(auth_id, equal_to('test-service'))
-        assert_that(xivo_user_uuid, equal_to('test-service'))
 
 
 @unittest.skip('Skipped until python-consul implement a timeout')
