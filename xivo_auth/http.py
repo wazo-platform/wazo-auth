@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Avencall
+# Copyright (C) 2015-2016 Avencall
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,17 +35,23 @@ def _error(code, msg):
             'status_code': code}, code
 
 
+def _is_positive_integer(i):
+    return isinstance(i, int) and i > 0
+
+
 class Token(Resource):
 
     @httpauth.login_required
     def post(self):
         data = request.get_json()
         args = {}
-        if 'expiration' in data:
-            if not data['expiration'] > 0:
-                return _error(400, 'Invalid expiration')
 
-            args['expiration'] = data['expiration']
+        expiration = data.get('expiration')
+        if expiration is not None:
+            if _is_positive_integer(expiration):
+                args['expiration'] = expiration
+            else:
+                return _error(400, 'Invalid expiration')
 
         login = httpauth.username()
         backend_name = request.get_json()['backend']
