@@ -39,7 +39,7 @@ Running unit tests
 ------------------
 
 ```
-apt-get install libpq-dev python-dev libffi-dev libyaml-dev
+apt-get install libldap2-dev libpq-dev python-dev libffi-dev libyaml-dev
 pip install tox
 tox --recreate -e py27
 ```
