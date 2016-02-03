@@ -28,30 +28,33 @@ curl -k -i -X GET -H 'Content-Type: application/json' "https://localhost:9497/0.
     docker run -p 9497:9497 -v /conf/xivo-auth:/etc/xivo-auth/conf.d/ -it xivo-auth bash
     xivo-auth [-df] [-u <user>] [-c <path/to/config/file>]
 
+
 Configuration
 -------------
 
 The default config is /etc/xivo-auth/config.yml, you could override in /etc/xivo-auth/conf.d/
 
 
-Integration tests
------------------
+Running unit tests
+------------------
 
-Executing integration tests require docker, the docker image is located in the
-integration_tests directory.
-
-Before starting build the xivo/xivo-auth image
-
-```sh
-cd integration_tests
-make test-setup
-pip install -r test-requirements.txt
+```
+apt-get install libpq-dev python-dev libffi-dev libyaml-dev
+pip install tox
+tox --recreate -e py27
 ```
 
-To run the tests from the integration_tests directory
 
-```sh
-nosetests
+Running integration tests
+-------------------------
+
+You need Docker installed.
+
+```
+cd integration_tests
+pip install -U -r test-requirements.txt
+make test-setup
+make test
 ```
 
 If you are using docker-machine you must:
