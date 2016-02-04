@@ -1,8 +1,8 @@
-.PHONY: test-setup test test-image test-prerequisit
+.PHONY: test-setup test test-image test-prerequisite
 
-test-setup: test-prerequisit test-image ;
+test-setup: test-prerequisite test-image ;
 
-test-prerequisit:
+test-prerequisite:
 	docker pull python:2.7
 	docker pull n3llyb0y/wait
 	docker pull rabbitmq
