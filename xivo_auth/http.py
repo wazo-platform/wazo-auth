@@ -39,7 +39,7 @@ def _is_positive_integer(i):
     return isinstance(i, int) and i > 0
 
 
-class Token(Resource):
+class Tokens(Resource):
 
     @httpauth.login_required
     def post(self):
@@ -64,6 +64,9 @@ class Token(Resource):
 
         response = {'data': token.to_dict()}
         return response, 200
+
+
+class Token(Resource):
 
     def delete(self, token):
         try:

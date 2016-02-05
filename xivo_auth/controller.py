@@ -124,9 +124,8 @@ class Controller(object):
         app = Flask('xivo-auth')
         http_helpers.add_logger(app, logger)
         api = Api(app, prefix='/0.1')
-        api.add_resource(http.Token,
-                         '/token',
-                         '/token/<string:token>')
+        api.add_resource(http.Tokens, '/token')
+        api.add_resource(http.Token, '/token/<string:token>')
         api.add_resource(http.Backends, '/backends')
         api.add_resource(http.Api, '/api/api.json')
         app.config.update(self._config)
