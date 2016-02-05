@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Avencall
+# Copyright (C) 2015-2016 Avencall
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ from xivo_dao.helpers.db_utils import session_scope
 logger = logging.getLogger(__name__)
 
 
-class LDAPUserVoicemail(BaseAuthenticationBackend):
+class LDAPUser(BaseAuthenticationBackend):
 
     def __init__(self, config):
         self.config = config['ldap']
