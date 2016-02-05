@@ -20,7 +20,7 @@ import logging
 from ldap_backend import XivoLDAP
 from xivo_auth import BaseAuthenticationBackend
 
-from xivo_dao import user_dao
+from xivo_dao.resources.user.dao import find_by
 from xivo_dao.helpers.db_utils import session_scope
 
 logger = logging.getLogger(__name__)
@@ -56,12 +56,12 @@ class LDAPUser(BaseAuthenticationBackend):
 
     def _get_xivo_user_uuid_by_ldap_username(self, username):
         email = self._set_username_with_domain(username)
-        try:
-            with session_scope():
-                return user_dao.get_uuid_by_email(email)
-        except LookupError:
-            logger.warning('%s does not have an email associated with a XiVO user', username)
-            return None
+        with session_scope():
+            xivo_user = find_by(email=email)
+            if not xivo_user:
+                logger.warning('%s does not have an email associated with a XiVO user', username)
+                return xivo_user
+            return xivo_user.uuid
 
     def _get_username(self, username):
         if '@' in username:
