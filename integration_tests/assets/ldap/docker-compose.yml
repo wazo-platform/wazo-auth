@@ -39,12 +39,11 @@ slapd:
   ports:
     - "3899:389"
 postgres:
-  image: xivo/xivo-postgres
+  image: xivo/postgres-test
   expose:
     - "5432"
   volumes:
-    - "./etc/xivo-postgres/populate.sql:/docker-entrypoint-initdb.d/populate.sql"
-    - "./etc/xivo-postgres/fsync_off.sh:/docker-entrypoint-initdb.d/fsync_off.sh"
+      - "./etc/xivo-postgres/populate.sql:/pg-init-db/populate.sql"
 rabbitmq:
   image: rabbitmq
   expose:
