@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Avencall
+# Copyright (C) 2015-2016 Avencall
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,17 +20,16 @@ import logging
 from ldap_backend import XivoLDAP
 from xivo_auth import BaseAuthenticationBackend
 
-from xivo_dao import user_dao
+from xivo_dao.resources.user.dao import find_by
 from xivo_dao.helpers.db_utils import session_scope
 
 logger = logging.getLogger(__name__)
 
 
-class LDAPUserVoicemail(BaseAuthenticationBackend):
+class LDAPUser(BaseAuthenticationBackend):
 
     def __init__(self, config):
         self.config = config['ldap']
-        self.domain = self.config['domain']
         self.bind_dn_format = self.config['bind_dn_format']
         self.ldap = XivoLDAP(self.config)
 
@@ -56,12 +55,12 @@ class LDAPUserVoicemail(BaseAuthenticationBackend):
 
     def _get_xivo_user_uuid_by_ldap_username(self, username):
         email = self._set_username_with_domain(username)
-        try:
-            with session_scope():
-                return user_dao.get_uuid_by_email(email)
-        except LookupError:
-            logger.warning('%s does not have an email associated with a XiVO user', username)
-            return None
+        with session_scope():
+            xivo_user = find_by(email=email)
+            if not xivo_user:
+                logger.warning('%s does not have an email associated with a XiVO user', username)
+                return xivo_user
+            return xivo_user.uuid
 
     def _get_username(self, username):
         if '@' in username:
@@ -73,5 +72,5 @@ class LDAPUserVoicemail(BaseAuthenticationBackend):
 
     def _set_username_with_domain(self, username):
         if '@' not in username:
-            username = '{username}@{domain}'.format(username=username, domain=self.domain)
+            username = '{username}@{domain}'.format(username=username, domain=self.config['domain'])
         return username

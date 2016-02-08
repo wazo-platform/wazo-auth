@@ -17,7 +17,7 @@ rest_api:
     allow_headers: Content-Type, authorization, x-auth-token
 
 enabled_plugins:
-  - ldap_user_voicemail
+  - ldap_user
 
 amqp:
   uri: amqp://guest:guest@rabbitmq:5672/

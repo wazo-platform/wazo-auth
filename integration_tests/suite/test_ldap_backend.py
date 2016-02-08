@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2015 Avencall
+# Copyright (C) 2015-2016 Avencall
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -86,7 +86,7 @@ class TestLDAP(_BaseTestCase):
             raise
 
     def test_ldap_authentication(self):
-        response = self._post_token('awonderland', 'awonderland_password', backend='ldap_user_voicemail')
+        response = self._post_token('awonderland', 'awonderland_password', backend='ldap_user')
 
         assert_that(response.status_code, equal_to(200))
 
@@ -94,6 +94,6 @@ class TestLDAP(_BaseTestCase):
         assert_that(xivo_user_uuid, equal_to('1'))
 
     def test_ldap_authentication_fail_when_wrong_password(self):
-        response = self._post_token('awonderland', 'wrong_password', backend='ldap_user_voicemail')
+        response = self._post_token('awonderland', 'wrong_password', backend='ldap_user')
 
         assert_that(response.status_code, equal_to(401))
