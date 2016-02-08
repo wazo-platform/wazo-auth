@@ -24,4 +24,4 @@ ADD ./contribs/docker/certs /usr/share/xivo-certs
 
 EXPOSE 9497
 
-CMD xivo-auth -fd --user www-data
+CMD ["xivo-auth", "-fd", "--user", "www-data"]
