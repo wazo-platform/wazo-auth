@@ -35,8 +35,8 @@ rest_api:
 
 
 enabled_plugins:
+  - ldap_user
   - xivo_admin
-  - xivo_ldap
   - xivo_service
   - xivo_user
 
