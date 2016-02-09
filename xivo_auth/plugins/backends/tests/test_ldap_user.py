@@ -63,10 +63,15 @@ class TestGetACLS(unittest.TestCase):
         self.args = None
         self.backend = LDAPUser(config)
 
-    def test_that_get_consul_acls_calls_get_ids(self, find_by):
+    def test_get_acls(self, find_by):
         result = self.backend.get_acls('alice', self.args)
 
-        acls = ['dird']
+        acls = ['dird.#.me',
+                'confd.users.me.read',
+                'confd.users.me.update',
+                'confd.users.me.funckeys.*.*',
+                'confd.users.me.#.read']
+
         assert_that(result, equal_to((acls)))
 
 

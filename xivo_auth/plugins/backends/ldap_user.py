@@ -40,7 +40,11 @@ class LDAPUser(BaseAuthenticationBackend):
         return rules
 
     def get_acls(self, login, args):
-        return ['dird']
+        return ['dird.#.me',
+                'confd.users.me.read',
+                'confd.users.me.update',
+                'confd.users.me.funckeys.*.*',
+                'confd.users.me.#.read']
 
     def get_ids(self, username, args):
         user_uuid = self._get_xivo_user_uuid_by_ldap_username(username)
