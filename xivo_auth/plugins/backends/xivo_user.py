@@ -20,6 +20,12 @@ from xivo_auth import BaseAuthenticationBackend
 from xivo_dao.resources.user import dao as user_dao
 from xivo_dao.helpers.db_utils import session_scope
 
+DEFAULT_ACLS = ['dird.#.me',
+                'confd.users.me.read',
+                'confd.users.me.update',
+                'confd.users.me.funckeys.*.*',
+                'confd.users.me.#.read']
+
 
 class XiVOUser(BaseAuthenticationBackend):
 
@@ -30,11 +36,7 @@ class XiVOUser(BaseAuthenticationBackend):
         return rules
 
     def get_acls(self, login, args):
-        return ['dird.#.me',
-                'confd.users.me.read',
-                'confd.users.me.update',
-                'confd.users.me.funckeys.*.*',
-                'confd.users.me.#.read']
+        return DEFAULT_ACLS
 
     def get_ids(self, username, args):
         with session_scope():

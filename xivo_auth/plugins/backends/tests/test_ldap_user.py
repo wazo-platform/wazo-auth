@@ -20,8 +20,7 @@ import unittest
 from mock import patch, Mock
 from hamcrest import assert_that, equal_to
 
-from xivo_auth.plugins.backends.ldap_user import LDAPUser
-
+from xivo_auth.plugins.backends.ldap_user import LDAPUser, DEFAULT_ACLS
 
 @patch('xivo_auth.plugins.backends.ldap_user.XivoLDAP', Mock())
 @patch('xivo_auth.plugins.backends.ldap_user.find_by')
@@ -66,13 +65,7 @@ class TestGetACLS(unittest.TestCase):
     def test_get_acls(self, find_by):
         result = self.backend.get_acls('alice', self.args)
 
-        acls = ['dird.#.me',
-                'confd.users.me.read',
-                'confd.users.me.update',
-                'confd.users.me.funckeys.*.*',
-                'confd.users.me.#.read']
-
-        assert_that(result, equal_to((acls)))
+        assert_that(result, equal_to((DEFAULT_ACLS)))
 
 
 @patch('xivo_auth.plugins.backends.ldap_user.XivoLDAP', Mock())
