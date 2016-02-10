@@ -35,7 +35,12 @@ DEFAULT_ACLS = ['dird.#.me',
 class LDAPUser(BaseAuthenticationBackend):
 
     def __init__(self, config):
-        self.config = config['ldap']
+        try:
+            self.config = config['ldap']
+        except KeyError:
+            logger.warning('Plugin ldap is not configured')
+            return
+
         self.bind_dn_format = self.config['bind_dn_format']
         self.ldap = XivoLDAP(self.config)
 
