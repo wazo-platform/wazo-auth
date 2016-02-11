@@ -50,6 +50,15 @@ _DEFAULT_CONFIG = {
         'port': 8500,
         'verify': '/usr/share/xivo-certs/server.crt',
     },
+    'service_discovery': {
+        'advertise_address': 'auto',
+        'advertise_address_interface': 'eth0',
+        'enabled': True,
+        'ttl_interval': 30,
+        'refresh_interval': 27,
+        'retry_interval': 2,
+        'extra_tags': [],
+    },
 }
 
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Avencall
+# Copyright (C) 2015-2016 Avencall
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import logging
+import signal
 import sys
+import os
+
+from functools import partial
 
 from cherrypy import wsgiserver
 from celery import Celery
@@ -27,10 +31,17 @@ from flask.ext.cors import CORS
 from stevedore.dispatch import NameDispatchExtensionManager
 from threading import Thread
 from xivo import http_helpers
+from xivo.consul_helpers import ServiceCatalogRegistration
 
 from xivo_auth import http, token, extensions
 
+from .service_discovery import self_check
+
 logger = logging.getLogger(__name__)
+
+
+def _signal_handler(signum, frame):
+    sys.exit(0)
 
 
 class Controller(object):
@@ -44,8 +55,10 @@ class Controller(object):
             self._cors_config = config['rest_api']['cors']
             self._cors_enabled = self._cors_config['enabled']
             self._consul_config = config['consul']
+            self._service_discovery_config = config['service_discovery']
             self._plugins = config['enabled_plugins']
             self._bus_uri = config['amqp']['uri']
+            self._bus_config = config['amqp']
             self._log_level = config['log_level']
             self._debug = config['debug']
             self._bind_addr = (self._listen_addr, self._listen_port)
@@ -67,15 +80,28 @@ class Controller(object):
 
     def run(self):
         self._start_celery_worker()
+        signal.signal(signal.SIGTERM, _signal_handler)
         wsgi_app = wsgiserver.WSGIPathInfoDispatcher({'/': self._flask_app})
         server = wsgiserver.CherryPyWSGIServer(bind_addr=self._bind_addr, wsgi_app=wsgi_app)
         server.ssl_adapter = http_helpers.ssl_adapter(self._ssl_cert_file,
                                                       self._ssl_key_file,
                                                       self._ssl_ciphers)
-        try:
-            server.start()
-        except KeyboardInterrupt:
-            server.stop()
+
+        uuid = os.getenv('XIVO_UUID')
+        if not uuid and self._service_discovery_config['enabled']:
+            logger.error('undefined environment variable XIVO_UUID')
+            sys.exit(1)
+
+        with ServiceCatalogRegistration('xivo-auth',
+                                        uuid,
+                                        self._consul_config,
+                                        self._service_discovery_config,
+                                        self._bus_config,
+                                        partial(self_check, self._listen_port)):
+            try:
+                server.start()
+            finally:
+                server.stop()
 
     def _start_celery_worker(self):
         args = sys.argv[:1]
