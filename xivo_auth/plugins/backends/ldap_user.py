@@ -29,7 +29,10 @@ DEFAULT_ACLS = ['dird.#.me',
                 'confd.users.me.read',
                 'confd.users.me.update',
                 'confd.users.me.funckeys.*.*',
-                'confd.users.me.#.read']
+                'confd.users.me.#.read',
+                'ctid-ng.calls.create',
+                'ctid-ng.calls.*.read',
+                'ctid-ng.calls.*.delete']
 
 
 class LDAPUser(BaseAuthenticationBackend):
