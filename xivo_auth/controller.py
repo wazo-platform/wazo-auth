@@ -87,13 +87,13 @@ class Controller(object):
                                                       self._ssl_key_file,
                                                       self._ssl_ciphers)
 
-        uuid = os.getenv('XIVO_UUID')
-        if not uuid and self._service_discovery_config['enabled']:
+        xivo_uuid = os.getenv('XIVO_UUID')
+        if not xivo_uuid and self._service_discovery_config['enabled']:
             logger.error('undefined environment variable XIVO_UUID')
             sys.exit(1)
 
         with ServiceCatalogRegistration('xivo-auth',
-                                        uuid,
+                                        xivo_uuid,
                                         self._consul_config,
                                         self._service_discovery_config,
                                         self._bus_config,
