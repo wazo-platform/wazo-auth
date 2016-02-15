@@ -24,6 +24,7 @@ from xivo.xivo_logging import get_log_level_by_name
 
 
 TWO_HOURS = 60 * 60 * 2
+_DEFAULT_HTTP_PORT = 9497
 _DEFAULT_CONFIG = {
     'user': 'www-data',
     'config_file': '/etc/xivo-auth/config.yml',
@@ -35,7 +36,7 @@ _DEFAULT_CONFIG = {
     'rest_api': {
         'https': {
             'listen': '0.0.0.0',
-            'port': 9497,
+            'port': _DEFAULT_HTTP_PORT,
             'certificate': '/usr/share/xivo-certs/server.crt',
             'private_key': '/usr/share/xivo-certs/server.key',
             'ciphers': DEFAULT_CIPHERS,
@@ -53,6 +54,7 @@ _DEFAULT_CONFIG = {
     'service_discovery': {
         'advertise_address': 'auto',
         'advertise_address_interface': 'eth0',
+        'advertise_port': _DEFAULT_HTTP_PORT,
         'enabled': True,
         'ttl_interval': 30,
         'refresh_interval': 27,
