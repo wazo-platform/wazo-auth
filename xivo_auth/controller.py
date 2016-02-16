@@ -71,6 +71,8 @@ class Controller(object):
             sys.exit(1)
 
         backends = self._load_backends()
+        self._config['loaded_plugins'] = self._loaded_plugins_names(backends)
+
         self._celery = self._configure_celery()
         consul_client = Consul(**self._consul_config)
         token_storage = token.Storage(consul_client)
@@ -114,6 +116,9 @@ class Controller(object):
 
     def _load_backends(self):
         return _PluginLoader(self._config).load()
+
+    def _loaded_plugins_names(self, backends):
+        return [backend.name for backend in backends]
 
     def _configure_celery(self):
         celery = Celery('xivo-auth', broker=self._bus_uri)
@@ -183,7 +188,11 @@ class _PluginLoader(object):
         return self._backends
 
     def _check(self, plugin):
-        return plugin.name in self._enabled_plugins
+        if plugin.name in self._enabled_plugins:
+            if plugin.plugin.should_be_loaded(self._config):
+                return True
+            logger.info('Plugin %s is not configured', plugin.name)
+        return False
 
     def _load(self, extension):
         try:

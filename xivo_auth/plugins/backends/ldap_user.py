@@ -38,12 +38,7 @@ DEFAULT_ACLS = ['dird.#.me',
 class LDAPUser(BaseAuthenticationBackend):
 
     def __init__(self, config):
-        try:
-            self.config = config['ldap']
-        except KeyError:
-            logger.warning('Plugin ldap is not configured')
-            return
-
+        self.config = config['ldap']
         self.bind_dn_format = self.config['bind_dn_format']
         self.ldap = XivoLDAP(self.config)
 
@@ -66,6 +61,10 @@ class LDAPUser(BaseAuthenticationBackend):
         if self._get_xivo_user_uuid_by_ldap_username(username) is None:
             return False
         return True
+
+    @staticmethod
+    def should_be_loaded(config):
+        return bool(config.get('ldap', False))
 
     def _get_xivo_user_uuid_by_ldap_username(self, username):
         email = self._set_username_with_domain(username)

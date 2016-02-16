@@ -96,7 +96,7 @@ class Token(Resource):
 class Backends(Resource):
 
     def get(self):
-        return {'data': current_app.config['enabled_plugins']}
+        return {'data': current_app.config['loaded_plugins']}
 
 
 class Api(Resource):
