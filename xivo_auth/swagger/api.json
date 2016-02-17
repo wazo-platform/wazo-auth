@@ -46,6 +46,11 @@
                 "tags": [
                     "token"
                 ],
+                "security": [
+                    {
+                        "xivo_auth_basic": []
+                    }
+                ],
                 "parameters": [
                     {
                         "name": "body",
@@ -95,6 +100,7 @@
                 "tags": [
                     "token"
                 ],
+                "security": [ {} ],
                 "parameters": [
                     {
                         "name": "token",
@@ -143,6 +149,7 @@
                 "tags": [
                     "token"
                 ],
+                "security": [ {} ],
                 "parameters": [
                     {
                         "name": "token",
@@ -188,6 +195,7 @@
                 "tags": [
                     "token"
                 ],
+                "security": [ {} ],
                 "parameters": [
                     {
                         "name": "token",
@@ -216,6 +224,7 @@
                 "tags": [
                     "backends"
                 ],
+                "security": [ {} ],
                 "description": "Retrieves the list of activated backends",
                 "responses": {
                     "200": {
