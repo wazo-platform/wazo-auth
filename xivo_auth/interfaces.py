@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Avencall
+# Copyright (C) 2015-2016 Avencall
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,3 +51,14 @@ class BaseAuthenticationBackend(object):
     @abc.abstractmethod
     def verify_password(self, login, passwd):
         """Checks if a login/password combination is correct, returns True or False."""
+
+    @staticmethod
+    def should_be_loaded(config):
+        """Checks if a plugin should be loaded
+
+        This method is called before plugins are loaded. This method is not called
+        if the plugin is not in enabled_plugins.
+
+        Return True if the plugin should be loaded and False otherwise.
+        """
+        return True

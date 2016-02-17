@@ -22,6 +22,7 @@ from hamcrest import assert_that, equal_to
 
 from xivo_auth.plugins.backends.ldap_user import LDAPUser, DEFAULT_ACLS
 
+
 @patch('xivo_auth.plugins.backends.ldap_user.XivoLDAP', Mock())
 @patch('xivo_auth.plugins.backends.ldap_user.find_by')
 class TestGetConsulACLS(unittest.TestCase):
@@ -132,4 +133,17 @@ class TestVerifyPassword(unittest.TestCase):
 
         result = backend.verify_password('foo', 'bar')
 
+        assert_that(result, equal_to(False))
+
+
+class TestShouldBeLoaded(unittest.TestCase):
+
+    def test_that_should_be_loaded_return_false_when_no_config(self):
+        config = {}
+        result = LDAPUser.should_be_loaded(config)
+        assert_that(result, equal_to(False))
+
+    def test_that_should_be_loaded_return_true(self):
+        config = {'ldap': {}}
+        result = LDAPUser.should_be_loaded(config)
         assert_that(result, equal_to(False))
