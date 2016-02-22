@@ -20,14 +20,19 @@ from xivo_auth import BaseAuthenticationBackend
 from xivo_dao.resources.user import dao as user_dao
 from xivo_dao.helpers.db_utils import session_scope
 
-DEFAULT_ACLS = ['dird.#.me',
-                'confd.users.me.read',
+DEFAULT_ACLS = ['confd.users.me.read',
                 'confd.users.me.update',
                 'confd.users.me.funckeys.*.*',
                 'confd.users.me.#.read',
                 'ctid-ng.calls.create',
                 'ctid-ng.calls.*.read',
-                'ctid-ng.calls.*.delete']
+                'ctid-ng.calls.*.delete',
+                'dird.#.me.read',
+                'dird.directories.favorites.#',
+                'dird.directories.lookup.*.headers.read',
+                'dird.directories.lookup.*.read',
+                'dird.directories.personal.*.read',
+                'dird.personal.#']
 
 
 class XiVOUser(BaseAuthenticationBackend):
