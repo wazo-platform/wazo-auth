@@ -65,3 +65,31 @@ If you are using docker-machine you must:
 export XIVO_AUTH_TEST_HOST=$(docker-machine ip <your-docker-machine>)
 sed -i '/delete-on-docker-machine/d' assets/*/docker-compose.yml
 ```
+
+
+Load testing
+------------
+
+To test xivo-auth with ab
+
+Dependencies
+
+* ab
+
+```sh
+apt-get update && apt-get install apache2-utils
+```
+
+Running the tests
+
+with the following content in '/tmp/body.json'
+
+```javascript
+{"backend": "xivo_user"}
+```
+
+```sh
+ab -n1000 -c25 -A 'alice:alice' -p /tmp/body.json -T 'application/json' "https://localhost:9497/0.1/token"
+```
+
+This line will start 25 process creating 1000 tokens with the username and password alice alice
