@@ -17,7 +17,7 @@
 
 import unittest
 
-from mock import patch, Mock
+from mock import patch, Mock, call
 from hamcrest import assert_that, equal_to
 
 from xivo_auth.plugins.backends.ldap_user import LDAPUser, DEFAULT_ACLS
@@ -31,21 +31,17 @@ class TestGetConsulACLS(unittest.TestCase):
         config = {
             'ldap': {
                 'uri': 'ldap://host:389',
-                'bind_dn_format': 'uid={username},dc=example,dc=com',
-                'domain': 'example.com',
+                'user_base_dn': 'dc=example,dc=com',
+                'user_login_attribute': 'uid'
             }
         }
-        self.args = None
+        self.args = {'xivo_user_uuid': 'alice-uuid'}
         self.backend = LDAPUser(config)
 
     def test_that_get_consul_acls_calls_get_ids(self, find_by):
-        find_by.return_value.uuid = 'alice-uuid'
-
+        expected_acls = [{'rule': 'xivo/private/alice-uuid', 'policy': 'write'}]
         result = self.backend.get_consul_acls('alice', self.args)
-
-        acls = [{'rule': 'xivo/private/alice-uuid', 'policy': 'write'}]
-        assert_that(result, equal_to((acls)))
-        find_by.assert_called_once_with(email='alice@example.com')
+        assert_that(result, equal_to((expected_acls)))
 
 
 @patch('xivo_auth.plugins.backends.ldap_user.XivoLDAP', Mock())
@@ -56,16 +52,15 @@ class TestGetACLS(unittest.TestCase):
         config = {
             'ldap': {
                 'uri': 'ldap://host:389',
-                'bind_dn_format': 'uid={username},dc=example,dc=com',
-                'domain': 'example.com',
+                'user_base_dn': 'dc=example,dc=com',
+                'user_login_attribute': 'uid'
             }
         }
-        self.args = None
+        self.args = {'xivo_user_uuid': 'alice-uuid'}
         self.backend = LDAPUser(config)
 
     def test_get_acls(self, find_by):
         result = self.backend.get_acls('alice', self.args)
-
         assert_that(result, equal_to((DEFAULT_ACLS)))
 
 
@@ -77,24 +72,19 @@ class TestGetIDS(unittest.TestCase):
         config = {
             'ldap': {
                 'uri': 'ldap://host:389',
-                'bind_dn_format': 'uid={username},dc=example,dc=com',
-                'domain': 'example.com',
+                'user_base_dn': 'dc=example,dc=com',
+                'user_login_attribute': 'uid'
             }
         }
-        self.args = None
+        self.args = {'xivo_user_uuid': 'alice-uuid'}
         self.backend = LDAPUser(config)
 
     def test_that_get_ids_calls_the_dao(self, find_by):
-        find_by.return_value.uuid = 'alice-uuid'
         expected_result = ('alice-uuid', 'alice-uuid')
-
         result = self.backend.get_ids('alice', self.args)
-
         assert_that(result, equal_to(expected_result))
-        find_by.assert_called_once_with(email='alice@example.com')
 
     def test_that_get_ids_raises_if_no_user(self, find_by):
-        find_by.return_value.uuid = None
         self.assertRaises(Exception, self.backend.get_ids, 'alice')
 
 
@@ -102,38 +92,141 @@ class TestGetIDS(unittest.TestCase):
 @patch('xivo_auth.plugins.backends.ldap_user.find_by')
 class TestVerifyPassword(unittest.TestCase):
 
-    def test_that_verify_password_calls_perform_bind(self, find_by):
-        config = {
+    def setUp(self):
+        self.config = {
             'ldap': {
                 'uri': 'ldap://host:389',
-                'bind_dn_format': 'uid={username},dc=example,dc=com',
-                'domain': 'example.com',
+                'user_base_dn': 'dc=example,dc=com',
+                'user_login_attribute': 'uid'
             }
         }
-        backend = LDAPUser(config)
-        backend.ldap.perform_bind.return_value = True
-        find_by.return_value.uuid = 'alice-uuid'
+        self.expected_user_dn = 'uid=foo,dc=example,dc=com'
 
-        result = backend.verify_password('foo', 'bar')
+    def test_that_verify_password_calls_perform_bind(self, find_by):
+        backend = LDAPUser(self.config)
+        backend.ldap.reset_mock()
+        backend.ldap.perform_bind.return_value = True
+        backend.ldap.get_user_email.return_value = 'foo@example.com'
+        backend.ldap.build_dn_with_config.return_value = self.expected_user_dn
+        find_by.return_value.uuid = 'alice-uuid'
+        args = {}
+
+        result = backend.verify_password('foo', 'bar', args)
 
         assert_that(result, equal_to(True))
-        backend.ldap.perform_bind.assert_called_once_with('uid=foo,dc=example,dc=com', 'bar')
+        backend.ldap.perform_bind.assert_called_once_with(self.expected_user_dn, 'bar')
 
-    def test_that_verify_password_calls_return_False_when_no_email_associated(self, find_by):
-        config = {
-            'ldap': {
-                'uri': 'ldap://host:389',
-                'bind_dn_format': 'uid={username},dc=example,dc=com',
-                'domain': 'example.com',
-            }
-        }
-        backend = LDAPUser(config)
-        backend.ldap.perform_bind.return_value = True
-        find_by.return_value.uuid = None
+    def test_that_verify_password_calls_return_false_when_no_user_bind(self, find_by):
+        backend = LDAPUser(self.config)
+        backend.ldap.reset_mock()
+        backend.ldap.perform_bind.return_value = False
+        args = {}
 
-        result = backend.verify_password('foo', 'bar')
+        result = backend.verify_password('foo', 'bar', args)
 
         assert_that(result, equal_to(False))
+        backend.ldap.perform_bind.assert_called_once_with(self.expected_user_dn, 'bar')
+
+    def test_that_verify_password_calls_return_False_when_no_email_associated(self, find_by):
+        backend = LDAPUser(self.config)
+        backend.ldap.reset_mock()
+        backend.ldap.perform_bind.return_value = True
+        backend.ldap.get_user_email.return_value = 'foo@example.com'
+        backend.ldap.build_dn_with_config.return_value = 'uid=foo,dc=example,dc=com'
+        find_by.return_value.uuid = None
+        args = {}
+
+        result = backend.verify_password('foo', 'bar', args)
+
+        assert_that(result, equal_to(False))
+        assert_that(args, equal_to({}))
+
+    def test_that_verify_password_calls_with_bind_anonymous(self, find_by):
+        extended_config = {
+            'ldap': {
+                'bind_anonymous': True
+            }
+        }
+        extended_config['ldap'].update(self.config['ldap'])
+        backend = LDAPUser(extended_config)
+        backend.ldap.reset_mock()
+        backend.ldap.perform_bind.return_value = True
+        backend.ldap.get_user_email.return_value = 'foo@example.com'
+        backend.ldap.perform_search_dn.return_value = self.expected_user_dn
+        find_by.return_value.uuid = 'alice-uuid'
+        args = {}
+
+        result = backend.verify_password('foo', 'bar', args)
+
+        assert_that(result, equal_to(True))
+        assert_that(args, equal_to({'xivo_user_uuid': 'alice-uuid'}))
+        expected_call = [call('', ''), call(self.expected_user_dn, 'bar')]
+        backend.ldap.perform_bind.assert_has_calls(expected_call)
+        backend.ldap.perform_search_dn.assert_called_once_with('foo')
+
+    def test_that_verify_password_calls_return_false_when_no_binding_with_anonymous(self, find_by):
+        extended_config = {
+            'ldap': {
+                'bind_anonymous': True
+            }
+        }
+        extended_config['ldap'].update(self.config['ldap'])
+        backend = LDAPUser(extended_config)
+        backend.ldap.reset_mock()
+        backend.ldap.perform_bind.return_value = False
+        args = {}
+
+        result = backend.verify_password('foo', 'bar', args)
+
+        assert_that(result, equal_to(False))
+        backend.ldap.perform_bind.assert_called_once_with('', '')
+
+    def test_that_verify_password_calls_with_bind_dn(self, find_by):
+        extended_config = {
+            'ldap': {
+                'bind_dn': 'uid=foo,dc=example,dc=com',
+                'bind_password': 'S3cr$t'
+            }
+        }
+        extended_config['ldap'].update(self.config['ldap'])
+        backend = LDAPUser(extended_config)
+        backend.ldap.reset_mock()
+        backend.ldap.perform_bind.return_value = True
+        backend.ldap.get_user_email.return_value = 'foo@example.com'
+        backend.ldap.perform_search_dn.return_value = self.expected_user_dn
+        find_by.return_value.uuid = 'alice-uuid'
+        args = {}
+
+        result = backend.verify_password('foo', 'bar', args)
+
+        assert_that(result, equal_to(True))
+        assert_that(args, equal_to({'xivo_user_uuid': 'alice-uuid'}))
+        expected_call = [call('uid=foo,dc=example,dc=com', 'S3cr$t'), call(self.expected_user_dn, 'bar')]
+        backend.ldap.perform_bind.assert_has_calls(expected_call)
+        backend.ldap.perform_search_dn.assert_called_once_with('foo')
+
+    def test_that_verify_password_calls_with_missing_bind_password_try_bind(self, find_by):
+        extended_config = {
+            'ldap': {
+                'bind_dn': 'uid=foo,dc=example,dc=com',
+            }
+        }
+        extended_config['ldap'].update(self.config['ldap'])
+        backend = LDAPUser(extended_config)
+        backend.ldap.reset_mock()
+        backend.ldap.perform_bind.return_value = True
+        backend.ldap.get_user_email.return_value = 'foo@example.com'
+        backend.ldap.perform_search_dn.return_value = self.expected_user_dn
+        backend.ldap.build_dn_with_config.return_value = self.expected_user_dn
+        find_by.return_value.uuid = 'alice-uuid'
+        args = {}
+
+        result = backend.verify_password('foo', 'bar', args)
+
+        assert_that(result, equal_to(True))
+        assert_that(args, equal_to({'xivo_user_uuid': 'alice-uuid'}))
+        backend.ldap.build_dn_with_config.assert_called_once_with('foo')
+        backend.ldap.perform_bind.assert_called_once_with(self.expected_user_dn, 'bar')
 
 
 class TestShouldBeLoaded(unittest.TestCase):

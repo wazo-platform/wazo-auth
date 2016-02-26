@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2015 Avencall
+# Copyright (C) 2015-2016 Avencall
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,10 +28,12 @@ class XivoLDAP(object):
     def __init__(self, config):
         self.config = config
         self.uri = self.config['uri']
+        self.user_base_dn = self.config['user_base_dn']
+        self.user_login_attribute = self.config['user_login_attribute']
+        self.user_email_attribute = self.config.get('user_email_attribute', 'mail')
         self.ldapobj = None
 
         try:
-            logger.info('LDAP config requested: %s', self.config)
             self.ldapobj = self._create_ldap_obj(self.uri)
         except ldap.LDAPError, exc:
             logger.exception('__init__: ldap.LDAPError (%r, %r, %r)', self.ldapobj, self.config, exc)
@@ -51,7 +53,7 @@ class XivoLDAP(object):
 
         try:
             self.ldapobj.simple_bind_s(username, password)
-            logger.info('LDAP : simple bind done with %s on %s', username, self.uri)
+            logger.debug('LDAP : simple bind done with %s on %s', username, self.uri)
         except ldap.INVALID_CREDENTIALS:
             logger.info('LDAP : simple bind failed with %s on %s : invalid credentials!', username, self.uri)
             return False
@@ -60,3 +62,44 @@ class XivoLDAP(object):
             return False
 
         return True
+
+    def build_dn_with_config(self, login):
+        return '{}={},{}'.format(self.user_login_attribute, login, self.user_base_dn)
+
+    def perform_search_dn(self, username):
+        filterstr = '{}={}'.format(self.user_login_attribute, username)
+        dn, _ = self._perform_search(self.user_base_dn, ldap.SCOPE_SUBTREE,
+                                     filterstr=filterstr,
+                                     attrlist=[''])
+        if not dn:
+            logger.debug('LDAP : No user DN for user_base dn: %s and filterstr: %s', self.user_base_dn, filterstr)
+        return dn
+
+    def get_user_email(self, user_dn):
+        _, obj = self._perform_search(user_dn, ldap.SCOPE_BASE,
+                                      attrlist=[self.user_email_attribute])
+        email = obj.get(self.user_email_attribute, None)
+        email = email[0] if isinstance(email, list) else email
+        if not email:
+            logger.debug('LDAP : No email found for the user DN: %s', user_dn)
+        return email
+
+    def _perform_search(self, base, scope, filterstr='(objectClass=*)', attrlist=None):
+        if self.ldapobj is None:
+            logger.warning('LDAP SERVER not responding')
+            return None, None
+
+        try:
+            results = self.ldapobj.search_ext_s(base, scope,
+                                                filterstr=filterstr,
+                                                attrlist=attrlist,
+                                                sizelimit=1)
+        except ldap.SERVER_DOWN:
+            logger.warning('LDAP : SERVER not responding on %s', self.uri)
+            return None, None
+
+        if not results:
+            logger.debug('LDAP : No result found for base: %s and filterstr: %s', base, filterstr)
+            return None, None
+
+        return results[0]

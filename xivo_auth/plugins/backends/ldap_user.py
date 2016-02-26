@@ -44,7 +44,10 @@ class LDAPUser(BaseAuthenticationBackend):
 
     def __init__(self, config):
         self.config = config['ldap']
-        self.bind_dn_format = self.config['bind_dn_format']
+        self.bind_dn = self.config.get('bind_dn', '')
+        self.bind_password = self.config.get('bind_password', '')
+        self.bind_anonymous = self.config.get('bind_anonymous', False)
+
         self.ldap = XivoLDAP(self.config)
 
     def get_consul_acls(self, username, args):
@@ -57,38 +60,41 @@ class LDAPUser(BaseAuthenticationBackend):
         return DEFAULT_ACLS
 
     def get_ids(self, username, args):
-        user_uuid = self._get_xivo_user_uuid_by_ldap_username(username)
+        user_uuid = args['xivo_user_uuid']
         return user_uuid, user_uuid
 
     def verify_password(self, username, password, args):
-        if not self.ldap.perform_bind(self._set_username_dn(username), password):
+        if self.bind_anonymous or (self.bind_dn and self.bind_password):
+            if self.ldap.perform_bind(self.bind_dn, self.bind_password):
+                user_dn = self.ldap.perform_search_dn(username)
+            else:
+                return False
+        else:
+            user_dn = self.ldap.build_dn_with_config(username)
+
+        if not user_dn or not self.ldap.perform_bind(user_dn, password):
             return False
-        if self._get_xivo_user_uuid_by_ldap_username(username) is None:
+
+        user_email = self.ldap.get_user_email(user_dn)
+        if not user_email:
             return False
+
+        xivo_user_uuid = self._get_xivo_user_uuid_by_ldap_attribute(user_email)
+        if not xivo_user_uuid:
+            return False
+
+        args['xivo_user_uuid'] = xivo_user_uuid
+
         return True
 
     @staticmethod
     def should_be_loaded(config):
         return bool(config.get('ldap', False))
 
-    def _get_xivo_user_uuid_by_ldap_username(self, username):
-        email = self._set_username_with_domain(username)
+    def _get_xivo_user_uuid_by_ldap_attribute(self, user_email):
         with session_scope():
-            xivo_user = find_by(email=email)
+            xivo_user = find_by(email=user_email)
             if not xivo_user:
-                logger.warning('%s does not have an email associated with a XiVO user', username)
+                logger.warning('%s does not have an email associated with a XiVO user', user_email)
                 return xivo_user
             return xivo_user.uuid
-
-    def _get_username(self, username):
-        if '@' in username:
-            username, _ = username.split('@', 1)
-        return username
-
-    def _set_username_dn(self, username):
-        return self.bind_dn_format.format(username=self._get_username(username))
-
-    def _set_username_with_domain(self, username):
-        if '@' not in username:
-            username = '{username}@{domain}'.format(username=username, domain=self.config['domain'])
-        return username
