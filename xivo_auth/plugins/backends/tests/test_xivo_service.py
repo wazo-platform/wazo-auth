@@ -30,7 +30,7 @@ class TestVerifyPassword(unittest.TestCase):
         dao_mock.return_value = 'a_return_value'
         backend = backends.XiVOService('config')
 
-        result = backend.verify_password('foo', 'bar')
+        result = backend.verify_password('foo', 'bar', None)
 
         assert_that(result, equal_to('a_return_value'))
         dao_mock.assert_called_once_with('foo', 'bar')

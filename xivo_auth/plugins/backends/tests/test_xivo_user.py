@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Avencall
+# Copyright (C) 2015-2016 Avencall
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -68,7 +68,7 @@ class TestVerifyPassword(unittest.TestCase):
         user_dao_mock.find_by.return_value = Mock(User)
         backend = XiVOUser('config')
 
-        result = backend.verify_password('foo', 'bar')
+        result = backend.verify_password('foo', 'bar', None)
 
         assert_that(result, equal_to(True))
         user_dao_mock.find_by.assert_called_once_with(username='foo',

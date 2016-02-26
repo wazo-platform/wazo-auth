@@ -60,7 +60,7 @@ class LDAPUser(BaseAuthenticationBackend):
         user_uuid = self._get_xivo_user_uuid_by_ldap_username(username)
         return user_uuid, user_uuid
 
-    def verify_password(self, username, password):
+    def verify_password(self, username, password, args):
         if not self.ldap.perform_bind(self._set_username_dn(username), password):
             return False
         if self._get_xivo_user_uuid_by_ldap_username(username) is None:

@@ -20,12 +20,10 @@ import logging
 
 from flask import current_app, request, make_response
 from flask_restful import Resource
-from flask.ext.httpauth import HTTPBasicAuth
 from pkg_resources import resource_string
 
 from xivo_auth.token import ManagerException
 
-httpauth = HTTPBasicAuth()
 logger = logging.getLogger(__name__)
 
 
@@ -41,11 +39,15 @@ def _is_positive_integer(i):
 
 class Tokens(Resource):
 
-    @httpauth.login_required
     def post(self):
-        data = request.get_json()
+        login = request.authorization.username
+        password = request.authorization.password
         args = {}
 
+        if not verify_password(login, password, args):
+            return _error(401, 'Unauthorized Access')
+
+        data = request.get_json()
         expiration = data.get('expiration')
         if expiration is not None:
             if _is_positive_integer(expiration):
@@ -53,7 +55,6 @@ class Tokens(Resource):
             else:
                 return _error(400, 'Invalid expiration')
 
-        login = httpauth.username()
         backend_name = request.get_json()['backend']
         backend = current_app.config['backends'][backend_name].obj
 
@@ -118,10 +119,9 @@ class Api(Resource):
         return make_response(api_spec, 200, {'Content-Type': 'application/json'})
 
 
-@httpauth.verify_password
-def verify_password(login, passwd):
+def verify_password(login, passwd, args):
     try:
-        return _call_backend('verify_password', login, passwd)
+        return _call_backend('verify_password', login, passwd, args)
     except IndexError:
         return False
 

@@ -51,7 +51,7 @@ class XiVOUser(BaseAuthenticationBackend):
             user = user_dao.get_by(username=username, enableclient=1)
             return user.uuid, user.uuid
 
-    def verify_password(self, login, password):
+    def verify_password(self, login, password, args):
         with session_scope():
             user = user_dao.find_by(username=login, password=password, enableclient=1)
             return user is not None
