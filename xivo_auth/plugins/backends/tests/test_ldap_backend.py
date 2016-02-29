@@ -93,6 +93,15 @@ class TestXivoLDAP(unittest.TestCase):
         self.assertEquals(result, None)
 
     @patch('ldap.initialize')
+    def test_that_perform_search_return_none_when_multiple_result(self, ldap_initialize):
+        ldapobj = ldap_initialize.return_value = Mock()
+        xivo_ldap = XivoLDAP(self.config)
+        ldapobj.search_ext_s.side_effect = ldap.SIZELIMIT_EXCEEDED()
+
+        result = xivo_ldap.perform_search_dn('username')
+        self.assertEquals(result, None)
+
+    @patch('ldap.initialize')
     def test_that_perform_search_return_none_when_no_result(self, ldap_initialize):
         ldapobj = ldap_initialize.return_value = Mock()
         xivo_ldap = XivoLDAP(self.config)

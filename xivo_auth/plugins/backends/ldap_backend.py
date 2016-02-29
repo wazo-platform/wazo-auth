@@ -97,6 +97,9 @@ class XivoLDAP(object):
         except ldap.SERVER_DOWN:
             logger.warning('LDAP : SERVER not responding on %s', self.uri)
             return None, None
+        except ldap.SIZELIMIT_EXCEEDED:
+            logger.debug('LDAP : More than 1 result for base: %s and filterstr: %s', base, filterstr)
+            return None, None
 
         if not results:
             logger.debug('LDAP : No result found for base: %s and filterstr: %s', base, filterstr)
