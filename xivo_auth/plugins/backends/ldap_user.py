@@ -18,6 +18,8 @@
 import logging
 import ldap
 
+from ldap.filter import escape_filter_chars
+from ldap.dn import escape_dn_chars
 from xivo_auth import BaseAuthenticationBackend
 
 from xivo_dao.resources.user.dao import find_by
@@ -111,22 +113,24 @@ class LDAPUser(BaseAuthenticationBackend):
             return xivo_user.uuid
 
     def _build_dn_with_config(self, login):
-        return '{}={},{}'.format(self.user_login_attribute, login, self.user_base_dn)
+        login_esc = escape_dn_chars(login)
+        return '{}={},{}'.format(self.user_login_attribute, login_esc, self.user_base_dn)
 
-    def _get_user_ldap_email(self, ldap, user_dn):
-        _, obj = ldap.perform_search(user_dn, ldap.SCOPE_BASE,
-                                     attrlist=[self.user_email_attribute])
+    def _get_user_ldap_email(self, xivo_ldap, user_dn):
+        _, obj = xivo_ldap.perform_search(user_dn, ldap.SCOPE_BASE,
+                                          attrlist=[self.user_email_attribute])
         email = obj.get(self.user_email_attribute, None)
         email = email[0] if isinstance(email, list) else email
         if not email:
             logger.debug('LDAP : No email found for the user DN: %s', user_dn)
         return email
 
-    def _perform_search_dn(self, ldap, username):
-        filterstr = '{}={}'.format(self.user_login_attribute, username)
-        dn, _ = ldap.perform_search(self.user_base_dn, ldap.SCOPE_SUBTREE,
-                                    filterstr=filterstr,
-                                    attrlist=[''])
+    def _perform_search_dn(self, xivo_ldap, username):
+        username_esc = escape_filter_chars(username)
+        filterstr = '{}={}'.format(self.user_login_attribute, username_esc)
+        dn, _ = xivo_ldap.perform_search(self.user_base_dn, ldap.SCOPE_SUBTREE,
+                                         filterstr=filterstr,
+                                         attrlist=[''])
         if not dn:
             logger.debug('LDAP : No user DN for user_base dn: %s and filterstr: %s', self.user_base_dn, filterstr)
         return dn

@@ -134,6 +134,40 @@ class TestVerifyPassword(unittest.TestCase):
         assert_that(result, equal_to(True))
         xivo_ldap.perform_bind.assert_called_once_with(self.expected_user_dn, 'bar')
 
+    def test_that_verify_password_escape_dn_chars(self, find_by, xivo_ldap):
+        backend = LDAPUser(self.config)
+
+        xivo_ldap = xivo_ldap.return_value
+        xivo_ldap.perform_bind.return_value = True
+        xivo_ldap.perform_search.return_value = ('uid=fo\+o,dc=example,dc=com', Mock())
+        find_by.return_value.uuid = 'alice-uuid'
+        args = {}
+
+        result = backend.verify_password('fo+o', 'bar', args)
+
+        assert_that(result, equal_to(True))
+        xivo_ldap.perform_bind.assert_called_once_with('uid=fo\+o,dc=example,dc=com', 'bar')
+
+    def test_that_verify_password_escape_filter_chars(self, find_by, xivo_ldap):
+        extended_config = {
+            'ldap': {
+                'bind_anonymous': True
+            }
+        }
+        extended_config['ldap'].update(self.config['ldap'])
+        backend = LDAPUser(self.config)
+
+        xivo_ldap = xivo_ldap.return_value
+        xivo_ldap.perform_bind.return_value = True
+        xivo_ldap.perform_search.return_value = ('uid=fo\+o,dc=example,dc=com', Mock())
+        find_by.return_value.uuid = 'alice-uuid'
+        args = {}
+
+        result = backend.verify_password('fo+o', 'bar', args)
+
+        assert_that(result, equal_to(True))
+        xivo_ldap.perform_search.assert_called_once_with('uid=fo\+o,dc=example,dc=com', 0, attrlist=['mail'])
+
     def test_that_verify_password_calls_return_false_when_no_user_bind(self, find_by, xivo_ldap):
         backend = LDAPUser(self.config)
         xivo_ldap = xivo_ldap.return_value
