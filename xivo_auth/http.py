@@ -40,8 +40,12 @@ def _is_positive_integer(i):
 class Tokens(Resource):
 
     def post(self):
-        login = request.authorization.username
-        password = request.authorization.password
+        if request.authorization:
+            login = request.authorization.username
+            password = request.authorization.password
+        else:
+            login = ''
+            password = ''
         args = {}
 
         if not verify_password(login, password, args):
