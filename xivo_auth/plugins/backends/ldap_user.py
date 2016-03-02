@@ -47,6 +47,9 @@ class LDAPUser(BaseAuthenticationBackend):
         self.bind_dn = self.config.get('bind_dn', '')
         self.bind_password = self.config.get('bind_password', '')
         self.bind_anonymous = self.config.get('bind_anonymous', False)
+        self.user_base_dn = self.config['user_base_dn']
+        self.user_login_attribute = self.config['user_login_attribute']
+        self.user_email_attribute = self.config.get('user_email_attribute', 'mail')
 
     def get_consul_acls(self, username, args):
         identifier, _ = self.get_ids(username, args)
@@ -62,20 +65,29 @@ class LDAPUser(BaseAuthenticationBackend):
         return user_uuid, user_uuid
 
     def verify_password(self, username, password, args):
-        ldap = XivoLDAP(self.config)
-        if self.bind_anonymous or (self.bind_dn and self.bind_password):
-            if ldap.perform_bind(self.bind_dn, self.bind_password):
-                user_dn = ldap.perform_search_dn(username)
+        try:
+            xivo_ldap = _XivoLDAP(self.config)
+
+            if self.bind_anonymous or (self.bind_dn and self.bind_password):
+                if xivo_ldap.perform_bind(self.bind_dn, self.bind_password):
+                    user_dn = self._perform_search_dn(xivo_ldap, username)
+                else:
+                    return False
             else:
+                user_dn = self._build_dn_with_config(username)
+
+            if not user_dn or not xivo_ldap.perform_bind(user_dn, password):
                 return False
-        else:
-            user_dn = ldap.build_dn_with_config(username)
 
-        if not user_dn or not ldap.perform_bind(user_dn, password):
+            user_email = self._get_user_ldap_email(xivo_ldap, user_dn)
+            if not user_email:
+                return False
+
+        except ldap.LDAPError, exc:
+            logger.exception('ldap.LDAPError (%r, %r)', self.config, exc)
             return False
-
-        user_email = ldap.get_user_email(user_dn)
-        if not user_email:
+        except ldap.SERVER_DOWN:
+            logger.warning('LDAP : SERVER not responding on %s', self.uri)
             return False
 
         xivo_user_uuid = self._get_xivo_user_uuid_by_ldap_attribute(user_email)
@@ -98,22 +110,34 @@ class LDAPUser(BaseAuthenticationBackend):
                 return xivo_user
             return xivo_user.uuid
 
+    def _build_dn_with_config(self, login):
+        return '{}={},{}'.format(self.user_login_attribute, login, self.user_base_dn)
 
-class XivoLDAP(object):
+    def _get_user_ldap_email(self, ldap, user_dn):
+        _, obj = ldap.perform_search(user_dn, ldap.SCOPE_BASE,
+                                     attrlist=[self.user_email_attribute])
+        email = obj.get(self.user_email_attribute, None)
+        email = email[0] if isinstance(email, list) else email
+        if not email:
+            logger.debug('LDAP : No email found for the user DN: %s', user_dn)
+        return email
+
+    def _perform_search_dn(self, ldap, username):
+        filterstr = '{}={}'.format(self.user_login_attribute, username)
+        dn, _ = ldap.perform_search(self.user_base_dn, ldap.SCOPE_SUBTREE,
+                                    filterstr=filterstr,
+                                    attrlist=[''])
+        if not dn:
+            logger.debug('LDAP : No user DN for user_base dn: %s and filterstr: %s', self.user_base_dn, filterstr)
+        return dn
+
+
+class _XivoLDAP(object):
 
     def __init__(self, config):
         self.config = config
         self.uri = self.config['uri']
-        self.user_base_dn = self.config['user_base_dn']
-        self.user_login_attribute = self.config['user_login_attribute']
-        self.user_email_attribute = self.config.get('user_email_attribute', 'mail')
-        self.ldapobj = None
-
-        try:
-            self.ldapobj = self._create_ldap_obj(self.uri)
-        except ldap.LDAPError, exc:
-            logger.exception('__init__: ldap.LDAPError (%r, %r, %r)', self.ldapobj, self.config, exc)
-            self.ldapobj = None
+        self.ldapobj = self._create_ldap_obj(self.uri)
 
     def _create_ldap_obj(self, uri):
         ldapobj = ldap.initialize(uri, 0)
@@ -123,56 +147,21 @@ class XivoLDAP(object):
         return ldapobj
 
     def perform_bind(self, username, password):
-        if self.ldapobj is None:
-            logger.warning('LDAP SERVER not responding')
-            return False
-
         try:
             self.ldapobj.simple_bind_s(username, password)
             logger.debug('LDAP : simple bind done with %s on %s', username, self.uri)
         except ldap.INVALID_CREDENTIALS:
             logger.info('LDAP : simple bind failed with %s on %s : invalid credentials!', username, self.uri)
             return False
-        except ldap.SERVER_DOWN:
-            logger.warning('LDAP : SERVER not responding on %s', self.uri)
-            return False
 
         return True
 
-    def build_dn_with_config(self, login):
-        return '{}={},{}'.format(self.user_login_attribute, login, self.user_base_dn)
-
-    def perform_search_dn(self, username):
-        filterstr = '{}={}'.format(self.user_login_attribute, username)
-        dn, _ = self._perform_search(self.user_base_dn, ldap.SCOPE_SUBTREE,
-                                     filterstr=filterstr,
-                                     attrlist=[''])
-        if not dn:
-            logger.debug('LDAP : No user DN for user_base dn: %s and filterstr: %s', self.user_base_dn, filterstr)
-        return dn
-
-    def get_user_email(self, user_dn):
-        _, obj = self._perform_search(user_dn, ldap.SCOPE_BASE,
-                                      attrlist=[self.user_email_attribute])
-        email = obj.get(self.user_email_attribute, None)
-        email = email[0] if isinstance(email, list) else email
-        if not email:
-            logger.debug('LDAP : No email found for the user DN: %s', user_dn)
-        return email
-
-    def _perform_search(self, base, scope, filterstr='(objectClass=*)', attrlist=None):
-        if self.ldapobj is None:
-            logger.warning('LDAP SERVER not responding')
-            return None, None
-
+    def perform_search(self, base, scope, filterstr='(objectClass=*)', attrlist=None):
         try:
             results = self.ldapobj.search_ext_s(base, scope,
                                                 filterstr=filterstr,
                                                 attrlist=attrlist,
                                                 sizelimit=1)
-        except ldap.SERVER_DOWN:
-            logger.warning('LDAP : SERVER not responding on %s', self.uri)
-            return None, None
         except ldap.SIZELIMIT_EXCEEDED:
             logger.debug('LDAP : More than 1 result for base: %s and filterstr: %s', base, filterstr)
             return None, None
