@@ -46,6 +46,7 @@ class LDAPUser(BaseAuthenticationBackend):
 
     def __init__(self, config):
         self.config = config['ldap']
+        self.uri = self.config['uri']
         self.bind_dn = self.config.get('bind_dn', '')
         self.bind_password = self.config.get('bind_password', '')
         self.bind_anonymous = self.config.get('bind_anonymous', False)
@@ -85,11 +86,11 @@ class LDAPUser(BaseAuthenticationBackend):
             if not user_email:
                 return False
 
-        except ldap.LDAPError, exc:
-            logger.exception('ldap.LDAPError (%r, %r)', self.config, exc)
-            return False
         except ldap.SERVER_DOWN:
             logger.warning('LDAP : SERVER not responding on %s', self.uri)
+            return False
+        except ldap.LDAPError, exc:
+            logger.exception('ldap.LDAPError (%r, %r)', self.config, exc)
             return False
 
         xivo_user_uuid = self._get_xivo_user_uuid_by_ldap_attribute(user_email)
