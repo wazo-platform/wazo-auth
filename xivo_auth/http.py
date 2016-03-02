@@ -45,7 +45,7 @@ class Tokens(Resource):
         args = {}
 
         if not verify_password(login, password, args):
-            return _error(401, 'Unauthorized Access')
+            return _error(401, 'Authentication Failed')
 
         data = request.get_json()
         expiration = data.get('expiration')
