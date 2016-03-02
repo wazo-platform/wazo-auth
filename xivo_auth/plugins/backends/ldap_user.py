@@ -48,8 +48,6 @@ class LDAPUser(BaseAuthenticationBackend):
         self.bind_password = self.config.get('bind_password', '')
         self.bind_anonymous = self.config.get('bind_anonymous', False)
 
-        self.ldap = XivoLDAP(self.config)
-
     def get_consul_acls(self, username, args):
         identifier, _ = self.get_ids(username, args)
         rules = [{'rule': 'xivo/private/{identifier}'.format(identifier=identifier),
@@ -64,18 +62,19 @@ class LDAPUser(BaseAuthenticationBackend):
         return user_uuid, user_uuid
 
     def verify_password(self, username, password, args):
+        ldap = XivoLDAP(self.config)
         if self.bind_anonymous or (self.bind_dn and self.bind_password):
-            if self.ldap.perform_bind(self.bind_dn, self.bind_password):
-                user_dn = self.ldap.perform_search_dn(username)
+            if ldap.perform_bind(self.bind_dn, self.bind_password):
+                user_dn = ldap.perform_search_dn(username)
             else:
                 return False
         else:
-            user_dn = self.ldap.build_dn_with_config(username)
+            user_dn = ldap.build_dn_with_config(username)
 
-        if not user_dn or not self.ldap.perform_bind(user_dn, password):
+        if not user_dn or not ldap.perform_bind(user_dn, password):
             return False
 
-        user_email = self.ldap.get_user_email(user_dn)
+        user_email = ldap.get_user_email(user_dn)
         if not user_email:
             return False
 
