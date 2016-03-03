@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Avencall
+# Copyright (C) 2015-2016 Avencall
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ class BackendMock(BaseAuthenticationBackend):
     def get_ids(self, login, agrs):
         return 'a-mocked-uuid', None
 
-    def verify_password(self, login, password):
+    def verify_password(self, login, password, args):
         return login == 'foo' and password == 'bar'
 
 
@@ -44,5 +44,5 @@ class BackendMockWithUUID(BaseAuthenticationBackend):
     def get_ids(self, login, args):
         return 'a-mocked-auth-id', 'a-mocked-xivo-user-uuid'
 
-    def verify_password(self, login, password):
+    def verify_password(self, login, password, args):
         return login == 'foo' and password == 'bar'
