@@ -69,7 +69,7 @@ class LDAPUser(BaseAuthenticationBackend):
 
     def verify_password(self, username, password, args):
         try:
-            xivo_ldap = _XivoLDAP(self.config)
+            xivo_ldap = _XivoLDAP(self.uri)
 
             if self.bind_anonymous or (self.bind_dn and self.bind_password):
                 if xivo_ldap.perform_bind(self.bind_dn, self.bind_password):
@@ -139,9 +139,8 @@ class LDAPUser(BaseAuthenticationBackend):
 
 class _XivoLDAP(object):
 
-    def __init__(self, config):
-        self.config = config
-        self.uri = self.config['uri']
+    def __init__(self, uri):
+        self.uri = uri
         self.ldapobj = self._create_ldap_obj(self.uri)
 
     def _create_ldap_obj(self, uri):

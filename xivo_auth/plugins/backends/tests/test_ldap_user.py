@@ -299,7 +299,7 @@ class TestXivoLDAP(unittest.TestCase):
     def test_xivo_ldap_init(self, ldap_initialize):
         ldapobj = ldap_initialize.return_value = Mock()
 
-        _XivoLDAP(self.config)
+        _XivoLDAP(self.config['uri'])
 
         ldap_initialize.assert_called_once_with(self.config['uri'], 0)
         ldapobj.set_option.assert_any_call(ldap.OPT_REFERRALS, 0)
