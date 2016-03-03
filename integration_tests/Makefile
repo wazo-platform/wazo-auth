@@ -3,7 +3,6 @@
 test-setup: test-prerequisite test-image egg-info
 
 test-prerequisite:
-	docker pull python:2.7
 	docker pull n3llyb0y/wait
 	docker pull rabbitmq
 	docker pull progrium/consul
