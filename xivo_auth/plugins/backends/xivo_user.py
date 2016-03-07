@@ -32,7 +32,11 @@ DEFAULT_ACLS = ['confd.users.me.read',
                 'dird.directories.lookup.*.headers.read',
                 'dird.directories.lookup.*.read',
                 'dird.directories.personal.*.read',
-                'dird.personal.#']
+                'dird.personal.#',
+                'events.calls.me',
+                'events.statuses.*',
+                'events.switchboards',
+                'websocketd']
 
 
 class XiVOUser(BaseAuthenticationBackend):
