@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Avencall
+# Copyright (C) 2015-2016 Avencall
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ class TestVerifyPassword(unittest.TestCase):
         admin_dao_mock.check_username_password.return_value = 'a_return_value'
         backend = backends.XiVOAdmin('config')
 
-        result = backend.verify_password('foo', 'bar')
+        result = backend.verify_password('foo', 'bar', None)
 
         assert_that(result, equal_to('a_return_value'))
         admin_dao_mock.check_username_password.assert_called_once_with('foo', 'bar')

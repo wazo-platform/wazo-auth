@@ -49,8 +49,12 @@ class BaseAuthenticationBackend(object):
         """
 
     @abc.abstractmethod
-    def verify_password(self, login, passwd):
-        """Checks if a login/password combination is correct, returns True or False."""
+    def verify_password(self, login, passwd, args):
+        """Checks if a login/password combination is correct, returns True or False.
+
+        It's possible to pass values through the args parameter. These values
+        will be passed to the other methods of the plugin.
+        """
 
     @staticmethod
     def should_be_loaded(config):

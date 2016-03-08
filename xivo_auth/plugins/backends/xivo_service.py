@@ -46,6 +46,6 @@ class XiVOService(BaseAuthenticationBackend):
         user_uuid = None
         return auth_id, user_uuid
 
-    def verify_password(self, login, password):
+    def verify_password(self, login, password, args):
         with session_scope():
             return accesswebservice_dao.check_username_password(login, password)

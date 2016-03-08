@@ -33,7 +33,8 @@ consul:
 
 ldap:
   uri: ldap://slapd
-  user_base_dn: 'ou=quebec,ou=people,dc=xivo-auth,dc=xivo,dc=io'
-  user_login_attribute: 'cn'
+  bind_anonymous: true
+  user_base_dn: "dc=xivo-auth,dc=xivo,dc=io"
+  user_login_attribute: 'mail'
 
 db_uri: postgresql://asterisk:proformatique@postgres/asterisk

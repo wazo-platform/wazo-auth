@@ -1,0 +1,59 @@
+sync:
+  image: n3llyb0y/wait
+  links:
+    - auth
+    - postgres
+    - slapd
+    - rabbitmq
+    - consul
+  environment:
+    PORTS: "389 5432 5672 8500 9497"
+    TIMEOUT: 60
+data:
+  image: xivo/xivo-auth-tests-data
+  volumes:
+    - "/data/"
+  command: "sh -c 'while true; do sleep 10; done'"
+auth:
+  image: xivo/xivo-auth-tests
+  ports:
+    - "9497:9497"
+  volumes_from:
+     - data
+  volumes:  # delete-on-docker-machine
+     - "../../..:/usr/src/xivo-auth"  # delete-on-docker-machine
+  links:
+    - postgres
+    - slapd
+    - rabbitmq
+    - consul
+  command: "xivo-auth -u www-data -c /data/ldap_service_user/etc/xivo-auth/config.yml"
+slapd:
+  image: nickstenning/slapd
+  environment:
+    LDAP_DOMAIN: xivo-auth.xivo.io
+    LDAP_ORGANISATION: acme
+    LDAP_ROOTPASS: xivopassword
+  expose:
+    - "389"
+  ports:
+    - "3899:389"
+postgres:
+  image: xivo/postgres-test
+  expose:
+    - "5432"
+  volumes:
+      - "./etc/xivo-postgres/populate.sql:/pg-init-db/populate.sql"
+rabbitmq:
+  image: rabbitmq
+  expose:
+    - "5672"
+consul:
+  image: progrium/consul
+  expose:
+    - "8500"
+  ports:
+    - "8500:8500"
+  volumes_from:
+    - data
+  command: "-config-dir /data/_common/etc/consul/"
