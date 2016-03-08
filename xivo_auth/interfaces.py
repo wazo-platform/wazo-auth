@@ -49,7 +49,7 @@ class BaseAuthenticationBackend(object):
         """
 
     @abc.abstractmethod
-    def verify_password(self, login, passwd):
+    def verify_password(self, login, passwd, args):
         """Checks if a login/password combination is correct, returns True or False.
 
         It's possible to pass values through the args parameter. These values
