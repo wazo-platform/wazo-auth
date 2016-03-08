@@ -89,7 +89,7 @@ class LDAPUser(BaseAuthenticationBackend):
         except ldap.SERVER_DOWN:
             logger.warning('LDAP : SERVER not responding on %s', self.uri)
             return False
-        except ldap.LDAPError, exc:
+        except ldap.LDAPError as exc:
             logger.exception('ldap.LDAPError (%r, %r)', self.config, exc)
             return False
 
