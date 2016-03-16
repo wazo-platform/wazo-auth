@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Avencall
+# Copyright (C) 2015-2016 Avencall
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -73,9 +73,8 @@ class _RabbitMQConnectionException(ManagerException):
 
 class Token(object):
 
-    def __init__(self, id_, name, auth_id, xivo_user_uuid, issued_at, expires_at, acls):
+    def __init__(self, id_, auth_id, xivo_user_uuid, issued_at, expires_at, acls):
         self.token = id_
-        self.name = name
         self.auth_id = auth_id
         self.xivo_user_uuid = xivo_user_uuid
         self.issued_at = issued_at
@@ -85,7 +84,6 @@ class Token(object):
     def to_consul(self):
         acls = {acl: acl for acl in self.acls}
         return {'token': self.token,
-                'name': self.name,
                 'auth_id': self.auth_id,
                 'xivo_user_uuid': self.xivo_user_uuid,
                 'issued_at': self.issued_at,
@@ -125,12 +123,12 @@ class Token(object):
     @classmethod
     def from_consul(cls, d):
         acls = d.get('acls', {}) or {}
-        return Token(d['token'], d.get('name'), d['auth_id'], d['xivo_user_uuid'],
+        return Token(d['token'], d['auth_id'], d['xivo_user_uuid'],
                      d['issued_at'], d['expires_at'], acls.keys())
 
     @classmethod
-    def from_payload(cls, id_, name, payload):
-        return Token(id_, name, payload.auth_id, payload.xivo_user_uuid,
+    def from_payload(cls, id_, payload):
+        return Token(id_, payload.auth_id, payload.xivo_user_uuid,
                      payload.issued_at, payload.expires_at, payload.acls)
 
 
@@ -218,8 +216,6 @@ class _ConsulACLGenerator(object):
 class Storage(object):
 
     _TOKEN_KEY_FORMAT = 'xivo/xivo-auth/tokens/{}'
-    _TOKEN_NAME_KEY_FORMAT = 'xivo/xivo-auth/tokens/{}/name'
-    _NAME_INDEX_KEY_FORMAT = 'xivo/xivo-auth/token-names/{}'
 
     def __init__(self, consul):
         self._consul = consul
@@ -242,22 +238,7 @@ class Storage(object):
     def create_token(self, token_payload, rules):
         try:
             token_id = self._consul.acl.create(rules=rules)
-            token = Token.from_payload(token_id, None, token_payload)
-            self._store_token(token)
-        except ConnectionError as e:
-            logger.error('Connection to consul failed: %s', e)
-            raise _ConsulConnectionException()
-        return token
-
-    def upsert_named_token(self, token_name, token_payload, rules):
-        try:
-            token_id = self._get_token_id_by_name(token_name)
-            if token_id:
-                self._consul.acl.update(token_id, rules=rules)
-            else:
-                token_id = self._consul.acl.create(rules=rules)
-                self._consul.kv.put(self._NAME_INDEX_KEY_FORMAT.format(token_name), token_id)
-            token = Token.from_payload(token_id, token_name, token_payload)
+            token = Token.from_payload(token_id, token_payload)
             self._store_token(token)
         except ConnectionError as e:
             logger.error('Connection to consul failed: %s', e)
@@ -268,27 +249,11 @@ class Storage(object):
         self._check_valid_token_id(token_id)
 
         try:
-            token_name = self._get_token_name(token_id)
             self._consul.acl.destroy(token_id)
             self._consul.kv.delete(self._TOKEN_KEY_FORMAT.format(token_id), recurse=True)
-            if token_name:
-                self._consul.kv.delete(self._NAME_INDEX_KEY_FORMAT.format(token_name))
         except ConnectionError as e:
             logger.error('Connection to consul failed: %s', e)
             raise _ConsulConnectionException()
-
-    def _get_token_name(self, token_id):
-        _, value = self._consul.kv.get(self._TOKEN_NAME_KEY_FORMAT.format(token_id))
-        if not value:
-            return None
-        return value['Value']
-
-    def _get_token_id_by_name(self, token_name):
-        key = self._NAME_INDEX_KEY_FORMAT.format(token_name)
-        _, value = self._consul.kv.get(key)
-        if not value:
-            return None
-        return value['Value']
 
     def _store_token(self, token):
         flat_dict = FlatDict({'xivo': {'xivo-auth': {'tokens': {token.token: token.to_consul()}}}})
