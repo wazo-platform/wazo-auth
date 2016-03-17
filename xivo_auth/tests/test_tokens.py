@@ -16,8 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import unittest
+import json
 
-from hamcrest import assert_that, equal_to, none
+from hamcrest import assert_that, contains_inanyorder, equal_to, none
 from mock import ANY, Mock, patch, sentinel
 
 from xivo_auth import token, extensions, BaseAuthenticationBackend
@@ -194,19 +195,18 @@ class TestStorage(unittest.TestCase):
 
     def test_get_token(self):
         token_id = '12345678-1234-5678-1234-567812345678'
-        self.consul.kv.get.return_value = (42, [
-            {'Key': 'xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678/token', 'Value': token_id},
-            {'Key': 'xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678/auth_id', 'Value': ''},
-            {'Key': 'xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678/xivo_user_uuid', 'Value': ''},
-            {'Key': 'xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678/issued_at', 'Value': ''},
-            {'Key': 'xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678/expires_at', 'Value': ''},
-        ])
+        raw_token = json.dumps({'token': token_id,
+                                'auth_id': '',
+                                'xivo_user_uuid': '',
+                                'issued_at': '',
+                                'expires_at': ''})
+        self.consul.kv.get.return_value = 42, {'Key': 'xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678',
+                                               'Value': raw_token}
 
         token = self.storage.get_token(token_id)
 
         assert_that(token.token, equal_to(token_id))
-        self.consul.kv.get.assert_called_once_with('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678',
-                                                   recurse=True)
+        self.consul.kv.get.assert_called_once_with('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678')
 
     def test_create_token(self):
         token_payload = token.TokenPayload(self.auth_id, issued_at=self.issued_at)
@@ -216,20 +216,13 @@ class TestStorage(unittest.TestCase):
 
         assert_that(t.token, equal_to(self.token_id))
         self.consul.acl.create.assert_called_once_with(rules=self.rules)
-        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/tok-id/token', self.token_id)
-        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/tok-id/auth_id', self.auth_id)
-        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/tok-id/xivo_user_uuid', None)
-        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/tok-id/issued_at', self.issued_at)
-        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/tok-id/expires_at', None)
-        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/tok-id/acls', None)
-
-    def test_that_create_token_does_not_send_unicode_to_consul(self):
-        token_payload = token.TokenPayload(self.auth_id, issued_at=u'é')
-        self.consul.acl.create.return_value = self.token_id
-
-        self.storage.create_token(token_payload, self.rules)
-
-        self.consul.kv.put.assert_any_call('xivo/xivo-auth/tokens/tok-id/issued_at', 'é')
+        expected = {'token': self.token_id,
+                    'auth_id': self.auth_id,
+                    'xivo_user_uuid': None,
+                    'issued_at': self.issued_at,
+                    'expires_at': None,
+                    'acls': None}
+        self.assert_kv_put_json('xivo/xivo-auth/tokens/tok-id', expected)
 
     def test_remove_token(self):
         token_id = '12345678-1234-5678-1234-567812345678'
@@ -240,3 +233,10 @@ class TestStorage(unittest.TestCase):
         self.consul.acl.destroy.assert_called_once_with('12345678-1234-5678-1234-567812345678')
         self.consul.kv.delete.assert_called_once_with('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678',
                                                       recurse=True)
+
+    def assert_kv_put_json(self, expected_path, expected_value):
+        raw_calls = self.consul.kv.put.call_args_list
+        calls = [(path, json.loads(value)) for path, value in [args for args, kwargs in raw_calls]]
+        print 'Calls', calls
+        print 'Expected', expected_value
+        assert_that(calls, contains_inanyorder((expected_path, expected_value)))
