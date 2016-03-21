@@ -20,13 +20,12 @@ import json
 import logging
 import re
 import socket
-import urllib
 
 from unidecode import unidecode
 from uuid import UUID
 from requests.exceptions import ConnectionError
 
-from xivo_auth.helpers import now, later, values_to_dict, FlatDict
+from xivo_auth.helpers import now, later
 
 logger = logging.getLogger(__name__)
 
@@ -82,13 +81,12 @@ class Token(object):
         self.acls = acls
 
     def to_consul(self):
-        acls = {acl: acl for acl in self.acls}
         return {'token': self.token,
                 'auth_id': self.auth_id,
                 'xivo_user_uuid': self.xivo_user_uuid,
                 'issued_at': self.issued_at,
                 'expires_at': self.expires_at,
-                'acls': acls or None}
+                'acls': self.acls}
 
     def to_dict(self):
         return {'token': self.token,
@@ -122,9 +120,8 @@ class Token(object):
 
     @classmethod
     def from_consul(cls, d):
-        acls = d.get('acls', {}) or {}
         return Token(d['token'], d['auth_id'], d['xivo_user_uuid'],
-                     d['issued_at'], d['expires_at'], acls.keys())
+                     d['issued_at'], d['expires_at'], d['acls'])
 
     @classmethod
     def from_payload(cls, id_, payload):
@@ -225,15 +222,15 @@ class Storage(object):
 
         key = self._TOKEN_KEY_FORMAT.format(token_id)
         try:
-            _, values = self._consul.kv.get(key, recurse=True)
+            _, raw_value = self._consul.kv.get(key)
         except ConnectionError as e:
             logger.error('Connection to consul failed: %s', e)
             raise _ConsulConnectionException()
 
-        if not values:
+        if not raw_value:
             raise UnknownTokenException()
 
-        return Token.from_consul(values_to_dict(values)['xivo']['xivo-auth']['tokens'][token_id])
+        return Token.from_consul(json.loads(raw_value['Value']))
 
     def create_token(self, token_payload, rules):
         try:
@@ -256,15 +253,8 @@ class Storage(object):
             raise _ConsulConnectionException()
 
     def _store_token(self, token):
-        flat_dict = FlatDict({'xivo': {'xivo-auth': {'tokens': {token.token: token.to_consul()}}}})
-        for key, value in flat_dict.iteritems():
-            value = self._ensure_bytes_type(value)
-            self._consul.kv.put(urllib.quote(key), value)
-
-    def _ensure_bytes_type(self, value):
-        if isinstance(value, unicode):
-            return value.encode('utf-8')
-        return value
+        key = self._TOKEN_KEY_FORMAT.format(token.token)
+        return self._consul.kv.put(key, json.dumps(token.to_consul()))
 
     def _check_valid_token_id(self, token_id):
         try:
