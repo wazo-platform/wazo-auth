@@ -98,15 +98,10 @@ class TestToken(unittest.TestCase):
             'issued_at': self.issued_at,
             'expires_at': self.expires_at,
             'xivo_user_uuid': self.xivo_user_uuid,
-            'acls': {'confd': 'confd'},
+            'acls': ['confd'],
         }
 
         assert_that(self.token.to_consul(), equal_to(expected))
-
-    def test_to_consul_with_no_acl(self):
-        self.token.acls = []
-
-        assert_that(self.token.to_consul()['acls'], none())
 
     def test_matches_required_acls_when_user_acl_ends_with_hashtag(self):
         self.token.acls = ['foo.bar.#']
@@ -199,7 +194,8 @@ class TestStorage(unittest.TestCase):
                                 'auth_id': '',
                                 'xivo_user_uuid': '',
                                 'issued_at': '',
-                                'expires_at': ''})
+                                'expires_at': '',
+                                'acls': []})
         self.consul.kv.get.return_value = 42, {'Key': 'xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678',
                                                'Value': raw_token}
 
@@ -221,7 +217,7 @@ class TestStorage(unittest.TestCase):
                     'xivo_user_uuid': None,
                     'issued_at': self.issued_at,
                     'expires_at': None,
-                    'acls': None}
+                    'acls': []}
         self.assert_kv_put_json('xivo/xivo-auth/tokens/tok-id', expected)
 
     def test_remove_token(self):

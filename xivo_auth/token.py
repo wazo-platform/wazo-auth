@@ -81,13 +81,12 @@ class Token(object):
         self.acls = acls
 
     def to_consul(self):
-        acls = {acl: acl for acl in self.acls}
         return {'token': self.token,
                 'auth_id': self.auth_id,
                 'xivo_user_uuid': self.xivo_user_uuid,
                 'issued_at': self.issued_at,
                 'expires_at': self.expires_at,
-                'acls': acls or None}
+                'acls': self.acls}
 
     def to_dict(self):
         return {'token': self.token,
@@ -121,9 +120,8 @@ class Token(object):
 
     @classmethod
     def from_consul(cls, d):
-        acls = d.get('acls', {}) or {}
         return Token(d['token'], d['auth_id'], d['xivo_user_uuid'],
-                     d['issued_at'], d['expires_at'], acls.keys())
+                     d['issued_at'], d['expires_at'], d['acls'])
 
     @classmethod
     def from_payload(cls, id_, payload):
