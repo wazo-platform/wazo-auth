@@ -39,6 +39,12 @@ case "$1" in
 		fi
 		chown $USER:$GROUP "$LOG_FILENAME"
 
+		previous_version="$2"
+		if [ dpkg --compare-versions "$previous_version" "<<" "16.04"
+			-a dpkg --compare-versions "$previous_version" ">>" "15.17" ] ; then
+			/usr/share/xivo-auth/migrations/0001_remove_named_tokens.py
+		fi
+
 	;;
 
 	abort-upgrade|abort-remove|abort-deconfigure)

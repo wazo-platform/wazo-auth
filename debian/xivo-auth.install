@@ -1,1 +1,2 @@
 etc/*  etc/
+migrations/ usr/share/xivo-auth
