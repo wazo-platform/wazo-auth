@@ -21,29 +21,12 @@ import ldap
 from ldap.filter import escape_filter_chars
 from ldap.dn import escape_dn_chars
 from xivo_auth import BaseAuthenticationBackend
+from xivo_auth.plugins.backends.default_acls import DEFAULT_USER_ACLS
 
 from xivo_dao.resources.user.dao import find_by
 from xivo_dao.helpers.db_utils import session_scope
 
 logger = logging.getLogger(__name__)
-
-DEFAULT_ACLS = ['confd.users.me.read',
-                'confd.users.me.update',
-                'confd.users.me.funckeys.*.*',
-                'confd.users.me.#.read',
-                'ctid-ng.calls.create',
-                'ctid-ng.calls.*.read',
-                'ctid-ng.calls.*.delete',
-                'dird.#.me.read',
-                'dird.directories.favorites.#',
-                'dird.directories.lookup.*.headers.read',
-                'dird.directories.lookup.*.read',
-                'dird.directories.personal.*.read',
-                'dird.personal.#',
-                'events.calls.me',
-                'events.statuses.*',
-                'events.switchboards',
-                'websocketd']
 
 
 class LDAPUser(BaseAuthenticationBackend):
@@ -65,7 +48,7 @@ class LDAPUser(BaseAuthenticationBackend):
         return rules
 
     def get_acls(self, login, args):
-        return DEFAULT_ACLS
+        return DEFAULT_USER_ACLS
 
     def get_ids(self, username, args):
         user_uuid = args['xivo_user_uuid']

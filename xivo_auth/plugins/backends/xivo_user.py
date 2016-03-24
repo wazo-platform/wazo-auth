@@ -16,27 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 from xivo_auth import BaseAuthenticationBackend
+from xivo_auth.plugins.backends.default_acls import DEFAULT_USER_ACLS
 
 from xivo_dao.resources.user import dao as user_dao
 from xivo_dao.helpers.db_utils import session_scope
-
-DEFAULT_ACLS = ['confd.users.me.read',
-                'confd.users.me.update',
-                'confd.users.me.funckeys.*.*',
-                'confd.users.me.#.read',
-                'ctid-ng.calls.create',
-                'ctid-ng.calls.*.read',
-                'ctid-ng.calls.*.delete',
-                'dird.#.me.read',
-                'dird.directories.favorites.#',
-                'dird.directories.lookup.*.headers.read',
-                'dird.directories.lookup.*.read',
-                'dird.directories.personal.*.read',
-                'dird.personal.#',
-                'events.calls.me',
-                'events.statuses.*',
-                'events.switchboards',
-                'websocketd']
 
 
 class XiVOUser(BaseAuthenticationBackend):
@@ -48,7 +31,7 @@ class XiVOUser(BaseAuthenticationBackend):
         return rules
 
     def get_acls(self, login, args):
-        return DEFAULT_ACLS
+        return DEFAULT_USER_ACLS
 
     def get_ids(self, username, args):
         with session_scope():
