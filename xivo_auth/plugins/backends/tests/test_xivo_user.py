@@ -23,7 +23,8 @@ from xivo_dao.helpers.exception import InputError
 from mock import patch, Mock
 from hamcrest import assert_that, equal_to
 
-from xivo_auth.plugins.backends.xivo_user import DEFAULT_ACLS, XiVOUser
+from xivo_auth.plugins.backends.default_acls import DEFAULT_USER_ACLS
+from xivo_auth.plugins.backends.xivo_user import XiVOUser
 
 
 @patch('xivo_auth.plugins.backends.xivo_user.user_dao')
@@ -83,4 +84,4 @@ class TestGetAcls(unittest.TestCase):
 
         result = backend.get_acls('foo', 'bar')
 
-        assert_that(result, equal_to(DEFAULT_ACLS))
+        assert_that(result, equal_to(DEFAULT_USER_ACLS))
