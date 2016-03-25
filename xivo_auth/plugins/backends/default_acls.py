@@ -32,5 +32,5 @@ DEFAULT_USER_ACLS = ['confd.users.me.read',
                      'events.calls.me',
                      'events.statuses.*',
                      'events.switchboards',
-                     'events.users.me.services.*.*',
+                     'events.config.users.me.services.*.*',
                      'websocketd']
