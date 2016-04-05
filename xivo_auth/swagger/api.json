@@ -41,7 +41,7 @@
                     "application/json"
                 ],
                 "summary": "Creates a token",
-                "description": "Creates a valid token for the supplied username and password combination using the specified backend.",
+                "description": "Creates a valid token for the supplied username and password combination using the specified backend. The stock backends are: ``xivo_users``, ``xivo_service``, ``xivo_admin``, ``xivo_ldap``. For more details about the backends, see http://documentation.xivo.io/en/latest/system/xivo-auth/stock_plugins.html#backends-plugins",
                 "operationId": "createToken",
                 "tags": [
                     "token"
