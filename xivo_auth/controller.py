@@ -65,6 +65,7 @@ class Controller(object):
             self._ssl_cert_file = config['rest_api']['https']['certificate']
             self._ssl_key_file = config['rest_api']['https']['private_key']
             self._ssl_ciphers = config['rest_api']['https']['ciphers']
+            self._xivo_uuid = config.get('uuid')
             logger.debug('private key: %s', self._ssl_key_file)
         except KeyError as e:
             logger.error('Missing configuration to start the application: %s', e)
@@ -89,13 +90,8 @@ class Controller(object):
                                                       self._ssl_key_file,
                                                       self._ssl_ciphers)
 
-        xivo_uuid = os.getenv('XIVO_UUID')
-        if not xivo_uuid and self._service_discovery_config['enabled']:
-            logger.error('undefined environment variable XIVO_UUID')
-            sys.exit(1)
-
         with ServiceCatalogRegistration('xivo-auth',
-                                        xivo_uuid,
+                                        self._xivo_uuid,
                                         self._consul_config,
                                         self._service_discovery_config,
                                         self._bus_config,
