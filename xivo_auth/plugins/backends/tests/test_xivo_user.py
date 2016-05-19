@@ -48,21 +48,6 @@ class TestGetIDS(unittest.TestCase):
 
 
 @patch('xivo_auth.plugins.backends.xivo_user.user_dao')
-class TestGetACLS(unittest.TestCase):
-
-    def test_that_get_consul_acls_calls_get_ids(self, user_dao_mock):
-        user_dao_mock.get_by.return_value = Mock(User, uuid='foobars-uuid')
-        backend = XiVOUser('config')
-        args = None
-
-        result = backend.get_consul_acls('foobar', args)
-
-        acls = [{'rule': 'xivo/private/foobars-uuid', 'policy': 'write'}]
-        assert_that(result, equal_to((acls)))
-        user_dao_mock.get_by.assert_called_once_with(username='foobar', enableclient=1)
-
-
-@patch('xivo_auth.plugins.backends.xivo_user.user_dao')
 class TestVerifyPassword(unittest.TestCase):
 
     def test_that_verify_password_calls_the_dao(self, user_dao_mock):

@@ -18,7 +18,7 @@
 import unittest
 
 from mock import Mock, patch
-from hamcrest import assert_that, equal_to, empty
+from hamcrest import assert_that, equal_to
 
 from xivo_auth.plugins import backends
 
@@ -43,26 +43,6 @@ class TestVerifyPassword(unittest.TestCase):
         acls = backend.get_acls('foo', None)
 
         assert_that(acls, equal_to(['confd.#', 'dird.#']))
-
-    @patch('xivo_auth.plugins.backends.xivo_service.accesswebservice_dao.get_user_acl',
-           Mock(return_value=['confd.#', 'dird.#']))
-    def test_that_get_consul_acls_return_acl_for_dird(self):
-        backend = backends.XiVOService({})
-        expected_result = [{'rule': 'xivo/private',
-                            'policy': 'read'}]
-
-        consul_acl = backend.get_consul_acls('foo', None)
-
-        assert_that(consul_acl, equal_to(expected_result))
-
-    @patch('xivo_auth.plugins.backends.xivo_service.accesswebservice_dao.get_user_acl',
-           Mock(return_value=['confd.#', '#.dird']))
-    def test_that_get_consul_acls_return_empty_list(self):
-        backend = backends.XiVOService({})
-
-        consul_acl = backend.get_consul_acls('foo', None)
-
-        assert_that(consul_acl, empty())
 
     @patch('xivo_auth.plugins.backends.xivo_service.accesswebservice_dao.get_user_id', Mock(return_value=42))
     def test_that_get_ids_returns_the_id_and_None(self):

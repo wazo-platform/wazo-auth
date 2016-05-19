@@ -20,9 +20,6 @@ from xivo_auth import BaseAuthenticationBackend
 
 class BackendMock(BaseAuthenticationBackend):
 
-    def get_consul_acls(self, login, args):
-        return [{'rule': 'a-mock-rule', 'policy': 'write'}]
-
     def get_acls(self, login, args):
         return ['foo', 'bar']
 
@@ -34,9 +31,6 @@ class BackendMock(BaseAuthenticationBackend):
 
 
 class BackendMockWithUUID(BaseAuthenticationBackend):
-
-    def get_consul_acls(self, login, args):
-        return [{'rule': 'a-mock-rule', 'policy': 'write'}]
 
     def get_acls(self, login, args):
         return ['foo', 'bar']

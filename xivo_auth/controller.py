@@ -18,7 +18,6 @@
 import logging
 import signal
 import sys
-import os
 
 from functools import partial
 

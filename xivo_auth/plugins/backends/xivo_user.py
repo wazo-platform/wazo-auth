@@ -24,12 +24,6 @@ from xivo_dao.helpers.db_utils import session_scope
 
 class XiVOUser(BaseAuthenticationBackend):
 
-    def get_consul_acls(self, username, args):
-        identifier, _ = self.get_ids(username, args)
-        rules = [{'rule': 'xivo/private/{identifier}'.format(identifier=identifier),
-                  'policy': 'write'}]
-        return rules
-
     def get_acls(self, login, args):
         return DEFAULT_USER_ACLS
 

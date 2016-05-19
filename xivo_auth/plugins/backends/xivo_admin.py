@@ -23,9 +23,6 @@ from xivo_dao.helpers.db_utils import session_scope
 
 class XiVOAdmin(BaseAuthenticationBackend):
 
-    def get_consul_acls(self, username, args):
-        return []
-
     def get_acls(self, login, args):
         return ['confd.#']
 

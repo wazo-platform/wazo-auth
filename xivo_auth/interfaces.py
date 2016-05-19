@@ -25,17 +25,6 @@ class BaseAuthenticationBackend(object):
     def __init__(self, config):
         """Initialize this backend instance from the given configuration"""
 
-    def get_consul_acls(self, login, args):
-        """Make consul ACL rules from the given args or configuration file.
-
-        {'rule': '', 'policy': 'deny'} is applied by default.
-
-        Returns a list of dictionaries containing the rules and policies for this login.
-        [{'rule':'/xivo/consul/path/', 'policy': 'write'}]
-        Note: The ACL order is respected.
-        """
-        return []
-
     def get_acls(self, login, args):
         """returns a list of XiVO acls"""
         return []

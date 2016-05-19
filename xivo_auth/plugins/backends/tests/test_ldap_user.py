@@ -26,26 +26,6 @@ from xivo_auth.plugins.backends.ldap_user import LDAPUser, _XivoLDAP
 
 
 @patch('xivo_auth.plugins.backends.ldap_user.find_by')
-class TestGetConsulACLS(unittest.TestCase):
-
-    def setUp(self):
-        config = {
-            'ldap': {
-                'uri': 'ldap://host:389',
-                'user_base_dn': 'dc=example,dc=com',
-                'user_login_attribute': 'uid'
-            }
-        }
-        self.args = {'xivo_user_uuid': 'alice-uuid'}
-        self.backend = LDAPUser(config)
-
-    def test_that_get_consul_acls_calls_get_ids(self, find_by):
-        expected_acls = [{'rule': 'xivo/private/alice-uuid', 'policy': 'write'}]
-        result = self.backend.get_consul_acls('alice', self.args)
-        assert_that(result, equal_to((expected_acls)))
-
-
-@patch('xivo_auth.plugins.backends.ldap_user.find_by')
 class TestGetACLS(unittest.TestCase):
 
     def setUp(self):

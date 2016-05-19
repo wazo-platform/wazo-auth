@@ -22,7 +22,7 @@ import re
 import socket
 
 from unidecode import unidecode
-from uuid import UUID
+from uuid import UUID, uuid4
 from requests.exceptions import ConnectionError
 
 from xivo_auth.helpers import now, later
@@ -124,7 +124,8 @@ class Token(object):
                      d['issued_at'], d['expires_at'], d['acls'])
 
     @classmethod
-    def from_payload(cls, id_, payload):
+    def from_payload(cls, payload):
+        id_ = str(uuid4())
         return Token(id_, payload.auth_id, payload.xivo_user_uuid,
                      payload.issued_at, payload.expires_at, payload.acls)
 
@@ -146,7 +147,6 @@ class TokenPayload(object):
 class Manager(object):
 
     def __init__(self, config, storage, celery, consul_acl_generator=None):
-        self._consul_acl_generator = consul_acl_generator or _ConsulACLGenerator()
         self._default_expiration = config['default_token_lifetime']
         self._storage = storage
         self._celery = celery
@@ -155,13 +155,12 @@ class Manager(object):
         from xivo_auth import tasks
 
         auth_id, xivo_user_uuid = backend.get_ids(login, args)
-        rules = self._consul_acl_generator.create_from_backend(backend, login, args)
         acls = backend.get_acls(login, args)
         expiration = args.get('expiration', self._default_expiration)
         token_payload = TokenPayload(auth_id=auth_id, xivo_user_uuid=xivo_user_uuid,
                                      expires_at=later(expiration), acls=acls)
 
-        token = self._storage.create_token(token_payload, rules)
+        token = self._storage.create_token(token_payload)
 
         task_id = self._get_token_hash(token)
         try:
@@ -196,20 +195,6 @@ class Manager(object):
         return hashlib.sha256('{token}'.format(token=token)).hexdigest()
 
 
-class _ConsulACLGenerator(object):
-
-    def create_from_backend(self, backend, login, args):
-        backend_specific_acls = backend.get_consul_acls(login, args)
-        return self.create(backend_specific_acls)
-
-    def create(self, acls):
-        rules = {'key': {'': {'policy': 'deny'}}}
-        for rule_policy in acls:
-            rules['key'][rule_policy['rule']] = {'policy': rule_policy['policy']}
-
-        return json.dumps(rules)
-
-
 class Storage(object):
 
     _TOKEN_KEY_FORMAT = 'xivo/xivo-auth/tokens/{}'
@@ -232,10 +217,9 @@ class Storage(object):
 
         return Token.from_consul(json.loads(raw_value['Value']))
 
-    def create_token(self, token_payload, rules):
+    def create_token(self, token_payload):
         try:
-            token_id = self._consul.acl.create(rules=rules)
-            token = Token.from_payload(token_id, token_payload)
+            token = Token.from_payload(token_payload)
             self._store_token(token)
         except ConnectionError as e:
             logger.error('Connection to consul failed: %s', e)
@@ -246,7 +230,6 @@ class Storage(object):
         self._check_valid_token_id(token_id)
 
         try:
-            self._consul.acl.destroy(token_id)
             self._consul.kv.delete(self._TOKEN_KEY_FORMAT.format(token_id), recurse=True)
         except ConnectionError as e:
             logger.error('Connection to consul failed: %s', e)
