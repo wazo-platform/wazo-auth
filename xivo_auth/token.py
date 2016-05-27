@@ -146,7 +146,7 @@ class TokenPayload(object):
 
 class Manager(object):
 
-    def __init__(self, config, storage, celery, consul_acl_generator=None):
+    def __init__(self, config, storage, celery):
         self._default_expiration = config['default_token_lifetime']
         self._storage = storage
         self._celery = celery

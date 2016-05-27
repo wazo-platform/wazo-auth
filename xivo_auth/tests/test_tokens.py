@@ -198,7 +198,6 @@ class TestStorage(unittest.TestCase):
         self.token_id = 'tok-id'
         self.auth_id = 'the-auth-id'
         self.issued_at = 'the-issued-at'
-        self.rules = None
         self.consul = Mock()
         self.storage = token.Storage(self.consul)
 
