@@ -18,7 +18,7 @@
 import unittest
 
 from mock import Mock, patch
-from hamcrest import assert_that, contains_inanyorder, equal_to, empty
+from hamcrest import assert_that, contains_inanyorder, equal_to
 
 from xivo_auth.plugins import backends
 
@@ -41,13 +41,6 @@ class TestVerifyPassword(unittest.TestCase):
         acls = backend.get_acls('foo', None)
 
         assert_that(acls, contains_inanyorder('confd.#'))
-
-    def test_that_an_admin_as_no_kv_available(self):
-        backend = backends.XiVOAdmin({})
-
-        rules = backend.get_consul_acls('foo', None)
-
-        assert_that(rules, empty())
 
     @patch('xivo_auth.plugins.backends.xivo_admin.admin_dao.get_admin_id', Mock(return_value=42))
     def test_that_get_ids_returns_the_id_and_None(self):

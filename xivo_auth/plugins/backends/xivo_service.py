@@ -27,15 +27,6 @@ logger = logging.getLogger(__name__)
 
 class XiVOService(BaseAuthenticationBackend):
 
-    def get_consul_acls(self, login, args):
-        acl = self.get_acls(login, args)
-        consul_acl = []
-        for access in acl:
-            if access.startswith('dird'):
-                consul_acl = [{'rule': 'xivo/private',
-                               'policy': 'read'}]
-        return consul_acl
-
     def get_acls(self, login, args):
         with session_scope():
             return accesswebservice_dao.get_user_acl(login)
