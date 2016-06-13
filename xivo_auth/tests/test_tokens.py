@@ -161,18 +161,23 @@ class TestToken(unittest.TestCase):
         self.token.auth_id = '123'
 
         assert_that(self.token.matches_required_acl('foo.bar'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar.me'), equal_to(True))
         assert_that(self.token.matches_required_acl('foo.bar.123'))
+        assert_that(self.token.matches_required_acl('foo.bar.toto.me'))
         assert_that(self.token.matches_required_acl('foo.bar.toto.123'))
+        assert_that(self.token.matches_required_acl('foo.bar.toto.me.titi'), equal_to(False))
         assert_that(self.token.matches_required_acl('foo.bar.toto.123.titi'), equal_to(False))
 
     def test_matches_required_acls_when_user_acl_has_me_in_middle(self):
         self.token.acls = ['foo.#.me.bar']
         self.token.auth_id = '123'
 
-        assert_that(self.token.matches_required_acl('foo.bar.me.bar'), equal_to(False))
         assert_that(self.token.matches_required_acl('foo.bar.123'), equal_to(False))
+        assert_that(self.token.matches_required_acl('foo.bar.me'), equal_to(False))
         assert_that(self.token.matches_required_acl('foo.bar.123.bar'))
+        assert_that(self.token.matches_required_acl('foo.bar.me.bar'), equal_to(True))
         assert_that(self.token.matches_required_acl('foo.bar.toto.123.bar'))
+        assert_that(self.token.matches_required_acl('foo.bar.toto.me.bar'))
 
     def test_is_expired_when_time_is_in_the_future(self):
         time_in_the_future = later(60)
