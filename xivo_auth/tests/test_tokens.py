@@ -243,6 +243,4 @@ class TestStorage(unittest.TestCase):
     def assert_kv_put_json(self, expected_path, expected_value):
         raw_calls = self.consul.kv.put.call_args_list
         calls = [(path, json.loads(value)) for path, value in [args for args, kwargs in raw_calls]]
-        print 'Calls', calls
-        print 'Expected', expected_value
         assert_that(calls, contains_inanyorder((expected_path, expected_value)))
