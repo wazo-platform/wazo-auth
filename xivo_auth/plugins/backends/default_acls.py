@@ -17,6 +17,7 @@
 
 DEFAULT_USER_ACLS = ['confd.users.me.read',
                      'confd.users.me.update',
+                     'confd.users.me.funckeys.*',
                      'confd.users.me.funckeys.*.*',
                      'confd.users.me.#.read',
                      'confd.users.me.services.*.*',
