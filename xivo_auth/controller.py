@@ -94,7 +94,9 @@ class Controller(object):
                                         self._consul_config,
                                         self._service_discovery_config,
                                         self._bus_config,
-                                        partial(self_check, self._listen_port)):
+                                        partial(self_check,
+                                                self._listen_port,
+                                                self._ssl_cert_file)):
             try:
                 server.start()
             finally:
