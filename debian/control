@@ -1,7 +1,7 @@
 Source: xivo-auth
 Section: python
 Priority: extra
-Maintainer: XiVO Dev Team <dev@avencall.com>
+Maintainer: XiVO Dev Team <dev+pkg@proformatique.com>
 Uploaders: XiVO Builder Team <release@xivo.io>
 Build-Depends: debhelper (>= 9), dh-python, dh-systemd (>= 1.5), python-all (>= 2.7), python-setuptools
 Standards-Version: 3.9.4
