@@ -12,6 +12,7 @@ Package: xivo-auth
 Architecture: all
 Depends: ${python:Depends},
          ${misc:Depends},
+         adduser,
          xivo-lib-python,
          xivo-libdao,
          python-flask,
