@@ -20,19 +20,18 @@ case "$1" in
 			rm -f '/etc/xivo-auth/services.d/xivo_dird_phoned.yml'
 		fi
 
-		# add the group consul if it does not exists
-		groupadd -f consul
-
-		# add user xivo-auth
+		# add/update user
 		if ! getent passwd $USER > /dev/null ; then
-			echo "Adding system user for ${USER}" 1>&2
-			adduser --system --group --quiet \
-				--home /var/www \
-				--no-create-home --disabled-login \
-				$USER
+			echo "Adding system user $USER" 1>&2
+			adduser --quiet --system --group --no-create-home \
+					--home /var/lib/xivo-auth \
+					$USER
+		else
+			if dpkg --compare-versions "$2" lt '16.12~'; then
+				usermod --home /var/lib/xivo-auth $USER
+			fi
 		fi
-		usermod -G consul xivo-auth
-		usermod -G www-data xivo-auth
+		adduser --quiet $USER www-data
 
 		if [ ! -e "$LOG_FILENAME" ]; then
 			touch "$LOG_FILENAME"
