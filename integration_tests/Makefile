@@ -7,6 +7,7 @@ test-prerequisite:
 	docker pull rabbitmq
 	docker pull progrium/consul
 	docker pull xivo/postgres-test
+	docker pull swaggerapi/swagger-validator
 	docker build --no-cache -t xivo/xivo-auth-tests-data -f Dockerfile-data .
 
 test-image:

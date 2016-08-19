@@ -1,0 +1,30 @@
+sync:
+  image: n3llyb0y/wait
+  links:
+    - auth
+    - swagger-validator
+  environment:
+    PORTS: "9497 8080"
+
+data:
+  image: xivo/xivo-auth-tests-data
+  volumes:
+    - "/data/"
+  command: "sh -c 'while true; do sleep 10; done'"
+
+auth:
+   image: xivo/xivo-auth-tests
+   expose:
+     - "9497"
+   volumes_from:
+     - data
+   volumes:
+     - "../../..:/usr/src/xivo-auth"
+   command: "xivo-auth -u www-data -c /data/mock_backend/etc/xivo-auth/config.yml"
+
+swagger-validator:
+  image: swaggerapi/swagger-validator
+  ports:
+    - "18080:8080"
+  links:
+    - auth
