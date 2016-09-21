@@ -24,7 +24,15 @@ from xivo_dao.helpers.db_utils import session_scope
 class XiVOAdmin(BaseAuthenticationBackend):
 
     def get_acls(self, login, args):
-        return ['confd.#']
+        with session_scope():
+            entity = admin_dao.get_admin_entity(login)
+
+        if entity:
+            dird_acl = 'dird.tenants.{}.#'.format(entity)
+        else:
+            dird_acl = 'dird.tenants.#'
+
+        return ['confd.#', dird_acl]
 
     def get_ids(self, username, args):
         with session_scope():

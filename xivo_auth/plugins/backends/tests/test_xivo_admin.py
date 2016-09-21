@@ -17,10 +17,40 @@
 
 import unittest
 
-from mock import Mock, patch
-from hamcrest import assert_that, contains_inanyorder, equal_to
+from mock import Mock, patch, sentinel as s
+from hamcrest import assert_that, equal_to, has_item
 
 from xivo_auth.plugins import backends
+
+
+class TestGetACLS(unittest.TestCase):
+
+    def setUp(self):
+        self.backend = backends.XiVOAdmin('config')
+
+    @patch('xivo_auth.plugins.backends.xivo_admin.admin_dao')
+    def test_that_returned_acls_contains_the_entity(self, admin_dao_mock):
+        tenant = admin_dao_mock.get_admin_entity.return_value = 'the-entity'
+
+        result = self.backend.get_acls(s.login, None)
+
+        admin_dao_mock.get_admin_entity.assert_called_once_with(s.login)
+        assert_that(result, has_item('dird.tenants.{}.#'.format(tenant)))
+
+    @patch('xivo_auth.plugins.backends.xivo_admin.admin_dao')
+    def test_that_returned_acls_contains_all_entity_acl_if_not_assigned(self, admin_dao_mock):
+        admin_dao_mock.get_admin_entity.return_value = None
+
+        result = self.backend.get_acls(s.login, None)
+
+        admin_dao_mock.get_admin_entity.assert_called_once_with(s.login)
+        assert_that(result, has_item('dird.tenants.#'))
+
+    @patch('xivo_auth.plugins.backends.xivo_admin.admin_dao', Mock())
+    def test_that_get_acls_return_acl_for_confd(self):
+        acls = self.backend.get_acls('foo', None)
+
+        assert_that(acls, has_item('confd.#'))
 
 
 class TestVerifyPassword(unittest.TestCase):
@@ -34,13 +64,6 @@ class TestVerifyPassword(unittest.TestCase):
 
         assert_that(result, equal_to('a_return_value'))
         admin_dao_mock.check_username_password.assert_called_once_with('foo', 'bar')
-
-    def test_that_get_acls_return_acl_for_confd(self):
-        backend = backends.XiVOAdmin({})
-
-        acls = backend.get_acls('foo', None)
-
-        assert_that(acls, contains_inanyorder('confd.#'))
 
     @patch('xivo_auth.plugins.backends.xivo_admin.admin_dao.get_admin_id', Mock(return_value=42))
     def test_that_get_ids_returns_the_id_and_None(self):
