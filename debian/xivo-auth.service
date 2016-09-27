@@ -1,6 +1,5 @@
 [Unit]
 Description=xivo-auth server
-ConditionPathExists=!/var/lib/xivo/disabled
 After=network.target consul.service
 Before=monit.service
 
