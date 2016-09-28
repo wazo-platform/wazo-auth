@@ -11,7 +11,7 @@ setup(
     description='XiVO auth',
 
     author='Avencall',
-    author_email='dev@avencall.com',
+    author_email='dev@proformatique.com',
 
     url='https://github.com/xivo-pbx/xivo-auth',
 

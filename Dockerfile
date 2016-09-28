@@ -1,5 +1,5 @@
 FROM python:2.7.9
-MAINTAINER Sylvain Boily "sboily@avencall.com"
+MAINTAINER Sylvain Boily "sboily@proformatique.com"
 
 RUN apt-get -yq update \
    && apt-get -yqq dist-upgrade \
