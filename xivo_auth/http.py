@@ -107,8 +107,8 @@ class Backends(Resource):
 class Api(Resource):
 
     api_package = "xivo_auth.swagger"
-    api_filename = "api.json"
-    api_path = "/api/api.json"
+    api_filename = "api.yml"
+    api_path = "/api/api.yml"
 
     @classmethod
     def add_resource(cls, api):
@@ -120,7 +120,7 @@ class Api(Resource):
         except IOError:
             return {'error': "API spec does not exist"}, 404
 
-        return make_response(api_spec, 200, {'Content-Type': 'application/json'})
+        return make_response(api_spec, 200, {'Content-Type': 'application/x-yaml'})
 
 
 def verify_password(login, passwd, args):
