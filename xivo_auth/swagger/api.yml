@@ -1,0 +1,210 @@
+swagger: '2.0'
+info:
+  version: '0.1'
+  title: XiVO Auth
+  description: XiVO's authentication service
+  contact:
+    name: XiVO dev team
+    url: http://xivo.io
+    email: dev@proformatique.com
+  license:
+    name: GPLv3
+    url: http://www.gnu.org/licenses/gpl-3.0.html
+x-xivo-port: 9497
+x-xivo-name: auth
+basePath: /0.1
+schemes:
+- https
+consumes:
+- application/json
+produces:
+- application/json
+securityDefinitions:
+  xivo_auth_basic:
+    type: basic
+paths:
+  /token:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      summary: Creates a token
+      description: 'Creates a valid token for the supplied username and password combination
+        using the specified backend. The stock backends are: ``xivo_user``, ``xivo_service``,
+        ``xivo_admin``, ``ldap_user``. For more details about the backends, see http://documentation.xivo.io/en/latest/system/xivo-auth/stock_plugins.html#backends-plugins'
+      operationId: createToken
+      tags:
+      - token
+      security:
+      - xivo_auth_basic: []
+      parameters:
+      - name: body
+        in: body
+        description: The token creation parameters
+        required: true
+        schema:
+          type: object
+          properties:
+            backend:
+              type: string
+            expiration:
+              type: integer
+          required:
+          - backend
+      responses:
+        '200':
+          description: The created token's data
+          schema:
+            $ref: '#/definitions/Token'
+        '400':
+          description: Invalid expiration
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: System related token generation error
+          schema:
+            $ref: '#/definitions/Error'
+  /token/{token}:
+    get:
+      tags:
+      - token
+      security:
+      - {}
+      parameters:
+      - name: token
+        in: path
+        type: string
+        description: The token to query
+        required: true
+      - name: scope
+        in: query
+        type: string
+        description: The required ACL
+        required: false
+      summary: Retrieves token data
+      responses:
+        '200':
+          description: The token's data
+          schema:
+            $ref: '#/definitions/Token'
+        '403':
+          description: This token cannot acces the required ACL
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Token not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: System related token error
+          schema:
+            $ref: '#/definitions/Error'
+    head:
+      tags:
+      - token
+      security:
+      - {}
+      parameters:
+      - name: token
+        in: path
+        type: string
+        description: The token to query
+        required: true
+      - name: scope
+        in: query
+        type: string
+        description: The required ACL
+        required: false
+      summary: Checks if a token is valid
+      responses:
+        '204':
+          description: No data
+        '403':
+          description: This token cannot acces the required ACL
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Token not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: System related token error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      tags:
+      - token
+      security:
+      - {}
+      parameters:
+      - name: token
+        in: path
+        type: string
+        description: The token to query
+        required: true
+      summary: Revoke a token
+      responses:
+        '200':
+          description: Success message
+        '500':
+          description: System related token error
+          schema:
+            $ref: '#/definitions/Error'
+  /backends:
+    get:
+      tags:
+      - backends
+      security:
+      - {}
+      description: Retrieves the list of activated backends
+      responses:
+        '200':
+          description: The list of activated backends
+          schema:
+            $ref: '#/definitions/BackendList'
+definitions:
+  BackendList:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          type: string
+  Token:
+    type: object
+    properties:
+      data:
+        type: object
+        properties:
+          token:
+            type: string
+          expires_at:
+            type: string
+          issued_at:
+            type: string
+          auth_id:
+            type: string
+            description: The unique identifier retrieved from the backend
+          xivo_user_uuid:
+            type: string
+            description: The UUID of the XiVO user matching these credentials, this
+              field can be None
+          acls:
+            type: array
+            items:
+              type: string
+            description: The list of allowed ACLs for this token
+  Error:
+    type: object
+    properties:
+      reason:
+        type: array
+        items:
+          type: string
+      timestamp:
+        type: array
+        items:
+          type: string
+      status_code:
+        type: integer

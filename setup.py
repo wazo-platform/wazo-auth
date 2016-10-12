@@ -20,7 +20,7 @@ setup(
     zip_safe=False,
 
     package_data={
-        'xivo_auth.swagger': ['*.json'],
+        'xivo_auth.swagger': ['*.yml'],
     },
 
     scripts=['bin/xivo-auth'],
