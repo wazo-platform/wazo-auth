@@ -40,5 +40,6 @@ DEFAULT_USER_ACLS = ['confd.users.me.read',
                      'events.chat.message.*.me',
                      'events.statuses.*',
                      'events.switchboards',
+                     'events.users.me.#',
                      'events.config.users.me.#',
                      'websocketd']
