@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2016 Avencall
+# Copyright (C) 2016 Proformatique Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,6 +40,6 @@ DEFAULT_USER_ACLS = ['confd.users.me.read',
                      'events.chat.message.*.me',
                      'events.statuses.*',
                      'events.switchboards',
-                     'events.config.users.me.services.*.*',
-                     'events.config.users.me.forwards.*.*',
+                     'events.users.me.#',
+                     'events.config.users.me.#',
                      'websocketd']
