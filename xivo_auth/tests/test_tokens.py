@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015-2016 Avencall
+# Copyright (C) 2016 Proformatique, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,11 +20,18 @@ import unittest
 import json
 import uuid
 
+from datetime import datetime, timedelta
+
 from hamcrest import assert_that, contains_inanyorder, equal_to
 from mock import ANY, Mock, patch, sentinel
 
 from xivo_auth import token, extensions, BaseAuthenticationBackend
-from xivo_auth.helpers import later
+
+
+def later(expiration):
+    delta = timedelta(seconds=expiration)
+    return (datetime.now() + delta).isoformat()
+
 
 
 class AnyUUID(object):
@@ -55,34 +63,6 @@ class TestManager(unittest.TestCase):
                                      uuid or sentinel.uuid))
         return Mock(BaseAuthenticationBackend, get_ids=get_ids)
 
-    @patch('xivo_auth.token.now', Mock(return_value=sentinel.now))
-    @patch('xivo_auth.token.later')
-    def test_new_token(self, mocked_later):
-        backend = self._new_backend_mock()
-        login = sentinel.login
-        args = {}
-
-        self.manager.new_token(backend, login, args)
-
-        token_payload = self.storage.create_token.call_args[0][0]
-        assert_that(token_payload.auth_id, equal_to(sentinel.auth_id))
-        assert_that(token_payload.xivo_user_uuid, equal_to(sentinel.uuid))
-        assert_that(token_payload.issued_at, equal_to(sentinel.now))
-        assert_that(token_payload.expires_at, equal_to(mocked_later.return_value))
-        mocked_later.assert_called_once_with(sentinel.default_expiration_delay)
-        self.storage.create_token.assert_called_once_with(ANY)
-
-    @patch('xivo_auth.token.later')
-    def test_now_token_with_expiration(self, mocked_later):
-        backend = self._new_backend_mock()
-        args = {'expiration': sentinel.expiration_delay}
-
-        self.manager.new_token(backend, sentinel.login, args)
-
-        token_payload = self.storage.create_token.call_args[0][0]
-        assert_that(token_payload.expires_at, equal_to(mocked_later.return_value))
-        mocked_later.assert_called_once_with(sentinel.expiration_delay)
-
     def test_remove_token(self):
         token_id = 'my-token'
         self.manager._get_token_hash = Mock()
@@ -101,9 +81,18 @@ class TestToken(unittest.TestCase):
         self.xivo_user_uuid = 'the-user-uuid'
         self.issued_at = 'the-issued-at'
         self.expires_at = 'the-expires-at'
+        self.utc_expires_at = 'utc-expires-at'
+        self.utc_issued_at = 'utc-issued-at'
         self.acls = ['confd']
-        self.token = token.Token(self.id_, self.auth_id, self.xivo_user_uuid,
-                                 self.issued_at, self.expires_at, self.acls)
+        self.token = token.Token(
+            self.id_,
+            auth_id=self.auth_id,
+            xivo_user_uuid=self.xivo_user_uuid,
+            issued_at=self.issued_at,
+            expires_at=self.expires_at,
+            utc_issued_at=self.utc_issued_at,
+            utc_expires_at=self.utc_expires_at,
+            acls=self.acls)
 
     def test_to_consul(self):
         expected = {
@@ -112,6 +101,8 @@ class TestToken(unittest.TestCase):
             'issued_at': self.issued_at,
             'expires_at': self.expires_at,
             'xivo_user_uuid': self.xivo_user_uuid,
+            'utc_expires_at': self.utc_expires_at,
+            'utc_issued_at': self.utc_issued_at,
             'acls': ['confd'],
         }
 
@@ -213,6 +204,8 @@ class TestStorage(unittest.TestCase):
                                 'xivo_user_uuid': '',
                                 'issued_at': '',
                                 'expires_at': '',
+                                'utc_issued_at': '',
+                                'utc_expires_at': '',
                                 'acls': []})
         self.consul.kv.get.return_value = 42, {'Key': 'xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678',
                                                'Value': raw_token}
@@ -223,7 +216,8 @@ class TestStorage(unittest.TestCase):
         self.consul.kv.get.assert_called_once_with('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678')
 
     def test_create_token(self):
-        token_payload = token.TokenPayload(self.auth_id, issued_at=self.issued_at)
+        token_payload = token.TokenPayload(
+            self.auth_id, issued_at=self.issued_at)
 
         t = self.storage.create_token(token_payload)
 
@@ -232,6 +226,8 @@ class TestStorage(unittest.TestCase):
                     'auth_id': self.auth_id,
                     'xivo_user_uuid': None,
                     'issued_at': self.issued_at,
+                    'utc_issued_at': None,
+                    'utc_expires_at': None,
                     'expires_at': None,
                     'acls': []}
         self.assert_kv_put_json('xivo/xivo-auth/tokens/{}'.format(t.token), expected)
