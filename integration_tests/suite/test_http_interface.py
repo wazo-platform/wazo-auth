@@ -22,6 +22,7 @@ import os
 import uuid
 import json
 import logging
+
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 
@@ -41,6 +42,8 @@ from hamcrest import none
 from hamcrest import raises
 from hamcrest.core.base_matcher import BaseMatcher
 from xivo_auth_client import Client
+
+from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)
@@ -99,104 +102,17 @@ def http_error(code, msg):
     return HTTPErrorMatcher(code, msg)
 
 
-class AssetRunner(object):
+class _BaseTestCase(AssetLaunchingTestCase):
 
-    _launcher = 'docker-compose'
-    _instance = None
-
-    def __init__(self):
-        self._running_asset = None
-
-    def __del__(self):
-        self.stop()
-
-    def is_running(self, service):
-        service_id = self._get_service_id(service)
-        status = self._run_cmd('docker inspect {container}'.format(container=service_id))
-        return json.loads(status)[0]['State']['Running']
-
-    def service_logs(self, service):
-        service_id = self._get_service_id(service)
-        status = self._run_cmd('docker logs {container}'.format(container=service_id))
-        return status
-
-    def start(self, asset):
-        if asset == self._running_asset:
-            return
-        elif self._running_asset != asset:
-            self._stop(self._running_asset)
-        self._start(asset)
-
-    def stop(self):
-        self._stop(self._running_asset)
-
-    def _get_service_id(self, service):
-        return self._run_cmd('docker-compose ps -q {}'.format(service)).strip()
-
-    def _pause_services(self, *services):
-        cmd = 'docker pause {}'
-        for service in services:
-            self._run_cmd(cmd.format(self._container_name(service)))
-
-    def _resume_services(self, *services):
-        cmd = 'docker unpause {}'
-        for service in services:
-            self._run_cmd(cmd.format(self._container_name(service)))
-
-    @contextmanager
-    def paused_service(self, service):
-        self._pause_services(service)
-        yield
-        self._resume_services(service)
-
-    def _container_name(self, service):
-        contracted_asset_name = self._running_asset.replace('_', '')
-        return '{asset}_{service}_1'.format(asset=contracted_asset_name, service=service)
-
-    def _start(self, asset):
-        self._running_asset = asset
-        asset_path = os.path.join(os.path.dirname(__file__), '..', 'assets', asset)
-        self.cur_dir = os.getcwd()
-        os.chdir(asset_path)
-        self._run_cmd('{} rm --force'.format(self._launcher))
-        self._run_cmd('{} run --rm sync'.format(self._launcher))
-        time.sleep(1)
-
-    def _stop(self, asset):
-        if not asset or asset != self._running_asset:
-            return
-
-        self._run_cmd('{} kill'.format(self._launcher))
-        os.chdir(self.cur_dir)
-        time.sleep(1)
-
-    @staticmethod
-    def _run_cmd(cmd):
-        process = subprocess.Popen(cmd.split(' '), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        out, _ = process.communicate()
-        logger.info('%s', out)
-        return out
-
-    @classmethod
-    def get_instance(cls):
-        if not cls._instance:
-            cls._instance = AssetRunner()
-        return cls._instance
-
-
-class _BaseTestCase(unittest.TestCase):
+    assets_root = os.path.join(os.path.dirname(__file__), '..', 'assets')
 
     @classmethod
     def setUpClass(cls):
-        cls._asset_runner = AssetRunner.get_instance()
-        cls._asset_runner.start(cls.asset)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls._asset_runner.stop()
+        super(_BaseTestCase, cls).setUpClass()
 
     def _post_token(self, username, password, backend=None, expiration=None):
-        client = Client(HOST, username=username, password=password, verify_certificate=False)
+        port = self.service_port(9497, 'auth')
+        client = Client(HOST, port, username=username, password=password, verify_certificate=False)
         backend = backend or 'mock'
         args = {}
         if expiration:
@@ -215,7 +131,8 @@ class _BaseTestCase(unittest.TestCase):
             self.fail('Should have raised an exception')
 
     def _get_token(self, token, acls=None):
-        client = Client(HOST, verify_certificate=False)
+        port = self.service_port(9497, 'auth')
+        client = Client(HOST, port, verify_certificate=False)
         args = {}
         if acls:
             args['required_acl'] = acls
@@ -233,11 +150,13 @@ class _BaseTestCase(unittest.TestCase):
             self.fail('Should have raised an exception')
 
     def _delete_token(self, token):
-        client = Client(HOST, verify_certificate=False)
+        port = self.service_port(9497, 'auth')
+        client = Client(HOST, port, verify_certificate=False)
         return client.token.revoke(token)
 
     def _is_valid(self, token, acls=None):
-        client = Client(HOST, verify_certificate=False)
+        port = self.service_port(9497, 'auth')
+        client = Client(HOST, port, verify_certificate=False)
         args = {}
         if acls:
             args['required_acl'] = acls
@@ -245,7 +164,7 @@ class _BaseTestCase(unittest.TestCase):
 
     def _assert_that_xivo_auth_is_stopping(self):
         for _ in range(5):
-            if not self._asset_runner.is_running('auth'):
+            if not self.service_status('auth')['State']['Running']:
                 break
             time.sleep(0.2)
         else:
@@ -258,7 +177,8 @@ class TestPolicies(_BaseTestCase):
 
     def setUp(self):
         super(TestPolicies, self).setUp()
-        self.client = Client(HOST, username='foo', password='bar', verify_certificate=False)
+        port = self.service_port(9497, 'auth')
+        self.client = Client(HOST, port, username='foo', password='bar', verify_certificate=False)
         token = self.client.token.new(backend='mock', expiration=3600)['token']
         self.client.set_token(token)
 
@@ -421,7 +341,8 @@ class TestCoreMockBackend(_BaseTestCase):
         assert_that(self._is_valid('abcdef'), is_(False))
 
     def test_backends(self):
-        response = requests.get('https://{}:9497/0.1/backends'.format(HOST), verify=False)
+        url = 'https://{}:{}/0.1/backends'.format(HOST, self.service_port(9497, 'auth'))
+        response = requests.get(url, verify=False)
 
         assert_that(response.json()['data'],
                     contains_inanyorder('mock', 'mock_with_uuid', 'broken_init', 'broken_verify_password'))
@@ -479,7 +400,7 @@ class TestCoreMockBackend(_BaseTestCase):
         self._post_token_with_expected_exception('foo', 'not_bar', 'broken_verify_password', status_code=401)
 
     def test_that_no_type_returns_400(self):
-        url = 'https://{}:9497/0.1/token'.format(HOST)
+        url = 'https://{}:{}/0.1/token'.format(HOST, self.service_port(9497, 'auth'))
         s = requests.Session()
         s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         s.auth = requests.auth.HTTPBasicAuth('foo', 'bar')
@@ -560,7 +481,7 @@ class TestNoSSLCertificate(_BaseTestCase):
     def test_that_xivo_auth_stops_if_not_readable_ssl_certificate(self):
         self._assert_that_xivo_auth_is_stopping()
 
-        log = self._asset_runner.service_logs('auth')
+        log = self.service_logs('auth')
         assert_that(log, contains_string("No such file or directory: '/data/_common/ssl/no_server.crt'"))
 
 
@@ -571,5 +492,5 @@ class TestNoSSLKey(_BaseTestCase):
     def test_that_xivo_auth_stops_if_not_readable_ssl_key(self):
         self._assert_that_xivo_auth_is_stopping()
 
-        log = self._asset_runner.service_logs('auth')
+        log = self.service_logs('auth')
         assert_that(log, contains_string("No such file or directory: '/data/_common/ssl/no_server.key'"))

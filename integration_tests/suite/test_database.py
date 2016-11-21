@@ -26,7 +26,7 @@ from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 
 from xivo_auth import database, exceptions
 
-DB_URI = os.getenv('DB_URI', 'postgresql://asterisk:proformatique@localhost:15432')
+DB_URI = os.getenv('DB_URI', 'postgresql://asterisk:proformatique@localhost:{port}')
 
 
 def new_uuid():
@@ -50,7 +50,7 @@ def teardown():
 class TestPolicyCRUD(unittest.TestCase):
 
     def setUp(self):
-        self._crud = database._PolicyCRUD(DB_URI)
+        self._crud = database._PolicyCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
         default_user_policy = self._crud.get('wazo_default_user_policy', 'name', 'asc', 1, 0)[0]
         default_admin_policy = self._crud.get('wazo_default_admin_policy', 'name', 'asc', 1, 0)[0]
         self._default_user_policy_uuid = default_user_policy['uuid']
@@ -210,7 +210,7 @@ class TestPolicyCRUD(unittest.TestCase):
 class TestTokenCRUD(unittest.TestCase):
 
     def setUp(self):
-        self._crud = database._TokenCRUD(DB_URI)
+        self._crud = database._TokenCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
 
     def test_create(self):
         with nested(self._new_token(),

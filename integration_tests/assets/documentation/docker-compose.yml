@@ -25,7 +25,7 @@ auth:
 swagger-validator:
   image: swaggerapi/swagger-validator
   ports:
-    - "18080:8080"
+    - "8080"
   links:
     - auth
 postgres:

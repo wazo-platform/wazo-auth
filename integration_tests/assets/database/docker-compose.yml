@@ -7,7 +7,5 @@ sync:
 
 postgres:
   image: wazopbx/xivo-auth-db
-  expose:
-    - "5432"
   ports:
-    - "15432:5432"
+    - "5432"

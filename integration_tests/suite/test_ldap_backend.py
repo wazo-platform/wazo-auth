@@ -62,8 +62,6 @@ def _run_cmd(cmd, stderr=True):
 
 class LDAPHelper(object):
 
-    LDAP_URI = 'ldap://localhost:3899'
-
     BASE_DN = 'dc=xivo-auth,dc=wazo,dc=community'
     ADMIN_DN = 'cn=admin,{}'.format(BASE_DN)
     ADMIN_PASSWORD = 'xivopassword'
@@ -72,8 +70,8 @@ class LDAPHelper(object):
     OU_DN = {'people': PEOPLE_DN,
              'quebec': QUEBEC_DN}
 
-    def __init__(self):
-        self._ldap_obj = ldap.initialize(self.LDAP_URI)
+    def __init__(self, ldap_uri):
+        self._ldap_obj = ldap.initialize(ldap_uri)
         self._ldap_obj.simple_bind_s(self.ADMIN_DN, self.ADMIN_PASSWORD)
 
     def add_contact(self, contact, ou):
@@ -102,10 +100,10 @@ class LDAPHelper(object):
         self._ldap_obj.add_s(self.QUEBEC_DN, modlist)
 
 
-def add_contacts(contacts):
+def add_contacts(contacts, ldap_uri):
     for _ in xrange(10):
         try:
-            helper = LDAPHelper()
+            helper = LDAPHelper(ldap_uri)
             break
         except ldap.SERVER_DOWN:
             time.sleep(1)
@@ -123,9 +121,11 @@ class _BaseLDAPTestCase(_BaseTestCase):
     @classmethod
     def setUpClass(cls):
         super(_BaseLDAPTestCase, cls).setUpClass()
+        port = cls.service_port(389, 'slapd')
+        ldap_uri = 'ldap://localhost:{port}'.format(port=port)
 
         try:
-            add_contacts(cls.CONTACTS)
+            add_contacts(cls.CONTACTS, ldap_uri)
         except Exception:
             super(_BaseLDAPTestCase, cls).tearDownClass()
             raise
