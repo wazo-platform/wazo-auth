@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015-2016 Avencall
+# Copyright (C) 2016 Proformatique, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -253,6 +254,11 @@ class TestCoreMockBackend(_BaseTestCase):
 
     asset = 'mock_backend'
 
+    def test_that_the_xivo_uuid_is_included_in_POST_response(self):
+        xivo_uuid = self._post_token('foo', 'bar').json()['xivo-uuid']
+
+        assert_that(xivo_uuid, equal_to('the-predefined-xivo-uuid'))
+
     def test_that_head_with_a_valid_token_returns_204(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
@@ -278,6 +284,13 @@ class TestCoreMockBackend(_BaseTestCase):
 
         assert_that(response.status_code, equal_to(200))
         assert_that(response.json()['data']['auth_id'], equal_to('a-mocked-uuid'))
+
+    def test_that_get_returns_the_xivo_uuid_in_the_response(self):
+        token = self._post_token('foo', 'bar').json()['data']['token']
+
+        response = requests.get('{}/{}'.format(self.url, token), verify=False)
+
+        assert_that(response.json()['xivo-uuid'], equal_to('the-predefined-xivo-uuid'))
 
     def test_that_get_returns_the_xivo_user_uuid(self):
         token = self._post_token('foo', 'bar').json()['data']['token']

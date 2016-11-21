@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015-2016 Avencall
+# Copyright (C) 2016 Proformatique, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +18,7 @@
 
 import time
 import logging
+import os
 
 from flask import current_app, request, make_response
 from flask_restful import Resource
@@ -25,6 +27,8 @@ from pkg_resources import resource_string
 from xivo_auth.token import ManagerException
 
 logger = logging.getLogger(__name__)
+
+XIVO_UUID = os.getenv('XIVO_UUID')
 
 
 def _error(code, msg):
@@ -67,7 +71,8 @@ class Tokens(Resource):
         except ManagerException as e:
             return _error(e.code, str(e))
 
-        response = {'data': token.to_dict()}
+        response = {'data': token.to_dict(),
+                    'xivo-uuid': XIVO_UUID}
         return response, 200
 
 
@@ -85,7 +90,8 @@ class Token(Resource):
         required_acl = request.args.get('scope')
         try:
             token = current_app.config['token_manager'].get(token, required_acl)
-            return {'data': token.to_dict()}
+            return {'data': token.to_dict(),
+                    'xivo-uuid': XIVO_UUID}
         except ManagerException as e:
             return _error(e.code, str(e))
 
