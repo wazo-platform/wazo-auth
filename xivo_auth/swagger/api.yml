@@ -181,7 +181,11 @@ definitions:
             type: string
           expires_at:
             type: string
+          utc_expires_at:
+            type: string
           issued_at:
+            type: string
+          utc_issued_at:
             type: string
           auth_id:
             type: string

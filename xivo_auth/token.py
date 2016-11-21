@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015-2016 Avencall
+# Copyright (C) 2016 Proformatique, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,12 +21,13 @@ import json
 import logging
 import re
 import socket
+import time
+
+from datetime import datetime, timedelta
 
 from unidecode import unidecode
 from uuid import UUID, uuid4
 from requests.exceptions import ConnectionError
-
-from xivo_auth.helpers import now, later
 
 logger = logging.getLogger(__name__)
 
@@ -72,12 +74,15 @@ class _RabbitMQConnectionException(ManagerException):
 
 class Token(object):
 
-    def __init__(self, id_, auth_id, xivo_user_uuid, issued_at, expires_at, acls):
+    def __init__(self, id_, auth_id, xivo_user_uuid, issued_at, utc_issued_at,
+                 expires_at, utc_expires_at, acls):
         self.token = id_
         self.auth_id = auth_id
         self.xivo_user_uuid = xivo_user_uuid
         self.issued_at = issued_at
         self.expires_at = expires_at
+        self.utc_issued_at = utc_issued_at
+        self.utc_expires_at = utc_expires_at
         self.acls = acls
 
     def to_consul(self):
@@ -86,6 +91,8 @@ class Token(object):
                 'xivo_user_uuid': self.xivo_user_uuid,
                 'issued_at': self.issued_at,
                 'expires_at': self.expires_at,
+                'utc_issued_at': self.utc_issued_at,
+                'utc_expires_at': self.utc_expires_at,
                 'acls': self.acls}
 
     def to_dict(self):
@@ -94,10 +101,13 @@ class Token(object):
                 'xivo_user_uuid': self.xivo_user_uuid,
                 'issued_at': self.issued_at,
                 'expires_at': self.expires_at,
+                'utc_issued_at': self.utc_issued_at,
+                'utc_expires_at': self.utc_expires_at,
                 'acls': self.acls}
 
     def is_expired(self):
-        return self.expires_at and now() > self.expires_at
+        now = datetime.now().isoformat()
+        return self.expires_at and now > self.expires_at
 
     def matches_required_acl(self, required_acl):
         if required_acl is None:
@@ -122,28 +132,47 @@ class Token(object):
 
     @classmethod
     def from_consul(cls, d):
-        return Token(d['token'], d['auth_id'], d['xivo_user_uuid'],
-                     d['issued_at'], d['expires_at'], d['acls'])
+        return Token(
+            d['token'],
+            auth_id=d['auth_id'],
+            xivo_user_uuid=d['xivo_user_uuid'],
+            issued_at=d['issued_at'],
+            expires_at=d['expires_at'],
+            utc_issued_at=d.get('utc_issued_at'),
+            utc_expires_at=d.get('utc_expires_at'),
+            acls=d['acls'])
 
     @classmethod
     def from_payload(cls, payload):
         id_ = str(uuid4())
-        return Token(id_, payload.auth_id, payload.xivo_user_uuid,
-                     payload.issued_at, payload.expires_at, payload.acls)
+        return Token(
+            id_,
+            auth_id=payload.auth_id,
+            xivo_user_uuid=payload.xivo_user_uuid,
+            issued_at=payload.issued_at,
+            expires_at=payload.expires_at,
+            utc_expires_at=payload.utc_expires_at,
+            utc_issued_at=payload.utc_issued_at,
+            acls=payload.acls)
 
 
 class TokenPayload(object):
 
-    def __init__(self, auth_id, xivo_user_uuid=None, issued_at=None, expires_at=None, acls=None):
-        if not issued_at:
-            issued_at = now()
-        if not acls:
-            acls = []
+    def __init__(self,
+                 auth_id,
+                 xivo_user_uuid=None,
+                 issued_at=None,
+                 utc_issued_at=None,
+                 expires_at=None,
+                 utc_expires_at=None,
+                 acls=None):
         self.auth_id = auth_id
         self.xivo_user_uuid = xivo_user_uuid
         self.issued_at = issued_at
         self.expires_at = expires_at
-        self.acls = acls
+        self.utc_issued_at = utc_issued_at
+        self.utc_expires_at = utc_expires_at
+        self.acls = acls or []
 
 
 class Manager(object):
@@ -159,8 +188,19 @@ class Manager(object):
         auth_id, xivo_user_uuid = backend.get_ids(login, args)
         acls = backend.get_acls(login, args)
         expiration = args.get('expiration', self._default_expiration)
-        token_payload = TokenPayload(auth_id=auth_id, xivo_user_uuid=xivo_user_uuid,
-                                     expires_at=later(expiration), acls=acls)
+        t = time.time()
+        now = datetime.fromtimestamp(t)
+        utcnow = datetime.utcfromtimestamp(t)
+        localized_issued_at, localized_expires_at = self._build_timestamps(now, expiration)
+        utc_issued_at, utc_expires_at = self._build_timestamps(utcnow, expiration)
+        token_payload = TokenPayload(
+            auth_id=auth_id,
+            xivo_user_uuid=xivo_user_uuid,
+            expires_at=localized_expires_at,
+            issued_at=localized_issued_at,
+            utc_expires_at=utc_expires_at,
+            utc_issued_at=utc_issued_at,
+            acls=acls)
 
         token = self._storage.create_token(token_payload)
 
@@ -195,6 +235,12 @@ class Manager(object):
 
     def _get_token_hash(self, token):
         return hashlib.sha256('{token}'.format(token=token)).hexdigest()
+
+    @staticmethod
+    def _build_timestamps(t, expiration):
+        delta = timedelta(seconds=expiration)
+        expiration_t = t + delta
+        return t.isoformat(), expiration_t.isoformat()
 
 
 class Storage(object):

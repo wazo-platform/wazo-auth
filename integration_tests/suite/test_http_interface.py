@@ -25,7 +25,7 @@ import os
 import uuid
 
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 from hamcrest import assert_that
 from hamcrest import contains_inanyorder
 from hamcrest import contains_string
@@ -343,10 +343,18 @@ class TestCoreMockBackend(_BaseTestCase):
 
         creation_time = datetime.strptime(token_data['issued_at'], ISO_DATETIME)
         expiration_time = datetime.strptime(token_data['expires_at'], ISO_DATETIME)
+        utc_creation_time = datetime.strptime(token_data['utc_issued_at'], ISO_DATETIME)
+        utc_expiration_time = datetime.strptime(token_data['utc_expires_at'], ISO_DATETIME)
+
+        utcoffset = timedelta(hours=1)  # UTC+1 is hardcoded in the docker-compose file
 
         expiration = expiration_time - creation_time
+        utc_expiration = utc_expiration_time - utc_creation_time
 
-        assert_that(1 <= expiration.seconds < 3)
+        assert_that(expiration.seconds, equal_to(2))
+        assert_that(utc_expiration.seconds, equal_to(2))
+        assert_that(utc_expiration_time - expiration_time, equal_to(utcoffset))
+        assert_that(utc_creation_time - creation_time, equal_to(utcoffset))
 
     def test_the_expiration_argument_as_a_string(self):
         response = self._post_token('foo', 'bar', expiration="30")
