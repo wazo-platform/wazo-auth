@@ -174,7 +174,7 @@ definitions:
   Token:
     type: object
     properties:
-      xivo-uuid:
+      xivo_uuid:
         type: string
       data:
         type: object

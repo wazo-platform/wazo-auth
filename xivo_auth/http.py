@@ -72,7 +72,7 @@ class Tokens(Resource):
             return _error(e.code, str(e))
 
         response = {'data': token.to_dict(),
-                    'xivo-uuid': XIVO_UUID}
+                    'xivo_uuid': XIVO_UUID}
         return response, 200
 
 
@@ -91,7 +91,7 @@ class Token(Resource):
         try:
             token = current_app.config['token_manager'].get(token, required_acl)
             return {'data': token.to_dict(),
-                    'xivo-uuid': XIVO_UUID}
+                    'xivo_uuid': XIVO_UUID}
         except ManagerException as e:
             return _error(e.code, str(e))
 

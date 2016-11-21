@@ -255,7 +255,7 @@ class TestCoreMockBackend(_BaseTestCase):
     asset = 'mock_backend'
 
     def test_that_the_xivo_uuid_is_included_in_POST_response(self):
-        xivo_uuid = self._post_token('foo', 'bar').json()['xivo-uuid']
+        xivo_uuid = self._post_token('foo', 'bar').json()['xivo_uuid']
 
         assert_that(xivo_uuid, equal_to('the-predefined-xivo-uuid'))
 
@@ -290,7 +290,7 @@ class TestCoreMockBackend(_BaseTestCase):
 
         response = requests.get('{}/{}'.format(self.url, token), verify=False)
 
-        assert_that(response.json()['xivo-uuid'], equal_to('the-predefined-xivo-uuid'))
+        assert_that(response.json()['xivo_uuid'], equal_to('the-predefined-xivo-uuid'))
 
     def test_that_get_returns_the_xivo_user_uuid(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
