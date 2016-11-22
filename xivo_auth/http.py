@@ -71,8 +71,9 @@ class Tokens(Resource):
         except ManagerException as e:
             return _error(e.code, str(e))
 
-        response = {'data': token.to_dict(),
-                    'xivo_uuid': XIVO_UUID}
+        data = token.to_dict()
+        data['xivo_uuid'] = XIVO_UUID
+        response = {'data': data}
         return response, 200
 
 
@@ -90,8 +91,9 @@ class Token(Resource):
         required_acl = request.args.get('scope')
         try:
             token = current_app.config['token_manager'].get(token, required_acl)
-            return {'data': token.to_dict(),
-                    'xivo_uuid': XIVO_UUID}
+            data = token.to_dict()
+            data['xivo_uuid'] = XIVO_UUID
+            return {'data': data}
         except ManagerException as e:
             return _error(e.code, str(e))
 
