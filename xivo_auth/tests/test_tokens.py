@@ -23,7 +23,7 @@ import uuid
 from datetime import datetime, timedelta
 
 from hamcrest import assert_that, contains_inanyorder, equal_to
-from mock import ANY, Mock, patch, sentinel
+from mock import Mock, sentinel
 
 from xivo_auth import token, extensions, BaseAuthenticationBackend
 
@@ -31,7 +31,6 @@ from xivo_auth import token, extensions, BaseAuthenticationBackend
 def later(expiration):
     delta = timedelta(seconds=expiration)
     return (datetime.now() + delta).isoformat()
-
 
 
 class AnyUUID(object):
@@ -79,6 +78,7 @@ class TestToken(unittest.TestCase):
         self.id_ = 'the-token-id'
         self.auth_id = 'the-auth-id'
         self.xivo_user_uuid = 'the-user-uuid'
+        self.xivo_uuid = 'the-xivo-uuid'
         self.issued_at = 'the-issued-at'
         self.expires_at = 'the-expires-at'
         self.utc_expires_at = 'utc-expires-at'
@@ -88,6 +88,7 @@ class TestToken(unittest.TestCase):
             self.id_,
             auth_id=self.auth_id,
             xivo_user_uuid=self.xivo_user_uuid,
+            xivo_uuid=self.xivo_uuid,
             issued_at=self.issued_at,
             expires_at=self.expires_at,
             utc_issued_at=self.utc_issued_at,
@@ -98,6 +99,7 @@ class TestToken(unittest.TestCase):
         expected = {
             'token': self.id_,
             'auth_id': self.auth_id,
+            'xivo_uuid': self.xivo_uuid,
             'issued_at': self.issued_at,
             'expires_at': self.expires_at,
             'xivo_user_uuid': self.xivo_user_uuid,
@@ -216,8 +218,7 @@ class TestStorage(unittest.TestCase):
         self.consul.kv.get.assert_called_once_with('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678')
 
     def test_create_token(self):
-        token_payload = token.TokenPayload(
-            self.auth_id, issued_at=self.issued_at)
+        token_payload = self.new_payload(self.auth_id, issued_at=self.issued_at)
 
         t = self.storage.create_token(token_payload)
 
@@ -225,6 +226,7 @@ class TestStorage(unittest.TestCase):
         expected = {'token': t.token,
                     'auth_id': self.auth_id,
                     'xivo_user_uuid': None,
+                    'xivo_uuid': None,
                     'issued_at': self.issued_at,
                     'utc_issued_at': None,
                     'utc_expires_at': None,
@@ -240,6 +242,19 @@ class TestStorage(unittest.TestCase):
 
         self.consul.kv.delete.assert_called_once_with('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678',
                                                       recurse=True)
+
+    @staticmethod
+    def new_payload(auth_id,
+                    xivo_user_uuid=None,
+                    xivo_uuid=None,
+                    issued_at=None,
+                    utc_issued_at=None,
+                    expires_at=None,
+                    utc_expires_at=None,
+                    acls=None):
+        return token.TokenPayload(auth_id, xivo_user_uuid, xivo_uuid, issued_at,
+                                  utc_issued_at, expires_at, utc_expires_at,
+                                  acls)
 
     def assert_kv_put_json(self, expected_path, expected_value):
         raw_calls = self.consul.kv.put.call_args_list

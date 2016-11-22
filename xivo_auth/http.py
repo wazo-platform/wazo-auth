@@ -18,7 +18,6 @@
 
 import time
 import logging
-import os
 
 from flask import current_app, request, make_response
 from flask_restful import Resource
@@ -27,8 +26,6 @@ from pkg_resources import resource_string
 from xivo_auth.token import ManagerException
 
 logger = logging.getLogger(__name__)
-
-XIVO_UUID = os.getenv('XIVO_UUID')
 
 
 def _error(code, msg):
@@ -71,10 +68,7 @@ class Tokens(Resource):
         except ManagerException as e:
             return _error(e.code, str(e))
 
-        data = token.to_dict()
-        data['xivo_uuid'] = XIVO_UUID
-        response = {'data': data}
-        return response, 200
+        return {'data': token.to_dict()}, 200
 
 
 class Token(Resource):
@@ -91,9 +85,7 @@ class Token(Resource):
         required_acl = request.args.get('scope')
         try:
             token = current_app.config['token_manager'].get(token, required_acl)
-            data = token.to_dict()
-            data['xivo_uuid'] = XIVO_UUID
-            return {'data': data}
+            return {'data': token.to_dict()}
         except ManagerException as e:
             return _error(e.code, str(e))
 

@@ -19,17 +19,20 @@
 import hashlib
 import json
 import logging
+import os
 import re
 import socket
 import time
 
 from datetime import datetime, timedelta
+from uuid import UUID, uuid4
 
 from unidecode import unidecode
-from uuid import UUID, uuid4
 from requests.exceptions import ConnectionError
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_XIVO_UUID = os.getenv('XIVO_UUID')
 
 
 class ManagerException(Exception):
@@ -74,11 +77,12 @@ class _RabbitMQConnectionException(ManagerException):
 
 class Token(object):
 
-    def __init__(self, id_, auth_id, xivo_user_uuid, issued_at, utc_issued_at,
-                 expires_at, utc_expires_at, acls):
+    def __init__(self, id_, auth_id, xivo_user_uuid, xivo_uuid, issued_at,
+                 utc_issued_at, expires_at, utc_expires_at, acls):
         self.token = id_
         self.auth_id = auth_id
         self.xivo_user_uuid = xivo_user_uuid
+        self.xivo_uuid = xivo_uuid
         self.issued_at = issued_at
         self.expires_at = expires_at
         self.utc_issued_at = utc_issued_at
@@ -89,6 +93,7 @@ class Token(object):
         return {'token': self.token,
                 'auth_id': self.auth_id,
                 'xivo_user_uuid': self.xivo_user_uuid,
+                'xivo_uuid': self.xivo_uuid,
                 'issued_at': self.issued_at,
                 'expires_at': self.expires_at,
                 'utc_issued_at': self.utc_issued_at,
@@ -99,6 +104,7 @@ class Token(object):
         return {'token': self.token,
                 'auth_id': self.auth_id,
                 'xivo_user_uuid': self.xivo_user_uuid,
+                'xivo_uuid': self.xivo_uuid,
                 'issued_at': self.issued_at,
                 'expires_at': self.expires_at,
                 'utc_issued_at': self.utc_issued_at,
@@ -136,6 +142,7 @@ class Token(object):
             d['token'],
             auth_id=d['auth_id'],
             xivo_user_uuid=d['xivo_user_uuid'],
+            xivo_uuid=d.get('xivo_uuid', DEFAULT_XIVO_UUID),
             issued_at=d['issued_at'],
             expires_at=d['expires_at'],
             utc_issued_at=d.get('utc_issued_at'),
@@ -149,6 +156,7 @@ class Token(object):
             id_,
             auth_id=payload.auth_id,
             xivo_user_uuid=payload.xivo_user_uuid,
+            xivo_uuid=payload.xivo_uuid,
             issued_at=payload.issued_at,
             expires_at=payload.expires_at,
             utc_expires_at=payload.utc_expires_at,
@@ -158,16 +166,11 @@ class Token(object):
 
 class TokenPayload(object):
 
-    def __init__(self,
-                 auth_id,
-                 xivo_user_uuid=None,
-                 issued_at=None,
-                 utc_issued_at=None,
-                 expires_at=None,
-                 utc_expires_at=None,
-                 acls=None):
+    def __init__(self, auth_id, xivo_user_uuid, xivo_uuid, issued_at,
+                 utc_issued_at, expires_at, utc_expires_at, acls):
         self.auth_id = auth_id
         self.xivo_user_uuid = xivo_user_uuid
+        self.xivo_uuid = xivo_uuid
         self.issued_at = issued_at
         self.expires_at = expires_at
         self.utc_issued_at = utc_issued_at
@@ -186,6 +189,7 @@ class Manager(object):
         from xivo_auth import tasks
 
         auth_id, xivo_user_uuid = backend.get_ids(login, args)
+        xivo_uuid = os.getenv('XIVO_UUID')
         acls = backend.get_acls(login, args)
         expiration = args.get('expiration', self._default_expiration)
         t = time.time()
@@ -196,6 +200,7 @@ class Manager(object):
         token_payload = TokenPayload(
             auth_id=auth_id,
             xivo_user_uuid=xivo_user_uuid,
+            xivo_uuid=xivo_uuid,
             expires_at=localized_expires_at,
             issued_at=localized_issued_at,
             utc_expires_at=utc_expires_at,
