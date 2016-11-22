@@ -189,7 +189,7 @@ class Manager(object):
         from xivo_auth import tasks
 
         auth_id, xivo_user_uuid = backend.get_ids(login, args)
-        xivo_uuid = os.getenv('XIVO_UUID')
+        xivo_uuid = backend.get_xivo_uuid(args)
         acls = backend.get_acls(login, args)
         expiration = args.get('expiration', self._default_expiration)
         t = time.time()
