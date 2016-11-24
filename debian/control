@@ -13,6 +13,8 @@ Architecture: all
 Depends: ${python:Depends},
          ${misc:Depends},
          adduser,
+         alembic,
+         xivo-dbms,
          xivo-lib-python,
          xivo-libdao,
          python-flask,
@@ -24,8 +26,9 @@ Depends: ${python:Depends},
          python-celery,
          python-unidecode,
          python-threadpool,
-         python-ldap
-Description: XIVO PBX's authentication service
- XIVO is a system based on a powerful IPBX, to bring an easy to
+         python-ldap,
+         python-psycopg2
+Description: Wazo PBX's authentication service
+ Wazo is a system based on a powerful IPBX, to bring an easy to
  install solution for telephony and related services.
  .

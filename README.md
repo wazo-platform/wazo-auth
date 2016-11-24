@@ -93,3 +93,11 @@ ab -n1000 -c25 -A 'alice:alice' -p /tmp/body.json -T 'application/json' "https:/
 ```
 
 This line will start 25 process creating 1000 tokens with the username and password alice alice
+
+
+Adding a new database migration
+-------------------------------
+
+To add a new migration script for the database use the following command:
+
+   % alembic -c alembic.ini revision -m "<description of the revision>"

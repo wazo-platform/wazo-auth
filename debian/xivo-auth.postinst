@@ -6,7 +6,11 @@ DAEMONNAME='xivo-auth'
 USER='xivo-auth'
 GROUP=$USER
 LOG_FILENAME="/var/log/${DAEMONNAME}.log"
+ALEMBIC_INI_PATH='/usr/share/xivo-auth'
 
+pg_is_running () {
+        pg_lsclusters --no-header | grep -q online
+}
 
 case "$1" in
 	configure)
@@ -41,6 +45,13 @@ case "$1" in
 		previous_version="$2"
 		if dpkg --compare-versions "$previous_version" "<<" "16.04" && dpkg --compare-versions "$previous_version" ">>" "15.17"; then
 			/usr/share/xivo-auth/migrations/0001_remove_named_tokens.py
+		fi
+
+		# Database initialization and migrations
+		if pg_is_running ; then
+			xivo-auth-init-db --user postgres
+			echo "Upgrading xivo-auth database ..."
+			(cd $ALEMBIC_INI_PATH && alembic -c alembic.ini upgrade head)
 		fi
 
 	;;
