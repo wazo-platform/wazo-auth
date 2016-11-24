@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015-2016 Avencall
+# Copyright (C) 2016 Proformatique, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +17,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import abc
+import os
+
+DEFAULT_XIVO_UUID = os.getenv('XIVO_UUID')
 
 
 class BaseAuthenticationBackend(object):
@@ -28,6 +32,14 @@ class BaseAuthenticationBackend(object):
     def get_acls(self, login, args):
         """returns a list of XiVO acls"""
         return []
+
+    def get_xivo_uuid(self, _args):
+        """returns the xivo-uuid for this given backend
+
+        Will return the XIVO_UUID environment variable if the backend does not implement
+        this method.
+        """
+        return DEFAULT_XIVO_UUID
 
     @abc.abstractmethod
     def get_ids(self, login, args):

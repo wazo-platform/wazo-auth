@@ -194,6 +194,8 @@ definitions:
             type: string
             description: The UUID of the XiVO user matching these credentials, this
               field can be None
+          xivo_uuid:
+            type: string
           acls:
             type: array
             items:
