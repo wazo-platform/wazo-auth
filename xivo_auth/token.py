@@ -24,8 +24,8 @@ import re
 import socket
 import time
 
-from datetime import datetime, timedelta
 from uuid import UUID, uuid4
+from datetime import datetime
 
 from unidecode import unidecode
 from requests.exceptions import ConnectionError
@@ -77,27 +77,38 @@ class _RabbitMQConnectionException(ManagerException):
 
 class Token(object):
 
-    def __init__(self, id_, auth_id, xivo_user_uuid, xivo_uuid, issued_at,
-                 utc_issued_at, expires_at, utc_expires_at, acls):
+    _TIME_FORMAT = '%Y-%m-%dT%H:%M:%S.%f'
+
+    def __init__(self, id_, auth_id, xivo_user_uuid, xivo_uuid, issued_t, expire_t, acls):
         self.token = id_
         self.auth_id = auth_id
         self.xivo_user_uuid = xivo_user_uuid
         self.xivo_uuid = xivo_uuid
-        self.issued_at = issued_at
-        self.expires_at = expires_at
-        self.utc_issued_at = utc_issued_at
-        self.utc_expires_at = utc_expires_at
+        self.issued_t = issued_t
+        self.expire_t = expire_t
         self.acls = acls
+
+    @staticmethod
+    def _format_local_time(t):
+        if not t:
+            return None
+        return datetime.fromtimestamp(t).isoformat()
+
+    @staticmethod
+    def _format_utc_time(t):
+        if not t:
+            return None
+        return datetime.utcfromtimestamp(t).isoformat()
 
     def to_consul(self):
         return {'token': self.token,
                 'auth_id': self.auth_id,
                 'xivo_user_uuid': self.xivo_user_uuid,
                 'xivo_uuid': self.xivo_uuid,
-                'issued_at': self.issued_at,
-                'expires_at': self.expires_at,
-                'utc_issued_at': self.utc_issued_at,
-                'utc_expires_at': self.utc_expires_at,
+                'issued_at': self._format_local_time(self.issued_t),
+                'expires_at': self._format_local_time(self.expire_t),
+                'utc_issued_at': self._format_utc_time(self.issued_t),
+                'utc_expires_at': self._format_utc_time(self.expire_t),
                 'acls': self.acls}
 
     def to_dict(self):
@@ -105,15 +116,14 @@ class Token(object):
                 'auth_id': self.auth_id,
                 'xivo_user_uuid': self.xivo_user_uuid,
                 'xivo_uuid': self.xivo_uuid,
-                'issued_at': self.issued_at,
-                'expires_at': self.expires_at,
-                'utc_issued_at': self.utc_issued_at,
-                'utc_expires_at': self.utc_expires_at,
+                'issued_at': self._format_local_time(self.issued_t),
+                'expires_at': self._format_local_time(self.expire_t),
+                'utc_issued_at': self._format_utc_time(self.issued_t),
+                'utc_expires_at': self._format_utc_time(self.expire_t),
                 'acls': self.acls}
 
     def is_expired(self):
-        now = datetime.now().isoformat()
-        return self.expires_at and now > self.expires_at
+        return self.expire_t and time.time() > self.expire_t
 
     def matches_required_acl(self, required_acl):
         if required_acl is None:
@@ -138,15 +148,17 @@ class Token(object):
 
     @classmethod
     def from_consul(cls, d):
+        issued_at = d.get('utc_issued_at', d['issued_at'])
+        expires_at = d.get('utc_expires_at', d['expires_at'])
+        issued_t = float(datetime.strptime(issued_at, cls._TIME_FORMAT).strftime('%s'))
+        expire_t = float(datetime.strptime(expires_at, cls._TIME_FORMAT).strftime('%s'))
         return Token(
             d['token'],
             auth_id=d['auth_id'],
             xivo_user_uuid=d['xivo_user_uuid'],
             xivo_uuid=d.get('xivo_uuid', DEFAULT_XIVO_UUID),
-            issued_at=d['issued_at'],
-            expires_at=d['expires_at'],
-            utc_issued_at=d.get('utc_issued_at'),
-            utc_expires_at=d.get('utc_expires_at'),
+            issued_t=issued_t,
+            expire_t=expire_t,
             acls=d['acls'])
 
     @classmethod
@@ -157,24 +169,19 @@ class Token(object):
             auth_id=payload.auth_id,
             xivo_user_uuid=payload.xivo_user_uuid,
             xivo_uuid=payload.xivo_uuid,
-            issued_at=payload.issued_at,
-            expires_at=payload.expires_at,
-            utc_expires_at=payload.utc_expires_at,
-            utc_issued_at=payload.utc_issued_at,
+            issued_t=payload.issued_t,
+            expire_t=payload.expire_t,
             acls=payload.acls)
 
 
 class TokenPayload(object):
 
-    def __init__(self, auth_id, xivo_user_uuid, xivo_uuid, issued_at,
-                 utc_issued_at, expires_at, utc_expires_at, acls):
+    def __init__(self, auth_id, xivo_user_uuid, xivo_uuid, issued_t, expire_t, acls):
         self.auth_id = auth_id
         self.xivo_user_uuid = xivo_user_uuid
         self.xivo_uuid = xivo_uuid
-        self.issued_at = issued_at
-        self.expires_at = expires_at
-        self.utc_issued_at = utc_issued_at
-        self.utc_expires_at = utc_expires_at
+        self.issued_t = issued_t
+        self.expire_t = expire_t
         self.acls = acls or []
 
 
@@ -193,18 +200,12 @@ class Manager(object):
         acls = backend.get_acls(login, args)
         expiration = args.get('expiration', self._default_expiration)
         t = time.time()
-        now = datetime.fromtimestamp(t)
-        utcnow = datetime.utcfromtimestamp(t)
-        localized_issued_at, localized_expires_at = self._build_timestamps(now, expiration)
-        utc_issued_at, utc_expires_at = self._build_timestamps(utcnow, expiration)
         token_payload = TokenPayload(
             auth_id=auth_id,
             xivo_user_uuid=xivo_user_uuid,
             xivo_uuid=xivo_uuid,
-            expires_at=localized_expires_at,
-            issued_at=localized_issued_at,
-            utc_expires_at=utc_expires_at,
-            utc_issued_at=utc_issued_at,
+            expire_t=t + expiration,
+            issued_t=t,
             acls=acls)
 
         token = self._storage.create_token(token_payload)
@@ -240,12 +241,6 @@ class Manager(object):
 
     def _get_token_hash(self, token):
         return hashlib.sha256('{token}'.format(token=token)).hexdigest()
-
-    @staticmethod
-    def _build_timestamps(t, expiration):
-        delta = timedelta(seconds=expiration)
-        expiration_t = t + delta
-        return t.isoformat(), expiration_t.isoformat()
 
 
 class Storage(object):
