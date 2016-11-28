@@ -13,7 +13,7 @@ setup(
     author='Avencall',
     author_email='dev@proformatique.com',
 
-    url='https://github.com/xivo-pbx/xivo-auth',
+    url='https://github.com/wazo-pbx/xivo-auth',
 
     packages=find_packages(),
     include_package_data=True,
