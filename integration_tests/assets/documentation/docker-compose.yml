@@ -7,13 +7,13 @@ sync:
     PORTS: "9497 8080"
 
 data:
-  image: xivo/xivo-auth-tests-data
+  image: wazopbx/xivo-auth-tests-data
   volumes:
     - "/data/"
   command: "sh -c 'while true; do sleep 10; done'"
 
 auth:
-   image: xivo/xivo-auth-tests
+   image: wazopbx/xivo-auth-tests
    expose:
      - "9497"
    volumes_from:

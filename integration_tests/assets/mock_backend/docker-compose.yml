@@ -7,12 +7,12 @@ sync:
   environment:
     PORTS: "9497 5672 8500"
 data:
-  image: xivo/xivo-auth-tests-data
+  image: wazopbx/xivo-auth-tests-data
   volumes:
     - "/data/"
   command: "sh -c 'while true; do sleep 10; done'"
 auth:
-   image: xivo/xivo-auth-tests
+   image: wazopbx/xivo-auth-tests
    environment:
     - "TZ=UTC+1"
     - "XIVO_UUID=the-predefined-xivo-uuid"
