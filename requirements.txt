@@ -4,8 +4,8 @@ flask-cors==1.10.3
 flask-httpauth==2.2.1
 flask-restful==0.3.5
 flask==0.10.1
-git+https://github.com/xivo-pbx/xivo-dao.git
-git+https://github.com/xivo-pbx/xivo-lib-python.git
+git+https://github.com/wazo-pbx/xivo-dao.git
+git+https://github.com/wazo-pbx/xivo-lib-python.git
 psycopg2==2.5.4
 pyopenssl==0.14  # from xivo-lib-python
 python-consul==0.4.7
