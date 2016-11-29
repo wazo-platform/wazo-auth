@@ -8,11 +8,11 @@ test-prerequisite:
 	docker pull progrium/consul
 	docker pull wazopbx/postgres-test
 	docker pull swaggerapi/swagger-validator
-	docker build --no-cache -t xivo/xivo-auth-tests-data -f Dockerfile-data .
+	docker build --no-cache -t wazopbx/xivo-auth-tests-data -f Dockerfile-data .
 
 test-image:
-	docker build --no-cache -t xivo/xivo-auth ..
-	docker build --no-cache -t xivo/xivo-auth-tests -f Dockerfile-auth-test ..
+	docker build --no-cache -t wazopbx/xivo-auth ..
+	docker build --no-cache -t wazopbx/xivo-auth-tests -f Dockerfile-auth-test ..
 
 egg-info:
 	cd .. && python setup.py egg_info
