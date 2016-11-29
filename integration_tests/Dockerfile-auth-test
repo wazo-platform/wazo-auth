@@ -1,4 +1,4 @@
-FROM xivo/xivo-auth
+FROM wazopbx/xivo-auth
 
 ADD integration_tests/assets/_common/etc/xivo-auth/conf.d /etc/xivo-auth/conf.d
 ADD . /usr/src/xivo-auth
