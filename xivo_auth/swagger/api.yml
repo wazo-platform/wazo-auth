@@ -1,12 +1,12 @@
 swagger: '2.0'
 info:
   version: '0.1'
-  title: XiVO Auth
-  description: XiVO's authentication service
+  title: Wazo Auth
+  description: Wazo's authentication service
   contact:
-    name: XiVO dev team
-    url: http://xivo.io
-    email: dev@proformatique.com
+    name: Wazo dev team
+    url: http://wazo.community
+    email: dev.wazo@gmail.com
   license:
     name: GPLv3
     url: http://www.gnu.org/licenses/gpl-3.0.html
@@ -32,7 +32,7 @@ paths:
       summary: Creates a token
       description: 'Creates a valid token for the supplied username and password combination
         using the specified backend. The stock backends are: ``xivo_user``, ``xivo_service``,
-        ``xivo_admin``, ``ldap_user``. For more details about the backends, see http://documentation.xivo.io/en/latest/system/xivo-auth/stock_plugins.html#backends-plugins'
+        ``xivo_admin``, ``ldap_user``. For more details about the backends, see http://documentation.wazo.community/en/latest/system/xivo-auth/stock_plugins.html#backends-plugins'
       operationId: createToken
       tags:
       - token
