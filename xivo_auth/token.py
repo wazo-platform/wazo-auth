@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2016 Avencall
-# Copyright (C) 2016 Proformatique, Inc.
+# Copyright 2015-2016 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -87,6 +86,20 @@ class Token(object):
         self.issued_t = issued_t
         self.expire_t = expire_t
         self.acls = acls
+
+    def __eq__(self, other):
+        return (
+            self.token == other.token
+            and self.auth_id == other.auth_id
+            and self.xivo_user_uuid == other.xivo_user_uuid
+            and self.xivo_uuid == other.xivo_uuid
+            and self.issued_t == other.issued_t
+            and self.expire_t == other.expire_t
+            and self.acls == other.acls
+        )
+
+    def __ne__(self, other):
+        return not self == other
 
     @staticmethod
     def _format_local_time(t):
