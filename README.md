@@ -22,11 +22,20 @@ Retrieving token data
 curl -k -i -X GET -H 'Content-Type: application/json' "https://localhost:9497/0.1/token/${TOKEN}"
 ```
 
-# Using docker
+# Docker
 
-    docker build -t xivo-auth .
-    docker run -p 9497:9497 -v /conf/xivo-auth:/etc/xivo-auth/conf.d/ -it xivo-auth bash
-    xivo-auth [-df] [-u <user>] [-c <path/to/config/file>]
+The wazopbx/xivo-auth image can be built using the following command:
+
+    % docker build -t wazopbx/xivo-auth .
+
+To run xivo-auth in docker, use the following commands:
+
+    % docker run -p 9497:9497 -v /conf/xivo-auth:/etc/xivo-auth/conf.d/ -it wazopbx/xivo-auth bash
+    % xivo-auth [-df] [-u <user>] [-c <path/to/config/file>]
+
+The wazopbx/xivo-auth-db image can be built using the following command:
+
+    % docker build -f contribs/docker/Dockerfile-db -t wazopbx/xivo-auth-db .
 
 
 Configuration
