@@ -50,11 +50,16 @@ class Storage(object):
 class _TokenCRUD(object):
 
     _DELETE_TOKEN_QRY = """DELETE FROM auth_token WHERE uuid=%s;"""
+    _INSERT_ACL_QRY = """\
+INSERT INTO auth_acl (value, token_uuid)
+VALUES (%s, %s);
+"""
     _INSERT_TOKEN_QRY = """\
 INSERT INTO auth_token (auth_id, user_uuid, xivo_uuid, issued_t, expire_t)
 VALUES (%s, %s, %s, %s, %s)
 RETURNING uuid;
 """
+    _SELECT_ACL_QRY = "SELECT value FROM auth_acl WHERE token_uuid=%s;"
     _SELECT_TOKEN_QRY = """\
 SELECT uuid, auth_id, user_uuid, xivo_uuid, issued_t, expire_t
 FROM auth_token
@@ -73,17 +78,22 @@ WHERE uuid=%s;
         with self._conn.cursor() as curs:
             curs.execute(self._INSERT_TOKEN_QRY, token_args)
             token_uuid = curs.fetchone()[0]
+            for acl in body['acls']:
+                curs.execute(self._INSERT_ACL_QRY, (acl, token_uuid))
         return token_uuid
 
     def get(self, token_uuid):
         with self._conn.cursor() as curs:
             curs.execute(self._SELECT_TOKEN_QRY, (token_uuid,))
             row = curs.fetchone()
+            if not row:
+                raise UnknownTokenException()
+            curs.execute(self._SELECT_ACL_QRY, (row[0],))
+            acls = [acl[0] for acl in curs.fetchall()]
 
-        if not row:
-            raise UnknownTokenException()
-
-        return dict(izip(self._RETURNED_COLUMNS, row))
+        token_data = dict(izip(self._RETURNED_COLUMNS, row))
+        token_data['acls'] = acls
+        return token_data
 
     def delete(self, token_uuid):
         with self._conn.cursor() as curs:

@@ -52,13 +52,20 @@ class TestTokenCRUD(unittest.TestCase):
     def setUp(self):
         self._crud = database._TokenCRUD(DB_URI)
 
+    def test_create(self):
+        with nested(self._new_token(),
+                    self._new_token(acls=['first', 'second'])) as (e1, e2):
+            t1 = self._crud.get(e1['uuid'])
+            t2 = self._crud.get(e2['uuid'])
+            assert_that(t1, equal_to(e1))
+            assert_that(t2, equal_to(e2))
+
     def test_get(self):
         self.assertRaises(database.UnknownTokenException, self._crud.get,
                           'unknown')
         with nested(self._new_token(),
                     self._new_token(),
                     self._new_token()) as (_, expected_token, __):
-            expected_token.pop('acls')  # TODO handle ACL
             token = self._crud.get(expected_token['uuid'])
         assert_that(token, equal_to(expected_token))
 
@@ -70,7 +77,7 @@ class TestTokenCRUD(unittest.TestCase):
             self._crud.delete(token['uuid'])  # No error on delete unknown
 
     @contextmanager
-    def _new_token(self):
+    def _new_token(self, acls=None):
         now = int(time.time())
         body = {
             'auth_id': 'test',
@@ -78,7 +85,7 @@ class TestTokenCRUD(unittest.TestCase):
             'xivo_uuid': new_uuid(),
             'issued_t': now,
             'expire_t': now + 120,
-            'acls': [],
+            'acls': acls or [],
         }
         token_uuid = self._crud.create(body)
         token_data = dict(body)
