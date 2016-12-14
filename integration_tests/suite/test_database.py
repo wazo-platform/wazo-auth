@@ -62,6 +62,13 @@ class TestTokenCRUD(unittest.TestCase):
             token = self._crud.get(expected_token['uuid'])
         assert_that(token, equal_to(expected_token))
 
+    def test_delete(self):
+        with self._new_token() as token:
+            self._crud.delete(token['uuid'])
+            self.assertRaises(database.UnknownTokenException, self._crud.get,
+                              token['uuid'])
+            self._crud.delete(token['uuid'])  # No error on delete unknown
+
     @contextmanager
     def _new_token(self):
         now = int(time.time())
