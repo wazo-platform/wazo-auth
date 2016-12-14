@@ -1,0 +1,13 @@
+sync:
+  image: n3llyb0y/wait
+  links:
+    - postgres
+  environment:
+    PORTS: "5432"
+
+postgres:
+  image: wazopbx/xivo-auth-db
+  expose:
+    - "5432"
+  ports:
+    - "15432:5432"
