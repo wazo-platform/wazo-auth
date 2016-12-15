@@ -16,18 +16,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import hashlib
-import json
 import logging
 import os
 import re
 import socket
 import time
 
-from uuid import UUID, uuid4
+from uuid import uuid4
 from datetime import datetime
-
 from unidecode import unidecode
-from requests.exceptions import ConnectionError
 
 logger = logging.getLogger(__name__)
 
@@ -56,14 +53,6 @@ class MissingACLTokenException(ManagerException):
 
     def __str__(self):
         return 'Unauthorized for {}'.format(unidecode(self._required_acl))
-
-
-class _ConsulConnectionException(ManagerException):
-
-    code = 500
-
-    def __str__(self):
-        return 'Connection to consul failed'
 
 
 class _RabbitMQConnectionException(ManagerException):
@@ -113,17 +102,6 @@ class Token(object):
             return None
         return datetime.utcfromtimestamp(t).isoformat()
 
-    def to_consul(self):
-        return {'token': self.token,
-                'auth_id': self.auth_id,
-                'xivo_user_uuid': self.xivo_user_uuid,
-                'xivo_uuid': self.xivo_uuid,
-                'issued_at': self._format_local_time(self.issued_t),
-                'expires_at': self._format_local_time(self.expire_t),
-                'utc_issued_at': self._format_utc_time(self.issued_t),
-                'utc_expires_at': self._format_utc_time(self.expire_t),
-                'acls': self.acls}
-
     def to_dict(self):
         return {'token': self.token,
                 'auth_id': self.auth_id,
@@ -158,21 +136,6 @@ class Token(object):
         if acl_regex.endswith('\.me'):
             acl_regex = '{acl_start}\.(me|{auth_id})'.format(acl_start=acl_regex[:-4], auth_id=self.auth_id)
         return acl_regex
-
-    @classmethod
-    def from_consul(cls, d):
-        issued_at = d.get('utc_issued_at', d['issued_at'])
-        expires_at = d.get('utc_expires_at', d['expires_at'])
-        issued_t = float(datetime.strptime(issued_at, cls._TIME_FORMAT).strftime('%s'))
-        expire_t = float(datetime.strptime(expires_at, cls._TIME_FORMAT).strftime('%s'))
-        return Token(
-            d['token'],
-            auth_id=d['auth_id'],
-            xivo_user_uuid=d['xivo_user_uuid'],
-            xivo_uuid=d.get('xivo_uuid', DEFAULT_XIVO_UUID),
-            issued_t=issued_t,
-            expire_t=expire_t,
-            acls=d['acls'])
 
     @classmethod
     def from_payload(cls, payload):
@@ -241,8 +204,8 @@ class Manager(object):
     def remove_expired_token(self, token):
         self._storage.remove_token(token)
 
-    def get(self, consul_token, required_acl):
-        token = self._storage.get_token(consul_token)
+    def get(self, token_uuid, required_acl):
+        token = self._storage.get_token(token_uuid)
 
         if token.is_expired():
             raise UnknownTokenException()
@@ -254,55 +217,3 @@ class Manager(object):
 
     def _get_token_hash(self, token):
         return hashlib.sha256('{token}'.format(token=token)).hexdigest()
-
-
-class Storage(object):
-
-    _TOKEN_KEY_FORMAT = 'xivo/xivo-auth/tokens/{}'
-
-    def __init__(self, consul):
-        self._consul = consul
-
-    def get_token(self, token_id):
-        self._check_valid_token_id(token_id)
-
-        key = self._TOKEN_KEY_FORMAT.format(token_id)
-        try:
-            _, raw_value = self._consul.kv.get(key)
-        except ConnectionError as e:
-            logger.error('Connection to consul failed: %s', e)
-            raise _ConsulConnectionException()
-
-        if not raw_value:
-            raise UnknownTokenException()
-
-        return Token.from_consul(json.loads(raw_value['Value']))
-
-    def create_token(self, token_payload):
-        try:
-            token = Token.from_payload(token_payload)
-            self._store_token(token)
-        except ConnectionError as e:
-            logger.error('Connection to consul failed: %s', e)
-            raise _ConsulConnectionException()
-        return token
-
-    def remove_token(self, token_id):
-        self._check_valid_token_id(token_id)
-
-        try:
-            self._consul.kv.delete(self._TOKEN_KEY_FORMAT.format(token_id), recurse=True)
-        except ConnectionError as e:
-            logger.error('Connection to consul failed: %s', e)
-            raise _ConsulConnectionException()
-
-    def _store_token(self, token):
-        key = self._TOKEN_KEY_FORMAT.format(token.token)
-        return self._consul.kv.put(key, json.dumps(token.to_consul()))
-
-    def _check_valid_token_id(self, token_id):
-        try:
-            UUID(hex=token_id)
-        except ValueError as e:
-            logger.warning('Invalid token ID: %s', e)
-            raise UnknownTokenException()
