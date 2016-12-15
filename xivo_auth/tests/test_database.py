@@ -61,7 +61,7 @@ class TestStorage(unittest.TestCase):
 
         expected_token = Token(s.token_uuid, **token_data)
         assert_that(result, equal_to(expected_token))
-        self.crud.assert_created_with(payload)
+        self.crud.assert_created_with(token_data)
 
     def test_remove_token(self):
         storage = Storage(self.crud)
