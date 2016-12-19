@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
@@ -18,6 +19,7 @@ fileConfig(config.config_file_name)
 # ... etc.
 
 VERSION_TABLE = 'alembic_version_auth'
+URI = os.getenv('ALEMBIC_DB_URI', None)
 
 
 def run_migrations_offline():
@@ -32,7 +34,7 @@ def run_migrations_offline():
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = URI or config.get_main_option("sqlalchemy.url")
     context.configure(url=url, version_table=VERSION_TABLE)
 
     with context.begin_transaction():
@@ -46,6 +48,9 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
+    if URI:
+        config.set_section_option('alembic', 'sqlalchemy.url', URI)
+
     engine = engine_from_config(
         config.get_section(config.config_ini_section),
         prefix='sqlalchemy.',
