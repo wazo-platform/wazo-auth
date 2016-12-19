@@ -28,3 +28,4 @@ consul:
   port: 8500
   token: 'the_one_ring'
   verify: /data/_common/ssl/consul/server.crt
+db_uri: postgresql://asterisk:proformatique@postgres:5432

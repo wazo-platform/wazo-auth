@@ -3,17 +3,18 @@ sync:
   links:
     - auth
     - swagger-validator
+    - postgres
   environment:
-    PORTS: "9497 8080"
-
+    PORTS: "9497 8080 5432"
 data:
   image: wazopbx/xivo-auth-tests-data
   volumes:
     - "/data/"
   command: "sh -c 'while true; do sleep 10; done'"
-
 auth:
    image: wazopbx/xivo-auth-tests
+   links:
+    - postgres
    expose:
      - "9497"
    volumes_from:
@@ -21,10 +22,13 @@ auth:
    volumes:
      - "../../..:/usr/src/xivo-auth"
    command: "xivo-auth -u www-data -c /data/documentation/etc/xivo-auth/config.yml"
-
 swagger-validator:
   image: swaggerapi/swagger-validator
   ports:
     - "18080:8080"
   links:
     - auth
+postgres:
+  image: wazopbx/xivo-auth-db
+  expose:
+    - "5432"

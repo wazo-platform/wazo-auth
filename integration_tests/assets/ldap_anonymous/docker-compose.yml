@@ -40,7 +40,7 @@ slapd:
     - "3899:389"
 postgres:
   image: wazopbx/postgres-test
-  expose:
+  ports:
     - "5432"
   volumes:
       - "./etc/xivo-postgres/populate.sql:/pg-init-db/populate.sql"

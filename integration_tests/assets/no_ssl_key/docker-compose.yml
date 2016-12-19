@@ -4,8 +4,9 @@ sync:
     - auth
     - consul
     - rabbitmq
+    - postgres
   environment:
-    PORTS: "9497 5672 8500"
+    PORTS: "9497 5672 8500 5432"
 data:
   image: wazopbx/xivo-auth-tests-data
   volumes:
@@ -22,6 +23,7 @@ auth:
    links:
      - "rabbitmq"
      - "consul"
+     - "postgres"
    command: "xivo-auth -u www-data -c /data/no_ssl_key/etc/xivo-auth/config.yml"
 rabbitmq:
   image: rabbitmq
@@ -34,3 +36,7 @@ consul:
   volumes_from:
     - data
   command: "-config-dir /data/_common/etc/consul/"
+postgres:
+  image: wazopbx/xivo-auth-db
+  expose:
+    - "5432"

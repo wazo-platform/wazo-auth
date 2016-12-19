@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2016 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,17 +15,47 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-import ldap
+import os
+import subprocess
 import time
-
-from .test_http_interface import _BaseTestCase
-
 from collections import namedtuple
+from contextlib import contextmanager
+import ldap
 from ldap.modlist import addModlist
+from docker import Client
 from hamcrest import assert_that
 from hamcrest import equal_to
+from .test_http_interface import _BaseTestCase
 
 Contact = namedtuple('Contact', ['cn', 'uid', 'password', 'mail', 'login_attribute'])
+
+
+@contextmanager
+def cd(newdir):
+    prevdir = os.getcwd()
+    os.chdir(os.path.expanduser(newdir))
+    try:
+        yield
+    finally:
+        os.chdir(prevdir)
+
+
+def _container_id(service_name):
+    result = _run_cmd(['docker-compose', 'ps', '-q', service_name], stderr=False).strip()
+    result = result.decode('utf-8')
+    if '\n' in result:
+        raise AssertionError('There is more than one container running with name {}'.format(service_name))
+    if not result:
+        raise Exception('No such service: {}'.format(service_name))
+    return result
+
+
+def _run_cmd(cmd, stderr=True):
+    with open(os.devnull, "w") as null:
+        stderr = subprocess.STDOUT if stderr else null
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=stderr)
+        out, _ = process.communicate()
+    return out
 
 
 class LDAPHelper(object):
@@ -86,23 +116,61 @@ def add_contacts(contacts):
         helper.add_contact(contact, 'quebec')
 
 
-class TestLDAP(_BaseTestCase):
+class _BaseLDAPTestCase(_BaseTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super(_BaseLDAPTestCase, cls).setUpClass()
+
+        try:
+            add_contacts(cls.CONTACTS)
+        except Exception:
+            super(_BaseLDAPTestCase, cls).tearDownClass()
+            raise
+        cls.init_db()
+
+    @classmethod
+    def init_db(cls):
+        port = cls.service_port(5432, 'postgres')
+        command = [
+            'xivo-auth-init-db',
+            '--db', 'asterisk',
+            '--pg_db_uri', 'postgresql://localhost:{}/postgres'.format(port),
+            '--auth_db_uri', 'postgresql://localhost:{}/asterisk'.format(port),
+            '--user', 'postgres',
+            '--owner', 'asterisk',
+            '--password', 'proformatique',
+        ]
+        subprocess.call(command)
+        db_uri = "postgresql://asterisk:proformatique@localhost:{}/asterisk".format(port)
+        env = os.environ.copy()
+        env['ALEMBIC_DB_URI'] = db_uri
+        xivo_auth_root = '../../..'  # The cwd is in the asset directory
+        with cd(xivo_auth_root):
+            command = ['alembic', '-c', 'alembic.ini', 'upgrade', 'head']
+            subprocess.call(command, env=env)
+
+    @classmethod
+    def service_port(cls, internal_port, service_name=None):
+        if not service_name:
+            service_name = cls.service
+
+        with Client(base_url='unix://var/run/docker.sock') as docker:
+            result = docker.port(_container_id(service_name), internal_port)
+
+        if not result:
+            raise Exception('No such port: {} {}'.format(service_name, internal_port))
+
+        return int(result[0]['HostPort'])
+
+
+class TestLDAP(_BaseLDAPTestCase):
 
     asset = 'ldap'
 
     CONTACTS = [
         Contact('Alice Wonderland', 'awonderland', 'awonderland_password', 'awonderland@xivo-auth.com', 'cn'),
     ]
-
-    @classmethod
-    def setUpClass(cls):
-        super(TestLDAP, cls).setUpClass()
-
-        try:
-            add_contacts(cls.CONTACTS)
-        except Exception:
-            super(TestLDAP, cls).tearDownClass()
-            raise
 
     def test_ldap_authentication(self):
         response = self._post_token('Alice Wonderland', 'awonderland_password', backend='ldap_user')
@@ -118,23 +186,13 @@ class TestLDAP(_BaseTestCase):
         assert_that(response.status_code, equal_to(401))
 
 
-class TestLDAPAnonymous(_BaseTestCase):
+class TestLDAPAnonymous(_BaseLDAPTestCase):
 
     asset = 'ldap_anonymous'
 
     CONTACTS = [
         Contact('Alice Wonderland', 'awonderland', 'awonderland_password', 'awonderland@xivo-auth.com', 'mail'),
     ]
-
-    @classmethod
-    def setUpClass(cls):
-        super(TestLDAPAnonymous, cls).setUpClass()
-
-        try:
-            add_contacts(cls.CONTACTS)
-        except Exception:
-            super(TestLDAPAnonymous, cls).tearDownClass()
-            raise
 
     def test_ldap_authentication(self):
         response = self._post_token('awonderland@xivo-auth.com', 'awonderland_password', backend='ldap_user')
@@ -150,23 +208,13 @@ class TestLDAPAnonymous(_BaseTestCase):
         assert_that(response.status_code, equal_to(401))
 
 
-class TestLDAPServiceUser(_BaseTestCase):
+class TestLDAPServiceUser(_BaseLDAPTestCase):
 
     asset = 'ldap_service_user'
 
     CONTACTS = [
         Contact('Alice Wonderland', 'awonderland', 'awonderland_password', 'awonderland@xivo-auth.com', 'uid'),
     ]
-
-    @classmethod
-    def setUpClass(cls):
-        super(TestLDAPServiceUser, cls).setUpClass()
-
-        try:
-            add_contacts(cls.CONTACTS)
-        except Exception:
-            super(TestLDAPServiceUser, cls).tearDownClass()
-            raise
 
     def test_ldap_authentication(self):
         response = self._post_token('awonderland', 'awonderland_password', backend='ldap_user')
