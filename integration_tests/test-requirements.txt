@@ -1,7 +1,6 @@
 docker-compose
 nose
 pyhamcrest
-python-consul
 python-ldap
 
 # for database tests

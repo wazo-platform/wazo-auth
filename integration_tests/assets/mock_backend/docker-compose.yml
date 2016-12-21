@@ -2,11 +2,10 @@ sync:
   image: n3llyb0y/wait
   links:
     - auth
-    - consul
     - rabbitmq
     - postgres
   environment:
-    PORTS: "9497 5672 8500 5432"
+    PORTS: "9497 5672 5432"
 data:
   image: wazopbx/xivo-auth-tests-data
   volumes:
@@ -25,22 +24,12 @@ auth:
      - "../../..:/usr/src/xivo-auth"  # delete-on-docker-machine
    links:
      - "rabbitmq"
-     - "consul"
      - "postgres"
    command: "xivo-auth -u www-data -c /data/mock_backend/etc/xivo-auth/config.yml"
 rabbitmq:
   image: rabbitmq
   expose:
     - "5672"
-consul:
-  image: progrium/consul
-  expose:
-    - "8500"
-  ports:
-    - "8500:8500"
-  volumes_from:
-    - data
-  command: "-config-dir /data/_common/etc/consul/"
 postgres:
   image: wazopbx/xivo-auth-db
   expose:

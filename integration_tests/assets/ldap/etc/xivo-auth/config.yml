@@ -16,12 +16,6 @@ amqp:
   uri: amqp://guest:guest@rabbitmq:5672/
   exchange_name: xivo
   exchange_type: topic
-consul:
-  scheme: https
-  host: consul
-  port: 8500
-  token: 'the_one_ring'
-  verify: /data/_common/ssl/consul/server.crt
 ldap:
   uri: ldap://slapd
   user_base_dn: 'ou=quebec,ou=people,dc=xivo-auth,dc=xivo,dc=io'

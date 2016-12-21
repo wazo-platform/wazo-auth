@@ -23,9 +23,3 @@ amqp:
   exchange_name: xivo
   exchange_type: topic
 db_uri: postgresql://asterisk:proformatique@postgres:5432
-consul:
-  scheme: https
-  host: consul
-  port: 8500
-  token: 'the_one_ring'
-  verify: /data/_common/ssl/consul/server.crt

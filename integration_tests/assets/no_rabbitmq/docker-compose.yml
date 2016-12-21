@@ -2,7 +2,6 @@ sync:
   image: n3llyb0y/wait
   links:
     - auth
-    - consul
     - postgres
   environment:
     PORTS: "9497 8500 5432"
@@ -20,16 +19,8 @@ auth:
    volumes:  # delete-on-docker-machine
      - "../../..:/usr/src/xivo-auth"  # delete-on-docker-machine
    links:
-     - "consul"
      - "postgres"
    command: "xivo-auth -u www-data -c /data/no_rabbitmq/etc/xivo-auth/config.yml"
-consul:
-  image: progrium/consul
-  expose:
-    - "8500"
-  volumes_from:
-    - data
-  command: "-config-dir /data/_common/etc/consul/"
 postgres:
   image: wazopbx/xivo-auth-db
   expose:
