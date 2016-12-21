@@ -1,6 +1,6 @@
 [Unit]
 Description=xivo-auth server
-After=network.target consul.service
+After=network.target postgresql.service
 Before=monit.service
 
 [Service]

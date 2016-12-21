@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright 2016 by Avencall
+# Copyright 2016 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from consul import Consul
@@ -11,14 +11,14 @@ DEFAULT_CONFIG = {
     'config_file': '/etc/xivo-auth/config.yml',
     'extra_config_files': '/etc/xivo-auth/conf.d',
 }
-NAMED_TOKENS = 'xivo/xivo-auth/token-names'
+STORAGE = 'xivo/xivo-auth'
 
 
 def main():
-    print 'Removing named tokens from consul...'
+    print 'Removing data from consul...'
     consul_config = read_config_file_hierarchy(DEFAULT_CONFIG)['consul']
     client = Consul(**consul_config)
-    client.kv.delete(NAMED_TOKENS, recurse=True)
+    client.kv.delete(STORAGE, recurse=True)
     print 'done'
 
 
