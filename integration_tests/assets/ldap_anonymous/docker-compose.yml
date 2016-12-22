@@ -5,9 +5,8 @@ sync:
     - postgres
     - slapd
     - rabbitmq
-    - consul
   environment:
-    PORTS: "389 5432 5672 8500 9497"
+    PORTS: "389 5432 5672 9497"
     TIMEOUT: 60
 data:
   image: wazopbx/xivo-auth-tests-data
@@ -26,7 +25,6 @@ auth:
     - postgres
     - slapd
     - rabbitmq
-    - consul
   command: "xivo-auth -u www-data -c /data/ldap_anonymous/etc/xivo-auth/config.yml"
 slapd:
   image: nickstenning/slapd
@@ -40,7 +38,7 @@ slapd:
     - "3899:389"
 postgres:
   image: wazopbx/postgres-test
-  expose:
+  ports:
     - "5432"
   volumes:
       - "./etc/xivo-postgres/populate.sql:/pg-init-db/populate.sql"
@@ -48,12 +46,3 @@ rabbitmq:
   image: rabbitmq
   expose:
     - "5672"
-consul:
-  image: progrium/consul
-  expose:
-    - "8500"
-  ports:
-    - "8500:8500"
-  volumes_from:
-    - data
-  command: "-config-dir /data/_common/etc/consul/"

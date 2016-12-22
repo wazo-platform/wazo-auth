@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2016 Avencall
-# Copyright (C) 2016 Proformatique, Inc.
+# Copyright 2015-2016 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,26 +15,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-import json
-import logging
-import requests
 import subprocess
 import unittest
 import time
 import os
 import uuid
-
+import json
+import logging
 from contextlib import contextmanager
 from datetime import datetime, timedelta
+
+import requests
 from hamcrest import assert_that
 from hamcrest import contains_inanyorder
 from hamcrest import contains_string
-from hamcrest import empty
 from hamcrest import equal_to
 from hamcrest import has_key
 from hamcrest import has_length
 from hamcrest import is_
-from hamcrest import less_than
 from hamcrest.core.base_matcher import BaseMatcher
 
 requests.packages.urllib3.disable_warnings()
@@ -201,55 +198,6 @@ class _BaseTestCase(unittest.TestCase):
             self.fail('xivo-auth did not stop')
 
 
-@unittest.skip('Skipped until python-consul implement a timeout')
-class TestSlowConsul(_BaseTestCase):
-
-    asset = 'mock_backend'
-
-    def test_POST_when_consul_is_slow(self):
-        start = time.time()
-
-        with self._asset_runner.paused_service('consul'):
-            response = self._post_token('foo', 'bar')
-
-        end = time.time()
-        assert_that(end - start, less_than(3))
-        assert_that(response, is_(http_error(500, 'Connection to consul timedout')))
-
-    def test_DELETE_when_consul_is_slow(self):
-        token = self._post_token('foo', 'bar').json()['data']['token']
-
-        start = time.time()
-        with self._asset_runner.paused_service('consul'):
-            response = requests.delete('{}/{}'.format(self.url, token), verify=False)
-
-        end = time.time()
-        assert_that(end - start, less_than(3))
-        assert_that(response, is_(http_error(500, 'Connection to consul timedout')))
-
-    def test_GET_when_consul_is_slow(self):
-        token = self._post_token('foo', 'bar').json()['data']['token']
-
-        start = time.time()
-        with self._asset_runner.paused_service('consul'):
-            response = requests.get('{}/{}'.format(self.url, token), verify=False)
-
-        end = time.time()
-        assert_that(end - start, less_than(3))
-        assert_that(response, is_(http_error(500, 'Connection to consul timedout')))
-
-    def test_HEAD_when_consul_is_slow(self):
-        token = self._post_token('foo', 'bar').json()['data']['token']
-
-        start = time.time()
-        with self._asset_runner.paused_service('consul'):
-            response = requests.head('{}/{}'.format(self.url, token), verify=False)
-
-        end = time.time()
-        assert_that(end - start, less_than(3))
-        assert_that(response.status_code, equal_to(500))
-
-
 class TestCoreMockBackend(_BaseTestCase):
 
     asset = 'mock_backend'
@@ -390,24 +338,6 @@ class TestCoreMockBackend(_BaseTestCase):
 
         assert_that(response.status_code, equal_to(404))
 
-    def test_that_expired_tokens_are_removed(self):
-        from consul import Consul
-        consul = Consul(token='the_one_ring', host='localhost', port=8500, scheme='https', verify=False)
-
-        token = self._post_token('foo', 'bar', expiration=1).json()['data']['token']
-        key = 'xivo/xivo-auth/tokens/{}'.format(token)
-        _, values = consul.kv.get(key, recurse=True)
-
-        assert_that(values, not empty())
-
-        for _ in range(10):
-            _, values = consul.kv.get(key, recurse=True)
-            if values is None:
-                break
-            time.sleep(1)
-        else:
-            self.fail('Keys are not removed')
-
     def test_that_invalid_unicode_acl_returns_403(self):
         token = self._post_token('foo', 'bar').json()['data']['token']
 
@@ -442,31 +372,6 @@ class TestCoreMockBackend(_BaseTestCase):
         response = requests.get('{}/{}'.format(self.url, token), verify=False, params={'scope': 'foo'})
 
         assert_that(response.status_code, equal_to(200))
-
-
-class TestNoConsul(_BaseTestCase):
-
-    asset = 'no_consul'
-
-    def test_POST_with_no_consul_running(self):
-        response = self._post_token('foo', 'bar')
-
-        assert_that(response, is_(http_error(500, 'Connection to consul failed')))
-
-    def test_DELETE_with_no_consul_running(self):
-        response = requests.delete('{}/{}'.format(self.url, _new_token_id()), verify=False)
-
-        assert_that(response, is_(http_error(500, 'Connection to consul failed')))
-
-    def test_GET_with_no_consul_running(self):
-        response = requests.get('{}/{}'.format(self.url, _new_token_id()), verify=False)
-
-        assert_that(response, is_(http_error(500, 'Connection to consul failed')))
-
-    def test_HEAD_with_no_consul_running(self):
-        response = requests.head('{}/{}'.format(self.url, _new_token_id()), verify=False)
-
-        assert_that(response.status_code, equal_to(500))
 
 
 class TestNoRabbitMQ(_BaseTestCase):

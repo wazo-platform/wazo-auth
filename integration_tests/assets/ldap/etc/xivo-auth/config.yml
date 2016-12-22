@@ -1,11 +1,6 @@
-# This file should not be modified as it may get changed by the maintainer.
-# Add extra configuration files in the extra_config_files directory to override
-# the content from this file
-
 log_filename: /tmp/xivo-auth.log
 foreground: True
 debug: True
-
 rest_api:
   https:
     listen: 0.0.0.0
@@ -15,25 +10,14 @@ rest_api:
   cors:
     enabled: False
     allow_headers: Content-Type, authorization, x-auth-token
-
 enabled_plugins:
   - ldap_user
-
 amqp:
   uri: amqp://guest:guest@rabbitmq:5672/
   exchange_name: xivo
   exchange_type: topic
-
-consul:
-  scheme: https
-  host: consul
-  port: 8500
-  token: 'the_one_ring'
-  verify: /data/_common/ssl/consul/server.crt
-
 ldap:
   uri: ldap://slapd
   user_base_dn: 'ou=quebec,ou=people,dc=xivo-auth,dc=xivo,dc=io'
   user_login_attribute: 'cn'
-
-db_uri: postgresql://asterisk:proformatique@postgres/asterisk
+db_uri: postgresql://asterisk:proformatique@postgres:5432

@@ -1,5 +1,12 @@
 docker-compose
 nose
 pyhamcrest
-python-consul
 python-ldap
+
+# for database tests
+-e ..
+unidecode==0.04.16
+psycopg2
+git+https://github.com/wazo-pbx/xivo-test-helpers.git
+git+https://github.com/wazo-pbx/xivo-lib-python.git
+alembic==0.6.5

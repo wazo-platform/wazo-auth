@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2016 Avencall
-# Copyright (C) 2016 Proformatique, Inc.
+# Copyright 2015-2016 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,15 +16,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import unittest
-import json
+import time
 import uuid
 
 from datetime import datetime, timedelta
 
-from hamcrest import assert_that, contains_inanyorder, equal_to
+from hamcrest import assert_that, equal_to
 from mock import Mock, sentinel
 
-from xivo_auth import token, extensions, BaseAuthenticationBackend
+from xivo_auth import database, token, extensions, BaseAuthenticationBackend
 
 
 def later(expiration):
@@ -53,7 +52,7 @@ class TestManager(unittest.TestCase):
 
     def setUp(self):
         self.config = {'default_token_lifetime': sentinel.default_expiration_delay}
-        self.storage = Mock(token.Storage)
+        self.storage = Mock(database.Storage)
         extensions.celery = self.celery = Mock()
         self.manager = token.Manager(self.config, self.storage, self.celery)
 
@@ -79,36 +78,19 @@ class TestToken(unittest.TestCase):
         self.auth_id = 'the-auth-id'
         self.xivo_user_uuid = 'the-user-uuid'
         self.xivo_uuid = 'the-xivo-uuid'
-        self.issued_at = 'the-issued-at'
-        self.expires_at = 'the-expires-at'
-        self.utc_expires_at = 'utc-expires-at'
-        self.utc_issued_at = 'utc-issued-at'
+        self.issued_at = 1480011471.53537
+        self.expires_at = 1480011513.53537
         self.acls = ['confd']
         self.token = token.Token(
             self.id_,
             auth_id=self.auth_id,
             xivo_user_uuid=self.xivo_user_uuid,
             xivo_uuid=self.xivo_uuid,
-            issued_at=self.issued_at,
-            expires_at=self.expires_at,
-            utc_issued_at=self.utc_issued_at,
-            utc_expires_at=self.utc_expires_at,
+            issued_t=self.issued_at,
+            expire_t=self.expires_at,
             acls=self.acls)
-
-    def test_to_consul(self):
-        expected = {
-            'token': self.id_,
-            'auth_id': self.auth_id,
-            'xivo_uuid': self.xivo_uuid,
-            'issued_at': self.issued_at,
-            'expires_at': self.expires_at,
-            'xivo_user_uuid': self.xivo_user_uuid,
-            'utc_expires_at': self.utc_expires_at,
-            'utc_issued_at': self.utc_issued_at,
-            'acls': ['confd'],
-        }
-
-        assert_that(self.token.to_consul(), equal_to(expected))
+        self.utc_issued_at = '2016-11-24T18:17:51.535370'
+        self.utc_expires_at = '2016-11-24T18:18:33.535370'
 
     def test_matches_required_acls_when_user_acl_ends_with_hashtag(self):
         self.token.acls = ['foo.bar.#']
@@ -173,90 +155,16 @@ class TestToken(unittest.TestCase):
         assert_that(self.token.matches_required_acl('foo.bar.toto.me.bar'))
 
     def test_is_expired_when_time_is_in_the_future(self):
-        time_in_the_future = later(60)
-        self.token.expires_at = time_in_the_future
+        self.token.expire_t = time.time() + 60
 
         self.assertFalse(self.token.is_expired())
 
     def test_is_expired_when_time_is_in_the_past(self):
-        time_in_the_past = later(-60)
-        self.token.expires_at = time_in_the_past
+        self.token.expire_t = time.time() - 60
 
         self.assertTrue(self.token.is_expired())
 
     def test_is_expired_when_no_expiration(self):
-        self.token.expires_at = None
+        self.token.expire_t = None
 
         self.assertFalse(self.token.is_expired())
-
-
-class TestStorage(unittest.TestCase):
-
-    def setUp(self):
-        self.token_id = 'tok-id'
-        self.auth_id = 'the-auth-id'
-        self.issued_at = 'the-issued-at'
-        self.consul = Mock()
-        self.storage = token.Storage(self.consul)
-
-    def test_get_token(self):
-        token_id = '12345678-1234-5678-1234-567812345678'
-        raw_token = json.dumps({'token': token_id,
-                                'auth_id': '',
-                                'xivo_user_uuid': '',
-                                'issued_at': '',
-                                'expires_at': '',
-                                'utc_issued_at': '',
-                                'utc_expires_at': '',
-                                'acls': []})
-        self.consul.kv.get.return_value = 42, {'Key': 'xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678',
-                                               'Value': raw_token}
-
-        token = self.storage.get_token(token_id)
-
-        assert_that(token.token, equal_to(token_id))
-        self.consul.kv.get.assert_called_once_with('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678')
-
-    def test_create_token(self):
-        token_payload = self.new_payload(self.auth_id, issued_at=self.issued_at)
-
-        t = self.storage.create_token(token_payload)
-
-        assert_that(t.token, equal_to(ANY_UUID))
-        expected = {'token': t.token,
-                    'auth_id': self.auth_id,
-                    'xivo_user_uuid': None,
-                    'xivo_uuid': None,
-                    'issued_at': self.issued_at,
-                    'utc_issued_at': None,
-                    'utc_expires_at': None,
-                    'expires_at': None,
-                    'acls': []}
-        self.assert_kv_put_json('xivo/xivo-auth/tokens/{}'.format(t.token), expected)
-
-    def test_remove_token(self):
-        token_id = '12345678-1234-5678-1234-567812345678'
-        self.consul.kv.get.return_value = (42, None)
-
-        self.storage.remove_token(token_id)
-
-        self.consul.kv.delete.assert_called_once_with('xivo/xivo-auth/tokens/12345678-1234-5678-1234-567812345678',
-                                                      recurse=True)
-
-    @staticmethod
-    def new_payload(auth_id,
-                    xivo_user_uuid=None,
-                    xivo_uuid=None,
-                    issued_at=None,
-                    utc_issued_at=None,
-                    expires_at=None,
-                    utc_expires_at=None,
-                    acls=None):
-        return token.TokenPayload(auth_id, xivo_user_uuid, xivo_uuid, issued_at,
-                                  utc_issued_at, expires_at, utc_expires_at,
-                                  acls)
-
-    def assert_kv_put_json(self, expected_path, expected_value):
-        raw_calls = self.consul.kv.put.call_args_list
-        calls = [(path, json.loads(value)) for path, value in [args for args, kwargs in raw_calls]]
-        assert_that(calls, contains_inanyorder((expected_path, expected_value)))

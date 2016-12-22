@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2016 Avencall
-# Copyright (C) 2016 Proformatique, Inc.
+# Copyright 2015-2016 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,18 +16,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import hashlib
-import json
 import logging
 import os
 import re
 import socket
 import time
 
-from datetime import datetime, timedelta
-from uuid import UUID, uuid4
-
+from uuid import uuid4
+from datetime import datetime
 from unidecode import unidecode
-from requests.exceptions import ConnectionError
 
 logger = logging.getLogger(__name__)
 
@@ -59,14 +55,6 @@ class MissingACLTokenException(ManagerException):
         return 'Unauthorized for {}'.format(unidecode(self._required_acl))
 
 
-class _ConsulConnectionException(ManagerException):
-
-    code = 500
-
-    def __str__(self):
-        return 'Connection to consul failed'
-
-
 class _RabbitMQConnectionException(ManagerException):
 
     code = 500
@@ -77,43 +65,54 @@ class _RabbitMQConnectionException(ManagerException):
 
 class Token(object):
 
-    def __init__(self, id_, auth_id, xivo_user_uuid, xivo_uuid, issued_at,
-                 utc_issued_at, expires_at, utc_expires_at, acls):
+    def __init__(self, id_, auth_id, xivo_user_uuid, xivo_uuid, issued_t, expire_t, acls):
         self.token = id_
         self.auth_id = auth_id
         self.xivo_user_uuid = xivo_user_uuid
         self.xivo_uuid = xivo_uuid
-        self.issued_at = issued_at
-        self.expires_at = expires_at
-        self.utc_issued_at = utc_issued_at
-        self.utc_expires_at = utc_expires_at
+        self.issued_t = issued_t
+        self.expire_t = expire_t
         self.acls = acls
 
-    def to_consul(self):
-        return {'token': self.token,
-                'auth_id': self.auth_id,
-                'xivo_user_uuid': self.xivo_user_uuid,
-                'xivo_uuid': self.xivo_uuid,
-                'issued_at': self.issued_at,
-                'expires_at': self.expires_at,
-                'utc_issued_at': self.utc_issued_at,
-                'utc_expires_at': self.utc_expires_at,
-                'acls': self.acls}
+    def __eq__(self, other):
+        return (
+            self.token == other.token
+            and self.auth_id == other.auth_id
+            and self.xivo_user_uuid == other.xivo_user_uuid
+            and self.xivo_uuid == other.xivo_uuid
+            and self.issued_t == other.issued_t
+            and self.expire_t == other.expire_t
+            and self.acls == other.acls
+        )
+
+    def __ne__(self, other):
+        return not self == other
+
+    @staticmethod
+    def _format_local_time(t):
+        if not t:
+            return None
+        return datetime.fromtimestamp(t).isoformat()
+
+    @staticmethod
+    def _format_utc_time(t):
+        if not t:
+            return None
+        return datetime.utcfromtimestamp(t).isoformat()
 
     def to_dict(self):
         return {'token': self.token,
                 'auth_id': self.auth_id,
                 'xivo_user_uuid': self.xivo_user_uuid,
                 'xivo_uuid': self.xivo_uuid,
-                'issued_at': self.issued_at,
-                'expires_at': self.expires_at,
-                'utc_issued_at': self.utc_issued_at,
-                'utc_expires_at': self.utc_expires_at,
+                'issued_at': self._format_local_time(self.issued_t),
+                'expires_at': self._format_local_time(self.expire_t),
+                'utc_issued_at': self._format_utc_time(self.issued_t),
+                'utc_expires_at': self._format_utc_time(self.expire_t),
                 'acls': self.acls}
 
     def is_expired(self):
-        now = datetime.now().isoformat()
-        return self.expires_at and now > self.expires_at
+        return self.expire_t and time.time() > self.expire_t
 
     def matches_required_acl(self, required_acl):
         if required_acl is None:
@@ -137,19 +136,6 @@ class Token(object):
         return acl_regex
 
     @classmethod
-    def from_consul(cls, d):
-        return Token(
-            d['token'],
-            auth_id=d['auth_id'],
-            xivo_user_uuid=d['xivo_user_uuid'],
-            xivo_uuid=d.get('xivo_uuid', DEFAULT_XIVO_UUID),
-            issued_at=d['issued_at'],
-            expires_at=d['expires_at'],
-            utc_issued_at=d.get('utc_issued_at'),
-            utc_expires_at=d.get('utc_expires_at'),
-            acls=d['acls'])
-
-    @classmethod
     def from_payload(cls, payload):
         id_ = str(uuid4())
         return Token(
@@ -157,24 +143,19 @@ class Token(object):
             auth_id=payload.auth_id,
             xivo_user_uuid=payload.xivo_user_uuid,
             xivo_uuid=payload.xivo_uuid,
-            issued_at=payload.issued_at,
-            expires_at=payload.expires_at,
-            utc_expires_at=payload.utc_expires_at,
-            utc_issued_at=payload.utc_issued_at,
+            issued_t=payload.issued_t,
+            expire_t=payload.expire_t,
             acls=payload.acls)
 
 
 class TokenPayload(object):
 
-    def __init__(self, auth_id, xivo_user_uuid, xivo_uuid, issued_at,
-                 utc_issued_at, expires_at, utc_expires_at, acls):
+    def __init__(self, auth_id, xivo_user_uuid, xivo_uuid, issued_t, expire_t, acls):
         self.auth_id = auth_id
         self.xivo_user_uuid = xivo_user_uuid
         self.xivo_uuid = xivo_uuid
-        self.issued_at = issued_at
-        self.expires_at = expires_at
-        self.utc_issued_at = utc_issued_at
-        self.utc_expires_at = utc_expires_at
+        self.issued_t = issued_t
+        self.expire_t = expire_t
         self.acls = acls or []
 
 
@@ -193,18 +174,12 @@ class Manager(object):
         acls = backend.get_acls(login, args)
         expiration = args.get('expiration', self._default_expiration)
         t = time.time()
-        now = datetime.fromtimestamp(t)
-        utcnow = datetime.utcfromtimestamp(t)
-        localized_issued_at, localized_expires_at = self._build_timestamps(now, expiration)
-        utc_issued_at, utc_expires_at = self._build_timestamps(utcnow, expiration)
         token_payload = TokenPayload(
             auth_id=auth_id,
             xivo_user_uuid=xivo_user_uuid,
             xivo_uuid=xivo_uuid,
-            expires_at=localized_expires_at,
-            issued_at=localized_issued_at,
-            utc_expires_at=utc_expires_at,
-            utc_issued_at=utc_issued_at,
+            expire_t=t + expiration,
+            issued_t=t,
             acls=acls)
 
         token = self._storage.create_token(token_payload)
@@ -227,8 +202,8 @@ class Manager(object):
     def remove_expired_token(self, token):
         self._storage.remove_token(token)
 
-    def get(self, consul_token, required_acl):
-        token = self._storage.get_token(consul_token)
+    def get(self, token_uuid, required_acl):
+        token = self._storage.get_token(token_uuid)
 
         if token.is_expired():
             raise UnknownTokenException()
@@ -240,61 +215,3 @@ class Manager(object):
 
     def _get_token_hash(self, token):
         return hashlib.sha256('{token}'.format(token=token)).hexdigest()
-
-    @staticmethod
-    def _build_timestamps(t, expiration):
-        delta = timedelta(seconds=expiration)
-        expiration_t = t + delta
-        return t.isoformat(), expiration_t.isoformat()
-
-
-class Storage(object):
-
-    _TOKEN_KEY_FORMAT = 'xivo/xivo-auth/tokens/{}'
-
-    def __init__(self, consul):
-        self._consul = consul
-
-    def get_token(self, token_id):
-        self._check_valid_token_id(token_id)
-
-        key = self._TOKEN_KEY_FORMAT.format(token_id)
-        try:
-            _, raw_value = self._consul.kv.get(key)
-        except ConnectionError as e:
-            logger.error('Connection to consul failed: %s', e)
-            raise _ConsulConnectionException()
-
-        if not raw_value:
-            raise UnknownTokenException()
-
-        return Token.from_consul(json.loads(raw_value['Value']))
-
-    def create_token(self, token_payload):
-        try:
-            token = Token.from_payload(token_payload)
-            self._store_token(token)
-        except ConnectionError as e:
-            logger.error('Connection to consul failed: %s', e)
-            raise _ConsulConnectionException()
-        return token
-
-    def remove_token(self, token_id):
-        self._check_valid_token_id(token_id)
-
-        try:
-            self._consul.kv.delete(self._TOKEN_KEY_FORMAT.format(token_id), recurse=True)
-        except ConnectionError as e:
-            logger.error('Connection to consul failed: %s', e)
-            raise _ConsulConnectionException()
-
-    def _store_token(self, token):
-        key = self._TOKEN_KEY_FORMAT.format(token.token)
-        return self._consul.kv.put(key, json.dumps(token.to_consul()))
-
-    def _check_valid_token_id(self, token_id):
-        try:
-            UUID(hex=token_id)
-        except ValueError as e:
-            logger.warning('Invalid token ID: %s', e)
-            raise UnknownTokenException()

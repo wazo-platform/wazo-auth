@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2016 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,19 +20,18 @@ import signal
 import sys
 
 from functools import partial
+from threading import Thread
 
 from cherrypy import wsgiserver
 from celery import Celery
-from consul import Consul
 from flask import Flask
 from flask_restful import Api
 from flask.ext.cors import CORS
 from stevedore.dispatch import NameDispatchExtensionManager
-from threading import Thread
 from xivo import http_helpers
 from xivo.consul_helpers import ServiceCatalogRegistration
 
-from xivo_auth import http, token, extensions
+from xivo_auth import database, http, token, extensions
 
 from .service_discovery import self_check
 
@@ -74,8 +73,7 @@ class Controller(object):
         self._config['loaded_plugins'] = self._loaded_plugins_names(backends)
 
         self._celery = self._configure_celery()
-        consul_client = Consul(**self._consul_config)
-        token_storage = token.Storage(consul_client)
+        token_storage = database.Storage.from_config(self._config)
         token_manager = token.Manager(config, token_storage, self._celery)
         self._flask_app = self._configure_flask_app(backends, token_manager)
         self._override_celery_task()

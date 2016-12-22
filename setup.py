@@ -1,5 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# Copyright 2016 The Wazo Authors  (see the AUTHORS file)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>
+
 
 from setuptools import find_packages
 from setuptools import setup
@@ -10,8 +25,8 @@ setup(
 
     description='XiVO auth',
 
-    author='Avencall',
-    author_email='dev@proformatique.com',
+    author='Wazo Authors',
+    author_email='dev.wazo@gmail.com',
 
     url='https://github.com/wazo-pbx/xivo-auth',
 
@@ -23,7 +38,10 @@ setup(
         'xivo_auth.swagger': ['*.yml'],
     },
 
-    scripts=['bin/xivo-auth'],
+    scripts=[
+        'bin/xivo-auth',
+        'bin/xivo-auth-init-db',
+    ],
 
     entry_points={
         'xivo_auth.backends': [

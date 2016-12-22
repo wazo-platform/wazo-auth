@@ -4,8 +4,8 @@
 # Provides:          xivo-auth
 # Required-Start:    $local_fs $remote_fs $network $syslog
 # Required-Stop:     $local_fs $remote_fs $network $syslog
-# Should-Start:      consul
-# Should-Stop:       consul
+# Should-Start:      postgresql
+# Should-Stop:       postgresql
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: Startup daemon script for xivo-auth
