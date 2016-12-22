@@ -65,8 +65,6 @@ class _RabbitMQConnectionException(ManagerException):
 
 class Token(object):
 
-    _TIME_FORMAT = '%Y-%m-%dT%H:%M:%S.%f'
-
     def __init__(self, id_, auth_id, xivo_user_uuid, xivo_uuid, issued_t, expire_t, acls):
         self.token = id_
         self.auth_id = auth_id

@@ -21,7 +21,7 @@ def upgrade():
     op.create_table(
         table_name,
         Column('uuid', String(38), server_default=text('uuid_generate_v4()'), primary_key=True),
-        Column('auth_id', Text(), nullable=False),
+        Column('auth_id', Text, nullable=False),
         Column('user_uuid', String(38)),
         Column('xivo_uuid', String(38)),
         Column('issued_t', Integer),
