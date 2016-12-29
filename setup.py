@@ -28,7 +28,7 @@ setup(
     author='Wazo Authors',
     author_email='dev.wazo@gmail.com',
 
-    url='https://github.com/wazo-pbx/xivo-auth',
+    url='http://wazo.community',
 
     packages=find_packages(),
     include_package_data=True,

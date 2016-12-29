@@ -29,7 +29,7 @@ auth:
 slapd:
   image: nickstenning/slapd
   environment:
-    LDAP_DOMAIN: xivo-auth.xivo.io
+    LDAP_DOMAIN: xivo-auth.wazo.community
     LDAP_ORGANISATION: acme
     LDAP_ROOTPASS: xivopassword
   expose:
