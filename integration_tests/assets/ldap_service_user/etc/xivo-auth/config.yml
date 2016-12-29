@@ -26,9 +26,9 @@ amqp:
 
 ldap:
   uri: ldap://slapd
-  bind_dn: 'cn=xivo_auth,ou=people,dc=xivo-auth,dc=xivo,dc=io'
+  bind_dn: 'cn=xivo_auth,ou=people,dc=xivo-auth,dc=wazo,dc=community'
   bind_password: 'S3cr$t'
-  user_base_dn: 'dc=xivo-auth,dc=xivo,dc=io'
+  user_base_dn: 'dc=xivo-auth,dc=wazo,dc=community'
   user_login_attribute: 'uid'
 
 db_uri: postgresql://asterisk:proformatique@postgres/asterisk

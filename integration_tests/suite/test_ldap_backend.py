@@ -62,7 +62,7 @@ class LDAPHelper(object):
 
     LDAP_URI = 'ldap://localhost:3899'
 
-    BASE_DN = 'dc=xivo-auth,dc=xivo,dc=io'
+    BASE_DN = 'dc=xivo-auth,dc=wazo,dc=community'
     ADMIN_DN = 'cn=admin,{}'.format(BASE_DN)
     ADMIN_PASSWORD = 'xivopassword'
     PEOPLE_DN = 'ou=people,{}'.format(BASE_DN)
