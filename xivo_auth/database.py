@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2016 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,8 +53,7 @@ class _TokenCRUD(object):
     _DELETE_TOKEN_QRY = """DELETE FROM auth_token WHERE uuid=%s;"""
     _INSERT_ACL_QRY = """\
 INSERT INTO auth_acl (value, token_uuid)
-VALUES (%s, %s);
-"""
+VALUES """
     _INSERT_TOKEN_QRY = """\
 INSERT INTO auth_token (auth_id, user_uuid, xivo_uuid, issued_t, expire_t)
 VALUES (%s, %s, %s, %s, %s)
@@ -80,8 +79,10 @@ WHERE uuid=%s;
             with conn.cursor() as curs:
                 curs.execute(self._INSERT_TOKEN_QRY, token_args)
                 token_uuid = curs.fetchone()[0]
-                for acl in body['acls']:
-                    curs.execute(self._INSERT_ACL_QRY, (acl, token_uuid))
+                acls = body.get('acls')
+                if acls:
+                    values = ', '.join(curs.mogrify("(%s,%s)", (acl, token_uuid)) for acl in acls)
+                    curs.execute(self._INSERT_ACL_QRY + values)
         return token_uuid
 
     def get(self, token_uuid):
