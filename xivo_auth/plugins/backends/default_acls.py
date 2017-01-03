@@ -42,4 +42,5 @@ DEFAULT_USER_ACLS = ['confd.infos.read',
                      'events.switchboards',
                      'events.users.me.#',
                      'events.config.users.me.#',
+                     'events.directory.me.#',
                      'websocketd']
