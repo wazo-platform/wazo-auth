@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>
 
-from contextlib import contextmanager
 from itertools import izip
 from threading import Lock
 import psycopg2
@@ -71,53 +70,52 @@ WHERE uuid=%s;
     def __init__(self, db_uri):
         self._db_uri = db_uri
         self._connection_lock = Lock()
-        with self._connection_lock:
-            self._conn = psycopg2.connect(self._db_uri)
+        self._conn = self._new_connection()
+
+    def _new_connection(self):
+        conn = psycopg2.connect(self._db_uri)
+        conn.autocommit = True
+        return conn
 
     def create(self, body):
         token_args = (body['auth_id'], body['xivo_user_uuid'],
                       body['xivo_uuid'], int(body['issued_t']),
                       int(body['expire_t']))
-        with self.connection() as conn:
-            with conn.cursor() as curs:
-                curs.execute(self._INSERT_TOKEN_QRY, token_args)
-                token_uuid = curs.fetchone()[0]
-                acls = body.get('acls')
-                if acls:
-                    values = ', '.join(curs.mogrify("(%s,%s)", (acl, token_uuid)) for acl in acls)
-                    curs.execute(self._INSERT_ACL_QRY + values)
+        with self.connection().cursor() as curs:
+            curs.execute(self._INSERT_TOKEN_QRY, token_args)
+            token_uuid = curs.fetchone()[0]
+            acls = body.get('acls')
+            if acls:
+                values = ', '.join(curs.mogrify("(%s,%s)", (acl, token_uuid)) for acl in acls)
+                curs.execute(self._INSERT_ACL_QRY + values)
         return token_uuid
 
     def get(self, token_uuid):
-        with self.connection() as conn:
-            with conn.cursor() as curs:
-                curs.execute(self._SELECT_TOKEN_QRY, (token_uuid,))
-                row = curs.fetchone()
-                if not row:
-                    raise UnknownTokenException()
-                curs.execute(self._SELECT_ACL_QRY, (row[0],))
-                acls = [acl[0] for acl in curs.fetchall()]
+        with self.connection().cursor() as curs:
+            curs.execute(self._SELECT_TOKEN_QRY, (token_uuid,))
+            row = curs.fetchone()
+            if not row:
+                raise UnknownTokenException()
+            curs.execute(self._SELECT_ACL_QRY, (row[0],))
+            acls = [acl[0] for acl in curs.fetchall()]
 
         token_data = dict(izip(self._RETURNED_COLUMNS, row))
         token_data['acls'] = acls
         return token_data
 
     def delete(self, token_uuid):
-        with self.connection() as conn:
-            with conn.cursor() as curs:
-                curs.execute(self._DELETE_TOKEN_QRY, (token_uuid,))
+        with self.connection().cursor() as curs:
+            curs.execute(self._DELETE_TOKEN_QRY, (token_uuid,))
 
-    @contextmanager
     def connection(self):
         with self._connection_lock:
             if self._conn.closed:
-                self._conn = psycopg2.connect(self._db_uri)
+                self._conn = self._new_connection()
 
             try:
                 with self._conn.cursor() as curs:
                     curs.execute('SELECT 1;')
             except psycopg2.OperationalError:
-                self._conn = psycopg2.connect(self._db_uri)
+                self._conn = self._new_connection()
 
-            yield self._conn
-            self._conn.commit()
+            return self._conn
