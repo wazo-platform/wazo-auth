@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2016 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -175,15 +175,11 @@ class TestLDAP(_BaseLDAPTestCase):
     def test_ldap_authentication(self):
         response = self._post_token('Alice Wonderland', 'awonderland_password', backend='ldap_user')
 
-        assert_that(response.status_code, equal_to(200))
-
-        xivo_user_uuid = response.json()['data']['xivo_user_uuid']
+        xivo_user_uuid = response['xivo_user_uuid']
         assert_that(xivo_user_uuid, equal_to('1'))
 
     def test_ldap_authentication_fail_when_wrong_password(self):
-        response = self._post_token('Alice Wonderland', 'wrong_password', backend='ldap_user')
-
-        assert_that(response.status_code, equal_to(401))
+        self._post_token_with_expected_exception('Alice Wonderland', 'wrong_password', backend='ldap_user', status_code=401)
 
 
 class TestLDAPAnonymous(_BaseLDAPTestCase):
@@ -197,15 +193,12 @@ class TestLDAPAnonymous(_BaseLDAPTestCase):
     def test_ldap_authentication(self):
         response = self._post_token('awonderland@xivo-auth.com', 'awonderland_password', backend='ldap_user')
 
-        assert_that(response.status_code, equal_to(200))
-
-        xivo_user_uuid = response.json()['data']['xivo_user_uuid']
+        xivo_user_uuid = response['xivo_user_uuid']
         assert_that(xivo_user_uuid, equal_to('1'))
 
     def test_ldap_authentication_fail_when_wrong_password(self):
-        response = self._post_token('awonderland@xivo-auth.com', 'wrong_password', backend='ldap_user')
-
-        assert_that(response.status_code, equal_to(401))
+        self._post_token_with_expected_exception(
+            'awonderland@xivo-auth.com', 'wrong_password', backend='ldap_user', status_code=401)
 
 
 class TestLDAPServiceUser(_BaseLDAPTestCase):
@@ -219,12 +212,9 @@ class TestLDAPServiceUser(_BaseLDAPTestCase):
     def test_ldap_authentication(self):
         response = self._post_token('awonderland', 'awonderland_password', backend='ldap_user')
 
-        assert_that(response.status_code, equal_to(200))
-
-        xivo_user_uuid = response.json()['data']['xivo_user_uuid']
+        xivo_user_uuid = response['xivo_user_uuid']
         assert_that(xivo_user_uuid, equal_to('1'))
 
     def test_ldap_authentication_fail_when_wrong_password(self):
-        response = self._post_token('awonderland', 'wrong_password', backend='ldap_user')
-
-        assert_that(response.status_code, equal_to(401))
+        self._post_token_with_expected_exception(
+            'awonderland', 'wrong_password', backend='ldap_user', status_code=401)
