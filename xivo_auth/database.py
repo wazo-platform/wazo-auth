@@ -17,6 +17,7 @@
 
 from contextlib import contextmanager
 from itertools import izip
+from threading import Lock
 import psycopg2
 from .token import Token, UnknownTokenException
 
@@ -69,7 +70,9 @@ WHERE uuid=%s;
 
     def __init__(self, db_uri):
         self._db_uri = db_uri
-        self._conn = psycopg2.connect(self._db_uri)
+        self._connection_lock = Lock()
+        with self._connection_lock:
+            self._conn = psycopg2.connect(self._db_uri)
 
     def create(self, body):
         token_args = (body['auth_id'], body['xivo_user_uuid'],
@@ -106,14 +109,15 @@ WHERE uuid=%s;
 
     @contextmanager
     def connection(self):
-        if self._conn.closed:
-            self._conn = psycopg2.connect(self._db_uri)
+        with self._connection_lock:
+            if self._conn.closed:
+                self._conn = psycopg2.connect(self._db_uri)
 
-        try:
-            with self._conn.cursor() as curs:
-                curs.execute('SELECT 1;')
-        except psycopg2.OperationalError:
-            self._conn = psycopg2.connect(self._db_uri)
+            try:
+                with self._conn.cursor() as curs:
+                    curs.execute('SELECT 1;')
+            except psycopg2.OperationalError:
+                self._conn = psycopg2.connect(self._db_uri)
 
-        yield self._conn
-        self._conn.commit()
+            yield self._conn
+            self._conn.commit()
