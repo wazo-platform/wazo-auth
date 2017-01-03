@@ -79,9 +79,9 @@ WHERE uuid=%s;
             with conn.cursor() as curs:
                 curs.execute(self._INSERT_TOKEN_QRY, token_args)
                 token_uuid = curs.fetchone()[0]
-                acls = body.get('acls', [])
+                acls = body.get('acls')
                 if acls:
-                    values = ', '.join(curs.mogrify("(%s,%s)", (acl, token_uuid)) for acl in body['acls'])
+                    values = ', '.join(curs.mogrify("(%s,%s)", (acl, token_uuid)) for acl in acls)
                     curs.execute(self._INSERT_ACL_QRY + values)
         return token_uuid
 
