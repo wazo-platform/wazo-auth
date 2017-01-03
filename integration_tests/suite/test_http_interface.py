@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2015-2016 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ from hamcrest import has_key
 from hamcrest import has_length
 from hamcrest import is_
 from hamcrest.core.base_matcher import BaseMatcher
+from xivo_auth_client import Client
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)
@@ -167,8 +168,6 @@ class AssetRunner(object):
 
 class _BaseTestCase(unittest.TestCase):
 
-    url = 'https://{}:9497/0.1/token'.format(HOST)
-
     @classmethod
     def setUpClass(cls):
         cls._asset_runner = AssetRunner.get_instance()
@@ -179,15 +178,52 @@ class _BaseTestCase(unittest.TestCase):
         cls._asset_runner.stop()
 
     def _post_token(self, username, password, backend=None, expiration=None):
-        if not backend:
-            backend = 'mock'
-        s = requests.Session()
-        s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
-        s.auth = requests.auth.HTTPBasicAuth(username, password)
-        data = {'backend': backend}
+        client = Client(HOST, username=username, password=password, verify_certificate=False)
+        backend = backend or 'mock'
+        args = {}
         if expiration:
-            data['expiration'] = expiration
-        return s.post(self.url, data=json.dumps(data), verify=False)
+            args['expiration'] = expiration
+        return client.token.new(backend, **args)
+
+    def _post_token_with_expected_exception(self, username, password, backend=None, expiration=None, status_code=None, msg=None):
+        try:
+            self._post_token(username, password, backend, expiration)
+        except requests.HTTPError as e:
+            if status_code:
+                assert_that(e.response.status_code, equal_to(status_code))
+            if msg:
+                assert_that(e.response.json()['reason'][0], equal_to(msg))
+        else:
+            self.fail('Should have raised an exception')
+
+    def _get_token(self, token, acls=None):
+        client = Client(HOST, verify_certificate=False)
+        args = {}
+        if acls:
+            args['required_acl'] = acls
+        return client.token.get(token, **args)
+
+    def _get_token_with_expected_exception(self, token, acls=None, status_code=None, msg=None):
+        try:
+            self._get_token(token, acls)
+        except requests.HTTPError as e:
+            if status_code:
+                assert_that(e.response.status_code, equal_to(status_code))
+            if msg:
+                assert_that(e.response.json()['reason'][0], equal_to(msg))
+        else:
+            self.fail('Should have raised an exception')
+
+    def _delete_token(self, token):
+        client = Client(HOST, verify_certificate=False)
+        return client.token.revoke(token)
+
+    def _is_valid(self, token, acls=None):
+        client = Client(HOST, verify_certificate=False)
+        args = {}
+        if acls:
+            args['required_acl'] = acls
+        return client.token.is_valid(token, **args)
 
     def _assert_that_xivo_auth_is_stopping(self):
         for _ in range(5):
@@ -205,20 +241,16 @@ class TestCoreMockBackend(_BaseTestCase):
     def test_that_the_xivo_uuid_is_included_in_POST_response(self):
         response = self._post_token('foo', 'bar')
 
-        xivo_uuid = response.json()['data']['xivo_uuid']
+        xivo_uuid = response['xivo_uuid']
         assert_that(xivo_uuid, equal_to('the-predefined-xivo-uuid'))
 
     def test_that_head_with_a_valid_token_returns_204(self):
-        token = self._post_token('foo', 'bar').json()['data']['token']
+        token = self._post_token('foo', 'bar')['token']
 
-        response = requests.head('{}/{}'.format(self.url, token), verify=False)
-
-        assert_that(response.status_code, equal_to(204))
+        assert_that(self._is_valid(token))
 
     def test_that_head_with_an_invalid_token_returns_404(self):
-        response = requests.head('{}/{}'.format(self.url, 'abcdef'), verify=False)
-
-        assert_that(response.status_code, equal_to(404))
+        assert_that(self._is_valid('abcdef'), is_(False))
 
     def test_backends(self):
         response = requests.get('https://{}:9497/0.1/backends'.format(HOST), verify=False)
@@ -227,82 +259,69 @@ class TestCoreMockBackend(_BaseTestCase):
                     contains_inanyorder('mock', 'mock_with_uuid', 'broken_init', 'broken_verify_password'))
 
     def test_that_get_returns_the_auth_id(self):
-        token = self._post_token('foo', 'bar').json()['data']['token']
+        token = self._post_token('foo', 'bar')['token']
 
-        response = requests.get('{}/{}'.format(self.url, token), verify=False)
+        response = self._get_token(token)
 
-        assert_that(response.status_code, equal_to(200))
-        assert_that(response.json()['data']['auth_id'], equal_to('a-mocked-uuid'))
+        assert_that(response['auth_id'], equal_to('a-mocked-uuid'))
 
     def test_that_get_returns_the_xivo_uuid_in_the_response(self):
-        token = self._post_token('foo', 'bar').json()['data']['token']
+        token = self._post_token('foo', 'bar')['token']
 
-        response = requests.get('{}/{}'.format(self.url, token), verify=False)
+        response = self._get_token(token)
 
-        xivo_uuid = response.json()['data']['xivo_uuid']
+        xivo_uuid = response['xivo_uuid']
         assert_that(xivo_uuid, equal_to('the-predefined-xivo-uuid'))
 
     def test_that_get_returns_the_xivo_user_uuid(self):
-        token = self._post_token('foo', 'bar').json()['data']['token']
+        token = self._post_token('foo', 'bar')['token']
 
-        response = requests.get('{}/{}'.format(self.url, token), verify=False)
+        response = self._get_token(token)
 
-        assert_that(response.status_code, equal_to(200))
-        assert_that(response.json()['data'], has_key('xivo_user_uuid'))
+        assert_that(response, has_key('xivo_user_uuid'))
 
     def test_that_get_does_not_work_after_delete(self):
-        token = self._post_token('foo', 'bar').json()['data']['token']
-
-        requests.delete('{}/{}'.format(self.url, token), verify=False)
-        response = requests.get('{}/{}'.format(self.url, token), verify=False)
-
-        assert_that(response, is_(http_error(404, 'No such token')))
+        token = self._post_token('foo', 'bar')['token']
+        self._delete_token(token)
+        self._get_token_with_expected_exception(token, status_code=404, msg='No such token')
 
     def test_that_deleting_unexistant_token_returns_200(self):
-        response = requests.delete('{}/{}'.format(self.url, _new_token_id()), verify=False)
-
-        assert_that(response.status_code, equal_to(200))
+        self._delete_token(_new_token_id())  # no exception
 
     def test_that_the_wrong_password_returns_401(self):
-        response = self._post_token('foo', 'not_bar')
-
-        assert_that(response.status_code, equal_to(401))
+        self._post_token_with_expected_exception('foo', 'not_bar', status_code=401)
 
     def test_that_the_right_credentials_return_a_token_with_datas(self):
         response = self._post_token('foo', 'bar', backend='mock_with_uuid')
-        content = response.json()['data']
+        content = response
         token = content['token']
         auth_id = content['auth_id']
         xivo_user_uuid = content['xivo_user_uuid']
         acls = content['acls']
 
-        assert_that(response.status_code, equal_to(200))
         assert_that(token, has_length(36))
         assert_that(auth_id, equal_to('a-mocked-auth-id'))
         assert_that(xivo_user_uuid, equal_to('a-mocked-xivo-user-uuid'))
         assert_that(acls, contains_inanyorder('foo', 'bar'))
 
     def test_that_an_unknown_type_returns_a_401(self):
-        response = self._post_token('foo', 'not_bar', 'unexistant_backend')
+        self._post_token_with_expected_exception('foo', 'not_bar', 'unexistant_backend', status_code=401)
 
-        assert_that(response.status_code, equal_to(401))
-
-    def test_that_an_broken_backend_returns_a_401(self):
-        response = self._post_token('foo', 'not_bar', 'broken_verify_password')
-
-        assert_that(response.status_code, equal_to(401))
+    def test_that_a_broken_backend_returns_a_401(self):
+        self._post_token_with_expected_exception('foo', 'not_bar', 'broken_verify_password', status_code=401)
 
     def test_that_no_type_returns_400(self):
+        url = 'https://{}:9497/0.1/token'.format(HOST)
         s = requests.Session()
         s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         s.auth = requests.auth.HTTPBasicAuth('foo', 'bar')
 
-        response = s.post(self.url, verify=False)
+        response = s.post(url, verify=False)
 
         assert_that(response.status_code, equal_to(400))
 
     def test_the_expiration_argument(self):
-        token_data = self._post_token('foo', 'bar', expiration=2).json()['data']
+        token_data = self._post_token('foo', 'bar', expiration=2)
 
         creation_time = datetime.strptime(token_data['issued_at'], ISO_DATETIME)
         expiration_time = datetime.strptime(token_data['expires_at'], ISO_DATETIME)
@@ -320,58 +339,41 @@ class TestCoreMockBackend(_BaseTestCase):
         assert_that(utc_creation_time - creation_time, equal_to(utcoffset))
 
     def test_the_expiration_argument_as_a_string(self):
-        response = self._post_token('foo', 'bar', expiration="30")
-
-        assert_that(response, is_(http_error(400, 'Invalid expiration')))
+        self._post_token_with_expected_exception(
+            'foo', 'bar', expiration="30",
+            status_code=400, msg='Invalid expiration')
 
     def test_negative_expiration(self):
-        response = self._post_token('foo', 'bar', expiration=-1)
-
-        assert_that(response, is_(http_error(400, 'Invalid expiration')))
+        self._post_token_with_expected_exception(
+            'foo', 'bar', expiration=-1,
+            status_code=400, msg='Invalid expiration')
 
     def test_that_expired_tokens_are_not_valid(self):
-        token = self._post_token('foo', 'bar', expiration=1).json()['data']['token']
+        token = self._post_token('foo', 'bar', expiration=1)['token']
 
         time.sleep(2)
 
-        response = requests.head('{}/{}'.format(self.url, token), verify=False)
-
-        assert_that(response.status_code, equal_to(404))
+        assert_that(self._is_valid(token), equal_to(False))
 
     def test_that_invalid_unicode_acl_returns_403(self):
-        token = self._post_token('foo', 'bar').json()['data']['token']
-
-        response = requests.head('{}/{}'.format(self.url, token), verify=False, params={'scope': 'éric'})
-
-        assert_that(response.status_code, equal_to(403))
+        token = self._post_token('foo', 'bar')['token']
+        assert_that(self._is_valid(token, acls='éric'), is_(False))
 
     def test_that_unauthorized_acls_on_HEAD_return_403(self):
-        token = self._post_token('foo', 'bar').json()['data']['token']
-
-        response = requests.head('{}/{}'.format(self.url, token), verify=False, params={'scope': 'confd'})
-
-        assert_that(response.status_code, equal_to(403))
+        token = self._post_token('foo', 'bar')['token']
+        assert_that(self._is_valid(token, acls='confd'), is_(False))
 
     def test_that_unauthorized_acls_on_GET_return_403(self):
-        token = self._post_token('foo', 'bar').json()['data']['token']
-
-        response = requests.get('{}/{}'.format(self.url, token), verify=False, params={'scope': 'confd'})
-
-        assert_that(response.status_code, equal_to(403))
+        token = self._post_token('foo', 'bar')['token']
+        self._get_token_with_expected_exception(token, acls='confd', status_code=403)
 
     def test_that_authorized_acls_on_HEAD_return_204(self):
-        token = self._post_token('foo', 'bar').json()['data']['token']
-
-        response = requests.head('{}/{}'.format(self.url, token), verify=False, params={'scope': 'foo'})
-
-        assert_that(response.status_code, equal_to(204))
+        token = self._post_token('foo', 'bar')['token']
+        assert_that(self._is_valid(token, acls='foo'))
 
     def test_that_authorized_acls_on_GET_return_200(self):
-        token = self._post_token('foo', 'bar').json()['data']['token']
-
-        response = requests.get('{}/{}'.format(self.url, token), verify=False, params={'scope': 'foo'})
-
-        assert_that(response.status_code, equal_to(200))
+        token = self._post_token('foo', 'bar')['token']
+        self._get_token(token, acls='foo')  # no exception
 
 
 class TestNoRabbitMQ(_BaseTestCase):
@@ -379,14 +381,8 @@ class TestNoRabbitMQ(_BaseTestCase):
     asset = 'no_rabbitmq'
 
     def test_POST_with_no_rabbitmq_running(self):
-        response = self._post_token('foo', 'bar')
-
-        assert_that(response, is_(http_error(500, 'Connection to rabbitmq failed')))
-
-    def test_DELETE_with_no_rabbitmq_running(self):
-        response = requests.delete('{}/{}'.format(self.url, 'foobar'), verify=False)
-
-        assert_that(response, is_(http_error(500, 'Connection to rabbitmq failed')))
+        self._post_token_with_expected_exception(
+            'foo', 'bar', status_code=500, msg='Connection to rabbitmq failed')
 
 
 class TestNoSSLCertificate(_BaseTestCase):
