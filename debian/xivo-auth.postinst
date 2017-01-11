@@ -43,7 +43,7 @@ case "$1" in
 		chown $USER:$GROUP "$LOG_FILENAME"
 
 		previous_version="$2"
-		if dpkg --compare-versions "$previous_version" "<<" "17.01"; then
+		if dpkg --compare-versions "$previous_version" "lt-nl" "17.01"; then
 			/usr/share/xivo-auth/migrations/0001_remove_consul_storage.py
 		fi
 
