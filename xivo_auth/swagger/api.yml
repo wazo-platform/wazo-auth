@@ -22,7 +22,54 @@ produces:
 securityDefinitions:
   xivo_auth_basic:
     type: basic
+  xivo_auth_token:
+    type: apiKey
+    name: X-Auth-Token
+    in: header
 paths:
+  /policy:
+    post:
+      security:
+        - xivo_auth_token: []
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Create a new ACL policy
+      description: '**Required ACL:** `auth.policy.create`
+
+        Create a new ACL policy set that can be associated to a user, an administrator, a service or a backend.
+        An ACL policy is a list of ACL or ACL patterns that is used to create a token'
+      operationId: createPolicy
+      tags:
+        - policy
+      parameters:
+      - name: body
+        in: body
+        description: The policy creation parameters
+        required: true
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+          required:
+            - name
+      responses:
+        '200':
+          description: The created policy's data
+          schema:
+            $ref: '#/definitions/Policy'
+        '401':
+          description: Invalid data has been supplied'
+          schema:
+            $ref: '#/definitions/Error'
+        '409':
+          description: Duplicate Policy
+          schema:
+            $ref: '#/definitions/Error'
   /token:
     post:
       consumes:
@@ -171,6 +218,22 @@ definitions:
         type: array
         items:
           type: string
+  Policy:
+    type: object
+    properties:
+      data:
+        type: object
+        properties:
+          uuid:
+            type: string
+          name:
+            type: string
+          description:
+            type: string
+          acls:
+            type: array
+            items:
+              type: string
   Token:
     type: object
     properties:
