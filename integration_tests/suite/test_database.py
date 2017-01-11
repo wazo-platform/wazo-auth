@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2016 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ def teardown():
 class TestTokenCRUD(unittest.TestCase):
 
     def setUp(self):
-        self._crud = database._TokenCRUD(DB_URI)
+        self._crud = database._TokenCRUD(database._ConnectionFactory(DB_URI))
 
     def test_create(self):
         with nested(self._new_token(),

@@ -49,18 +49,28 @@ class Storage(object):
 
     @classmethod
     def from_config(cls, config):
-        group_crud = _GroupCRUD(config['db_uri'])
-        token_crud = _TokenCRUD(config['db_uri'])
+        factory = _ConnectionFactory(config['db_uri'])
+        group_crud = _GroupCRUD(factory)
+        token_crud = _TokenCRUD(factory)
         return cls(group_crud, token_crud)
 
 
-class _GroupCRUD(object):
+class _CRUD(object):
+
+    def __init__(self, connection_factory):
+        self._factory = connection_factory
+
+    def connection(self):
+        return self._factory.connection()
+
+
+class _GroupCRUD(_CRUD):
 
     def create(self, name, description):
         pass
 
 
-class _TokenCRUD(object):
+class _TokenCRUD(_CRUD):
 
     _DELETE_TOKEN_QRY = """DELETE FROM auth_token WHERE uuid=%s;"""
     _INSERT_ACL_QRY = """\
@@ -78,16 +88,6 @@ FROM auth_token
 WHERE uuid=%s;
 """
     _RETURNED_COLUMNS = ['uuid', 'auth_id', 'xivo_user_uuid', 'xivo_uuid', 'issued_t', 'expire_t']
-
-    def __init__(self, db_uri):
-        self._db_uri = db_uri
-        self._connection_lock = Lock()
-        self._conn = self._new_connection()
-
-    def _new_connection(self):
-        conn = psycopg2.connect(self._db_uri)
-        conn.autocommit = True
-        return conn
 
     def create(self, body):
         token_args = (body['auth_id'], body['xivo_user_uuid'],
@@ -118,6 +118,19 @@ WHERE uuid=%s;
     def delete(self, token_uuid):
         with self.connection().cursor() as curs:
             curs.execute(self._DELETE_TOKEN_QRY, (token_uuid,))
+
+
+class _ConnectionFactory(object):
+
+    def __init__(self, db_uri):
+        self._db_uri = db_uri
+        self._connection_lock = Lock()
+        self._conn = self._new_connection()
+
+    def _new_connection(self):
+        conn = psycopg2.connect(self._db_uri)
+        conn.autocommit = True
+        return conn
 
     def connection(self):
         with self._connection_lock:
