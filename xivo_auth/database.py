@@ -23,7 +23,8 @@ from .token import Token, UnknownTokenException
 
 class Storage(object):
 
-    def __init__(self, token_crud):
+    def __init__(self, group_crud, token_crud):
+        self._group_crud = group_crud
         self._token_crud = token_crud
 
     def get_token(self, token_id):
@@ -35,7 +36,8 @@ class Storage(object):
         return Token(id_, **token_data)
 
     def create_group(self, name, description):
-        pass
+        # TODO handle duplicate groups
+        return self._group_crud.create(name, description)
 
     def create_token(self, token_payload):
         token_data = token_payload.__dict__
@@ -47,8 +49,15 @@ class Storage(object):
 
     @classmethod
     def from_config(cls, config):
-        crud = _TokenCRUD(config['db_uri'])
-        return cls(crud)
+        group_crud = _GroupCRUD(config['db_uri'])
+        token_crud = _TokenCRUD(config['db_uri'])
+        return cls(group_crud, token_crud)
+
+
+class _GroupCRUD(object):
+
+    def create(self, name, description):
+        pass
 
 
 class _TokenCRUD(object):
