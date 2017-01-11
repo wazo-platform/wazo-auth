@@ -34,6 +34,9 @@ class Storage(object):
         id_ = token_data.pop('uuid')
         return Token(id_, **token_data)
 
+    def create_group(self, name, description):
+        pass
+
     def create_token(self, token_payload):
         token_data = token_payload.__dict__
         token_uuid = self._crud.create(token_data)

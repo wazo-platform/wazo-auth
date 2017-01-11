@@ -22,6 +22,17 @@ class ManagerException(Exception):
     pass
 
 
+class InvalidInputException(ManagerException):
+
+    code = 400
+
+    def __init__(self, field):
+        self._field = field
+
+    def __str__(self):
+        return 'Invalid value supplied for field: {}'.format(self._field)
+
+
 class UnknownTokenException(ManagerException):
 
     code = 404
