@@ -28,21 +28,18 @@ class TestStorage(unittest.TestCase):
 
     def setUp(self):
         self.token_crud = MockedCrud()
+        self.storage = Storage(self.token_crud)
 
     def test_get_token(self):
-        storage = Storage(self.token_crud)
-
-        result = storage.get_token(s.token_id)
+        result = self.storage.get_token(s.token_id)
 
         expected_token = Token(s.token_id, s.auth_id, s.xivo_user_uuid,
                                s.xivo_uuid, s.issued_t, s.expire_t, s.acls)
         assert_that(result, equal_to(expected_token))
 
     def test_get_token_not_found(self):
-        storage = Storage(self.token_crud)
-
         assert_that(
-            calling(storage.get_token).with_args(s.inexistant_token),
+            calling(self.storage.get_token).with_args(s.inexistant_token),
             raises(UnknownTokenException))
 
     def test_create_token(self):
@@ -54,19 +51,16 @@ class TestStorage(unittest.TestCase):
             'expire_t': s.expire_t,
             'acls': s.acls
         }
-        storage = Storage(self.token_crud)
-
         payload = TokenPayload(**token_data)
-        result = storage.create_token(payload)
+
+        result = self.storage.create_token(payload)
 
         expected_token = Token(s.token_uuid, **token_data)
         assert_that(result, equal_to(expected_token))
         self.token_crud.assert_created_with(token_data)
 
     def test_remove_token(self):
-        storage = Storage(self.token_crud)
-
-        storage.remove_token(s.token_uuid)
+        self.storage.remove_token(s.token_uuid)
 
         self.token_crud.assert_deleted(s.token_uuid)
 
