@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2016 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,10 +27,10 @@ from ..token import Token, TokenPayload, UnknownTokenException
 class TestStorage(unittest.TestCase):
 
     def setUp(self):
-        self.crud = MockedCrud()
+        self.token_crud = MockedCrud()
 
     def test_get_token(self):
-        storage = Storage(self.crud)
+        storage = Storage(self.token_crud)
 
         result = storage.get_token(s.token_id)
 
@@ -39,7 +39,7 @@ class TestStorage(unittest.TestCase):
         assert_that(result, equal_to(expected_token))
 
     def test_get_token_not_found(self):
-        storage = Storage(self.crud)
+        storage = Storage(self.token_crud)
 
         assert_that(
             calling(storage.get_token).with_args(s.inexistant_token),
@@ -54,21 +54,21 @@ class TestStorage(unittest.TestCase):
             'expire_t': s.expire_t,
             'acls': s.acls
         }
-        storage = Storage(self.crud)
+        storage = Storage(self.token_crud)
 
         payload = TokenPayload(**token_data)
         result = storage.create_token(payload)
 
         expected_token = Token(s.token_uuid, **token_data)
         assert_that(result, equal_to(expected_token))
-        self.crud.assert_created_with(token_data)
+        self.token_crud.assert_created_with(token_data)
 
     def test_remove_token(self):
-        storage = Storage(self.crud)
+        storage = Storage(self.token_crud)
 
         storage.remove_token(s.token_uuid)
 
-        self.crud.assert_deleted(s.token_uuid)
+        self.token_crud.assert_deleted(s.token_uuid)
 
 
 class MockedCrud(object):

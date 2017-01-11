@@ -23,11 +23,11 @@ from .token import Token, UnknownTokenException
 
 class Storage(object):
 
-    def __init__(self, crud):
-        self._crud = crud
+    def __init__(self, token_crud):
+        self._token_crud = token_crud
 
     def get_token(self, token_id):
-        token_data = self._crud.get(token_id)
+        token_data = self._token_crud.get(token_id)
         if not token_data:
             raise UnknownTokenException()
 
@@ -39,11 +39,11 @@ class Storage(object):
 
     def create_token(self, token_payload):
         token_data = token_payload.__dict__
-        token_uuid = self._crud.create(token_data)
+        token_uuid = self._token_crud.create(token_data)
         return Token(token_uuid, **token_data)
 
     def remove_token(self, token_id):
-        self._crud.delete(token_id)
+        self._token_crud.delete(token_id)
 
     @classmethod
     def from_config(cls, config):
