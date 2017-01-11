@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2015-2016 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,43 +24,17 @@ import time
 
 from uuid import uuid4
 from datetime import datetime
-from unidecode import unidecode
+
+from .exceptions import (
+    MissingACLTokenException,
+    UnknownTokenException,
+    RabbitMQConnectionException,
+)
+
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_XIVO_UUID = os.getenv('XIVO_UUID')
-
-
-class ManagerException(Exception):
-    pass
-
-
-class UnknownTokenException(ManagerException):
-
-    code = 404
-
-    def __str__(self):
-        return 'No such token'
-
-
-class MissingACLTokenException(ManagerException):
-
-    code = 403
-
-    def __init__(self, required_acl):
-        super(MissingACLTokenException, self).__init__()
-        self._required_acl = required_acl
-
-    def __str__(self):
-        return 'Unauthorized for {}'.format(unidecode(self._required_acl))
-
-
-class _RabbitMQConnectionException(ManagerException):
-
-    code = 500
-
-    def __str__(self):
-        return 'Connection to rabbitmq failed'
 
 
 class Token(object):
@@ -188,7 +162,7 @@ class Manager(object):
         try:
             tasks.clean_token.apply_async(args=[token.token], countdown=expiration, task_id=task_id)
         except socket.error:
-            raise _RabbitMQConnectionException()
+            raise RabbitMQConnectionException()
         return token
 
     def remove_token(self, token):
@@ -196,7 +170,7 @@ class Manager(object):
         try:
             self._celery.control.revoke(task_id)
         except socket.error:
-            raise _RabbitMQConnectionException()
+            raise RabbitMQConnectionException()
         self._storage.remove_token(token)
 
     def remove_expired_token(self, token):
