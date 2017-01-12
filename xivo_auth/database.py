@@ -97,6 +97,9 @@ RETURNING uuid
             curs.execute(self._SELECT_POLICY_QRY, (policy_uuid,))
             row = curs.fetchone()
 
+        if not row:
+            raise UnknownPolicyException()
+
         return dict(izip(self._RETURNED_COLUMNS, row))
 
 

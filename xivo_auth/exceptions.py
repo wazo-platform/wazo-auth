@@ -46,6 +46,14 @@ class DuplicatePolicyException(ManagerException):
         return 'Policy "{}" already exists'.format(self._name)
 
 
+class UnknownPolicyException(ManagerException):
+
+    code = 404
+
+    def __str__(self):
+        return 'No such policy'
+
+
 class UnknownTokenException(ManagerException):
 
     code = 404

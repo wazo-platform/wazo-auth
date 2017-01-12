@@ -67,6 +67,18 @@ class TestPolicyCRUD(unittest.TestCase):
                 calling(self._crud.create).with_args(duplicated_name, ''),
                 raises(exceptions.DuplicatePolicyException))
 
+    def test_get(self):
+        with self._new_policy('foobar', '') as uuid_:
+            policy = self._crud.get(uuid_)
+            assert_that(policy['uuid'], equal_to(uuid_))
+            assert_that(policy['name'], equal_to('foobar'))
+            assert_that(policy['description'], equal_to(''))
+
+        unknown_uuid = new_uuid()
+        assert_that(
+            calling(self._crud.get).with_args(unknown_uuid),
+            raises(exceptions.UnknownPolicyException))
+
     @contextmanager
     def _new_policy(self, name, description):
         uuid_ = self._crud.create(name, description)
