@@ -45,7 +45,7 @@ def required_acl(acl):
             try:
                 token = request.headers.get('X-Auth-Token', '')
                 current_app.config['token_manager'].get(token, acl)
-            except ManagerException as e:
+            except ManagerException:
                 return _error(401, 'Unauthorized')
             return f(*args, **kwargs)
         return wrapped_f
