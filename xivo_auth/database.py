@@ -19,6 +19,7 @@ from itertools import izip
 from threading import Lock
 import psycopg2
 from .token import Token, UnknownTokenException
+from .exceptions import DuplicatePolicyException, UnknownPolicyException
 
 
 class Storage(object):
@@ -36,7 +37,6 @@ class Storage(object):
         return Token(id_, **token_data)
 
     def create_group(self, name, description):
-        # TODO handle duplicate groups
         return self._group_crud.create(name, description)
 
     def create_token(self, token_payload):
@@ -57,6 +57,8 @@ class Storage(object):
 
 class _CRUD(object):
 
+    _UNIQUE_CONSTRAINT_CODE = '23505'
+
     def __init__(self, connection_factory):
         self._factory = connection_factory
 
@@ -66,8 +68,36 @@ class _CRUD(object):
 
 class _GroupCRUD(_CRUD):
 
+    _DELETE_POLICY_QRY = "DELETE FROM auth_policy WHERE uuid=%s"
+    _INSERT_POLICY_QRY = """\
+INSERT INTO auth_policy (name, description)
+VALUES (%s, %s)
+RETURNING uuid
+"""
+    _SELECT_POLICY_QRY = "SELECT uuid, name, description FROM auth_policy WHERE uuid=%s"
+    _RETURNED_COLUMNS = ['uuid', 'name', 'description']
+
     def create(self, name, description):
-        pass
+        with self.connection().cursor() as curs:
+            try:
+                curs.execute(self._INSERT_POLICY_QRY, (name, description))
+            except psycopg2.IntegrityError as e:
+                if e.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                    raise DuplicatePolicyException(name)
+                raise
+            uuid = curs.fetchone()[0]
+        return uuid
+
+    def delete(self, policy_uuid):
+        with self.connection().cursor() as curs:
+            curs.execute(self._DELETE_POLICY_QRY, (policy_uuid,))
+
+    def get(self, policy_uuid):
+        with self.connection().cursor() as curs:
+            curs.execute(self._SELECT_POLICY_QRY, (policy_uuid,))
+            row = curs.fetchone()
+
+        return dict(izip(self._RETURNED_COLUMNS, row))
 
 
 class _TokenCRUD(_CRUD):

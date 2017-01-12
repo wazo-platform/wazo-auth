@@ -27,10 +27,23 @@ class InvalidInputException(ManagerException):
     code = 400
 
     def __init__(self, field):
+        super(InvalidInputException, self).__init__()
         self._field = field
 
     def __str__(self):
         return 'Invalid value supplied for field: {}'.format(self._field)
+
+
+class DuplicatePolicyException(ManagerException):
+
+    code = 409
+
+    def __init__(self, name):
+        super(DuplicatePolicyException, self).__init__()
+        self._name = name
+
+    def __str__(self):
+        return 'Policy "{}" already exists'.format(self._name)
 
 
 class UnknownTokenException(ManagerException):

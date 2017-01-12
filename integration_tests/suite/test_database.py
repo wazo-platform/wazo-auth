@@ -21,10 +21,10 @@ import unittest
 import uuid
 
 from contextlib import contextmanager, nested
-from hamcrest import assert_that, equal_to
+from hamcrest import assert_that, calling, equal_to, raises
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 
-from xivo_auth import database
+from xivo_auth import database, exceptions
 
 DB_URI = os.getenv('DB_URI', 'postgresql://asterisk:proformatique@localhost:15432')
 
@@ -45,6 +45,35 @@ def setup():
 
 def teardown():
     DBStarter.tearDownClass()
+
+
+class TestPolicyCRUD(unittest.TestCase):
+
+    def setUp(self):
+        self._crud = database._PolicyCRUD(database._ConnectionFactory(DB_URI))
+
+    def test_create(self):
+        with self._new_policy('testé', 'descriptioñ') as uuid_:
+            policy = self._crud.get(uuid_)
+
+            assert_that(policy['uuid'], equal_to(uuid_))
+            assert_that(policy['name'], equal_to('testé'))
+            assert_that(policy['description'], equal_to('descriptioñ'))
+
+    def test_that_two_policies_cannot_have_the_same_name(self):
+        duplicated_name = 'foobar'
+        with self._new_policy(duplicated_name, 'descriptioñ'):
+            assert_that(
+                calling(self._crud.create).with_args(duplicated_name, ''),
+                raises(exceptions.DuplicatePolicyException))
+
+    @contextmanager
+    def _new_policy(self, name, description):
+        uuid_ = self._crud.create(name, description)
+        try:
+            yield uuid_
+        finally:
+            self._crud.delete(uuid_)
 
 
 class TestTokenCRUD(unittest.TestCase):
