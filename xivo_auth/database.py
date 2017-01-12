@@ -65,6 +65,10 @@ class _CRUD(object):
     def connection(self):
         return self._factory.connection()
 
+    @staticmethod
+    def row_to_dict(columns, row):
+        return dict(izip(columns, row))
+
 
 class _PolicyCRUD(_CRUD):
 
@@ -102,7 +106,7 @@ RETURNING uuid
         if not row:
             raise UnknownPolicyException()
 
-        return dict(izip(self._RETURNED_COLUMNS, row))
+        return self.row_to_dict(self._RETURNED_COLUMNS, row)
 
 
 class _TokenCRUD(_CRUD):
@@ -146,7 +150,7 @@ WHERE uuid=%s;
             curs.execute(self._SELECT_ACL_QRY, (row[0],))
             acls = [acl[0] for acl in curs.fetchall()]
 
-        token_data = dict(izip(self._RETURNED_COLUMNS, row))
+        token_data = self.row_to_dict(self._RETURNED_COLUMNS, row)
         token_data['acls'] = acls
         return token_data
 
