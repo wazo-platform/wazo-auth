@@ -15,8 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-import time
+import functools
 import logging
+import time
 
 from flask import current_app, request, make_response
 from flask_restful import Resource
@@ -37,8 +38,23 @@ def _is_positive_integer(i):
     return isinstance(i, int) and i > 0
 
 
+def required_acl(acl):
+    def wrap(f):
+        @functools.wraps(f)
+        def wrapped_f(*args, **kwargs):
+            try:
+                token = request.headers.get('X-Auth-Token', '')
+                current_app.config['token_manager'].get(token, acl)
+            except ManagerException as e:
+                return _error(401, 'Unauthorized')
+            return f(*args, **kwargs)
+        return wrapped_f
+    return wrap
+
+
 class Policies(Resource):
 
+    @required_acl('auth.policy.create')
     def post(self):
         data = request.get_json()
         policy_manager = current_app.config['policy_manager']
