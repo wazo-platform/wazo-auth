@@ -37,6 +37,18 @@ def _is_positive_integer(i):
     return isinstance(i, int) and i > 0
 
 
+class Policies(Resource):
+
+    def post(self):
+        data = request.get_json()
+        policy_manager = current_app.config['policy_manager']
+        try:
+            policy = policy_manager.create(data)
+        except ManagerException as e:
+            return _error(e.code, str(e))
+        return policy, 200
+
+
 class Tokens(Resource):
 
     def post(self):

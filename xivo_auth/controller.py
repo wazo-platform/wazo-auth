@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2015-2016 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ from stevedore.dispatch import NameDispatchExtensionManager
 from xivo import http_helpers
 from xivo.consul_helpers import ServiceCatalogRegistration
 
-from xivo_auth import database, http, token, extensions
+from xivo_auth import database, http, policy, token, extensions
 
 from .service_discovery import self_check
 
@@ -73,9 +73,10 @@ class Controller(object):
         self._config['loaded_plugins'] = self._loaded_plugins_names(backends)
 
         self._celery = self._configure_celery()
-        token_storage = database.Storage.from_config(self._config)
-        token_manager = token.Manager(config, token_storage, self._celery)
-        self._flask_app = self._configure_flask_app(backends, token_manager)
+        storage = database.Storage.from_config(self._config)
+        policy_manager = policy.Manager(storage)
+        token_manager = token.Manager(config, storage, self._celery)
+        self._flask_app = self._configure_flask_app(backends, policy_manager, token_manager)
         self._override_celery_task()
 
     def run(self):
@@ -146,10 +147,11 @@ class Controller(object):
         extensions.celery = self._celery
         from xivo_auth import tasks  # noqa
 
-    def _configure_flask_app(self, backends, token_manager):
+    def _configure_flask_app(self, backends, policy_manager, token_manager):
         app = Flask('xivo-auth')
         http_helpers.add_logger(app, logger)
         api = Api(app, prefix='/0.1')
+        api.add_resource(http.Policies, '/policy')
         api.add_resource(http.Tokens, '/token')
         api.add_resource(http.Token, '/token/<string:token>')
         api.add_resource(http.Backends, '/backends')
@@ -158,6 +160,7 @@ class Controller(object):
         if self._cors_enabled:
             CORS(app, **self._cors_config)
 
+        app.config['policy_manager'] = policy_manager
         app.config['token_manager'] = token_manager
         app.config['backends'] = backends
         app.after_request(http_helpers.log_request)
