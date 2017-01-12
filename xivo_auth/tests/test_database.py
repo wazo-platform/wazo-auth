@@ -20,7 +20,7 @@ import unittest
 from hamcrest import assert_that, calling, equal_to, raises
 from mock import Mock, sentinel as s
 
-from ..database import Storage, _GroupCRUD
+from ..database import Storage, _PolicyCRUD
 from ..token import Token, TokenPayload, UnknownTokenException
 
 
@@ -28,8 +28,8 @@ class TestStorage(unittest.TestCase):
 
     def setUp(self):
         self.token_crud = MockedCrud()
-        self.group_crud = Mock(_GroupCRUD)
-        self.storage = Storage(self.group_crud, self.token_crud)
+        self.policy_crud = Mock(_PolicyCRUD)
+        self.storage = Storage(self.policy_crud, self.token_crud)
 
     def test_get_token(self):
         result = self.storage.get_token(s.token_id)
@@ -43,11 +43,11 @@ class TestStorage(unittest.TestCase):
             calling(self.storage.get_token).with_args(s.inexistant_token),
             raises(UnknownTokenException))
 
-    def test_create_group(self):
-        result = self.storage.create_group(s.name, s.description)
+    def test_create_policy(self):
+        result = self.storage.create_policy(s.name, s.description)
 
-        assert_that(result, equal_to(self.group_crud.create.return_value))
-        self.group_crud.create.assert_called_once_with(s.name, s.description)
+        assert_that(result, equal_to(self.policy_crud.create.return_value))
+        self.policy_crud.create.assert_called_once_with(s.name, s.description)
 
     def test_create_token(self):
         token_data = {

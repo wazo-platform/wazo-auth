@@ -22,16 +22,16 @@ from mock import ANY, Mock
 
 from ..database import Storage
 from ..exceptions import InvalidInputException
-from ..groups import Manager
+from ..policy import Manager
 
 
-class TestGroupManager(unittest.TestCase):
+class TestPolicyManager(unittest.TestCase):
 
     def setUp(self):
         storage = Mock(Storage)
         self.manager = Manager(storage)
 
-    def test_create_group_valid(self):
+    def test_create_policy_valid(self):
         name = 'valid'
         desc = 'A Valid description'
         input_and_expected = [
@@ -51,9 +51,9 @@ class TestGroupManager(unittest.TestCase):
             )
         ]
 
-        for group_data, expected in input_and_expected:
-            group = self.manager.create(group_data)
-            assert_that(group, equal_to(expected))
+        for policy_data, expected in input_and_expected:
+            policy = self.manager.create(policy_data)
+            assert_that(policy, equal_to(expected))
 
     def test_that_invalid_values_raise_a_manager_exception(self):
         names = [

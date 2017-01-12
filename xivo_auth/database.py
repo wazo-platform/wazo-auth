@@ -24,8 +24,8 @@ from .exceptions import DuplicatePolicyException, UnknownPolicyException
 
 class Storage(object):
 
-    def __init__(self, group_crud, token_crud):
-        self._group_crud = group_crud
+    def __init__(self, policy_crud, token_crud):
+        self._policy_crud = policy_crud
         self._token_crud = token_crud
 
     def get_token(self, token_id):
@@ -36,8 +36,8 @@ class Storage(object):
         id_ = token_data.pop('uuid')
         return Token(id_, **token_data)
 
-    def create_group(self, name, description):
-        return self._group_crud.create(name, description)
+    def create_policy(self, name, description):
+        return self._policy_crud.create(name, description)
 
     def create_token(self, token_payload):
         token_data = token_payload.__dict__
@@ -50,9 +50,9 @@ class Storage(object):
     @classmethod
     def from_config(cls, config):
         factory = _ConnectionFactory(config['db_uri'])
-        group_crud = _GroupCRUD(factory)
+        policy_crud = _PolicyCRUD(factory)
         token_crud = _TokenCRUD(factory)
-        return cls(group_crud, token_crud)
+        return cls(policy_crud, token_crud)
 
 
 class _CRUD(object):
@@ -66,7 +66,7 @@ class _CRUD(object):
         return self._factory.connection()
 
 
-class _GroupCRUD(_CRUD):
+class _PolicyCRUD(_CRUD):
 
     _DELETE_POLICY_QRY = "DELETE FROM auth_policy WHERE uuid=%s"
     _INSERT_POLICY_QRY = """\

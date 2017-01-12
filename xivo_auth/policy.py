@@ -30,7 +30,7 @@ class Manager(object):
         self._validate_name(name)
         self._validate_description(description)
 
-        uuid = self._storage.create_group(name, description)
+        uuid = self._storage.create_policy(name, description)
 
         return {'uuid': uuid,
                 'name': name,
