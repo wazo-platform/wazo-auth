@@ -38,13 +38,13 @@ def _is_positive_integer(i):
     return isinstance(i, int) and i > 0
 
 
-def required_acl(acl):
+def required_acl(scope):
     def wrap(f):
         @functools.wraps(f)
         def wrapped_f(*args, **kwargs):
             try:
                 token = request.headers.get('X-Auth-Token', '')
-                current_app.config['token_manager'].get(token, acl)
+                current_app.config['token_manager'].get(token, scope)
             except ManagerException:
                 return _error(401, 'Unauthorized')
             return f(*args, **kwargs)
@@ -109,17 +109,17 @@ class Token(Resource):
         return {'data': {'message': 'success'}}
 
     def get(self, token):
-        required_acl = request.args.get('scope')
+        scope = request.args.get('scope')
         try:
-            token = current_app.config['token_manager'].get(token, required_acl)
+            token = current_app.config['token_manager'].get(token, scope)
             return {'data': token.to_dict()}
         except ManagerException as e:
             return _error(e.code, str(e))
 
     def head(self, token):
-        required_acl = request.args.get('scope')
+        scope = request.args.get('scope')
         try:
-            token = current_app.config['token_manager'].get(token, required_acl)
+            token = current_app.config['token_manager'].get(token, scope)
             return '', 204
         except ManagerException as e:
             return _error(e.code, str(e))
