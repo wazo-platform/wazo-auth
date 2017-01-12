@@ -79,6 +79,13 @@ class TestPolicyCRUD(unittest.TestCase):
             calling(self._crud.get).with_args(unknown_uuid),
             raises(exceptions.UnknownPolicyException))
 
+    def test_delete(self):
+        uuid_ = self._crud.create('foobar', '')
+        self._crud.delete(uuid_)
+        assert_that(
+            calling(self._crud.delete).with_args(uuid_),
+            raises(exceptions.UnknownPolicyException))
+
     @contextmanager
     def _new_policy(self, name, description):
         uuid_ = self._crud.create(name, description)

@@ -91,6 +91,8 @@ RETURNING uuid
     def delete(self, policy_uuid):
         with self.connection().cursor() as curs:
             curs.execute(self._DELETE_POLICY_QRY, (policy_uuid,))
+            if curs.rowcount == 0:
+                raise UnknownPolicyException()
 
     def get(self, policy_uuid):
         with self.connection().cursor() as curs:
