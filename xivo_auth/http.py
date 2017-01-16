@@ -54,7 +54,7 @@ def required_acl(scope):
 
 class Policies(Resource):
 
-    @required_acl('auth.policy.create')
+    @required_acl('auth.policies.create')
     def post(self):
         data = request.get_json()
         policy_manager = current_app.config['policy_manager']
