@@ -74,6 +74,37 @@ paths:
           description: Duplicate Policy
           schema:
             $ref: '#/definitions/Error'
+  /policies/{policy_uuid}:
+    get:
+      tags:
+        - policies
+      security:
+      - xivo_auth_token: []
+      description: '**Required ACL**: `auth.policies.{policy_uuid}.read'
+      parameters:
+      - name: policy_uuid
+        in: path
+        type: string
+        description: The UUID of the policy
+        required: true
+      summary: Retrieves the details of a policy
+      responses:
+        '200':
+          description: The policy's data
+          schema:
+            $ref: '#/definitions/Policy'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Policy not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: System related error
+          schema:
+            $ref: '#/definitions/Error'
   /token:
     post:
       consumes:

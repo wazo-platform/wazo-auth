@@ -28,6 +28,9 @@ class Storage(object):
         self._policy_crud = policy_crud
         self._token_crud = token_crud
 
+    def get_policy(self, policy_uuid):
+        return self._policy_crud.get(policy_uuid)
+
     def get_token(self, token_id):
         token_data = self._token_crud.get(token_id)
         if not token_data:

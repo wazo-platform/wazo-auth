@@ -65,6 +65,18 @@ class Policies(Resource):
         return policy, 200
 
 
+class Policy(Resource):
+
+    @required_acl('auth.policies.{policy_uuid}.read')
+    def get(self, policy_uuid):
+        policy_manager = current_app.config['policy_manager']
+        try:
+            policy = policy_manager.get(policy_uuid)
+        except ManagerException as e:
+            return _error(e.code, str(e))
+        return policy, 200
+
+
 class Tokens(Resource):
 
     def post(self):

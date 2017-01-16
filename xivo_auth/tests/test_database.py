@@ -31,6 +31,14 @@ class TestStorage(unittest.TestCase):
         self.policy_crud = Mock(_PolicyCRUD)
         self.storage = Storage(self.policy_crud, self.token_crud)
 
+    def test_get_policy(self):
+        result = self.storage.get_policy(s.policy_uuid)
+
+        expected = self.policy_crud.get.return_value
+
+        assert_that(result, equal_to(expected))
+        self.policy_crud.get.assert_called_once_with(s.policy_uuid)
+
     def test_get_token(self):
         result = self.storage.get_token(s.token_id)
 
