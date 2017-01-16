@@ -44,10 +44,10 @@ class TestStorage(unittest.TestCase):
             raises(UnknownTokenException))
 
     def test_create_policy(self):
-        result = self.storage.create_policy(s.name, s.description)
+        result = self.storage.create_policy(s.name, s.description, s.acls)
 
         assert_that(result, equal_to(self.policy_crud.create.return_value))
-        self.policy_crud.create.assert_called_once_with(s.name, s.description)
+        self.policy_crud.create.assert_called_once_with(s.name, s.description, s.acls)
 
     def test_create_token(self):
         token_data = {

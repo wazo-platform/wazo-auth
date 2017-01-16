@@ -26,16 +26,18 @@ class Manager(object):
     def create(self, body):
         name = body.get('name')
         description = body.get('description', '')
+        acl_templates = body.get('acl_templates', [])
 
         self._validate_name(name)
         self._validate_description(description)
+        self._validate_acl_templates(acl_templates)
 
-        uuid = self._storage.create_policy(name, description)
+        uuid = self._storage.create_policy(name, description, acl_templates)
 
         return {'uuid': uuid,
                 'name': name,
                 'description': description,
-                'acls': []}
+                'acl_templates': acl_templates}
 
     def _validate_name(self, name):
         if not name or not self._is_str(name):
@@ -45,6 +47,21 @@ class Manager(object):
         if not self._is_str(description):
             raise InvalidInputException('description')
 
+    def _validate_acl_templates(self, acls):
+        if not self._is_list_of_str(acls):
+            raise InvalidInputException('acls')
+
     @staticmethod
     def _is_str(s):
         return isinstance(s, (str, unicode))
+
+    @staticmethod
+    def _is_list_of_str(l):
+        if not isinstance(l, list):
+            return False
+
+        for i in l:
+            if not isinstance(i, (str, unicode)):
+                return False
+
+        return True

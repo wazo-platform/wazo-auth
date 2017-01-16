@@ -40,14 +40,14 @@ class TestPolicyManager(unittest.TestCase):
                 {'uuid': ANY,
                  'name': name,
                  'description': '',
-                 'acls': []}
+                 'acl_templates': []}
             ),
             (
                 {'name': name, 'description': desc},
                 {'uuid': ANY,
                  'name': name,
                  'description': desc,
-                 'acls': []}
+                 'acl_templates': []}
             )
         ]
 
@@ -82,3 +82,25 @@ class TestPolicyManager(unittest.TestCase):
                 calling(self.manager.create).with_args(body),
                 raises(InvalidInputException)
             )
+
+    def test_that_invalid_acl_templates_raise_a_manager_exception(self):
+        name = 'foobar'
+        templates = [
+            {'foo': 'bar'},
+            42,
+            True,
+            False,
+            None,
+            'auth.*',
+            [{'foo': 'bar'}],
+            [42],
+            ['#', False],
+            [None],
+        ]
+
+        for template in templates:
+            assert_that(
+                calling(self.manager.create).with_args({
+                    'name': name,
+                    'acl_templates': template
+                }), raises(InvalidInputException))

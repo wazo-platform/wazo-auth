@@ -21,7 +21,7 @@ import unittest
 import uuid
 
 from contextlib import contextmanager, nested
-from hamcrest import assert_that, calling, equal_to, raises
+from hamcrest import assert_that, calling, contains_inanyorder, equal_to, empty, raises
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 
 from xivo_auth import database, exceptions
@@ -53,18 +53,20 @@ class TestPolicyCRUD(unittest.TestCase):
         self._crud = database._PolicyCRUD(database._ConnectionFactory(DB_URI))
 
     def test_create(self):
-        with self._new_policy('testé', 'descriptioñ') as uuid_:
+        acl_templates = ['dird.#', 'confd.line.42.*']
+        with self._new_policy('testé', 'descriptioñ', acl_templates) as uuid_:
             policy = self._crud.get(uuid_)
 
             assert_that(policy['uuid'], equal_to(uuid_))
             assert_that(policy['name'], equal_to('testé'))
             assert_that(policy['description'], equal_to('descriptioñ'))
+            assert_that(policy['acl_templates'], contains_inanyorder(*acl_templates))
 
     def test_that_two_policies_cannot_have_the_same_name(self):
         duplicated_name = 'foobar'
         with self._new_policy(duplicated_name, 'descriptioñ'):
             assert_that(
-                calling(self._crud.create).with_args(duplicated_name, ''),
+                calling(self._crud.create).with_args(duplicated_name, '', []),
                 raises(exceptions.DuplicatePolicyException))
 
     def test_get(self):
@@ -73,6 +75,7 @@ class TestPolicyCRUD(unittest.TestCase):
             assert_that(policy['uuid'], equal_to(uuid_))
             assert_that(policy['name'], equal_to('foobar'))
             assert_that(policy['description'], equal_to(''))
+            assert_that(policy['acl_templates'], empty())
 
         unknown_uuid = new_uuid()
         assert_that(
@@ -80,15 +83,16 @@ class TestPolicyCRUD(unittest.TestCase):
             raises(exceptions.UnknownPolicyException))
 
     def test_delete(self):
-        uuid_ = self._crud.create('foobar', '')
+        uuid_ = self._crud.create('foobar', '', [])
         self._crud.delete(uuid_)
         assert_that(
             calling(self._crud.delete).with_args(uuid_),
             raises(exceptions.UnknownPolicyException))
 
     @contextmanager
-    def _new_policy(self, name, description):
-        uuid_ = self._crud.create(name, description)
+    def _new_policy(self, name, description, acl_templates=None):
+        acl_templates = acl_templates or []
+        uuid_ = self._crud.create(name, description, acl_templates)
         try:
             yield uuid_
         finally:

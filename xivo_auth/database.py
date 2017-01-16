@@ -36,8 +36,8 @@ class Storage(object):
         id_ = token_data.pop('uuid')
         return Token(id_, **token_data)
 
-    def create_policy(self, name, description):
-        return self._policy_crud.create(name, description)
+    def create_policy(self, name, description, acl_templates):
+        return self._policy_crud.create(name, description, acl_templates)
 
     def create_token(self, token_payload):
         token_data = token_payload.__dict__
@@ -73,16 +73,30 @@ class _CRUD(object):
 class _PolicyCRUD(_CRUD):
 
     _DELETE_POLICY_QRY = "DELETE FROM auth_policy WHERE uuid=%s"
+    _INSERT_TEMPLATE_QRY = "INSERT INTO auth_acl_template (template) VALUES (%s) RETURNING id"
+    _INSERT_POLICY_TEMPLATE_QRY = "INSERT INTO auth_policy_template (policy_uuid, template_id) VALUES "
     _INSERT_POLICY_QRY = """\
 INSERT INTO auth_policy (name, description)
 VALUES (%s, %s)
 RETURNING uuid
 """
-    _SELECT_POLICY_QRY = "SELECT uuid, name, description FROM auth_policy WHERE uuid=%s"
-    _RETURNED_COLUMNS = ['uuid', 'name', 'description']
+    _SELECT_TEMPLATE_QRY = "SELECT id, template FROM auth_acl_template WHERE template in %s"
+    _SELECT_POLICY_QRY = """\
+SELECT auth_policy.uuid,
+       auth_policy.name,
+       auth_policy.description,
+       array_agg(auth_acl_template.template) AS acl_templates
+FROM auth_policy
+LEFT JOIN auth_policy_template ON auth_policy.uuid = auth_policy_template.policy_uuid
+LEFT JOIN auth_acl_template ON auth_policy_template.template_id = auth_acl_template.id
+WHERE auth_policy.uuid = %s
+GROUP BY auth_policy.uuid, auth_policy.name, auth_policy.description;
+"""
+    _RETURNED_COLUMNS = ['uuid', 'name', 'description', 'acl_templates']
 
-    def create(self, name, description):
+    def create(self, name, description, acl_templates):
         with self.connection().cursor() as curs:
+            template_ids = self._create_or_find_acl_templates(curs, acl_templates)
             try:
                 curs.execute(self._INSERT_POLICY_QRY, (name, description))
             except psycopg2.IntegrityError as e:
@@ -90,6 +104,9 @@ RETURNING uuid
                     raise DuplicatePolicyException(name)
                 raise
             uuid = curs.fetchone()[0]
+            if template_ids:
+                values = ', '.join(curs.mogrify("(%s,%s)", (uuid, id_)) for id_ in template_ids)
+                curs.execute(self._INSERT_POLICY_TEMPLATE_QRY + values)
         return uuid
 
     def delete(self, policy_uuid):
@@ -106,7 +123,30 @@ RETURNING uuid
         if not row:
             raise UnknownPolicyException()
 
-        return self.row_to_dict(self._RETURNED_COLUMNS, row)
+        policy = self.row_to_dict(self._RETURNED_COLUMNS, row)
+
+        # The array_agg function returns [None] if there no acl_template
+        if policy['acl_templates'] == [None]:
+            policy['acl_templates'] = []
+
+        return policy
+
+    def _create_or_find_acl_templates(self, curs, acl_templates):
+        if not acl_templates:
+            return []
+
+        curs.execute(self._SELECT_TEMPLATE_QRY, (tuple(acl_templates),))
+        existing = {row[1]: row[0] for row in curs.fetchall()}
+        for template in acl_templates:
+            if template in existing:
+                continue
+            id_ = self._insert_acl_template(curs, template)
+            existing[template] = id_
+        return existing.values()
+
+    def _insert_acl_template(self, curs, template):
+        curs.execute(self._INSERT_TEMPLATE_QRY, (template,))
+        return curs.fetchone()[0]
 
 
 class _TokenCRUD(_CRUD):

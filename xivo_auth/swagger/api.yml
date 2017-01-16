@@ -39,7 +39,7 @@ paths:
       description: '**Required ACL:** `auth.policy.create`
 
         Create a new ACL policy set that can be associated to a user, an administrator, a service or a backend.
-        An ACL policy is a list of ACL or ACL patterns that is used to create a token'
+        An ACL policy is a list of ACL or ACL templates that is used to create a token'
       operationId: createPolicy
       tags:
         - policy
@@ -55,6 +55,10 @@ paths:
               type: string
             description:
               type: string
+            acl_templates:
+              type: array
+              items:
+                type: string
           required:
             - name
       responses:
@@ -230,7 +234,7 @@ definitions:
             type: string
           description:
             type: string
-          acls:
+          acl_templates:
             type: array
             items:
               type: string
