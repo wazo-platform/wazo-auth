@@ -55,7 +55,7 @@ class TestPolicyCRUD(unittest.TestCase):
     def test_create(self):
         acl_templates = ['dird.#', 'confd.line.42.*']
         with self._new_policy('testé', 'descriptioñ', acl_templates) as uuid_:
-            policy = self._crud.get(uuid_)
+            policy = self.get_policy(uuid_)
 
             assert_that(policy['uuid'], equal_to(uuid_))
             assert_that(policy['name'], equal_to('testé'))
@@ -71,7 +71,7 @@ class TestPolicyCRUD(unittest.TestCase):
 
     def test_get(self):
         with self._new_policy('foobar', '') as uuid_:
-            policy = self._crud.get(uuid_)
+            policy = self.get_policy(uuid_)
             assert_that(policy['uuid'], equal_to(uuid_))
             assert_that(policy['name'], equal_to('foobar'))
             assert_that(policy['description'], equal_to(''))
@@ -88,6 +88,10 @@ class TestPolicyCRUD(unittest.TestCase):
         assert_that(
             calling(self._crud.delete).with_args(uuid_),
             raises(exceptions.UnknownPolicyException))
+
+    def get_policy(self, policy_uuid):
+        for policy in self._crud.get(policy_uuid):
+            return policy
 
     @contextmanager
     def _new_policy(self, name, description, acl_templates=None):

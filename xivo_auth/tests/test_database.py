@@ -32,11 +32,11 @@ class TestStorage(unittest.TestCase):
         self.storage = Storage(self.policy_crud, self.token_crud)
 
     def test_get_policy(self):
+        self.policy_crud.get.return_value = [s.expected]
+
         result = self.storage.get_policy(s.policy_uuid)
 
-        expected = self.policy_crud.get.return_value
-
-        assert_that(result, equal_to(expected))
+        assert_that(result, equal_to(s.expected))
         self.policy_crud.get.assert_called_once_with(s.policy_uuid)
 
     def test_get_token(self):
@@ -78,6 +78,12 @@ class TestStorage(unittest.TestCase):
         self.storage.delete_policy(s.token_uuid)
 
         self.policy_crud.delete.assert_called_once_with(s.token_uuid)
+
+    def test_list_policies(self):
+        result = self.storage.list_policies()
+
+        self.policy_crud.get.assert_called_once_with('%')
+        assert_that(result, equal_to(self.policy_crud.get.return_value))
 
     def test_remove_token(self):
         self.storage.remove_token(s.token_uuid)

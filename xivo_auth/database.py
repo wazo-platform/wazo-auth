@@ -29,7 +29,8 @@ class Storage(object):
         self._token_crud = token_crud
 
     def get_policy(self, policy_uuid):
-        return self._policy_crud.get(policy_uuid)
+        for policy in self._policy_crud.get(policy_uuid):
+            return policy
 
     def get_token(self, token_id):
         token_data = self._token_crud.get(token_id)
@@ -49,6 +50,9 @@ class Storage(object):
 
     def delete_policy(self, policy_uuid):
         self._policy_crud.delete(policy_uuid)
+
+    def list_policies(self):
+        return self._policy_crud.get('%')
 
     def remove_token(self, token_id):
         self._token_crud.delete(token_id)
@@ -95,7 +99,7 @@ SELECT auth_policy.uuid,
 FROM auth_policy
 LEFT JOIN auth_policy_template ON auth_policy.uuid = auth_policy_template.policy_uuid
 LEFT JOIN auth_acl_template ON auth_policy_template.template_id = auth_acl_template.id
-WHERE auth_policy.uuid = %s
+WHERE auth_policy.uuid LIKE %s
 GROUP BY auth_policy.uuid, auth_policy.name, auth_policy.description;
 """
     _RETURNED_COLUMNS = ['uuid', 'name', 'description', 'acl_templates']
@@ -124,18 +128,22 @@ GROUP BY auth_policy.uuid, auth_policy.name, auth_policy.description;
     def get(self, policy_uuid):
         with self.connection().cursor() as curs:
             curs.execute(self._SELECT_POLICY_QRY, (policy_uuid,))
-            row = curs.fetchone()
+            rows = curs.fetchall()
 
-        if not row:
+        if not rows:
             raise UnknownPolicyException()
 
-        policy = self.row_to_dict(self._RETURNED_COLUMNS, row)
+        policies = []
+        for row in rows:
+            policy = self.row_to_dict(self._RETURNED_COLUMNS, row)
 
-        # The array_agg function returns [None] if there no acl_template
-        if policy['acl_templates'] == [None]:
-            policy['acl_templates'] = []
+            # The array_agg function returns [None] if there no acl_template
+            if policy['acl_templates'] == [None]:
+                policy['acl_templates'] = []
 
-        return policy
+            policies.append(policy)
+
+        return policies
 
     def _create_or_find_acl_templates(self, curs, acl_templates):
         if not acl_templates:

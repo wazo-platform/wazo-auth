@@ -28,6 +28,27 @@ securityDefinitions:
     in: header
 paths:
   /policies:
+    get:
+      security:
+        - xivo_auth_token: []
+      produces:
+        - application/json
+      summary: List ACL policies
+      description: '**Required ACL:** `auth.policies.*.read`'
+      operationId: listPolicies
+      tags:
+        - policies
+      responses:
+        '200':
+          description: A list of policies
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Policy'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
     post:
       security:
         - xivo_auth_token: []
