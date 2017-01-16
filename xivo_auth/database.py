@@ -47,6 +47,9 @@ class Storage(object):
         token_uuid = self._token_crud.create(token_data)
         return Token(token_uuid, **token_data)
 
+    def delete_policy(self, policy_uuid):
+        self._policy_crud.delete(policy_uuid)
+
     def remove_token(self, token_id):
         self._token_crud.delete(token_id)
 

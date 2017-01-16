@@ -76,6 +76,15 @@ class Policy(Resource):
             return _error(e.code, str(e))
         return policy, 200
 
+    @required_acl('auth.policies.{policy_uuid}.delete')
+    def delete(self, policy_uuid):
+        policy_manager = current_app.config['policy_manager']
+        try:
+            policy_manager.delete(policy_uuid)
+        except ManagerException as e:
+            return _error(e.code, str(e))
+        return 204
+
 
 class Tokens(Resource):
 

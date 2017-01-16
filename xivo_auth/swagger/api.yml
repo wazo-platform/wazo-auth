@@ -105,6 +105,35 @@ paths:
           description: System related error
           schema:
             $ref: '#/definitions/Error'
+    delete:
+      operationId: delete_policy
+      tags:
+        - policies
+      security:
+      - xivo_auth_token: []
+      description: '**Required ACL**: `auth.policies.{policy_uuid}.delete`'
+      parameters:
+      - name: policy_uuid
+        in: path
+        type: string
+        description: The UUID of the policy
+        required: true
+      summary: Delete a policy
+      responses:
+        '204':
+          description: The policy has been removed
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Policy not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: System related error
+          schema:
+            $ref: '#/definitions/Error'
   /token:
     post:
       consumes:

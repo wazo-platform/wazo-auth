@@ -18,7 +18,7 @@
 import unittest
 
 from hamcrest import assert_that, calling, equal_to, raises
-from mock import ANY, Mock
+from mock import ANY, Mock, sentinel as s
 
 from ..database import Storage
 from ..exceptions import InvalidInputException
@@ -104,3 +104,8 @@ class TestPolicyManager(unittest.TestCase):
                     'name': name,
                     'acl_templates': template
                 }), raises(InvalidInputException))
+
+        def test_delete(selt):
+            self.manager.delete(s.policy_uuid)
+
+            self.storage.delete_policy.assert_called_once_with(s.policy_uuid)

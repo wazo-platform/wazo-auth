@@ -74,6 +74,11 @@ class TestStorage(unittest.TestCase):
         assert_that(result, equal_to(expected_token))
         self.token_crud.assert_created_with(token_data)
 
+    def test_delete_policy(self):
+        self.storage.delete_policy(s.token_uuid)
+
+        self.policy_crud.delete.assert_called_once_with(s.token_uuid)
+
     def test_remove_token(self):
         self.storage.remove_token(s.token_uuid)
 

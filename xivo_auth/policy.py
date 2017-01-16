@@ -39,6 +39,9 @@ class Manager(object):
                 'description': description,
                 'acl_templates': acl_templates}
 
+    def delete(self, policy_uuid):
+        return self._storage.delete_policy(policy_uuid)
+
     def get(self, policy_uuid):
         return self._storage.get_policy(policy_uuid)
 
