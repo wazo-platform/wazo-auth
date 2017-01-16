@@ -100,7 +100,8 @@ FROM auth_policy
 LEFT JOIN auth_policy_template ON auth_policy.uuid = auth_policy_template.policy_uuid
 LEFT JOIN auth_acl_template ON auth_policy_template.template_id = auth_acl_template.id
 WHERE auth_policy.uuid LIKE %s
-GROUP BY auth_policy.uuid, auth_policy.name, auth_policy.description;
+GROUP BY auth_policy.uuid, auth_policy.name, auth_policy.description
+ORDER BY auth_policy.name ASC
 """
     _RETURNED_COLUMNS = ['uuid', 'name', 'description', 'acl_templates']
 
