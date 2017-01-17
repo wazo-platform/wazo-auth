@@ -38,6 +38,12 @@ paths:
       operationId: listPolicies
       tags:
         - policies
+      parameters:
+      - $ref: '#/parameters/order'
+      - $ref: '#/parameters/direction'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
+      - $ref: '#/parameters/search'
       responses:
         '200':
           description: A list of policies
@@ -295,6 +301,42 @@ paths:
           description: The list of activated backends
           schema:
             $ref: '#/definitions/BackendList'
+parameters:
+  direction:
+    required: false
+    name: direction
+    in: query
+    type: string
+    enum:
+    - asc
+    - desc
+    description: Sort list of items in 'asc' (ascending) or 'desc' (descending) order
+  limit:
+    name: limit
+    in: query
+    type: integer
+    description: The limit defines the number of individual objects that are returned
+    required: false
+  offset:
+    name: offset
+    in: query
+    type: integer
+    description: The offset defines the offsets the start by the number specified
+    default: 0
+    required: false
+  order:
+    required: false
+    name: order
+    in: query
+    type: string
+    description: Name of the field to use for sorting the list of items returned.
+  search:
+    required: false
+    name: search
+    in: query
+    type: string
+    description: Search term for filtering a list of items. Only items with a field
+      containing the search term will be returned.
 definitions:
   BackendList:
     type: object
