@@ -56,8 +56,13 @@ class Storage(object):
     def delete_policy(self, policy_uuid):
         self._policy_crud.delete(policy_uuid)
 
-    def list_policies(self, order, direction, limit, offset):
-        return self._policy_crud.get('%', order, direction, limit, offset)
+    def list_policies(self, term, order, direction, limit, offset):
+        if term:
+            words = [w for w in term.split(' ') if w]
+            search_pattern = '%{}%'.format('%'.join(words))
+        else:
+            search_pattern = '%'
+        return self._policy_crud.get(search_pattern, order, direction, limit, offset)
 
     def remove_token(self, token_id):
         self._token_crud.delete(token_id)
@@ -112,7 +117,9 @@ SELECT auth_policy.uuid,
 FROM auth_policy
 LEFT JOIN auth_policy_template ON auth_policy.uuid = auth_policy_template.policy_uuid
 LEFT JOIN auth_acl_template ON auth_policy_template.template_id = auth_acl_template.id
-WHERE auth_policy.uuid LIKE %s
+WHERE auth_policy.uuid ILIKE %s
+      OR auth_policy.name ILIKE %s
+      OR auth_policy.description ILIKE %s
 GROUP BY auth_policy.uuid, auth_policy.name, auth_policy.description
 ORDER BY auth_policy.{} {}
 LIMIT {} OFFSET {}
@@ -128,11 +135,11 @@ LIMIT {} OFFSET {}
                 if e.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                     raise DuplicatePolicyException(name)
                 raise
-            uuid = curs.fetchone()[0]
+            policy_uuid = curs.fetchone()[0]
             if template_ids:
-                values = ', '.join(curs.mogrify("(%s,%s)", (uuid, id_)) for id_ in template_ids)
+                values = ', '.join(curs.mogrify("(%s,%s)", (policy_uuid, id_)) for id_ in template_ids)
                 curs.execute(self._INSERT_POLICY_TEMPLATE_QRY + values)
-        return uuid
+        return policy_uuid
 
     def delete(self, policy_uuid):
         with self.connection().cursor() as curs:
@@ -140,7 +147,7 @@ LIMIT {} OFFSET {}
             if curs.rowcount == 0:
                 raise UnknownPolicyException()
 
-    def get(self, policy_uuid, order, direction, limit, offset):
+    def get(self, search_pattern, order, direction, limit, offset):
         if order not in ['name', 'description', 'uuid']:
             raise InvalidSortColumnException(order)
 
@@ -154,7 +161,7 @@ LIMIT {} OFFSET {}
             order, direction.upper(), limit, offset)
 
         with self.connection().cursor() as curs:
-            curs.execute(query, (policy_uuid,))
+            curs.execute(query, (search_pattern, search_pattern, search_pattern))
             rows = curs.fetchall()
 
         policies = []

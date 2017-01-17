@@ -70,10 +70,11 @@ class Policies(Resource):
         direction = request.args.get('direction', 'asc')
         limit = request.args.get('limit')
         offset = request.args.get('offset')
+        term = request.args.get('search')
 
         policy_manager = current_app.config['policy_manager']
         try:
-            policies = policy_manager.list(order, direction, limit, offset)
+            policies = policy_manager.list(term, order, direction, limit, offset)
         except ManagerException as e:
             return _error(e.code, str(e))
         return policies, 200
