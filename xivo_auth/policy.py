@@ -24,13 +24,7 @@ class Manager(object):
         self._storage = storage
 
     def create(self, body):
-        name = body.get('name')
-        description = body.get('description', '')
-        acl_templates = body.get('acl_templates', [])
-
-        self._validate_name(name)
-        self._validate_description(description)
-        self._validate_acl_templates(acl_templates)
+        name, description, acl_templates = self._extract_body(body)
 
         uuid = self._storage.create_policy(name, description, acl_templates)
 
@@ -47,6 +41,29 @@ class Manager(object):
 
     def list(self, term, order, direction, limit, offset):
         return self._storage.list_policies(term, order, direction, limit, offset)
+
+    def update(self, policy_uuid, body):
+        name, description, acl_templates = self._extract_body(body)
+
+        self._storage.update_policy(policy_uuid, name, description, acl_templates)
+
+        return {
+            'uuid': policy_uuid,
+            'name': name,
+            'description': description,
+            'acl_templates': acl_templates,
+        }
+
+    def _extract_body(self, body):
+        name = body.get('name')
+        description = body.get('description', '')
+        acl_templates = body.get('acl_templates', [])
+
+        self._validate_name(name)
+        self._validate_description(description)
+        self._validate_acl_templates(acl_templates)
+
+        return name, description, acl_templates
 
     def _validate_name(self, name):
         if not name or not self._is_str(name):

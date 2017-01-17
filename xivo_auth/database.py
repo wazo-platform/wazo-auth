@@ -64,6 +64,9 @@ class Storage(object):
             search_pattern = '%'
         return self._policy_crud.get(search_pattern, order, direction, limit, offset)
 
+    def update_policy(self, policy_uuid, name, description, acl_templates):
+        self._policy_crud.update(policy_uuid, name, description, acl_templates)
+
     def remove_token(self, token_id):
         self._token_crud.delete(token_id)
 
@@ -101,6 +104,7 @@ class _CRUD(object):
 class _PolicyCRUD(_CRUD):
 
     _DELETE_POLICY_QRY = "DELETE FROM auth_policy WHERE uuid=%s"
+    _DISSOCIATE_POLICY_ACL_TEMPLATE = "DELETE FROM auth_policy_template WHERE policy_uuid=%s"
     _INSERT_TEMPLATE_QRY = "INSERT INTO auth_acl_template (template) VALUES (%s) RETURNING id"
     _INSERT_POLICY_TEMPLATE_QRY = "INSERT INTO auth_policy_template (policy_uuid, template_id) VALUES "
     _INSERT_POLICY_QRY = """\
@@ -108,6 +112,7 @@ INSERT INTO auth_policy (name, description)
 VALUES (%s, %s)
 RETURNING uuid
 """
+    _UPDATE_POLICY_QRY = "UPDATE auth_policy SET name=%s, description=%s WHERE uuid=%s"
     _SELECT_TEMPLATE_QRY = "SELECT id, template FROM auth_acl_template WHERE template in %s"
     _SELECT_POLICY_QRY = """\
 SELECT auth_policy.uuid,
@@ -128,7 +133,6 @@ LIMIT {} OFFSET {}
 
     def create(self, name, description, acl_templates):
         with self.connection().cursor() as curs:
-            template_ids = self._create_or_find_acl_templates(curs, acl_templates)
             try:
                 curs.execute(self._INSERT_POLICY_QRY, (name, description))
             except psycopg2.IntegrityError as e:
@@ -136,9 +140,7 @@ LIMIT {} OFFSET {}
                     raise DuplicatePolicyException(name)
                 raise
             policy_uuid = curs.fetchone()[0]
-            if template_ids:
-                values = ', '.join(curs.mogrify("(%s,%s)", (policy_uuid, id_)) for id_ in template_ids)
-                curs.execute(self._INSERT_POLICY_TEMPLATE_QRY + values)
+            self._associate_acl_templates(curs, policy_uuid, acl_templates)
         return policy_uuid
 
     def delete(self, policy_uuid):
@@ -176,6 +178,27 @@ LIMIT {} OFFSET {}
 
         return policies
 
+    def update(self, policy_uuid, name, description, acl_templates):
+        with self.connection().cursor() as curs:
+            try:
+                curs.execute(self._UPDATE_POLICY_QRY, (name, description, policy_uuid))
+            except psycopg2.IntegrityError as e:
+                if e.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                    raise DuplicatePolicyException(name)
+                raise
+
+            if curs.rowcount == 0:
+                raise UnknownPolicyException()
+
+            self._dissociate_all_acl_templates(curs, policy_uuid)
+            self._associate_acl_templates(curs, policy_uuid, acl_templates)
+
+    def _associate_acl_templates(self, curs, policy_uuid, acl_templates):
+        template_ids = self._create_or_find_acl_templates(curs, acl_templates)
+        if template_ids:
+            values = ', '.join(curs.mogrify("(%s,%s)", (policy_uuid, id_)) for id_ in template_ids)
+            curs.execute(self._INSERT_POLICY_TEMPLATE_QRY + values)
+
     def _check_valid_limit_or_offset(self, value, default, exc):
         if value is True or value is False:
             raise exc(value)
@@ -205,6 +228,9 @@ LIMIT {} OFFSET {}
             id_ = self._insert_acl_template(curs, template)
             existing[template] = id_
         return existing.values()
+
+    def _dissociate_all_acl_templates(self, curs, policy_uuid):
+        curs.execute(self._DISSOCIATE_POLICY_ACL_TEMPLATE, (policy_uuid,))
 
     def _insert_acl_template(self, curs, template):
         curs.execute(self._INSERT_TEMPLATE_QRY, (template,))

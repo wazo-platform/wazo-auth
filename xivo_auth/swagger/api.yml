@@ -161,6 +161,54 @@ paths:
           description: System related error
           schema:
             $ref: '#/definitions/Error'
+    put:
+      security:
+        - xivo_auth_token: []
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Modify an ACL policy
+      description: '**Required ACL:** `auth.policies.{policy_uuid}.edit`'
+      operationId: editPolicies
+      tags:
+        - policies
+      parameters:
+      - name: policy_uuid
+        in: path
+        type: string
+        description: The UUID of the policy
+        required: true
+      - name: body
+        in: body
+        description: The policy edition parameters
+        required: true
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+            acl_templates:
+              type: array
+              items:
+                type: string
+          required:
+            - name
+      responses:
+        '200':
+          description: The modified policy's data
+          schema:
+            $ref: '#/definitions/Policy'
+        '401':
+          description: Invalid data has been supplied'
+          schema:
+            $ref: '#/definitions/Error'
+        '409':
+          description: Duplicate Policy
+          schema:
+            $ref: '#/definitions/Error'
   /token:
     post:
       consumes:

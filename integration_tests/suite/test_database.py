@@ -134,6 +134,26 @@ class TestPolicyCRUD(unittest.TestCase):
             calling(self._crud.delete).with_args(uuid_),
             raises(exceptions.UnknownPolicyException))
 
+    def test_update(self):
+        assert_that(
+            calling(self._crud.update).with_args('unknown', 'foo', '', []),
+            raises(exceptions.UnknownPolicyException))
+
+        with self._new_policy('foobar',
+                              'This is the description',
+                              ['confd.line.{{ line_id }}', 'dird.#']) as uuid_:
+            self._crud.update(
+                uuid_, 'foobaz', 'A new description',
+                ['confd.line.{{ line_id }}', 'dird.#', 'ctid-ng.#'])
+            policy = self.get_policy(uuid_)
+
+            assert_that(policy['uuid'], equal_to(uuid_))
+            assert_that(policy['name'], equal_to('foobaz'))
+            assert_that(policy['description'], equal_to('A new description'))
+            assert_that(
+                policy['acl_templates'],
+                contains_inanyorder('confd.line.{{ line_id }}', 'dird.#', 'ctid-ng.#'))
+
     def get_policy(self, policy_uuid):
         for policy in self._crud.get(policy_uuid, 'name', 'asc', None, None):
             return policy

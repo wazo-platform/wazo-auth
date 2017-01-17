@@ -100,6 +100,16 @@ class Policy(Resource):
             return _error(e.code, str(e))
         return 204
 
+    @required_acl('auth.policies.{policy_uuid}.edit')
+    def put(self, policy_uuid):
+        data = request.get_json()
+        policy_manager = current_app.config['policy_manager']
+        try:
+            policy = policy_manager.update(policy_uuid, data)
+        except ManagerException as e:
+            return _error(e.code, str(e))
+        return policy, 200
+
 
 class Tokens(Resource):
 
