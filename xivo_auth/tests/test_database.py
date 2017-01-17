@@ -18,7 +18,7 @@
 import unittest
 
 from hamcrest import assert_that, calling, equal_to, raises
-from mock import Mock, sentinel as s
+from mock import ANY, Mock, sentinel as s
 
 from ..database import Storage, _PolicyCRUD
 from ..token import Token, TokenPayload, UnknownTokenException
@@ -37,7 +37,7 @@ class TestStorage(unittest.TestCase):
         result = self.storage.get_policy(s.policy_uuid)
 
         assert_that(result, equal_to(s.expected))
-        self.policy_crud.get.assert_called_once_with(s.policy_uuid)
+        self.policy_crud.get.assert_called_once_with(s.policy_uuid, ANY, ANY, None, None)
 
     def test_get_token(self):
         result = self.storage.get_token(s.token_id)
@@ -80,9 +80,9 @@ class TestStorage(unittest.TestCase):
         self.policy_crud.delete.assert_called_once_with(s.token_uuid)
 
     def test_list_policies(self):
-        result = self.storage.list_policies()
+        result = self.storage.list_policies(s.order, s.direction, s.limit, s.offset)
 
-        self.policy_crud.get.assert_called_once_with('%')
+        self.policy_crud.get.assert_called_once_with('%', s.order, s.direction, s.limit, s.offset)
         assert_that(result, equal_to(self.policy_crud.get.return_value))
 
     def test_remove_token(self):

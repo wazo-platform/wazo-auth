@@ -34,6 +34,30 @@ class InvalidInputException(ManagerException):
         return 'Invalid value supplied for field: {}'.format(self._field)
 
 
+class InvalidLimitException(ManagerException):
+
+    code = 400
+
+    def __init__(self, limit):
+        super(InvalidLimitException, self).__init__()
+        self._limit = limit
+
+    def __str__(self):
+        return 'Invalid limit: {}'.format(self._limit)
+
+
+class InvalidOffsetException(ManagerException):
+
+    code = 400
+
+    def __init__(self, offset):
+        super(InvalidOffsetException, self).__init__()
+        self._offset = offset
+
+    def __str__(self):
+        return 'Invalid offset: {}'.format(self._offset)
+
+
 class InvalidSortColumnException(ManagerException):
 
     code = 400

@@ -15,11 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>
 
+import uuid
 from itertools import izip
 from threading import Lock
 import psycopg2
 from .token import Token, UnknownTokenException
-from .exceptions import (DuplicatePolicyException, InvalidSortColumnException,
+from .exceptions import (DuplicatePolicyException, InvalidLimitException,
+                         InvalidOffsetException, InvalidSortColumnException,
                          InvalidSortDirectionException, UnknownPolicyException)
 
 
@@ -30,8 +32,9 @@ class Storage(object):
         self._token_crud = token_crud
 
     def get_policy(self, policy_uuid):
-        for policy in self._policy_crud.get(policy_uuid):
-            return policy
+        if self._is_uuid(policy_uuid):
+            for policy in self._policy_crud.get(policy_uuid, 'name', 'asc', None, None):
+                return policy
         raise UnknownPolicyException()
 
     def get_token(self, token_id):
@@ -58,6 +61,14 @@ class Storage(object):
 
     def remove_token(self, token_id):
         self._token_crud.delete(token_id)
+
+    @staticmethod
+    def _is_uuid(value):
+        try:
+            uuid.UUID(value)
+            return True
+        except (ValueError, TypeError):
+            return False
 
     @classmethod
     def from_config(cls, config):
@@ -104,6 +115,7 @@ LEFT JOIN auth_acl_template ON auth_policy_template.template_id = auth_acl_templ
 WHERE auth_policy.uuid LIKE %s
 GROUP BY auth_policy.uuid, auth_policy.name, auth_policy.description
 ORDER BY auth_policy.{} {}
+LIMIT {} OFFSET {}
 """
     _RETURNED_COLUMNS = ['uuid', 'name', 'description', 'acl_templates']
 
@@ -135,7 +147,11 @@ ORDER BY auth_policy.{} {}
         if direction not in ['asc', 'desc']:
             raise InvalidSortDirectionException(direction)
 
-        query = self._SELECT_POLICY_QRY.format(order, direction.upper())
+        offset = self._check_valid_limit_or_offset(offset, 0, InvalidOffsetException)
+        limit = self._check_valid_limit_or_offset(limit, 'ALL', InvalidLimitException)
+
+        query = self._SELECT_POLICY_QRY.format(
+            order, direction.upper(), limit, offset)
 
         with self.connection().cursor() as curs:
             curs.execute(query, (policy_uuid,))
@@ -152,6 +168,23 @@ ORDER BY auth_policy.{} {}
             policies.append(policy)
 
         return policies
+
+    def _check_valid_limit_or_offset(self, value, default, exc):
+        if value is True or value is False:
+            raise exc(value)
+
+        if value is None:
+            return default
+
+        try:
+            value = int(value)
+        except ValueError:
+            raise exc(value)
+
+        if value < 0:
+            raise exc(value)
+
+        return value
 
     def _create_or_find_acl_templates(self, curs, acl_templates):
         if not acl_templates:

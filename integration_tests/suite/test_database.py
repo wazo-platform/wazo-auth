@@ -81,7 +81,7 @@ class TestPolicyCRUD(unittest.TestCase):
         result = self._crud.get(unknown_uuid, 'name', 'asc', None, None)
         assert_that(result, empty())
 
-    def test_get_sort(self):
+    def test_get_sort_and_pagination(self):
         with nested(
             self._new_policy('a', 'z'),
             self._new_policy('b', 'y'),
@@ -105,7 +105,27 @@ class TestPolicyCRUD(unittest.TestCase):
 
             assert_that(
                 calling(self.list_policy).with_args(order='name', direction='down'),
-                raises(exceptions.InvalidSortOrderException))
+                raises(exceptions.InvalidSortDirectionException))
+
+            result = self.list_policy(order='name', direction='asc', limit=2)
+            assert_that(result, contains(a, b))
+
+            result = self.list_policy(order='name', direction='asc', offset=1)
+            assert_that(result, contains(b, c))
+
+            invalid_offsets = [-1, 'two', True, False]
+            for offset in invalid_offsets:
+                assert_that(
+                    calling(self.list_policy).with_args(order='name', direction='asc', offset=offset),
+                    raises(exceptions.InvalidOffsetException),
+                    offset)
+
+            invalid_limits = [-1, 'two', True, False]
+            for limit in invalid_limits:
+                assert_that(
+                    calling(self.list_policy).with_args(order='name', direction='asc', limit=limit),
+                    raises(exceptions.InvalidLimitException),
+                    limit)
 
     def test_delete(self):
         uuid_ = self._crud.create('foobar', '', [])
@@ -118,8 +138,8 @@ class TestPolicyCRUD(unittest.TestCase):
         for policy in self._crud.get(policy_uuid, 'name', 'asc', None, None):
             return policy
 
-    def list_policy(self, order=None, direction=None):
-        policies = self._crud.get('%', order, direction, None, None)
+    def list_policy(self, order=None, direction=None, limit=None, offset=None):
+        policies = self._crud.get('%', order, direction, limit, offset)
         return [policy['uuid'] for policy in policies]
 
     @contextmanager
