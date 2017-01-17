@@ -34,6 +34,30 @@ class InvalidInputException(ManagerException):
         return 'Invalid value supplied for field: {}'.format(self._field)
 
 
+class InvalidSortColumnException(ManagerException):
+
+    code = 400
+
+    def __init__(self, field):
+        super(InvalidSortColumnException, self).__init__()
+        self._field = field
+
+    def __str__(self):
+        return 'Invalid sort column: {}'.format(self._field)
+
+
+class InvalidSortDirectionException(ManagerException):
+
+    code = 400
+
+    def __init__(self, direction):
+        super(InvalidSortDirectionException, self).__init__()
+        self._direction = direction
+
+    def __str__(self):
+        return 'Invalid sort direction: {}'.format(self._direction)
+
+
 class DuplicatePolicyException(ManagerException):
 
     code = 409

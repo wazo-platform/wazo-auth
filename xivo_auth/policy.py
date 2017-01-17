@@ -45,8 +45,8 @@ class Manager(object):
     def get(self, policy_uuid):
         return self._storage.get_policy(policy_uuid)
 
-    def list(self):
-        return self._storage.list_policies()
+    def list(self, order, direction, limit, offset):
+        return self._storage.list_policies(order, direction, limit, offset)
 
     def _validate_name(self, name):
         if not name or not self._is_str(name):

@@ -19,7 +19,8 @@ from itertools import izip
 from threading import Lock
 import psycopg2
 from .token import Token, UnknownTokenException
-from .exceptions import DuplicatePolicyException, UnknownPolicyException
+from .exceptions import (DuplicatePolicyException, InvalidSortColumnException,
+                         InvalidSortDirectionException, UnknownPolicyException)
 
 
 class Storage(object):
@@ -31,6 +32,7 @@ class Storage(object):
     def get_policy(self, policy_uuid):
         for policy in self._policy_crud.get(policy_uuid):
             return policy
+        raise UnknownPolicyException()
 
     def get_token(self, token_id):
         token_data = self._token_crud.get(token_id)
@@ -51,8 +53,8 @@ class Storage(object):
     def delete_policy(self, policy_uuid):
         self._policy_crud.delete(policy_uuid)
 
-    def list_policies(self):
-        return self._policy_crud.get('%')
+    def list_policies(self, order, direction, limit, offset):
+        return self._policy_crud.get('%', order, direction, limit, offset)
 
     def remove_token(self, token_id):
         self._token_crud.delete(token_id)
@@ -101,7 +103,7 @@ LEFT JOIN auth_policy_template ON auth_policy.uuid = auth_policy_template.policy
 LEFT JOIN auth_acl_template ON auth_policy_template.template_id = auth_acl_template.id
 WHERE auth_policy.uuid LIKE %s
 GROUP BY auth_policy.uuid, auth_policy.name, auth_policy.description
-ORDER BY auth_policy.name ASC
+ORDER BY auth_policy.{} {}
 """
     _RETURNED_COLUMNS = ['uuid', 'name', 'description', 'acl_templates']
 
@@ -126,13 +128,18 @@ ORDER BY auth_policy.name ASC
             if curs.rowcount == 0:
                 raise UnknownPolicyException()
 
-    def get(self, policy_uuid):
-        with self.connection().cursor() as curs:
-            curs.execute(self._SELECT_POLICY_QRY, (policy_uuid,))
-            rows = curs.fetchall()
+    def get(self, policy_uuid, order, direction, limit, offset):
+        if order not in ['name', 'description', 'uuid']:
+            raise InvalidSortColumnException(order)
 
-        if not rows:
-            raise UnknownPolicyException()
+        if direction not in ['asc', 'desc']:
+            raise InvalidSortDirectionException(direction)
+
+        query = self._SELECT_POLICY_QRY.format(order, direction.upper())
+
+        with self.connection().cursor() as curs:
+            curs.execute(query, (policy_uuid,))
+            rows = curs.fetchall()
 
         policies = []
         for row in rows:

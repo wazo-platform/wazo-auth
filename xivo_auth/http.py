@@ -66,9 +66,14 @@ class Policies(Resource):
 
     @required_acl('auth.policies.*.read')
     def get(self):
+        order = request.args.get('order', 'name')
+        direction = request.args.get('direction', 'asc')
+        limit = request.args.get('limit')
+        offset = request.args.get('offset')
+
         policy_manager = current_app.config['policy_manager']
         try:
-            policies = policy_manager.list()
+            policies = policy_manager.list(order, direction, limit, offset)
         except ManagerException as e:
             return _error(e.code, str(e))
         return policies, 200

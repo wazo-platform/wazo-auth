@@ -21,7 +21,7 @@ import unittest
 import uuid
 
 from contextlib import contextmanager, nested
-from hamcrest import assert_that, calling, contains_inanyorder, equal_to, empty, raises
+from hamcrest import assert_that, calling, contains, contains_inanyorder, equal_to, empty, raises
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 
 from xivo_auth import database, exceptions
@@ -78,9 +78,34 @@ class TestPolicyCRUD(unittest.TestCase):
             assert_that(policy['acl_templates'], empty())
 
         unknown_uuid = new_uuid()
-        assert_that(
-            calling(self._crud.get).with_args(unknown_uuid),
-            raises(exceptions.UnknownPolicyException))
+        result = self._crud.get(unknown_uuid, 'name', 'asc', None, None)
+        assert_that(result, empty())
+
+    def test_get_sort(self):
+        with nested(
+            self._new_policy('a', 'z'),
+            self._new_policy('b', 'y'),
+            self._new_policy('c', 'x'),
+        ) as (a, b, c):
+            result = self.list_policy(order='name', direction='asc')
+            assert_that(result, contains(a, b, c))
+
+            result = self.list_policy(order='name', direction='desc')
+            assert_that(result, contains(c, b, a))
+
+            result = self.list_policy(order='description', direction='asc')
+            assert_that(result, contains(c, b, a))
+
+            result = self.list_policy(order='description', direction='desc')
+            assert_that(result, contains(a, b, c))
+
+            assert_that(
+                calling(self.list_policy).with_args(order='foobar', direction='asc'),
+                raises(exceptions.InvalidSortColumnException))
+
+            assert_that(
+                calling(self.list_policy).with_args(order='name', direction='down'),
+                raises(exceptions.InvalidSortOrderException))
 
     def test_delete(self):
         uuid_ = self._crud.create('foobar', '', [])
@@ -90,8 +115,12 @@ class TestPolicyCRUD(unittest.TestCase):
             raises(exceptions.UnknownPolicyException))
 
     def get_policy(self, policy_uuid):
-        for policy in self._crud.get(policy_uuid):
+        for policy in self._crud.get(policy_uuid, 'name', 'asc', None, None):
             return policy
+
+    def list_policy(self, order=None, direction=None):
+        policies = self._crud.get('%', order, direction, None, None)
+        return [policy['uuid'] for policy in policies]
 
     @contextmanager
     def _new_policy(self, name, description, acl_templates=None):
