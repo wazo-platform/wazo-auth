@@ -32,12 +32,14 @@ class TestStorage(unittest.TestCase):
         self.storage = Storage(self.policy_crud, self.token_crud)
 
     def test_get_policy(self):
-        self.policy_crud.get.return_value = [s.expected]
+        uuid = 'c1647454-8d30-408a-9507-b2a3a9767a3d'
 
-        result = self.storage.get_policy(s.policy_uuid)
+        self.policy_crud.get.return_value = [uuid]
 
-        assert_that(result, equal_to(s.expected))
-        self.policy_crud.get.assert_called_once_with(s.policy_uuid, ANY, ANY, None, None)
+        result = self.storage.get_policy(uuid)
+
+        assert_that(result, equal_to(uuid))
+        self.policy_crud.get.assert_called_once_with(uuid, ANY, ANY, None, None)
 
     def test_get_token(self):
         result = self.storage.get_token(s.token_id)
