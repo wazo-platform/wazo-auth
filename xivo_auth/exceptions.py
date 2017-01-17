@@ -94,6 +94,18 @@ class DuplicatePolicyException(ManagerException):
         return 'Policy "{}" already exists'.format(self._name)
 
 
+class DuplicateTemplateException(ManagerException):
+
+    code = 409
+
+    def __init__(self, template):
+        super(DuplicateTemplateException, self).__init__()
+        self._template = template
+
+    def __str__(self):
+        return 'Policy already associated to {}'.format(self._template)
+
+
 class UnknownPolicyException(ManagerException):
 
     code = 404

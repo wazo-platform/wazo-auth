@@ -23,6 +23,9 @@ class Manager(object):
     def __init__(self, storage):
         self._storage = storage
 
+    def add_acl_template(self, policy_uuid, acl_template):
+        return self._storage.add_policy_acl_template(policy_uuid, acl_template)
+
     def create(self, body):
         name, description, acl_templates = self._extract_body(body)
 
@@ -35,6 +38,9 @@ class Manager(object):
 
     def delete(self, policy_uuid):
         return self._storage.delete_policy(policy_uuid)
+
+    def delete_acl_template(self, policy_uuid, acl_template):
+        return self._storage.delete_policy_acl_template(policy_uuid, acl_template)
 
     def get(self, policy_uuid):
         return self._storage.get_policy(policy_uuid)

@@ -209,6 +209,57 @@ paths:
           description: Duplicate Policy
           schema:
             $ref: '#/definitions/Error'
+  /policies/{policy_uuid}/acl_templates/{template}:
+    delete:
+      security:
+        - xivo_auth_token: []
+      operationId: deletePolicyACLTemplate
+      tags:
+        - policies
+      description: '**Required ACL:** `auth.policies.{policy_uuid}.edit`'
+      parameters:
+      - name: policy_uuid
+        in: path
+        type: string
+        description: The UUID of the policy
+        required: true
+      - name: template
+        in: path
+        type: string
+        description: The ACL template to removed
+        required: true
+      responses:
+        '204':
+          description: The policy has been modified
+        '404':
+          description: Policy or ACL template not found
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      security:
+        - xivo_auth_token: []
+      operationId: addPolicyACLTemplate
+      tags:
+        - policies
+      description: '**Required ACL:** `auth.policies.{policy_uuid}.edit`'
+      parameters:
+      - name: policy_uuid
+        in: path
+        type: string
+        description: The UUID of the policy
+        required: true
+      - name: template
+        in: path
+        type: string
+        description: The ACL template to add
+        required: true
+      responses:
+        '204':
+          description: The policy has been modified
+        '404':
+          description: Policy not found
+          schema:
+            $ref: '#/definitions/Error'
   /token:
     post:
       consumes:

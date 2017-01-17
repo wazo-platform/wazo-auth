@@ -52,6 +52,27 @@ class TestPolicyCRUD(unittest.TestCase):
     def setUp(self):
         self._crud = database._PolicyCRUD(database._ConnectionFactory(DB_URI))
 
+    def test_template_association(self):
+        assert_that(
+            calling(self._crud.associate_policy_template).with_args('unknown', '#'),
+            raises(exceptions.UnknownPolicyException))
+        assert_that(
+            calling(self._crud.dissociate_policy_template).with_args('unknown', '#'),
+            raises(exceptions.UnknownPolicyException))
+
+        with self._new_policy('testé', 'descriptioñ', []) as uuid_:
+            self._crud.associate_policy_template(uuid_, '#')
+            policy = self.get_policy(uuid_)
+            assert_that(policy['acl_templates'], contains_inanyorder('#'))
+
+            assert_that(
+                calling(self._crud.associate_policy_template).with_args(uuid_, '#'),
+                raises(exceptions.DuplicateTemplateException))
+
+            self._crud.dissociate_policy_template(uuid_, '#')
+            policy = self.get_policy(uuid_)
+            assert_that(policy['acl_templates'], empty())
+
     def test_create(self):
         acl_templates = ['dird.#', 'confd.line.42.*']
         with self._new_policy('testé', 'descriptioñ', acl_templates) as uuid_:

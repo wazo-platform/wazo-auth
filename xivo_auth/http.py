@@ -111,6 +111,27 @@ class Policy(Resource):
         return policy, 200
 
 
+class PolicyTemplate(Resource):
+
+    @required_acl('auth.policies.{policy_uuid}.edit')
+    def delete(self, policy_uuid, template):
+        policy_manager = current_app.config['policy_manager']
+        try:
+            policy_manager.delete_acl_template(policy_uuid, template)
+        except ManagerException as e:
+            return _error(e.code, str(e))
+        return 204
+
+    @required_acl('auth.policies.{policy_uuid}.edit')
+    def put(self, policy_uuid, template):
+        policy_manager = current_app.config['policy_manager']
+        try:
+            policy_manager.add_acl_template(policy_uuid, template)
+        except ManagerException as e:
+            return _error(e.code, str(e))
+        return 204
+
+
 class Tokens(Resource):
 
     def post(self):

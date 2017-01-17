@@ -20,8 +20,9 @@ from itertools import izip
 from threading import Lock
 import psycopg2
 from .token import Token, UnknownTokenException
-from .exceptions import (DuplicatePolicyException, InvalidLimitException,
-                         InvalidOffsetException, InvalidSortColumnException,
+from .exceptions import (DuplicatePolicyException, DuplicateTemplateException,
+                         InvalidLimitException, InvalidOffsetException,
+                         InvalidSortColumnException,
                          InvalidSortDirectionException, UnknownPolicyException)
 
 
@@ -30,6 +31,12 @@ class Storage(object):
     def __init__(self, policy_crud, token_crud):
         self._policy_crud = policy_crud
         self._token_crud = token_crud
+
+    def add_policy_acl_template(self, policy_uuid, acl_template):
+        self._policy_crud.associate_policy_template(policy_uuid, acl_template)
+
+    def delete_policy_acl_template(self, policy_uuid, acl_template):
+        self._policy_crud.dissociate_policy_template(policy_uuid, acl_template)
 
     def get_policy(self, policy_uuid):
         if self._is_uuid(policy_uuid):
@@ -104,7 +111,8 @@ class _CRUD(object):
 class _PolicyCRUD(_CRUD):
 
     _DELETE_POLICY_QRY = "DELETE FROM auth_policy WHERE uuid=%s"
-    _DISSOCIATE_POLICY_ACL_TEMPLATE = "DELETE FROM auth_policy_template WHERE policy_uuid=%s"
+    _DISSOCIATE_POLICY_ACL_TEMPLATE = "DELETE FROM auth_policy_template WHERE policy_uuid=%s AND template_id=%s"
+    _DISSOCIATE_POLICY_ACL_TEMPLATE_ALL = "DELETE FROM auth_policy_template WHERE policy_uuid=%s"
     _INSERT_TEMPLATE_QRY = "INSERT INTO auth_acl_template (template) VALUES (%s) RETURNING id"
     _INSERT_POLICY_TEMPLATE_QRY = "INSERT INTO auth_policy_template (policy_uuid, template_id) VALUES "
     _INSERT_POLICY_QRY = """\
@@ -112,6 +120,7 @@ INSERT INTO auth_policy (name, description)
 VALUES (%s, %s)
 RETURNING uuid
 """
+    _POLICY_EXISTS_QRY = "SELECT count(uuid) from auth_policy WHERE uuid=%s"
     _UPDATE_POLICY_QRY = "UPDATE auth_policy SET name=%s, description=%s WHERE uuid=%s"
     _SELECT_TEMPLATE_QRY = "SELECT id, template FROM auth_acl_template WHERE template in %s"
     _SELECT_POLICY_QRY = """\
@@ -130,6 +139,25 @@ ORDER BY auth_policy.{} {}
 LIMIT {} OFFSET {}
 """
     _RETURNED_COLUMNS = ['uuid', 'name', 'description', 'acl_templates']
+
+    def associate_policy_template(self, policy_uuid, acl_template):
+        with self.connection().cursor() as curs:
+            try:
+                self._associate_acl_templates(curs, policy_uuid, [acl_template])
+            except psycopg2.IntegrityError as e:
+                if e.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                    raise DuplicateTemplateException(acl_template)
+                raise UnknownPolicyException()
+
+    def dissociate_policy_template(self, policy_uuid, acl_template):
+        with self.connection().cursor() as curs:
+            curs.execute(self._POLICY_EXISTS_QRY, (policy_uuid,))
+            if curs.fetchone()[0] == 0:
+                raise UnknownPolicyException()
+
+            template_ids = self._create_or_find_acl_templates(curs, [acl_template])
+            for template_id in template_ids:
+                curs.execute(self._DISSOCIATE_POLICY_ACL_TEMPLATE, (policy_uuid, template_id))
 
     def create(self, name, description, acl_templates):
         with self.connection().cursor() as curs:
@@ -230,7 +258,7 @@ LIMIT {} OFFSET {}
         return existing.values()
 
     def _dissociate_all_acl_templates(self, curs, policy_uuid):
-        curs.execute(self._DISSOCIATE_POLICY_ACL_TEMPLATE, (policy_uuid,))
+        curs.execute(self._DISSOCIATE_POLICY_ACL_TEMPLATE_ALL, (policy_uuid,))
 
     def _insert_acl_template(self, curs, template):
         curs.execute(self._INSERT_TEMPLATE_QRY, (template,))

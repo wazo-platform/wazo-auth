@@ -153,6 +153,7 @@ class Controller(object):
         api = Api(app, prefix='/0.1')
         api.add_resource(http.Policies, '/policies')
         api.add_resource(http.Policy, '/policies/<string:policy_uuid>')
+        api.add_resource(http.PolicyTemplate, '/policies/<string:policy_uuid>/acl_templates/<template>')
         api.add_resource(http.Tokens, '/token')
         api.add_resource(http.Token, '/token/<string:token>')
         api.add_resource(http.Backends, '/backends')
