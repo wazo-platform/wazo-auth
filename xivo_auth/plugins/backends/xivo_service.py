@@ -17,10 +17,11 @@
 
 import logging
 
-from xivo_auth import BaseAuthenticationBackend
-
 from xivo_dao import accesswebservice_dao
 from xivo_dao.helpers.db_utils import session_scope
+
+from xivo_auth import BaseAuthenticationBackend
+from xivo_auth.exceptions import AuthenticationFailedException
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,11 @@ class XiVOService(BaseAuthenticationBackend):
 
     def get_ids(self, login, args):
         with session_scope():
-            auth_id = str(accesswebservice_dao.get_user_uuid(login))
+            try:
+                auth_id = accesswebservice_dao.get_user_uuid(login)
+            except LookupError:
+                raise AuthenticationFailedException()
+
         user_uuid = None
         return auth_id, user_uuid
 
