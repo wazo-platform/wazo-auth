@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,11 +44,12 @@ class TestVerifyPassword(unittest.TestCase):
 
         assert_that(acls, equal_to(['confd.#', 'dird.#']))
 
-    @patch('xivo_auth.plugins.backends.xivo_service.accesswebservice_dao.get_user_id', Mock(return_value=42))
+    @patch('xivo_auth.plugins.backends.xivo_service.accesswebservice_dao.get_user_uuid',
+           Mock(return_value='534ede0d-9395-445a-8541-96b99e7b16a5'))
     def test_that_get_ids_returns_the_id_and_None(self):
         backend = backends.XiVOService({})
 
         auth_id, xivo_user_uuid = backend.get_ids('foo', None)
 
-        assert_that(auth_id, equal_to('42'))
+        assert_that(auth_id, equal_to('534ede0d-9395-445a-8541-96b99e7b16a5'))
         assert_that(xivo_user_uuid, equal_to(None))
