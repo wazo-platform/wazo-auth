@@ -18,9 +18,11 @@
 import unittest
 
 from mock import Mock, patch, sentinel as s
-from hamcrest import assert_that, equal_to, has_item
+from hamcrest import assert_that, calling, equal_to, has_item, raises
 
 from xivo_auth.plugins import backends
+from xivo_auth.exceptions import ManagerException
+from xivo_auth.plugins.backends.xivo_admin import NotFoundError
 
 
 class TestGetACLS(unittest.TestCase):
@@ -74,3 +76,12 @@ class TestVerifyPassword(unittest.TestCase):
 
         assert_that(auth_id, equal_to('5900b8d4-5c38-49f9-b5fc-e0b7057b4c50'))
         assert_that(xivo_user_uuid, equal_to(None))
+
+    @patch('xivo_auth.plugins.backends.xivo_admin.admin_dao.get_admin_uuid',
+           Mock(side_effect=NotFoundError))
+    def test_that_a_manager_error_is_raised_if_username_not_found(self):
+        backend = backends.XiVOAdmin({})
+
+        assert_that(
+            calling(backend.get_ids).with_args('foo', None),
+            raises(ManagerException))

@@ -22,6 +22,15 @@ class ManagerException(Exception):
     pass
 
 
+class AuthenticationFailedException(ManagerException):
+
+    code = 401
+    _msg = 'Authentication Failed'
+
+    def __str__(self):
+        return self._msg
+
+
 class InvalidInputException(ManagerException):
 
     code = 400
