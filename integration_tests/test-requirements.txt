@@ -1,3 +1,4 @@
+docker
 docker-compose
 nose
 pyhamcrest

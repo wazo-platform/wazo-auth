@@ -22,7 +22,7 @@ from collections import namedtuple
 from contextlib import contextmanager
 import ldap
 from ldap.modlist import addModlist
-from docker import Client
+from docker import APIClient
 from hamcrest import assert_that
 from hamcrest import equal_to
 from .test_http_interface import _BaseTestCase
@@ -155,7 +155,7 @@ class _BaseLDAPTestCase(_BaseTestCase):
         if not service_name:
             service_name = cls.service
 
-        with Client(base_url='unix://var/run/docker.sock') as docker:
+        with APIClient(base_url='unix://var/run/docker.sock') as docker:
             result = docker.port(_container_id(service_name), internal_port)
 
         if not result:
