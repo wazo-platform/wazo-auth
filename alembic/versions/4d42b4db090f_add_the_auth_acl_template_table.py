@@ -30,7 +30,7 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_constraint('auth_policy_acl_template_keys')
+    op.drop_constraint('auth_policy_acl_template_keys', 'auth_policy_template')
     op.drop_table('auth_policy_template')
     op.drop_constraint('auth_acl_template_template', 'auth_acl_template')
     op.drop_table('auth_acl_template')
