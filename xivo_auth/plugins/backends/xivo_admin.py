@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ class XiVOAdmin(BaseAuthenticationBackend):
 
     def get_ids(self, username, args):
         with session_scope():
-            auth_id = str(admin_dao.get_admin_id(username))
+            auth_id = admin_dao.get_admin_uuid(username)
         user_uuid = None
         return auth_id, user_uuid
 
