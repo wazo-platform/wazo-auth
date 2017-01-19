@@ -52,16 +52,27 @@ def required_acl(scope):
     return wrap
 
 
-class Policies(Resource):
+def handle_manager_exception(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except ManagerException as error:
+            return _error(error.code, str(error))
+    return wrapper
+
+
+class ErrorCatchingResource(Resource):
+    method_decorators = [handle_manager_exception] + Resource.method_decorators
+
+
+class Policies(ErrorCatchingResource):
 
     @required_acl('auth.policies.create')
     def post(self):
         data = request.get_json()
         policy_manager = current_app.config['policy_manager']
-        try:
-            policy = policy_manager.create(data)
-        except ManagerException as e:
-            return _error(e.code, str(e))
+        policy = policy_manager.create(data)
         return policy, 200
 
     @required_acl('auth.policies.read')
@@ -73,66 +84,48 @@ class Policies(Resource):
         term = request.args.get('search')
 
         policy_manager = current_app.config['policy_manager']
-        try:
-            policies = policy_manager.list(term, order, direction, limit, offset)
-        except ManagerException as e:
-            return _error(e.code, str(e))
+        policies = policy_manager.list(term, order, direction, limit, offset)
         return policies, 200
 
 
-class Policy(Resource):
+class Policy(ErrorCatchingResource):
 
     @required_acl('auth.policies.{policy_uuid}.read')
     def get(self, policy_uuid):
         policy_manager = current_app.config['policy_manager']
-        try:
-            policy = policy_manager.get(policy_uuid)
-        except ManagerException as e:
-            return _error(e.code, str(e))
+        policy = policy_manager.get(policy_uuid)
         return policy, 200
 
     @required_acl('auth.policies.{policy_uuid}.delete')
     def delete(self, policy_uuid):
         policy_manager = current_app.config['policy_manager']
-        try:
-            policy_manager.delete(policy_uuid)
-        except ManagerException as e:
-            return _error(e.code, str(e))
+        policy_manager.delete(policy_uuid)
         return 204
 
     @required_acl('auth.policies.{policy_uuid}.edit')
     def put(self, policy_uuid):
         data = request.get_json()
         policy_manager = current_app.config['policy_manager']
-        try:
-            policy = policy_manager.update(policy_uuid, data)
-        except ManagerException as e:
-            return _error(e.code, str(e))
+        policy = policy_manager.update(policy_uuid, data)
         return policy, 200
 
 
-class PolicyTemplate(Resource):
+class PolicyTemplate(ErrorCatchingResource):
 
     @required_acl('auth.policies.{policy_uuid}.edit')
     def delete(self, policy_uuid, template):
         policy_manager = current_app.config['policy_manager']
-        try:
-            policy_manager.delete_acl_template(policy_uuid, template)
-        except ManagerException as e:
-            return _error(e.code, str(e))
+        policy_manager.delete_acl_template(policy_uuid, template)
         return 204
 
     @required_acl('auth.policies.{policy_uuid}.edit')
     def put(self, policy_uuid, template):
         policy_manager = current_app.config['policy_manager']
-        try:
-            policy_manager.add_acl_template(policy_uuid, template)
-        except ManagerException as e:
-            return _error(e.code, str(e))
+        policy_manager.add_acl_template(policy_uuid, template)
         return 204
 
 
-class Tokens(Resource):
+class Tokens(ErrorCatchingResource):
 
     def post(self):
         if request.authorization:
@@ -157,42 +150,30 @@ class Tokens(Resource):
         backend_name = request.get_json()['backend']
         backend = current_app.config['backends'][backend_name].obj
 
-        try:
-            token = current_app.config['token_manager'].new_token(backend, login, args)
-        except ManagerException as e:
-            return _error(e.code, str(e))
+        token = current_app.config['token_manager'].new_token(backend, login, args)
 
         return {'data': token.to_dict()}, 200
 
 
-class Token(Resource):
+class Token(ErrorCatchingResource):
 
     def delete(self, token):
-        try:
-            current_app.config['token_manager'].remove_token(token)
-        except ManagerException as e:
-            return _error(e.code, str(e))
+        current_app.config['token_manager'].remove_token(token)
 
         return {'data': {'message': 'success'}}
 
     def get(self, token):
         scope = request.args.get('scope')
-        try:
-            token = current_app.config['token_manager'].get(token, scope)
-            return {'data': token.to_dict()}
-        except ManagerException as e:
-            return _error(e.code, str(e))
+        token = current_app.config['token_manager'].get(token, scope)
+        return {'data': token.to_dict()}
 
     def head(self, token):
         scope = request.args.get('scope')
-        try:
-            token = current_app.config['token_manager'].get(token, scope)
-            return '', 204
-        except ManagerException as e:
-            return _error(e.code, str(e))
+        token = current_app.config['token_manager'].get(token, scope)
+        return '', 204
 
 
-class Backends(Resource):
+class Backends(ErrorCatchingResource):
 
     def get(self):
         return {'data': current_app.config['loaded_plugins']}
