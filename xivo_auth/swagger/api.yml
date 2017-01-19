@@ -187,7 +187,7 @@ paths:
           description: Duplicate Policy
           schema:
             $ref: '#/definitions/Error'
-  /policies/{policy_uuid}/acl_templates/{template}:
+  /policies/{policy_uuid}/acl_templates/{acl_template}:
     delete:
       security:
         - xivo_auth_token: []
@@ -202,7 +202,7 @@ paths:
         type: string
         description: The UUID of the policy
         required: true
-      - name: template
+      - name: acl_template
         in: path
         type: string
         description: The ACL template to removed
@@ -228,7 +228,7 @@ paths:
         type: string
         description: The UUID of the policy
         required: true
-      - name: template
+      - name: acl_template
         in: path
         type: string
         description: The ACL template to add
