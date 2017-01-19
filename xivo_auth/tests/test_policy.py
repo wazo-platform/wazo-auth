@@ -83,6 +83,10 @@ class TestPolicyManager(unittest.TestCase):
                 raises(InvalidInputException)
             )
 
+        assert_that(
+            calling(self.manager.create).with_args(None),
+            raises(InvalidInputException))
+
     def test_that_invalid_acl_templates_raise_a_manager_exception(self):
         name = 'foobar'
         templates = [
