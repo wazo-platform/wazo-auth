@@ -20,8 +20,8 @@ import unittest
 from hamcrest import assert_that, calling, equal_to, raises
 from mock import ANY, Mock, sentinel as s
 
-from ..database import Storage, _PolicyCRUD
-from ..token import Token, TokenPayload, UnknownTokenException
+from ..database import Storage, _PolicyCRUD, UnknownTokenException
+from ..token import Token, TokenPayload
 
 
 class TestStorage(unittest.TestCase):

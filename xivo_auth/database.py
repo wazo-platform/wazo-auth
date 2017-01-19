@@ -19,11 +19,12 @@ import uuid
 from itertools import izip
 from threading import Lock
 import psycopg2
-from .token import Token, UnknownTokenException
+from .token import Token
 from .exceptions import (DuplicatePolicyException, DuplicateTemplateException,
                          InvalidLimitException, InvalidOffsetException,
                          InvalidSortColumnException,
-                         InvalidSortDirectionException, UnknownPolicyException)
+                         InvalidSortDirectionException, UnknownPolicyException,
+                         UnknownTokenException)
 
 
 class Storage(object):
