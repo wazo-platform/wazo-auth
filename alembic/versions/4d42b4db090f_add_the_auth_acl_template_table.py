@@ -23,14 +23,16 @@ def upgrade():
     op.create_unique_constraint('auth_acl_template_template', 'auth_acl_template', ['template'])
     op.create_table(
         'auth_policy_template',
-        Column('policy_uuid', sa.String(38), sa.ForeignKey('auth_policy.uuid', ondelete='CASCADE')),
-        Column('template_id', sa.Integer, sa.ForeignKey('auth_acl_template.id', ondelete='CASCADE')),
+        Column('policy_uuid', sa.String(38),
+               sa.ForeignKey('auth_policy.uuid', ondelete='CASCADE'),
+               primary_key=True),
+        Column('template_id', sa.Integer,
+               sa.ForeignKey('auth_acl_template.id', ondelete='CASCADE'),
+               primary_key=True),
     )
-    op.create_unique_constraint('auth_policy_acl_template_keys', 'auth_policy_template', ['policy_uuid', 'template_id'])
 
 
 def downgrade():
-    op.drop_constraint('auth_policy_acl_template_keys', 'auth_policy_template')
     op.drop_table('auth_policy_template')
     op.drop_constraint('auth_acl_template_template', 'auth_acl_template')
     op.drop_table('auth_acl_template')
