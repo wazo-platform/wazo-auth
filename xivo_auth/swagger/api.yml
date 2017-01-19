@@ -449,19 +449,16 @@ definitions:
   Policy:
     type: object
     properties:
-      data:
-        type: object
-        properties:
-          uuid:
-            type: string
-          name:
-            type: string
-          description:
-            type: string
-          acl_templates:
-            type: array
-            items:
-              type: string
+      uuid:
+        type: string
+      name:
+        type: string
+      description:
+        type: string
+      acl_templates:
+        type: array
+        items:
+          type: string
   Token:
     type: object
     properties:
