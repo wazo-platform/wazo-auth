@@ -48,7 +48,7 @@ paths:
         '200':
           description: A list of policies
           schema:
-            $ref: '#/definitions/PolicyList'
+            $ref: '#/definitions/GetPoliciesResult'
         '401':
           description: Unauthorized
           schema:
@@ -448,10 +448,27 @@ definitions:
         type: array
         items:
           type: string
+    required:
+    - uuid
+    - name
+    - description
+    - acl_templates
   PolicyList:
     type: array
     items:
       $ref: '#/definitions/PolicyResult'
+  GetPoliciesResult:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: The number of policies matching the searched term
+      items:
+        $ref: '#/definitions/PolicyList'
+        description: A paginated list of policies
+    required:
+    - total
+    - items
   Token:
     type: object
     properties:

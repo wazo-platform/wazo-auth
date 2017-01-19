@@ -44,6 +44,9 @@ class Manager(object):
                 'description': description,
                 'acl_templates': acl_templates}
 
+    def count(self, term):
+        return self._storage.count_policies(term)
+
     def delete(self, policy_uuid):
         return self._storage.delete_policy(policy_uuid)
 

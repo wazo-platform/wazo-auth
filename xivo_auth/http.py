@@ -85,7 +85,8 @@ class Policies(ErrorCatchingResource):
 
         policy_manager = current_app.config['policy_manager']
         policies = policy_manager.list(term, order, direction, limit, offset)
-        return policies, 200
+        total = policy_manager.count(term)
+        return {'items': policies, 'total': total}, 200
 
 
 class Policy(ErrorCatchingResource):

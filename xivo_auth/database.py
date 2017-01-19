@@ -36,6 +36,10 @@ class Storage(object):
     def add_policy_acl_template(self, policy_uuid, acl_template):
         self._policy_crud.associate_policy_template(policy_uuid, acl_template)
 
+    def count_policies(self, term):
+        search_pattern = self._prepare_search_pattern(term)
+        return self._policy_crud.count(search_pattern)
+
     def delete_policy_acl_template(self, policy_uuid, acl_template):
         self._policy_crud.dissociate_policy_template(policy_uuid, acl_template)
 
@@ -65,11 +69,7 @@ class Storage(object):
         self._policy_crud.delete(policy_uuid)
 
     def list_policies(self, term, order, direction, limit, offset):
-        if term:
-            words = [w for w in term.split(' ') if w]
-            search_pattern = '%{}%'.format('%'.join(words))
-        else:
-            search_pattern = '%'
+        search_pattern = self._prepare_search_pattern(term)
         return self._policy_crud.get(search_pattern, order, direction, limit, offset)
 
     def update_policy(self, policy_uuid, name, description, acl_templates):
@@ -77,6 +77,14 @@ class Storage(object):
 
     def remove_token(self, token_id):
         self._token_crud.delete(token_id)
+
+    @staticmethod
+    def _prepare_search_pattern(term):
+        if not term:
+            return '%'
+
+        words = [w for w in term.split(' ') if w]
+        return '%{}%'.format('%'.join(words))
 
     @staticmethod
     def _is_uuid(value):
@@ -111,6 +119,13 @@ class _CRUD(object):
 
 class _PolicyCRUD(_CRUD):
 
+    _COUNT_POLICY_QRY = """
+SELECT COUNT(uuid)
+FROM auth_policy
+WHERE auth_policy.uuid ILIKE %s
+      OR auth_policy.name ILIKE %s
+      OR auth_policy.description ILIKE %s
+"""
     _DELETE_POLICY_QRY = "DELETE FROM auth_policy WHERE uuid=%s"
     _DISSOCIATE_POLICY_ACL_TEMPLATE = "DELETE FROM auth_policy_template WHERE policy_uuid=%s AND template_id=%s"
     _DISSOCIATE_POLICY_ACL_TEMPLATE_ALL = "DELETE FROM auth_policy_template WHERE policy_uuid=%s"
@@ -159,6 +174,11 @@ LIMIT {} OFFSET {}
             template_ids = self._create_or_find_acl_templates(curs, [acl_template])
             for template_id in template_ids:
                 curs.execute(self._DISSOCIATE_POLICY_ACL_TEMPLATE, (policy_uuid, template_id))
+
+    def count(self, search_pattern):
+        with self.connection().cursor() as curs:
+            curs.execute(self._COUNT_POLICY_QRY, (search_pattern, search_pattern, search_pattern))
+            return curs.fetchone()[0]
 
     def create(self, name, description, acl_templates):
         with self.connection().cursor() as curs:
