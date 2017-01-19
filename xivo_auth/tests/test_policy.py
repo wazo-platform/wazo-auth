@@ -28,8 +28,8 @@ from ..policy import Manager
 class TestPolicyManager(unittest.TestCase):
 
     def setUp(self):
-        storage = Mock(Storage)
-        self.manager = Manager(storage)
+        self.storage = Mock(Storage)
+        self.manager = Manager(self.storage)
 
     def test_create_policy_valid(self):
         name = 'valid'
@@ -105,7 +105,7 @@ class TestPolicyManager(unittest.TestCase):
                     'acl_templates': template
                 }), raises(InvalidInputException))
 
-        def test_delete(selt):
-            self.manager.delete(s.policy_uuid)
+    def test_delete(self):
+        self.manager.delete(s.policy_uuid)
 
-            self.storage.delete_policy.assert_called_once_with(s.policy_uuid)
+        self.storage.delete_policy.assert_called_once_with(s.policy_uuid)
