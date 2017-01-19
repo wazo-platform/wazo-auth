@@ -64,7 +64,7 @@ class Policies(Resource):
             return _error(e.code, str(e))
         return policy, 200
 
-    @required_acl('auth.policies.*.read')
+    @required_acl('auth.policies.read')
     def get(self):
         order = request.args.get('order', 'name')
         direction = request.args.get('direction', 'asc')
