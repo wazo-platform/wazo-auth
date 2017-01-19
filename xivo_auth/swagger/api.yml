@@ -217,6 +217,7 @@ paths:
       tags:
         - policies
       description: '**Required ACL:** `auth.policies.{policy_uuid}.edit`'
+      summary: Dissociate an ACL template from a policy
       parameters:
       - name: policy_uuid
         in: path
@@ -242,6 +243,7 @@ paths:
       tags:
         - policies
       description: '**Required ACL:** `auth.policies.{policy_uuid}.edit`'
+      summary: Associate an ACL template to a policy
       parameters:
       - name: policy_uuid
         in: path
