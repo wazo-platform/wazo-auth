@@ -34,7 +34,7 @@ paths:
       produces:
         - application/json
       summary: List ACL policies
-      description: '**Required ACL:** `auth.policies.*.read`'
+      description: '**Required ACL:** `auth.policies.read`'
       operationId: listPolicies
       tags:
         - policies
