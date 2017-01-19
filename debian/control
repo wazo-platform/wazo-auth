@@ -25,7 +25,8 @@ Depends: ${python:Depends},
          python-unidecode,
          python-threadpool,
          python-ldap,
-         python-psycopg2
+         python-psycopg2,
+         python-marshmallow
 Description: Wazo PBX's authentication service
  Wazo is a system based on a powerful IPBX, to bring an easy to
  install solution for telephony and related services.

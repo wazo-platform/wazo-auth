@@ -103,7 +103,8 @@ class TestPolicyManager(unittest.TestCase):
                 calling(self.manager.create).with_args({
                     'name': name,
                     'acl_templates': template
-                }), raises(InvalidInputException))
+                }), raises(InvalidInputException),
+                template)
 
     def test_delete(self):
         self.manager.delete(s.policy_uuid)

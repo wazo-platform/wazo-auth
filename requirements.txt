@@ -17,3 +17,4 @@ stevedore==0.14.1
 threadpool==1.2.7
 unidecode==0.04.16
 alembic==0.6.5
+marshmallow==2.10.3

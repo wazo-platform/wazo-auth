@@ -15,7 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>
 
+from marshmallow import fields, Schema, validate
+
 from .exceptions import InvalidInputException
+
+
+class _PolicySchema(Schema):
+    name = fields.String(validate=validate.Length(min=1, max=80), required=True)
+    description = fields.String(required=False, default='')
+    acl_templates = fields.List(fields.String(), default=[])
 
 
 class Manager(object):
@@ -61,39 +69,13 @@ class Manager(object):
         }
 
     def _extract_body(self, body):
-        name = body.get('name')
+        body, errors = _PolicySchema().load(body)
+        if errors:
+            for field in errors:
+                raise InvalidInputException(field)
+
+        name = body['name']
         description = body.get('description', '')
         acl_templates = body.get('acl_templates', [])
 
-        self._validate_name(name)
-        self._validate_description(description)
-        self._validate_acl_templates(acl_templates)
-
         return name, description, acl_templates
-
-    def _validate_name(self, name):
-        if not name or not self._is_str(name):
-            raise InvalidInputException('name')
-
-    def _validate_description(self, description):
-        if not self._is_str(description):
-            raise InvalidInputException('description')
-
-    def _validate_acl_templates(self, acls):
-        if not self._is_list_of_str(acls):
-            raise InvalidInputException('acls')
-
-    @staticmethod
-    def _is_str(s):
-        return isinstance(s, (str, unicode))
-
-    @staticmethod
-    def _is_list_of_str(l):
-        if not isinstance(l, list):
-            return False
-
-        for i in l:
-            if not isinstance(i, (str, unicode)):
-                return False
-
-        return True
