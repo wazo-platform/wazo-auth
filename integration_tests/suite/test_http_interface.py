@@ -308,6 +308,18 @@ class TestPolicies(_BaseTestCase):
         assert_that(response['total'], equal_to(3), response)
         assert_that(response['items'], contains(three), response)
 
+    def test_get_policy(self):
+        name, description, acl_templates = 'foobar', 'a test policy', ['dird.me.#', 'ctid-ng.#']
+        policy = self.client.policies.new(name, description, acl_templates)
+
+        response = self.client.policies.get(policy['uuid'])
+        assert_that(response, equal_to(policy))
+
+        unknown_uuid = str(uuid.uuid4())
+        assert_that(
+            calling(self.client.policies.get).with_args(unknown_uuid),
+            raises(requests.HTTPError))
+
 
 class TestCoreMockBackend(_BaseTestCase):
 
