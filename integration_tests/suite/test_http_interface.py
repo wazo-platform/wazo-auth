@@ -334,6 +334,21 @@ class TestPolicies(_BaseTestCase):
             calling(self.client.policies.delete).with_args(policy['uuid']),
             raises(requests.HTTPError))
 
+    def test_edit_policy(self):
+        unknown_uuid = str(uuid.uuid4())
+        assert_that(
+            calling(self.client.policies.edit).with_args(unknown_uuid, 'foobaz'),
+            raises(requests.HTTPError))
+
+        name, description, acl_templates = 'foobar', 'a test policy', ['dird.me.#', 'ctid-ng.#']
+        policy = self.client.policies.new(name, description, acl_templates)
+
+        response = self.client.policies.edit(policy['uuid'], 'foobaz')
+        assert_that(response['uuid'], equal_to(policy['uuid']))
+        assert_that(response['name'], equal_to('foobaz'))
+        assert_that(response['description'], equal_to(''))
+        assert_that(response['acl_templates'], empty())
+
 
 class TestCoreMockBackend(_BaseTestCase):
 
