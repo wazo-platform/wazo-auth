@@ -349,6 +349,23 @@ class TestPolicies(_BaseTestCase):
         assert_that(response['description'], equal_to(''))
         assert_that(response['acl_templates'], empty())
 
+    def test_add_acl_template(self):
+        unknown_uuid = str(uuid.uuid4())
+        assert_that(
+            calling(self.client.policies.add_acl_template).with_args(unknown_uuid, '#'),
+            raises(requests.HTTPError))
+
+        name, description, acl_templates = 'foobar', 'a test policy', ['dird.me.#', 'ctid-ng.#']
+        policy = self.client.policies.new(name, description, acl_templates)
+
+        self.client.policies.add_acl_template(policy['uuid'], 'new.acl.template')
+
+        response = self.client.policies.get(policy['uuid'])
+        assert_that(response['uuid'], equal_to(policy['uuid']))
+        assert_that(response['name'], equal_to(name))
+        assert_that(response['description'], equal_to(description))
+        assert_that(response['acl_templates'], acl_templates + ['new.acl.template'])
+
 
 class TestCoreMockBackend(_BaseTestCase):
 
