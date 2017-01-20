@@ -27,12 +27,16 @@ from datetime import datetime, timedelta
 
 import requests
 from hamcrest import assert_that
+from hamcrest import calling
+from hamcrest import contains
 from hamcrest import contains_inanyorder
 from hamcrest import contains_string
 from hamcrest import equal_to
+from hamcrest import empty
 from hamcrest import has_key
 from hamcrest import has_length
 from hamcrest import is_
+from hamcrest import raises
 from hamcrest.core.base_matcher import BaseMatcher
 from xivo_auth_client import Client
 
@@ -42,6 +46,18 @@ logger = logging.getLogger(__name__)
 ISO_DATETIME = '%Y-%m-%dT%H:%M:%S.%f'
 
 HOST = os.getenv('XIVO_AUTH_TEST_HOST', 'localhost')
+
+
+class _UUIDMatcher(object):
+
+    def __eq__(self, other):
+        try:
+            uuid.UUID(other)
+            return True
+        except (ValueError, TypeError):
+            return False
+
+ANY_UUID = _UUIDMatcher()
 
 
 def _new_token_id():
@@ -233,6 +249,35 @@ class _BaseTestCase(unittest.TestCase):
         else:
             self.fail('xivo-auth did not stop')
 
+
+class TestPolicies(_BaseTestCase):
+
+    asset = 'mock_backend'
+
+    def setUp(self):
+        super(TestPolicies, self).setUp()
+        self.client = Client(HOST, username='foo', password='bar', verify_certificate=False)
+        token = self.client.token.new(backend='mock', expiration=3600)['token']
+        self.client.set_token(token)
+
+    def test_policies_creation(self):
+        name, description, acl_templates = 'foobar', 'a test policy', ['dird.me.#', 'ctid-ng.#']
+        response = self.client.policies.new(name, description, acl_templates)
+        assert_that(response['uuid'], equal_to(ANY_UUID))
+        assert_that(response['name'], equal_to(name))
+        assert_that(response['description'], equal_to(description))
+        assert_that(response['acl_templates'], contains_inanyorder(*acl_templates))
+
+        name = 'foobaz'
+        response = self.client.policies.new(name)
+        assert_that(response['uuid'], equal_to(ANY_UUID))
+        assert_that(response['name'], equal_to(name))
+        assert_that(response['description'], equal_to(''))
+        assert_that(response['acl_templates'], empty())
+
+        assert_that(
+            calling(self.client.policies.new).with_args(''),
+            raises(requests.HTTPError))
 
 class TestCoreMockBackend(_BaseTestCase):
 
