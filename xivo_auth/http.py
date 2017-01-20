@@ -101,7 +101,7 @@ class Policy(ErrorCatchingResource):
     def delete(self, policy_uuid):
         policy_manager = current_app.config['policy_manager']
         policy_manager.delete(policy_uuid)
-        return 204
+        return '', 204
 
     @required_acl('auth.policies.{policy_uuid}.edit')
     def put(self, policy_uuid):
@@ -117,13 +117,13 @@ class PolicyTemplate(ErrorCatchingResource):
     def delete(self, policy_uuid, template):
         policy_manager = current_app.config['policy_manager']
         policy_manager.delete_acl_template(policy_uuid, template)
-        return 204
+        return '', 204
 
     @required_acl('auth.policies.{policy_uuid}.edit')
     def put(self, policy_uuid, template):
         policy_manager = current_app.config['policy_manager']
         policy_manager.add_acl_template(policy_uuid, template)
-        return 204
+        return '', 204
 
 
 class Tokens(ErrorCatchingResource):
