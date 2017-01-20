@@ -279,6 +279,36 @@ class TestPolicies(_BaseTestCase):
             calling(self.client.policies.new).with_args(''),
             raises(requests.HTTPError))
 
+    def test_list_policies(self):
+        one = self.client.policies.new('one')
+        two = self.client.policies.new('two')
+        three = self.client.policies.new('three')
+
+        response = self.client.policies.list(search='foobar')
+        assert_that(response['total'], equal_to(0), response)
+        assert_that(response['items'], empty(), response)
+
+        response = self.client.policies.list()
+        assert_that(response['total'], equal_to(3))
+        assert_that(response['items'], contains_inanyorder(one, two, three))
+
+        response = self.client.policies.list(search='one')
+        assert_that(response['total'], equal_to(1))
+        assert_that(response['items'], contains_inanyorder(one))
+
+        response = self.client.policies.list(order='name', direction='asc')
+        assert_that(response['total'], equal_to(3))
+        assert_that(response['items'], contains(one, three, two))
+
+        response = self.client.policies.list(order='name', direction='asc', limit=1)
+        assert_that(response['total'], equal_to(3))
+        assert_that(response['items'], contains(one))
+
+        response = self.client.policies.list(order='name', direction='asc', limit=1, offset=1)
+        assert_that(response['total'], equal_to(3), response)
+        assert_that(response['items'], contains(three), response)
+
+
 class TestCoreMockBackend(_BaseTestCase):
 
     asset = 'mock_backend'
