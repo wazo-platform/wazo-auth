@@ -260,6 +260,10 @@ class TestPolicies(_BaseTestCase):
         token = self.client.token.new(backend='mock', expiration=3600)['token']
         self.client.set_token(token)
 
+    def tearDown(self):
+        for policy in self.client.policies.list()['items']:
+            self.client.policies.delete(policy['uuid'])
+
     def test_policies_creation(self):
         name, description, acl_templates = 'foobar', 'a test policy', ['dird.me.#', 'ctid-ng.#']
         response = self.client.policies.new(name, description, acl_templates)
@@ -358,13 +362,31 @@ class TestPolicies(_BaseTestCase):
         name, description, acl_templates = 'foobar', 'a test policy', ['dird.me.#', 'ctid-ng.#']
         policy = self.client.policies.new(name, description, acl_templates)
 
-        self.client.policies.add_acl_template(policy['uuid'], 'new.acl.template')
+        self.client.policies.add_acl_template(policy['uuid'], 'new.acl.template.#')
+
+        expected_acl_templates = acl_templates + ['new.acl.template.#']
+        response = self.client.policies.get(policy['uuid'])
+        assert_that(response['uuid'], equal_to(policy['uuid']))
+        assert_that(response['name'], equal_to(name))
+        assert_that(response['description'], equal_to(description))
+        assert_that(response['acl_templates'], contains_inanyorder(*expected_acl_templates))
+
+    def test_remove_acl_template(self):
+        unknown_uuid = str(uuid.uuid4())
+        assert_that(
+            calling(self.client.policies.remove_acl_template).with_args(unknown_uuid, 'foo'),
+            raises(requests.HTTPError))
+
+        name, description, acl_templates = 'foobar', 'a test policy', ['dird.me.#', 'ctid-ng.#']
+        policy = self.client.policies.new(name, description, acl_templates)
+
+        self.client.policies.remove_acl_template(policy['uuid'], 'ctid-ng.#')
 
         response = self.client.policies.get(policy['uuid'])
         assert_that(response['uuid'], equal_to(policy['uuid']))
         assert_that(response['name'], equal_to(name))
         assert_that(response['description'], equal_to(description))
-        assert_that(response['acl_templates'], acl_templates + ['new.acl.template'])
+        assert_that(response['acl_templates'], contains_inanyorder(*acl_templates[:-1]))
 
 
 class TestCoreMockBackend(_BaseTestCase):
