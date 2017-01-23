@@ -33,6 +33,7 @@ from hamcrest import contains_inanyorder
 from hamcrest import contains_string
 from hamcrest import equal_to
 from hamcrest import empty
+from hamcrest import has_entries
 from hamcrest import has_key
 from hamcrest import has_length
 from hamcrest import is_
@@ -267,17 +268,19 @@ class TestPolicies(_BaseTestCase):
     def test_policies_creation(self):
         name, description, acl_templates = 'foobar', 'a test policy', ['dird.me.#', 'ctid-ng.#']
         response = self.client.policies.new(name, description, acl_templates)
-        assert_that(response['uuid'], equal_to(ANY_UUID))
-        assert_that(response['name'], equal_to(name))
-        assert_that(response['description'], equal_to(description))
-        assert_that(response['acl_templates'], contains_inanyorder(*acl_templates))
+        assert_that(response, has_entries({
+            'uuid': equal_to(ANY_UUID),
+            'name': equal_to(name),
+            'description': equal_to(description),
+            'acl_templates': contains_inanyorder(*acl_templates)}))
 
         name = 'foobaz'
         response = self.client.policies.new(name)
-        assert_that(response['uuid'], equal_to(ANY_UUID))
-        assert_that(response['name'], equal_to(name))
-        assert_that(response['description'], equal_to(''))
-        assert_that(response['acl_templates'], empty())
+        assert_that(response, has_entries({
+            'uuid': equal_to(ANY_UUID),
+            'name': equal_to(name),
+            'description': equal_to(''),
+            'acl_templates': empty()}))
 
         assert_that(
             calling(self.client.policies.new).with_args(''),
@@ -289,28 +292,34 @@ class TestPolicies(_BaseTestCase):
         three = self.client.policies.new('three')
 
         response = self.client.policies.list(search='foobar')
-        assert_that(response['total'], equal_to(0), response)
-        assert_that(response['items'], empty(), response)
+        assert_that(response, has_entries({
+            'total': equal_to(0),
+            'items': empty()}))
 
         response = self.client.policies.list()
-        assert_that(response['total'], equal_to(3))
-        assert_that(response['items'], contains_inanyorder(one, two, three))
+        assert_that(response, has_entries({
+            'total': equal_to(3),
+            'items': contains_inanyorder(one, two, three)}))
 
         response = self.client.policies.list(search='one')
-        assert_that(response['total'], equal_to(1))
-        assert_that(response['items'], contains_inanyorder(one))
+        assert_that(response, has_entries({
+            'total': equal_to(1),
+            'items': contains_inanyorder(one)}))
 
         response = self.client.policies.list(order='name', direction='asc')
-        assert_that(response['total'], equal_to(3))
-        assert_that(response['items'], contains(one, three, two))
+        assert_that(response, has_entries({
+            'total': equal_to(3),
+            'items': contains(one, three, two)}))
 
         response = self.client.policies.list(order='name', direction='asc', limit=1)
-        assert_that(response['total'], equal_to(3))
-        assert_that(response['items'], contains(one))
+        assert_that(response, has_entries({
+            'total': equal_to(3),
+            'items': contains(one)}))
 
         response = self.client.policies.list(order='name', direction='asc', limit=1, offset=1)
-        assert_that(response['total'], equal_to(3), response)
-        assert_that(response['items'], contains(three), response)
+        assert_that(response, has_entries({
+            'total': equal_to(3),
+            'items': contains(three)}))
 
     def test_get_policy(self):
         name, description, acl_templates = 'foobar', 'a test policy', ['dird.me.#', 'ctid-ng.#']
@@ -348,10 +357,11 @@ class TestPolicies(_BaseTestCase):
         policy = self.client.policies.new(name, description, acl_templates)
 
         response = self.client.policies.edit(policy['uuid'], 'foobaz')
-        assert_that(response['uuid'], equal_to(policy['uuid']))
-        assert_that(response['name'], equal_to('foobaz'))
-        assert_that(response['description'], equal_to(''))
-        assert_that(response['acl_templates'], empty())
+        assert_that(response, has_entries({
+            'uuid': equal_to(policy['uuid']),
+            'name': equal_to('foobaz'),
+            'description': equal_to(''),
+            'acl_templates': empty()}))
 
     def test_add_acl_template(self):
         unknown_uuid = str(uuid.uuid4())
@@ -366,10 +376,11 @@ class TestPolicies(_BaseTestCase):
 
         expected_acl_templates = acl_templates + ['new.acl.template.#']
         response = self.client.policies.get(policy['uuid'])
-        assert_that(response['uuid'], equal_to(policy['uuid']))
-        assert_that(response['name'], equal_to(name))
-        assert_that(response['description'], equal_to(description))
-        assert_that(response['acl_templates'], contains_inanyorder(*expected_acl_templates))
+        assert_that(response, has_entries({
+            'uuid': equal_to(policy['uuid']),
+            'name': equal_to(name),
+            'description': equal_to(description),
+            'acl_templates': contains_inanyorder(*expected_acl_templates)}))
 
     def test_remove_acl_template(self):
         unknown_uuid = str(uuid.uuid4())
@@ -383,10 +394,11 @@ class TestPolicies(_BaseTestCase):
         self.client.policies.remove_acl_template(policy['uuid'], 'ctid-ng.#')
 
         response = self.client.policies.get(policy['uuid'])
-        assert_that(response['uuid'], equal_to(policy['uuid']))
-        assert_that(response['name'], equal_to(name))
-        assert_that(response['description'], equal_to(description))
-        assert_that(response['acl_templates'], contains_inanyorder(*acl_templates[:-1]))
+        assert_that(response, has_entries({
+            'uuid': equal_to(policy['uuid']),
+            'name': equal_to(name),
+            'description': equal_to(description),
+            'acl_templates': contains_inanyorder(*acl_templates[:-1])}))
 
 
 class TestCoreMockBackend(_BaseTestCase):
