@@ -22,8 +22,8 @@ from .exceptions import InvalidInputException
 
 class _PolicySchema(Schema):
     name = fields.String(validate=validate.Length(min=1, max=80), required=True)
-    description = fields.String(required=False, default='')
-    acl_templates = fields.List(fields.String(), default=[])
+    description = fields.String(missing='')
+    acl_templates = fields.List(fields.String(), missing=[])
 
     @pre_load
     def warn_on_none(self, data):
@@ -81,8 +81,4 @@ class Manager(object):
             for field in errors:
                 raise InvalidInputException(field)
 
-        name = body['name']
-        description = body.get('description', '')
-        acl_templates = body.get('acl_templates', [])
-
-        return name, description, acl_templates
+        return body['name'], body['description'], body['acl_templates']
