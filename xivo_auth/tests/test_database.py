@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2016 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,32 +18,46 @@
 import unittest
 
 from hamcrest import assert_that, calling, equal_to, raises
-from mock import sentinel as s
+from mock import ANY, Mock, sentinel as s
 
-from ..database import Storage
-from ..token import Token, TokenPayload, UnknownTokenException
+from ..database import Storage, _PolicyCRUD, UnknownTokenException
+from ..token import Token, TokenPayload
 
 
 class TestStorage(unittest.TestCase):
 
     def setUp(self):
-        self.crud = MockedCrud()
+        self.token_crud = MockedCrud()
+        self.policy_crud = Mock(_PolicyCRUD)
+        self.storage = Storage(self.policy_crud, self.token_crud)
+
+    def test_get_policy(self):
+        uuid = 'c1647454-8d30-408a-9507-b2a3a9767a3d'
+
+        self.policy_crud.get.return_value = [uuid]
+
+        result = self.storage.get_policy(uuid)
+
+        assert_that(result, equal_to(uuid))
+        self.policy_crud.get.assert_called_once_with(uuid, ANY, ANY, None, None)
 
     def test_get_token(self):
-        storage = Storage(self.crud)
-
-        result = storage.get_token(s.token_id)
+        result = self.storage.get_token(s.token_id)
 
         expected_token = Token(s.token_id, s.auth_id, s.xivo_user_uuid,
                                s.xivo_uuid, s.issued_t, s.expire_t, s.acls)
         assert_that(result, equal_to(expected_token))
 
     def test_get_token_not_found(self):
-        storage = Storage(self.crud)
-
         assert_that(
-            calling(storage.get_token).with_args(s.inexistant_token),
+            calling(self.storage.get_token).with_args(s.inexistant_token),
             raises(UnknownTokenException))
+
+    def test_create_policy(self):
+        result = self.storage.create_policy(s.name, s.description, s.acls)
+
+        assert_that(result, equal_to(self.policy_crud.create.return_value))
+        self.policy_crud.create.assert_called_once_with(s.name, s.description, s.acls)
 
     def test_create_token(self):
         token_data = {
@@ -54,21 +68,36 @@ class TestStorage(unittest.TestCase):
             'expire_t': s.expire_t,
             'acls': s.acls
         }
-        storage = Storage(self.crud)
-
         payload = TokenPayload(**token_data)
-        result = storage.create_token(payload)
+
+        result = self.storage.create_token(payload)
 
         expected_token = Token(s.token_uuid, **token_data)
         assert_that(result, equal_to(expected_token))
-        self.crud.assert_created_with(token_data)
+        self.token_crud.assert_created_with(token_data)
+
+    def test_delete_policy(self):
+        self.storage.delete_policy(s.token_uuid)
+
+        self.policy_crud.delete.assert_called_once_with(s.token_uuid)
+
+    def test_list_policies(self):
+        result = self.storage.list_policies(None, s.order, s.direction, s.limit, s.offset)
+        assert_that(result, equal_to(self.policy_crud.get.return_value))
+        self.policy_crud.get.assert_called_once_with('%', s.order, s.direction, s.limit, s.offset)
+
+        self.policy_crud.get.reset_mock()
+        result = self.storage.list_policies('foobar', s.order, s.direction, s.limit, s.offset)
+        self.policy_crud.get.assert_called_once_with('%foobar%', s.order, s.direction, s.limit, s.offset)
+
+        self.policy_crud.get.reset_mock()
+        result = self.storage.list_policies('foobar baz', s.order, s.direction, s.limit, s.offset)
+        self.policy_crud.get.assert_called_once_with('%foobar%baz%', s.order, s.direction, s.limit, s.offset)
 
     def test_remove_token(self):
-        storage = Storage(self.crud)
+        self.storage.remove_token(s.token_uuid)
 
-        storage.remove_token(s.token_uuid)
-
-        self.crud.assert_deleted(s.token_uuid)
+        self.token_crud.assert_deleted(s.token_uuid)
 
 
 class MockedCrud(object):

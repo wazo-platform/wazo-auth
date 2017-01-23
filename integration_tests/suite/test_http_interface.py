@@ -27,12 +27,18 @@ from datetime import datetime, timedelta
 
 import requests
 from hamcrest import assert_that
+from hamcrest import calling
+from hamcrest import contains
 from hamcrest import contains_inanyorder
 from hamcrest import contains_string
 from hamcrest import equal_to
+from hamcrest import empty
+from hamcrest import has_entries
 from hamcrest import has_key
 from hamcrest import has_length
 from hamcrest import is_
+from hamcrest import none
+from hamcrest import raises
 from hamcrest.core.base_matcher import BaseMatcher
 from xivo_auth_client import Client
 
@@ -42,6 +48,18 @@ logger = logging.getLogger(__name__)
 ISO_DATETIME = '%Y-%m-%dT%H:%M:%S.%f'
 
 HOST = os.getenv('XIVO_AUTH_TEST_HOST', 'localhost')
+
+
+class _UUIDMatcher(object):
+
+    def __eq__(self, other):
+        try:
+            uuid.UUID(other)
+            return True
+        except (ValueError, TypeError):
+            return False
+
+ANY_UUID = _UUIDMatcher()
 
 
 def _new_token_id():
@@ -232,6 +250,156 @@ class _BaseTestCase(unittest.TestCase):
             time.sleep(0.2)
         else:
             self.fail('xivo-auth did not stop')
+
+
+class TestPolicies(_BaseTestCase):
+
+    asset = 'mock_backend'
+
+    def setUp(self):
+        super(TestPolicies, self).setUp()
+        self.client = Client(HOST, username='foo', password='bar', verify_certificate=False)
+        token = self.client.token.new(backend='mock', expiration=3600)['token']
+        self.client.set_token(token)
+
+    def tearDown(self):
+        for policy in self.client.policies.list()['items']:
+            self.client.policies.delete(policy['uuid'])
+
+    def test_policies_creation(self):
+        name, description, acl_templates = 'foobar', 'a test policy', ['dird.me.#', 'ctid-ng.#']
+        response = self.client.policies.new(name, description, acl_templates)
+        assert_that(response, has_entries({
+            'uuid': equal_to(ANY_UUID),
+            'name': equal_to(name),
+            'description': equal_to(description),
+            'acl_templates': contains_inanyorder(*acl_templates)}))
+
+        name = 'foobaz'
+        response = self.client.policies.new(name)
+        assert_that(response, has_entries({
+            'uuid': equal_to(ANY_UUID),
+            'name': equal_to(name),
+            'description': none(),
+            'acl_templates': empty()}))
+
+        assert_that(
+            calling(self.client.policies.new).with_args(''),
+            raises(requests.HTTPError))
+
+    def test_list_policies(self):
+        one = self.client.policies.new('one')
+        two = self.client.policies.new('two')
+        three = self.client.policies.new('three')
+
+        response = self.client.policies.list(search='foobar')
+        assert_that(response, has_entries({
+            'total': equal_to(0),
+            'items': empty()}))
+
+        response = self.client.policies.list()
+        assert_that(response, has_entries({
+            'total': equal_to(3),
+            'items': contains_inanyorder(one, two, three)}))
+
+        response = self.client.policies.list(search='one')
+        assert_that(response, has_entries({
+            'total': equal_to(1),
+            'items': contains_inanyorder(one)}))
+
+        response = self.client.policies.list(order='name', direction='asc')
+        assert_that(response, has_entries({
+            'total': equal_to(3),
+            'items': contains(one, three, two)}))
+
+        response = self.client.policies.list(order='name', direction='asc', limit=1)
+        assert_that(response, has_entries({
+            'total': equal_to(3),
+            'items': contains(one)}))
+
+        response = self.client.policies.list(order='name', direction='asc', limit=1, offset=1)
+        assert_that(response, has_entries({
+            'total': equal_to(3),
+            'items': contains(three)}))
+
+    def test_get_policy(self):
+        name, description, acl_templates = 'foobar', 'a test policy', ['dird.me.#', 'ctid-ng.#']
+        policy = self.client.policies.new(name, description, acl_templates)
+
+        response = self.client.policies.get(policy['uuid'])
+        assert_that(response, equal_to(policy))
+
+        unknown_uuid = str(uuid.uuid4())
+        assert_that(
+            calling(self.client.policies.get).with_args(unknown_uuid),
+            raises(requests.HTTPError))
+
+    def test_delete_policy(self):
+        unknown_uuid = str(uuid.uuid4())
+        assert_that(
+            calling(self.client.policies.delete).with_args(unknown_uuid),
+            raises(requests.HTTPError))
+
+        name, description, acl_templates = 'foobar', 'a test policy', ['dird.me.#', 'ctid-ng.#']
+        policy = self.client.policies.new(name, description, acl_templates)
+
+        self.client.policies.delete(policy['uuid'])
+        assert_that(
+            calling(self.client.policies.delete).with_args(policy['uuid']),
+            raises(requests.HTTPError))
+
+    def test_edit_policy(self):
+        unknown_uuid = str(uuid.uuid4())
+        assert_that(
+            calling(self.client.policies.edit).with_args(unknown_uuid, 'foobaz'),
+            raises(requests.HTTPError))
+
+        name, description, acl_templates = 'foobar', 'a test policy', ['dird.me.#', 'ctid-ng.#']
+        policy = self.client.policies.new(name, description, acl_templates)
+
+        response = self.client.policies.edit(policy['uuid'], 'foobaz')
+        assert_that(response, has_entries({
+            'uuid': equal_to(policy['uuid']),
+            'name': equal_to('foobaz'),
+            'description': none(),
+            'acl_templates': empty()}))
+
+    def test_add_acl_template(self):
+        unknown_uuid = str(uuid.uuid4())
+        assert_that(
+            calling(self.client.policies.add_acl_template).with_args(unknown_uuid, '#'),
+            raises(requests.HTTPError))
+
+        name, description, acl_templates = 'foobar', 'a test policy', ['dird.me.#', 'ctid-ng.#']
+        policy = self.client.policies.new(name, description, acl_templates)
+
+        self.client.policies.add_acl_template(policy['uuid'], 'new.acl.template.#')
+
+        expected_acl_templates = acl_templates + ['new.acl.template.#']
+        response = self.client.policies.get(policy['uuid'])
+        assert_that(response, has_entries({
+            'uuid': equal_to(policy['uuid']),
+            'name': equal_to(name),
+            'description': equal_to(description),
+            'acl_templates': contains_inanyorder(*expected_acl_templates)}))
+
+    def test_remove_acl_template(self):
+        unknown_uuid = str(uuid.uuid4())
+        assert_that(
+            calling(self.client.policies.remove_acl_template).with_args(unknown_uuid, 'foo'),
+            raises(requests.HTTPError))
+
+        name, description, acl_templates = 'foobar', 'a test policy', ['dird.me.#', 'ctid-ng.#']
+        policy = self.client.policies.new(name, description, acl_templates)
+
+        self.client.policies.remove_acl_template(policy['uuid'], 'ctid-ng.#')
+
+        response = self.client.policies.get(policy['uuid'])
+        assert_that(response, has_entries({
+            'uuid': equal_to(policy['uuid']),
+            'name': equal_to(name),
+            'description': equal_to(description),
+            'acl_templates': contains_inanyorder(*acl_templates[:-1])}))
 
 
 class TestCoreMockBackend(_BaseTestCase):

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@ from xivo_auth import BaseAuthenticationBackend
 class BackendMock(BaseAuthenticationBackend):
 
     def get_acls(self, login, args):
-        return ['foo', 'bar']
+        return ['foo', 'bar', 'auth.#']
 
     def get_ids(self, login, agrs):
         return 'a-mocked-uuid', None

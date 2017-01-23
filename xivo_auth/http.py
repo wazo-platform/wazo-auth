@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2016 Avencall
-# Copyright (C) 2016 Proformatique, Inc.
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,14 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-import time
+import functools
 import logging
+import time
 
 from flask import current_app, request, make_response
 from flask_restful import Resource
 from pkg_resources import resource_string
 
-from xivo_auth.token import ManagerException
+from xivo_auth.exceptions import ManagerException
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,95 @@ def _is_positive_integer(i):
     return isinstance(i, int) and i > 0
 
 
-class Tokens(Resource):
+def required_acl(scope):
+    def wrap(f):
+        @functools.wraps(f)
+        def wrapped_f(*args, **kwargs):
+            try:
+                token = request.headers.get('X-Auth-Token', '')
+                current_app.config['token_manager'].get(token, scope)
+            except ManagerException:
+                return _error(401, 'Unauthorized')
+            return f(*args, **kwargs)
+        return wrapped_f
+    return wrap
+
+
+def handle_manager_exception(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except ManagerException as error:
+            return _error(error.code, str(error))
+    return wrapper
+
+
+class ErrorCatchingResource(Resource):
+    method_decorators = [handle_manager_exception] + Resource.method_decorators
+
+
+class Policies(ErrorCatchingResource):
+
+    @required_acl('auth.policies.create')
+    def post(self):
+        data = request.get_json()
+        policy_manager = current_app.config['policy_manager']
+        policy = policy_manager.create(data)
+        return policy, 200
+
+    @required_acl('auth.policies.read')
+    def get(self):
+        order = request.args.get('order', 'name')
+        direction = request.args.get('direction', 'asc')
+        limit = request.args.get('limit')
+        offset = request.args.get('offset')
+        term = request.args.get('search')
+
+        policy_manager = current_app.config['policy_manager']
+        policies = policy_manager.list(term, order, direction, limit, offset)
+        total = policy_manager.count(term)
+        return {'items': policies, 'total': total}, 200
+
+
+class Policy(ErrorCatchingResource):
+
+    @required_acl('auth.policies.{policy_uuid}.read')
+    def get(self, policy_uuid):
+        policy_manager = current_app.config['policy_manager']
+        policy = policy_manager.get(policy_uuid)
+        return policy, 200
+
+    @required_acl('auth.policies.{policy_uuid}.delete')
+    def delete(self, policy_uuid):
+        policy_manager = current_app.config['policy_manager']
+        policy_manager.delete(policy_uuid)
+        return '', 204
+
+    @required_acl('auth.policies.{policy_uuid}.edit')
+    def put(self, policy_uuid):
+        data = request.get_json()
+        policy_manager = current_app.config['policy_manager']
+        policy = policy_manager.update(policy_uuid, data)
+        return policy, 200
+
+
+class PolicyTemplate(ErrorCatchingResource):
+
+    @required_acl('auth.policies.{policy_uuid}.edit')
+    def delete(self, policy_uuid, template):
+        policy_manager = current_app.config['policy_manager']
+        policy_manager.delete_acl_template(policy_uuid, template)
+        return '', 204
+
+    @required_acl('auth.policies.{policy_uuid}.edit')
+    def put(self, policy_uuid, template):
+        policy_manager = current_app.config['policy_manager']
+        policy_manager.add_acl_template(policy_uuid, template)
+        return '', 204
+
+
+class Tokens(ErrorCatchingResource):
 
     def post(self):
         if request.authorization:
@@ -63,42 +151,30 @@ class Tokens(Resource):
         backend_name = request.get_json()['backend']
         backend = current_app.config['backends'][backend_name].obj
 
-        try:
-            token = current_app.config['token_manager'].new_token(backend, login, args)
-        except ManagerException as e:
-            return _error(e.code, str(e))
+        token = current_app.config['token_manager'].new_token(backend, login, args)
 
         return {'data': token.to_dict()}, 200
 
 
-class Token(Resource):
+class Token(ErrorCatchingResource):
 
     def delete(self, token):
-        try:
-            current_app.config['token_manager'].remove_token(token)
-        except ManagerException as e:
-            return _error(e.code, str(e))
+        current_app.config['token_manager'].remove_token(token)
 
         return {'data': {'message': 'success'}}
 
     def get(self, token):
-        required_acl = request.args.get('scope')
-        try:
-            token = current_app.config['token_manager'].get(token, required_acl)
-            return {'data': token.to_dict()}
-        except ManagerException as e:
-            return _error(e.code, str(e))
+        scope = request.args.get('scope')
+        token = current_app.config['token_manager'].get(token, scope)
+        return {'data': token.to_dict()}
 
     def head(self, token):
-        required_acl = request.args.get('scope')
-        try:
-            token = current_app.config['token_manager'].get(token, required_acl)
-            return '', 204
-        except ManagerException as e:
-            return _error(e.code, str(e))
+        scope = request.args.get('scope')
+        token = current_app.config['token_manager'].get(token, scope)
+        return '', 204
 
 
-class Backends(Resource):
+class Backends(ErrorCatchingResource):
 
     def get(self):
         return {'data': current_app.config['loaded_plugins']}

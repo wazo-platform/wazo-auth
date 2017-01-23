@@ -1,6 +1,9 @@
-.PHONY: test-setup test test-image test-prerequisite
+.PHONY: test-setup test test-image test-prerequisite test-db
 
-test-setup: test-prerequisite test-image egg-info
+test-setup: test-prerequisite test-image egg-info test-db
+
+test-db:
+	docker build -f ../contribs/docker/Dockerfile-db -t wazopbx/xivo-auth-db ..
 
 test-prerequisite:
 	docker pull n3llyb0y/wait
@@ -8,7 +11,6 @@ test-prerequisite:
 	docker pull wazopbx/postgres-test
 	docker pull swaggerapi/swagger-validator
 	docker build --no-cache -t wazopbx/xivo-auth-tests-data -f Dockerfile-data .
-	docker build -f ../contribs/docker/Dockerfile-db -t wazopbx/xivo-auth-db ..
 
 test-image:
 	docker build --no-cache -t wazopbx/xivo-auth ..
