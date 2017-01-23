@@ -22,7 +22,7 @@ from .exceptions import InvalidInputException
 
 class _PolicySchema(Schema):
     name = fields.String(validate=validate.Length(min=1, max=80), required=True)
-    description = fields.String(missing='')
+    description = fields.String(missing=None)
     acl_templates = fields.List(fields.String(), missing=[])
 
     @pre_load
