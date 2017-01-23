@@ -21,7 +21,7 @@ from xivo_auth import BaseAuthenticationBackend
 class BackendMock(BaseAuthenticationBackend):
 
     def get_acls(self, login, args):
-        return ['foo', 'bar', '#']
+        return ['foo', 'bar', 'auth.#']
 
     def get_ids(self, login, agrs):
         return 'a-mocked-uuid', None
