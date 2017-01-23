@@ -197,5 +197,6 @@ class _PluginLoader(object):
     def _load(self, extension):
         try:
             extension.obj = extension.plugin(self._config)
+            extension.obj.plugin_name = extension.name
         except Exception:
             logger.exception('Failed to load %s', extension.name)
