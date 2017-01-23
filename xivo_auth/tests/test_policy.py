@@ -39,7 +39,7 @@ class TestPolicyManager(unittest.TestCase):
                 {'name': name},
                 {'uuid': ANY,
                  'name': name,
-                 'description': '',
+                 'description': None,
                  'acl_templates': []}
             ),
             (
@@ -71,7 +71,6 @@ class TestPolicyManager(unittest.TestCase):
             )
 
         descriptions = [
-            None,
             True,
             False,
             42,
