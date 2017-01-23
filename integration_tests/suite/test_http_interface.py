@@ -37,6 +37,7 @@ from hamcrest import has_entries
 from hamcrest import has_key
 from hamcrest import has_length
 from hamcrest import is_
+from hamcrest import none
 from hamcrest import raises
 from hamcrest.core.base_matcher import BaseMatcher
 from xivo_auth_client import Client
@@ -279,7 +280,7 @@ class TestPolicies(_BaseTestCase):
         assert_that(response, has_entries({
             'uuid': equal_to(ANY_UUID),
             'name': equal_to(name),
-            'description': equal_to(''),
+            'description': none(),
             'acl_templates': empty()}))
 
         assert_that(
@@ -360,7 +361,7 @@ class TestPolicies(_BaseTestCase):
         assert_that(response, has_entries({
             'uuid': equal_to(policy['uuid']),
             'name': equal_to('foobaz'),
-            'description': equal_to(''),
+            'description': none(),
             'acl_templates': empty()}))
 
     def test_add_acl_template(self):
