@@ -453,10 +453,6 @@ definitions:
     - name
     - description
     - acl_templates
-  PolicyList:
-    type: array
-    items:
-      $ref: '#/definitions/PolicyResult'
   GetPoliciesResult:
     type: object
     properties:
@@ -464,7 +460,9 @@ definitions:
         type: integer
         description: The number of policies matching the searched term
       items:
-        $ref: '#/definitions/PolicyList'
+        type: array
+        items:
+          $ref: '#/definitions/PolicyResult'
         description: A paginated list of policies
     required:
     - total
