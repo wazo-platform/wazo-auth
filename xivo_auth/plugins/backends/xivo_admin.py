@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,10 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-from xivo_auth import BaseAuthenticationBackend
 
 from xivo_dao import admin_dao
+from xivo_dao.helpers.exception import NotFoundError
 from xivo_dao.helpers.db_utils import session_scope
+
+from xivo_auth import BaseAuthenticationBackend
+from xivo_auth.exceptions import AuthenticationFailedException
 
 
 class XiVOAdmin(BaseAuthenticationBackend):
@@ -36,7 +39,11 @@ class XiVOAdmin(BaseAuthenticationBackend):
 
     def get_ids(self, username, args):
         with session_scope():
-            auth_id = str(admin_dao.get_admin_id(username))
+            try:
+                auth_id = admin_dao.get_admin_uuid(username)
+            except NotFoundError:
+                raise AuthenticationFailedException()
+
         user_uuid = None
         return auth_id, user_uuid
 
