@@ -9,60 +9,65 @@ LOG_FILENAME="/var/log/${DAEMONNAME}.log"
 ALEMBIC_INI_PATH='/usr/share/xivo-auth'
 
 pg_is_running () {
-        pg_lsclusters --no-header | grep -q online
+    pg_lsclusters --no-header | grep -q online
 }
 
 case "$1" in
-	configure)
-		# remove the /var/log/${DAEMONNAME}.log file created before 15.12
-		if [ -e '/var/log/${DAEMONNAME}.log' ]; then
-			rm -f '/var/log/${DAEMONNAME}.log'
-		fi
+    configure)
+        # remove the /var/log/${DAEMONNAME}.log file created before 15.12
+        if [ -e '/var/log/${DAEMONNAME}.log' ]; then
+            rm -f '/var/log/${DAEMONNAME}.log'
+        fi
 
-		# remove the /etc/xivo-auth/services.d/xivo_dird_phoned.yml file created before 15.19
-		if [ -e '/etc/xivo-auth/services.d/xivo_dird_phoned.yml' ]; then
-			rm -f '/etc/xivo-auth/services.d/xivo_dird_phoned.yml'
-		fi
+        # remove the /etc/xivo-auth/services.d/xivo_dird_phoned.yml file created before 15.19
+        if [ -e '/etc/xivo-auth/services.d/xivo_dird_phoned.yml' ]; then
+            rm -f '/etc/xivo-auth/services.d/xivo_dird_phoned.yml'
+        fi
 
-		# add/update user
-		if ! getent passwd $USER > /dev/null ; then
-			echo "Adding system user $USER" 1>&2
-			adduser --quiet --system --group --no-create-home \
-					--home /var/lib/xivo-auth \
-					$USER
-		else
-			if dpkg --compare-versions "$2" lt '16.12~'; then
-				usermod --home /var/lib/xivo-auth $USER
-			fi
-		fi
-		adduser --quiet $USER www-data
+        # add/update user
+        if ! getent passwd $USER > /dev/null ; then
+            echo "Adding system user $USER" 1>&2
+            adduser --quiet --system --group --no-create-home \
+                    --home /var/lib/xivo-auth \
+                    $USER
+        else
+            if dpkg --compare-versions "$2" lt '16.12~'; then
+                usermod --home /var/lib/xivo-auth $USER
+            fi
+        fi
+        adduser --quiet $USER www-data
 
-		if [ ! -e "$LOG_FILENAME" ]; then
-			touch "$LOG_FILENAME"
-		fi
-		chown $USER:$GROUP "$LOG_FILENAME"
+        if [ ! -e "$LOG_FILENAME" ]; then
+            touch "$LOG_FILENAME"
+        fi
+        chown $USER:$GROUP "$LOG_FILENAME"
 
-		previous_version="$2"
-		if dpkg --compare-versions "$previous_version" "lt-nl" "17.01"; then
-			/usr/share/xivo-auth/migrations/0001_remove_consul_storage.py
-		fi
+        previous_version="$2"
+        if dpkg --compare-versions "$previous_version" "lt-nl" "17.01"; then
+            /usr/share/xivo-auth/migrations/0001_remove_consul_storage.py
+        fi
 
-		# Database initialization and migrations
-		if pg_is_running ; then
-			xivo-auth-init-db --user postgres
-			echo "Upgrading xivo-auth database ..."
-			(cd $ALEMBIC_INI_PATH && alembic -c alembic.ini upgrade head)
-		fi
+        # Database initialization and migrations
+        if pg_is_running ; then
+            xivo-auth-init-db --user postgres
+            echo "Upgrading xivo-auth database ..."
+            (cd $ALEMBIC_INI_PATH && alembic -c alembic.ini upgrade head)
+        fi
 
-	;;
+        if dpkg --compare-versions "$2" lt '17.02'; then
+            ln -sf  /etc/nginx/locations/https-available/$DAEMONNAME \
+                    /etc/nginx/locations/https-enabled/$DAEMONNAME
+        fi
 
-	abort-upgrade|abort-remove|abort-deconfigure)
-	;;
+    ;;
 
-	*)
-		echo "postinst called with unknown argument \`$1'" >&2
-		exit 1
-	;;
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
 esac
 
 # dh_installdeb will replace this with shell code automatically
