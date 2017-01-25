@@ -9,7 +9,7 @@ LOG_FILENAME="/var/log/${DAEMONNAME}.log"
 ALEMBIC_INI_PATH='/usr/share/xivo-auth'
 
 pg_is_running () {
-        pg_lsclusters --no-header | grep -q online
+	pg_lsclusters --no-header | grep -q online
 }
 
 case "$1" in
@@ -52,6 +52,11 @@ case "$1" in
 			xivo-auth-init-db --user postgres
 			echo "Upgrading xivo-auth database ..."
 			(cd $ALEMBIC_INI_PATH && alembic -c alembic.ini upgrade head)
+		fi
+
+		if dpkg --compare-versions "$2" lt '17.03'; then
+			ln -sf  /etc/nginx/locations/https-available/$DAEMONNAME \
+					/etc/nginx/locations/https-enabled/$DAEMONNAME
 		fi
 
 	;;
