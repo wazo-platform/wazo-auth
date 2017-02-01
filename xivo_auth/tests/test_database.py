@@ -41,6 +41,18 @@ class TestStorage(unittest.TestCase):
         assert_that(result, equal_to(uuid))
         self.policy_crud.get.assert_called_once_with(uuid, ANY, ANY, None, None)
 
+    def test_get_policy_by_name(self):
+        name = 'test'
+        _, expected, __ = self.policy_crud.get.return_value = [
+            {'name': 'testsuffix'},
+            {'name': name},
+            {'name': 'prefixtest'},
+        ]
+        result = self.storage.get_policy_by_name(name)
+
+        assert_that(result, equal_to(expected))
+        self.policy_crud.get.assert_called_once_with(name, ANY, ANY, None, None)
+
     def test_get_token(self):
         result = self.storage.get_token(s.token_id)
 
