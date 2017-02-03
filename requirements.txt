@@ -4,6 +4,8 @@ flask-cors==1.10.3
 flask-httpauth==2.2.1
 flask-restful==0.3.5
 flask==0.10.1
+git+https://github.com/wazo-pbx/xivo-lib-rest-client.git
+git+https://github.com/wazo-pbx/xivo-confd-client.git
 git+https://github.com/wazo-pbx/xivo-dao.git
 git+https://github.com/wazo-pbx/xivo-lib-python.git
 psycopg2==2.5.4
