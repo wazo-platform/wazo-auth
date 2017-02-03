@@ -62,7 +62,7 @@ class TestVerifyPassword(unittest.TestCase):
                                                       enableclient=1)
 
 
-@patch('xivo_auth.plugins.backends.xivo_user.Client')
+@patch('xivo_auth.interfaces.Client')
 class TestGetAcls(unittest.TestCase):
 
     def test_that_get_acls_returns_the_right_acls(self, _ConfdClient):
