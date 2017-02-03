@@ -53,7 +53,7 @@ class XiVOUser(BaseAuthenticationBackend):
             return user is not None
 
     def _get_user_data(self, **kwargs):
-        confd_client = Client(token=self._config['token'], **self._confd_config)
+        confd_client = Client(token=self._config.get('token'), **self._confd_config)
         response = confd_client.users.list(**kwargs)
         for user in response['items']:
             voicemail_id = user.get('voicemail', {}).get('id')

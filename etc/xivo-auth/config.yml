@@ -53,7 +53,7 @@ consul:
   token: 'the_one_ring'
 
 backend_policies:
-  xivo_user: default_user_policy
+  xivo_user: wazo_default_user_policy
 
 # Confd connection information
 confd:
