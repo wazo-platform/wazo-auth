@@ -69,14 +69,14 @@ class Controller(object):
             logger.error('Missing configuration to start the application: %s', e)
             sys.exit(1)
 
-        backends = self._load_backends()
-        self._config['loaded_plugins'] = self._loaded_plugins_names(backends)
+        self._backends = self._load_backends()
+        self._config['loaded_plugins'] = self._loaded_plugins_names(self._backends)
 
         self._celery = self._configure_celery()
         storage = database.Storage.from_config(self._config)
         policy_manager = policy.Manager(storage)
-        token_manager = token.Manager(config, storage, self._celery)
-        self._flask_app = self._configure_flask_app(backends, policy_manager, token_manager)
+        self._token_manager = token.Manager(config, storage, self._celery)
+        self._flask_app = self._configure_flask_app(self._backends, policy_manager, self._token_manager)
         self._override_celery_task()
 
     def run(self):
@@ -97,9 +97,20 @@ class Controller(object):
                                                 self._listen_port,
                                                 self._ssl_cert_file)):
             try:
+                self._config['token'] = self._get_xivo_auth_token()
                 server.start()
             finally:
                 server.stop()
+                self._token_manager.remove_token(self._config.get('token'))
+
+    def _get_xivo_auth_token(self):
+        # TODO use a "normal" expiration and renew the token
+        args = {'expiration': 3600 * 24 * 365}
+        backend = self._backends['xivo_service']
+        if not backend:
+            logger.info('Failed to get a service token for xivo-auth make sure the xivo_service plugin is loaded')
+        token = self._token_manager.new_token(backend.obj, 'xivo-auth', args)
+        return token.token
 
     def _start_celery_worker(self):
         args = sys.argv[:1]
