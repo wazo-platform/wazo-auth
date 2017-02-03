@@ -96,19 +96,21 @@ class Controller(object):
                                         partial(self_check,
                                                 self._listen_port,
                                                 self._ssl_cert_file)):
+            self._config['token'] = self._get_xivo_auth_token()
             try:
-                self._config['token'] = self._get_xivo_auth_token()
                 server.start()
             finally:
                 server.stop()
-                self._token_manager.remove_token(self._config.get('token'))
+            self._token_manager.remove_token(self._config.get('token'))
 
     def _get_xivo_auth_token(self):
         # TODO use a "normal" expiration and renew the token
         args = {'expiration': 3600 * 24 * 365}
-        backend = self._backends['xivo_service']
-        if not backend:
+        try:
+            backend = self._backends['xivo_service']
+        except KeyError:
             logger.info('Failed to get a service token for xivo-auth make sure the xivo_service plugin is loaded')
+            return
         token = self._token_manager.new_token(backend.obj, 'xivo-auth', args)
         return token.token
 
