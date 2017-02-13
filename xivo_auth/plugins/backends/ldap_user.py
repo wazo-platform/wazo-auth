@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,8 +20,7 @@ import ldap
 
 from ldap.filter import escape_filter_chars
 from ldap.dn import escape_dn_chars
-from xivo_auth import BaseAuthenticationBackend
-from xivo_auth.plugins.backends.default_acls import DEFAULT_USER_ACLS
+from xivo_auth import UserAuthenticationBackend
 
 from xivo_dao.resources.user.dao import find_by
 from xivo_dao.helpers.db_utils import session_scope
@@ -29,9 +28,10 @@ from xivo_dao.helpers.db_utils import session_scope
 logger = logging.getLogger(__name__)
 
 
-class LDAPUser(BaseAuthenticationBackend):
+class LDAPUser(UserAuthenticationBackend):
 
     def __init__(self, config):
+        super(LDAPUser, self).__init__(config)
         self.config = config['ldap']
         self.uri = self.config['uri']
         self.bind_dn = self.config.get('bind_dn', '')
@@ -42,7 +42,9 @@ class LDAPUser(BaseAuthenticationBackend):
         self.user_email_attribute = self.config.get('user_email_attribute', 'mail')
 
     def get_acls(self, login, args):
-        return DEFAULT_USER_ACLS
+        acl_templates = args.get('acl_templates', [])
+        xivo_user_uuid = args.get('xivo_user_uuid')
+        return self.render_acl(acl_templates, self.get_user_data, uuid=xivo_user_uuid)
 
     def get_ids(self, username, args):
         user_uuid = args['xivo_user_uuid']

@@ -54,6 +54,7 @@ consul:
 
 backend_policies:
   xivo_user: wazo_default_user_policy
+  ldap_user: wazo_default_user_policy
 
 # Confd connection information
 confd:
@@ -62,7 +63,6 @@ confd:
   port: 9486
   verify_certificate: /usr/share/xivo-certs/server.crt
   key_file: /var/lib/xivo-auth-keys/xivo-auth.yml
-
 
 # Database connection informations.
 db_uri: postgresql://asterisk:proformatique@localhost/asterisk
