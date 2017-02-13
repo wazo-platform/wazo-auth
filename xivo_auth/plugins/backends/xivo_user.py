@@ -32,7 +32,6 @@ class XiVOUser(UserAuthenticationBackend):
         self._confd_config = config['confd']
 
     def get_acls(self, login, args):
-        logger.debug('get_acls(%s, %s)', login, args)
         acl_templates = args.get('acl_templates', [])
         return self.render_acl(acl_templates, self.get_user_data, username=login)
 
