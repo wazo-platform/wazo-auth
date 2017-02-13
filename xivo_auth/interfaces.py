@@ -122,13 +122,38 @@ class UserAuthenticationBackend(BaseAuthenticationBackend):
             }
         return {}
 
-    def render_acl(self, acl_templates, user_data):
+    def render_acl(self, acl_templates, get_data_fn, *args, **kwargs):
+        renderer = LazyTemplateRenderer(acl_templates, get_data_fn, *args, **kwargs)
+        return renderer.render()
+
+
+class LazyTemplateRenderer(object):
+
+    def __init__(self, acl_templates, get_data_fn, *args, **kwargs):
+        self._acl_templates = acl_templates
+        self._get_data_fn = get_data_fn
+        self._args = args
+        self._kwargs = kwargs
+        self._data = {}
+        self._initialized = False
+
+    def render(self):
         acls = []
-        for acl_template in acl_templates:
-            template = Template(acl_template, undefined=StrictUndefined)
-            try:
-                acl = template.render(user_data)
-            except UndefinedError:
+        for acl_template in self._acl_templates:
+            acl = self._evaluate_template(acl_template)
+            if not acl:
                 continue
             acls.append(acl)
         return acls
+
+    def _evaluate_template(self, acl_template):
+        template = Template(acl_template, undefined=StrictUndefined)
+        try:
+            return template.render(self._data)
+        except UndefinedError:
+            # _data is only fetched if needed
+            if self._initialized:
+                return
+            self._initialized = True
+            self._data = self._get_data_fn(*self._args, **self._kwargs)
+            return self._evaluate_template(acl_template)
