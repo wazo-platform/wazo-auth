@@ -94,8 +94,8 @@ class UserAuthenticationBackend(BaseAuthenticationBackend):
         confd_client = Client(token=self._config.get('token'), **self._confd_config)
         response = confd_client.users.list(**kwargs)
         for user in response['items']:
-            voicemail_id = user.get('voicemail', {}).get('id')
-            voicemails = [voicemail_id] if voicemail_id else []
+            voicemail = user.get('voicemail')
+            voicemails = [voicemail['id']] if voicemail else []
             lines, sip, sccp, custom, extensions = [], [], [], [], []
             for line in user['lines']:
                 lines.append(line['id'])
