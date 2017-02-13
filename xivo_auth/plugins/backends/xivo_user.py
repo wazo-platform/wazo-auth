@@ -32,12 +32,14 @@ class XiVOUser(UserAuthenticationBackend):
         self._confd_config = config['confd']
 
     def get_acls(self, login, args):
-        # TODO don't botter calling xivo-confd if there no acl_templates
         # TODO check if there's a way to check if a substitution is required?
         logger.debug('get_acls(%s, %s)', login, args)
-        user_data = self.get_user_data(username=login)
-        logger.debug('%s', user_data)
-        return self.render_acl(args.get('acl_templates'), user_data)
+        user_data = {}
+        acl_templates = args.get('acl_templates', [])
+        if acl_templates:
+            user_data = self.get_user_data(username=login)
+
+        return self.render_acl(acl_templates, user_data)
 
     def get_ids(self, username, args):
         with session_scope():

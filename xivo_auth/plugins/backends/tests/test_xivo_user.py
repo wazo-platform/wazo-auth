@@ -21,7 +21,7 @@ from xivo_dao.alchemy.userfeatures import UserFeatures as User
 from xivo_dao.helpers.exception import InputError
 
 from mock import patch, Mock
-from hamcrest import assert_that, equal_to
+from hamcrest import assert_that, equal_to, is_
 
 from xivo_auth.plugins.backends.default_acls import DEFAULT_USER_ACLS
 from xivo_auth.plugins.backends.xivo_user import XiVOUser
@@ -65,9 +65,19 @@ class TestVerifyPassword(unittest.TestCase):
 @patch('xivo_auth.interfaces.Client')
 class TestGetAcls(unittest.TestCase):
 
-    def test_that_get_acls_returns_the_right_acls(self, _ConfdClient):
-        backend = XiVOUser({'confd': {'host': 'localhost'}})
+    def setUp(self):
+        self.backend = XiVOUser({'confd': {'host': 'localhost'}})
 
-        result = backend.get_acls('foo', {'acl_templates': DEFAULT_USER_ACLS})
+    def test_that_get_acls_returns_the_right_acls(self, _ConfdClient):
+        result = self.backend.get_acls('foo', {'acl_templates': DEFAULT_USER_ACLS})
 
         assert_that(result, equal_to(DEFAULT_USER_ACLS))
+
+    def test_that_confd_is_not_called_if_no_acl_templates(self, _ConfdClient):
+        args = [{'acl_templates': []}, {}]
+
+        with patch.object(self.backend, 'get_user_data') as get_user_data:
+            for arg in args:
+                self.backend.get_acls('foo', arg)
+                assert_that(get_user_data.called, is_(False), arg)
+                get_user_data.reset_mock()
