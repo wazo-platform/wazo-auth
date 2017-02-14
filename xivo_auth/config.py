@@ -61,7 +61,12 @@ _DEFAULT_CONFIG = {
         'retry_interval': 2,
         'extra_tags': [],
     },
-    'confd': {},
+    'confd': {
+        'host': 'localhost',
+        'port': 9486,
+        'verify_certificate': '/usr/share/xivo-certs/server.crt',
+        'https': True,
+    },
 }
 
 

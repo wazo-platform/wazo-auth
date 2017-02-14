@@ -62,7 +62,6 @@ confd:
   https: true
   port: 9486
   verify_certificate: /usr/share/xivo-certs/server.crt
-  key_file: /var/lib/xivo-auth-keys/xivo-auth.yml
 
 # Database connection informations.
 db_uri: postgresql://asterisk:proformatique@localhost/asterisk
