@@ -51,6 +51,8 @@ class TestPolicyCRUD(unittest.TestCase):
 
     def setUp(self):
         self._crud = database._PolicyCRUD(database._ConnectionFactory(DB_URI))
+        default_user_policy = self._crud.get('wazo_default_user_policy', 'name', 'asc', 1, 0)[0]
+        self._default_user_policy_uuid = default_user_policy['uuid']
 
     def test_template_association(self):
         assert_that(
@@ -109,16 +111,16 @@ class TestPolicyCRUD(unittest.TestCase):
             self._new_policy('c', 'x'),
         ) as (a, b, c):
             result = self.list_policy(order='name', direction='asc')
-            assert_that(result, contains(a, b, c))
+            assert_that(result, contains(a, b, c, self._default_user_policy_uuid))
 
             result = self.list_policy(order='name', direction='desc')
-            assert_that(result, contains(c, b, a))
+            assert_that(result, contains(self._default_user_policy_uuid, c, b, a))
 
             result = self.list_policy(order='description', direction='asc')
-            assert_that(result, contains(c, b, a))
+            assert_that(result, contains(self._default_user_policy_uuid, c, b, a))
 
             result = self.list_policy(order='description', direction='desc')
-            assert_that(result, contains(a, b, c))
+            assert_that(result, contains(a, b, c, self._default_user_policy_uuid))
 
             assert_that(
                 calling(self.list_policy).with_args(order='foobar', direction='asc'),
@@ -132,7 +134,7 @@ class TestPolicyCRUD(unittest.TestCase):
             assert_that(result, contains(a, b))
 
             result = self.list_policy(order='name', direction='asc', offset=1)
-            assert_that(result, contains(b, c))
+            assert_that(result, contains(b, c, self._default_user_policy_uuid))
 
             invalid_offsets = [-1, 'two', True, False]
             for offset in invalid_offsets:

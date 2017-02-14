@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -60,6 +60,12 @@ _DEFAULT_CONFIG = {
         'refresh_interval': 27,
         'retry_interval': 2,
         'extra_tags': [],
+    },
+    'confd': {
+        'host': 'localhost',
+        'port': 9486,
+        'verify_certificate': '/usr/share/xivo-certs/server.crt',
+        'https': True,
     },
 }
 

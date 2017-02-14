@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,17 +15,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-from xivo_auth import BaseAuthenticationBackend
-from xivo_auth.plugins.backends.default_acls import DEFAULT_USER_ACLS
+import logging
 
+from xivo_auth import UserAuthenticationBackend
 from xivo_dao.resources.user import dao as user_dao
 from xivo_dao.helpers.db_utils import session_scope
 
+logger = logging.getLogger(__name__)
 
-class XiVOUser(BaseAuthenticationBackend):
+
+class XiVOUser(UserAuthenticationBackend):
+
+    def __init__(self, config):
+        super(XiVOUser, self).__init__(config)
+        self._config = config
+        self._confd_config = config['confd']
 
     def get_acls(self, login, args):
-        return DEFAULT_USER_ACLS
+        acl_templates = args.get('acl_templates', [])
+        return self.render_acl(acl_templates, self.get_user_data, username=login)
 
     def get_ids(self, username, args):
         with session_scope():

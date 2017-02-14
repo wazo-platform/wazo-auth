@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@ from xivo_dao.alchemy.userfeatures import UserFeatures as User
 from xivo_dao.helpers.exception import InputError
 
 from mock import patch, Mock
-from hamcrest import assert_that, equal_to
+from hamcrest import assert_that, equal_to, is_
 
 from xivo_auth.plugins.backends.default_acls import DEFAULT_USER_ACLS
 from xivo_auth.plugins.backends.xivo_user import XiVOUser
@@ -32,7 +32,7 @@ class TestGetIDS(unittest.TestCase):
 
     def test_that_get_ids_calls_the_dao(self, user_dao_mock):
         user_dao_mock.get_by.return_value = Mock(User, uuid='foobars-uuid')
-        backend = XiVOUser('config')
+        backend = XiVOUser({'confd': {'host': 'localhost'}})
         args = None
 
         result = backend.get_ids('foobar', args)
@@ -42,7 +42,7 @@ class TestGetIDS(unittest.TestCase):
 
     def test_that_get_ids_raises_if_no_user(self, user_dao_mock):
         user_dao_mock.get_by.side_effect = InputError
-        backend = XiVOUser('config')
+        backend = XiVOUser({'confd': {'host': 'localhost'}})
 
         self.assertRaises(Exception, backend.get_ids, 'foobar')
 
@@ -52,7 +52,7 @@ class TestVerifyPassword(unittest.TestCase):
 
     def test_that_verify_password_calls_the_dao(self, user_dao_mock):
         user_dao_mock.find_by.return_value = Mock(User)
-        backend = XiVOUser('config')
+        backend = XiVOUser({'confd': {'host': 'localhost'}})
 
         result = backend.verify_password('foo', 'bar', None)
 
@@ -62,11 +62,22 @@ class TestVerifyPassword(unittest.TestCase):
                                                       enableclient=1)
 
 
+@patch('xivo_auth.interfaces.Client')
 class TestGetAcls(unittest.TestCase):
 
-    def test_that_get_acls_returns_the_right_acls(self):
-        backend = XiVOUser('config')
+    def setUp(self):
+        self.backend = XiVOUser({'confd': {'host': 'localhost'}})
 
-        result = backend.get_acls('foo', 'bar')
+    def test_that_get_acls_returns_the_right_acls(self, _ConfdClient):
+        result = self.backend.get_acls('foo', {'acl_templates': DEFAULT_USER_ACLS})
 
         assert_that(result, equal_to(DEFAULT_USER_ACLS))
+
+    def test_that_confd_is_not_called_if_no_acl_templates(self, _ConfdClient):
+        args = [{'acl_templates': []}, {}]
+
+        with patch.object(self.backend, 'get_user_data') as get_user_data:
+            for arg in args:
+                self.backend.get_acls('foo', arg)
+                assert_that(get_user_data.called, is_(False), arg)
+                get_user_data.reset_mock()

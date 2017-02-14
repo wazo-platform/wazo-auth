@@ -49,6 +49,12 @@ class Storage(object):
                 return policy
         raise UnknownPolicyException()
 
+    def get_policy_by_name(self, policy_name):
+        for policy in self._policy_crud.get(policy_name, 'name', 'asc', None, None):
+            if policy['name'] == policy_name:
+                return policy
+        raise UnknownPolicyException()
+
     def get_token(self, token_id):
         token_data = self._token_crud.get(token_id)
         if not token_data:

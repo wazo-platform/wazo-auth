@@ -52,6 +52,17 @@ consul:
   verify: /usr/share/xivo-certs/server.crt
   token: 'the_one_ring'
 
+backend_policies:
+  xivo_user: wazo_default_user_policy
+  ldap_user: wazo_default_user_policy
+
+# Confd connection information
+confd:
+  host: 'localhost'
+  https: true
+  port: 9486
+  verify_certificate: /usr/share/xivo-certs/server.crt
+
 # Database connection informations.
 db_uri: postgresql://asterisk:proformatique@localhost/asterisk
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,13 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-import ldap
 import unittest
+import ldap
 
 from mock import patch, Mock, call
 from hamcrest import assert_that, equal_to
 
-from xivo_auth.plugins.backends.default_acls import DEFAULT_USER_ACLS
 from xivo_auth.plugins.backends.ldap_user import LDAPUser, _XivoLDAP
 
 
@@ -30,6 +29,7 @@ class TestGetACLS(unittest.TestCase):
 
     def setUp(self):
         config = {
+            'confd': {},
             'ldap': {
                 'uri': 'ldap://host:389',
                 'user_base_dn': 'dc=example,dc=com',
@@ -40,8 +40,9 @@ class TestGetACLS(unittest.TestCase):
         self.backend = LDAPUser(config)
 
     def test_get_acls(self, find_by):
-        result = self.backend.get_acls('alice', self.args)
-        assert_that(result, equal_to((DEFAULT_USER_ACLS)))
+        with patch.object(self.backend, 'render_acl') as render_acl:
+            result = self.backend.get_acls('alice', self.args)
+            assert_that(result, equal_to(render_acl.return_value))
 
 
 @patch('xivo_auth.plugins.backends.ldap_user.find_by')
@@ -49,6 +50,7 @@ class TestGetIDS(unittest.TestCase):
 
     def setUp(self):
         config = {
+            'confd': {},
             'ldap': {
                 'uri': 'ldap://host:389',
                 'user_base_dn': 'dc=example,dc=com',
@@ -73,6 +75,7 @@ class TestVerifyPassword(unittest.TestCase):
 
     def setUp(self):
         self.config = {
+            'confd': {},
             'ldap': {
                 'uri': 'ldap://host:389',
                 'user_base_dn': 'dc=example,dc=com',
@@ -175,6 +178,7 @@ class TestVerifyPassword(unittest.TestCase):
 
     def test_that_verify_password_calls_with_bind_anonymous(self, find_by, xivo_ldap):
         extended_config = {
+            'confd': {},
             'ldap': {
                 'bind_anonymous': True
             }
@@ -196,6 +200,7 @@ class TestVerifyPassword(unittest.TestCase):
 
     def test_that_verify_password_calls_return_false_when_no_binding_with_anonymous(self, find_by, xivo_ldap):
         extended_config = {
+            'confd': {},
             'ldap': {
                 'bind_anonymous': True
             }
@@ -213,6 +218,7 @@ class TestVerifyPassword(unittest.TestCase):
 
     def test_that_verify_password_calls_with_bind_dn(self, find_by, xivo_ldap):
         extended_config = {
+            'confd': {},
             'ldap': {
                 'bind_dn': 'uid=foo,dc=example,dc=com',
                 'bind_password': 'S3cr$t'
@@ -235,6 +241,7 @@ class TestVerifyPassword(unittest.TestCase):
 
     def test_that_verify_password_calls_with_missing_bind_password_try_bind(self, find_by, xivo_ldap):
         extended_config = {
+            'confd': {},
             'ldap': {
                 'bind_dn': 'uid=foo,dc=example,dc=com',
             }

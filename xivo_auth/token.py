@@ -27,6 +27,7 @@ from datetime import datetime
 
 from .exceptions import (
     MissingACLTokenException,
+    UnknownPolicyException,
     UnknownTokenException,
     RabbitMQConnectionException,
 )
@@ -136,6 +137,7 @@ class TokenPayload(object):
 class Manager(object):
 
     def __init__(self, config, storage, celery):
+        self._backend_policies = config.get('backend_policies', {})
         self._default_expiration = config['default_token_lifetime']
         self._storage = storage
         self._celery = celery
@@ -145,6 +147,7 @@ class Manager(object):
 
         auth_id, xivo_user_uuid = backend.get_ids(login, args)
         xivo_uuid = backend.get_xivo_uuid(args)
+        args['acl_templates'] = self._get_acl_templates(backend.plugin_name)
         acls = backend.get_acls(login, args)
         expiration = args.get('expiration', self._default_expiration)
         t = time.time()
@@ -186,6 +189,19 @@ class Manager(object):
             raise MissingACLTokenException(required_acl)
 
         return token
+
+    def _get_acl_templates(self, backend_name):
+        policy_name = self._backend_policies.get(backend_name)
+        if not policy_name:
+            return []
+
+        try:
+            policy = self._storage.get_policy_by_name(policy_name)
+        except UnknownPolicyException:
+            logger.info('Unknown policy name "%s" configured for backend "%s"', policy_name, backend_name)
+            return []
+
+        return policy['acl_templates']
 
     def _get_token_hash(self, token):
         return hashlib.sha256('{token}'.format(token=token)).hexdigest()

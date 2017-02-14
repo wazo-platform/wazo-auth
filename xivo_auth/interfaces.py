@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2016 Avencall
-# Copyright (C) 2016 Proformatique, Inc.
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +17,9 @@
 
 import abc
 import os
+
+from xivo_confd_client import Client
+from xivo_auth.helpers import LazyTemplateRenderer
 
 DEFAULT_XIVO_UUID = os.getenv('XIVO_UUID')
 
@@ -67,3 +69,57 @@ class BaseAuthenticationBackend(object):
         Return True if the plugin should be loaded and False otherwise.
         """
         return True
+
+
+class UserAuthenticationBackend(BaseAuthenticationBackend):
+
+    __metaclass__ = abc.ABCMeta
+
+    def __init__(self, config):
+        super(UserAuthenticationBackend, self).__init__(config)
+        self._config = config
+        self._confd_config = config['confd']
+
+    @abc.abstractmethod
+    def get_ids(self, login, args):
+        super(UserAuthenticationBackend, self).get_ids(login, args)
+
+    @abc.abstractmethod
+    def verify_password(self, login, passwd, args):
+        super(UserAuthenticationBackend, self).verify_password(login, passwd, args)
+
+    def get_user_data(self, **kwargs):
+        confd_client = Client(token=self._config.get('token'), **self._confd_config)
+        response = confd_client.users.list(**kwargs)
+        for user in response['items']:
+            voicemail = user.get('voicemail')
+            voicemails = [voicemail['id']] if voicemail else []
+            lines, sip, sccp, custom, extensions = [], [], [], [], []
+            for line in user['lines']:
+                lines.append(line['id'])
+                endpoint_custom = line.get('endpoint_custom')
+                endpoint_sip = line.get('endpoint_sip')
+                endpoint_sccp = line.get('endpoint_sccp')
+                if endpoint_custom:
+                    custom.append(endpoint_custom['id'])
+                elif endpoint_sip:
+                    sip.append(endpoint_sip['id'])
+                elif endpoint_sccp:
+                    sccp.append(endpoint_sccp['id'])
+                for extension in line['extensions']:
+                    extensions.append(extension['id'])
+            return {
+                'id': user['id'],
+                'uuid': user['uuid'],
+                'voicemails': voicemails,
+                'lines': lines,
+                'extensions': extensions,
+                'endpoint_sip': sip,
+                'endpoint_sccp': sccp,
+                'endpoint_custom': custom,
+            }
+        return {}
+
+    def render_acl(self, acl_templates, get_data_fn, *args, **kwargs):
+        renderer = LazyTemplateRenderer(acl_templates, get_data_fn, *args, **kwargs)
+        return renderer.render()
