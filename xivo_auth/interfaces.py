@@ -140,20 +140,23 @@ class LazyTemplateRenderer(object):
     def render(self):
         acls = []
         for acl_template in self._acl_templates:
-            acl = self._evaluate_template(acl_template)
-            if not acl:
-                continue
-            acls.append(acl)
+            for acl in self._evaluate_template(acl_template):
+                acls.append(acl)
         return acls
 
     def _evaluate_template(self, acl_template):
         template = Template(acl_template, undefined=StrictUndefined)
         try:
-            return template.render(self._data)
+            rendered_template = template.render(self._data)
+            for acl in rendered_template.split('\n'):
+                if acl:
+                    yield acl
         except UndefinedError:
             # _data is only fetched if needed
             if self._initialized:
                 return
             self._initialized = True
             self._data = self._get_data_fn(*self._args, **self._kwargs)
-            return self._evaluate_template(acl_template)
+            for acl in self._evaluate_template(acl_template):
+                if acl:
+                    yield acl
