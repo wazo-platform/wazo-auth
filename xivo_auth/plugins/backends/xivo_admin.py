@@ -35,7 +35,7 @@ class XiVOAdmin(BaseAuthenticationBackend):
         else:
             dird_acl = 'dird.tenants.#'
 
-        return ['confd.#', dird_acl]
+        return ['confd.#', dird_acl, 'auth.policies.#']
 
     def get_ids(self, username, args):
         with session_scope():
