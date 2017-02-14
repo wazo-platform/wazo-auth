@@ -10,6 +10,7 @@ unidecode==0.04.16
 psycopg2
 git+https://github.com/wazo-pbx/xivo-lib-rest-client.git
 git+https://github.com/wazo-pbx/xivo-auth-client.git
+git+https://github.com/wazo-pbx/xivo-confd-client.git
 git+https://github.com/wazo-pbx/xivo-test-helpers.git
 git+https://github.com/wazo-pbx/xivo-lib-python.git
 alembic==0.6.5
