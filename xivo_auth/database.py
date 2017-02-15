@@ -16,9 +16,13 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>
 
 import uuid
+from contextlib import contextmanager
 from itertools import izip
 from threading import Lock
 import psycopg2
+from sqlalchemy import create_engine, exc
+from sqlalchemy.orm import sessionmaker, scoped_session
+from .models import Policy
 from .token import Token
 from .exceptions import (DuplicatePolicyException, DuplicateTemplateException,
                          InvalidLimitException, InvalidOffsetException,
@@ -118,6 +122,16 @@ class _CRUD(object):
     def connection(self):
         return self._factory.connection()
 
+    @contextmanager
+    def new_session(self):
+        session = self._factory.get_session()
+        try:
+            yield session
+            session.commit()
+        except (exc.OperationalError, exc.SQLAlchemyError):
+            session.rollback()
+            raise
+
     @staticmethod
     def row_to_dict(columns, row):
         return dict(izip(columns, row))
@@ -132,7 +146,6 @@ WHERE auth_policy.uuid ILIKE %s
       OR auth_policy.name ILIKE %s
       OR auth_policy.description ILIKE %s
 """
-    _DELETE_POLICY_QRY = "DELETE FROM auth_policy WHERE uuid=%s"
     _DISSOCIATE_POLICY_ACL_TEMPLATE = "DELETE FROM auth_policy_template WHERE policy_uuid=%s AND template_id=%s"
     _DISSOCIATE_POLICY_ACL_TEMPLATE_ALL = "DELETE FROM auth_policy_template WHERE policy_uuid=%s"
     _INSERT_TEMPLATE_QRY = "INSERT INTO auth_acl_template (template) VALUES (%s) RETURNING id"
@@ -199,10 +212,13 @@ LIMIT {} OFFSET {}
         return policy_uuid
 
     def delete(self, policy_uuid):
-        with self.connection().cursor() as curs:
-            curs.execute(self._DELETE_POLICY_QRY, (policy_uuid,))
-            if curs.rowcount == 0:
-                raise UnknownPolicyException()
+        filter_ = Policy.uuid == policy_uuid
+
+        with self.new_session() as s:
+            nb_deleted = s.query(Policy).filter(filter_).delete(synchronize_session=False)
+
+        if not nb_deleted:
+            raise UnknownPolicyException()
 
     def get(self, search_pattern, order, direction, limit, offset):
         if order not in ['name', 'description', 'uuid']:
@@ -348,6 +364,9 @@ class _ConnectionFactory(object):
         self._db_uri = db_uri
         self._connection_lock = Lock()
         self._conn = self._new_connection()
+        self._Session = scoped_session(sessionmaker())
+        engine = create_engine(db_uri)
+        self._Session.configure(bind=engine)
 
     def _new_connection(self):
         conn = psycopg2.connect(self._db_uri)
@@ -366,3 +385,6 @@ class _ConnectionFactory(object):
                 self._conn = self._new_connection()
 
             return self._conn
+
+    def get_session(self):
+        return self._Session()
