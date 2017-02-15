@@ -22,7 +22,7 @@ from threading import Lock
 import psycopg2
 from sqlalchemy import create_engine, exc
 from sqlalchemy.orm import sessionmaker, scoped_session
-from .models import Policy, Token as TokenModel
+from .models import ACL, Policy, Token as TokenModel
 from .token import Token
 from .exceptions import (DuplicatePolicyException, DuplicateTemplateException,
                          InvalidLimitException, InvalidOffsetException,
@@ -318,13 +318,6 @@ INSERT INTO auth_token (auth_id, user_uuid, xivo_uuid, issued_t, expire_t)
 VALUES (%s, %s, %s, %s, %s)
 RETURNING uuid;
 """
-    _SELECT_ACL_QRY = "SELECT value FROM auth_acl WHERE token_uuid=%s;"
-    _SELECT_TOKEN_QRY = """\
-SELECT uuid, auth_id, user_uuid, xivo_uuid, issued_t, expire_t
-FROM auth_token
-WHERE uuid=%s;
-"""
-    _RETURNED_COLUMNS = ['uuid', 'auth_id', 'xivo_user_uuid', 'xivo_uuid', 'issued_t', 'expire_t']
 
     def create(self, body):
         token_args = (body['auth_id'], body['xivo_user_uuid'],
@@ -340,17 +333,23 @@ WHERE uuid=%s;
         return token_uuid
 
     def get(self, token_uuid):
-        with self.connection().cursor() as curs:
-            curs.execute(self._SELECT_TOKEN_QRY, (token_uuid,))
-            row = curs.fetchone()
-            if not row:
+        with self.new_session() as s:
+            token = s.query(TokenModel).filter(TokenModel.uuid == token_uuid).first()
+            if not token:
                 raise UnknownTokenException()
-            curs.execute(self._SELECT_ACL_QRY, (row[0],))
-            acls = [acl[0] for acl in curs.fetchall()]
 
-        token_data = self.row_to_dict(self._RETURNED_COLUMNS, row)
-        token_data['acls'] = acls
-        return token_data
+            filter_ = ACL.token_uuid == token.uuid
+            acls = [acl.value for acl in s.query(ACL.value).filter(filter_).all()]
+
+        return {
+            'uuid': token.uuid,
+            'auth_id': token.auth_id,
+            'xivo_user_uuid': token.user_uuid,
+            'xivo_uuid': token.xivo_uuid,
+            'issued_t': token.issued_t,
+            'expire_t': token.expire_t,
+            'acls': acls,
+        }
 
     def delete(self, token_uuid):
         filter_ = TokenModel.uuid == token_uuid
