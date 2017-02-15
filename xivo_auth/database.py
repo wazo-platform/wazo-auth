@@ -22,7 +22,7 @@ from threading import Lock
 import psycopg2
 from sqlalchemy import create_engine, exc
 from sqlalchemy.orm import sessionmaker, scoped_session
-from .models import Policy
+from .models import Policy, Token as TokenModel
 from .token import Token
 from .exceptions import (DuplicatePolicyException, DuplicateTemplateException,
                          InvalidLimitException, InvalidOffsetException,
@@ -310,7 +310,6 @@ LIMIT {} OFFSET {}
 
 class _TokenCRUD(_CRUD):
 
-    _DELETE_TOKEN_QRY = """DELETE FROM auth_token WHERE uuid=%s;"""
     _INSERT_ACL_QRY = """\
 INSERT INTO auth_acl (value, token_uuid)
 VALUES """
@@ -354,8 +353,10 @@ WHERE uuid=%s;
         return token_data
 
     def delete(self, token_uuid):
-        with self.connection().cursor() as curs:
-            curs.execute(self._DELETE_TOKEN_QRY, (token_uuid,))
+        filter_ = TokenModel.uuid == token_uuid
+
+        with self.new_session() as s:
+            s.query(TokenModel).filter(filter_).delete(synchronize_session=False)
 
 
 class _ConnectionFactory(object):
