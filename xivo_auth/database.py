@@ -310,27 +310,20 @@ LIMIT {} OFFSET {}
 
 class _TokenCRUD(_CRUD):
 
-    _INSERT_ACL_QRY = """\
-INSERT INTO auth_acl (value, token_uuid)
-VALUES """
-    _INSERT_TOKEN_QRY = """\
-INSERT INTO auth_token (auth_id, user_uuid, xivo_uuid, issued_t, expire_t)
-VALUES (%s, %s, %s, %s, %s)
-RETURNING uuid;
-"""
-
     def create(self, body):
-        token_args = (body['auth_id'], body['xivo_user_uuid'],
-                      body['xivo_uuid'], int(body['issued_t']),
-                      int(body['expire_t']))
-        with self.connection().cursor() as curs:
-            curs.execute(self._INSERT_TOKEN_QRY, token_args)
-            token_uuid = curs.fetchone()[0]
-            acls = body.get('acls')
-            if acls:
-                values = ', '.join(curs.mogrify("(%s,%s)", (acl, token_uuid)) for acl in acls)
-                curs.execute(self._INSERT_ACL_QRY + values)
-        return token_uuid
+        token = TokenModel(
+            auth_id=body['auth_id'],
+            user_uuid=body['xivo_user_uuid'],
+            xivo_uuid=body['xivo_uuid'],
+            issued_t=int(body['issued_t']),
+            expire_t=int(body['expire_t']),
+        )
+        with self.new_session() as s:
+            s.add(token)
+            s.commit()
+            acls = [ACL(token_uuid=token.uuid, value=acl) for acl in body.get('acls') or []]
+            s.add_all(acls)
+        return token.uuid
 
     def get(self, token_uuid):
         with self.new_session() as s:
