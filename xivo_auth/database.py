@@ -20,9 +20,9 @@ from contextlib import contextmanager
 from itertools import izip
 from threading import Lock
 import psycopg2
-from sqlalchemy import create_engine, exc, func, or_
+from sqlalchemy import and_, create_engine, exc, func, or_
 from sqlalchemy.orm import sessionmaker, scoped_session
-from .models import ACL, Policy, Token as TokenModel
+from .models import ACL, ACLTemplate, Policy, ACLTemplatePolicy, Token as TokenModel
 from .token import Token
 from .exceptions import (DuplicatePolicyException, DuplicateTemplateException,
                          InvalidLimitException, InvalidOffsetException,
@@ -139,7 +139,6 @@ class _CRUD(object):
 
 class _PolicyCRUD(_CRUD):
 
-    _DISSOCIATE_POLICY_ACL_TEMPLATE = "DELETE FROM auth_policy_template WHERE policy_uuid=%s AND template_id=%s"
     _DISSOCIATE_POLICY_ACL_TEMPLATE_ALL = "DELETE FROM auth_policy_template WHERE policy_uuid=%s"
     _INSERT_TEMPLATE_QRY = "INSERT INTO auth_acl_template (template) VALUES (%s) RETURNING id"
     _INSERT_POLICY_TEMPLATE_QRY = "INSERT INTO auth_policy_template (policy_uuid, template_id) VALUES "
@@ -148,7 +147,6 @@ INSERT INTO auth_policy (name, description)
 VALUES (%s, %s)
 RETURNING uuid
 """
-    _POLICY_EXISTS_QRY = "SELECT count(uuid) from auth_policy WHERE uuid=%s"
     _UPDATE_POLICY_QRY = "UPDATE auth_policy SET name=%s, description=%s WHERE uuid=%s"
     _SELECT_TEMPLATE_QRY = "SELECT id, template FROM auth_acl_template WHERE template in %s"
     _SELECT_POLICY_QRY = """\
@@ -178,14 +176,20 @@ LIMIT {} OFFSET {}
                 raise UnknownPolicyException()
 
     def dissociate_policy_template(self, policy_uuid, acl_template):
-        with self.connection().cursor() as curs:
-            curs.execute(self._POLICY_EXISTS_QRY, (policy_uuid,))
-            if curs.fetchone()[0] == 0:
+        with self.new_session() as s:
+            policy_count = s.query(Policy).filter(Policy.uuid == policy_uuid).scalar()
+            if not policy_count:
                 raise UnknownPolicyException()
 
-            template_ids = self._create_or_find_acl_templates(curs, [acl_template])
-            for template_id in template_ids:
-                curs.execute(self._DISSOCIATE_POLICY_ACL_TEMPLATE, (policy_uuid, template_id))
+            filter_ = ACLTemplate.template == acl_template
+            templ_ids = [t.id_ for t in s.query(ACLTemplate.id_).filter(filter_).all()]
+
+            for templ_id in templ_ids:
+                filter_ = and_(
+                    ACLTemplatePolicy.policy_uuid == policy_uuid,
+                    ACLTemplatePolicy.template_id == templ_id,
+                )
+                s.query(ACLTemplatePolicy).filter(filter_).delete(synchronize_session=False)
 
     def count(self, search_pattern):
         filter_ = or_(
