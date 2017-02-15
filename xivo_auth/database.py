@@ -20,7 +20,7 @@ from contextlib import contextmanager
 from itertools import izip
 from threading import Lock
 import psycopg2
-from sqlalchemy import create_engine, exc
+from sqlalchemy import create_engine, exc, func, or_
 from sqlalchemy.orm import sessionmaker, scoped_session
 from .models import ACL, Policy, Token as TokenModel
 from .token import Token
@@ -139,13 +139,6 @@ class _CRUD(object):
 
 class _PolicyCRUD(_CRUD):
 
-    _COUNT_POLICY_QRY = """
-SELECT COUNT(uuid)
-FROM auth_policy
-WHERE auth_policy.uuid ILIKE %s
-      OR auth_policy.name ILIKE %s
-      OR auth_policy.description ILIKE %s
-"""
     _DISSOCIATE_POLICY_ACL_TEMPLATE = "DELETE FROM auth_policy_template WHERE policy_uuid=%s AND template_id=%s"
     _DISSOCIATE_POLICY_ACL_TEMPLATE_ALL = "DELETE FROM auth_policy_template WHERE policy_uuid=%s"
     _INSERT_TEMPLATE_QRY = "INSERT INTO auth_acl_template (template) VALUES (%s) RETURNING id"
@@ -195,9 +188,13 @@ LIMIT {} OFFSET {}
                 curs.execute(self._DISSOCIATE_POLICY_ACL_TEMPLATE, (policy_uuid, template_id))
 
     def count(self, search_pattern):
-        with self.connection().cursor() as curs:
-            curs.execute(self._COUNT_POLICY_QRY, (search_pattern, search_pattern, search_pattern))
-            return curs.fetchone()[0]
+        filter_ = or_(
+            Policy.uuid.ilike(search_pattern),
+            Policy.name.ilike(search_pattern),
+            Policy.description.ilike(search_pattern),
+        )
+        with self.new_session() as s:
+            return s.query(func.count(Policy.uuid)).filter(filter_).scalar()
 
     def create(self, name, description, acl_templates):
         with self.connection().cursor() as curs:
