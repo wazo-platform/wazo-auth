@@ -185,12 +185,15 @@ LIMIT {} OFFSET {}
                 )
                 s.query(ACLTemplatePolicy).filter(filter_).delete(synchronize_session=False)
 
-    def count(self, search_pattern):
-        filter_ = or_(
+    def _new_search_filter(self, search_pattern):
+        return or_(
             Policy.uuid.ilike(search_pattern),
             Policy.name.ilike(search_pattern),
             Policy.description.ilike(search_pattern),
         )
+
+    def count(self, search_pattern):
+        filter_ = self._new_search_filter(search_pattern)
         with self.new_session() as s:
             return s.query(func.count(Policy.uuid)).filter(filter_).scalar()
 
