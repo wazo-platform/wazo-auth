@@ -270,9 +270,9 @@ LIMIT {} OFFSET {}
         template_policies = [ACLTemplatePolicy(policy_uuid=policy_uuid, template_id=id_) for id_ in ids]
         session.add_all(template_policies)
 
-    def _check_valid_limit_or_offset(self, value, default, exc):
+    def _check_valid_limit_or_offset(self, value, default, exception):
         if value is True or value is False:
-            raise exc(value)
+            raise exception(value)
 
         if value is None:
             return default
@@ -280,10 +280,10 @@ LIMIT {} OFFSET {}
         try:
             value = int(value)
         except ValueError:
-            raise exc(value)
+            raise exception(value)
 
         if value < 0:
-            raise exc(value)
+            raise exception(value)
 
         return value
 
