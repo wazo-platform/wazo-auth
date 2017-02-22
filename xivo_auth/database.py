@@ -103,9 +103,8 @@ class Storage(object):
 
     @classmethod
     def from_config(cls, config):
-        factory = _ConnectionFactory(config['db_uri'])
-        policy_crud = _PolicyCRUD(factory)
-        token_crud = _TokenCRUD(factory)
+        policy_crud = _PolicyCRUD(config['db_uri'])
+        token_crud = _TokenCRUD(config['db_uri'])
         return cls(policy_crud, token_crud)
 
 
@@ -113,12 +112,14 @@ class _CRUD(object):
 
     _UNIQUE_CONSTRAINT_CODE = '23505'
 
-    def __init__(self, connection_factory):
-        self._factory = connection_factory
+    def __init__(self, db_uri):
+        self._Session = scoped_session(sessionmaker())
+        engine = create_engine(db_uri)
+        self._Session.configure(bind=engine)
 
     @contextmanager
     def new_session(self):
-        session = self._factory.get_session()
+        session = self._Session()
         try:
             yield session
             session.commit()
@@ -357,14 +358,3 @@ class _TokenCRUD(_CRUD):
 
         with self.new_session() as s:
             s.query(TokenModel).filter(filter_).delete(synchronize_session=False)
-
-
-class _ConnectionFactory(object):
-
-    def __init__(self, db_uri):
-        self._Session = scoped_session(sessionmaker())
-        engine = create_engine(db_uri)
-        self._Session.configure(bind=engine)
-
-    def get_session(self):
-        return self._Session()

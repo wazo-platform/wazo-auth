@@ -50,7 +50,7 @@ def teardown():
 class TestPolicyCRUD(unittest.TestCase):
 
     def setUp(self):
-        self._crud = database._PolicyCRUD(database._ConnectionFactory(DB_URI))
+        self._crud = database._PolicyCRUD(DB_URI)
         default_user_policy = self._crud.get('wazo_default_user_policy', 'name', 'asc', 1, 0)[0]
         self._default_user_policy_uuid = default_user_policy['uuid']
 
@@ -198,7 +198,7 @@ class TestPolicyCRUD(unittest.TestCase):
 class TestTokenCRUD(unittest.TestCase):
 
     def setUp(self):
-        self._crud = database._TokenCRUD(database._ConnectionFactory(DB_URI))
+        self._crud = database._TokenCRUD(DB_URI)
 
     def test_create(self):
         with nested(self._new_token(),
