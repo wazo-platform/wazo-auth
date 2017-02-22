@@ -16,9 +16,10 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>
 
 import uuid
-from itertools import izip
-from threading import Lock
-import psycopg2
+from contextlib import contextmanager
+from sqlalchemy import and_, create_engine, exc, func, or_
+from sqlalchemy.orm import sessionmaker, scoped_session
+from .models import ACL, ACLTemplate, Policy, ACLTemplatePolicy, Token as TokenModel
 from .token import Token
 from .exceptions import (DuplicatePolicyException, DuplicateTemplateException,
                          InvalidLimitException, InvalidOffsetException,
@@ -102,9 +103,8 @@ class Storage(object):
 
     @classmethod
     def from_config(cls, config):
-        factory = _ConnectionFactory(config['db_uri'])
-        policy_crud = _PolicyCRUD(factory)
-        token_crud = _TokenCRUD(factory)
+        policy_crud = _PolicyCRUD(config['db_uri'])
+        token_crud = _TokenCRUD(config['db_uri'])
         return cls(policy_crud, token_crud)
 
 
@@ -112,97 +112,87 @@ class _CRUD(object):
 
     _UNIQUE_CONSTRAINT_CODE = '23505'
 
-    def __init__(self, connection_factory):
-        self._factory = connection_factory
+    def __init__(self, db_uri):
+        self._Session = scoped_session(sessionmaker())
+        engine = create_engine(db_uri)
+        self._Session.configure(bind=engine)
 
-    def connection(self):
-        return self._factory.connection()
-
-    @staticmethod
-    def row_to_dict(columns, row):
-        return dict(izip(columns, row))
+    @contextmanager
+    def new_session(self):
+        session = self._Session()
+        try:
+            yield session
+            session.commit()
+        except (exc.OperationalError, exc.SQLAlchemyError):
+            session.rollback()
+            raise
 
 
 class _PolicyCRUD(_CRUD):
 
-    _COUNT_POLICY_QRY = """
-SELECT COUNT(uuid)
-FROM auth_policy
-WHERE auth_policy.uuid ILIKE %s
-      OR auth_policy.name ILIKE %s
-      OR auth_policy.description ILIKE %s
-"""
-    _DELETE_POLICY_QRY = "DELETE FROM auth_policy WHERE uuid=%s"
-    _DISSOCIATE_POLICY_ACL_TEMPLATE = "DELETE FROM auth_policy_template WHERE policy_uuid=%s AND template_id=%s"
-    _DISSOCIATE_POLICY_ACL_TEMPLATE_ALL = "DELETE FROM auth_policy_template WHERE policy_uuid=%s"
-    _INSERT_TEMPLATE_QRY = "INSERT INTO auth_acl_template (template) VALUES (%s) RETURNING id"
-    _INSERT_POLICY_TEMPLATE_QRY = "INSERT INTO auth_policy_template (policy_uuid, template_id) VALUES "
-    _INSERT_POLICY_QRY = """\
-INSERT INTO auth_policy (name, description)
-VALUES (%s, %s)
-RETURNING uuid
-"""
-    _POLICY_EXISTS_QRY = "SELECT count(uuid) from auth_policy WHERE uuid=%s"
-    _UPDATE_POLICY_QRY = "UPDATE auth_policy SET name=%s, description=%s WHERE uuid=%s"
-    _SELECT_TEMPLATE_QRY = "SELECT id, template FROM auth_acl_template WHERE template in %s"
-    _SELECT_POLICY_QRY = """\
-SELECT auth_policy.uuid,
-       auth_policy.name,
-       auth_policy.description,
-       array_agg(auth_acl_template.template) AS acl_templates
-FROM auth_policy
-LEFT JOIN auth_policy_template ON auth_policy.uuid = auth_policy_template.policy_uuid
-LEFT JOIN auth_acl_template ON auth_policy_template.template_id = auth_acl_template.id
-WHERE auth_policy.uuid ILIKE %s
-      OR auth_policy.name ILIKE %s
-      OR auth_policy.description ILIKE %s
-GROUP BY auth_policy.uuid, auth_policy.name, auth_policy.description
-ORDER BY auth_policy.{} {}
-LIMIT {} OFFSET {}
-"""
-    _RETURNED_COLUMNS = ['uuid', 'name', 'description', 'acl_templates']
-
     def associate_policy_template(self, policy_uuid, acl_template):
-        with self.connection().cursor() as curs:
-            try:
-                self._associate_acl_templates(curs, policy_uuid, [acl_template])
-            except psycopg2.IntegrityError as e:
-                if e.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                    raise DuplicateTemplateException(acl_template)
+        with self.new_session() as s:
+            if not self._policy_exists(s, policy_uuid):
                 raise UnknownPolicyException()
+
+            self._associate_acl_templates(s, policy_uuid, [acl_template])
+            try:
+                s.commit()
+            except exc.IntegrityError as e:
+                if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                    s.rollback()
+                    raise DuplicateTemplateException(acl_template)
+                raise
 
     def dissociate_policy_template(self, policy_uuid, acl_template):
-        with self.connection().cursor() as curs:
-            curs.execute(self._POLICY_EXISTS_QRY, (policy_uuid,))
-            if curs.fetchone()[0] == 0:
+        with self.new_session() as s:
+            if not self._policy_exists(s, policy_uuid):
                 raise UnknownPolicyException()
 
-            template_ids = self._create_or_find_acl_templates(curs, [acl_template])
-            for template_id in template_ids:
-                curs.execute(self._DISSOCIATE_POLICY_ACL_TEMPLATE, (policy_uuid, template_id))
+            filter_ = ACLTemplate.template == acl_template
+            templ_ids = [t.id_ for t in s.query(ACLTemplate.id_).filter(filter_).all()]
+
+            for templ_id in templ_ids:
+                filter_ = and_(
+                    ACLTemplatePolicy.policy_uuid == policy_uuid,
+                    ACLTemplatePolicy.template_id == templ_id,
+                )
+                s.query(ACLTemplatePolicy).filter(filter_).delete(synchronize_session=False)
+
+    def _new_search_filter(self, search_pattern):
+        return or_(
+            Policy.uuid.ilike(search_pattern),
+            Policy.name.ilike(search_pattern),
+            Policy.description.ilike(search_pattern),
+        )
 
     def count(self, search_pattern):
-        with self.connection().cursor() as curs:
-            curs.execute(self._COUNT_POLICY_QRY, (search_pattern, search_pattern, search_pattern))
-            return curs.fetchone()[0]
+        filter_ = self._new_search_filter(search_pattern)
+        with self.new_session() as s:
+            return s.query(func.count(Policy.uuid)).filter(filter_).scalar()
 
     def create(self, name, description, acl_templates):
-        with self.connection().cursor() as curs:
+        policy = Policy(name=name, description=description)
+        with self.new_session() as s:
+            s.add(policy)
             try:
-                curs.execute(self._INSERT_POLICY_QRY, (name, description))
-            except psycopg2.IntegrityError as e:
-                if e.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                s.commit()
+            except exc.IntegrityError as e:
+                if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                    s.rollback()
                     raise DuplicatePolicyException(name)
                 raise
-            policy_uuid = curs.fetchone()[0]
-            self._associate_acl_templates(curs, policy_uuid, acl_templates)
-        return policy_uuid
+            self._associate_acl_templates(s, policy.uuid, acl_templates)
+        return policy.uuid
 
     def delete(self, policy_uuid):
-        with self.connection().cursor() as curs:
-            curs.execute(self._DELETE_POLICY_QRY, (policy_uuid,))
-            if curs.rowcount == 0:
-                raise UnknownPolicyException()
+        filter_ = Policy.uuid == policy_uuid
+
+        with self.new_session() as s:
+            nb_deleted = s.query(Policy).filter(filter_).delete(synchronize_session=False)
+
+        if not nb_deleted:
+            raise UnknownPolicyException()
 
     def get(self, search_pattern, order, direction, limit, offset):
         if order not in ['name', 'description', 'uuid']:
@@ -212,51 +202,79 @@ LIMIT {} OFFSET {}
             raise InvalidSortDirectionException(direction)
 
         offset = self._check_valid_limit_or_offset(offset, 0, InvalidOffsetException)
-        limit = self._check_valid_limit_or_offset(limit, 'ALL', InvalidLimitException)
+        order_field = getattr(Policy, order)
+        order_clause = order_field.asc() if direction == 'asc' else order_field.desc()
+        limit = self._check_valid_limit_or_offset(limit, None, InvalidLimitException)
 
-        query = self._SELECT_POLICY_QRY.format(
-            order, direction.upper(), limit, offset)
+        filter_ = self._new_search_filter(search_pattern)
+        with self.new_session() as s:
+            query = s.query(
+                Policy.uuid,
+                Policy.name,
+                Policy.description,
+                func.array_agg(ACLTemplate.template).label('acl_templates'),
+            ).outerjoin(
+                ACLTemplatePolicy,
+            ).outerjoin(
+                ACLTemplate,
+            ).filter(
+                filter_,
+            ).group_by(
+                Policy.uuid,
+                Policy.name,
+                Policy.description,
+            ).order_by(
+                order_clause,
+            ).limit(
+                limit,
+            ).offset(
+                offset,
+            )
 
-        with self.connection().cursor() as curs:
-            curs.execute(query, (search_pattern, search_pattern, search_pattern))
-            rows = curs.fetchall()
+            policies = []
+            for policy in query.all():
+                if policy.acl_templates == [None]:
+                    acl_templates = []
+                else:
+                    acl_templates = policy.acl_templates
 
-        policies = []
-        for row in rows:
-            policy = self.row_to_dict(self._RETURNED_COLUMNS, row)
-
-            # The array_agg function returns [None] if there no acl_template
-            if policy['acl_templates'] == [None]:
-                policy['acl_templates'] = []
-
-            policies.append(policy)
+                body = {
+                    'uuid': policy.uuid,
+                    'name': policy.name,
+                    'description': policy.description,
+                    'acl_templates': acl_templates,
+                }
+                policies.append(body)
 
         return policies
 
     def update(self, policy_uuid, name, description, acl_templates):
-        with self.connection().cursor() as curs:
+        with self.new_session() as s:
+            filter_ = Policy.uuid == policy_uuid
+            body = {'name': name, 'description': description}
+            affected_rows = s.query(Policy).filter(filter_).update(body)
+            if not affected_rows:
+                raise UnknownPolicyException()
+
             try:
-                curs.execute(self._UPDATE_POLICY_QRY, (name, description, policy_uuid))
-            except psycopg2.IntegrityError as e:
-                if e.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                s.commit()
+            except exc.IntegrityError as e:
+                if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                    s.rollback()
                     raise DuplicatePolicyException(name)
                 raise
 
-            if curs.rowcount == 0:
-                raise UnknownPolicyException()
+            self._dissociate_all_acl_templates(s, policy_uuid)
+            self._associate_acl_templates(s, policy_uuid, acl_templates)
 
-            self._dissociate_all_acl_templates(curs, policy_uuid)
-            self._associate_acl_templates(curs, policy_uuid, acl_templates)
+    def _associate_acl_templates(self, session, policy_uuid, acl_templates):
+        ids = self._create_or_find_acl_templates(session, acl_templates)
+        template_policies = [ACLTemplatePolicy(policy_uuid=policy_uuid, template_id=id_) for id_ in ids]
+        session.add_all(template_policies)
 
-    def _associate_acl_templates(self, curs, policy_uuid, acl_templates):
-        template_ids = self._create_or_find_acl_templates(curs, acl_templates)
-        if template_ids:
-            values = ', '.join(curs.mogrify("(%s,%s)", (policy_uuid, id_)) for id_ in template_ids)
-            curs.execute(self._INSERT_POLICY_TEMPLATE_QRY + values)
-
-    def _check_valid_limit_or_offset(self, value, default, exc):
+    def _check_valid_limit_or_offset(self, value, default, exception):
         if value is True or value is False:
-            raise exc(value)
+            raise exception(value)
 
         if value is None:
             return default
@@ -264,105 +282,79 @@ LIMIT {} OFFSET {}
         try:
             value = int(value)
         except ValueError:
-            raise exc(value)
+            raise exception(value)
 
         if value < 0:
-            raise exc(value)
+            raise exception(value)
 
         return value
 
-    def _create_or_find_acl_templates(self, curs, acl_templates):
+    def _create_or_find_acl_templates(self, s, acl_templates):
         if not acl_templates:
             return []
 
-        curs.execute(self._SELECT_TEMPLATE_QRY, (tuple(acl_templates),))
-        existing = {row[1]: row[0] for row in curs.fetchall()}
+        tpl = s.query(ACLTemplate).filter(ACLTemplate.template.in_(acl_templates)).all()
+        existing = {t.template: t.id_ for t in tpl}
         for template in acl_templates:
             if template in existing:
                 continue
-            id_ = self._insert_acl_template(curs, template)
+            id_ = self._insert_acl_template(s, template)
             existing[template] = id_
         return existing.values()
 
-    def _dissociate_all_acl_templates(self, curs, policy_uuid):
-        curs.execute(self._DISSOCIATE_POLICY_ACL_TEMPLATE_ALL, (policy_uuid,))
+    def _dissociate_all_acl_templates(self, s, policy_uuid):
+        filter_ = ACLTemplatePolicy.policy_uuid == policy_uuid
+        s.query(ACLTemplatePolicy).filter(filter_).delete(synchronize_session=False)
 
-    def _insert_acl_template(self, curs, template):
-        curs.execute(self._INSERT_TEMPLATE_QRY, (template,))
-        return curs.fetchone()[0]
+    def _insert_acl_template(self, s, template):
+        tpl = ACLTemplate(template=template)
+        s.add(tpl)
+        s.commit()
+        return tpl.id_
+
+    def _policy_exists(self, s, policy_uuid):
+        policy_count = s.query(func.count(Policy.uuid)).filter(Policy.uuid == policy_uuid).scalar()
+        return policy_count != 0
 
 
 class _TokenCRUD(_CRUD):
 
-    _DELETE_TOKEN_QRY = """DELETE FROM auth_token WHERE uuid=%s;"""
-    _INSERT_ACL_QRY = """\
-INSERT INTO auth_acl (value, token_uuid)
-VALUES """
-    _INSERT_TOKEN_QRY = """\
-INSERT INTO auth_token (auth_id, user_uuid, xivo_uuid, issued_t, expire_t)
-VALUES (%s, %s, %s, %s, %s)
-RETURNING uuid;
-"""
-    _SELECT_ACL_QRY = "SELECT value FROM auth_acl WHERE token_uuid=%s;"
-    _SELECT_TOKEN_QRY = """\
-SELECT uuid, auth_id, user_uuid, xivo_uuid, issued_t, expire_t
-FROM auth_token
-WHERE uuid=%s;
-"""
-    _RETURNED_COLUMNS = ['uuid', 'auth_id', 'xivo_user_uuid', 'xivo_uuid', 'issued_t', 'expire_t']
-
     def create(self, body):
-        token_args = (body['auth_id'], body['xivo_user_uuid'],
-                      body['xivo_uuid'], int(body['issued_t']),
-                      int(body['expire_t']))
-        with self.connection().cursor() as curs:
-            curs.execute(self._INSERT_TOKEN_QRY, token_args)
-            token_uuid = curs.fetchone()[0]
-            acls = body.get('acls')
-            if acls:
-                values = ', '.join(curs.mogrify("(%s,%s)", (acl, token_uuid)) for acl in acls)
-                curs.execute(self._INSERT_ACL_QRY + values)
-        return token_uuid
+        token = TokenModel(
+            auth_id=body['auth_id'],
+            user_uuid=body['xivo_user_uuid'],
+            xivo_uuid=body['xivo_uuid'],
+            issued_t=int(body['issued_t']),
+            expire_t=int(body['expire_t']),
+        )
+        with self.new_session() as s:
+            s.add(token)
+            s.commit()
+            acls = [ACL(token_uuid=token.uuid, value=acl) for acl in body.get('acls') or []]
+            s.add_all(acls)
+        return token.uuid
 
     def get(self, token_uuid):
-        with self.connection().cursor() as curs:
-            curs.execute(self._SELECT_TOKEN_QRY, (token_uuid,))
-            row = curs.fetchone()
-            if not row:
+        with self.new_session() as s:
+            token = s.query(TokenModel).filter(TokenModel.uuid == token_uuid).first()
+            if not token:
                 raise UnknownTokenException()
-            curs.execute(self._SELECT_ACL_QRY, (row[0],))
-            acls = [acl[0] for acl in curs.fetchall()]
 
-        token_data = self.row_to_dict(self._RETURNED_COLUMNS, row)
-        token_data['acls'] = acls
-        return token_data
+            filter_ = ACL.token_uuid == token.uuid
+            acls = [acl.value for acl in s.query(ACL.value).filter(filter_).all()]
+
+        return {
+            'uuid': token.uuid,
+            'auth_id': token.auth_id,
+            'xivo_user_uuid': token.user_uuid,
+            'xivo_uuid': token.xivo_uuid,
+            'issued_t': token.issued_t,
+            'expire_t': token.expire_t,
+            'acls': acls,
+        }
 
     def delete(self, token_uuid):
-        with self.connection().cursor() as curs:
-            curs.execute(self._DELETE_TOKEN_QRY, (token_uuid,))
+        filter_ = TokenModel.uuid == token_uuid
 
-
-class _ConnectionFactory(object):
-
-    def __init__(self, db_uri):
-        self._db_uri = db_uri
-        self._connection_lock = Lock()
-        self._conn = self._new_connection()
-
-    def _new_connection(self):
-        conn = psycopg2.connect(self._db_uri)
-        conn.autocommit = True
-        return conn
-
-    def connection(self):
-        with self._connection_lock:
-            if self._conn.closed:
-                self._conn = self._new_connection()
-
-            try:
-                with self._conn.cursor() as curs:
-                    curs.execute('SELECT 1;')
-            except psycopg2.OperationalError:
-                self._conn = self._new_connection()
-
-            return self._conn
+        with self.new_session() as s:
+            s.query(TokenModel).filter(filter_).delete(synchronize_session=False)

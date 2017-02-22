@@ -50,7 +50,7 @@ def teardown():
 class TestPolicyCRUD(unittest.TestCase):
 
     def setUp(self):
-        self._crud = database._PolicyCRUD(database._ConnectionFactory(DB_URI))
+        self._crud = database._PolicyCRUD(DB_URI)
         default_user_policy = self._crud.get('wazo_default_user_policy', 'name', 'asc', 1, 0)[0]
         self._default_user_policy_uuid = default_user_policy['uuid']
 
@@ -62,7 +62,7 @@ class TestPolicyCRUD(unittest.TestCase):
             calling(self._crud.dissociate_policy_template).with_args('unknown', '#'),
             raises(exceptions.UnknownPolicyException))
 
-        with self._new_policy('testé', 'descriptioñ', []) as uuid_:
+        with self._new_policy(u'testé', u'descriptioñ', []) as uuid_:
             self._crud.associate_policy_template(uuid_, '#')
             policy = self.get_policy(uuid_)
             assert_that(policy['acl_templates'], contains_inanyorder('#'))
@@ -77,17 +77,17 @@ class TestPolicyCRUD(unittest.TestCase):
 
     def test_create(self):
         acl_templates = ['dird.#', 'confd.line.42.*']
-        with self._new_policy('testé', 'descriptioñ', acl_templates) as uuid_:
+        with self._new_policy(u'testé', u'descriptioñ', acl_templates) as uuid_:
             policy = self.get_policy(uuid_)
 
             assert_that(policy['uuid'], equal_to(uuid_))
-            assert_that(policy['name'], equal_to('testé'))
-            assert_that(policy['description'], equal_to('descriptioñ'))
+            assert_that(policy['name'], equal_to(u'testé'))
+            assert_that(policy['description'], equal_to(u'descriptioñ'))
             assert_that(policy['acl_templates'], contains_inanyorder(*acl_templates))
 
     def test_that_two_policies_cannot_have_the_same_name(self):
         duplicated_name = 'foobar'
-        with self._new_policy(duplicated_name, 'descriptioñ'):
+        with self._new_policy(duplicated_name, u'descriptioñ'):
             assert_that(
                 calling(self._crud.create).with_args(duplicated_name, '', []),
                 raises(exceptions.DuplicatePolicyException))
@@ -198,7 +198,7 @@ class TestPolicyCRUD(unittest.TestCase):
 class TestTokenCRUD(unittest.TestCase):
 
     def setUp(self):
-        self._crud = database._TokenCRUD(database._ConnectionFactory(DB_URI))
+        self._crud = database._TokenCRUD(DB_URI)
 
     def test_create(self):
         with nested(self._new_token(),
