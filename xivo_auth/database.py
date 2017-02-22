@@ -17,9 +17,6 @@
 
 import uuid
 from contextlib import contextmanager
-from itertools import izip
-from threading import Lock
-import psycopg2
 from sqlalchemy import and_, create_engine, exc, func, or_
 from sqlalchemy.orm import sessionmaker, scoped_session
 from .models import ACL, ACLTemplate, Policy, ACLTemplatePolicy, Token as TokenModel
@@ -119,9 +116,6 @@ class _CRUD(object):
     def __init__(self, connection_factory):
         self._factory = connection_factory
 
-    def connection(self):
-        return self._factory.connection()
-
     @contextmanager
     def new_session(self):
         session = self._factory.get_session()
@@ -131,10 +125,6 @@ class _CRUD(object):
         except (exc.OperationalError, exc.SQLAlchemyError):
             session.rollback()
             raise
-
-    @staticmethod
-    def row_to_dict(columns, row):
-        return dict(izip(columns, row))
 
 
 class _PolicyCRUD(_CRUD):
@@ -372,30 +362,9 @@ class _TokenCRUD(_CRUD):
 class _ConnectionFactory(object):
 
     def __init__(self, db_uri):
-        self._db_uri = db_uri
-        self._connection_lock = Lock()
-        self._conn = self._new_connection()
         self._Session = scoped_session(sessionmaker())
         engine = create_engine(db_uri)
         self._Session.configure(bind=engine)
-
-    def _new_connection(self):
-        conn = psycopg2.connect(self._db_uri)
-        conn.autocommit = True
-        return conn
-
-    def connection(self):
-        with self._connection_lock:
-            if self._conn.closed:
-                self._conn = self._new_connection()
-
-            try:
-                with self._conn.cursor() as curs:
-                    curs.execute('SELECT 1;')
-            except psycopg2.OperationalError:
-                self._conn = self._new_connection()
-
-            return self._conn
 
     def get_session(self):
         return self._Session()
