@@ -139,23 +139,6 @@ class _CRUD(object):
 
 class _PolicyCRUD(_CRUD):
 
-    _SELECT_POLICY_QRY = """\
-SELECT auth_policy.uuid,
-       auth_policy.name,
-       auth_policy.description,
-       array_agg(auth_acl_template.template) AS acl_templates
-FROM auth_policy
-LEFT JOIN auth_policy_template ON auth_policy.uuid = auth_policy_template.policy_uuid
-LEFT JOIN auth_acl_template ON auth_policy_template.template_id = auth_acl_template.id
-WHERE auth_policy.uuid ILIKE %s
-      OR auth_policy.name ILIKE %s
-      OR auth_policy.description ILIKE %s
-GROUP BY auth_policy.uuid, auth_policy.name, auth_policy.description
-ORDER BY auth_policy.{} {}
-LIMIT {} OFFSET {}
-"""
-    _RETURNED_COLUMNS = ['uuid', 'name', 'description', 'acl_templates']
-
     def associate_policy_template(self, policy_uuid, acl_template):
         with self.new_session() as s:
             if not self._policy_exists(s, policy_uuid):
@@ -228,24 +211,49 @@ LIMIT {} OFFSET {}
             raise InvalidSortDirectionException(direction)
 
         offset = self._check_valid_limit_or_offset(offset, 0, InvalidOffsetException)
-        limit = self._check_valid_limit_or_offset(limit, 'ALL', InvalidLimitException)
+        order_field = getattr(Policy, order)
+        order_clause = order_field.asc() if direction == 'asc' else order_field.desc()
+        limit = self._check_valid_limit_or_offset(limit, None, InvalidLimitException)
 
-        query = self._SELECT_POLICY_QRY.format(
-            order, direction.upper(), limit, offset)
+        filter_ = self._new_search_filter(search_pattern)
+        with self.new_session() as s:
+            query = s.query(
+                Policy.uuid,
+                Policy.name,
+                Policy.description,
+                func.array_agg(ACLTemplate.template).label('acl_templates'),
+            ).outerjoin(
+                ACLTemplatePolicy,
+            ).outerjoin(
+                ACLTemplate,
+            ).filter(
+                filter_,
+            ).group_by(
+                Policy.uuid,
+                Policy.name,
+                Policy.description,
+            ).order_by(
+                order_clause,
+            ).limit(
+                limit,
+            ).offset(
+                offset,
+            )
 
-        with self.connection().cursor() as curs:
-            curs.execute(query, (search_pattern, search_pattern, search_pattern))
-            rows = curs.fetchall()
+            policies = []
+            for policy in query.all():
+                if policy.acl_templates == [None]:
+                    acl_templates = []
+                else:
+                    acl_templates = policy.acl_templates
 
-        policies = []
-        for row in rows:
-            policy = self.row_to_dict(self._RETURNED_COLUMNS, row)
-
-            # The array_agg function returns [None] if there no acl_template
-            if policy['acl_templates'] == [None]:
-                policy['acl_templates'] = []
-
-            policies.append(policy)
+                body = {
+                    'uuid': policy.uuid,
+                    'name': policy.name,
+                    'description': policy.description,
+                    'acl_templates': acl_templates,
+                }
+                policies.append(body)
 
         return policies
 
