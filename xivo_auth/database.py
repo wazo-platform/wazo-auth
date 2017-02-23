@@ -122,11 +122,12 @@ class _CRUD(object):
         session = self._Session()
         try:
             yield session
+            session.commit()
         except:
             session.rollback()
             raise
         finally:
-            session.commit()
+            self._Session.remove()
 
 
 class _PolicyCRUD(_CRUD):
@@ -182,7 +183,7 @@ class _PolicyCRUD(_CRUD):
                     raise DuplicatePolicyException(name)
                 raise
             self._associate_acl_templates(s, policy.uuid, acl_templates)
-        return policy.uuid
+            return policy.uuid
 
     def delete(self, policy_uuid):
         filter_ = Policy.uuid == policy_uuid
@@ -329,24 +330,23 @@ class _TokenCRUD(_CRUD):
         with self.new_session() as s:
             s.add(token)
             s.commit()
-        return token.uuid
+            return token.uuid
 
     def get(self, token_uuid):
         with self.new_session() as s:
             token = s.query(TokenModel).get(token_uuid)
+            if token:
+                return {
+                    'uuid': token.uuid,
+                    'auth_id': token.auth_id,
+                    'xivo_user_uuid': token.user_uuid,
+                    'xivo_uuid': token.xivo_uuid,
+                    'issued_t': token.issued_t,
+                    'expire_t': token.expire_t,
+                    'acls': [acl.value for acl in token.acls],
+                }
 
-        if not token:
             raise UnknownTokenException()
-
-        return {
-            'uuid': token.uuid,
-            'auth_id': token.auth_id,
-            'xivo_user_uuid': token.user_uuid,
-            'xivo_uuid': token.xivo_uuid,
-            'issued_t': token.issued_t,
-            'expire_t': token.expire_t,
-            'acls': [acl.value for acl in token.acls],
-        }
 
     def delete(self, token_uuid):
         filter_ = TokenModel.uuid == token_uuid
