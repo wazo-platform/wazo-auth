@@ -157,7 +157,7 @@ class _PolicyCRUD(_CRUD):
                     ACLTemplatePolicy.policy_uuid == policy_uuid,
                     ACLTemplatePolicy.template_id == templ_id,
                 )
-                s.query(ACLTemplatePolicy).filter(filter_).delete(synchronize_session=False)
+                s.query(ACLTemplatePolicy).filter(filter_).delete()
 
     def _new_search_filter(self, search_pattern):
         return or_(
@@ -189,7 +189,7 @@ class _PolicyCRUD(_CRUD):
         filter_ = Policy.uuid == policy_uuid
 
         with self.new_session() as s:
-            nb_deleted = s.query(Policy).filter(filter_).delete(synchronize_session=False)
+            nb_deleted = s.query(Policy).filter(filter_).delete()
 
         if not nb_deleted:
             raise UnknownPolicyException()
@@ -304,7 +304,7 @@ class _PolicyCRUD(_CRUD):
 
     def _dissociate_all_acl_templates(self, s, policy_uuid):
         filter_ = ACLTemplatePolicy.policy_uuid == policy_uuid
-        s.query(ACLTemplatePolicy).filter(filter_).delete(synchronize_session=False)
+        s.query(ACLTemplatePolicy).filter(filter_).delete()
 
     def _insert_acl_template(self, s, template):
         tpl = ACLTemplate(template=template)
@@ -357,4 +357,4 @@ class _TokenCRUD(_CRUD):
         filter_ = TokenModel.uuid == token_uuid
 
         with self.new_session() as s:
-            s.query(TokenModel).filter(filter_).delete(synchronize_session=False)
+            s.query(TokenModel).filter(filter_).delete()
