@@ -336,7 +336,7 @@ class _TokenCRUD(_CRUD):
 
     def get(self, token_uuid):
         with self.new_session() as s:
-            token = s.query(TokenModel).filter(TokenModel.uuid == token_uuid).first()
+            token = s.query(TokenModel).get(token_uuid)
             if not token:
                 raise UnknownTokenException()
 
