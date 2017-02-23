@@ -122,10 +122,11 @@ class _CRUD(object):
         session = self._Session()
         try:
             yield session
-            session.commit()
-        except (exc.OperationalError, exc.SQLAlchemyError):
+        except:
             session.rollback()
             raise
+        finally:
+            session.commit()
 
 
 class _PolicyCRUD(_CRUD):
@@ -140,7 +141,6 @@ class _PolicyCRUD(_CRUD):
                 s.commit()
             except exc.IntegrityError as e:
                 if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                    s.rollback()
                     raise DuplicateTemplateException(acl_template)
                 raise
 
@@ -179,7 +179,6 @@ class _PolicyCRUD(_CRUD):
                 s.commit()
             except exc.IntegrityError as e:
                 if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                    s.rollback()
                     raise DuplicatePolicyException(name)
                 raise
             self._associate_acl_templates(s, policy.uuid, acl_templates)
@@ -260,7 +259,6 @@ class _PolicyCRUD(_CRUD):
                 s.commit()
             except exc.IntegrityError as e:
                 if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                    s.rollback()
                     raise DuplicatePolicyException(name)
                 raise
 
@@ -336,8 +334,9 @@ class _TokenCRUD(_CRUD):
     def get(self, token_uuid):
         with self.new_session() as s:
             token = s.query(TokenModel).get(token_uuid)
-            if not token:
-                raise UnknownTokenException()
+
+        if not token:
+            raise UnknownTokenException()
 
         return {
             'uuid': token.uuid,
