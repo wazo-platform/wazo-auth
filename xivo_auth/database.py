@@ -169,7 +169,7 @@ class _PolicyCRUD(_CRUD):
     def count(self, search_pattern):
         filter_ = self._new_search_filter(search_pattern)
         with self.new_session() as s:
-            return s.query(func.count(Policy.uuid)).filter(filter_).scalar()
+            return s.query(Policy).filter(filter_).count()
 
     def create(self, name, description, acl_templates):
         policy = Policy(name=name, description=description)
@@ -313,7 +313,7 @@ class _PolicyCRUD(_CRUD):
         return tpl.id_
 
     def _policy_exists(self, s, policy_uuid):
-        policy_count = s.query(func.count(Policy.uuid)).filter(Policy.uuid == policy_uuid).scalar()
+        policy_count = s.query(Policy).filter(Policy.uuid == policy_uuid).count()
         return policy_count != 0
 
 
