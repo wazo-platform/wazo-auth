@@ -327,11 +327,10 @@ class _TokenCRUD(_CRUD):
             issued_t=int(body['issued_t']),
             expire_t=int(body['expire_t']),
         )
+        token.acls = [ACL(token_uuid=token.uuid, value=acl) for acl in body.get('acls') or []]
         with self.new_session() as s:
             s.add(token)
             s.commit()
-            acls = [ACL(token_uuid=token.uuid, value=acl) for acl in body.get('acls') or []]
-            s.add_all(acls)
         return token.uuid
 
     def get(self, token_uuid):
@@ -340,9 +339,6 @@ class _TokenCRUD(_CRUD):
             if not token:
                 raise UnknownTokenException()
 
-            filter_ = ACL.token_uuid == token.uuid
-            acls = [acl.value for acl in s.query(ACL.value).filter(filter_).all()]
-
         return {
             'uuid': token.uuid,
             'auth_id': token.auth_id,
@@ -350,7 +346,7 @@ class _TokenCRUD(_CRUD):
             'xivo_uuid': token.xivo_uuid,
             'issued_t': token.issued_t,
             'expire_t': token.expire_t,
-            'acls': acls,
+            'acls': [acl.value for acl in token.acls],
         }
 
     def delete(self, token_uuid):

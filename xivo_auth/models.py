@@ -19,6 +19,7 @@ from sqlalchemy import (
     Column, ForeignKey, Integer, String, Text, text, UniqueConstraint,
 )
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
@@ -42,6 +43,7 @@ class Token(Base):
     xivo_uuid = Column(String(38))
     issued_t = Column(Integer)
     expire_t = Column(Integer)
+    acls = relationship('ACL')
 
 
 class Policy(Base):
