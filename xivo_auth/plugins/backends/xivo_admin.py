@@ -20,22 +20,21 @@ from xivo_dao import admin_dao
 from xivo_dao.helpers.exception import NotFoundError
 from xivo_dao.helpers.db_utils import session_scope
 
-from xivo_auth import BaseAuthenticationBackend
+from xivo_auth import BaseAuthenticationBackend, ACLRenderingBackend
 from xivo_auth.exceptions import AuthenticationFailedException
 
 
-class XiVOAdmin(BaseAuthenticationBackend):
+class XiVOAdmin(BaseAuthenticationBackend, ACLRenderingBackend):
 
     def get_acls(self, login, args):
+        acl_templates = args.get('acl_templates', [])
+        return self.render_acl(acl_templates, self.get_admin_data, username=login)
+
+    def get_admin_data(self, username):
         with session_scope():
-            entity = admin_dao.get_admin_entity(login)
+            entity = admin_dao.get_admin_entity(username)
 
-        if entity:
-            dird_acl = 'dird.tenants.{}.#'.format(entity)
-        else:
-            dird_acl = 'dird.tenants.#'
-
-        return ['confd.#', dird_acl, 'auth.policies.#']
+        return {'entity': entity}
 
     def get_ids(self, username, args):
         with session_scope():
