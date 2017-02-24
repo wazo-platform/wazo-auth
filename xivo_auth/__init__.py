@@ -16,11 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 from xivo_auth.interfaces import (
+    ACLRenderingBackend,
     BaseAuthenticationBackend,
     UserAuthenticationBackend,
 )
 
 __all__ = [
+    'ACLRenderingBackend',
     'BaseAuthenticationBackend',
     'UserAuthenticationBackend',
 ]

@@ -71,7 +71,14 @@ class BaseAuthenticationBackend(object):
         return True
 
 
-class UserAuthenticationBackend(BaseAuthenticationBackend):
+class ACLRenderingBackend(object):
+
+    def render_acl(self, acl_templates, get_data_fn, *args, **kwargs):
+        renderer = LazyTemplateRenderer(acl_templates, get_data_fn, *args, **kwargs)
+        return renderer.render()
+
+
+class UserAuthenticationBackend(BaseAuthenticationBackend, ACLRenderingBackend):
 
     __metaclass__ = abc.ABCMeta
 
@@ -119,7 +126,3 @@ class UserAuthenticationBackend(BaseAuthenticationBackend):
                 'endpoint_custom': custom,
             }
         return {}
-
-    def render_acl(self, acl_templates, get_data_fn, *args, **kwargs):
-        renderer = LazyTemplateRenderer(acl_templates, get_data_fn, *args, **kwargs)
-        return renderer.render()
