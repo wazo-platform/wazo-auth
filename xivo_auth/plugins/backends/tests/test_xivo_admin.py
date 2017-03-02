@@ -18,41 +18,26 @@
 import unittest
 
 from mock import Mock, patch, sentinel as s
-from hamcrest import assert_that, calling, equal_to, has_item, raises
+from hamcrest import assert_that, calling, equal_to, has_entry, raises
 
 from xivo_auth.plugins import backends
 from xivo_auth.exceptions import ManagerException
 from xivo_auth.plugins.backends.xivo_admin import NotFoundError
 
 
-class TestGetACLS(unittest.TestCase):
+class TestGetAdminData(unittest.TestCase):
 
     def setUp(self):
         self.backend = backends.XiVOAdmin('config')
 
     @patch('xivo_auth.plugins.backends.xivo_admin.admin_dao')
-    def test_that_returned_acls_contains_the_entity(self, admin_dao_mock):
+    def test_that_returned_contains_the_entity(self, admin_dao_mock):
         tenant = admin_dao_mock.get_admin_entity.return_value = 'the-entity'
 
-        result = self.backend.get_acls(s.login, None)
+        result = self.backend.get_admin_data(s.login)
 
         admin_dao_mock.get_admin_entity.assert_called_once_with(s.login)
-        assert_that(result, has_item('dird.tenants.{}.#'.format(tenant)))
-
-    @patch('xivo_auth.plugins.backends.xivo_admin.admin_dao')
-    def test_that_returned_acls_contains_all_entity_acl_if_not_assigned(self, admin_dao_mock):
-        admin_dao_mock.get_admin_entity.return_value = None
-
-        result = self.backend.get_acls(s.login, None)
-
-        admin_dao_mock.get_admin_entity.assert_called_once_with(s.login)
-        assert_that(result, has_item('dird.tenants.#'))
-
-    @patch('xivo_auth.plugins.backends.xivo_admin.admin_dao', Mock())
-    def test_that_get_acls_return_acl_for_confd(self):
-        acls = self.backend.get_acls('foo', None)
-
-        assert_that(acls, has_item('confd.#'))
+        assert_that(result, has_entry('entity', tenant))
 
 
 class TestVerifyPassword(unittest.TestCase):
