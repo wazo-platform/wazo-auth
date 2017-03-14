@@ -15,7 +15,7 @@ python-ldap==2.4.10
 pyyaml==3.11
 requests==2.4.3
 sqlalchemy==0.9.8
-stevedore==0.14.1
+stevedore==1.17.1
 threadpool==1.2.7
 unidecode==0.04.16
 alembic==0.6.5
