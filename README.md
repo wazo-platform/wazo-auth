@@ -107,6 +107,11 @@ This line will start 25 process creating 1000 tokens with the username and passw
 Adding a new database migration
 -------------------------------
 
-To add a new migration script for the database use the following command:
+To add a new migration script for the database use the following command from the root of the project:
 
-   % alembic -c alembic.ini revision -m "<description of the revision>"
+   % ./alembic_revision.sh "<description of the revision>"
+
+To add a new ACL migration script use the following command from the root of the project:
+
+   % ./alembic_revision.sh -a "<description of the revision>"
+
