@@ -101,7 +101,6 @@ class UserAuthenticationBackend(BaseAuthenticationBackend, ACLRenderingBackend):
         for user in response['items']:
             voicemail = user.get('voicemail')
             voicemails = [voicemail['id']] if voicemail else []
-            agent = user.get('agent')
             lines, sip, sccp, custom, extensions = [], [], [], [], []
             for line in user['lines']:
                 lines.append(line['id'])
@@ -125,6 +124,6 @@ class UserAuthenticationBackend(BaseAuthenticationBackend, ACLRenderingBackend):
                 'endpoint_sip': sip,
                 'endpoint_sccp': sccp,
                 'endpoint_custom': custom,
-                'agent': { 'id': agent, 'number': agent }
+                'agent': user['agent'],
             }
         return {}
