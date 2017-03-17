@@ -1,1 +1,0 @@
-/home/sylvain/dev/xivo-auth/alembic/alembic_template.py.mako

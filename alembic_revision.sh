@@ -43,10 +43,9 @@ done
 
 if [ $ACL -eq 1 ]; then
     ln -sf "$(pwd)/$ACL_TEMPLATE_FILE" "$(pwd)/$ALEMBIC_ENTRY_POINT"
+else
+    ln -sf "$(pwd)/$NORMAL_TEMPLATE_FILE" "$(pwd)/$ALEMBIC_ENTRY_POINT"
 fi
 
 alembic -c alembic.ini revision -m "$msg"
-
-if [ $ACL -eq 1 ]; then
-    ln -sf "$(pwd)/$NORMAL_TEMPLATE_FILE" "$(pwd)/$ALEMBIC_ENTRY_POINT"
-fi
+rm -f "$ALEMBIC_ENTRY_POINT"
