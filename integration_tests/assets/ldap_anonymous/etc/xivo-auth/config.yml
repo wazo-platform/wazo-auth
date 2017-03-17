@@ -30,3 +30,5 @@ ldap:
   user_login_attribute: 'mail'
 
 db_uri: postgresql://asterisk:proformatique@postgres/asterisk
+backend_policies:
+  ldap_user: none

@@ -32,3 +32,5 @@ ldap:
   user_login_attribute: 'uid'
 
 db_uri: postgresql://asterisk:proformatique@postgres/asterisk
+backend_policies:
+  ldap_user: none

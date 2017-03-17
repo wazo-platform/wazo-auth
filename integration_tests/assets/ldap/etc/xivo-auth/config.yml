@@ -21,3 +21,5 @@ ldap:
   user_base_dn: 'ou=quebec,ou=people,dc=xivo-auth,dc=wazo,dc=community'
   user_login_attribute: 'cn'
 db_uri: postgresql://asterisk:proformatique@postgres:5432
+backend_policies:
+  ldap_user: none
