@@ -1,1 +1,0 @@
-/home/pcm/dev/xivo/xivo-auth/alembic/alembic_template.py.mako

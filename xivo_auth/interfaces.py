@@ -124,5 +124,6 @@ class UserAuthenticationBackend(BaseAuthenticationBackend, ACLRenderingBackend):
                 'endpoint_sip': sip,
                 'endpoint_sccp': sccp,
                 'endpoint_custom': custom,
+                'agent': user['agent'],
             }
         return {}
