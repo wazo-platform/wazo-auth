@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>
 
+from functools import partial
 from jinja2 import StrictUndefined, Template
 from jinja2.exceptions import UndefinedError
 
@@ -52,3 +53,15 @@ class LazyTemplateRenderer(object):
             for acl in self._evaluate_template(acl_template):
                 if acl:
                     yield acl
+
+
+class LocalTokenManager(object):
+
+    def __init__(self, backend, new_token_fn):
+        self._new_token = partial(new_token_fn, backend.obj, 'xivo-auth')
+
+    def get_token(self):
+        # TODO use a "normal" expiration and renew the token
+        args = {'expiration': 3600 * 24 * 365}
+        token = self._new_token(args)
+        return token.token
