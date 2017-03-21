@@ -103,6 +103,7 @@ class Controller(object):
                 server.start()
             finally:
                 server.stop()
+            local_token_manager.revoke_token()
 
     def _get_local_token_manager(self):
         try:
@@ -111,7 +112,7 @@ class Controller(object):
             logger.info('xivo_service disabled no service token will be created for xivo-auth')
             return
 
-        return LocalTokenManager(backend, self._token_manager.new_token)
+        return LocalTokenManager(backend, self._token_manager)
 
     def _start_celery_worker(self):
         args = sys.argv[:1]

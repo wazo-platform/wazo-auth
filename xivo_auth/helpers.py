@@ -58,8 +58,9 @@ class LazyTemplateRenderer(object):
 
 class LocalTokenManager(object):
 
-    def __init__(self, backend, new_token_fn):
-        self._new_token = partial(new_token_fn, backend.obj, 'xivo-auth')
+    def __init__(self, backend, token_manager):
+        self._new_token = partial(token_manager.new_token, backend.obj, 'xivo-auth')
+        self._remove_token = token_manager.remove_token
         self._token = None
         self._renew_time = time.time() - 5
         self._delay = 3600
@@ -71,6 +72,10 @@ class LocalTokenManager(object):
             self._token = self._new_token({'expiration': 3600})
 
         return self._token.token
+
+    def revoke_token(self):
+        if self._token:
+            self._remove_token(self._token.token)
 
     def _need_new_token(self):
         return not self._token or time.time() > self._renew_time
