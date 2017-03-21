@@ -97,22 +97,21 @@ class Controller(object):
                                         partial(self_check,
                                                 self._listen_port,
                                                 self._ssl_cert_file)):
-            self._config['token'] = self._get_xivo_auth_token()
+            local_token_manager = self._get_local_token_manager()
+            self._config['local_token_manager'] = local_token_manager
             try:
                 server.start()
             finally:
                 server.stop()
-            self._token_manager.remove_token(self._config.get('token'))
 
-    def _get_xivo_auth_token(self):
+    def _get_local_token_manager(self):
         try:
             backend = self._backends['xivo_service']
         except KeyError:
-            logger.info('Failed to get a service token for xivo-auth make sure the xivo_service plugin is loaded')
+            logger.info('xivo_service disabled no service token will be created for xivo-auth')
             return
 
-        local_token_manager = LocalTokenManager(backend, self._token_manager.new_token)
-        return local_token_manager.get_token()
+        return LocalTokenManager(backend, self._token_manager.new_token)
 
     def _start_celery_worker(self):
         args = sys.argv[:1]

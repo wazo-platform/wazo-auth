@@ -17,11 +17,13 @@
 
 import abc
 import os
+import logging
 
 from xivo_confd_client import Client
 from xivo_auth.helpers import LazyTemplateRenderer
 
 DEFAULT_XIVO_UUID = os.getenv('XIVO_UUID')
+logger = logging.getLogger(__name__)
 
 
 class BaseAuthenticationBackend(object):
@@ -96,7 +98,13 @@ class UserAuthenticationBackend(BaseAuthenticationBackend, ACLRenderingBackend):
         super(UserAuthenticationBackend, self).verify_password(login, passwd, args)
 
     def get_user_data(self, **kwargs):
-        confd_client = Client(token=self._config.get('token'), **self._confd_config)
+        local_token_manager = self._config.get('local_token_manager')
+        if not local_token_manager:
+            logger.info('no local token manager')
+            return {}
+
+        token = local_token_manager.get_token()
+        confd_client = Client(token=token, **self._confd_config)
         response = confd_client.users.list(**kwargs)
         for user in response['items']:
             voicemail = user.get('voicemail')
