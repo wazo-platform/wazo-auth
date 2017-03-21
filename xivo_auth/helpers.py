@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>
 
+import time
 from functools import partial
 from jinja2 import StrictUndefined, Template
 from jinja2.exceptions import UndefinedError
@@ -59,9 +60,17 @@ class LocalTokenManager(object):
 
     def __init__(self, backend, new_token_fn):
         self._new_token = partial(new_token_fn, backend.obj, 'xivo-auth')
+        self._token = None
+        self._renew_time = time.time() - 5
+        self._delay = 3600
+        self._threshold = 30
 
     def get_token(self):
-        # TODO use a "normal" expiration and renew the token
-        args = {'expiration': 3600 * 24 * 365}
-        token = self._new_token(args)
-        return token.token
+        if self._need_new_token():
+            self._renew_time = time.time() + self._delay - self._threshold
+            self._token = self._new_token({'expiration': 3600})
+
+        return self._token.token
+
+    def _need_new_token(self):
+        return not self._token or time.time() > self._renew_time
