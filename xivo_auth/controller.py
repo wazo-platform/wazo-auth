@@ -32,6 +32,7 @@ from xivo import http_helpers
 from xivo.consul_helpers import ServiceCatalogRegistration
 
 from xivo_auth import database, http, policy, token, extensions
+from xivo_auth.helpers import LocalTokenManager
 
 from .service_discovery import self_check
 
@@ -96,23 +97,22 @@ class Controller(object):
                                         partial(self_check,
                                                 self._listen_port,
                                                 self._ssl_cert_file)):
-            self._config['token'] = self._get_xivo_auth_token()
+            local_token_manager = self._get_local_token_manager()
+            self._config['local_token_manager'] = local_token_manager
             try:
                 server.start()
             finally:
                 server.stop()
-            self._token_manager.remove_token(self._config.get('token'))
+            local_token_manager.revoke_token()
 
-    def _get_xivo_auth_token(self):
-        # TODO use a "normal" expiration and renew the token
-        args = {'expiration': 3600 * 24 * 365}
+    def _get_local_token_manager(self):
         try:
             backend = self._backends['xivo_service']
         except KeyError:
-            logger.info('Failed to get a service token for xivo-auth make sure the xivo_service plugin is loaded')
+            logger.info('xivo_service disabled no service token will be created for xivo-auth')
             return
-        token = self._token_manager.new_token(backend.obj, 'xivo-auth', args)
-        return token.token
+
+        return LocalTokenManager(backend, self._token_manager)
 
     def _start_celery_worker(self):
         args = sys.argv[:1]
