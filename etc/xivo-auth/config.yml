@@ -31,7 +31,7 @@ rest_api:
     enabled: True
 
     #Allow JSON preflight requests
-    allow_headers: Content-Type, authorization, x-auth-token
+    allow_headers: [Content-Type, authorization, x-auth-token]
 
 
 enabled_plugins:

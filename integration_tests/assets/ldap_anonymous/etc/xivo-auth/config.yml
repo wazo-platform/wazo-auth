@@ -14,7 +14,7 @@ rest_api:
     private_key: /data/_common/ssl/server.key
   cors:
     enabled: False
-    allow_headers: Content-Type, authorization, x-auth-token
+    allow_headers: [Content-Type, authorization, x-auth-token]
 
 enabled_plugins:
   - ldap_user

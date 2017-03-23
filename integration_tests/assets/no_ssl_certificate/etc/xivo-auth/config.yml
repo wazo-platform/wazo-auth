@@ -10,7 +10,7 @@ rest_api:
     private_key: /data/_common/ssl/server.key
   cors:
     enabled: False
-    allow_headers: Content-Type, authorization
+    allow_headers: [Content-Type, authorization]
 
 enabled_plugins:
   - mock
