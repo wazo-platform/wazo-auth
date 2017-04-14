@@ -15,16 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
+import docker as docker_client
 import os
 import subprocess
+import ldap
 import time
+
 from collections import namedtuple
 from contextlib import contextmanager
-import ldap
 from ldap.modlist import addModlist
-from docker import APIClient
 from hamcrest import assert_that
 from hamcrest import equal_to
+
 from .test_http_interface import _BaseTestCase
 
 Contact = namedtuple('Contact', ['cn', 'uid', 'password', 'mail', 'login_attribute'])
@@ -155,8 +157,8 @@ class _BaseLDAPTestCase(_BaseTestCase):
         if not service_name:
             service_name = cls.service
 
-        with APIClient(base_url='unix://var/run/docker.sock') as docker:
-            result = docker.port(_container_id(service_name), internal_port)
+        docker = docker_client.from_env().api
+        result = docker.port(_container_id(service_name), internal_port)
 
         if not result:
             raise Exception('No such port: {} {}'.format(service_name, internal_port))
