@@ -13,15 +13,7 @@ from alembic import op
 import sqlalchemy as sa
 
 
-def upgrade():
-    pass
-
-
-def downgrade():
-    pass
-
-
-POLICY_NAME = ''
+POLICY_NAME = 'wazo_default_admin_policy'
 ACL_TEMPLATES = [
     'call_logd.cdr.read'
 ]
