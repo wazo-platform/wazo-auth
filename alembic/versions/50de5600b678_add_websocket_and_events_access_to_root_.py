@@ -1,13 +1,13 @@
 """Add websocket and events access to root user
 
 Revision ID: 50de5600b678
-Revises: 52a21739a22a
+Revises: ffe8284b62d9
 
 """
 
 # revision identifiers, used by Alembic.
 revision = '50de5600b678'
-down_revision = '52a21739a22a'
+down_revision = 'ffe8284b62d9'
 
 from alembic import op
 import sqlalchemy as sa
