@@ -26,6 +26,7 @@ from hamcrest import assert_that, equal_to, is_
 from xivo_auth.plugins.backends.xivo_user import XiVOUser
 
 DEFAULT_USER_ACLS = [
+    'call-logd.users.me.cdr.read',
     'confd.infos.read',
     'confd.users.me.read',
     'confd.users.me.update',
