@@ -25,27 +25,25 @@ usage () {
     exit
 }
 
-for msg; do true; done
-if [ -z ${msg} ]; then
-    usage
-fi
+template_file="$NORMAL_TEMPLATE_FILE"
 
 while getopts ":ah" opt; do
     case $opt in
         a)
-            ACL=1
+            template_file="$ACL_TEMPLATE_FILE"
             ;;
         \?)
             usage
             ;;
     esac
 done
+shift $(expr $OPTIND - 1)
 
-if [ $ACL -eq 1 ]; then
-    ln -sf "$(pwd)/$ACL_TEMPLATE_FILE" "$(pwd)/$ALEMBIC_ENTRY_POINT"
-else
-    ln -sf "$(pwd)/$NORMAL_TEMPLATE_FILE" "$(pwd)/$ALEMBIC_ENTRY_POINT"
+msg="$1"
+if [ -z "${msg}" ]; then
+    usage
 fi
 
+ln -sf "$(pwd)/$template_file" "$(pwd)/$ALEMBIC_ENTRY_POINT"
 alembic -c alembic.ini revision -m "$msg"
 rm -f "$ALEMBIC_ENTRY_POINT"
