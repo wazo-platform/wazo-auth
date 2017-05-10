@@ -40,6 +40,7 @@ from hamcrest.core.base_matcher import BaseMatcher
 from xivo_auth_client import Client
 
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
+from xivo_test_helpers.hamcrest.uuid_ import uuid_
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)
@@ -47,18 +48,6 @@ logger = logging.getLogger(__name__)
 ISO_DATETIME = '%Y-%m-%dT%H:%M:%S.%f'
 
 HOST = os.getenv('XIVO_AUTH_TEST_HOST', 'localhost')
-
-
-class _UUIDMatcher(object):
-
-    def __eq__(self, other):
-        try:
-            uuid.UUID(other)
-            return True
-        except (ValueError, TypeError):
-            return False
-
-ANY_UUID = _UUIDMatcher()
 
 
 def _new_token_id():
@@ -186,7 +175,7 @@ class TestPolicies(_BaseTestCase):
         name, description, acl_templates = 'foobar', 'a test policy', ['dird.me.#', 'ctid-ng.#']
         response = self.client.policies.new(name, description, acl_templates)
         assert_that(response, has_entries({
-            'uuid': equal_to(ANY_UUID),
+            'uuid': uuid_(),
             'name': equal_to(name),
             'description': equal_to(description),
             'acl_templates': contains_inanyorder(*acl_templates)}))
@@ -194,7 +183,7 @@ class TestPolicies(_BaseTestCase):
         name = 'foobaz'
         response = self.client.policies.new(name)
         assert_that(response, has_entries({
-            'uuid': equal_to(ANY_UUID),
+            'uuid': uuid_(),
             'name': equal_to(name),
             'description': none(),
             'acl_templates': empty()}))
