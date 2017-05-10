@@ -15,15 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-import subprocess
-import unittest
 import time
 import os
 import uuid
-import json
 import logging
 
-from contextlib import contextmanager
 from datetime import datetime, timedelta
 
 import requests
