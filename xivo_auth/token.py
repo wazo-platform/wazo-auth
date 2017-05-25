@@ -161,7 +161,7 @@ class Manager(object):
 
         token = self._storage.create_token(token_payload)
 
-        task_id = self._get_token_hash(token)
+        task_id = self._get_token_hash(token.token)
         try:
             tasks.clean_token.apply_async(args=[token.token], countdown=expiration, task_id=task_id)
         except socket.error:
