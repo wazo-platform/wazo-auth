@@ -137,6 +137,7 @@ class Controller(object):
             CELERY_ACCEPT_CONTENT=['json'],
             CELERY_TASK_SERIALIZER='json',
             CELERY_RESULT_SERIALIZER='json',
+            CELERY_IGNORE_RESULT=True,
             CELERY_ALWAYS_EAGER=False,
             CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
             CELERY_DEFAULT_EXCHANGE_TYPE='topic',
