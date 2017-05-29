@@ -17,6 +17,9 @@ default_token_lifetime: 7200
 # REST API server
 rest_api:
 
+  # The maximum number of threads in the webserver thread pool
+  max_threads: 25
+
   https:
     listen: 0.0.0.0
     port: 9497

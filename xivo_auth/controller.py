@@ -64,6 +64,7 @@ class Controller(object):
             self._ssl_cert_file = config['rest_api']['https']['certificate']
             self._ssl_key_file = config['rest_api']['https']['private_key']
             self._ssl_ciphers = config['rest_api']['https']['ciphers']
+            self._max_threads = config['rest_api']['max_threads']
             self._xivo_uuid = config.get('uuid')
             logger.debug('private key: %s', self._ssl_key_file)
         except KeyError as e:
@@ -84,7 +85,9 @@ class Controller(object):
         self._start_celery_worker()
         signal.signal(signal.SIGTERM, _signal_handler)
         wsgi_app = wsgiserver.WSGIPathInfoDispatcher({'/': self._flask_app})
-        server = wsgiserver.CherryPyWSGIServer(bind_addr=self._bind_addr, wsgi_app=wsgi_app)
+        server = wsgiserver.CherryPyWSGIServer(bind_addr=self._bind_addr,
+                                               wsgi_app=wsgi_app,
+                                               numthreads=self._max_threads)
         server.ssl_adapter = http_helpers.ssl_adapter(self._ssl_cert_file,
                                                       self._ssl_key_file,
                                                       self._ssl_ciphers)
