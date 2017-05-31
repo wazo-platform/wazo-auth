@@ -39,6 +39,7 @@ _DEFAULT_CONFIG = {
         'xivo_user': 'wazo_default_user_policy',
     },
     'rest_api': {
+        'max_threads': 25,
         'https': {
             'listen': '0.0.0.0',
             'port': _DEFAULT_HTTP_PORT,
