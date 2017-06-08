@@ -63,7 +63,6 @@ class Controller(object):
             self._bind_addr = (self._listen_addr, self._listen_port)
             self._ssl_cert_file = config['rest_api']['https']['certificate']
             self._ssl_key_file = config['rest_api']['https']['private_key']
-            self._ssl_ciphers = config['rest_api']['https']['ciphers']
             self._max_threads = config['rest_api']['max_threads']
             self._xivo_uuid = config.get('uuid')
             logger.debug('private key: %s', self._ssl_key_file)
@@ -89,8 +88,7 @@ class Controller(object):
                                  wsgi_app=wsgi_app,
                                  numthreads=self._max_threads)
         server.ssl_adapter = http_helpers.ssl_adapter(self._ssl_cert_file,
-                                                      self._ssl_key_file,
-                                                      self._ssl_ciphers)
+                                                      self._ssl_key_file)
 
         with ServiceCatalogRegistration('xivo-auth',
                                         self._xivo_uuid,
