@@ -22,8 +22,8 @@ import sys
 from functools import partial
 from threading import Thread
 
-from cherrypy import wsgiserver
 from celery import Celery
+from cheroot import wsgi
 from flask import Flask
 from flask_restful import Api
 from flask.ext.cors import CORS
@@ -84,10 +84,10 @@ class Controller(object):
     def run(self):
         self._start_celery_worker()
         signal.signal(signal.SIGTERM, _signal_handler)
-        wsgi_app = wsgiserver.WSGIPathInfoDispatcher({'/': self._flask_app})
-        server = wsgiserver.CherryPyWSGIServer(bind_addr=self._bind_addr,
-                                               wsgi_app=wsgi_app,
-                                               numthreads=self._max_threads)
+        wsgi_app = wsgi.WSGIPathInfoDispatcher({'/': self._flask_app})
+        server = wsgi.WSGIServer(bind_addr=self._bind_addr,
+                                 wsgi_app=wsgi_app,
+                                 numthreads=self._max_threads)
         server.ssl_adapter = http_helpers.ssl_adapter(self._ssl_cert_file,
                                                       self._ssl_key_file,
                                                       self._ssl_ciphers)
