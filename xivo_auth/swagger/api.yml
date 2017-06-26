@@ -1,7 +1,7 @@
 swagger: '2.0'
 info:
   version: '0.1'
-  title: Wazo Auth
+  title: xivo-auth
   description: Wazo's authentication service
   contact:
     name: Wazo dev team
