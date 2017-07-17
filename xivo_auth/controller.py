@@ -29,7 +29,9 @@ from flask_restful import Api
 from flask.ext.cors import CORS
 from stevedore.dispatch import NameDispatchExtensionManager
 from xivo import http_helpers
+from xivo.http_helpers import ReverseProxied
 from xivo.consul_helpers import ServiceCatalogRegistration
+from werkzeug.contrib.fixers import ProxyFix
 
 from xivo_auth import database, http, policy, token, extensions
 from xivo_auth.helpers import LocalTokenManager
@@ -83,7 +85,7 @@ class Controller(object):
     def run(self):
         self._start_celery_worker()
         signal.signal(signal.SIGTERM, _signal_handler)
-        wsgi_app = wsgi.WSGIPathInfoDispatcher({'/': self._flask_app})
+        wsgi_app = ReverseProxied(ProxyFix(wsgi.WSGIPathInfoDispatcher({'/': self._flask_app})))
         server = wsgi.WSGIServer(bind_addr=self._bind_addr,
                                  wsgi_app=wsgi_app,
                                  numthreads=self._max_threads)
