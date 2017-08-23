@@ -134,16 +134,6 @@ class _BaseLDAPTestCase(_BaseTestCase):
     @classmethod
     def init_db(cls):
         port = cls.service_port(5432, 'postgres')
-        command = [
-            'xivo-auth-init-db',
-            '--db', 'asterisk',
-            '--pg_db_uri', 'postgresql://localhost:{}/postgres'.format(port),
-            '--auth_db_uri', 'postgresql://localhost:{}/asterisk'.format(port),
-            '--user', 'postgres',
-            '--owner', 'asterisk',
-            '--password', 'proformatique',
-        ]
-        subprocess.call(command)
         db_uri = "postgresql://asterisk:proformatique@localhost:{}/asterisk".format(port)
         env = os.environ.copy()
         env['ALEMBIC_DB_URI'] = db_uri
