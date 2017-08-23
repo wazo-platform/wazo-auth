@@ -19,11 +19,6 @@ rest_api:
 enabled_plugins:
   - ldap_user
 
-amqp:
-  uri: amqp://guest:guest@rabbitmq:5672/
-  exchange_name: xivo
-  exchange_type: topic
-
 ldap:
   uri: ldap://slapd
   bind_dn: 'cn=xivo_auth,ou=people,dc=xivo-auth,dc=wazo,dc=community'

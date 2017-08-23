@@ -12,8 +12,4 @@ rest_api:
     allow_headers: [Content-Type, authorization, x-auth-token]
 enabled_plugins:
   - mock
-amqp:
-  uri: amqp://guest:guest@rabbitmq:5672/
-  exchange_name: xivo
-  exchange_type: topic
 db_uri: postgresql://asterisk:proformatique@postgres:5432
