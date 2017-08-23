@@ -143,10 +143,15 @@ class Tokens(ErrorCatchingResource):
         if error:
             return _error(400, unicode(error))
 
-        if not verify_password(args['backend'], login, password, args):
+        backend_name = args['backend']
+        try:
+            backend = current_app.config['backends'][backend_name].obj
+        except KeyError:
             return _error(401, 'Authentication Failed')
 
-        backend = current_app.config['backends'][args['backend']].obj
+        if not backend.verify_password(login, password, args):
+            return _error(401, 'Authentication Failed')
+
         token = current_app.config['token_manager'].new_token(backend, login, args)
 
         return {'data': token.to_dict()}, 200
@@ -193,16 +198,3 @@ class Api(Resource):
             return {'error': "API spec does not exist"}, 404
 
         return make_response(api_spec, 200, {'Content-Type': 'application/x-yaml'})
-
-
-def verify_password(backend_name, login, passwd, args):
-    try:
-        return _call_backend('verify_password', backend_name, login, passwd, args)
-    except IndexError:
-        return False
-
-
-def _call_backend(fn, backend_name, *args, **kwargs):
-    backend_names = [backend_name]
-    results = current_app.config['backends'].map_method(backend_names, fn, *args, **kwargs)
-    return results[0]
