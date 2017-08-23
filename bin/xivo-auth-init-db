@@ -23,6 +23,7 @@ import psycopg2
 
 from xivo import db_helper
 from xivo.user_rights import change_user
+from xivo.xivo_logging import setup_logging
 
 
 def _parse_cli_args(args):
@@ -43,6 +44,7 @@ def _parse_cli_args(args):
 
 
 def main():
+    setup_logging('/dev/null', foreground=True, debug=False)
     args = _parse_cli_args(sys.argv[1:])
 
     if args.user:
