@@ -450,15 +450,6 @@ class TestCoreMockBackend(_BaseTestCase):
         self._get_token(token, acls='foo')  # no exception
 
 
-class TestNoRabbitMQ(_BaseTestCase):
-
-    asset = 'no_rabbitmq'
-
-    def test_POST_with_no_rabbitmq_running(self):
-        self._post_token_with_expected_exception(
-            'foo', 'bar', status_code=500, msg='Connection to rabbitmq failed')
-
-
 class TestNoSSLCertificate(_BaseTestCase):
 
     asset = 'no_ssl_certificate'

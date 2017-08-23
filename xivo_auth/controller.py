@@ -20,9 +20,7 @@ import signal
 import sys
 
 from functools import partial
-from threading import Thread
 
-from celery import Celery
 from cheroot import wsgi
 from flask import Flask
 from flask_restful import Api
@@ -33,7 +31,7 @@ from xivo.http_helpers import ReverseProxied
 from xivo.consul_helpers import ServiceCatalogRegistration
 from werkzeug.contrib.fixers import ProxyFix
 
-from xivo_auth import database, http, policy, token, extensions
+from xivo_auth import database, http, policy, token
 from xivo_auth.helpers import LocalTokenManager
 
 from .service_discovery import self_check
@@ -75,15 +73,12 @@ class Controller(object):
         self._backends = self._load_backends()
         self._config['loaded_plugins'] = self._loaded_plugins_names(self._backends)
 
-        self._celery = self._configure_celery()
         storage = database.Storage.from_config(self._config)
         policy_manager = policy.Manager(storage)
-        self._token_manager = token.Manager(config, storage, self._celery)
+        self._token_manager = token.Manager(config, storage)
         self._flask_app = self._configure_flask_app(self._backends, policy_manager, self._token_manager)
-        self._override_celery_task()
 
     def run(self):
-        self._start_celery_worker()
         signal.signal(signal.SIGTERM, _signal_handler)
         wsgi_app = ReverseProxied(ProxyFix(wsgi.WSGIPathInfoDispatcher({'/': self._flask_app})))
         server = wsgi.WSGIServer(bind_addr=self._bind_addr,
@@ -117,52 +112,11 @@ class Controller(object):
 
         return LocalTokenManager(backend, self._token_manager)
 
-    def _start_celery_worker(self):
-        args = sys.argv[:1]
-        args.append('-P')
-        args.append('threads')
-        celery_thread = Thread(target=self._celery.worker_main,
-                               args=(args,))
-        celery_thread.daemon = True
-        celery_thread.start()
-
     def _load_backends(self):
         return _PluginLoader(self._config).load()
 
     def _loaded_plugins_names(self, backends):
         return [backend.name for backend in backends]
-
-    def _configure_celery(self):
-        celery = Celery('xivo-auth', broker=self._bus_uri)
-        celery.conf.update(self._config)
-        celery.conf.update(
-            CELERY_RESULT_BACKEND=self._bus_uri,
-            CELERY_ACCEPT_CONTENT=['json'],
-            CELERY_TASK_SERIALIZER='json',
-            CELERY_RESULT_SERIALIZER='json',
-            CELERY_IGNORE_RESULT=True,
-            CELERY_ALWAYS_EAGER=False,
-            CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
-            CELERY_DEFAULT_EXCHANGE_TYPE='topic',
-            CELERYD_LOG_LEVEL='debug' if self._debug else self._log_level,
-            CELERYD_HIJACK_ROOT_LOGGER=False,
-        )
-        return celery
-
-    def _override_celery_task(self):
-        TaskBase = self._celery.Task
-        app = self._flask_app
-
-        class ContextTask(TaskBase):
-            abstract = True
-
-            def __call__(self, *args, **kwargs):
-                with app.app_context():
-                    return TaskBase.__call__(self, app, *args, **kwargs)
-
-        self._celery.Task = ContextTask
-        extensions.celery = self._celery
-        from xivo_auth import tasks  # noqa
 
     def _configure_flask_app(self, backends, policy_manager, token_manager):
         app = Flask('xivo-auth')
