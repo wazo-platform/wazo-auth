@@ -414,13 +414,13 @@ class TestCoreMockBackend(_BaseTestCase):
 
     def test_the_expiration_argument_as_a_string(self):
         self._post_token_with_expected_exception(
-            'foo', 'bar', expiration="30",
-            status_code=400, msg='Invalid expiration')
+            'foo', 'bar', expiration="string",
+            status_code=400)
 
     def test_negative_expiration(self):
         self._post_token_with_expected_exception(
             'foo', 'bar', expiration=-1,
-            status_code=400, msg='Invalid expiration')
+            status_code=400)
 
     def test_that_expired_tokens_are_not_valid(self):
         token = self._post_token('foo', 'bar', expiration=1)['token']

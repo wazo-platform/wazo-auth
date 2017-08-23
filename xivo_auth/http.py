@@ -21,6 +21,8 @@ import time
 
 from flask import current_app, request, make_response
 from flask_restful import Resource
+from marshmallow import Schema, fields
+from marshmallow.validate import Range
 from pkg_resources import resource_string
 
 from xivo_auth.exceptions import ManagerException
@@ -32,10 +34,6 @@ def _error(code, msg):
     return {'reason': [msg],
             'timestamp': [time.time()],
             'status_code': code}, code
-
-
-def _is_positive_integer(i):
-    return isinstance(i, int) and i > 0
 
 
 def required_acl(scope):
@@ -126,6 +124,11 @@ class PolicyTemplate(ErrorCatchingResource):
         return '', 204
 
 
+class TokenRequestSchema(Schema):
+    backend = fields.String(required=True)
+    expiration = fields.Integer(validate=Range(min=1))
+
+
 class Tokens(ErrorCatchingResource):
 
     def post(self):
@@ -135,21 +138,19 @@ class Tokens(ErrorCatchingResource):
         else:
             login = ''
             password = ''
-        args = {}
 
-        if not verify_password(login, password, args):
+        args, error = TokenRequestSchema().load(request.get_json(force=True))
+        if error:
+            return _error(400, unicode(error))
+
+        backend_name = args['backend']
+        try:
+            backend = current_app.config['backends'][backend_name].obj
+        except KeyError:
             return _error(401, 'Authentication Failed')
 
-        data = request.get_json()
-        expiration = data.get('expiration')
-        if expiration is not None:
-            if _is_positive_integer(expiration):
-                args['expiration'] = expiration
-            else:
-                return _error(400, 'Invalid expiration')
-
-        backend_name = request.get_json()['backend']
-        backend = current_app.config['backends'][backend_name].obj
+        if not backend.verify_password(login, password, args):
+            return _error(401, 'Authentication Failed')
 
         token = current_app.config['token_manager'].new_token(backend, login, args)
 
@@ -197,16 +198,3 @@ class Api(Resource):
             return {'error': "API spec does not exist"}, 404
 
         return make_response(api_spec, 200, {'Content-Type': 'application/x-yaml'})
-
-
-def verify_password(login, passwd, args):
-    try:
-        return _call_backend('verify_password', login, passwd, args)
-    except IndexError:
-        return False
-
-
-def _call_backend(fn, *args, **kwargs):
-    backend_names = [request.get_json()['backend']]
-    results = current_app.config['backends'].map_method(backend_names, fn, *args, **kwargs)
-    return results[0]
