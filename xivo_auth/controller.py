@@ -77,6 +77,7 @@ class Controller(object):
         policy_manager = policy.Manager(storage)
         self._token_manager = token.Manager(config, storage)
         self._flask_app = self._configure_flask_app(self._backends, policy_manager, self._token_manager)
+        self._expired_token_remover = token.ExpiredTokenRemover(config, storage)
 
     def run(self):
         signal.signal(signal.SIGTERM, _signal_handler)
@@ -95,6 +96,7 @@ class Controller(object):
                                         partial(self_check,
                                                 self._listen_port,
                                                 self._ssl_cert_file)):
+            self._expired_token_remover.run()
             local_token_manager = self._get_local_token_manager()
             self._config['local_token_manager'] = local_token_manager
             try:
