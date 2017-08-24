@@ -26,5 +26,5 @@ auth:
    command: "xivo-auth -u www-data -c /data/mock_backend/etc/xivo-auth/config.yml"
 postgres:
   image: wazopbx/xivo-auth-db
-  expose:
+  ports:
     - "5432"

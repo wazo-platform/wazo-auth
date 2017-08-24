@@ -41,6 +41,7 @@ from xivo_auth_client import Client
 
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
+from xivo_auth import database, exceptions
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)
@@ -412,6 +413,12 @@ class TestCoreMockBackend(_BaseTestCase):
         assert_that(utc_expiration_time - expiration_time, equal_to(utcoffset))
         assert_that(utc_creation_time - creation_time, equal_to(utcoffset))
 
+    def test_that_expired_tokens_are_not_leaked_in_the_db(self):
+        token_data = self._post_token('foo', 'bar', expiration=1)
+
+        is_in_the_db = self._is_token_in_the_db(token_data['token'])
+        assert_that(is_in_the_db, equal_to(False))
+
     def test_the_expiration_argument_as_a_string(self):
         self._post_token_with_expected_exception(
             'foo', 'bar', expiration="30",
@@ -448,6 +455,15 @@ class TestCoreMockBackend(_BaseTestCase):
     def test_that_authorized_acls_on_GET_return_200(self):
         token = self._post_token('foo', 'bar')['token']
         self._get_token(token, acls='foo')  # no exception
+
+    def _is_token_in_the_db(self, token):
+        db_uri = os.getenv('DB_URI', 'postgresql://asterisk:proformatique@localhost:{port}')
+        crud = database._TokenCRUD(db_uri.format(port=self.service_port(5432, 'postgres')))
+        try:
+            crud.get(token)
+            return True
+        except exceptions.UnknownTokenException:
+            return False
 
 
 class TestNoSSLCertificate(_BaseTestCase):
