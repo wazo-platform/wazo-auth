@@ -20,6 +20,7 @@ import logging
 import os
 import re
 import time
+from threading import Timer
 
 from uuid import uuid4
 from datetime import datetime
@@ -130,6 +131,22 @@ class TokenPayload(object):
         self.issued_t = issued_t
         self.expire_t = expire_t
         self.acls = acls or []
+
+
+class ExpiredTokenRemover(object):
+
+    def __init__(self, config, storage):
+        self._storage = storage
+        self._cleanup_interval = config['token_cleanup_interval']
+
+    def run(self):
+        self._cleanup_and_reschedule(self._cleanup_interval)
+
+    def _cleanup_and_reschedule(self, interval):
+        self._storage.remove_expired_tokens()
+        t = Timer(interval, self._cleanup_and_reschedule, (interval,))
+        t.daemon = True
+        t.start()
 
 
 class Manager(object):

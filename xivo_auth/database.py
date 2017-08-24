@@ -86,6 +86,9 @@ class Storage(object):
     def remove_token(self, token_id):
         self._token_crud.delete(token_id)
 
+    def remove_expired_tokens(self):
+        self._token_crud.delete_expired_tokens()
+
     @staticmethod
     def _prepare_search_pattern(term):
         if not term:
