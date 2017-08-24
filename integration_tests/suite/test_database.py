@@ -21,7 +21,7 @@ import unittest
 import uuid
 
 from contextlib import contextmanager, nested
-from hamcrest import assert_that, calling, contains, contains_inanyorder, equal_to, empty, raises
+from hamcrest import assert_that, calling, contains, contains_inanyorder, equal_to, empty, not_, raises
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 
 from xivo_auth import database, exceptions
@@ -236,15 +236,33 @@ class TestTokenCRUD(unittest.TestCase):
                               token['uuid'])
             self._crud.delete(token['uuid'])  # No error on delete unknown
 
+    def test_delete_expired_tokens(self):
+        with nested(
+                self._new_token(),
+                self._new_token(expiration=0),
+                self._new_token(expiration=0),
+        ) as (a, b, c):
+            expired = [b, c]
+            valid = [a]
+
+            self._crud.delete_expired_tokens()
+
+            for token in valid:
+                assert_that(calling(self._crud.get).with_args(token['uuid']),
+                            not_(raises(exceptions.UnknownTokenException)))
+            for token in expired:
+                assert_that(calling(self._crud.get).with_args(token['uuid']),
+                            raises(exceptions.UnknownTokenException))
+
     @contextmanager
-    def _new_token(self, acls=None):
+    def _new_token(self, acls=None, expiration=120):
         now = int(time.time())
         body = {
             'auth_id': 'test',
             'xivo_user_uuid': new_uuid(),
             'xivo_uuid': new_uuid(),
             'issued_t': now,
-            'expire_t': now + 120,
+            'expire_t': now + expiration,
             'acls': acls or [],
         }
         token_uuid = self._crud.create(body)

@@ -16,6 +16,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>
 
 import uuid
+import time
 from contextlib import contextmanager
 from sqlalchemy import and_, create_engine, exc, func, or_
 from sqlalchemy.orm import sessionmaker, scoped_session
@@ -350,6 +351,12 @@ class _TokenCRUD(_CRUD):
 
     def delete(self, token_uuid):
         filter_ = TokenModel.uuid == token_uuid
+
+        with self.new_session() as s:
+            s.query(TokenModel).filter(filter_).delete()
+
+    def delete_expired_tokens(self):
+        filter_ = TokenModel.expire_t < time.time()
 
         with self.new_session() as s:
             s.query(TokenModel).filter(filter_).delete()
