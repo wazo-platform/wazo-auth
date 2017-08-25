@@ -41,6 +41,7 @@ from xivo_auth_client import Client
 
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
+from xivo_test_helpers import until
 from xivo_auth import database, exceptions
 
 requests.packages.urllib3.disable_warnings()
@@ -416,8 +417,7 @@ class TestCoreMockBackend(_BaseTestCase):
     def test_that_expired_tokens_are_not_leaked_in_the_db(self):
         token_data = self._post_token('foo', 'bar', expiration=1)
 
-        is_in_the_db = self._is_token_in_the_db(token_data['token'])
-        assert_that(is_in_the_db, equal_to(False))
+        until.true(self._is_token_in_the_db, token_data['token'], tries=5, interval=1)
 
     def test_the_expiration_argument_as_a_string(self):
         self._post_token_with_expected_exception(

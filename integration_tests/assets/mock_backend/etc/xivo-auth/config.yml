@@ -1,6 +1,7 @@
 debug: True
 foreground: True
 log_filename: /tmp/xivo-auth.log
+token_cleanup_interval: 2.0
 
 rest_api:
   https:
