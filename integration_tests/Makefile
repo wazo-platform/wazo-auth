@@ -8,7 +8,7 @@ test-db:
 test-prerequisite:
 	docker pull n3llyb0y/wait
 	docker pull rabbitmq
-	docker pull wazopbx/postgres-test
+	docker pull wazopbx/wazo-base-db
 	docker pull swaggerapi/swagger-validator
 	docker build --no-cache -t wazopbx/xivo-auth-tests-data -f Dockerfile-data .
 
