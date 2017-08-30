@@ -12,10 +12,6 @@ rest_api:
     allow_headers: [Content-Type, authorization, x-auth-token]
 enabled_plugins:
   - ldap_user
-amqp:
-  uri: amqp://guest:guest@rabbitmq:5672/
-  exchange_name: xivo
-  exchange_type: topic
 ldap:
   uri: ldap://slapd
   user_base_dn: 'ou=quebec,ou=people,dc=xivo-auth,dc=wazo,dc=community'

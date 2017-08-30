@@ -19,8 +19,8 @@ import hashlib
 import logging
 import os
 import re
-import socket
 import time
+from threading import Timer
 
 from uuid import uuid4
 from datetime import datetime
@@ -29,7 +29,6 @@ from .exceptions import (
     MissingACLTokenException,
     UnknownPolicyException,
     UnknownTokenException,
-    RabbitMQConnectionException,
 )
 
 
@@ -134,17 +133,37 @@ class TokenPayload(object):
         self.acls = acls or []
 
 
+class ExpiredTokenRemover(object):
+
+    def __init__(self, config, storage):
+        self._storage = storage
+        self._cleanup_interval = config['token_cleanup_interval']
+        self._debug = config['debug']
+
+    def run(self):
+        self._cleanup()
+        self._reschedule(self._cleanup_interval)
+
+    def _cleanup(self):
+        try:
+            self._storage.remove_expired_tokens()
+        except Exception:
+            logger.warning('failed to remove expired tokens', exc_info=self._debug)
+
+    def _reschedule(self, interval):
+        t = Timer(interval, self.run)
+        t.daemon = True
+        t.start()
+
+
 class Manager(object):
 
-    def __init__(self, config, storage, celery):
+    def __init__(self, config, storage):
         self._backend_policies = config.get('backend_policies', {})
         self._default_expiration = config['default_token_lifetime']
         self._storage = storage
-        self._celery = celery
 
     def new_token(self, backend, login, args):
-        from xivo_auth import tasks
-
         auth_id, xivo_user_uuid = backend.get_ids(login, args)
         xivo_uuid = backend.get_xivo_uuid(args)
         args['acl_templates'] = self._get_acl_templates(backend.plugin_name)
@@ -161,22 +180,9 @@ class Manager(object):
 
         token = self._storage.create_token(token_payload)
 
-        task_id = self._get_token_hash(token.token)
-        try:
-            tasks.clean_token.apply_async(args=[token.token], countdown=expiration, task_id=task_id)
-        except socket.error:
-            raise RabbitMQConnectionException()
         return token
 
     def remove_token(self, token):
-        task_id = self._get_token_hash(token)
-        try:
-            self._celery.control.revoke(task_id)
-        except socket.error:
-            raise RabbitMQConnectionException()
-        self._storage.remove_token(token)
-
-    def remove_expired_token(self, token):
         self._storage.remove_token(token)
 
     def get(self, token_uuid, required_acl):

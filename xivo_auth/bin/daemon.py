@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2016 Avencall
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ from xivo.user_rights import change_user
 from xivo_auth.config import get_config
 from xivo_auth.controller import Controller
 
-SPAMMY_LOGGERS = ['urllib3', 'Flask-Cors', 'amqp', 'kombu', 'celery']
+SPAMMY_LOGGERS = ['urllib3', 'Flask-Cors', 'amqp', 'kombu']
 
 logger = logging.getLogger(__name__)
 

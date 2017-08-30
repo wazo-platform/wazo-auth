@@ -1,6 +1,7 @@
 debug: True
 foreground: True
 log_filename: /tmp/xivo-auth.log
+token_cleanup_interval: 2.0
 
 rest_api:
   https:
@@ -18,8 +19,4 @@ enabled_plugins:
   - broken_init
   - broken_verify_password
 
-amqp:
-  uri: amqp://guest:guest@rabbitmq:5672/
-  exchange_name: xivo
-  exchange_type: topic
 db_uri: postgresql://asterisk:proformatique@postgres:5432

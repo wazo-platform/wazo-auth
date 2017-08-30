@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2015-2016 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ from datetime import datetime, timedelta
 from hamcrest import assert_that, equal_to
 from mock import Mock, sentinel
 
-from xivo_auth import database, token, extensions, BaseAuthenticationBackend
+from xivo_auth import database, token, BaseAuthenticationBackend
 
 
 def later(expiration):
@@ -53,8 +53,7 @@ class TestManager(unittest.TestCase):
     def setUp(self):
         self.config = {'default_token_lifetime': sentinel.default_expiration_delay}
         self.storage = Mock(database.Storage)
-        extensions.celery = self.celery = Mock()
-        self.manager = token.Manager(self.config, self.storage, self.celery)
+        self.manager = token.Manager(self.config, self.storage)
 
     def _new_backend_mock(self, auth_id=None, uuid=None):
         get_ids = Mock(return_value=(auth_id or sentinel.auth_id,
@@ -67,7 +66,6 @@ class TestManager(unittest.TestCase):
 
         self.manager.remove_token(token_id)
 
-        self.celery.control.revoke.assert_called_once_with(self.manager._get_token_hash.return_value)
         self.storage.remove_token.assert_called_once_with(token_id)
 
 

@@ -32,6 +32,7 @@ _DEFAULT_CONFIG = {
     'log_filename': '/var/log/xivo-auth.log',
     'pid_filename': '/var/run/xivo-auth/xivo-auth.pid',
     'default_token_lifetime': TWO_HOURS,
+    'token_cleanup_interval': 60.0,
     'backend_policies': {
         'ldap_user': 'wazo_default_user_policy',
         'xivo_admin': 'wazo_default_admin_policy',

@@ -4,9 +4,8 @@ sync:
     - auth
     - postgres
     - slapd
-    - rabbitmq
   environment:
-    PORTS: "389 5432 5672 9497"
+    PORTS: "389 5432 9497"
     TIMEOUT: 60
 data:
   image: wazopbx/xivo-auth-tests-data
@@ -24,7 +23,6 @@ auth:
   links:
     - postgres
     - slapd
-    - rabbitmq
   command: "xivo-auth -u www-data -c /data/ldap_service_user/etc/xivo-auth/config.yml"
 slapd:
   image: nickstenning/slapd
@@ -42,7 +40,3 @@ postgres:
     - "5432"
   volumes:
       - "./etc/xivo-postgres/populate.sql:/pg-init-db/populate.sql"
-rabbitmq:
-  image: rabbitmq
-  expose:
-    - "5672"

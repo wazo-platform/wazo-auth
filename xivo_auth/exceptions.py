@@ -141,11 +141,3 @@ class MissingACLTokenException(ManagerException):
 
     def __str__(self):
         return 'Unauthorized for {}'.format(unidecode(self._required_acl))
-
-
-class RabbitMQConnectionException(ManagerException):
-
-    code = 500
-
-    def __str__(self):
-        return 'Connection to rabbitmq failed'
