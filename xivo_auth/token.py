@@ -148,7 +148,7 @@ class ExpiredTokenRemover(object):
         try:
             self._storage.remove_expired_tokens()
         except Exception:
-            logger.info('failed to remove expired tokens', exc_info=self._debug)
+            logger.warning('failed to remove expired tokens', exc_info=self._debug)
 
     def _reschedule(self, interval):
         t = Timer(interval, self.run)
