@@ -56,7 +56,6 @@ class Controller(object):
             self._consul_config = config['consul']
             self._service_discovery_config = config['service_discovery']
             self._plugins = config['enabled_plugins']
-            self._bus_uri = config['amqp']['uri']
             self._bus_config = config['amqp']
             self._log_level = config['log_level']
             self._debug = config['debug']
