@@ -141,15 +141,17 @@ class ExpiredTokenRemover(object):
         self._debug = config['debug']
 
     def run(self):
-        self._cleanup_and_reschedule(self._cleanup_interval)
+        self._cleanup()
+        self._reschedule(self._cleanup_interval)
 
-    def _cleanup_and_reschedule(self, interval):
+    def _cleanup(self):
         try:
             self._storage.remove_expired_tokens()
         except Exception:
             logger.info('failed to remove expired tokens', exc_info=self._debug)
 
-        t = Timer(interval, self._cleanup_and_reschedule, (interval,))
+    def _reschedule(self, interval):
+        t = Timer(interval, self.run)
         t.daemon = True
         t.start()
 
