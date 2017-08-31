@@ -72,6 +72,11 @@ _DEFAULT_CONFIG = {
         'verify_certificate': '/usr/share/xivo-certs/server.crt',
         'https': True,
     },
+    'amqp': {
+        'uri': 'amqp://guest:guest@localhost:5672/',
+        'exchange_name': 'xivo',
+        'exchange_type': 'topic',
+    },
 }
 
 
