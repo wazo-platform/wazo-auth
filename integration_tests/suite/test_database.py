@@ -37,6 +37,7 @@ class DBStarter(AssetLaunchingTestCase):
 
     asset = 'database'
     assets_root = os.path.join(os.path.dirname(__file__), '..', 'assets')
+    service = 'postgres'
 
 
 def setup():
