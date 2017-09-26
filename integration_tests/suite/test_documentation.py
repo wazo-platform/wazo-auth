@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2016 Avencall
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ from .test_http_interface import _BaseTestCase
 class TestDocumentation(_BaseTestCase):
 
     asset = 'documentation'
+    service = 'swagger-validator'
 
     def test_documentation_errors(self):
         api_url = 'https://auth:9497/0.1/api/api.yml'
