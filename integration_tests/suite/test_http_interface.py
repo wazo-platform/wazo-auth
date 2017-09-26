@@ -92,6 +92,7 @@ def http_error(code, msg):
 class _BaseTestCase(AssetLaunchingTestCase):
 
     assets_root = os.path.join(os.path.dirname(__file__), '..', 'assets')
+    service = 'auth'
 
     @classmethod
     def setUpClass(cls):
