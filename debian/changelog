@@ -1,3 +1,9 @@
+xivo-auth (17.14~20170922.235844.5b6a777+6) wazo-dev; urgency=medium
+
+  * replace the bin/xivo-auth script by a console_script
+
+ -- Wazo Maintainers <dev+pkg@wazo.community>  Wed, 27 Sep 2017 14:55:33 -0400
+
 xivo-auth (17.14~20170922.235844.5b6a777+5) wazo-dev; urgency=medium
 
   * rename xivo-auth-init-db to wazo-auth-init-db

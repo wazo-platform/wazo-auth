@@ -39,11 +39,13 @@ setup(
     },
 
     scripts=[
-        'bin/xivo-auth',
         'bin/wazo-auth-init-db',
     ],
 
     entry_points={
+        'console_scripts': [
+            'xivo-auth=xivo_auth.bin.daemon:main',
+        ],
         'xivo_auth.backends': [
             'xivo_admin = xivo_auth.plugins.backends:XiVOAdmin',
             'xivo_service = xivo_auth.plugins.backends:XiVOService',
