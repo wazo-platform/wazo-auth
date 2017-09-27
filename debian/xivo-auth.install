@@ -1,5 +1,5 @@
 etc/*  etc/
 migrations/ usr/share/xivo-auth
-bin/xivo-auth-init-db usr/bin/
+bin/wazo-auth-init-db usr/bin/
 alembic/ usr/share/xivo-auth/
 alembic.ini usr/share/xivo-auth/

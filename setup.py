@@ -40,7 +40,7 @@ setup(
 
     scripts=[
         'bin/xivo-auth',
-        'bin/xivo-auth-init-db',
+        'bin/wazo-auth-init-db',
     ],
 
     entry_points={

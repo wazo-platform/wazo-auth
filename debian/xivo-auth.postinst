@@ -74,7 +74,7 @@ case "$1" in
 
         # Database initialization and migrations
         if pg_is_running ; then
-            xivo-auth-init-db --user postgres
+            wazo-auth-init-db --user postgres
             echo "Upgrading xivo-auth database ..."
             (cd $ALEMBIC_INI_PATH && alembic -c alembic.ini upgrade head)
         fi
