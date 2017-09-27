@@ -1,4 +1,4 @@
-xivo-auth (0.0.1) UNRELEASED; urgency=low
+xivo-auth (0.0.1) wazo-dev; urgency=low
 
   * Initial release.
 
