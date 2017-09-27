@@ -35,7 +35,7 @@ slapd:
   ports:
     - "389"
 postgres:
-  image: wazopbx/postgres-test
+  image: wazopbx/xivo-auth-db
   ports:
     - "5432"
   volumes:

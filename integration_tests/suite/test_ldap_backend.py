@@ -42,16 +42,6 @@ def cd(newdir):
         os.chdir(prevdir)
 
 
-def _container_id(service_name):
-    result = _run_cmd(['docker-compose', 'ps', '-q', service_name], stderr=False).strip()
-    result = result.decode('utf-8')
-    if '\n' in result:
-        raise AssertionError('There is more than one container running with name {}'.format(service_name))
-    if not result:
-        raise Exception('No such service: {}'.format(service_name))
-    return result
-
-
 def _run_cmd(cmd, stderr=True):
     with open(os.devnull, "w") as null:
         stderr = subprocess.STDOUT if stderr else null
@@ -129,18 +119,6 @@ class _BaseLDAPTestCase(_BaseTestCase):
         except Exception:
             super(_BaseLDAPTestCase, cls).tearDownClass()
             raise
-        cls.init_db()
-
-    @classmethod
-    def init_db(cls):
-        port = cls.service_port(5432, 'postgres')
-        db_uri = "postgresql://asterisk:proformatique@localhost:{}/asterisk".format(port)
-        env = os.environ.copy()
-        env['ALEMBIC_DB_URI'] = db_uri
-        xivo_auth_root = '../../..'  # The cwd is in the asset directory
-        with cd(xivo_auth_root):
-            command = ['alembic', '-c', 'alembic.ini', 'upgrade', 'head']
-            subprocess.call(command, env=env)
 
     @classmethod
     def service_port(cls, internal_port, service_name=None):
@@ -148,7 +126,7 @@ class _BaseLDAPTestCase(_BaseTestCase):
             service_name = cls.service
 
         docker = docker_client.from_env().api
-        result = docker.port(_container_id(service_name), internal_port)
+        result = docker.port(cls._container_id(service_name), internal_port)
 
         if not result:
             raise Exception('No such port: {} {}'.format(service_name, internal_port))

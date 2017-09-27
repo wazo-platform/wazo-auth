@@ -1,5 +1,6 @@
-FROM wazopbx/wazo-base-db
+FROM wazopbx/postgres-test
 MAINTAINER Wazo Maintainers <dev@wazo.community>
+USER root
 
 ADD . /usr/src/xivo-auth
 WORKDIR /usr/src/xivo-auth
@@ -11,4 +12,3 @@ RUN true \
     && (cd /usr/src/xivo-auth && alembic -c alembic.ini upgrade head) \
     && pg_stop \
     && true
-USER postgres
