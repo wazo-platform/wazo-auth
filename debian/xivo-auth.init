@@ -18,8 +18,8 @@ USER=xivo-auth
 GROUP=$USER
 DAEMONNAME=xivo-auth
 DAEMON=/usr/bin/$DAEMONNAME
-PIDDIR=/var/run/$DAEMONNAME
-PIDFILE=$PIDDIR/$DAEMONNAME.pid
+PIDDIR=/var/run/wazo-auth
+PIDFILE=$PIDDIR/wazo-auth.pid
 XIVO_DEFAULT_FILE="/etc/default/xivo"
 
 . /lib/lsb/init-functions

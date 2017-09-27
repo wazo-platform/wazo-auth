@@ -7,6 +7,7 @@ USER='xivo-auth'
 GROUP=$USER
 LOG_FILENAME="/var/log/${DAEMONNAME}.log"
 ALEMBIC_INI_PATH='/usr/share/xivo-auth'
+OLD_PID_DIR='/var/run/xivo-auth'
 
 pg_is_running () {
     pg_lsclusters --no-header | grep -q online
@@ -45,6 +46,11 @@ case "$1" in
         previous_version="$2"
         if dpkg --compare-versions "$previous_version" "lt-nl" "17.01"; then
             /usr/share/xivo-auth/migrations/0001_remove_consul_storage.py
+        fi
+
+        # The pid file was moved from /var/run/xivo-auth/xivo-auth.pid in version 17.14
+        if dpkg --compare-versions "$previous_version" "lt-nl" "17.14"; then
+            rm -rf "${OLD_PID_DIR}"
         fi
 
         # Database initialization and migrations

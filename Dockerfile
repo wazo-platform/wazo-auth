@@ -12,7 +12,7 @@ RUN apt-get update \
     && touch /var/log/xivo-auth.log \
     && mkdir -p /etc/xivo-auth/conf.d \
     && cp /usr/src/xivo-auth/etc/xivo-auth/*.yml /etc/xivo-auth/ \
-    && install -d -o www-data -g www-data /var/run/xivo-auth/
+    && install -d -o www-data -g www-data /var/run/wazo-auth/
 
 EXPOSE 9497
 
