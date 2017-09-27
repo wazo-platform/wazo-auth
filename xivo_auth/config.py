@@ -25,7 +25,7 @@ from xivo.xivo_logging import get_log_level_by_name
 TWO_HOURS = 60 * 60 * 2
 _DEFAULT_HTTP_PORT = 9497
 _DEFAULT_CONFIG = {
-    'user': 'www-data',
+    'user': 'wazo-auth',
     'config_file': '/etc/wazo-auth/config.yml',
     'extra_config_files': '/etc/wazo-auth/conf.d',
     'log_level': 'info',

@@ -14,7 +14,7 @@
 set -e
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
-USER=xivo-auth
+USER=wazo-auth
 GROUP=$USER
 DAEMONNAME=xivo-auth
 DAEMON=/usr/bin/$DAEMONNAME

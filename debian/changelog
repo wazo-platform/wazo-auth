@@ -1,3 +1,9 @@
+xivo-auth (17.14~20170922.235844.5b6a777+4) wazo-dev; urgency=medium
+
+  * rename user from xivo-auth to wazo-auth
+
+ -- Wazo Maintainers <dev+pkg@wazo.community>  Wed, 27 Sep 2017 14:11:45 -0400
+
 xivo-auth (17.14~20170922.235844.5b6a777+3) wazo-dev; urgency=medium
 
   * move log files

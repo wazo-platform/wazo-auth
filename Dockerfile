@@ -12,8 +12,10 @@ RUN apt-get update \
     && touch /var/log/wazo-auth.log \
     && mkdir -p /etc/wazo-auth/conf.d \
     && cp /usr/src/xivo-auth/etc/wazo-auth/*.yml /etc/wazo-auth/ \
-    && install -d -o www-data -g www-data /var/run/wazo-auth/
+    && adduser --quiet --system --group --no-create-home --home /var/lib/wazo-auth wazo-auth \
+    && install -d -o wazo-auth -g wazo-auth /var/run/wazo-auth/ \
+    && true
 
 EXPOSE 9497
 
-CMD ["xivo-auth", "-fd", "--user", "www-data"]
+CMD ["xivo-auth", "-fd"]

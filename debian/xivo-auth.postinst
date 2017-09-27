@@ -3,7 +3,7 @@
 set -e
 
 DAEMONNAME='xivo-auth'
-USER='xivo-auth'
+USER='wazo-auth'
 GROUP=$USER
 LOG_FILENAME="/var/log/wazo-auth.log"
 ALEMBIC_INI_PATH='/usr/share/xivo-auth'
@@ -26,12 +26,8 @@ case "$1" in
         if ! getent passwd $USER > /dev/null ; then
             echo "Adding system user $USER" 1>&2
             adduser --quiet --system --group --no-create-home \
-                    --home /var/lib/xivo-auth \
+                    --home "/var/lib/${USER}" \
                     $USER
-        else
-            if dpkg --compare-versions "$2" lt '16.12~'; then
-                usermod --home /var/lib/xivo-auth $USER
-            fi
         fi
         adduser --quiet $USER www-data
 
@@ -43,6 +39,12 @@ case "$1" in
                     mv "${f}" "$(echo ${f} | sed 's/xivo-auth/wazo-auth/g')"
                 done
             )
+
+            # The USER was renamed from xivo-auth in version 17.14
+            if getent passwd xivo-auth > /dev/null ; then
+                echo "Deleting system user xivo-auth" 1>&2
+                deluser --system xivo-auth
+            fi
         fi
 
         if [ ! -e "$LOG_FILENAME" ]; then
