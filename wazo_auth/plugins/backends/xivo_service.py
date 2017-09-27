@@ -20,8 +20,8 @@ import logging
 from xivo_dao import accesswebservice_dao
 from xivo_dao.helpers.db_utils import session_scope
 
-from xivo_auth import BaseAuthenticationBackend
-from xivo_auth.exceptions import AuthenticationFailedException
+from wazo_auth import BaseAuthenticationBackend
+from wazo_auth.exceptions import AuthenticationFailedException
 
 logger = logging.getLogger(__name__)
 

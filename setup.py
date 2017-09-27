@@ -35,7 +35,7 @@ setup(
     zip_safe=False,
 
     package_data={
-        'xivo_auth.swagger': ['*.yml'],
+        'wazo_auth.swagger': ['*.yml'],
     },
 
     scripts=[
@@ -44,17 +44,17 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'xivo-auth=xivo_auth.bin.daemon:main',
+            'xivo-auth=wazo_auth.bin.daemon:main',
         ],
         'xivo_auth.backends': [
-            'xivo_admin = xivo_auth.plugins.backends:XiVOAdmin',
-            'xivo_service = xivo_auth.plugins.backends:XiVOService',
-            'xivo_user = xivo_auth.plugins.backends:XiVOUser',
-            'ldap_user = xivo_auth.plugins.backends:LDAPUser',
-            'mock = xivo_auth.plugins.backends:BackendMock',
-            'mock_with_uuid = xivo_auth.plugins.backends:BackendMockWithUUID',
-            'broken_init = xivo_auth.plugins.backends:BrokenInitBackend',
-            'broken_verify_password = xivo_auth.plugins.backends:BrokenVerifyPasswordBackend',
+            'xivo_admin = wazo_auth.plugins.backends:XiVOAdmin',
+            'xivo_service = wazo_auth.plugins.backends:XiVOService',
+            'xivo_user = wazo_auth.plugins.backends:XiVOUser',
+            'ldap_user = wazo_auth.plugins.backends:LDAPUser',
+            'mock = wazo_auth.plugins.backends:BackendMock',
+            'mock_with_uuid = wazo_auth.plugins.backends:BackendMockWithUUID',
+            'broken_init = wazo_auth.plugins.backends:BrokenInitBackend',
+            'broken_verify_password = wazo_auth.plugins.backends:BrokenVerifyPasswordBackend',
         ],
     }
 )

@@ -15,32 +15,37 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-import logging
 
-from xivo_auth import UserAuthenticationBackend
-from xivo_dao.resources.user import dao as user_dao
+from xivo_dao import admin_dao
+from xivo_dao.helpers.exception import NotFoundError
 from xivo_dao.helpers.db_utils import session_scope
 
-logger = logging.getLogger(__name__)
+from wazo_auth import BaseAuthenticationBackend, ACLRenderingBackend
+from wazo_auth.exceptions import AuthenticationFailedException
 
 
-class XiVOUser(UserAuthenticationBackend):
-
-    def __init__(self, config):
-        super(XiVOUser, self).__init__(config)
-        self._config = config
-        self._confd_config = config['confd']
+class XiVOAdmin(BaseAuthenticationBackend, ACLRenderingBackend):
 
     def get_acls(self, login, args):
         acl_templates = args.get('acl_templates', [])
-        return self.render_acl(acl_templates, self.get_user_data, username=login)
+        return self.render_acl(acl_templates, self.get_admin_data, username=login)
+
+    def get_admin_data(self, username):
+        with session_scope():
+            entity = admin_dao.get_admin_entity(username)
+
+        return {'entity': entity}
 
     def get_ids(self, username, args):
         with session_scope():
-            user = user_dao.get_by(username=username, enableclient=1)
-            return user.uuid, user.uuid
+            try:
+                auth_id = admin_dao.get_admin_uuid(username)
+            except NotFoundError:
+                raise AuthenticationFailedException()
+
+        user_uuid = None
+        return auth_id, user_uuid
 
     def verify_password(self, login, password, args):
         with session_scope():
-            user = user_dao.find_by(username=login, password=password, enableclient=1)
-            return user is not None
+            return admin_dao.check_username_password(login, password)

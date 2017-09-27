@@ -23,7 +23,7 @@ from xivo_dao.helpers.exception import InputError
 from mock import patch, Mock
 from hamcrest import assert_that, equal_to, is_
 
-from xivo_auth.plugins.backends.xivo_user import XiVOUser
+from wazo_auth.plugins.backends.xivo_user import XiVOUser
 
 DEFAULT_USER_ACLS = [
     'call-logd.users.me.cdr.read',
@@ -60,7 +60,7 @@ DEFAULT_USER_ACLS = [
 ]
 
 
-@patch('xivo_auth.plugins.backends.xivo_user.user_dao')
+@patch('wazo_auth.plugins.backends.xivo_user.user_dao')
 class TestGetIDS(unittest.TestCase):
 
     def test_that_get_ids_calls_the_dao(self, user_dao_mock):
@@ -80,7 +80,7 @@ class TestGetIDS(unittest.TestCase):
         self.assertRaises(Exception, backend.get_ids, 'foobar')
 
 
-@patch('xivo_auth.plugins.backends.xivo_user.user_dao')
+@patch('wazo_auth.plugins.backends.xivo_user.user_dao')
 class TestVerifyPassword(unittest.TestCase):
 
     def test_that_verify_password_calls_the_dao(self, user_dao_mock):
@@ -95,7 +95,7 @@ class TestVerifyPassword(unittest.TestCase):
                                                       enableclient=1)
 
 
-@patch('xivo_auth.interfaces.Client')
+@patch('wazo_auth.interfaces.Client')
 class TestGetAcls(unittest.TestCase):
 
     def setUp(self):

@@ -21,10 +21,10 @@ import ldap
 from mock import patch, Mock, call
 from hamcrest import assert_that, equal_to
 
-from xivo_auth.plugins.backends.ldap_user import LDAPUser, _XivoLDAP
+from wazo_auth.plugins.backends.ldap_user import LDAPUser, _XivoLDAP
 
 
-@patch('xivo_auth.plugins.backends.ldap_user.find_by')
+@patch('wazo_auth.plugins.backends.ldap_user.find_by')
 class TestGetACLS(unittest.TestCase):
 
     def setUp(self):
@@ -45,7 +45,7 @@ class TestGetACLS(unittest.TestCase):
             assert_that(result, equal_to(render_acl.return_value))
 
 
-@patch('xivo_auth.plugins.backends.ldap_user.find_by')
+@patch('wazo_auth.plugins.backends.ldap_user.find_by')
 class TestGetIDS(unittest.TestCase):
 
     def setUp(self):
@@ -69,8 +69,8 @@ class TestGetIDS(unittest.TestCase):
         self.assertRaises(Exception, self.backend.get_ids, 'alice')
 
 
-@patch('xivo_auth.plugins.backends.ldap_user._XivoLDAP')
-@patch('xivo_auth.plugins.backends.ldap_user.find_by')
+@patch('wazo_auth.plugins.backends.ldap_user._XivoLDAP')
+@patch('wazo_auth.plugins.backends.ldap_user.find_by')
 class TestVerifyPassword(unittest.TestCase):
 
     def setUp(self):

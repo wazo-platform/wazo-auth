@@ -24,7 +24,7 @@ from datetime import datetime, timedelta
 from hamcrest import assert_that, equal_to
 from mock import Mock, sentinel
 
-from xivo_auth import database, token, BaseAuthenticationBackend
+from wazo_auth import database, token, BaseAuthenticationBackend
 
 
 def later(expiration):

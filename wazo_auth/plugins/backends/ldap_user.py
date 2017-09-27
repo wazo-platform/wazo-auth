@@ -20,7 +20,7 @@ import ldap
 
 from ldap.filter import escape_filter_chars
 from ldap.dn import escape_dn_chars
-from xivo_auth import UserAuthenticationBackend
+from wazo_auth import UserAuthenticationBackend
 
 from xivo_dao.resources.user.dao import find_by
 from xivo_dao.helpers.db_utils import session_scope

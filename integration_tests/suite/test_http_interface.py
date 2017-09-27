@@ -42,7 +42,7 @@ from xivo_auth_client import Client
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from xivo_test_helpers import until
-from xivo_auth import database, exceptions
+from wazo_auth import database, exceptions
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)

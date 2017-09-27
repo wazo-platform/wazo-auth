@@ -25,7 +25,7 @@ from marshmallow import Schema, fields
 from marshmallow.validate import Range
 from pkg_resources import resource_string
 
-from xivo_auth.exceptions import ManagerException
+from wazo_auth.exceptions import ManagerException
 
 logger = logging.getLogger(__name__)
 
@@ -183,7 +183,7 @@ class Backends(ErrorCatchingResource):
 
 class Api(Resource):
 
-    api_package = "xivo_auth.swagger"
+    api_package = "wazo_auth.swagger"
     api_filename = "api.yml"
     api_path = "/api/api.yml"
 

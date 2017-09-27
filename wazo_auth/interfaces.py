@@ -20,7 +20,7 @@ import os
 import logging
 
 from xivo_confd_client import Client
-from xivo_auth.helpers import LazyTemplateRenderer
+from wazo_auth.helpers import LazyTemplateRenderer
 
 DEFAULT_XIVO_UUID = os.getenv('XIVO_UUID')
 logger = logging.getLogger(__name__)

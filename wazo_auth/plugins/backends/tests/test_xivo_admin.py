@@ -20,9 +20,9 @@ import unittest
 from mock import Mock, patch, sentinel as s
 from hamcrest import assert_that, calling, equal_to, has_entry, raises
 
-from xivo_auth.plugins import backends
-from xivo_auth.exceptions import ManagerException
-from xivo_auth.plugins.backends.xivo_admin import NotFoundError
+from wazo_auth.plugins import backends
+from wazo_auth.exceptions import ManagerException
+from wazo_auth.plugins.backends.xivo_admin import NotFoundError
 
 
 class TestGetAdminData(unittest.TestCase):
@@ -30,7 +30,7 @@ class TestGetAdminData(unittest.TestCase):
     def setUp(self):
         self.backend = backends.XiVOAdmin('config')
 
-    @patch('xivo_auth.plugins.backends.xivo_admin.admin_dao')
+    @patch('wazo_auth.plugins.backends.xivo_admin.admin_dao')
     def test_that_returned_contains_the_entity(self, admin_dao_mock):
         tenant = admin_dao_mock.get_admin_entity.return_value = 'the-entity'
 
@@ -42,7 +42,7 @@ class TestGetAdminData(unittest.TestCase):
 
 class TestVerifyPassword(unittest.TestCase):
 
-    @patch('xivo_auth.plugins.backends.xivo_admin.admin_dao')
+    @patch('wazo_auth.plugins.backends.xivo_admin.admin_dao')
     def test_that_get_uuid_calls_the_dao(self, admin_dao_mock):
         admin_dao_mock.check_username_password.return_value = 'a_return_value'
         backend = backends.XiVOAdmin('config')
@@ -52,7 +52,7 @@ class TestVerifyPassword(unittest.TestCase):
         assert_that(result, equal_to('a_return_value'))
         admin_dao_mock.check_username_password.assert_called_once_with('foo', 'bar')
 
-    @patch('xivo_auth.plugins.backends.xivo_admin.admin_dao.get_admin_uuid',
+    @patch('wazo_auth.plugins.backends.xivo_admin.admin_dao.get_admin_uuid',
            Mock(return_value='5900b8d4-5c38-49f9-b5fc-e0b7057b4c50'))
     def test_that_get_ids_returns_the_uuid_and_None(self):
         backend = backends.XiVOAdmin({})
@@ -62,7 +62,7 @@ class TestVerifyPassword(unittest.TestCase):
         assert_that(auth_id, equal_to('5900b8d4-5c38-49f9-b5fc-e0b7057b4c50'))
         assert_that(xivo_user_uuid, equal_to(None))
 
-    @patch('xivo_auth.plugins.backends.xivo_admin.admin_dao.get_admin_uuid',
+    @patch('wazo_auth.plugins.backends.xivo_admin.admin_dao.get_admin_uuid',
            Mock(side_effect=NotFoundError))
     def test_that_a_manager_error_is_raised_if_username_not_found(self):
         backend = backends.XiVOAdmin({})
