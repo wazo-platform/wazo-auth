@@ -4,7 +4,7 @@
 
 # Extra configuration directory where the config files overriding this file
 # should be.
-extra_config_files: /etc/xivo-auth/conf.d/
+extra_config_files: /etc/wazo-auth/conf.d/
 
 log_filename: /var/log/xivo-auth.log
 pid_filename: /var/run/wazo-auth/wazo-auth.pid

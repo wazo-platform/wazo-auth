@@ -23,7 +23,7 @@ auth:
   links:
     - postgres
     - slapd
-  command: "xivo-auth -u www-data -c /data/ldap/etc/xivo-auth/config.yml"
+  command: "xivo-auth -u www-data -c /data/ldap/etc/wazo-auth/config.yml"
 slapd:
   image: nickstenning/slapd
   environment:

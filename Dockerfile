@@ -10,8 +10,8 @@ RUN apt-get update \
     && pip install -r requirements.txt \
     && python setup.py install \
     && touch /var/log/xivo-auth.log \
-    && mkdir -p /etc/xivo-auth/conf.d \
-    && cp /usr/src/xivo-auth/etc/xivo-auth/*.yml /etc/xivo-auth/ \
+    && mkdir -p /etc/wazo-auth/conf.d \
+    && cp /usr/src/xivo-auth/etc/wazo-auth/*.yml /etc/wazo-auth/ \
     && install -d -o www-data -g www-data /var/run/wazo-auth/
 
 EXPOSE 9497

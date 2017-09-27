@@ -20,7 +20,7 @@ auth:
      - "../../..:/usr/src/xivo-auth"  # delete-on-docker-machine
    links:
      - "postgres"
-   command: "xivo-auth -u www-data -c /data/no_ssl_certificate/etc/xivo-auth/config.yml"
+   command: "xivo-auth -u www-data -c /data/no_ssl_certificate/etc/wazo-auth/config.yml"
 postgres:
   image: wazopbx/xivo-auth-db
   expose:

@@ -1,1 +1,2 @@
 rm_conffile /etc/default/xivo-auth 15.20
+mv_conffile /etc/xivo-auth/config.yml /etc/wazo-auth/config.yml 17.14

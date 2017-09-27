@@ -26,8 +26,8 @@ TWO_HOURS = 60 * 60 * 2
 _DEFAULT_HTTP_PORT = 9497
 _DEFAULT_CONFIG = {
     'user': 'www-data',
-    'config_file': '/etc/xivo-auth/config.yml',
-    'extra_config_files': '/etc/xivo-auth/conf.d',
+    'config_file': '/etc/wazo-auth/config.yml',
+    'extra_config_files': '/etc/wazo-auth/conf.d',
     'log_level': 'info',
     'log_filename': '/var/log/xivo-auth.log',
     'pid_filename': '/var/run/wazo-auth/wazo-auth.pid',
