@@ -20,11 +20,6 @@ case "$1" in
             rm -f '/var/log/${DAEMONNAME}.log'
         fi
 
-        # remove the /etc/xivo-auth/services.d/xivo_dird_phoned.yml file created before 15.19
-        if [ -e '/etc/xivo-auth/services.d/xivo_dird_phoned.yml' ]; then
-            rm -f '/etc/xivo-auth/services.d/xivo_dird_phoned.yml'
-        fi
-
         # add/update user
         if ! getent passwd $USER > /dev/null ; then
             echo "Adding system user $USER" 1>&2
