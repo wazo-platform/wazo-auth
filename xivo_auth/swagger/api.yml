@@ -2,11 +2,11 @@ swagger: '2.0'
 info:
   version: '0.1'
   title: xivo-auth
-  description: Wazo's authentication service
+  description: "Wazo's authentication service"
   contact:
     name: Wazo dev team
     url: http://wazo.community
-    email: dev.wazo@gmail.com
+    email: dev@wazo.community
   license:
     name: GPLv3
     url: http://www.gnu.org/licenses/gpl-3.0.html

@@ -1,5 +1,5 @@
 FROM python:2.7.9
-MAINTAINER Wazo Maintainers <dev.wazo@gmail.com>
+MAINTAINER Wazo Maintainers <dev@wazo.community>
 
 ADD . /usr/src/xivo-auth
 ADD ./contribs/docker/certs /usr/share/xivo-certs
