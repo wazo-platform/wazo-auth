@@ -2,7 +2,7 @@
 # Add extra configuration files in the extra_config_files directory to override
 # the content from this file
 
-log_filename: /tmp/xivo-auth.log
+log_filename: /tmp/wazo-auth.log
 foreground: True
 debug: True
 

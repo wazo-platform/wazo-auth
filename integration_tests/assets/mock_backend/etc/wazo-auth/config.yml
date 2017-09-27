@@ -1,6 +1,6 @@
 debug: True
 foreground: True
-log_filename: /tmp/xivo-auth.log
+log_filename: /tmp/wazo-auth.log
 token_cleanup_interval: 2.0
 
 rest_api:

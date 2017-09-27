@@ -29,7 +29,7 @@ _DEFAULT_CONFIG = {
     'config_file': '/etc/wazo-auth/config.yml',
     'extra_config_files': '/etc/wazo-auth/conf.d',
     'log_level': 'info',
-    'log_filename': '/var/log/xivo-auth.log',
+    'log_filename': '/var/log/wazo-auth.log',
     'pid_filename': '/var/run/wazo-auth/wazo-auth.pid',
     'default_token_lifetime': TWO_HOURS,
     'token_cleanup_interval': 60.0,

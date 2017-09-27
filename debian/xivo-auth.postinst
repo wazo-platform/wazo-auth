@@ -1,11 +1,11 @@
-#! /bin/sh
+#! /bin/bash
 
 set -e
 
 DAEMONNAME='xivo-auth'
 USER='xivo-auth'
 GROUP=$USER
-LOG_FILENAME="/var/log/${DAEMONNAME}.log"
+LOG_FILENAME="/var/log/wazo-auth.log"
 ALEMBIC_INI_PATH='/usr/share/xivo-auth'
 OLD_PID_DIR='/var/run/xivo-auth'
 
@@ -15,6 +15,8 @@ pg_is_running () {
 
 case "$1" in
     configure)
+        previous_version="$2"
+
         # remove the /var/log/${DAEMONNAME}.log file created before 15.12
         if [ -e '/var/log/${DAEMONNAME}.log' ]; then
             rm -f '/var/log/${DAEMONNAME}.log'
@@ -33,12 +35,21 @@ case "$1" in
         fi
         adduser --quiet $USER www-data
 
+        if dpkg --compare-versions "$previous_version" "lt-nl" "17.14"; then
+            # The log file have been renamed in version 17.14
+            (
+                shopt -s nullglob
+                for f in /var/log/xivo-auth*; do
+                    mv "${f}" "$(echo ${f} | sed 's/xivo-auth/wazo-auth/g')"
+                done
+            )
+        fi
+
         if [ ! -e "$LOG_FILENAME" ]; then
             touch "$LOG_FILENAME"
         fi
         chown $USER:$GROUP "$LOG_FILENAME"
 
-        previous_version="$2"
         if dpkg --compare-versions "$previous_version" "lt-nl" "17.14"; then
             # The pid file was moved from /var/run/xivo-auth/xivo-auth.pid in version 17.14
             rm -rf "${OLD_PID_DIR}"

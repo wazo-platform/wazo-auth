@@ -1,6 +1,6 @@
 debug: True
 foreground: True
-log_filename: /tmp/xivo-auth.log
+log_filename: /tmp/wazo-auth.log
 rest_api:
   https:
     listen: 0.0.0.0

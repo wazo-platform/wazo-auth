@@ -1,4 +1,4 @@
-/var/log/xivo-auth.log {
+/var/log/wazo-auth.log {
     daily
     rotate 15
     compress

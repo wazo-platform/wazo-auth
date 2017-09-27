@@ -1,3 +1,9 @@
+xivo-auth (17.14~20170922.235844.5b6a777+3) wazo-dev; urgency=medium
+
+  * move log files
+
+ -- Wazo Maintainers <dev+pkg@wazo.community>  Wed, 27 Sep 2017 11:34:15 -0400
+
 xivo-auth (17.14~20170922.235844.5b6a777+2) wazo-dev; urgency=medium
 
   * move the config file

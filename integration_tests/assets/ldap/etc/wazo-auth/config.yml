@@ -1,4 +1,4 @@
-log_filename: /tmp/xivo-auth.log
+log_filename: /tmp/wazo-auth.log
 foreground: True
 debug: True
 rest_api:

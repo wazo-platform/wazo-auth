@@ -9,7 +9,7 @@ RUN apt-get update \
     && apt-get -yq install libldap2-dev libsasl2-dev \
     && pip install -r requirements.txt \
     && python setup.py install \
-    && touch /var/log/xivo-auth.log \
+    && touch /var/log/wazo-auth.log \
     && mkdir -p /etc/wazo-auth/conf.d \
     && cp /usr/src/xivo-auth/etc/wazo-auth/*.yml /etc/wazo-auth/ \
     && install -d -o www-data -g www-data /var/run/wazo-auth/
