@@ -20,7 +20,7 @@ from setuptools import find_packages
 from setuptools import setup
 
 setup(
-    name='xivo_auth',
+    name='wazo_auth',
     version='0.1',
 
     description='XiVO auth',
