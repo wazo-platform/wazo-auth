@@ -87,7 +87,7 @@ class Controller(object):
         server.ssl_adapter = http_helpers.ssl_adapter(self._ssl_cert_file,
                                                       self._ssl_key_file)
 
-        with ServiceCatalogRegistration('xivo-auth',
+        with ServiceCatalogRegistration('wazo-auth',
                                         self._xivo_uuid,
                                         self._consul_config,
                                         self._service_discovery_config,
