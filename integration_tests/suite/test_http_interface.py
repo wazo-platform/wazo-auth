@@ -49,7 +49,7 @@ logger = logging.getLogger(__name__)
 
 ISO_DATETIME = '%Y-%m-%dT%H:%M:%S.%f'
 
-HOST = os.getenv('XIVO_AUTH_TEST_HOST', 'localhost')
+HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
 
 
 def _new_token_id():
