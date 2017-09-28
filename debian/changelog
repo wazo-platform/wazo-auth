@@ -1,41 +1,5 @@
-xivo-auth (17.14~20170922.235844.5b6a777+6) wazo-dev; urgency=medium
-
-  * replace the bin/xivo-auth script by a console_script
-
- -- Wazo Maintainers <dev+pkg@wazo.community>  Wed, 27 Sep 2017 14:55:33 -0400
-
-xivo-auth (17.14~20170922.235844.5b6a777+5) wazo-dev; urgency=medium
-
-  * rename xivo-auth-init-db to wazo-auth-init-db
-
- -- Wazo Maintainers <dev+pkg@wazo.community>  Wed, 27 Sep 2017 14:48:43 -0400
-
-xivo-auth (17.14~20170922.235844.5b6a777+4) wazo-dev; urgency=medium
-
-  * rename user from xivo-auth to wazo-auth
-
- -- Wazo Maintainers <dev+pkg@wazo.community>  Wed, 27 Sep 2017 14:11:45 -0400
-
-xivo-auth (17.14~20170922.235844.5b6a777+3) wazo-dev; urgency=medium
-
-  * move log files
-
- -- Wazo Maintainers <dev+pkg@wazo.community>  Wed, 27 Sep 2017 11:34:15 -0400
-
-xivo-auth (17.14~20170922.235844.5b6a777+2) wazo-dev; urgency=medium
-
-  * move the config file
-
- -- Wazo Maintainers <dev+pkg@wazo.community>  Wed, 27 Sep 2017 10:13:05 -0400
-
-xivo-auth (17.14~20170922.235844.5b6a777+1) wazo-dev; urgency=medium
-
-  * move the pidfile
-
- -- Wazo Maintainers <dev+pkg@wazo.community>  Wed, 27 Sep 2017 09:21:25 -0400
-
-xivo-auth (0.0.1) wazo-dev; urgency=low
+wazo-auth (17.14~20170922.235844.5b6a777+6ubuntu1) wazo-dev; urgency=medium
 
   * Initial release.
 
- -- Pascal Cadotte Michaud <pcadottemichaud@avencall.com>  Mon, 11 May 2015 10:14:39 -0400
+ -- Wazo Maintainers <dev+pkg@wazo.community>  Thu, 28 Sep 2017 11:18:39 -0400

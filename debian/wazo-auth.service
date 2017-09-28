@@ -1,5 +1,5 @@
 [Unit]
-Description=xivo-auth server
+Description=wazo-auth server
 After=network.target postgresql.service
 Before=monit.service
 

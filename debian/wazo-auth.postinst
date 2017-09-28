@@ -2,11 +2,11 @@
 
 set -e
 
-DAEMONNAME='xivo-auth'
+DAEMONNAME='wazo-auth'
 USER='wazo-auth'
 GROUP=$USER
-LOG_FILENAME="/var/log/wazo-auth.log"
-ALEMBIC_INI_PATH='/usr/share/wazo-auth'
+LOG_FILENAME="/var/log/${DAEMONNAME}.log"
+ALEMBIC_INI_PATH="/usr/share/${DAEMONNAME}"
 OLD_PID_DIR='/var/run/xivo-auth'
 
 pg_is_running () {
@@ -17,11 +17,6 @@ case "$1" in
     configure)
         previous_version="$2"
 
-        # remove the /var/log/${DAEMONNAME}.log file created before 15.12
-        if [ -e '/var/log/${DAEMONNAME}.log' ]; then
-            rm -f '/var/log/${DAEMONNAME}.log'
-        fi
-
         # add/update user
         if ! getent passwd $USER > /dev/null ; then
             echo "Adding system user $USER" 1>&2
@@ -31,7 +26,15 @@ case "$1" in
         fi
         adduser --quiet $USER www-data
 
-        if dpkg --compare-versions "$previous_version" "lt-nl" "17.14"; then
+        if [[ -z "${previous_version}" ]]; then
+            # The pid file was moved from /var/run/xivo-auth/xivo-auth.pid in version 17.14
+            rm -rf "${OLD_PID_DIR}"
+
+            # remove the /var/log/${DAEMONNAME}.log file created before 15.12
+            if [ -e '/var/log/${DAEMONNAME}.log' ]; then
+                rm -f '/var/log/${DAEMONNAME}.log'
+            fi
+
             # The log file have been renamed in version 17.14
             (
                 shopt -s nullglob
@@ -52,10 +55,7 @@ case "$1" in
         fi
         chown $USER:$GROUP "$LOG_FILENAME"
 
-        if dpkg --compare-versions "$previous_version" "lt-nl" "17.14"; then
-            # The pid file was moved from /var/run/xivo-auth/xivo-auth.pid in version 17.14
-            rm -rf "${OLD_PID_DIR}"
-
+        if [[ -z "${previous_version}" ]]; then
             # The config dir was moved from /etc/xivo-auth in version 17.14
             if [ -e /etc/xivo-auth/conf.d ]; then
                 (
@@ -66,22 +66,20 @@ case "$1" in
                 )
             fi
             rm -rf /etc/xivo-auth
-        fi
 
-        if dpkg --compare-versions "$previous_version" "lt-nl" "17.01"; then
+            # In 17.01 wazo-auth stopped using consul for storage
             /usr/share/wazo-auth/migrations/0001_remove_consul_storage.py
+
+            # Add nginx configuration on new installations
+            ln -sf  /etc/nginx/locations/https-available/$DAEMONNAME \
+                    /etc/nginx/locations/https-enabled/$DAEMONNAME
         fi
 
         # Database initialization and migrations
         if pg_is_running ; then
             wazo-auth-init-db --user postgres
-            echo "Upgrading xivo-auth database ..."
+            echo "Upgrading ${DAEMONNAME} database ..."
             (cd $ALEMBIC_INI_PATH && alembic -c alembic.ini upgrade head)
-        fi
-
-        if dpkg --compare-versions "$2" lt '17.02'; then
-            ln -sf  /etc/nginx/locations/https-available/$DAEMONNAME \
-                    /etc/nginx/locations/https-enabled/$DAEMONNAME
         fi
 
     ;;

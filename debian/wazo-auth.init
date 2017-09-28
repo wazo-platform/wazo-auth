@@ -1,14 +1,14 @@
 #!/bin/sh
 #
 ### BEGIN INIT INFO
-# Provides:          xivo-auth
+# Provides:          wazo-auth
 # Required-Start:    $local_fs $remote_fs $network $syslog
 # Required-Stop:     $local_fs $remote_fs $network $syslog
 # Should-Start:      postgresql
 # Should-Stop:       postgresql
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Startup daemon script for xivo-auth
+# Short-Description: Startup daemon script for wazo-auth
 ### END INIT INFO
 #
 set -e
@@ -16,10 +16,10 @@ set -e
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 USER=wazo-auth
 GROUP=$USER
-DAEMONNAME=xivo-auth
-DAEMON=/usr/bin/wazo-auth
-PIDDIR=/var/run/wazo-auth
-PIDFILE=$PIDDIR/wazo-auth.pid
+DAEMONNAME=wazo-auth
+DAEMON="/usr/bin/${DAEMONNAME}"
+PIDDIR="/var/run/${DAEMONNAME}"
+PIDFILE="${PIDDIR}/${DAEMONNAME}.pid"
 XIVO_DEFAULT_FILE="/etc/default/xivo"
 
 . /lib/lsb/init-functions
