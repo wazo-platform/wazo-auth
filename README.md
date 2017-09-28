@@ -24,18 +24,18 @@ curl -k -i -X GET -H 'Content-Type: application/json' "https://localhost:9497/0.
 
 # Docker
 
-The wazopbx/xivo-auth image can be built using the following command:
+The wazopbx/wazo-auth image can be built using the following command:
 
-    % docker build -t wazopbx/xivo-auth .
+    % docker build -t wazopbx/wazo-auth .
 
 To run wazo-auth in docker, use the following commands:
 
-    % docker run -p 9497:9497 -v /conf/wazo-auth:/etc/wazo-auth/conf.d/ -it wazopbx/xivo-auth bash
+    % docker run -p 9497:9497 -v /conf/wazo-auth:/etc/wazo-auth/conf.d/ -it wazopbx/wazo-auth bash
     % wazo-auth [-df] [-u <user>] [-c <path/to/config/file>]
 
-The wazopbx/xivo-auth-db image can be built using the following command:
+The wazopbx/wazo-auth-db image can be built using the following command:
 
-    % docker build -f contribs/docker/Dockerfile-db -t wazopbx/xivo-auth-db .
+    % docker build -f contribs/docker/Dockerfile-db -t wazopbx/wazo-auth-db .
 
 
 Configuration

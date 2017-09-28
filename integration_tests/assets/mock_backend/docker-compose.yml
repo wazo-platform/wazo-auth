@@ -6,12 +6,12 @@ sync:
   environment:
     PORTS: "9497 5432"
 data:
-  image: wazopbx/xivo-auth-tests-data
+  image: wazopbx/wazo-auth-tests-data
   volumes:
     - "/data/"
   command: "sh -c 'while true; do sleep 10; done'"
 auth:
-   image: wazopbx/xivo-auth-tests
+   image: wazopbx/wazo-auth-tests
    environment:
     - "TZ=UTC+1"
     - "XIVO_UUID=the-predefined-xivo-uuid"
@@ -20,11 +20,11 @@ auth:
    volumes_from:
      - data
    volumes:  # delete-on-docker-machine
-     - "../../..:/usr/src/xivo-auth"  # delete-on-docker-machine
+     - "../../..:/usr/src/wazo-auth"  # delete-on-docker-machine
    links:
      - "postgres"
    command: "wazo-auth -c /data/mock_backend/etc/wazo-auth/config.yml"
 postgres:
-  image: wazopbx/xivo-auth-db
+  image: wazopbx/wazo-auth-db
   ports:
     - "5432"

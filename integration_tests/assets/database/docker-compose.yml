@@ -6,6 +6,6 @@ sync:
     PORTS: "5432"
 
 postgres:
-  image: wazopbx/xivo-auth-db
+  image: wazopbx/wazo-auth-db
   ports:
     - "5432"
