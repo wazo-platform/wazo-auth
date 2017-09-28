@@ -46,7 +46,7 @@ setup(
         'console_scripts': [
             'wazo-auth=wazo_auth.bin.daemon:main',
         ],
-        'xivo_auth.backends': [
+        'wazo_auth.backends': [
             'xivo_admin = wazo_auth.plugins.backends:XiVOAdmin',
             'xivo_service = wazo_auth.plugins.backends:XiVOService',
             'xivo_user = wazo_auth.plugins.backends:XiVOUser',

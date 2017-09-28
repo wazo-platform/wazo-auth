@@ -144,7 +144,7 @@ class Controller(object):
 
 class _PluginLoader(object):
 
-    namespace = 'xivo_auth.backends'
+    namespace = 'wazo_auth.backends'
 
     def __init__(self, config):
         self._enabled_plugins = config['enabled_plugins']
