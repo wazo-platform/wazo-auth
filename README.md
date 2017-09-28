@@ -1,6 +1,6 @@
 # wazo-auth
 
-[![Build Status](https://travis-ci.org/wazo-pbx/xivo-auth.svg)](https://travis-ci.org/wazo-pbx/xivo-auth)
+[![Build Status](https://travis-ci.org/wazo-pbx/wazo-auth.svg)](https://travis-ci.org/wazo-pbx/wazo-auth)
 
 A micro-service to create tokens, check ACLs and delete expired tokens
 

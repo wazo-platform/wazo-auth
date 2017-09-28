@@ -1,6 +1,6 @@
 Format: http://dep.debian.net/deps/dep5
 Upstream-Name: wazo-auth
-Source: https://github.com/wazo-pbx/xivo-auth
+Source: https://github.com/wazo-pbx/wazo-auth
 
 Files: *
 Copyright: 2015-2017 The Wazo Authors
