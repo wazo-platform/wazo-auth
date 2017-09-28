@@ -8,7 +8,7 @@ A micro-service to create tokens, check ACLs and delete expired tokens
 
 Launching xivo-auth
 
-    xivo_auth [--user <user>] --config <path/to/config/file>
+    wazo_auth [--user <user>] --config <path/to/config/file>
 
 Getting a token
 
@@ -31,7 +31,7 @@ The wazopbx/xivo-auth image can be built using the following command:
 To run xivo-auth in docker, use the following commands:
 
     % docker run -p 9497:9497 -v /conf/wazo-auth:/etc/wazo-auth/conf.d/ -it wazopbx/xivo-auth bash
-    % xivo-auth [-df] [-u <user>] [-c <path/to/config/file>]
+    % wazo-auth [-df] [-u <user>] [-c <path/to/config/file>]
 
 The wazopbx/xivo-auth-db image can be built using the following command:
 

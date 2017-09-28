@@ -18,4 +18,4 @@ RUN apt-get update \
 
 EXPOSE 9497
 
-CMD ["xivo-auth", "-fd"]
+CMD ["wazo-auth", "-fd"]

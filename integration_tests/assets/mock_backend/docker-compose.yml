@@ -23,7 +23,7 @@ auth:
      - "../../..:/usr/src/xivo-auth"  # delete-on-docker-machine
    links:
      - "postgres"
-   command: "xivo-auth -c /data/mock_backend/etc/wazo-auth/config.yml"
+   command: "wazo-auth -c /data/mock_backend/etc/wazo-auth/config.yml"
 postgres:
   image: wazopbx/xivo-auth-db
   ports:
