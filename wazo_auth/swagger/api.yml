@@ -1,7 +1,7 @@
 swagger: '2.0'
 info:
   version: '0.1'
-  title: xivo-auth
+  title: wazo-auth
   description: "Wazo's authentication service"
   contact:
     name: Wazo dev team
@@ -20,9 +20,9 @@ consumes:
 produces:
 - application/json
 securityDefinitions:
-  xivo_auth_basic:
+  wazo_auth_basic:
     type: basic
-  xivo_auth_token:
+  wazo_auth_token:
     type: apiKey
     name: X-Auth-Token
     in: header
@@ -30,7 +30,7 @@ paths:
   /policies:
     get:
       security:
-        - xivo_auth_token: []
+        - wazo_auth_token: []
       produces:
         - application/json
       summary: List ACL policies
@@ -55,7 +55,7 @@ paths:
             $ref: '#/definitions/Error'
     post:
       security:
-        - xivo_auth_token: []
+        - wazo_auth_token: []
       consumes:
         - application/json
       produces:
@@ -95,7 +95,7 @@ paths:
       tags:
         - policies
       security:
-      - xivo_auth_token: []
+      - wazo_auth_token: []
       description: '**Required ACL**: `auth.policies.{policy_uuid}.read'
       parameters:
       - name: policy_uuid
@@ -126,7 +126,7 @@ paths:
       tags:
         - policies
       security:
-      - xivo_auth_token: []
+      - wazo_auth_token: []
       description: '**Required ACL**: `auth.policies.{policy_uuid}.delete`'
       parameters:
       - name: policy_uuid
@@ -152,7 +152,7 @@ paths:
             $ref: '#/definitions/Error'
     put:
       security:
-        - xivo_auth_token: []
+        - wazo_auth_token: []
       consumes:
         - application/json
       produces:
@@ -190,7 +190,7 @@ paths:
   /policies/{policy_uuid}/acl_templates/{acl_template}:
     delete:
       security:
-        - xivo_auth_token: []
+        - wazo_auth_token: []
       operationId: deletePolicyACLTemplate
       tags:
         - policies
@@ -216,7 +216,7 @@ paths:
             $ref: '#/definitions/Error'
     put:
       security:
-        - xivo_auth_token: []
+        - wazo_auth_token: []
       operationId: addPolicyACLTemplate
       tags:
         - policies
@@ -254,7 +254,7 @@ paths:
       tags:
       - token
       security:
-      - xivo_auth_basic: []
+      - wazo_auth_basic: []
       parameters:
       - name: body
         in: body
@@ -488,7 +488,7 @@ definitions:
             description: The unique identifier retrieved from the backend
           xivo_user_uuid:
             type: string
-            description: The UUID of the XiVO user matching these credentials, this
+            description: The UUID of the Wazo user matching these credentials, this
               field can be None
           xivo_uuid:
             type: string
