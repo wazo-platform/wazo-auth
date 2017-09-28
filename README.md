@@ -1,4 +1,4 @@
-# xivo-auth
+# wazo-auth
 
 [![Build Status](https://travis-ci.org/wazo-pbx/xivo-auth.svg)](https://travis-ci.org/wazo-pbx/xivo-auth)
 
@@ -6,7 +6,7 @@ A micro-service to create tokens, check ACLs and delete expired tokens
 
 # Usage
 
-Launching xivo-auth
+Launching wazo-auth
 
     wazo_auth [--user <user>] --config <path/to/config/file>
 
@@ -28,7 +28,7 @@ The wazopbx/xivo-auth image can be built using the following command:
 
     % docker build -t wazopbx/xivo-auth .
 
-To run xivo-auth in docker, use the following commands:
+To run wazo-auth in docker, use the following commands:
 
     % docker run -p 9497:9497 -v /conf/wazo-auth:/etc/wazo-auth/conf.d/ -it wazopbx/xivo-auth bash
     % wazo-auth [-df] [-u <user>] [-c <path/to/config/file>]
@@ -79,7 +79,7 @@ sed -i '/delete-on-docker-machine/d' assets/*/docker-compose.yml
 Load testing
 ------------
 
-To test xivo-auth with ab
+To test wazo-auth with ab
 
 Dependencies
 

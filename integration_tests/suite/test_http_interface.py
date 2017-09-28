@@ -156,7 +156,7 @@ class _BaseTestCase(AssetLaunchingTestCase):
                 break
             time.sleep(0.2)
         else:
-            self.fail('xivo-auth did not stop')
+            self.fail('wazo-auth did not stop')
 
 
 class TestPolicies(_BaseTestCase):
