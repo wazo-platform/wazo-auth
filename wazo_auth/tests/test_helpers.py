@@ -77,7 +77,7 @@ class TestLocalTokenManager(unittest.TestCase):
         token = self.local_token_manager.get_token()
 
         self._token_manager.new_token.assert_called_once_with(
-            self._backend.obj, 'xivo-auth', {'expiration': 3600})
+            self._backend.obj, 'wazo-auth', {'expiration': 3600})
 
         assert_that(token, equal_to(self._token_manager.new_token.return_value.token))
 

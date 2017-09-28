@@ -108,7 +108,7 @@ class Controller(object):
         try:
             backend = self._backends['xivo_service']
         except KeyError:
-            logger.info('xivo_service disabled no service token will be created for xivo-auth')
+            logger.info('xivo_service disabled no service token will be created for wazo-auth')
             return
 
         return LocalTokenManager(backend, self._token_manager)

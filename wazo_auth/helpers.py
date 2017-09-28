@@ -59,7 +59,7 @@ class LazyTemplateRenderer(object):
 class LocalTokenManager(object):
 
     def __init__(self, backend, token_manager):
-        self._new_token = partial(token_manager.new_token, backend.obj, 'xivo-auth')
+        self._new_token = partial(token_manager.new_token, backend.obj, 'wazo-auth')
         self._remove_token = token_manager.remove_token
         self._token = None
         self._renew_time = time.time() - 5
