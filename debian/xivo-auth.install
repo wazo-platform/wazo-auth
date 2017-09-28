@@ -1,5 +1,5 @@
 etc/*  etc/
-migrations/ usr/share/xivo-auth
+migrations/ usr/share/wazo-auth
 bin/wazo-auth-init-db usr/bin/
-alembic/ usr/share/xivo-auth/
-alembic.ini usr/share/xivo-auth/
+alembic/ usr/share/wazo-auth/
+alembic.ini usr/share/wazo-auth/

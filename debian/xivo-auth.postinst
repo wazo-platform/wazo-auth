@@ -6,7 +6,7 @@ DAEMONNAME='xivo-auth'
 USER='wazo-auth'
 GROUP=$USER
 LOG_FILENAME="/var/log/wazo-auth.log"
-ALEMBIC_INI_PATH='/usr/share/xivo-auth'
+ALEMBIC_INI_PATH='/usr/share/wazo-auth'
 OLD_PID_DIR='/var/run/xivo-auth'
 
 pg_is_running () {
@@ -69,7 +69,7 @@ case "$1" in
         fi
 
         if dpkg --compare-versions "$previous_version" "lt-nl" "17.01"; then
-            /usr/share/xivo-auth/migrations/0001_remove_consul_storage.py
+            /usr/share/wazo-auth/migrations/0001_remove_consul_storage.py
         fi
 
         # Database initialization and migrations
