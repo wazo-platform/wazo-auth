@@ -120,7 +120,7 @@ class Controller(object):
         return [backend.name for backend in backends]
 
     def _configure_flask_app(self, backends, policy_manager, token_manager):
-        app = Flask('xivo-auth')
+        app = Flask('wazo-auth')
         http_helpers.add_logger(app, logger)
         api = Api(app, prefix='/0.1')
         api.add_resource(http.Policies, '/policies')
