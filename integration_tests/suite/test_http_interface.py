@@ -42,14 +42,14 @@ from xivo_auth_client import Client
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from xivo_test_helpers import until
-from xivo_auth import database, exceptions
+from wazo_auth import database, exceptions
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)
 
 ISO_DATETIME = '%Y-%m-%dT%H:%M:%S.%f'
 
-HOST = os.getenv('XIVO_AUTH_TEST_HOST', 'localhost')
+HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
 
 
 def _new_token_id():
@@ -150,13 +150,13 @@ class _BaseTestCase(AssetLaunchingTestCase):
             args['required_acl'] = acls
         return client.token.is_valid(token, **args)
 
-    def _assert_that_xivo_auth_is_stopping(self):
+    def _assert_that_wazo_auth_is_stopping(self):
         for _ in range(5):
             if not self.service_status('auth')['State']['Running']:
                 break
             time.sleep(0.2)
         else:
-            self.fail('xivo-auth did not stop')
+            self.fail('wazo-auth did not stop')
 
 
 class TestPolicies(_BaseTestCase):
@@ -471,8 +471,8 @@ class TestNoSSLCertificate(_BaseTestCase):
 
     asset = 'no_ssl_certificate'
 
-    def test_that_xivo_auth_stops_if_not_readable_ssl_certificate(self):
-        self._assert_that_xivo_auth_is_stopping()
+    def test_that_wazo_auth_stops_if_not_readable_ssl_certificate(self):
+        self._assert_that_wazo_auth_is_stopping()
 
         log = self.service_logs('auth')
         assert_that(log, contains_string("No such file or directory: '/data/_common/ssl/no_server.crt'"))
@@ -482,8 +482,8 @@ class TestNoSSLKey(_BaseTestCase):
 
     asset = 'no_ssl_key'
 
-    def test_that_xivo_auth_stops_if_not_readable_ssl_key(self):
-        self._assert_that_xivo_auth_is_stopping()
+    def test_that_wazo_auth_stops_if_not_readable_ssl_key(self):
+        self._assert_that_wazo_auth_is_stopping()
 
         log = self.service_logs('auth')
         assert_that(log, contains_string("No such file or directory: '/data/_common/ssl/no_server.key'"))

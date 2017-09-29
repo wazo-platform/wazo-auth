@@ -1,5 +1,5 @@
-FROM wazopbx/xivo-auth
+FROM wazopbx/wazo-auth
 
-ADD integration_tests/assets/_common/etc/xivo-auth/conf.d /etc/xivo-auth/conf.d
-ADD . /usr/src/xivo-auth
+ADD integration_tests/assets/_common/etc/wazo-auth/conf.d /etc/wazo-auth/conf.d
+ADD . /usr/src/wazo-auth
 RUN python setup.py develop

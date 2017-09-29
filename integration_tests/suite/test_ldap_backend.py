@@ -52,9 +52,9 @@ def _run_cmd(cmd, stderr=True):
 
 class LDAPHelper(object):
 
-    BASE_DN = 'dc=xivo-auth,dc=wazo,dc=community'
+    BASE_DN = 'dc=wazo-auth,dc=wazo,dc=community'
     ADMIN_DN = 'cn=admin,{}'.format(BASE_DN)
-    ADMIN_PASSWORD = 'xivopassword'
+    ADMIN_PASSWORD = 'wazopassword'
     PEOPLE_DN = 'ou=people,{}'.format(BASE_DN)
     QUEBEC_DN = 'ou=quebec,{}'.format(PEOPLE_DN)
     OU_DN = {'people': PEOPLE_DN,
@@ -101,7 +101,7 @@ def add_contacts(contacts, ldap_uri):
         raise Exception('could not add contacts: LDAP server is down')
 
     helper.add_ou()
-    helper.add_contact(Contact('xivo_auth', 'xivo_auth', 'S3cr$t', '', 'cn'), 'people')
+    helper.add_contact(Contact('wazo_auth', 'wazo_auth', 'S3cr$t', '', 'cn'), 'people')
     for contact in contacts:
         helper.add_contact(contact, 'quebec')
 
@@ -139,7 +139,7 @@ class TestLDAP(_BaseLDAPTestCase):
     asset = 'ldap'
 
     CONTACTS = [
-        Contact('Alice Wonderland', 'awonderland', 'awonderland_password', 'awonderland@xivo-auth.com', 'cn'),
+        Contact('Alice Wonderland', 'awonderland', 'awonderland_password', 'awonderland@wazo-auth.com', 'cn'),
     ]
 
     def test_ldap_authentication(self):
@@ -157,18 +157,18 @@ class TestLDAPAnonymous(_BaseLDAPTestCase):
     asset = 'ldap_anonymous'
 
     CONTACTS = [
-        Contact('Alice Wonderland', 'awonderland', 'awonderland_password', 'awonderland@xivo-auth.com', 'mail'),
+        Contact('Alice Wonderland', 'awonderland', 'awonderland_password', 'awonderland@wazo-auth.com', 'mail'),
     ]
 
     def test_ldap_authentication(self):
-        response = self._post_token('awonderland@xivo-auth.com', 'awonderland_password', backend='ldap_user')
+        response = self._post_token('awonderland@wazo-auth.com', 'awonderland_password', backend='ldap_user')
 
         xivo_user_uuid = response['xivo_user_uuid']
         assert_that(xivo_user_uuid, equal_to('1'))
 
     def test_ldap_authentication_fail_when_wrong_password(self):
         self._post_token_with_expected_exception(
-            'awonderland@xivo-auth.com', 'wrong_password', backend='ldap_user', status_code=401)
+            'awonderland@wazo-auth.com', 'wrong_password', backend='ldap_user', status_code=401)
 
 
 class TestLDAPServiceUser(_BaseLDAPTestCase):
@@ -176,7 +176,7 @@ class TestLDAPServiceUser(_BaseLDAPTestCase):
     asset = 'ldap_service_user'
 
     CONTACTS = [
-        Contact('Alice Wonderland', 'awonderland', 'awonderland_password', 'awonderland@xivo-auth.com', 'uid'),
+        Contact('Alice Wonderland', 'awonderland', 'awonderland_password', 'awonderland@wazo-auth.com', 'uid'),
     ]
 
     def test_ldap_authentication(self):

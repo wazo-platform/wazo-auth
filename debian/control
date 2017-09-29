@@ -1,4 +1,4 @@
-Source: xivo-auth
+Source: wazo-auth
 Section: python
 Priority: extra
 Maintainer: Wazo Maintainers <dev.wazo@gmail.com>
@@ -6,7 +6,7 @@ Build-Depends: debhelper (>= 9), dh-python, dh-systemd (>= 1.5), python-all (>= 
 Standards-Version: 3.9.6
 X-Python-Version: >= 2.7
 
-Package: xivo-auth
+Package: wazo-auth
 Architecture: all
 Depends: ${python:Depends},
          ${misc:Depends},
@@ -29,6 +29,9 @@ Depends: ${python:Depends},
          xivo-dbms (>= 17.12~20170818.181555.3bff1f8),
          xivo-lib-python,
          xivo-libdao (>= 17.02~20170124.144633.cb56771)
+Conflicts: xivo-auth
+Replaces: xivo-auth
+Provides: xivo-auth
 Description: Wazo PBX's authentication service
  Wazo is a system based on a powerful IPBX, to bring an easy to
  install solution for telephony and related services.

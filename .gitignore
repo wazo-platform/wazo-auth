@@ -6,3 +6,8 @@ dist
 build
 integration_tests/assets/*/logs/
 .eggs/*
+.coverage
+coverage.xml
+nosetests.xml
+pep8.txt
+pylint.txt

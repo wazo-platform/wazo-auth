@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright 2016 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,13 +20,13 @@ from setuptools import find_packages
 from setuptools import setup
 
 setup(
-    name='xivo_auth',
+    name='wazo_auth',
     version='0.1',
 
     description='XiVO auth',
 
     author='Wazo Authors',
-    author_email='dev.wazo@gmail.com',
+    author_email='dev@wazo.community',
 
     url='http://wazo.community',
 
@@ -35,24 +35,26 @@ setup(
     zip_safe=False,
 
     package_data={
-        'xivo_auth.swagger': ['*.yml'],
+        'wazo_auth.swagger': ['*.yml'],
     },
 
     scripts=[
-        'bin/xivo-auth',
-        'bin/xivo-auth-init-db',
+        'bin/wazo-auth-init-db',
     ],
 
     entry_points={
-        'xivo_auth.backends': [
-            'xivo_admin = xivo_auth.plugins.backends:XiVOAdmin',
-            'xivo_service = xivo_auth.plugins.backends:XiVOService',
-            'xivo_user = xivo_auth.plugins.backends:XiVOUser',
-            'ldap_user = xivo_auth.plugins.backends:LDAPUser',
-            'mock = xivo_auth.plugins.backends:BackendMock',
-            'mock_with_uuid = xivo_auth.plugins.backends:BackendMockWithUUID',
-            'broken_init = xivo_auth.plugins.backends:BrokenInitBackend',
-            'broken_verify_password = xivo_auth.plugins.backends:BrokenVerifyPasswordBackend',
+        'console_scripts': [
+            'wazo-auth=wazo_auth.bin.daemon:main',
+        ],
+        'wazo_auth.backends': [
+            'xivo_admin = wazo_auth.plugins.backends:XiVOAdmin',
+            'xivo_service = wazo_auth.plugins.backends:XiVOService',
+            'xivo_user = wazo_auth.plugins.backends:XiVOUser',
+            'ldap_user = wazo_auth.plugins.backends:LDAPUser',
+            'mock = wazo_auth.plugins.backends:BackendMock',
+            'mock_with_uuid = wazo_auth.plugins.backends:BackendMockWithUUID',
+            'broken_init = wazo_auth.plugins.backends:BrokenInitBackend',
+            'broken_verify_password = wazo_auth.plugins.backends:BrokenVerifyPasswordBackend',
         ],
     }
 )

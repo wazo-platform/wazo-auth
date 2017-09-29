@@ -1,5 +1,5 @@
-xivo-auth (0.0.1) UNRELEASED; urgency=low
+wazo-auth (17.14~20170922.235844.5b6a777+6ubuntu1) wazo-dev; urgency=medium
 
   * Initial release.
 
- -- Pascal Cadotte Michaud <pcadottemichaud@avencall.com>  Mon, 11 May 2015 10:14:39 -0400
+ -- Wazo Maintainers <dev+pkg@wazo.community>  Thu, 28 Sep 2017 11:18:39 -0400

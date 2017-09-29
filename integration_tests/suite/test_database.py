@@ -24,7 +24,7 @@ from contextlib import contextmanager, nested
 from hamcrest import assert_that, calling, contains, contains_inanyorder, equal_to, empty, not_, raises
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 
-from xivo_auth import database, exceptions
+from wazo_auth import database, exceptions
 
 DB_URI = os.getenv('DB_URI', 'postgresql://asterisk:proformatique@localhost:{port}')
 

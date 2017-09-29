@@ -1,14 +1,14 @@
-# xivo-auth
+# wazo-auth
 
-[![Build Status](https://travis-ci.org/wazo-pbx/xivo-auth.svg)](https://travis-ci.org/wazo-pbx/xivo-auth)
+[![Build Status](https://travis-ci.org/wazo-pbx/wazo-auth.svg)](https://travis-ci.org/wazo-pbx/wazo-auth)
 
 A micro-service to create tokens, check ACLs and delete expired tokens
 
 # Usage
 
-Launching xivo-auth
+Launching wazo-auth
 
-    xivo_auth [--user <user>] --config <path/to/config/file>
+    wazo_auth [--user <user>] --config <path/to/config/file>
 
 Getting a token
 
@@ -24,24 +24,24 @@ curl -k -i -X GET -H 'Content-Type: application/json' "https://localhost:9497/0.
 
 # Docker
 
-The wazopbx/xivo-auth image can be built using the following command:
+The wazopbx/wazo-auth image can be built using the following command:
 
-    % docker build -t wazopbx/xivo-auth .
+    % docker build -t wazopbx/wazo-auth .
 
-To run xivo-auth in docker, use the following commands:
+To run wazo-auth in docker, use the following commands:
 
-    % docker run -p 9497:9497 -v /conf/xivo-auth:/etc/xivo-auth/conf.d/ -it wazopbx/xivo-auth bash
-    % xivo-auth [-df] [-u <user>] [-c <path/to/config/file>]
+    % docker run -p 9497:9497 -v /conf/wazo-auth:/etc/wazo-auth/conf.d/ -it wazopbx/wazo-auth bash
+    % wazo-auth [-df] [-u <user>] [-c <path/to/config/file>]
 
-The wazopbx/xivo-auth-db image can be built using the following command:
+The wazopbx/wazo-auth-db image can be built using the following command:
 
-    % docker build -f contribs/docker/Dockerfile-db -t wazopbx/xivo-auth-db .
+    % docker build -f contribs/docker/Dockerfile-db -t wazopbx/wazo-auth-db .
 
 
 Configuration
 -------------
 
-The default config is /etc/xivo-auth/config.yml, you could override in /etc/xivo-auth/conf.d/
+The default config is /etc/wazo-auth/config.yml, you could override in /etc/wazo-auth/conf.d/
 
 
 Running unit tests
@@ -67,11 +67,11 @@ make test
 ```
 
 If you are using docker-machine you must:
-* change your ip address with the variable XIVO_AUTH_TEST_HOST.
+* change your ip address with the variable WAZO_AUTH_TEST_HOST.
 * remove direct volume mount points
 
 ```sh
-export XIVO_AUTH_TEST_HOST=$(docker-machine ip <your-docker-machine>)
+export WAZO_AUTH_TEST_HOST=$(docker-machine ip <your-docker-machine>)
 sed -i '/delete-on-docker-machine/d' assets/*/docker-compose.yml
 ```
 
@@ -79,7 +79,7 @@ sed -i '/delete-on-docker-machine/d' assets/*/docker-compose.yml
 Load testing
 ------------
 
-To test xivo-auth with ab
+To test wazo-auth with ab
 
 Dependencies
 

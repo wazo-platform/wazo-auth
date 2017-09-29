@@ -2,13 +2,13 @@ FROM wazopbx/postgres-test
 MAINTAINER Wazo Maintainers <dev@wazo.community>
 USER root
 
-ADD . /usr/src/xivo-auth
-WORKDIR /usr/src/xivo-auth
+ADD . /usr/src/wazo-auth
+WORKDIR /usr/src/wazo-auth
 
 RUN true \
     && python3 setup.py install \
     && pg_start \
-    && bin/xivo-auth-init-db --user postgres \
-    && (cd /usr/src/xivo-auth && alembic -c alembic.ini upgrade head) \
+    && bin/wazo-auth-init-db --user postgres \
+    && (cd /usr/src/wazo-auth && alembic -c alembic.ini upgrade head) \
     && pg_stop \
     && true
