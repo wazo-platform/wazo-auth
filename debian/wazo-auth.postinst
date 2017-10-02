@@ -67,9 +67,6 @@ case "$1" in
             fi
             rm -rf /etc/xivo-auth
 
-            # In 17.01 wazo-auth stopped using consul for storage
-            /usr/share/wazo-auth/migrations/0001_remove_consul_storage.py
-
             # In version 15.20 a config file has been removed
             rm -rf /etc/default/xivo-auth
 
