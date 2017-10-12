@@ -177,6 +177,22 @@ class Token(ErrorCatchingResource):
         return '', 204
 
 
+class UserRequestSchema(Schema):
+
+    username = fields.String(required=True)
+    password = fields.String(required=True)
+    email_address = fields.Email(required=True)
+
+
+class Users(ErrorCatchingResource):
+
+    def post(self):
+        user_service = current_app.config['user_service']
+        args, errors = UserRequestSchema().load(request.get_json(force=True))
+        result = user_service.new_user(**args)
+        return result, 200
+
+
 class Backends(ErrorCatchingResource):
 
     def get(self):
@@ -202,7 +218,8 @@ class Swagger(Resource):
         return make_response(api_spec, 200, {'Content-Type': 'application/x-yaml'})
 
 
-def new_app(config, backends, policy_manager, token_manager):
+# TODO: remove the =None on the user_service
+def new_app(config, backends, policy_manager, token_manager, user_service=None):
     cors_config = config['rest_api']['cors']
     cors_enabled = cors_config.pop('enabled')
     app = Flask('wazo-auth')
@@ -213,6 +230,7 @@ def new_app(config, backends, policy_manager, token_manager):
     api.add_resource(PolicyTemplate, '/policies/<string:policy_uuid>/acl_templates/<template>')
     api.add_resource(Tokens, '/token')
     api.add_resource(Token, '/token/<string:token>')
+    api.add_resource(Users, '/users')
     api.add_resource(Backends, '/backends')
     api.add_resource(Swagger, '/api/api.yml')
     app.config.update(config)
@@ -222,6 +240,7 @@ def new_app(config, backends, policy_manager, token_manager):
     app.config['policy_manager'] = policy_manager
     app.config['token_manager'] = token_manager
     app.config['backends'] = backends
+    app.config['user_service'] = user_service
     app.after_request(http_helpers.log_request)
 
     return app
