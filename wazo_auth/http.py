@@ -19,11 +19,13 @@ import functools
 import logging
 import time
 
-from flask import current_app, request, make_response
-from flask_restful import Resource
+from flask import current_app, Flask, request, make_response
+from flask.ext.cors import CORS
+from flask_restful import Api, Resource
 from marshmallow import Schema, fields
 from marshmallow.validate import Range
 from pkg_resources import resource_string
+from xivo import http_helpers
 
 from wazo_auth.exceptions import ManagerException
 
@@ -181,7 +183,7 @@ class Backends(ErrorCatchingResource):
         return {'data': current_app.config['loaded_plugins']}
 
 
-class Api(Resource):
+class Swagger(Resource):
 
     api_package = "wazo_auth.swagger"
     api_filename = "api.yml"
@@ -198,3 +200,28 @@ class Api(Resource):
             return {'error': "API spec does not exist"}, 404
 
         return make_response(api_spec, 200, {'Content-Type': 'application/x-yaml'})
+
+
+def new_app(config, backends, policy_manager, token_manager):
+    cors_config = config['rest_api']['cors']
+    cors_enabled = cors_config.pop('enabled')
+    app = Flask('wazo-auth')
+    http_helpers.add_logger(app, logger)
+    api = Api(app, prefix='/0.1')
+    api.add_resource(Policies, '/policies')
+    api.add_resource(Policy, '/policies/<string:policy_uuid>')
+    api.add_resource(PolicyTemplate, '/policies/<string:policy_uuid>/acl_templates/<template>')
+    api.add_resource(Tokens, '/token')
+    api.add_resource(Token, '/token/<string:token>')
+    api.add_resource(Backends, '/backends')
+    api.add_resource(Swagger, '/api/api.yml')
+    app.config.update(config)
+    if cors_enabled:
+        CORS(app, **cors_config)
+
+    app.config['policy_manager'] = policy_manager
+    app.config['token_manager'] = token_manager
+    app.config['backends'] = backends
+    app.after_request(http_helpers.log_request)
+
+    return app
