@@ -40,8 +40,12 @@ class HTTPAppTestCase(TestCase):
 
 class TestUserResource(HTTPAppTestCase):
 
+    def setUp(self):
+        super(TestUserResource, self).setUp()
+        self.url = '/0.1/users'
+        self.headers = {'content-type': 'application/json'}
+
     def test_that_creating_a_user_calls_the_service(self):
-        url = '/0.1/users'
         username, password, email_address = 'foobar', 'b3h01D', 'foobar@example.com'
         uuid = '839a34a1-4027-4046-ad22-af086014874e'
         body = {
@@ -50,14 +54,13 @@ class TestUserResource(HTTPAppTestCase):
             'email_address': email_address,
         }
         data = json.dumps(body)
-        headers = {'content-type': 'application/json'}
         self.user_service.new_user.return_value = dict(
             uuid=uuid,
             username=username,
             email_address=email_address,
         )
 
-        result = self.app.post(url, data=data, headers=headers)
+        result = self.app.post(self.url, data=data, headers=self.headers)
 
         assert_that(result.status_code, equal_to(200))
         self.user_service.new_user.assert_called_once_with(**body)
@@ -69,3 +72,20 @@ class TestUserResource(HTTPAppTestCase):
                 'email_address', email_address,
             ),
         )
+
+    def test_that_ommiting_a_required_fields_return_400(self):
+        username, password, email_address = 'foobar', 'b3h01D', 'foobar@example.com'
+        valid_body = {
+            'username': username,
+            'password': password,
+            'email_address': email_address,
+        }
+
+        for field in ['username', 'password', 'email_address']:
+            body = dict(valid_body)
+            del body[field]
+            data = json.dumps(body)
+
+            result = self.app.post(self.url, data=data, headers=self.headers)
+
+            assert_that(result.status_code, equal_to(400))

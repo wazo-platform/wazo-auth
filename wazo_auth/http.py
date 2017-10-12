@@ -188,7 +188,10 @@ class Users(ErrorCatchingResource):
 
     def post(self):
         user_service = current_app.config['user_service']
-        args, errors = UserRequestSchema().load(request.get_json(force=True))
+        args, error = UserRequestSchema().load(request.get_json(force=True))
+        if error:
+            return _error(400, unicode(error))
+
         result = user_service.new_user(**args)
         return result, 200
 
@@ -220,7 +223,7 @@ class Swagger(Resource):
 
 # TODO: remove the =None on the user_service
 def new_app(config, backends, policy_manager, token_manager, user_service=None):
-    cors_config = config['rest_api']['cors']
+    cors_config = dict(config['rest_api']['cors'])
     cors_enabled = cors_config.pop('enabled')
     app = Flask('wazo-auth')
     http_helpers.add_logger(app, logger)
