@@ -17,6 +17,7 @@
 
 import uuid
 import time
+import logging
 from contextlib import contextmanager
 from sqlalchemy import and_, create_engine, exc, func, or_
 from sqlalchemy.orm import sessionmaker, scoped_session
@@ -27,6 +28,8 @@ from .exceptions import (DuplicatePolicyException, DuplicateTemplateException,
                          InvalidSortColumnException,
                          InvalidSortDirectionException, UnknownPolicyException,
                          UnknownTokenException)
+
+logger = logging.getLogger(__name__)
 
 
 class Storage(object):
@@ -84,6 +87,9 @@ class Storage(object):
         self._policy_crud.update(policy_uuid, name, description, acl_templates)
 
     def user_create(self, *args, **kwargs):
+        salt = kwargs.pop('salt')
+        logger.info('inserting new user %s', kwargs)
+        hash_ = kwargs.pop('hash_')
         return kwargs
 
     def remove_token(self, token_id):
