@@ -18,7 +18,7 @@
 import json
 
 from hamcrest import assert_that, equal_to, has_entries
-from mock import Mock, sentinel as s
+from mock import ANY, Mock, sentinel as s
 from unittest import TestCase
 
 from ..config import _DEFAULT_CONFIG
@@ -73,7 +73,7 @@ class TestUserResource(HTTPAppTestCase):
             ),
         )
 
-    def test_that_ommiting_a_required_fields_return_400(self):
+    def test_that_ommiting_a_required_fields_returns_400(self):
         username, password, email_address = 'foobar', 'b3h01D', 'foobar@example.com'
         valid_body = {
             'username': username,
@@ -88,4 +88,14 @@ class TestUserResource(HTTPAppTestCase):
 
             result = self.app.post(self.url, data=data, headers=self.headers)
 
-            assert_that(result.status_code, equal_to(400))
+            assert_that(result.status_code, equal_to(400), field)
+            assert_that(
+                json.loads(result.data),
+                has_entries('error_id', 'required',
+                            'message', 'Missing data for required field.',
+                            'resource', 'users',
+                            'details', {field: {'constraint_id': 'required',
+                                                'constraint': 'required',
+                                                'message': ANY}}),
+                field,
+            )

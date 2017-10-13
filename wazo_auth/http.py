@@ -24,6 +24,8 @@ from flask.ext.cors import CORS
 from flask_restful import Api, Resource
 from marshmallow import Schema, fields
 from marshmallow.validate import Range
+from xivo.mallow import fields as xfields
+from xivo.rest_api_helpers import APIException, handle_api_exception
 from pkg_resources import resource_string
 from xivo import http_helpers
 
@@ -63,7 +65,12 @@ def handle_manager_exception(func):
 
 
 class ErrorCatchingResource(Resource):
-    method_decorators = [handle_manager_exception] + Resource.method_decorators
+    method_decorators = (
+        [
+            handle_manager_exception,
+            handle_api_exception,
+        ] + Resource.method_decorators
+    )
 
 
 class Policies(ErrorCatchingResource):
@@ -179,19 +186,29 @@ class Token(ErrorCatchingResource):
 
 class UserRequestSchema(Schema):
 
-    username = fields.String(required=True)
-    password = fields.String(required=True)
-    email_address = fields.Email(required=True)
+    username = xfields.String(required=True)
+    password = xfields.String(required=True)
+    email_address = xfields.Email(required=True)
+
+
+class UserParamException(APIException):
+
+    def __init__(self, message, error_id, details=None):
+        super(UserParamException, self).__init__(400, message, error_id, details, 'users')
+
+    @classmethod
+    def from_errors(cls, errors):
+        for field, info in errors.iteritems():
+            return cls(info['message'], info['constraint_id'], errors)
 
 
 class Users(ErrorCatchingResource):
 
     def post(self):
         user_service = current_app.config['user_service']
-        args, error = UserRequestSchema().load(request.get_json(force=True))
-        if error:
-            return _error(400, unicode(error))
-
+        args, errors = UserRequestSchema().load(request.get_json(force=True))
+        if errors:
+            raise UserParamException.from_errors(errors)
         result = user_service.new_user(**args)
         return result, 200
 
