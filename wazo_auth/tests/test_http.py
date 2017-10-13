@@ -17,7 +17,7 @@
 
 import json
 
-from hamcrest import assert_that, equal_to, has_entries
+from hamcrest import assert_that, equal_to, has_entries, any_of
 from mock import ANY, Mock, sentinel as s
 from unittest import TestCase
 
@@ -91,7 +91,7 @@ class TestUserResource(HTTPAppTestCase):
             assert_that(result.status_code, equal_to(400), field)
             assert_that(
                 json.loads(result.data),
-                has_entries('error_id', 'required',
+                has_entries('error_id', 'invalid_data',
                             'message', 'Missing data for required field.',
                             'resource', 'users',
                             'details', {field: {'constraint_id': 'required',
@@ -106,5 +106,29 @@ class TestUserResource(HTTPAppTestCase):
         assert_that(result.status_code, equal_to(400))
         assert_that(
             json.loads(result.data),
-            has_entries('error_id', 'required')
+            has_entries('error_id', 'invalid_data')
         )
+
+    def test_that_empty_fields_are_not_valid(self):
+        username, password, email_address = 'foobar', 'b3h01D', 'foobar@example.com'
+        valid_body = {
+            'username': username,
+            'password': password,
+            'email_address': email_address,
+        }
+
+        for field in ['username', 'password', 'email_address']:
+            body = dict(valid_body)
+            body[field] = ''
+            data = json.dumps(body)
+
+            result = self.app.post(self.url, data=data, headers=self.headers)
+
+            assert_that(result.status_code, equal_to(400), field)
+            assert_that(
+                json.loads(result.data),
+                has_entries('error_id', 'invalid_data',
+                            'resource', 'users',
+                            'details', has_entries(field, has_entries('constraint_id', any_of('length', 'email')))),
+                field,
+            )

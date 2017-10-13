@@ -25,6 +25,7 @@ from flask_restful import Api, Resource
 from marshmallow import Schema, fields, pre_load
 from marshmallow.validate import Range
 from xivo.mallow import fields as xfields
+from xivo.mallow import validate
 from xivo.rest_api_helpers import APIException, handle_api_exception
 from pkg_resources import resource_string
 from xivo import http_helpers
@@ -186,8 +187,8 @@ class Token(ErrorCatchingResource):
 
 class UserRequestSchema(Schema):
 
-    username = xfields.String(required=True)
-    password = xfields.String(required=True)
+    username = xfields.String(validate=validate.Length(min=1), required=True)
+    password = xfields.String(validate=validate.Length(min=1), required=True)
     email_address = xfields.Email(required=True)
 
     @pre_load
@@ -198,13 +199,16 @@ class UserRequestSchema(Schema):
 
 class UserParamException(APIException):
 
-    def __init__(self, message, error_id, details=None):
-        super(UserParamException, self).__init__(400, message, error_id, details, 'users')
+    def __init__(self, message, details=None):
+        super(UserParamException, self).__init__(400, message, 'invalid_data', details, 'users')
 
     @classmethod
     def from_errors(cls, errors):
-        for field, info in errors.iteritems():
-            return cls(info['message'], info['constraint_id'], errors)
+        for field, infos in errors.iteritems():
+            if not isinstance(infos, list):
+                infos = [infos]
+            for info in infos:
+                return cls(info['message'], {field: info})
 
 
 class Users(ErrorCatchingResource):
