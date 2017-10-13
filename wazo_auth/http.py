@@ -22,15 +22,12 @@ import time
 from flask import current_app, Flask, request, make_response
 from flask.ext.cors import CORS
 from flask_restful import Api, Resource
-from marshmallow import Schema, fields, pre_load
-from marshmallow.validate import Range
-from xivo.mallow import fields as xfields
-from xivo.mallow import validate
 from xivo.rest_api_helpers import APIException, handle_api_exception
 from pkg_resources import resource_string
 from xivo import http_helpers
 
 from wazo_auth.exceptions import ManagerException
+from . import schemas
 
 logger = logging.getLogger(__name__)
 
@@ -134,11 +131,6 @@ class PolicyTemplate(ErrorCatchingResource):
         return '', 204
 
 
-class TokenRequestSchema(Schema):
-    backend = fields.String(required=True)
-    expiration = fields.Integer(validate=Range(min=1))
-
-
 class Tokens(ErrorCatchingResource):
 
     def post(self):
@@ -149,7 +141,7 @@ class Tokens(ErrorCatchingResource):
             login = ''
             password = ''
 
-        args, error = TokenRequestSchema().load(request.get_json(force=True))
+        args, error = schemas.TokenRequestSchema().load(request.get_json(force=True))
         if error:
             return _error(400, unicode(error))
 
@@ -185,18 +177,6 @@ class Token(ErrorCatchingResource):
         return '', 204
 
 
-class UserRequestSchema(Schema):
-
-    username = xfields.String(validate=validate.Length(min=1), required=True)
-    password = xfields.String(validate=validate.Length(min=1), required=True)
-    email_address = xfields.Email(required=True)
-
-    @pre_load
-    def dont_ignore_none(self, body):
-        if body is None:
-            return {}
-
-
 class UserParamException(APIException):
 
     def __init__(self, message, details=None):
@@ -215,7 +195,7 @@ class Users(ErrorCatchingResource):
 
     def post(self):
         user_service = current_app.config['user_service']
-        args, errors = UserRequestSchema().load(request.get_json(force=True))
+        args, errors = schemas.UserRequestSchema().load(request.get_json(force=True))
         if errors:
             raise UserParamException.from_errors(errors)
         result = user_service.new_user(**args)
