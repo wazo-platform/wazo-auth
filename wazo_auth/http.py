@@ -212,8 +212,7 @@ class Swagger(Resource):
         return make_response(api_spec, 200, {'Content-Type': 'application/x-yaml'})
 
 
-# TODO: remove the =None on the user_service
-def new_app(config, backends, policy_manager, token_manager, user_service=None):
+def new_app(config, backends, policy_manager, token_manager, user_service):
     cors_config = dict(config['rest_api']['cors'])
     cors_enabled = cors_config.pop('enabled')
     app = Flask('wazo-auth')

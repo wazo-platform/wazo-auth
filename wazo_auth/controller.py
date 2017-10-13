@@ -32,6 +32,7 @@ from wazo_auth import database, http, policy, token
 from wazo_auth.helpers import LocalTokenManager
 
 from .service_discovery import self_check
+from . import services
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +71,9 @@ class Controller(object):
         storage = database.Storage.from_config(self._config)
         policy_manager = policy.Manager(storage)
         self._token_manager = token.Manager(config, storage)
-        self._flask_app = http.new_app(config, self._backends, policy_manager, self._token_manager)
+        self._user_service = services.UserService()
+        self._flask_app = http.new_app(
+            config, self._backends, policy_manager, self._token_manager, self._user_service)
         self._expired_token_remover = token.ExpiredTokenRemover(config, storage)
 
     def run(self):
