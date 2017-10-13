@@ -368,6 +368,44 @@ paths:
           description: System related token error
           schema:
             $ref: '#/definitions/Error'
+  /users:
+    post:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Create a user
+      description: "Creates a new user that can be used to retrieve a token. The new user priviledge
+        are limited until its email address has been confirmed"
+      operationId: createUser
+      tags:
+        - users
+      parameters:
+        - name: body
+          in: body
+          description: The user creation parameters
+          required: true
+          schema:
+            type: object
+            properties:
+              username:
+                type: string
+                description: The username that will identify that new username
+              password:
+                type: string
+                description: The password of the newly created username
+              email_address:
+                type: string
+                description: The main email address of the new username
+      responses:
+        '200':
+          description: The new user data without the password
+          schema:
+            $ref: '#/definitions/UserPostResponse'
+        '400':
+          description: Invalid body
+          schema:
+            $ref: '#/definitions/APIError'
   /backends:
     get:
       tags:
@@ -417,6 +455,17 @@ parameters:
     description: Search term for filtering a list of items. Only items with a field
       containing the search term will be returned.
 definitions:
+  APIError:
+    type: object
+    properties:
+      timestamp:
+        type: number 
+      message:
+        type: string
+      resource:
+        type: string
+      details:
+        type: object
   BackendList:
     type: object
     properties:
@@ -467,6 +516,15 @@ definitions:
     required:
     - total
     - items
+  UserPostResponse:
+    type: object
+    properties:
+      username:
+        type: string
+      email_address:
+        type: string
+      uuid:
+        type: string
   Token:
     type: object
     properties:
