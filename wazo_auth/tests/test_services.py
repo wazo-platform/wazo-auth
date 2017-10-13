@@ -15,17 +15,27 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-import logging
+from hamcrest import assert_that, equal_to
+from mock import Mock
+from unittest import TestCase
 
-logger = logging.getLogger(__name__)
+from .. import services, database
 
 
-class UserService(object):
+class TestUserService(TestCase):
 
-    def __init__(self, storage):
-        self._storage = storage
+    def setUp(self):
+        self.storage = Mock(database.Storage)
+        self.service = services.UserService(self.storage)
 
-    def new_user(self, *args, **kwargs):
-        logger.info('creating a new user with params: %s', kwargs)
-        # a confirmation email should be sent
-        return self._storage.user_create(*args, **kwargs)
+    def test_that_new(self):
+        params = dict(
+            username='foobar',
+            password='s3cre7',
+            email_address='foobar@example.com',
+        )
+
+        result = self.service.new_user(**params)
+
+        self.storage.user_create.assert_called_once_with(**params)
+        assert_that(result, equal_to(self.storage.user_create.return_value))

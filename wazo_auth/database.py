@@ -83,6 +83,9 @@ class Storage(object):
     def update_policy(self, policy_uuid, name, description, acl_templates):
         self._policy_crud.update(policy_uuid, name, description, acl_templates)
 
+    def user_create(self, *args, **kwargs):
+        return kwargs
+
     def remove_token(self, token_id):
         self._token_crud.delete(token_id)
 
