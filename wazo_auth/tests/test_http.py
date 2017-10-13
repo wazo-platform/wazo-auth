@@ -99,3 +99,12 @@ class TestUserResource(HTTPAppTestCase):
                                                 'message': ANY}}),
                 field,
             )
+
+    def test_that_an_empty_body_returns_400(self):
+        result = self.app.post(self.url, data='null', headers=self.headers)
+
+        assert_that(result.status_code, equal_to(400))
+        assert_that(
+            json.loads(result.data),
+            has_entries('error_id', 'required')
+        )

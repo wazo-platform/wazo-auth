@@ -22,7 +22,7 @@ import time
 from flask import current_app, Flask, request, make_response
 from flask.ext.cors import CORS
 from flask_restful import Api, Resource
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, pre_load
 from marshmallow.validate import Range
 from xivo.mallow import fields as xfields
 from xivo.rest_api_helpers import APIException, handle_api_exception
@@ -189,6 +189,11 @@ class UserRequestSchema(Schema):
     username = xfields.String(required=True)
     password = xfields.String(required=True)
     email_address = xfields.Email(required=True)
+
+    @pre_load
+    def dont_ignore_none(self, body):
+        if body is None:
+            return {}
 
 
 class UserParamException(APIException):
