@@ -132,3 +132,27 @@ class TestUserResource(HTTPAppTestCase):
                             'details', has_entries(field, has_entries('constraint_id', any_of('length', 'email')))),
                 field,
             )
+
+    def test_that_null_fields_are_not_valid(self):
+        username, password, email_address = 'foobar', 'b3h01D', 'foobar@example.com'
+        valid_body = {
+            'username': username,
+            'password': password,
+            'email_address': email_address,
+        }
+
+        for field in ['username', 'password', 'email_address']:
+            body = dict(valid_body)
+            body[field] = None
+            data = json.dumps(body)
+
+            result = self.app.post(self.url, data=data, headers=self.headers)
+
+            assert_that(result.status_code, equal_to(400), field)
+            assert_that(
+                json.loads(result.data),
+                has_entries('error_id', 'invalid_data',
+                            'resource', 'users',
+                            'details', has_entries(field, has_entries('constraint_id', 'not_null'))),
+                field,
+            )
