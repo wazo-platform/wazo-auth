@@ -16,6 +16,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>
 
 from unidecode import unidecode
+from xivo.rest_api_helpers import APIException
 
 
 class ManagerException(Exception):
@@ -29,6 +30,20 @@ class AuthenticationFailedException(ManagerException):
 
     def __str__(self):
         return self._msg
+
+
+class UserParamException(APIException):
+
+    def __init__(self, message, details=None):
+        super(UserParamException, self).__init__(400, message, 'invalid_data', details, 'users')
+
+    @classmethod
+    def from_errors(cls, errors):
+        for field, infos in errors.iteritems():
+            if not isinstance(infos, list):
+                infos = [infos]
+            for info in infos:
+                return cls(info['message'], {field: info})
 
 
 class InvalidInputException(ManagerException):

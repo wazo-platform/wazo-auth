@@ -22,12 +22,11 @@ import time
 from flask import current_app, Flask, request, make_response
 from flask.ext.cors import CORS
 from flask_restful import Api, Resource
-from xivo.rest_api_helpers import APIException, handle_api_exception
+from xivo.rest_api_helpers import handle_api_exception
 from pkg_resources import resource_string
 from xivo import http_helpers
 
-from wazo_auth.exceptions import ManagerException
-from . import schemas
+from . import exceptions, schemas
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +44,7 @@ def required_acl(scope):
             try:
                 token = request.headers.get('X-Auth-Token', '')
                 current_app.config['token_manager'].get(token, scope)
-            except ManagerException:
+            except exceptions.ManagerException:
                 return _error(401, 'Unauthorized')
             return f(*args, **kwargs)
         return wrapped_f
@@ -57,7 +56,7 @@ def handle_manager_exception(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except ManagerException as error:
+        except exceptions.ManagerException as error:
             return _error(error.code, str(error))
     return wrapper
 
@@ -177,27 +176,13 @@ class Token(ErrorCatchingResource):
         return '', 204
 
 
-class UserParamException(APIException):
-
-    def __init__(self, message, details=None):
-        super(UserParamException, self).__init__(400, message, 'invalid_data', details, 'users')
-
-    @classmethod
-    def from_errors(cls, errors):
-        for field, infos in errors.iteritems():
-            if not isinstance(infos, list):
-                infos = [infos]
-            for info in infos:
-                return cls(info['message'], {field: info})
-
-
 class Users(ErrorCatchingResource):
 
     def post(self):
         user_service = current_app.config['user_service']
         args, errors = schemas.UserRequestSchema().load(request.get_json(force=True))
         if errors:
-            raise UserParamException.from_errors(errors)
+            raise exceptions.UserParamException.from_errors(errors)
         result = user_service.new_user(**args)
         return result, 200
 
