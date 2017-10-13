@@ -44,7 +44,7 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'wazo-auth=wazo_auth.bin.daemon:main',
+            'wazo-auth=wazo_auth.main:main',
         ],
         'wazo_auth.backends': [
             'xivo_admin = wazo_auth.plugins.backends:XiVOAdmin',
