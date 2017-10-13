@@ -21,6 +21,7 @@ auth:
      - data
    volumes:  # delete-on-docker-machine
      - "../../..:/usr/src/wazo-auth"  # delete-on-docker-machine
+     # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/usr/local/lib/python2.7/site-packages/xivo"
    links:
      - "postgres"
    command: "wazo-auth -c /data/mock_backend/etc/wazo-auth/config.yml"

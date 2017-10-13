@@ -21,6 +21,7 @@ auth:
      - data
    volumes:
      - "../../..:/usr/src/wazo-auth"
+     # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/usr/local/lib/python2.7/site-packages/xivo"
    command: "wazo-auth -c /data/documentation/etc/wazo-auth/config.yml"
 swagger-validator:
   image: swaggerapi/swagger-validator

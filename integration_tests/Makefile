@@ -20,3 +20,9 @@ egg-info:
 
 test:
 	nosetests
+
+mount:
+	for f in $$(ls assets/*/docker-compose.yml); do echo "updating $$f" && sed -i 's/# - "$${LOCAL_GIT_REPOS}/- "$${LOCAL_GIT_REPOS}/' $$f; done
+
+umount:
+	for f in $$(ls assets/*/docker-compose.yml); do echo "updating $$f" && sed -i 's/- "$${LOCAL_GIT_REPOS}/# - "$${LOCAL_GIT_REPOS}/' $$f; done
