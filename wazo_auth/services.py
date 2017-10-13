@@ -22,10 +22,19 @@ logger = logging.getLogger(__name__)
 
 class UserService(object):
 
-    def __init__(self, storage):
+    def __init__(self, storage, encrypter=None):
         self._storage = storage
+        self._encrypter = encrypter or PasswordEncrypter()
 
     def new_user(self, *args, **kwargs):
-        logger.info('creating a new user with params: %s', kwargs)
+        password = kwargs.pop('password')
+        salt, hash_ = self._encrypter.encrypt_password(password)
+        logger.info('creating a new user with params: %s', kwargs) # log after poping the password
         # a confirmation email should be sent
-        return self._storage.user_create(*args, **kwargs)
+        return self._storage.user_create(*args, salt=salt, hash_=hash_, **kwargs)
+
+
+class PasswordEncrypter(object):
+
+    def encrypt_password(self, password):
+        pass

@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 from hamcrest import assert_that, equal_to
-from mock import Mock
+from mock import Mock, sentinel as s
 from unittest import TestCase
 
 from .. import services, database
@@ -25,8 +25,9 @@ from .. import services, database
 class TestUserService(TestCase):
 
     def setUp(self):
+        self.encrypter = Mock(services.PasswordEncrypter)
         self.storage = Mock(database.Storage)
-        self.service = services.UserService(self.storage)
+        self.service = services.UserService(self.storage, encrypter=self.encrypter)
 
     def test_that_new(self):
         params = dict(
@@ -34,8 +35,15 @@ class TestUserService(TestCase):
             password='s3cre7',
             email_address='foobar@example.com',
         )
+        expected_db_params = dict(
+            username='foobar',
+            email_address='foobar@example.com',
+            salt=s.salt,
+            hash_=s.hash_,
+        )
+        self.encrypter.encrypt_password.return_value = s.salt, s.hash_
 
         result = self.service.new_user(**params)
 
-        self.storage.user_create.assert_called_once_with(**params)
+        self.storage.user_create.assert_called_once_with(**expected_db_params)
         assert_that(result, equal_to(self.storage.user_create.return_value))
