@@ -369,6 +369,24 @@ paths:
           schema:
             $ref: '#/definitions/Error'
   /users:
+    get:
+      tags:
+        - users
+      security:
+        - wazo_auth_token: []
+      description: "**Required ACL**: `auth.users.read
+      Retrieves the list of users"
+      parameters:
+      - $ref: '#/parameters/order'
+      - $ref: '#/parameters/direction'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
+      - $ref: '#/parameters/search'
+      responses:
+        '200':
+          description: 'The list of user'
+          schema:
+            $ref: '#/definitions/UserList'
     post:
       consumes:
         - application/json
@@ -524,6 +542,29 @@ definitions:
       email_address:
         type: string
       uuid:
+        type: string
+  UserList:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: The number of users
+      filtered:
+        type: integer
+        description: The number of users matching the searched term
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/UserResult'
+        description: A paginated list of users
+  UserResult:
+    type: object
+    properties:
+      uuid:
+        type: string
+      username:
+        type: string
+      main_email_address:
         type: string
   Token:
     type: object
