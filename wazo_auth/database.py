@@ -42,9 +42,10 @@ logger = logging.getLogger(__name__)
 
 class Storage(object):
 
-    def __init__(self, policy_crud, token_crud):
+    def __init__(self, policy_crud, token_crud, user_crud):
         self._policy_crud = policy_crud
         self._token_crud = token_crud
+        self._user_crud = user_crud
 
     def add_policy_acl_template(self, policy_uuid, acl_template):
         self._policy_crud.associate_policy_template(policy_uuid, acl_template)
@@ -94,11 +95,13 @@ class Storage(object):
     def update_policy(self, policy_uuid, name, description, acl_templates):
         self._policy_crud.update(policy_uuid, name, description, acl_templates)
 
-    def user_create(self, *args, **kwargs):
-        salt = kwargs.pop('salt')
-        logger.info('inserting new user %s', kwargs)
-        hash_ = kwargs.pop('hash_')
-        return kwargs
+    def user_create(self, username, email_address, hash_, salt):
+        user_uuid = self._user_crud.create(username, email_address, hash_, salt)
+        return dict(
+            uuid=user_uuid,
+            username=username,
+            email_address=email_address,
+        )
 
     def remove_token(self, token_id):
         self._token_crud.delete(token_id)
@@ -126,7 +129,8 @@ class Storage(object):
     def from_config(cls, config):
         policy_crud = _PolicyCRUD(config['db_uri'])
         token_crud = _TokenCRUD(config['db_uri'])
-        return cls(policy_crud, token_crud)
+        user_crud = _UserCRUD(config['db_uri'])
+        return cls(policy_crud, token_crud, user_crud)
 
 
 class _CRUD(object):
