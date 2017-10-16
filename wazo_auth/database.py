@@ -35,7 +35,7 @@ from .exceptions import (DuplicatePolicyException, DuplicateTemplateException,
                          InvalidLimitException, InvalidOffsetException,
                          InvalidSortColumnException,
                          InvalidSortDirectionException, UnknownPolicyException,
-                         UnknownTokenException)
+                         UnknownTokenException, UsernameAlreadyExistsException)
 
 logger = logging.getLogger(__name__)
 
@@ -402,7 +402,15 @@ class _UserCRUD(_CRUD):
                 main_email_uuid=email.uuid,
             )
             s.add(user)
-            s.flush()
+            try:
+                s.flush()
+            except exc.IntegrityError as e:
+                if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                    column = e.orig.diag.constraint_name.split('_')[-2]  # 'auth_user_username_key'
+                    if column == 'username':
+                        raise UsernameAlreadyExistsException(username)
+                raise
+
             email.user_uuid = user.uuid
             s.commit()
             return user.uuid

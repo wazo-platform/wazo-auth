@@ -292,6 +292,8 @@ class TestUserCrud(unittest.TestCase):
 
     def setUp(self):
         self._crud = database._UserCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
+        with self._crud.new_session() as s:
+            s.query(database.User).delete()
 
     def test_user_creation(self):
         username = 'foobar'
@@ -322,7 +324,7 @@ class TestUserCrud(unittest.TestCase):
                 )
             )
 
-    def test_that_the_username_us_unique(self):
+    def test_that_the_username_is_unique(self):
         username = 'foobar'
 
         self._crud.create(username, 'foobar@example.com', 'hash_one', self.salt)

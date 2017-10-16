@@ -110,8 +110,8 @@ class UsernameAlreadyExistsException(APIException):
 
     def __init__(self, username):
         msg = 'The username "{}" is already used'.format(username)
-        details = {'username': {}}
-        super(UsernameAlreadyExistsException, self).__init__(409, msg, 'conflict', details, 'users')
+        details = {'username': {'constraint_id': 'unique', 'message': msg}}
+        super(UsernameAlreadyExistsException, self).__init__(409, 'Conflict detected', 'conflict', details, 'users')
 
 
 class DuplicatePolicyException(ManagerException):

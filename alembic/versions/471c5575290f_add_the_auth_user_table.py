@@ -20,7 +20,7 @@ def upgrade():
         Column(
             'uuid', sa.String(38),
             server_default=sa.text('uuid_generate_v4()'), primary_key=True),
-        Column('username', sa.String(128), nullable=False),
+        Column('username', sa.String(128), unique=True, nullable=False),
         Column('password_hash', sa.Text, nullable=False),
         Column('password_salt', sa.LargeBinary, nullable=False),
     )

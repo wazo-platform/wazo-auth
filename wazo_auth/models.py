@@ -74,7 +74,7 @@ class User(Base):
     __tablename__ = 'auth_user'
 
     uuid = Column(String(38), server_default=text('uuid_generate_v4()'), primary_key=True)
-    username = Column(String(128), nullable=False)
+    username = Column(String(128), unique=True, nullable=False)
     password_hash = Column(Text, nullable=False)
     password_salt = Column(LargeBinary, nullable=False)
     main_email_uuid = Column(String(38), ForeignKey('auth_email.uuid', ondelete='RESTRICT'))
