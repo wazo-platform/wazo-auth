@@ -39,7 +39,7 @@ class Email(Base):
     __tablename__ = 'auth_email'
 
     uuid = Column(String(38), server_default=text('uuid_generate_v4()'), primary_key=True)
-    address = Column(Text, nullable=False)
+    address = Column(Text, unique=True, nullable=False)
     confirmed = Column(Boolean, nullable=False, default=False)
     user_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='CASCADE'))
 

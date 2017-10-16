@@ -29,7 +29,7 @@ def upgrade():
         Column(
             'uuid', sa.String(38),
             server_default=sa.text('uuid_generate_v4()'), primary_key=True),
-        Column('address', sa.Text, nullable=False),
+        Column('address', sa.Text, unique=True, nullable=False),
         Column('confirmed', sa.Boolean, nullable=False, default=False),
         Column('user_uuid', sa.String(38), sa.ForeignKey('auth_user.uuid', ondelete='CASCADE')),
     )

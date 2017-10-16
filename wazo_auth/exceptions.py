@@ -106,12 +106,12 @@ class InvalidSortDirectionException(ManagerException):
         return 'Invalid sort direction: {}'.format(self._direction)
 
 
-class UsernameAlreadyExistsException(APIException):
+class ConflictException(APIException):
 
-    def __init__(self, username):
-        msg = 'The username "{}" is already used'.format(username)
-        details = {'username': {'constraint_id': 'unique', 'message': msg}}
-        super(UsernameAlreadyExistsException, self).__init__(409, 'Conflict detected', 'conflict', details, 'users')
+    def __init__(self, resource, column, username):
+        msg = 'The {} "{}" is already used'.format(column, username)
+        details = {column: {'constraint_id': 'unique', 'message': msg}}
+        super(ConflictException, self).__init__(409, 'Conflict detected', 'conflict', details, resource)
 
 
 class DuplicatePolicyException(ManagerException):

@@ -331,11 +331,27 @@ class TestUserCrud(unittest.TestCase):
         assert_that(
             calling(self._crud.create).with_args(username, 'foobar@wazo.community', 'hash_two', self.salt),
             raises(
-                exceptions.UsernameAlreadyExistsException,
+                exceptions.ConflictException,
                 has_properties(
                     'status_code', 409,
                     'resource', 'users',
                     'details', has_entries('username', ANY),
+                ),
+            ),
+        )
+
+    def test_that_the_email_is_unique(self):
+        email = 'foobar@example.com'
+
+        self._crud.create('foo', email, 'hash_one', self.salt)
+        assert_that(
+            calling(self._crud.create).with_args('bar', email, 'hash_two', self.salt),
+            raises(
+                exceptions.ConflictException,
+                has_properties(
+                    'status_code', 409,
+                    'resource', 'users',
+                    'details', has_entries('email_address', ANY),
                 ),
             ),
         )

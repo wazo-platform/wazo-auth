@@ -31,11 +31,17 @@ from .models import (
     User,
 )
 from .token import Token
-from .exceptions import (DuplicatePolicyException, DuplicateTemplateException,
-                         InvalidLimitException, InvalidOffsetException,
-                         InvalidSortColumnException,
-                         InvalidSortDirectionException, UnknownPolicyException,
-                         UnknownTokenException, UsernameAlreadyExistsException)
+from .exceptions import (
+    ConflictException,
+    DuplicatePolicyException,
+    DuplicateTemplateException,
+    InvalidLimitException,
+    InvalidOffsetException,
+    InvalidSortColumnException,
+    InvalidSortDirectionException,
+    UnknownPolicyException,
+    UnknownTokenException,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -388,29 +394,34 @@ class _TokenCRUD(_CRUD):
 
 class _UserCRUD(_CRUD):
 
+    constraint_to_column_map = dict(
+        auth_user_username_key='username',
+        auth_email_address_key='email_address',
+    )
+
     def create(self, username, email_address, hash_, salt):
         with self.new_session() as s:
-            email = Email(
-                address=email_address,
-            )
-            s.add(email)
-            s.flush()
-            user = User(
-                username=username,
-                password_hash=hash_,
-                password_salt=salt,
-                main_email_uuid=email.uuid,
-            )
-            s.add(user)
             try:
+                email = Email(
+                    address=email_address,
+                )
+                s.add(email)
                 s.flush()
+                user = User(
+                    username=username,
+                    password_hash=hash_,
+                    password_salt=salt,
+                    main_email_uuid=email.uuid,
+                )
+                s.add(user)
+                s.flush()
+                email.user_uuid = user.uuid
+                s.commit()
             except exc.IntegrityError as e:
                 if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                    column = e.orig.diag.constraint_name.split('_')[-2]  # 'auth_user_username_key'
-                    if column == 'username':
-                        raise UsernameAlreadyExistsException(username)
+                    column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
+                    value = locals().get(column)
+                    if column:
+                        raise ConflictException('users', column, value)
                 raise
-
-            email.user_uuid = user.uuid
-            s.commit()
             return user.uuid
