@@ -28,7 +28,7 @@ class TokenRequestSchema(Schema):
 
 class UserRequestSchema(Schema):
 
-    username = xfields.String(validate=validate.Length(min=1), required=True)
+    username = xfields.String(validate=validate.Length(min=1, max=128), required=True)
     password = xfields.String(validate=validate.Length(min=1), required=True)
     email_address = xfields.Email(required=True)
 

@@ -21,8 +21,19 @@ import unittest
 import uuid
 
 from contextlib import contextmanager, nested
-from hamcrest import assert_that, calling, contains, contains_inanyorder, equal_to, empty, not_, raises
+from hamcrest import (
+    assert_that,
+    calling,
+    contains,
+    contains_inanyorder,
+    empty,
+    equal_to,
+    has_properties,
+    not_,
+    raises,
+)
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
+from xivo_test_helpers.mock import ANY_UUID
 
 from wazo_auth import database, exceptions
 
@@ -271,3 +282,40 @@ class TestTokenCRUD(unittest.TestCase):
         token_data['uuid'] = token_uuid
         yield token_data
         self._crud.delete(token_uuid)
+
+
+class TestUserCrud(unittest.TestCase):
+
+    salt = os.urandom(64)
+
+    def setUp(self):
+        self._crud = database._UserCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
+
+    def test_user_creation(self):
+        username = 'foobar'
+        hash_ = 'the_hashed_password'
+        email_address = 'foobar@example.com'
+
+        user_uuid = self._crud.create(username, email_address, hash_, self.salt)
+
+        assert_that(user_uuid, equal_to(ANY_UUID))
+        with self._crud.new_session() as s:
+            user = s.query(database.User).filter(database.User.uuid == user_uuid).first()
+            assert_that(
+                user,
+                has_properties(
+                    'username', username,
+                    'password_hash', hash_,
+                    'password_salt', self.salt,
+                )
+            )
+
+            email = s.query(database.Email).filter(database.Email.uuid == user.main_email_uuid).first()
+            assert_that(
+                email,
+                has_properties(
+                    'address', email_address,
+                    'user_uuid', user_uuid,
+                    'confirmed', False,
+                )
+            )

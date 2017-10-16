@@ -21,7 +21,15 @@ import logging
 from contextlib import contextmanager
 from sqlalchemy import and_, create_engine, exc, func, or_
 from sqlalchemy.orm import sessionmaker, scoped_session
-from .models import ACL, ACLTemplate, Policy, ACLTemplatePolicy, Token as TokenModel
+from .models import (
+    ACL,
+    ACLTemplate,
+    ACLTemplatePolicy,
+    Email,
+    Policy,
+    Token as TokenModel,
+    User,
+)
 from .token import Token
 from .exceptions import (DuplicatePolicyException, DuplicateTemplateException,
                          InvalidLimitException, InvalidOffsetException,
@@ -372,3 +380,25 @@ class _TokenCRUD(_CRUD):
 
         with self.new_session() as s:
             s.query(TokenModel).filter(filter_).delete()
+
+
+class _UserCRUD(_CRUD):
+
+    def create(self, username, email_address, hash_, salt):
+        with self.new_session() as s:
+            email = Email(
+                address=email_address,
+            )
+            s.add(email)
+            s.flush()
+            user = User(
+                username=username,
+                password_hash=hash_,
+                password_salt=salt,
+                main_email_uuid=email.uuid,
+            )
+            s.add(user)
+            s.flush()
+            email.user_uuid = user.uuid
+            s.commit()
+            return user.uuid
