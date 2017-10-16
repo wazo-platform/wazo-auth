@@ -106,6 +106,14 @@ class InvalidSortDirectionException(ManagerException):
         return 'Invalid sort direction: {}'.format(self._direction)
 
 
+class UsernameAlreadyExistsException(APIException):
+
+    def __init__(self, username):
+        msg = 'The username "{}" is already used'.format(username)
+        details = {'username': {}}
+        super(UsernameAlreadyExistsException, self).__init__(409, msg, 'conflict', details, 'users')
+
+
 class DuplicatePolicyException(ManagerException):
 
     code = 409

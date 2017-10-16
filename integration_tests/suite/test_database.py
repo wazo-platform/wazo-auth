@@ -28,12 +28,14 @@ from hamcrest import (
     contains_inanyorder,
     empty,
     equal_to,
+    has_entries,
     has_properties,
     not_,
-    raises,
 )
+from mock import ANY
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.mock import ANY_UUID
+from xivo_test_helpers.hamcrest.raises import raises
 
 from wazo_auth import database, exceptions
 
@@ -319,3 +321,19 @@ class TestUserCrud(unittest.TestCase):
                     'confirmed', False,
                 )
             )
+
+    def test_that_the_username_us_unique(self):
+        username = 'foobar'
+
+        self._crud.create(username, 'foobar@example.com', 'hash_one', self.salt)
+        assert_that(
+            calling(self._crud.create).with_args(username, 'foobar@wazo.community', 'hash_two', self.salt),
+            raises(
+                exceptions.UsernameAlreadyExistsException,
+                has_properties(
+                    'status_code', 409,
+                    'resource', 'users',
+                    'details', has_entries('username', ANY),
+                ),
+            ),
+        )
