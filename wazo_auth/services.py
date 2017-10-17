@@ -29,6 +29,12 @@ class UserService(object):
         self._storage = storage
         self._encrypter = encrypter or PasswordEncrypter()
 
+    def count_users(self, **kwargs):
+        return 0
+
+    def list_users(self, **kwargs):
+        return []
+
     def new_user(self, *args, **kwargs):
         password = kwargs.pop('password')
         salt, hash_ = self._encrypter.encrypt_password(password)

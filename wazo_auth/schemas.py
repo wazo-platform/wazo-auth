@@ -21,19 +21,29 @@ from xivo.mallow import fields as xfields
 from xivo.mallow import validate
 
 
+class BaseSchema(Schema):
+
+    @pre_load
+    def ensure_dict(self, data):
+        return data or {}
+
+
 class TokenRequestSchema(Schema):
     backend = fields.String(required=True)
     expiration = fields.Integer(validate=Range(min=1))
 
 
-class UserRequestSchema(Schema):
+class UserRequestSchema(BaseSchema):
 
     username = xfields.String(validate=validate.Length(min=1, max=128), required=True)
     password = xfields.String(validate=validate.Length(min=1), required=True)
     email_address = xfields.Email(required=True)
 
-    @pre_load
-    def dont_ignore_none(self, body):
-        if body is None:
-            return {}
 
+class UserListSchema(BaseSchema):
+
+    direction = fields.String(validate=validate.OneOf(['asc', 'desc']), missing='asc')
+    order = fields.String(validate=validate.Length(min=1), missing='username')
+    limit = fields.Integer(validate=validate.Range(min=0), missing=None)
+    offset = fields.Integer(validate=validate.Range(min=0), missing=0)
+    search = fields.String(missing=None)

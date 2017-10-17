@@ -178,6 +178,30 @@ class Token(ErrorCatchingResource):
 
 class Users(ErrorCatchingResource):
 
+    def get(self):
+        list_params, errors = schemas.UserListSchema().load(request.args)
+        if errors:
+            raise exceptions.InvalidListParamException(errors)
+
+        for key, value in request.args.iteritems():
+            if key in list_params:
+                continue
+            list_params[key] = value
+
+        user_service = current_app.config['user_service']
+
+        users = user_service.list_users(**list_params)
+        total = user_service.count_users(filtered=False, **list_params)
+        filtered = user_service.count_users(filtered=True, **list_params)
+
+        response = dict(
+            filtered=filtered,
+            total=total,
+            items=users,
+        )
+
+        return response, 200
+
     def post(self):
         user_service = current_app.config['user_service']
         args, errors = schemas.UserRequestSchema().load(request.get_json(force=True))

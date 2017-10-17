@@ -156,3 +156,35 @@ class TestUserResource(HTTPAppTestCase):
                             'details', has_entries(field, has_entries('constraint_id', 'not_null'))),
                 field,
             )
+
+    def test_user_list(self):
+        params = dict(
+            direction='desc',
+            order='email_address',
+            limit=5,
+            offset=42,
+            search='foo',
+            uuid='5941aabb-9e4a-4d2e-9e1e-7f9929354458',
+        )
+        expected_total, expected_filtered = 100, 1
+        expected_result = [
+            dict(
+                username='foobar',
+                email_address='foobar@example.com',
+                uuid='5941aabb-9e4a-4d2e-9e1e-7f9929354458',
+            ),
+        ]
+        self.user_service.list_users.return_value = expected_result
+        self.user_service.count_users.side_effect = [expected_total, expected_filtered]
+
+        result = self.app.get(self.url, query_string=params, headers=self.headers)
+
+        assert_that(result.status_code, equal_to(200))
+        assert_that(
+            json.loads(result.data),
+            has_entries(
+                'total', expected_total,
+                'filtered', expected_filtered,
+                'items', expected_result,
+            )
+        )
