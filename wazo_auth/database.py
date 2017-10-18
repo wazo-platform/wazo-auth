@@ -115,6 +115,9 @@ class Storage(object):
             email_address=email_address,
         )
 
+    def user_list(self, **kwargs):
+        return self._user_crud.list_(**kwargs)
+
     def remove_token(self, token_id):
         self._token_crud.delete(token_id)
 
@@ -465,3 +468,33 @@ class _UserCRUD(_CRUD):
                         raise ConflictException('users', column, value)
                 raise
             return user.uuid
+
+    def list_(self, **kwargs):
+        users = dict()
+
+        with self.new_session() as s:
+            rows = s.query(
+                User.uuid,
+                User.username,
+                User.main_email_uuid,
+                Email.uuid,
+                Email.address,
+                Email.confirmed,
+            ).join(Email, Email.user_uuid == User.uuid).all()
+
+            for user_uuid, username, main_email_uuid, email_uuid, address, confirmed in rows:
+                if user_uuid not in users:
+                    users[user_uuid] = dict(
+                        username=username,
+                        uuid=user_uuid,
+                        email_addresses=[],
+                    )
+
+                email = dict(
+                    address=address,
+                    main=main_email_uuid == email_uuid,
+                    confirmed=confirmed,
+                )
+                users[user_uuid]['email_addresses'].append(email)
+
+        return users.values()

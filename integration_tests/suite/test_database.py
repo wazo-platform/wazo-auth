@@ -400,3 +400,48 @@ class TestUserCrud(unittest.TestCase):
 
         result = self._crud.count(uuid=a, filtered=False)
         assert_that(result, equal_to(3))
+
+    @fixtures.user(username='a', email_address='a@example.com')
+    @fixtures.user(username='b', email_address='b@example.com')
+    @fixtures.user(username='c', email_address='c@example.com')
+    def test_user_list_no_search_term_no_strict_filter(self, c, b, a):
+        result = self._crud.list_()
+
+        assert_that(
+            result,
+            contains_inanyorder(
+                has_entries(
+                    'uuid', a,
+                    'username', 'a',
+                    'email_addresses', contains_inanyorder(
+                        has_entries(
+                            'address', 'a@example.com',
+                            'main', True,
+                            'confirmed', False,
+                        ),
+                    ),
+                ),
+                has_entries(
+                    'uuid', b,
+                    'username', 'b',
+                    'email_addresses', contains_inanyorder(
+                        has_entries(
+                            'address', 'b@example.com',
+                            'main', True,
+                            'confirmed', False,
+                        ),
+                    ),
+                ),
+                has_entries(
+                    'uuid', c,
+                    'username', 'c',
+                    'email_addresses', contains_inanyorder(
+                        has_entries(
+                            'address', 'c@example.com',
+                            'main', True,
+                            'confirmed', False,
+                        ),
+                    ),
+                )
+            )
+        )

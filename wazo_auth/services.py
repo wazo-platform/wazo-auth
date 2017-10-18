@@ -33,7 +33,7 @@ class UserService(object):
         return self._storage.user_count(**kwargs)
 
     def list_users(self, **kwargs):
-        return []
+        return self._storage.user_list(**kwargs)
 
     def new_user(self, *args, **kwargs):
         password = kwargs.pop('password')
