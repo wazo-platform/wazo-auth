@@ -418,7 +418,7 @@ class TestCoreMockBackend(_BaseTestCase):
     def test_that_expired_tokens_are_not_leaked_in_the_db(self):
         token_data = self._post_token('foo', 'bar', expiration=1)
 
-        until.true(self._is_token_in_the_db, token_data['token'], tries=5, interval=1)
+        until.false(self._is_token_in_the_db, token_data['token'], tries=5, interval=1)
 
     def test_the_expiration_argument_as_a_string(self):
         self._post_token_with_expected_exception(
