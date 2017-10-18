@@ -175,6 +175,15 @@ class _CRUD(object):
 
 class _PolicyCRUD(_CRUD):
 
+    def __init__(self, *args, **kwargs):
+        super(_PolicyCRUD, self).__init__(*args, **kwargs)
+        column_map = dict(
+            name=Policy.name,
+            description=Policy.description,
+            uuid=Policy.uuid,
+        )
+        self._paginator = QueryPaginator(column_map)
+
     def associate_policy_template(self, policy_uuid, acl_template):
         with self.new_session() as s:
             if not self._policy_exists(s, policy_uuid):
@@ -238,13 +247,6 @@ class _PolicyCRUD(_CRUD):
             raise UnknownPolicyException()
 
     def get(self, search_pattern, **kwargs):
-        column_map = dict(
-            name=Policy.name,
-            description=Policy.description,
-            uuid=Policy.uuid,
-        )
-        paginator = QueryPaginator(column_map)
-
         filter_ = self._new_search_filter(search_pattern)
         with self.new_session() as s:
             query = s.query(
@@ -263,7 +265,7 @@ class _PolicyCRUD(_CRUD):
                 Policy.name,
                 Policy.description,
             )
-            query = paginator.update_query(query, **kwargs)
+            query = self._paginator.update_query(query, **kwargs)
 
             policies = []
             for policy in query.all():
