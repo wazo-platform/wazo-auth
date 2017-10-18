@@ -30,7 +30,7 @@ class UserService(object):
         self._encrypter = encrypter or PasswordEncrypter()
 
     def count_users(self, **kwargs):
-        return 0
+        return self._storage.user_count(**kwargs)
 
     def list_users(self, **kwargs):
         return []

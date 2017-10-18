@@ -38,6 +38,7 @@ from xivo_test_helpers.mock import ANY_UUID
 from xivo_test_helpers.hamcrest.raises import raises
 
 from wazo_auth import database, exceptions
+from .helpers import fixtures
 
 DB_URI = os.getenv('DB_URI', 'postgresql://asterisk:proformatique@localhost:{port}')
 
@@ -355,3 +356,47 @@ class TestUserCrud(unittest.TestCase):
                 ),
             ),
         )
+
+    @fixtures.user()
+    @fixtures.user()
+    @fixtures.user()
+    def test_user_count_no_search_term_no_strict_filter(self, a, b, c):
+        result = self._crud.count()
+        assert_that(result, equal_to(3))
+
+    @fixtures.user(username='foo')
+    @fixtures.user(email_address='foobar@example.com')
+    @fixtures.user()
+    def test_user_count_no_search_term_strict_filter(self, a, b, c):
+        result = self._crud.count(username='foo')
+        assert_that(result, equal_to(1))
+
+        result = self._crud.count(email_address='foobar@example.com')
+        assert_that(result, equal_to(1))
+
+        result = self._crud.count(uuid=c)
+        assert_that(result, equal_to(1))
+
+    @fixtures.user(username='foo')
+    @fixtures.user(email_address='foobar@example.com')
+    @fixtures.user()
+    def test_user_count_search_term(self, a, b, c):
+        result = self._crud.count(search='%foo%')
+        assert_that(result, equal_to(2))
+
+    @fixtures.user(username='foo')
+    @fixtures.user(email_address='foobar@example.com')
+    @fixtures.user()
+    def test_user_count_mixed_strict_and_search(self, a, b, c):
+        result = self._crud.count(search='%foo%', uuid=a)
+        assert_that(result, equal_to(0))
+
+    @fixtures.user(username='foo')
+    @fixtures.user(email_address='foobar@example.com')
+    @fixtures.user()
+    def test_user_count_unfiltered(self, a, b, c):
+        result = self._crud.count(search='%foo%', filtered=False)
+        assert_that(result, equal_to(3))
+
+        result = self._crud.count(uuid=a, filtered=False)
+        assert_that(result, equal_to(3))

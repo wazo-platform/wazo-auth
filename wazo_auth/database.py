@@ -19,7 +19,7 @@ import uuid
 import time
 import logging
 from contextlib import contextmanager
-from sqlalchemy import and_, create_engine, exc, func, or_
+from sqlalchemy import and_, create_engine, exc, func, or_, text
 from sqlalchemy.orm import sessionmaker, scoped_session
 from .models import (
     ACL,
@@ -100,6 +100,12 @@ class Storage(object):
 
     def update_policy(self, policy_uuid, name, description, acl_templates):
         self._policy_crud.update(policy_uuid, name, description, acl_templates)
+
+    def user_count(self, **kwargs):
+        term = kwargs.get('search')
+        if term:
+            kwargs['search'] = self._prepare_search_pattern(term)
+        return self._user_crud.count(**kwargs)
 
     def user_create(self, username, email_address, hash_, salt):
         user_uuid = self._user_crud.create(username, email_address, hash_, salt)
@@ -398,6 +404,40 @@ class _UserCRUD(_CRUD):
         auth_user_username_key='username',
         auth_email_address_key='email_address',
     )
+
+    def _new_search_filter(self, search=None, **ignored):
+        if not search:
+            return text('true')
+
+        return or_(
+            User.uuid.ilike(search),
+            User.username.ilike(search),
+            Email.address.ilike(search),
+        )
+
+    def _new_strict_filter(self, uuid=None, username=None, email_address=None, **ignored):
+        filter_ = text('true')
+        if uuid:
+            filter_ = and_(filter_, User.uuid == uuid)
+        if username:
+            filter_ = and_(filter_, User.username == username)
+        if email_address:
+            filter_ = and_(filter_, Email.address == email_address)
+        return filter_
+
+    def count(self, **kwargs):
+        filtered = kwargs.get('filtered')
+        if filtered is not False:
+            strict_filter = self._new_strict_filter(**kwargs)
+            search_filter = self._new_search_filter(**kwargs)
+            filter_ = and_(strict_filter, search_filter)
+        else:
+            filter_ = text('true')
+
+        with self.new_session() as s:
+            return s.query(User).join(
+                Email, Email.user_uuid == User.uuid
+            ).filter(filter_).count()
 
     def create(self, username, email_address, hash_, salt):
         with self.new_session() as s:
