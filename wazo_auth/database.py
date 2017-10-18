@@ -237,17 +237,13 @@ class _PolicyCRUD(_CRUD):
         if not nb_deleted:
             raise UnknownPolicyException()
 
-    def get(self, search_pattern, order, direction, limit, offset):
-        if order not in ['name', 'description', 'uuid']:
-            raise InvalidSortColumnException(order)
-
-        if direction not in ['asc', 'desc']:
-            raise InvalidSortDirectionException(direction)
-
-        offset = self._check_valid_limit_or_offset(offset, 0, InvalidOffsetException)
-        order_field = getattr(Policy, order)
-        order_clause = order_field.asc() if direction == 'asc' else order_field.desc()
-        limit = self._check_valid_limit_or_offset(limit, None, InvalidLimitException)
+    def get(self, search_pattern, **kwargs):
+        column_map = dict(
+            name=Policy.name,
+            description=Policy.description,
+            uuid=Policy.uuid,
+        )
+        paginator = QueryPaginator(column_map)
 
         filter_ = self._new_search_filter(search_pattern)
         with self.new_session() as s:
@@ -266,13 +262,8 @@ class _PolicyCRUD(_CRUD):
                 Policy.uuid,
                 Policy.name,
                 Policy.description,
-            ).order_by(
-                order_clause,
-            ).limit(
-                limit,
-            ).offset(
-                offset,
             )
+            query = paginator.update_query(query, **kwargs)
 
             policies = []
             for policy in query.all():
@@ -313,23 +304,6 @@ class _PolicyCRUD(_CRUD):
         ids = self._create_or_find_acl_templates(session, acl_templates)
         template_policies = [ACLTemplatePolicy(policy_uuid=policy_uuid, template_id=id_) for id_ in ids]
         session.add_all(template_policies)
-
-    def _check_valid_limit_or_offset(self, value, default, exception):
-        if value is True or value is False:
-            raise exception(value)
-
-        if value is None:
-            return default
-
-        try:
-            value = int(value)
-        except ValueError:
-            raise exception(value)
-
-        if value < 0:
-            raise exception(value)
-
-        return value
 
     def _create_or_find_acl_templates(self, s, acl_templates):
         if not acl_templates:
@@ -505,3 +479,42 @@ class _UserCRUD(_CRUD):
                 users[user_uuid]['email_addresses'].append(email)
 
         return users.values()
+
+
+class QueryPaginator(object):
+
+    _valid_directions = ['asc', 'desc']
+
+    def __init__(self, column_map):
+        self._column_map = column_map
+
+    def update_query(self, query, limit, offset, order, direction, **ignored):
+        order_field = self._column_map.get(order)
+        if not order_field:
+            raise InvalidSortColumnException(order)
+
+        if direction not in self._valid_directions:
+            raise InvalidSortDirectionException(direction)
+
+        offset = self._check_valid_limit_or_offset(offset, 0, InvalidOffsetException)
+        limit = self._check_valid_limit_or_offset(limit, None, InvalidLimitException)
+        order_clause = order_field.asc() if direction == 'asc' else order_field.desc()
+
+        return query.order_by(order_clause).limit(limit).offset(offset)
+
+    def _check_valid_limit_or_offset(self, value, default, exception):
+        if value is True or value is False:
+            raise exception(value)
+
+        if value is None:
+            return default
+
+        try:
+            value = int(value)
+        except ValueError:
+            raise exception(value)
+
+        if value < 0:
+            raise exception(value)
+
+        return value

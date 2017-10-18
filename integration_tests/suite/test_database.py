@@ -66,8 +66,12 @@ class TestPolicyCRUD(unittest.TestCase):
 
     def setUp(self):
         self._crud = database._PolicyCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
-        default_user_policy = self._crud.get('wazo_default_user_policy', 'name', 'asc', 1, 0)[0]
-        default_admin_policy = self._crud.get('wazo_default_admin_policy', 'name', 'asc', 1, 0)[0]
+        default_user_policy = self._crud.get('wazo_default_user_policy',
+                                             order='name', direction='asc',
+                                             limit=1, offset=0)[0]
+        default_admin_policy = self._crud.get('wazo_default_admin_policy',
+                                              order='name', direction='asc',
+                                              limit=1, offset=0)[0]
         self._default_user_policy_uuid = default_user_policy['uuid']
         self._default_admin_policy_uuid = default_admin_policy['uuid']
 
@@ -118,7 +122,7 @@ class TestPolicyCRUD(unittest.TestCase):
             assert_that(policy['acl_templates'], empty())
 
         unknown_uuid = new_uuid()
-        result = self._crud.get(unknown_uuid, 'name', 'asc', None, None)
+        result = self._crud.get(unknown_uuid, order='name', direction='asc', limit=None, offset=None)
         assert_that(result, empty())
 
     def test_get_sort_and_pagination(self):
@@ -205,11 +209,11 @@ class TestPolicyCRUD(unittest.TestCase):
                 contains_inanyorder('confd.line.{{ line_id }}', 'dird.#', 'ctid-ng.#'))
 
     def get_policy(self, policy_uuid):
-        for policy in self._crud.get(policy_uuid, 'name', 'asc', None, None):
+        for policy in self._crud.get(policy_uuid, order='name', direction='asc', limit=None, offset=None):
             return policy
 
     def list_policy(self, order=None, direction=None, limit=None, offset=None):
-        policies = self._crud.get('%', order, direction, limit, offset)
+        policies = self._crud.get('%', order=order, direction=direction, limit=limit, offset=offset)
         return [policy['uuid'] for policy in policies]
 
     @contextmanager
