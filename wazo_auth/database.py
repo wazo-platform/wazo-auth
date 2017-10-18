@@ -116,6 +116,9 @@ class Storage(object):
         )
 
     def user_list(self, **kwargs):
+        term = kwargs.get('search')
+        if term:
+            kwargs['search'] = self._prepare_search_pattern(term)
         return self._user_crud.list_(**kwargs)
 
     def remove_token(self, token_id):
@@ -472,6 +475,10 @@ class _UserCRUD(_CRUD):
     def list_(self, **kwargs):
         users = dict()
 
+        search_filter = self._new_search_filter(**kwargs)
+        strict_filter = self._new_strict_filter(**kwargs)
+        filter_ = and_(strict_filter, search_filter)
+
         with self.new_session() as s:
             rows = s.query(
                 User.uuid,
@@ -480,7 +487,7 @@ class _UserCRUD(_CRUD):
                 Email.uuid,
                 Email.address,
                 Email.confirmed,
-            ).join(Email, Email.user_uuid == User.uuid).all()
+            ).join(Email, Email.user_uuid == User.uuid).filter(filter_).all()
 
             for user_uuid, username, main_email_uuid, email_uuid, address, confirmed in rows:
                 if user_uuid not in users:

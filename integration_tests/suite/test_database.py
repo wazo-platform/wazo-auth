@@ -445,3 +445,132 @@ class TestUserCrud(unittest.TestCase):
                 )
             )
         )
+
+    @fixtures.user(username='foo', email_address='foo@example.com')
+    @fixtures.user(username='bar', email_address='bar@example.com')
+    @fixtures.user(username='baz', email_address='baz@example.com')
+    def test_user_list_with_search_term(self, baz, bar, foo):
+        result = self._crud.list_(search='%@example.%')
+
+        assert_that(
+            result,
+            contains_inanyorder(
+                has_entries(
+                    'uuid', foo,
+                    'username', 'foo',
+                    'email_addresses', contains_inanyorder(
+                        has_entries(
+                            'address', 'foo@example.com',
+                            'main', True,
+                            'confirmed', False,
+                        ),
+                    ),
+                ),
+                has_entries(
+                    'uuid', bar,
+                    'username', 'bar',
+                    'email_addresses', contains_inanyorder(
+                        has_entries(
+                            'address', 'bar@example.com',
+                            'main', True,
+                            'confirmed', False,
+                        ),
+                    ),
+                ),
+                has_entries(
+                    'uuid', baz,
+                    'username', 'baz',
+                    'email_addresses', contains_inanyorder(
+                        has_entries(
+                            'address', 'baz@example.com',
+                            'main', True,
+                            'confirmed', False,
+                        ),
+                    ),
+                )
+            )
+        )
+
+        result = self._crud.list_(search='foo')
+        assert_that(
+            result,
+            contains_inanyorder(
+                has_entries(
+                    'uuid', foo,
+                    'username', 'foo',
+                    'email_addresses', contains_inanyorder(
+                        has_entries(
+                            'address', 'foo@example.com',
+                            'main', True,
+                            'confirmed', False,
+                        ),
+                    ),
+                )
+            )
+        )
+
+    @fixtures.user(username='foo', email_address='foo@example.com')
+    @fixtures.user(username='bar', email_address='bar@example.com')
+    @fixtures.user(username='baz', email_address='baz@example.com')
+    def test_user_list_with_strict_filters(self, baz, bar, foo):
+        result = self._crud.list_(username='foo')
+
+        assert_that(
+            result,
+            contains_inanyorder(
+                has_entries(
+                    'uuid', foo,
+                    'username', 'foo',
+                    'email_addresses', contains_inanyorder(
+                        has_entries(
+                            'address', 'foo@example.com',
+                            'main', True,
+                            'confirmed', False,
+                        ),
+                    ),
+                ),
+            )
+        )
+
+        result = self._crud.list_(uuid=foo)
+        assert_that(
+            result,
+            contains_inanyorder(
+                has_entries(
+                    'uuid', foo,
+                    'username', 'foo',
+                    'email_addresses', contains_inanyorder(
+                        has_entries(
+                            'address', 'foo@example.com',
+                            'main', True,
+                            'confirmed', False,
+                        ),
+                    ),
+                )
+            )
+        )
+
+    @fixtures.user(username='foo', email_address='foo@example.com')
+    @fixtures.user(username='bar', email_address='bar@example.com')
+    @fixtures.user(username='baz', email_address='baz@example.com')
+    def test_user_list_with_strict_filters_and_search(self, baz, bar, foo):
+        result = self._crud.list_(username='foo', search='%baz%')
+        assert_that(result, empty())
+
+        result = self._crud.list_(uuid=foo, search='%example%')
+        assert_that(
+            result,
+            contains_inanyorder(
+                has_entries(
+                    'uuid', foo,
+                    'username', 'foo',
+                    'email_addresses', contains_inanyorder(
+                        has_entries(
+                            'address', 'foo@example.com',
+                            'main', True,
+                            'confirmed', False,
+                        ),
+                    ),
+                )
+            )
+        )
