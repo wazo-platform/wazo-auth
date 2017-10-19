@@ -178,6 +178,7 @@ class Token(ErrorCatchingResource):
 
 class Users(ErrorCatchingResource):
 
+    @required_acl('auth.users.read')
     def get(self):
         list_params, errors = schemas.UserListSchema().load(request.args)
         if errors:
