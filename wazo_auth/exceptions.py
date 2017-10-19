@@ -46,6 +46,14 @@ class InvalidListParamException(APIException):
                 return cls(info['message'], {field: info})
 
 
+class UnknownUserException(APIException):
+
+    def __init__(self, user_uuid):
+        msg = 'No such user: "{}"'.format(user_uuid)
+        details = dict(uuid=user_uuid)
+        super(UnknownUserException, self).__init__(404, msg, 'unknown_user', details, 'users')
+
+
 class UserParamException(APIException):
 
     def __init__(self, message, details=None):

@@ -20,6 +20,8 @@ import hashlib
 import logging
 import os
 
+from . import exceptions
+
 logger = logging.getLogger(__name__)
 
 
@@ -31,6 +33,12 @@ class UserService(object):
 
     def count_users(self, **kwargs):
         return self._storage.user_count(**kwargs)
+
+    def get_user(self, user_uuid):
+        users = self._storage.user_list(uuid=user_uuid, limit=1, order='username', direction='asc', offset=0)
+        for user in users:
+            return user
+        raise exceptions.UnknownUserException(user_uuid)
 
     def list_users(self, **kwargs):
         return self._storage.user_list(**kwargs)

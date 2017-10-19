@@ -29,11 +29,12 @@ class HTTPAppTestCase(TestCase):
 
     def setUp(self):
         self.user_service = Mock()
+        token_manager = Mock()
         self.app = new_app(
             _DEFAULT_CONFIG,
             s.backends,
             s.policy_manager,
-            s.token_manager,
+            token_manager,
             self.user_service,
         ).test_client()
 
@@ -187,4 +188,23 @@ class TestUserResource(HTTPAppTestCase):
                 'filtered', expected_filtered,
                 'items', expected_result,
             )
+        )
+
+    def test_user_get(self):
+        uuid = '5730c531-5e47-4de6-be60-c3e28de00de4'
+        url = '/'.join([self.url, uuid])
+        expected_result = dict(
+            username='foobar',
+            uuid=uuid,
+            email_addresses=[
+                {'address': 'foobar@example.com', 'confirmed': True, 'main': True},
+            ],
+        )
+        self.user_service.get_user.return_value = expected_result
+
+        result = self.app.get(url, headers=self.headers)
+
+        assert_that(
+            json.loads(result.data),
+            equal_to(expected_result),
         )

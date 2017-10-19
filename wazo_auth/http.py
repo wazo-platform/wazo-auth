@@ -176,6 +176,14 @@ class Token(ErrorCatchingResource):
         return '', 204
 
 
+class User(ErrorCatchingResource):
+
+    @required_acl('auth.users.{user_uuid}.read')
+    def get(self, user_uuid):
+        user_service = current_app.config['user_service']
+        return user_service.get_user(user_uuid)
+
+
 class Users(ErrorCatchingResource):
 
     @required_acl('auth.users.read')
@@ -249,6 +257,7 @@ def new_app(config, backends, policy_manager, token_manager, user_service):
     api.add_resource(Tokens, '/token')
     api.add_resource(Token, '/token/<string:token>')
     api.add_resource(Users, '/users')
+    api.add_resource(User, '/users/<string:user_uuid>')
     api.add_resource(Backends, '/backends')
     api.add_resource(Swagger, '/api/api.yml')
     app.config.update(config)
