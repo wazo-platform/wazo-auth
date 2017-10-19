@@ -208,3 +208,11 @@ class TestUserResource(HTTPAppTestCase):
             json.loads(result.data),
             equal_to(expected_result),
         )
+
+    def test_user_delete(self):
+        uuid = '5730c531-5e47-4de6-be60-c3e28de00de4'
+        url = '/'.join([self.url, uuid])
+
+        result = self.app.delete(url, headers=self.headers)
+
+        assert_that(result.status_code, equal_to(204))

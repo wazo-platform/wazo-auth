@@ -41,6 +41,9 @@ class UserService(object):
     def count_users(self, **kwargs):
         return self._storage.user_count(**kwargs)
 
+    def delete_user(self, user_uuid):
+        self._storage.user_delete(user_uuid)
+
     def get_user(self, user_uuid):
         users = self._storage.user_list(uuid=user_uuid, **self._get_user_pagination_args)
         for user in users:

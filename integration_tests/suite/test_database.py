@@ -605,3 +605,12 @@ class TestUserCrud(unittest.TestCase):
             has_entries('uuid', b),
             has_entries('uuid', c),
         ))
+
+    @fixtures.user()
+    def test_delete(self, user_uuid):
+        self._crud.delete(user_uuid)
+
+        assert_that(
+            calling(self._crud.delete).with_args(user_uuid),
+            raises(exceptions.UnknownUserException),
+        )

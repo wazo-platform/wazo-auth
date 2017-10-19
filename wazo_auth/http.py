@@ -183,6 +183,12 @@ class User(ErrorCatchingResource):
         user_service = current_app.config['user_service']
         return user_service.get_user(user_uuid)
 
+    @required_acl('auth.users.{user_uuid}.delete')
+    def delete(self, user_uuid):
+        user_service = current_app.config['user_service']
+        user_service.delete_user(user_uuid)
+        return '', 204
+
 
 class Users(ErrorCatchingResource):
 

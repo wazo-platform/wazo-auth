@@ -455,6 +455,35 @@ paths:
           description: System related error
           schema:
             $ref: '#/definitions/Error'
+    delete:
+      operationId: delete_user
+      tags:
+        - users
+      security:
+      - wazo_auth_token: []
+      description: '**Required ACL**: `auth.users.{user_uuid}.delete'
+      parameters:
+      - name: user_uuid
+        in: path
+        type: string
+        description: The UUID of the user
+        required: true
+      summary: Delete a user
+      responses:
+        '204':
+          description: The user has been removed
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: System related error
+          schema:
+            $ref: '#/definitions/Error'
   /backends:
     get:
       tags:

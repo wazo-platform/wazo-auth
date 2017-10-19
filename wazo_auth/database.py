@@ -41,6 +41,7 @@ from .exceptions import (
     InvalidSortDirectionException,
     UnknownPolicyException,
     UnknownTokenException,
+    UnknownUserException,
 )
 
 logger = logging.getLogger(__name__)
@@ -106,6 +107,9 @@ class Storage(object):
         if term:
             kwargs['search'] = self._prepare_search_pattern(term)
         return self._user_crud.count(**kwargs)
+
+    def user_delete(self, user_uuid):
+        self._user_crud.delete(user_uuid)
 
     def user_create(self, username, email_address, hash_, salt):
         user_uuid = self._user_crud.create(username, email_address, hash_, salt)
@@ -454,6 +458,13 @@ class _UserCRUD(_CRUD):
                         raise ConflictException('users', column, value)
                 raise
             return user.uuid
+
+    def delete(self, user_uuid):
+        with self.new_session() as s:
+            nb_deleted = s.query(User).filter(User.uuid == user_uuid).delete()
+
+        if not nb_deleted:
+            raise UnknownUserException(user_uuid)
 
     def list_(self, **kwargs):
         users = dict()
