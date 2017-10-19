@@ -387,6 +387,13 @@ class _UserCRUD(_CRUD):
         auth_email_address_key='email_address',
     )
 
+    def __init__(self, *args, **kwargs):
+        super(_UserCRUD, self).__init__(*args, **kwargs)
+        column_map = dict(
+            username=User.username,
+        )
+        self._paginator = QueryPaginator(column_map)
+
     def _new_search_filter(self, search=None, **ignored):
         if not search:
             return text('true')
@@ -456,14 +463,16 @@ class _UserCRUD(_CRUD):
         filter_ = and_(strict_filter, search_filter)
 
         with self.new_session() as s:
-            rows = s.query(
+            query = s.query(
                 User.uuid,
                 User.username,
                 User.main_email_uuid,
                 Email.uuid,
                 Email.address,
                 Email.confirmed,
-            ).join(Email, Email.user_uuid == User.uuid).filter(filter_).all()
+            ).join(Email, Email.user_uuid == User.uuid).filter(filter_)
+            query = self._paginator.update_query(query, **kwargs)
+            rows = query.all()
 
             for user_uuid, username, main_email_uuid, email_uuid, address, confirmed in rows:
                 if user_uuid not in users:

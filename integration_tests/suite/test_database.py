@@ -578,3 +578,30 @@ class TestUserCrud(unittest.TestCase):
                 )
             )
         )
+
+    @fixtures.user(username='a')
+    @fixtures.user(username='b')
+    @fixtures.user(username='c')
+    @fixtures.user(username='d')
+    @fixtures.user(username='e')
+    @fixtures.user(username='f')
+    @fixtures.user(username='g')
+    @fixtures.user(username='h')
+    @fixtures.user(username='i')
+    def test_pagination(self, i, h, g, f, e, d, c, b, a):
+        result = self._crud.list_(order='username', direction='desc', limit=1, offset=0)
+        assert_that(result, contains_inanyorder(
+            has_entries('uuid', i),
+        ))
+
+        result = self._crud.list_(order='username', direction='asc', limit=2, offset=1)
+        assert_that(result, contains_inanyorder(
+            has_entries('uuid', b),
+            has_entries('uuid', c),
+        ))
+
+        result = self._crud.list_(order='username', direction='asc', limit=2, offset=1)
+        assert_that(result, contains_inanyorder(
+            has_entries('uuid', b),
+            has_entries('uuid', c),
+        ))
