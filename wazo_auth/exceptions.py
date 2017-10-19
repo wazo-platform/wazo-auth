@@ -32,6 +32,20 @@ class AuthenticationFailedException(ManagerException):
         return self._msg
 
 
+class InvalidListParamException(APIException):
+
+    def __init__(self, message, details=None):
+        super(InvalidListParamException, self).__init__(400, message, 'invalid_list_param', details, 'users')
+
+    @classmethod
+    def from_errors(cls, errors):
+        for field, infos in errors.iteritems():
+            if not isinstance(infos, list):
+                infos = [infos]
+            for info in infos:
+                return cls(info['message'], {field: info})
+
+
 class UserParamException(APIException):
 
     def __init__(self, message, details=None):
