@@ -15,19 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>
 
-from marshmallow import fields, pre_load, Schema, validate
-
 from .exceptions import InvalidInputException
-
-
-class _PolicySchema(Schema):
-    name = fields.String(validate=validate.Length(min=1, max=80), required=True)
-    description = fields.String(allow_none=True, missing=None)
-    acl_templates = fields.List(fields.String(), missing=[])
-
-    @pre_load
-    def warn_on_none(self, data):
-        return data or {}
+from .schemas import PolicySchema
 
 
 class Manager(object):
@@ -76,7 +65,7 @@ class Manager(object):
         }
 
     def _extract_body(self, body):
-        body, errors = _PolicySchema().load(body)
+        body, errors = PolicySchema().load(body)
         if errors:
             for field in errors:
                 raise InvalidInputException(field)

@@ -28,6 +28,13 @@ class BaseSchema(Schema):
         return data or {}
 
 
+class PolicySchema(BaseSchema):
+
+    name = fields.String(validate=validate.Length(min=1, max=80), required=True)
+    description = fields.String(allow_none=True, missing=None)
+    acl_templates = fields.List(fields.String(), missing=[])
+
+
 class TokenRequestSchema(Schema):
     backend = fields.String(required=True)
     expiration = fields.Integer(validate=Range(min=1))
