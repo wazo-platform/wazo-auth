@@ -69,11 +69,11 @@ class Controller(object):
         self._config['loaded_plugins'] = self._loaded_plugins_names(self._backends)
 
         storage = database.Storage.from_config(self._config)
-        policy_manager = policy.Manager(storage)
         self._token_manager = token.Manager(config, storage)
+        policy_service = services.PolicyService(storage)
         self._user_service = services.UserService(storage)
         self._flask_app = http.new_app(
-            config, self._backends, policy_manager, self._token_manager, self._user_service)
+            config, self._backends, policy_service, self._token_manager, self._user_service)
         self._expired_token_remover = token.ExpiredTokenRemover(config, storage)
 
     def run(self):

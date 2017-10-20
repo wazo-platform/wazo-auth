@@ -15,11 +15,101 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-from hamcrest import assert_that, equal_to
-from mock import Mock, sentinel as s
+from hamcrest import assert_that, calling, equal_to, raises
+from mock import ANY, Mock, sentinel as s
 from unittest import TestCase
 
-from .. import services, database
+from .. import exceptions, services, database
+
+
+class TestPolicyService(TestCase):
+
+    def setUp(self):
+        self.storage = Mock(database.Storage)
+        self.service = services.PolicyService(self.storage)
+
+    def test_create_policy_valid(self):
+        name = 'valid'
+        desc = 'A Valid description'
+        input_and_expected = [
+            (
+                {'name': name},
+                {'uuid': ANY,
+                 'name': name,
+                 'description': None,
+                 'acl_templates': []}
+            ),
+            (
+                {'name': name, 'description': desc},
+                {'uuid': ANY,
+                 'name': name,
+                 'description': desc,
+                 'acl_templates': []}
+            )
+        ]
+
+        for policy_data, expected in input_and_expected:
+            policy = self.service.create(policy_data)
+            assert_that(policy, equal_to(expected))
+
+    def test_that_invalid_values_raise_a_manager_exception(self):
+        names = [
+            None,
+            True,
+            False,
+            '',
+            42,
+        ]
+
+        for name in names:
+            assert_that(
+                calling(self.service.create).with_args({'name': name}),
+                raises(exceptions.InvalidInputException)
+            )
+
+        descriptions = [
+            True,
+            False,
+            42,
+        ]
+        for desc in descriptions:
+            body = {'name': 'name', 'description': desc}
+            assert_that(
+                calling(self.service.create).with_args(body),
+                raises(exceptions.InvalidInputException)
+            )
+
+        assert_that(
+            calling(self.service.create).with_args(None),
+            raises(exceptions.InvalidInputException))
+
+    def test_that_invalid_acl_templates_raise_a_manager_exception(self):
+        name = 'foobar'
+        templates = [
+            {'foo': 'bar'},
+            42,
+            True,
+            False,
+            None,
+            'auth.*',
+            [{'foo': 'bar'}],
+            [42],
+            ['#', False],
+            [None],
+        ]
+
+        for template in templates:
+            assert_that(
+                calling(self.service.create).with_args({
+                    'name': name,
+                    'acl_templates': template
+                }), raises(exceptions.InvalidInputException),
+                template)
+
+    def test_delete(self):
+        self.service.delete(s.policy_uuid)
+
+        self.storage.delete_policy.assert_called_once_with(s.policy_uuid)
 
 
 class TestUserService(TestCase):

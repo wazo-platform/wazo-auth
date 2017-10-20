@@ -33,7 +33,7 @@ class HTTPAppTestCase(TestCase):
         self.app = new_app(
             _DEFAULT_CONFIG,
             s.backends,
-            s.policy_manager,
+            s.policy_service,
             token_manager,
             self.user_service,
         ).test_client()

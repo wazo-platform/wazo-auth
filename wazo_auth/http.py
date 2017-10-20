@@ -75,8 +75,8 @@ class Policies(ErrorCatchingResource):
     @required_acl('auth.policies.create')
     def post(self):
         data = request.get_json()
-        policy_manager = current_app.config['policy_manager']
-        policy = policy_manager.create(data)
+        policy_service = current_app.config['policy_service']
+        policy = policy_service.create(data)
         return policy, 200
 
     @required_acl('auth.policies.read')
@@ -86,9 +86,9 @@ class Policies(ErrorCatchingResource):
         if errors:
             raise exceptions.InvalidListParamException(errors)
 
-        policy_manager = current_app.config['policy_manager']
-        policies = policy_manager.list(**list_params)
-        total = policy_manager.count(**list_params)
+        policy_service = current_app.config['policy_service']
+        policies = policy_service.list(**list_params)
+        total = policy_service.count(**list_params)
         return {'items': policies, 'total': total}, 200
 
 
@@ -96,21 +96,21 @@ class Policy(ErrorCatchingResource):
 
     @required_acl('auth.policies.{policy_uuid}.read')
     def get(self, policy_uuid):
-        policy_manager = current_app.config['policy_manager']
-        policy = policy_manager.get(policy_uuid)
+        policy_service = current_app.config['policy_service']
+        policy = policy_service.get(policy_uuid)
         return policy, 200
 
     @required_acl('auth.policies.{policy_uuid}.delete')
     def delete(self, policy_uuid):
-        policy_manager = current_app.config['policy_manager']
-        policy_manager.delete(policy_uuid)
+        policy_service = current_app.config['policy_service']
+        policy_service.delete(policy_uuid)
         return '', 204
 
     @required_acl('auth.policies.{policy_uuid}.edit')
     def put(self, policy_uuid):
         data = request.get_json()
-        policy_manager = current_app.config['policy_manager']
-        policy = policy_manager.update(policy_uuid, data)
+        policy_service = current_app.config['policy_service']
+        policy = policy_service.update(policy_uuid, data)
         return policy, 200
 
 
@@ -118,14 +118,14 @@ class PolicyTemplate(ErrorCatchingResource):
 
     @required_acl('auth.policies.{policy_uuid}.edit')
     def delete(self, policy_uuid, template):
-        policy_manager = current_app.config['policy_manager']
-        policy_manager.delete_acl_template(policy_uuid, template)
+        policy_service = current_app.config['policy_service']
+        policy_service.delete_acl_template(policy_uuid, template)
         return '', 204
 
     @required_acl('auth.policies.{policy_uuid}.edit')
     def put(self, policy_uuid, template):
-        policy_manager = current_app.config['policy_manager']
-        policy_manager.add_acl_template(policy_uuid, template)
+        policy_service = current_app.config['policy_service']
+        policy_service.add_acl_template(policy_uuid, template)
         return '', 204
 
 
@@ -251,7 +251,7 @@ class Swagger(Resource):
         return make_response(api_spec, 200, {'Content-Type': 'application/x-yaml'})
 
 
-def new_app(config, backends, policy_manager, token_manager, user_service):
+def new_app(config, backends, policy_service, token_manager, user_service):
     cors_config = dict(config['rest_api']['cors'])
     cors_enabled = cors_config.pop('enabled')
     app = Flask('wazo-auth')
@@ -270,7 +270,7 @@ def new_app(config, backends, policy_manager, token_manager, user_service):
     if cors_enabled:
         CORS(app, **cors_config)
 
-    app.config['policy_manager'] = policy_manager
+    app.config['policy_service'] = policy_service
     app.config['token_manager'] = token_manager
     app.config['backends'] = backends
     app.config['user_service'] = user_service

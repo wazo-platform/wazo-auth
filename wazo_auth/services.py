@@ -21,8 +21,63 @@ import logging
 import os
 
 from . import exceptions
+from . import schemas
 
 logger = logging.getLogger(__name__)
+
+
+class PolicyService(object):
+
+    def __init__(self, storage):
+        self._storage = storage
+
+    def add_acl_template(self, policy_uuid, acl_template):
+        return self._storage.add_policy_acl_template(policy_uuid, acl_template)
+
+    def create(self, body):
+        name, description, acl_templates = self._extract_body(body)
+
+        uuid = self._storage.create_policy(name, description, acl_templates)
+
+        return {'uuid': uuid,
+                'name': name,
+                'description': description,
+                'acl_templates': acl_templates}
+
+    def count(self, search, **ignored):
+        return self._storage.count_policies(search)
+
+    def delete(self, policy_uuid):
+        return self._storage.delete_policy(policy_uuid)
+
+    def delete_acl_template(self, policy_uuid, acl_template):
+        return self._storage.delete_policy_acl_template(policy_uuid, acl_template)
+
+    def get(self, policy_uuid):
+        return self._storage.get_policy(policy_uuid)
+
+    def list(self, **kwargs):
+        return self._storage.list_policies(**kwargs)
+
+    def update(self, policy_uuid, body):
+        name, description, acl_templates = self._extract_body(body)
+
+        self._storage.update_policy(policy_uuid, name, description, acl_templates)
+
+        return {
+            'uuid': policy_uuid,
+            'name': name,
+            'description': description,
+            'acl_templates': acl_templates,
+        }
+
+    def _extract_body(self, body):
+        body, errors = schemas.PolicySchema().load(body)
+        if errors:
+            for field in errors:
+                raise exceptions.InvalidInputException(field)
+
+        return body['name'], body['description'], body['acl_templates']
 
 
 class UserService(object):
