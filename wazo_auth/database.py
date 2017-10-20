@@ -57,8 +57,8 @@ class Storage(object):
     def add_policy_acl_template(self, policy_uuid, acl_template):
         self._policy_crud.associate_policy_template(policy_uuid, acl_template)
 
-    def count_policies(self, term):
-        search_pattern = self._prepare_search_pattern(term)
+    def count_policies(self, search):
+        search_pattern = self._prepare_search_pattern(search)
         return self._policy_crud.count(search_pattern)
 
     def delete_policy_acl_template(self, policy_uuid, acl_template):
@@ -66,12 +66,12 @@ class Storage(object):
 
     def get_policy(self, policy_uuid):
         if self._is_uuid(policy_uuid):
-            for policy in self._policy_crud.get(policy_uuid, 'name', 'asc', None, None):
+            for policy in self._policy_crud.get(search=policy_uuid):
                 return policy
         raise UnknownPolicyException()
 
     def get_policy_by_name(self, policy_name):
-        for policy in self._policy_crud.get(policy_name, 'name', 'asc', None, None):
+        for policy in self._policy_crud.get(search=policy_name):
             if policy['name'] == policy_name:
                 return policy
         raise UnknownPolicyException()
@@ -95,9 +95,9 @@ class Storage(object):
     def delete_policy(self, policy_uuid):
         self._policy_crud.delete(policy_uuid)
 
-    def list_policies(self, term, order, direction, limit, offset):
-        search_pattern = self._prepare_search_pattern(term)
-        return self._policy_crud.get(search_pattern, order, direction, limit, offset)
+    def list_policies(self, **kwargs):
+        kwargs['search'] = self._prepare_search_pattern(kwargs.get('search'))
+        return self._policy_crud.get(**kwargs)
 
     def update_policy(self, policy_uuid, name, description, acl_templates):
         self._policy_crud.update(policy_uuid, name, description, acl_templates)
@@ -216,15 +216,16 @@ class _PolicyCRUD(_CRUD):
                 )
                 s.query(ACLTemplatePolicy).filter(filter_).delete()
 
-    def _new_search_filter(self, search_pattern):
+    def _new_search_filter(self, search=None, **kwargs):
+        term = search or '%'
         return or_(
-            Policy.uuid.ilike(search_pattern),
-            Policy.name.ilike(search_pattern),
-            Policy.description.ilike(search_pattern),
+            Policy.uuid.ilike(term),
+            Policy.name.ilike(term),
+            Policy.description.ilike(term),
         )
 
     def count(self, search_pattern):
-        filter_ = self._new_search_filter(search_pattern)
+        filter_ = self._new_search_filter(search=search_pattern)
         with self.new_session() as s:
             return s.query(Policy).filter(filter_).count()
 
@@ -250,8 +251,8 @@ class _PolicyCRUD(_CRUD):
         if not nb_deleted:
             raise UnknownPolicyException()
 
-    def get(self, search_pattern, **kwargs):
-        filter_ = self._new_search_filter(search_pattern)
+    def get(self, **kwargs):
+        filter_ = self._new_search_filter(**kwargs)
         with self.new_session() as s:
             query = s.query(
                 Policy.uuid,
@@ -510,19 +511,27 @@ class QueryPaginator(object):
     def __init__(self, column_map):
         self._column_map = column_map
 
-    def update_query(self, query, limit, offset, order, direction, **ignored):
-        order_field = self._column_map.get(order)
-        if not order_field:
-            raise InvalidSortColumnException(order)
+    def update_query(self, query, limit=None, offset=None, order=None, direction=None, **ignored):
+        if order and direction:
+            order_field = self._column_map.get(order)
+            if not order_field:
+                raise InvalidSortColumnException(order)
 
-        if direction not in self._valid_directions:
-            raise InvalidSortDirectionException(direction)
+            if direction not in self._valid_directions:
+                raise InvalidSortDirectionException(direction)
 
-        offset = self._check_valid_limit_or_offset(offset, 0, InvalidOffsetException)
-        limit = self._check_valid_limit_or_offset(limit, None, InvalidLimitException)
-        order_clause = order_field.asc() if direction == 'asc' else order_field.desc()
+            order_clause = order_field.asc() if direction == 'asc' else order_field.desc()
+            query = query.order_by(order_clause)
 
-        return query.order_by(order_clause).limit(limit).offset(offset)
+        if limit is not None:
+            limit = self._check_valid_limit_or_offset(limit, None, InvalidLimitException)
+            query = query.limit(limit)
+
+        if offset is not None:
+            offset = self._check_valid_limit_or_offset(offset, 0, InvalidOffsetException)
+            query = query.offset(offset)
+
+        return query
 
     def _check_valid_limit_or_offset(self, value, default, exception):
         if value is True or value is False:

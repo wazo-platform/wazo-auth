@@ -48,8 +48,8 @@ class Manager(object):
                 'description': description,
                 'acl_templates': acl_templates}
 
-    def count(self, term):
-        return self._storage.count_policies(term)
+    def count(self, search, **ignored):
+        return self._storage.count_policies(search)
 
     def delete(self, policy_uuid):
         return self._storage.delete_policy(policy_uuid)
@@ -60,8 +60,8 @@ class Manager(object):
     def get(self, policy_uuid):
         return self._storage.get_policy(policy_uuid)
 
-    def list(self, term, order, direction, limit, offset):
-        return self._storage.list_policies(term, order, direction, limit, offset)
+    def list(self, **kwargs):
+        return self._storage.list_policies(**kwargs)
 
     def update(self, policy_uuid, body):
         name, description, acl_templates = self._extract_body(body)

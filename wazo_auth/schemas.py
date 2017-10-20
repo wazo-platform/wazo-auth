@@ -40,10 +40,14 @@ class UserRequestSchema(BaseSchema):
     email_address = xfields.Email(required=True)
 
 
-class UserListSchema(BaseSchema):
+def new_list_schema(default_sort_column):
 
-    direction = fields.String(validate=validate.OneOf(['asc', 'desc']), missing='asc')
-    order = fields.String(validate=validate.Length(min=1), missing='username')
-    limit = fields.Integer(validate=validate.Range(min=0), missing=None)
-    offset = fields.Integer(validate=validate.Range(min=0), missing=0)
-    search = fields.String(missing=None)
+    class ListSchema(BaseSchema):
+
+        direction = fields.String(validate=validate.OneOf(['asc', 'desc']), missing='asc')
+        order = fields.String(validate=validate.Length(min=1), missing=default_sort_column)
+        limit = fields.Integer(validate=validate.Range(min=0), missing=None)
+        offset = fields.Integer(validate=validate.Range(min=0), missing=0)
+        search = fields.String(missing=None)
+
+    return ListSchema

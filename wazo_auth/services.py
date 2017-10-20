@@ -27,13 +27,6 @@ logger = logging.getLogger(__name__)
 
 class UserService(object):
 
-    _get_user_pagination_args = dict(
-        limit=1,
-        offset=0,
-        order='username',
-        direction='asc',
-    )
-
     def __init__(self, storage, encrypter=None):
         self._storage = storage
         self._encrypter = encrypter or PasswordEncrypter()
@@ -45,7 +38,7 @@ class UserService(object):
         self._storage.user_delete(user_uuid)
 
     def get_user(self, user_uuid):
-        users = self._storage.user_list(uuid=user_uuid, **self._get_user_pagination_args)
+        users = self._storage.user_list(uuid=user_uuid)
         for user in users:
             return user
         raise exceptions.UnknownUserException(user_uuid)

@@ -81,15 +81,14 @@ class Policies(ErrorCatchingResource):
 
     @required_acl('auth.policies.read')
     def get(self):
-        order = request.args.get('order', 'name')
-        direction = request.args.get('direction', 'asc')
-        limit = request.args.get('limit')
-        offset = request.args.get('offset')
-        term = request.args.get('search')
+        ListSchema = schemas.new_list_schema('name')
+        list_params, errors = ListSchema().load(request.args)
+        if errors:
+            raise exceptions.InvalidListParamException(errors)
 
         policy_manager = current_app.config['policy_manager']
-        policies = policy_manager.list(term, order, direction, limit, offset)
-        total = policy_manager.count(term)
+        policies = policy_manager.list(**list_params)
+        total = policy_manager.count(**list_params)
         return {'items': policies, 'total': total}, 200
 
 
@@ -194,7 +193,8 @@ class Users(ErrorCatchingResource):
 
     @required_acl('auth.users.read')
     def get(self):
-        list_params, errors = schemas.UserListSchema().load(request.args)
+        ListSchema = schemas.new_list_schema('username')
+        list_params, errors = ListSchema().load(request.args)
         if errors:
             raise exceptions.InvalidListParamException(errors)
 
