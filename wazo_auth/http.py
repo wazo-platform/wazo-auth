@@ -74,10 +74,17 @@ class Policies(ErrorCatchingResource):
 
     @required_acl('auth.policies.create')
     def post(self):
-        data = request.get_json()
         policy_service = current_app.config['policy_service']
-        policy = policy_service.create(data)
-        return policy, 200
+
+        body, errors = schemas.PolicySchema().load(request.get_json(force=True))
+        if errors:
+            print errors
+            for field in errors:
+                raise exceptions.InvalidInputException(field)
+
+        policy_uuid = policy_service.create(**body)
+
+        return dict(uuid=policy_uuid, **body), 200
 
     @required_acl('auth.policies.read')
     def get(self):
@@ -108,9 +115,14 @@ class Policy(ErrorCatchingResource):
 
     @required_acl('auth.policies.{policy_uuid}.edit')
     def put(self, policy_uuid):
-        data = request.get_json()
+        body, errors = schemas.PolicySchema().load(request.get_json(force=True))
+        if errors:
+            print errors
+            for field in errors:
+                raise exceptions.InvalidInputException(field)
+
         policy_service = current_app.config['policy_service']
-        policy = policy_service.update(policy_uuid, data)
+        policy = policy_service.update(policy_uuid, **body)
         return policy, 200
 
 

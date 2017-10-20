@@ -17,7 +17,7 @@
 
 import json
 
-from hamcrest import assert_that, equal_to, has_entries, any_of
+from hamcrest import assert_that, contains, equal_to, has_entries, any_of
 from mock import ANY, Mock, sentinel as s
 from unittest import TestCase
 
@@ -29,11 +29,12 @@ class HTTPAppTestCase(TestCase):
 
     def setUp(self):
         self.user_service = Mock()
+        self.policy_service = Mock()
         token_manager = Mock()
         self.app = new_app(
             _DEFAULT_CONFIG,
             s.backends,
-            s.policy_service,
+            self.policy_service,
             token_manager,
             self.user_service,
         ).test_client()
@@ -216,3 +217,102 @@ class TestUserResource(HTTPAppTestCase):
         result = self.app.delete(url, headers=self.headers)
 
         assert_that(result.status_code, equal_to(204))
+
+
+class TestPolicyResource(HTTPAppTestCase):
+
+    def setUp(self):
+        super(TestPolicyResource, self).setUp()
+        self.url = '/0.1/policies'
+        self.headers = {'content-type': 'application/json'}
+
+    def test_create_policy_valid(self):
+        name = 'valid'
+        desc = 'A Valid description'
+        input_and_expected = [
+            (
+                {'name': name},
+                {'name': name,
+                 'description': None,
+                 'acl_templates': []}
+            ),
+            (
+                {'name': name, 'description': desc},
+                {'name': name,
+                 'description': desc,
+                 'acl_templates': []}
+            )
+        ]
+
+        for policy_data, expected in input_and_expected:
+            self.app.post(self.url, data=json.dumps(policy_data), headers=self.headers)
+            self.policy_service.create.assert_called_once_with(**expected)
+            self.policy_service.reset_mock()
+
+    def test_that_invalid_acl_templates_raise_a_manager_exception(self):
+        name = 'foobar'
+        templates = [
+            {'foo': 'bar'},
+            42,
+            True,
+            False,
+            None,
+            'auth.*',
+            [{'foo': 'bar'}],
+            [42],
+            ['#', False],
+            [None],
+        ]
+
+        for template in templates:
+            data = {'name': name, 'acl_templates': template}
+            result = self.app.post(self.url, data=json.dumps(data), headers=self.headers)
+            assert_that(result.status_code, equal_to(400))
+            assert_that(
+                json.loads(result.data),
+                has_entries(
+                    'reason', contains('Invalid value supplied for field: acl_templates'),
+                ),
+                template,
+            )
+
+    def test_that_invalid_values_raise_a_manager_exception(self):
+        names = [
+            None,
+            True,
+            False,
+            '',
+            42,
+        ]
+
+        for name in names:
+            data = {'name': name}
+            result = self.app.post(self.url, data=json.dumps(data), headers=self.headers)
+            assert_that(result.status_code, equal_to(400))
+            assert_that(
+                json.loads(result.data),
+                has_entries(
+                    'reason', contains('Invalid value supplied for field: name'),
+                ),
+                name,
+            )
+
+        descriptions = [
+            True,
+            False,
+            42,
+        ]
+        for desc in descriptions:
+            body = {'name': 'name', 'description': desc}
+            result = self.app.post(self.url, data=json.dumps(body), headers=self.headers)
+            assert_that(result.status_code, equal_to(400))
+            assert_that(
+                json.loads(result.data),
+                has_entries(
+                    'reason', contains('Invalid value supplied for field: description'),
+                ),
+                desc,
+            )
+
+        result = self.app.post(self.url, data='null', headers=self.headers)
+        assert_that(result.status_code, equal_to(400))
