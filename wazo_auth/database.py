@@ -18,6 +18,7 @@
 import uuid
 import time
 import logging
+from collections import OrderedDict
 from contextlib import contextmanager
 from sqlalchemy import and_, create_engine, exc, func, or_, text
 from sqlalchemy.orm import sessionmaker, scoped_session
@@ -468,7 +469,7 @@ class _UserCRUD(_CRUD):
             raise UnknownUserException(user_uuid)
 
     def list_(self, **kwargs):
-        users = dict()
+        users = OrderedDict()
 
         search_filter = self._new_search_filter(**kwargs)
         strict_filter = self._new_strict_filter(**kwargs)
