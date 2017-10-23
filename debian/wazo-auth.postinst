@@ -8,6 +8,7 @@ GROUP=$USER
 LOG_FILENAME="/var/log/${DAEMONNAME}.log"
 ALEMBIC_INI_PATH="/usr/share/${DAEMONNAME}"
 OLD_PID_DIR='/var/run/xivo-auth'
+OLD_NGINX_CONFIG="/etc/nginx/locations/https-available/xivo-auth /etc/nginx/locations/https-enabled/xivo-auth"
 
 pg_is_running () {
     pg_lsclusters --no-header | grep -q online
@@ -73,6 +74,12 @@ case "$1" in
             # Add nginx configuration on new installations
             ln -sf  /etc/nginx/locations/https-available/$DAEMONNAME \
                     /etc/nginx/locations/https-enabled/$DAEMONNAME
+        fi
+
+        if dpkg --compare-versions "$2" lt '17.16~'; then
+            for f in ${OLD_NGINX_CONFIG}; do
+                rm -f ${f}
+            done
         fi
 
         # Database initialization and migrations
