@@ -28,7 +28,7 @@ from xivo.http_helpers import ReverseProxied
 from xivo.consul_helpers import ServiceCatalogRegistration
 from werkzeug.contrib.fixers import ProxyFix
 
-from wazo_auth import database, http, policy, token
+from wazo_auth import database, http, token
 from wazo_auth.helpers import LocalTokenManager
 
 from .service_discovery import self_check
