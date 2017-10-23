@@ -529,7 +529,13 @@ class TestUsers(_BaseTestCase):
             has_entries(
                 'uuid', uuid_(),
                 'username', username,
-                'email_address', email,
+                'email_addresses', contains_inanyorder(
+                    has_entries(
+                        'address', 'foobar@example.com',
+                        'main', True,
+                        'confirmed', False,
+                    ),
+                ),
             ),
         )
 

@@ -114,10 +114,15 @@ class Storage(object):
 
     def user_create(self, username, email_address, hash_, salt):
         user_uuid = self._user_crud.create(username, email_address, hash_, salt)
+        email = dict(
+            address=email_address,
+            confirmed=False,
+            main=True,
+        )
         return dict(
             uuid=user_uuid,
             username=username,
-            email_address=email_address,
+            email_addresses=[email],
         )
 
     def user_list(self, **kwargs):
