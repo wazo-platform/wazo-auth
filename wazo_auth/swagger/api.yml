@@ -586,12 +586,13 @@ definitions:
     - items
   UserEmail:
     type: object
-    address:
-      type: string
-    main:
-      type: boolean
-    confirmed:
-      type: boolean
+    properties:
+      address:
+        type: string
+      main:
+        type: boolean
+      confirmed:
+        type: boolean
   UserPostResponse:
     type: object
     properties:
