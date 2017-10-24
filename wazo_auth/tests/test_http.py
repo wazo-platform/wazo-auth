@@ -197,7 +197,7 @@ class TestUserResource(HTTPAppTestCase):
         expected_result = dict(
             username='foobar',
             uuid=uuid,
-            email_addresses=[
+            emails=[
                 {'address': 'foobar@example.com', 'confirmed': True, 'main': True},
             ],
         )

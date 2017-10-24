@@ -584,13 +584,23 @@ definitions:
     required:
     - total
     - items
+  UserEmail:
+    type: object
+    address:
+      type: string
+    main:
+      type: boolean
+    confirmed:
+      type: boolean
   UserPostResponse:
     type: object
     properties:
       username:
         type: string
-      email_address:
-        type: string
+      emails:
+        type: array
+        items:
+          $ref: '#/definitions/UserEmail'
       uuid:
         type: string
   UserList:

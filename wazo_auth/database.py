@@ -122,7 +122,7 @@ class Storage(object):
         return dict(
             uuid=user_uuid,
             username=username,
-            email_addresses=[email],
+            emails=[email],
         )
 
     def user_list(self, **kwargs):
@@ -497,7 +497,7 @@ class _UserCRUD(_CRUD):
                     users[user_uuid] = dict(
                         username=username,
                         uuid=user_uuid,
-                        email_addresses=[],
+                        emails=[],
                     )
 
                 email = dict(
@@ -505,7 +505,7 @@ class _UserCRUD(_CRUD):
                     main=main_email_uuid == email_uuid,
                     confirmed=confirmed,
                 )
-                users[user_uuid]['email_addresses'].append(email)
+                users[user_uuid]['emails'].append(email)
 
         return users.values()
 

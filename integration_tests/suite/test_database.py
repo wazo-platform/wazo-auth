@@ -413,7 +413,7 @@ class TestUserCrud(unittest.TestCase):
                 has_entries(
                     'uuid', a,
                     'username', 'a',
-                    'email_addresses', contains_inanyorder(
+                    'emails', contains_inanyorder(
                         has_entries(
                             'address', 'a@example.com',
                             'main', True,
@@ -424,7 +424,7 @@ class TestUserCrud(unittest.TestCase):
                 has_entries(
                     'uuid', b,
                     'username', 'b',
-                    'email_addresses', contains_inanyorder(
+                    'emails', contains_inanyorder(
                         has_entries(
                             'address', 'b@example.com',
                             'main', True,
@@ -435,7 +435,7 @@ class TestUserCrud(unittest.TestCase):
                 has_entries(
                     'uuid', c,
                     'username', 'c',
-                    'email_addresses', contains_inanyorder(
+                    'emails', contains_inanyorder(
                         has_entries(
                             'address', 'c@example.com',
                             'main', True,
@@ -458,7 +458,7 @@ class TestUserCrud(unittest.TestCase):
                 has_entries(
                     'uuid', foo,
                     'username', 'foo',
-                    'email_addresses', contains_inanyorder(
+                    'emails', contains_inanyorder(
                         has_entries(
                             'address', 'foo@example.com',
                             'main', True,
@@ -469,7 +469,7 @@ class TestUserCrud(unittest.TestCase):
                 has_entries(
                     'uuid', bar,
                     'username', 'bar',
-                    'email_addresses', contains_inanyorder(
+                    'emails', contains_inanyorder(
                         has_entries(
                             'address', 'bar@example.com',
                             'main', True,
@@ -480,7 +480,7 @@ class TestUserCrud(unittest.TestCase):
                 has_entries(
                     'uuid', baz,
                     'username', 'baz',
-                    'email_addresses', contains_inanyorder(
+                    'emails', contains_inanyorder(
                         has_entries(
                             'address', 'baz@example.com',
                             'main', True,
@@ -498,7 +498,7 @@ class TestUserCrud(unittest.TestCase):
                 has_entries(
                     'uuid', foo,
                     'username', 'foo',
-                    'email_addresses', contains_inanyorder(
+                    'emails', contains_inanyorder(
                         has_entries(
                             'address', 'foo@example.com',
                             'main', True,
@@ -521,7 +521,7 @@ class TestUserCrud(unittest.TestCase):
                 has_entries(
                     'uuid', foo,
                     'username', 'foo',
-                    'email_addresses', contains_inanyorder(
+                    'emails', contains_inanyorder(
                         has_entries(
                             'address', 'foo@example.com',
                             'main', True,
@@ -539,7 +539,7 @@ class TestUserCrud(unittest.TestCase):
                 has_entries(
                     'uuid', foo,
                     'username', 'foo',
-                    'email_addresses', contains_inanyorder(
+                    'emails', contains_inanyorder(
                         has_entries(
                             'address', 'foo@example.com',
                             'main', True,
@@ -564,7 +564,7 @@ class TestUserCrud(unittest.TestCase):
                 has_entries(
                     'uuid', foo,
                     'username', 'foo',
-                    'email_addresses', contains_inanyorder(
+                    'emails', contains_inanyorder(
                         has_entries(
                             'address', 'foo@example.com',
                             'main', True,
