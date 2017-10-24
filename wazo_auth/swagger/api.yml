@@ -404,17 +404,7 @@ paths:
           description: The user creation parameters
           required: true
           schema:
-            type: object
-            properties:
-              username:
-                type: string
-                description: The username that will identify that new username
-              password:
-                type: string
-                description: The password of the newly created username
-              email_address:
-                type: string
-                description: The main email address of the new username
+            $ref: '#/definitions/UserCreate'
       responses:
         '200':
           description: The new user data without the password
@@ -537,7 +527,7 @@ definitions:
     type: object
     properties:
       timestamp:
-        type: number 
+        type: number
       message:
         type: string
       resource:
@@ -626,6 +616,22 @@ definitions:
         type: string
       main_email_address:
         type: string
+  UserCreate:
+    type: object
+    properties:
+      username:
+        type: string
+        description: The username that will identify that new username
+      password:
+        type: string
+        description: The password of the newly created username
+      email_address:
+        type: string
+        description: The main email address of the new username
+    required:
+      - username
+      - password
+      - email_address
   Token:
     type: object
     properties:
