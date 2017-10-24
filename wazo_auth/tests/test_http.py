@@ -191,6 +191,64 @@ class TestUserResource(HTTPAppTestCase):
             )
         )
 
+    def test_user_list_invalid_list_params(self):
+        params = dict(
+            direction='desc',
+            order='email_address',
+            limit=5,
+            offset=42,
+            search='foo',
+            uuid='5941aabb-9e4a-4d2e-9e1e-7f9929354458',
+        )
+
+        invalid_params = dict(params)
+        invalid_params['limit'] = -1
+        result = self.app.get(self.url, query_string=invalid_params, headers=self.headers)
+        assert_that(result.status_code, equal_to(400))
+        assert_that(
+            json.loads(result.data),
+            has_entries(
+                'error_id', 'invalid_list_param',
+                'message', has_entries('limit', ANY),
+            )
+        )
+
+        invalid_params = dict(params)
+        invalid_params['offset'] = -1
+        result = self.app.get(self.url, query_string=invalid_params, headers=self.headers)
+        assert_that(result.status_code, equal_to(400))
+        assert_that(
+            json.loads(result.data),
+            has_entries(
+                'error_id', 'invalid_list_param',
+                'message', has_entries('offset', ANY),
+            )
+        )
+
+        invalid_params = dict(params)
+        invalid_params['direction'] = -1
+        result = self.app.get(self.url, query_string=invalid_params, headers=self.headers)
+        assert_that(result.status_code, equal_to(400))
+        assert_that(
+            json.loads(result.data),
+            has_entries(
+                'error_id', 'invalid_list_param',
+                'message', has_entries('direction', ANY),
+            )
+        )
+
+        invalid_params = dict(params)
+        invalid_params['order'] = ''
+        result = self.app.get(self.url, query_string=invalid_params, headers=self.headers)
+        assert_that(result.status_code, equal_to(400))
+        assert_that(
+            json.loads(result.data),
+            has_entries(
+                'error_id', 'invalid_list_param',
+                'message', has_entries('order', ANY),
+            )
+        )
+
     def test_user_get(self):
         uuid = '5730c531-5e47-4de6-be60-c3e28de00de4'
         url = '/'.join([self.url, uuid])
