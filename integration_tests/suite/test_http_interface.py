@@ -276,6 +276,32 @@ class TestPolicies(_BaseTestCase):
             'acl_templates': contains_inanyorder(*acl_templates[:-1])}))
 
 
+class TestWazoUserBackend(_BaseTestCase):
+
+    asset = 'mock_backend'
+
+    def setUp(self):
+        super(TestWazoUserBackend, self).setUp()
+        port = self.service_port(9497, 'auth')
+        self.client = Client(HOST, port, username='foo', password='bar', verify_certificate=False)
+        token = self.client.token.new(backend='mock', expiration=3600)['token']
+        self.client.set_token(token)
+
+    def tearDown(self):
+        for user in self.client.users.list()['items']:
+            self.client.users.delete(user['uuid'])
+
+    def test_token_creation(self):
+        username, email, password = 'foobar', 'foobar@example.com', 's3cr37'
+        user = self.client.users.new(username=username, email_address=email, password=password)
+
+        response = self._post_token(username, password)
+
+        print response.status_code
+        print response.data
+        self.fail()
+
+
 class TestCoreMockBackend(_BaseTestCase):
 
     asset = 'mock_backend'

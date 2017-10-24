@@ -20,5 +20,6 @@ enabled_plugins:
   - mock_with_uuid
   - broken_init
   - broken_verify_password
+  - wazo_user
 
 db_uri: postgresql://asterisk:proformatique@postgres:5432

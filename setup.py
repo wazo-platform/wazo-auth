@@ -50,6 +50,7 @@ setup(
             'users = wazo_auth.plugins.http.users:Plugin',
         ],
         'wazo_auth.backends': [
+            'wazo_user = wazo_auth.plugins.backends:WazoUser',
             'xivo_admin = wazo_auth.plugins.backends:XiVOAdmin',
             'xivo_service = wazo_auth.plugins.backends:XiVOService',
             'xivo_user = wazo_auth.plugins.backends:XiVOUser',
