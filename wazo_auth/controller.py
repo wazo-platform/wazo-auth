@@ -22,19 +22,17 @@ import sys
 from functools import partial
 
 from cheroot import wsgi
-from flask import Flask
-from flask_restful import Api
-from flask.ext.cors import CORS
 from stevedore.dispatch import NameDispatchExtensionManager
 from xivo import http_helpers
 from xivo.http_helpers import ReverseProxied
 from xivo.consul_helpers import ServiceCatalogRegistration
 from werkzeug.contrib.fixers import ProxyFix
 
-from wazo_auth import database, http, policy, token
+from wazo_auth import database, http, token
 from wazo_auth.helpers import LocalTokenManager
 
 from .service_discovery import self_check
+from . import services
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +49,6 @@ class Controller(object):
             self._listen_addr = config['rest_api']['https']['listen']
             self._listen_port = config['rest_api']['https']['port']
             self._foreground = config['foreground']
-            self._cors_config = config['rest_api']['cors']
-            self._cors_enabled = self._cors_config['enabled']
             self._consul_config = config['consul']
             self._service_discovery_config = config['service_discovery']
             self._plugins = config['enabled_plugins']
@@ -73,9 +69,11 @@ class Controller(object):
         self._config['loaded_plugins'] = self._loaded_plugins_names(self._backends)
 
         storage = database.Storage.from_config(self._config)
-        policy_manager = policy.Manager(storage)
         self._token_manager = token.Manager(config, storage)
-        self._flask_app = self._configure_flask_app(self._backends, policy_manager, self._token_manager)
+        policy_service = services.PolicyService(storage)
+        self._user_service = services.UserService(storage)
+        self._flask_app = http.new_app(
+            config, self._backends, policy_service, self._token_manager, self._user_service)
         self._expired_token_remover = token.ExpiredTokenRemover(config, storage)
 
     def run(self):
@@ -118,28 +116,6 @@ class Controller(object):
 
     def _loaded_plugins_names(self, backends):
         return [backend.name for backend in backends]
-
-    def _configure_flask_app(self, backends, policy_manager, token_manager):
-        app = Flask('wazo-auth')
-        http_helpers.add_logger(app, logger)
-        api = Api(app, prefix='/0.1')
-        api.add_resource(http.Policies, '/policies')
-        api.add_resource(http.Policy, '/policies/<string:policy_uuid>')
-        api.add_resource(http.PolicyTemplate, '/policies/<string:policy_uuid>/acl_templates/<template>')
-        api.add_resource(http.Tokens, '/token')
-        api.add_resource(http.Token, '/token/<string:token>')
-        api.add_resource(http.Backends, '/backends')
-        api.add_resource(http.Api, '/api/api.yml')
-        app.config.update(self._config)
-        if self._cors_enabled:
-            CORS(app, **self._cors_config)
-
-        app.config['policy_manager'] = policy_manager
-        app.config['token_manager'] = token_manager
-        app.config['backends'] = backends
-        app.after_request(http_helpers.log_request)
-
-        return app
 
 
 class _PluginLoader(object):

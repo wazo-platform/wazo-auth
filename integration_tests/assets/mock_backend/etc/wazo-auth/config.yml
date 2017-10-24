@@ -13,6 +13,8 @@ rest_api:
     enabled: False
     allow_headers: [Content-Type, authorization, x-auth-token]
 
+enabled_http_plugins:
+  users: true
 enabled_plugins:
   - mock
   - mock_with_uuid

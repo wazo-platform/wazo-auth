@@ -19,13 +19,15 @@ import functools
 import logging
 import time
 
-from flask import current_app, request, make_response
-from flask_restful import Resource
-from marshmallow import Schema, fields
-from marshmallow.validate import Range
+from flask import current_app, Flask, request, make_response
+from flask_cors import CORS
+from flask_restful import Api, Resource
+from stevedore.named import NamedExtensionManager
+from xivo.rest_api_helpers import handle_api_exception
 from pkg_resources import resource_string
+from xivo import http_helpers
 
-from wazo_auth.exceptions import ManagerException
+from . import exceptions, schemas
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +45,7 @@ def required_acl(scope):
             try:
                 token = request.headers.get('X-Auth-Token', '')
                 current_app.config['token_manager'].get(token, scope)
-            except ManagerException:
+            except exceptions.ManagerException:
                 return _error(401, 'Unauthorized')
             return f(*args, **kwargs)
         return wrapped_f
@@ -55,35 +57,46 @@ def handle_manager_exception(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except ManagerException as error:
+        except exceptions.ManagerException as error:
             return _error(error.code, str(error))
     return wrapper
 
 
 class ErrorCatchingResource(Resource):
-    method_decorators = [handle_manager_exception] + Resource.method_decorators
+    method_decorators = (
+        [
+            handle_manager_exception,
+            handle_api_exception,
+        ] + Resource.method_decorators
+    )
 
 
 class Policies(ErrorCatchingResource):
 
     @required_acl('auth.policies.create')
     def post(self):
-        data = request.get_json()
-        policy_manager = current_app.config['policy_manager']
-        policy = policy_manager.create(data)
-        return policy, 200
+        policy_service = current_app.config['policy_service']
+
+        body, errors = schemas.PolicySchema().load(request.get_json(force=True))
+        if errors:
+            print errors
+            for field in errors:
+                raise exceptions.InvalidInputException(field)
+
+        policy_uuid = policy_service.create(**body)
+
+        return dict(uuid=policy_uuid, **body), 200
 
     @required_acl('auth.policies.read')
     def get(self):
-        order = request.args.get('order', 'name')
-        direction = request.args.get('direction', 'asc')
-        limit = request.args.get('limit')
-        offset = request.args.get('offset')
-        term = request.args.get('search')
+        ListSchema = schemas.new_list_schema('name')
+        list_params, errors = ListSchema().load(request.args)
+        if errors:
+            raise exceptions.InvalidListParamException(errors)
 
-        policy_manager = current_app.config['policy_manager']
-        policies = policy_manager.list(term, order, direction, limit, offset)
-        total = policy_manager.count(term)
+        policy_service = current_app.config['policy_service']
+        policies = policy_service.list(**list_params)
+        total = policy_service.count(**list_params)
         return {'items': policies, 'total': total}, 200
 
 
@@ -91,21 +104,26 @@ class Policy(ErrorCatchingResource):
 
     @required_acl('auth.policies.{policy_uuid}.read')
     def get(self, policy_uuid):
-        policy_manager = current_app.config['policy_manager']
-        policy = policy_manager.get(policy_uuid)
+        policy_service = current_app.config['policy_service']
+        policy = policy_service.get(policy_uuid)
         return policy, 200
 
     @required_acl('auth.policies.{policy_uuid}.delete')
     def delete(self, policy_uuid):
-        policy_manager = current_app.config['policy_manager']
-        policy_manager.delete(policy_uuid)
+        policy_service = current_app.config['policy_service']
+        policy_service.delete(policy_uuid)
         return '', 204
 
     @required_acl('auth.policies.{policy_uuid}.edit')
     def put(self, policy_uuid):
-        data = request.get_json()
-        policy_manager = current_app.config['policy_manager']
-        policy = policy_manager.update(policy_uuid, data)
+        body, errors = schemas.PolicySchema().load(request.get_json(force=True))
+        if errors:
+            print errors
+            for field in errors:
+                raise exceptions.InvalidInputException(field)
+
+        policy_service = current_app.config['policy_service']
+        policy = policy_service.update(policy_uuid, **body)
         return policy, 200
 
 
@@ -113,20 +131,15 @@ class PolicyTemplate(ErrorCatchingResource):
 
     @required_acl('auth.policies.{policy_uuid}.edit')
     def delete(self, policy_uuid, template):
-        policy_manager = current_app.config['policy_manager']
-        policy_manager.delete_acl_template(policy_uuid, template)
+        policy_service = current_app.config['policy_service']
+        policy_service.delete_acl_template(policy_uuid, template)
         return '', 204
 
     @required_acl('auth.policies.{policy_uuid}.edit')
     def put(self, policy_uuid, template):
-        policy_manager = current_app.config['policy_manager']
-        policy_manager.add_acl_template(policy_uuid, template)
+        policy_service = current_app.config['policy_service']
+        policy_service.add_acl_template(policy_uuid, template)
         return '', 204
-
-
-class TokenRequestSchema(Schema):
-    backend = fields.String(required=True)
-    expiration = fields.Integer(validate=Range(min=1))
 
 
 class Tokens(ErrorCatchingResource):
@@ -139,7 +152,7 @@ class Tokens(ErrorCatchingResource):
             login = ''
             password = ''
 
-        args, error = TokenRequestSchema().load(request.get_json(force=True))
+        args, error = schemas.TokenRequestSchema().load(request.get_json(force=True))
         if error:
             return _error(400, unicode(error))
 
@@ -181,7 +194,7 @@ class Backends(ErrorCatchingResource):
         return {'data': current_app.config['loaded_plugins']}
 
 
-class Api(Resource):
+class Swagger(Resource):
 
     api_package = "wazo_auth.swagger"
     api_filename = "api.yml"
@@ -198,3 +211,37 @@ class Api(Resource):
             return {'error': "API spec does not exist"}, 404
 
         return make_response(api_spec, 200, {'Content-Type': 'application/x-yaml'})
+
+
+def new_app(config, backends, policy_service, token_manager, user_service):
+    cors_config = dict(config['rest_api']['cors'])
+    cors_enabled = cors_config.pop('enabled')
+    app = Flask('wazo-auth')
+    http_helpers.add_logger(app, logger)
+    api = Api(app, prefix='/0.1')
+    enabled_plugins = [plugin_name for plugin_name, enabled in config['enabled_http_plugins'].iteritems() if enabled]
+    NamedExtensionManager(
+        namespace='wazo_auth.http',
+        names=enabled_plugins,
+        propagate_map_exceptions=True,
+        invoke_on_load=True,
+        invoke_args=(api,),
+    )
+    api.add_resource(Policies, '/policies')
+    api.add_resource(Policy, '/policies/<string:policy_uuid>')
+    api.add_resource(PolicyTemplate, '/policies/<string:policy_uuid>/acl_templates/<template>')
+    api.add_resource(Tokens, '/token')
+    api.add_resource(Token, '/token/<string:token>')
+    api.add_resource(Backends, '/backends')
+    api.add_resource(Swagger, '/api/api.yml')
+    app.config.update(config)
+    if cors_enabled:
+        CORS(app, **cors_config)
+
+    app.config['policy_service'] = policy_service
+    app.config['token_manager'] = token_manager
+    app.config['backends'] = backends
+    app.config['user_service'] = user_service
+    app.after_request(http_helpers.log_request)
+
+    return app

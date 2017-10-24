@@ -1,3 +1,5 @@
 mock
 nose
 pyhamcrest
+# for http tests that use stevedore plugins
+-e .

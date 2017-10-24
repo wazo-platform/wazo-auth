@@ -43,6 +43,16 @@ Configuration
 
 The default config is /etc/wazo-auth/config.yml, you could override in /etc/wazo-auth/conf.d/
 
+Enabling the users API
+---------------------------
+
+To enable the /users API add a file containing the following lines to the /etc/wazo-auth/conf.d directory and
+restart wazo-auth
+
+```
+enabled_http_plugins:
+    users: true
+```
 
 Running unit tests
 ------------------

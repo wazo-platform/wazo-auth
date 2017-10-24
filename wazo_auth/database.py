@@ -17,29 +17,49 @@
 
 import uuid
 import time
+import logging
+from collections import OrderedDict
 from contextlib import contextmanager
-from sqlalchemy import and_, create_engine, exc, func, or_
+from sqlalchemy import and_, create_engine, exc, func, or_, text
 from sqlalchemy.orm import sessionmaker, scoped_session
-from .models import ACL, ACLTemplate, Policy, ACLTemplatePolicy, Token as TokenModel
+from .models import (
+    ACL,
+    ACLTemplate,
+    ACLTemplatePolicy,
+    Email,
+    Policy,
+    Token as TokenModel,
+    User,
+)
 from .token import Token
-from .exceptions import (DuplicatePolicyException, DuplicateTemplateException,
-                         InvalidLimitException, InvalidOffsetException,
-                         InvalidSortColumnException,
-                         InvalidSortDirectionException, UnknownPolicyException,
-                         UnknownTokenException)
+from .exceptions import (
+    ConflictException,
+    DuplicatePolicyException,
+    DuplicateTemplateException,
+    InvalidLimitException,
+    InvalidOffsetException,
+    InvalidSortColumnException,
+    InvalidSortDirectionException,
+    UnknownPolicyException,
+    UnknownTokenException,
+    UnknownUserException,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class Storage(object):
 
-    def __init__(self, policy_crud, token_crud):
+    def __init__(self, policy_crud, token_crud, user_crud):
         self._policy_crud = policy_crud
         self._token_crud = token_crud
+        self._user_crud = user_crud
 
     def add_policy_acl_template(self, policy_uuid, acl_template):
         self._policy_crud.associate_policy_template(policy_uuid, acl_template)
 
-    def count_policies(self, term):
-        search_pattern = self._prepare_search_pattern(term)
+    def count_policies(self, search):
+        search_pattern = self._prepare_search_pattern(search)
         return self._policy_crud.count(search_pattern)
 
     def delete_policy_acl_template(self, policy_uuid, acl_template):
@@ -47,12 +67,12 @@ class Storage(object):
 
     def get_policy(self, policy_uuid):
         if self._is_uuid(policy_uuid):
-            for policy in self._policy_crud.get(policy_uuid, 'name', 'asc', None, None):
+            for policy in self._policy_crud.get(search=policy_uuid):
                 return policy
         raise UnknownPolicyException()
 
     def get_policy_by_name(self, policy_name):
-        for policy in self._policy_crud.get(policy_name, 'name', 'asc', None, None):
+        for policy in self._policy_crud.get(search=policy_name):
             if policy['name'] == policy_name:
                 return policy
         raise UnknownPolicyException()
@@ -76,12 +96,40 @@ class Storage(object):
     def delete_policy(self, policy_uuid):
         self._policy_crud.delete(policy_uuid)
 
-    def list_policies(self, term, order, direction, limit, offset):
-        search_pattern = self._prepare_search_pattern(term)
-        return self._policy_crud.get(search_pattern, order, direction, limit, offset)
+    def list_policies(self, **kwargs):
+        kwargs['search'] = self._prepare_search_pattern(kwargs.get('search'))
+        return self._policy_crud.get(**kwargs)
 
     def update_policy(self, policy_uuid, name, description, acl_templates):
         self._policy_crud.update(policy_uuid, name, description, acl_templates)
+
+    def user_count(self, **kwargs):
+        term = kwargs.get('search')
+        if term:
+            kwargs['search'] = self._prepare_search_pattern(term)
+        return self._user_crud.count(**kwargs)
+
+    def user_delete(self, user_uuid):
+        self._user_crud.delete(user_uuid)
+
+    def user_create(self, username, email_address, hash_, salt):
+        user_uuid = self._user_crud.create(username, email_address, hash_, salt)
+        email = dict(
+            address=email_address,
+            confirmed=False,
+            main=True,
+        )
+        return dict(
+            uuid=user_uuid,
+            username=username,
+            emails=[email],
+        )
+
+    def user_list(self, **kwargs):
+        term = kwargs.get('search')
+        if term:
+            kwargs['search'] = self._prepare_search_pattern(term)
+        return self._user_crud.list_(**kwargs)
 
     def remove_token(self, token_id):
         self._token_crud.delete(token_id)
@@ -109,7 +157,8 @@ class Storage(object):
     def from_config(cls, config):
         policy_crud = _PolicyCRUD(config['db_uri'])
         token_crud = _TokenCRUD(config['db_uri'])
-        return cls(policy_crud, token_crud)
+        user_crud = _UserCRUD(config['db_uri'])
+        return cls(policy_crud, token_crud, user_crud)
 
 
 class _CRUD(object):
@@ -135,6 +184,15 @@ class _CRUD(object):
 
 
 class _PolicyCRUD(_CRUD):
+
+    def __init__(self, *args, **kwargs):
+        super(_PolicyCRUD, self).__init__(*args, **kwargs)
+        column_map = dict(
+            name=Policy.name,
+            description=Policy.description,
+            uuid=Policy.uuid,
+        )
+        self._paginator = QueryPaginator(column_map)
 
     def associate_policy_template(self, policy_uuid, acl_template):
         with self.new_session() as s:
@@ -164,15 +222,16 @@ class _PolicyCRUD(_CRUD):
                 )
                 s.query(ACLTemplatePolicy).filter(filter_).delete()
 
-    def _new_search_filter(self, search_pattern):
+    def _new_search_filter(self, search=None, **kwargs):
+        term = search or '%'
         return or_(
-            Policy.uuid.ilike(search_pattern),
-            Policy.name.ilike(search_pattern),
-            Policy.description.ilike(search_pattern),
+            Policy.uuid.ilike(term),
+            Policy.name.ilike(term),
+            Policy.description.ilike(term),
         )
 
     def count(self, search_pattern):
-        filter_ = self._new_search_filter(search_pattern)
+        filter_ = self._new_search_filter(search=search_pattern)
         with self.new_session() as s:
             return s.query(Policy).filter(filter_).count()
 
@@ -198,19 +257,8 @@ class _PolicyCRUD(_CRUD):
         if not nb_deleted:
             raise UnknownPolicyException()
 
-    def get(self, search_pattern, order, direction, limit, offset):
-        if order not in ['name', 'description', 'uuid']:
-            raise InvalidSortColumnException(order)
-
-        if direction not in ['asc', 'desc']:
-            raise InvalidSortDirectionException(direction)
-
-        offset = self._check_valid_limit_or_offset(offset, 0, InvalidOffsetException)
-        order_field = getattr(Policy, order)
-        order_clause = order_field.asc() if direction == 'asc' else order_field.desc()
-        limit = self._check_valid_limit_or_offset(limit, None, InvalidLimitException)
-
-        filter_ = self._new_search_filter(search_pattern)
+    def get(self, **kwargs):
+        filter_ = self._new_search_filter(**kwargs)
         with self.new_session() as s:
             query = s.query(
                 Policy.uuid,
@@ -227,13 +275,8 @@ class _PolicyCRUD(_CRUD):
                 Policy.uuid,
                 Policy.name,
                 Policy.description,
-            ).order_by(
-                order_clause,
-            ).limit(
-                limit,
-            ).offset(
-                offset,
             )
+            query = self._paginator.update_query(query, **kwargs)
 
             policies = []
             for policy in query.all():
@@ -274,23 +317,6 @@ class _PolicyCRUD(_CRUD):
         ids = self._create_or_find_acl_templates(session, acl_templates)
         template_policies = [ACLTemplatePolicy(policy_uuid=policy_uuid, template_id=id_) for id_ in ids]
         session.add_all(template_policies)
-
-    def _check_valid_limit_or_offset(self, value, default, exception):
-        if value is True or value is False:
-            raise exception(value)
-
-        if value is None:
-            return default
-
-        try:
-            value = int(value)
-        except ValueError:
-            raise exception(value)
-
-        if value < 0:
-            raise exception(value)
-
-        return value
 
     def _create_or_find_acl_templates(self, s, acl_templates):
         if not acl_templates:
@@ -363,3 +389,169 @@ class _TokenCRUD(_CRUD):
 
         with self.new_session() as s:
             s.query(TokenModel).filter(filter_).delete()
+
+
+class _UserCRUD(_CRUD):
+
+    constraint_to_column_map = dict(
+        auth_user_username_key='username',
+        auth_email_address_key='email_address',
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(_UserCRUD, self).__init__(*args, **kwargs)
+        column_map = dict(
+            username=User.username,
+        )
+        self._paginator = QueryPaginator(column_map)
+
+    def _new_search_filter(self, search=None, **ignored):
+        if not search:
+            return text('true')
+
+        return or_(
+            User.uuid.ilike(search),
+            User.username.ilike(search),
+            Email.address.ilike(search),
+        )
+
+    def _new_strict_filter(self, uuid=None, username=None, email_address=None, **ignored):
+        filter_ = text('true')
+        if uuid:
+            filter_ = and_(filter_, User.uuid == uuid)
+        if username:
+            filter_ = and_(filter_, User.username == username)
+        if email_address:
+            filter_ = and_(filter_, Email.address == email_address)
+        return filter_
+
+    def count(self, **kwargs):
+        filtered = kwargs.get('filtered')
+        if filtered is not False:
+            strict_filter = self._new_strict_filter(**kwargs)
+            search_filter = self._new_search_filter(**kwargs)
+            filter_ = and_(strict_filter, search_filter)
+        else:
+            filter_ = text('true')
+
+        with self.new_session() as s:
+            return s.query(User).join(
+                Email, Email.user_uuid == User.uuid
+            ).filter(filter_).count()
+
+    def create(self, username, email_address, hash_, salt):
+        with self.new_session() as s:
+            try:
+                email = Email(
+                    address=email_address,
+                )
+                s.add(email)
+                s.flush()
+                user = User(
+                    username=username,
+                    password_hash=hash_,
+                    password_salt=salt,
+                    main_email_uuid=email.uuid,
+                )
+                s.add(user)
+                s.flush()
+                email.user_uuid = user.uuid
+                s.commit()
+            except exc.IntegrityError as e:
+                if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                    column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
+                    value = locals().get(column)
+                    if column:
+                        raise ConflictException('users', column, value)
+                raise
+            return user.uuid
+
+    def delete(self, user_uuid):
+        with self.new_session() as s:
+            nb_deleted = s.query(User).filter(User.uuid == user_uuid).delete()
+
+        if not nb_deleted:
+            raise UnknownUserException(user_uuid)
+
+    def list_(self, **kwargs):
+        users = OrderedDict()
+
+        search_filter = self._new_search_filter(**kwargs)
+        strict_filter = self._new_strict_filter(**kwargs)
+        filter_ = and_(strict_filter, search_filter)
+
+        with self.new_session() as s:
+            query = s.query(
+                User.uuid,
+                User.username,
+                User.main_email_uuid,
+                Email.uuid,
+                Email.address,
+                Email.confirmed,
+            ).join(Email, Email.user_uuid == User.uuid).filter(filter_)
+            query = self._paginator.update_query(query, **kwargs)
+            rows = query.all()
+
+            for user_uuid, username, main_email_uuid, email_uuid, address, confirmed in rows:
+                if user_uuid not in users:
+                    users[user_uuid] = dict(
+                        username=username,
+                        uuid=user_uuid,
+                        emails=[],
+                    )
+
+                email = dict(
+                    address=address,
+                    main=main_email_uuid == email_uuid,
+                    confirmed=confirmed,
+                )
+                users[user_uuid]['emails'].append(email)
+
+        return users.values()
+
+
+class QueryPaginator(object):
+
+    _valid_directions = ['asc', 'desc']
+
+    def __init__(self, column_map):
+        self._column_map = column_map
+
+    def update_query(self, query, limit=None, offset=None, order=None, direction=None, **ignored):
+        if order and direction:
+            order_field = self._column_map.get(order)
+            if not order_field:
+                raise InvalidSortColumnException(order)
+
+            if direction not in self._valid_directions:
+                raise InvalidSortDirectionException(direction)
+
+            order_clause = order_field.asc() if direction == 'asc' else order_field.desc()
+            query = query.order_by(order_clause)
+
+        if limit is not None:
+            limit = self._check_valid_limit_or_offset(limit, None, InvalidLimitException)
+            query = query.limit(limit)
+
+        if offset is not None:
+            offset = self._check_valid_limit_or_offset(offset, 0, InvalidOffsetException)
+            query = query.offset(offset)
+
+        return query
+
+    def _check_valid_limit_or_offset(self, value, default, exception):
+        if value is True or value is False:
+            raise exception(value)
+
+        if value is None:
+            return default
+
+        try:
+            value = int(value)
+        except ValueError:
+            raise exception(value)
+
+        if value < 0:
+            raise exception(value)
+
+        return value

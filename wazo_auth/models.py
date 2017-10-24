@@ -16,7 +16,8 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>
 
 from sqlalchemy import (
-    Column, ForeignKey, Integer, String, Text, text, UniqueConstraint,
+    Boolean, Column, ForeignKey, Integer, LargeBinary,
+    String, Text, text, UniqueConstraint,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -31,6 +32,16 @@ class ACL(Base):
     id_ = Column(Integer, name='id', primary_key=True)
     value = Column(Text, nullable=False)
     token_uuid = Column(String(38), ForeignKey('auth_token.uuid', ondelete='CASCADE'), nullable=False)
+
+
+class Email(Base):
+
+    __tablename__ = 'auth_email'
+
+    uuid = Column(String(38), server_default=text('uuid_generate_v4()'), primary_key=True)
+    address = Column(Text, unique=True, nullable=False)
+    confirmed = Column(Boolean, nullable=False, default=False)
+    user_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='CASCADE'))
 
 
 class Token(Base):
@@ -56,6 +67,17 @@ class Policy(Base):
     uuid = Column(String(38), server_default=text('uuid_generate_v4()'), primary_key=True)
     name = Column(String(80), nullable=False)
     description = Column(Text)
+
+
+class User(Base):
+
+    __tablename__ = 'auth_user'
+
+    uuid = Column(String(38), server_default=text('uuid_generate_v4()'), primary_key=True)
+    username = Column(String(128), unique=True, nullable=False)
+    password_hash = Column(Text, nullable=False)
+    password_salt = Column(LargeBinary, nullable=False)
+    main_email_uuid = Column(String(38), ForeignKey('auth_email.uuid', ondelete='RESTRICT'))
 
 
 class ACLTemplate(Base):

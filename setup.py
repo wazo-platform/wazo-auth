@@ -23,7 +23,7 @@ setup(
     name='wazo_auth',
     version='0.1',
 
-    description='XiVO auth',
+    description='Wazo auth',
 
     author='Wazo Authors',
     author_email='dev@wazo.community',
@@ -44,7 +44,10 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'wazo-auth=wazo_auth.bin.daemon:main',
+            'wazo-auth=wazo_auth.main:main',
+        ],
+        'wazo_auth.http': [
+            'users = wazo_auth.plugins.http.users:Plugin',
         ],
         'wazo_auth.backends': [
             'xivo_admin = wazo_auth.plugins.backends:XiVOAdmin',

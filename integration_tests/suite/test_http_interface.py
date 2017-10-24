@@ -36,7 +36,6 @@ from hamcrest import has_length
 from hamcrest import is_
 from hamcrest import none
 from hamcrest import raises
-from hamcrest.core.base_matcher import BaseMatcher
 from xivo_auth_client import Client
 
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
@@ -54,39 +53,6 @@ HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
 
 def _new_token_id():
     return uuid.uuid4()
-
-
-class HTTPErrorMatcher(BaseMatcher):
-
-    def __init__(self, code, msg):
-        self._code = code
-        self._msg = msg
-        self._description = None
-
-    def _matches(self, item):
-        data = item.json()
-
-        for key in ['status_code', 'timestamp', 'reason']:
-            if key not in data:
-                self._description = 'error should have a key {}'.format(key)
-                return False
-
-        if self._code != item.status_code or self._code != data['status_code']:
-            self._description = 'expected status code is {}, got {} and {} in the body'.format(
-                self._code, item.status_code, data['status_code'])
-            return False
-
-        assert_that(data['reason'], contains_inanyorder(self._msg),
-                    'Error message should be {}'.format(self._msg))
-        return True
-
-    def describe_to(self, description):
-        if self._description:
-            description.append_text(self._description)
-
-
-def http_error(code, msg):
-    return HTTPErrorMatcher(code, msg)
 
 
 class _BaseTestCase(AssetLaunchingTestCase):
@@ -487,3 +453,129 @@ class TestNoSSLKey(_BaseTestCase):
 
         log = self.service_logs('auth')
         assert_that(log, contains_string("No such file or directory: '/data/_common/ssl/no_server.key'"))
+
+
+class TestUsers(_BaseTestCase):
+
+    asset = 'mock_backend'
+
+    def setUp(self):
+        super(TestUsers, self).setUp()
+        port = self.service_port(9497, 'auth')
+        self.client = Client(HOST, port, username='foo', password='bar', verify_certificate=False)
+        token = self.client.token.new(backend='mock', expiration=3600)['token']
+        self.client.set_token(token)
+
+    def tearDown(self):
+        for user in self.client.users.list()['items']:
+            self.client.users.delete(user['uuid'])
+
+    def test_delete(self):
+        unknown_uuid = '67e7a4e9-8389-40df-b76d-ea6dea79b0ca'
+        assert_that(
+            calling(self.client.users.delete).with_args(unknown_uuid),
+            raises(requests.HTTPError),
+        )
+
+        username, email, password = 'foobar', 'foobar@example.com', 's3cr37'
+        user = self.client.users.new(username=username, email_address=email, password=password)
+
+        self.client.users.delete(user['uuid'])
+        assert_that(
+            calling(self.client.policies.delete).with_args(user['uuid']),
+            raises(requests.HTTPError),
+        )
+
+    def test_post(self):
+        username, email, password = 'foobar', 'foobar@example.com', 's3cr37'
+        user = self.client.users.new(username=username, email_address=email, password=password)
+
+        assert_that(
+            user,
+            has_entries(
+                'uuid', uuid_(),
+                'username', username,
+                'emails', contains_inanyorder(
+                    has_entries(
+                        'address', 'foobar@example.com',
+                        'main', True,
+                        'confirmed', False,
+                    ),
+                ),
+            ),
+        )
+
+    def test_list(self):
+        foo = ('foo', 'foo@example.com', 's3cr37')
+        bar = ('bar', 'bar@example.com', '$$bar$$')
+        baz = ('baz', 'baz@example.com', '5fb9359e-4135-4a0b-aaed-97ae6a0b140d')
+
+        for username, email, password in (foo, bar, baz):
+            self.client.users.new(username=username, email_address=email, password=password)
+
+        assert_that(
+            self.client.users.list(search='ba'),
+            has_entries(
+                'total', 3,
+                'filtered', 2,
+                'items', contains_inanyorder(
+                    has_entries('username', 'bar'),
+                    has_entries('username', 'baz'),
+                ),
+            ),
+        )
+
+        assert_that(
+            self.client.users.list(username='baz'),
+            has_entries(
+                'total', 3,
+                'filtered', 1,
+                'items', contains_inanyorder(
+                    has_entries('username', 'baz'),
+                ),
+            ),
+        )
+
+        assert_that(
+            self.client.users.list(order='username', direction='desc'),
+            has_entries(
+                'total', 3,
+                'filtered', 3,
+                'items', contains(
+                    has_entries('username', 'foo'),
+                    has_entries('username', 'baz'),
+                    has_entries('username', 'bar'),
+                ),
+            ),
+        )
+
+        assert_that(
+            self.client.users.list(limit=1, offset=1, order='username', direction='asc'),
+            has_entries(
+                'total', 3,
+                'filtered', 3,
+                'items', contains(
+                    has_entries('username', 'baz'),
+                ),
+            ),
+        )
+
+    def test_get(self):
+        username, email, password = 'foobar', 'foobar@example.com', 's3cr37'
+        user = self.client.users.new(username=username, email_address=email, password=password)
+
+        result = self.client.users.get(user['uuid'])
+        assert_that(
+            result,
+            has_entries(
+                'uuid', uuid_(),
+                'username', username,
+                'emails', contains_inanyorder(
+                    has_entries(
+                        'address', email,
+                        'confirmed', False,
+                        'main', True,
+                    ),
+                ),
+            ),
+        )

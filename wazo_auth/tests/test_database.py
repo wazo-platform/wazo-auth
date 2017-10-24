@@ -20,7 +20,7 @@ import unittest
 from hamcrest import assert_that, calling, equal_to, raises
 from mock import ANY, Mock, sentinel as s
 
-from ..database import Storage, _PolicyCRUD, UnknownTokenException
+from ..database import Storage, _PolicyCRUD, UnknownTokenException, _UserCRUD
 from ..token import Token, TokenPayload
 
 
@@ -29,7 +29,8 @@ class TestStorage(unittest.TestCase):
     def setUp(self):
         self.token_crud = MockedCrud()
         self.policy_crud = Mock(_PolicyCRUD)
-        self.storage = Storage(self.policy_crud, self.token_crud)
+        self.user_crud = Mock(_UserCRUD)
+        self.storage = Storage(self.policy_crud, self.token_crud, self.user_crud)
 
     def test_get_policy(self):
         uuid = 'c1647454-8d30-408a-9507-b2a3a9767a3d'
@@ -39,7 +40,7 @@ class TestStorage(unittest.TestCase):
         result = self.storage.get_policy(uuid)
 
         assert_that(result, equal_to(uuid))
-        self.policy_crud.get.assert_called_once_with(uuid, ANY, ANY, None, None)
+        self.policy_crud.get.assert_called_once_with(search=uuid)
 
     def test_get_policy_by_name(self):
         name = 'test'
@@ -51,7 +52,7 @@ class TestStorage(unittest.TestCase):
         result = self.storage.get_policy_by_name(name)
 
         assert_that(result, equal_to(expected))
-        self.policy_crud.get.assert_called_once_with(name, ANY, ANY, None, None)
+        self.policy_crud.get.assert_called_once_with(search=name)
 
     def test_get_token(self):
         result = self.storage.get_token(s.token_id)
@@ -94,17 +95,17 @@ class TestStorage(unittest.TestCase):
         self.policy_crud.delete.assert_called_once_with(s.token_uuid)
 
     def test_list_policies(self):
-        result = self.storage.list_policies(None, s.order, s.direction, s.limit, s.offset)
+        result = self.storage.list_policies(search=None)
         assert_that(result, equal_to(self.policy_crud.get.return_value))
-        self.policy_crud.get.assert_called_once_with('%', s.order, s.direction, s.limit, s.offset)
+        self.policy_crud.get.assert_called_once_with(search='%')
 
         self.policy_crud.get.reset_mock()
-        result = self.storage.list_policies('foobar', s.order, s.direction, s.limit, s.offset)
-        self.policy_crud.get.assert_called_once_with('%foobar%', s.order, s.direction, s.limit, s.offset)
+        result = self.storage.list_policies(search='foobar')
+        self.policy_crud.get.assert_called_once_with(search='%foobar%')
 
         self.policy_crud.get.reset_mock()
-        result = self.storage.list_policies('foobar baz', s.order, s.direction, s.limit, s.offset)
-        self.policy_crud.get.assert_called_once_with('%foobar%baz%', s.order, s.direction, s.limit, s.offset)
+        result = self.storage.list_policies(search='foobar baz')
+        self.policy_crud.get.assert_called_once_with(search='%foobar%baz%')
 
     def test_remove_token(self):
         self.storage.remove_token(s.token_uuid)
