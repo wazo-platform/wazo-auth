@@ -31,8 +31,10 @@ class HTTPAppTestCase(TestCase):
         self.user_service = Mock()
         self.policy_service = Mock()
         token_manager = Mock()
+        config = dict(_DEFAULT_CONFIG)
+        config['enabled_http_plugins']['users'] = True
         self.app = new_app(
-            _DEFAULT_CONFIG,
+            config,
             s.backends,
             self.policy_service,
             token_manager,
