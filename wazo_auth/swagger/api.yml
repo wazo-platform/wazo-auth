@@ -374,8 +374,8 @@ paths:
         - users
       security:
         - wazo_auth_token: []
-      description: "**Required ACL**: `auth.users.read
-      Retrieves the list of users"
+      description: '**Required ACL**: `auth.users.read`'
+      summary: 'Retrieves the list of users'
       parameters:
       - $ref: '#/parameters/order'
       - $ref: '#/parameters/direction'
@@ -393,7 +393,7 @@ paths:
       produces:
         - application/json
       summary: Create a user
-      description: "Creates a new user that can be used to retrieve a token. The new user priviledge
+      description: "Creates a new user that can be used to retrieve a token. The new user privilege
         are limited until its email address has been confirmed"
       operationId: createUser
       tags:
@@ -430,7 +430,7 @@ paths:
         - users
       security:
       - wazo_auth_token: []
-      description: '**Required ACL**: `auth.users.{user_uuid}.read'
+      description: '**Required ACL**: `auth.users.{user_uuid}.read`'
       parameters:
       - name: user_uuid
         in: path
@@ -461,7 +461,7 @@ paths:
         - users
       security:
       - wazo_auth_token: []
-      description: '**Required ACL**: `auth.users.{user_uuid}.delete'
+      description: '**Required ACL**: `auth.users.{user_uuid}.delete`'
       parameters:
       - name: user_uuid
         in: path
