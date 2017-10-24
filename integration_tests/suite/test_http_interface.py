@@ -36,7 +36,6 @@ from hamcrest import has_length
 from hamcrest import is_
 from hamcrest import none
 from hamcrest import raises
-from hamcrest.core.base_matcher import BaseMatcher
 from xivo_auth_client import Client
 
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
@@ -54,39 +53,6 @@ HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
 
 def _new_token_id():
     return uuid.uuid4()
-
-
-class HTTPErrorMatcher(BaseMatcher):
-
-    def __init__(self, code, msg):
-        self._code = code
-        self._msg = msg
-        self._description = None
-
-    def _matches(self, item):
-        data = item.json()
-
-        for key in ['status_code', 'timestamp', 'reason']:
-            if key not in data:
-                self._description = 'error should have a key {}'.format(key)
-                return False
-
-        if self._code != item.status_code or self._code != data['status_code']:
-            self._description = 'expected status code is {}, got {} and {} in the body'.format(
-                self._code, item.status_code, data['status_code'])
-            return False
-
-        assert_that(data['reason'], contains_inanyorder(self._msg),
-                    'Error message should be {}'.format(self._msg))
-        return True
-
-    def describe_to(self, description):
-        if self._description:
-            description.append_text(self._description)
-
-
-def http_error(code, msg):
-    return HTTPErrorMatcher(code, msg)
 
 
 class _BaseTestCase(AssetLaunchingTestCase):
