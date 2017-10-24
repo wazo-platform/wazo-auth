@@ -33,6 +33,8 @@ rest_api:
     #Allow JSON preflight requests
     allow_headers: [Content-Type, authorization, x-auth-token]
 
+enabled_http_plugins:
+  users: false
 
 enabled_plugins:
   - ldap_user

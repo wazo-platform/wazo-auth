@@ -219,9 +219,10 @@ def new_app(config, backends, policy_service, token_manager, user_service):
     app = Flask('wazo-auth')
     http_helpers.add_logger(app, logger)
     api = Api(app, prefix='/0.1')
+    enabled_plugins = [plugin_name for plugin_name, enabled in config['enabled_http_plugins'].iteritems() if enabled]
     NamedExtensionManager(
         namespace='wazo_auth.http',
-        names=['users'],
+        names=enabled_plugins,
         propagate_map_exceptions=True,
         invoke_on_load=True,
         invoke_args=(api,),
