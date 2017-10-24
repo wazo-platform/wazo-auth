@@ -22,6 +22,7 @@ import time
 from flask import current_app, Flask, request, make_response
 from flask_cors import CORS
 from flask_restful import Api, Resource
+from stevedore.named import NamedExtensionManager
 from xivo.rest_api_helpers import handle_api_exception
 from pkg_resources import resource_string
 from xivo import http_helpers
@@ -187,57 +188,6 @@ class Token(ErrorCatchingResource):
         return '', 204
 
 
-class User(ErrorCatchingResource):
-
-    @required_acl('auth.users.{user_uuid}.read')
-    def get(self, user_uuid):
-        user_service = current_app.config['user_service']
-        return user_service.get_user(user_uuid)
-
-    @required_acl('auth.users.{user_uuid}.delete')
-    def delete(self, user_uuid):
-        user_service = current_app.config['user_service']
-        user_service.delete_user(user_uuid)
-        return '', 204
-
-
-class Users(ErrorCatchingResource):
-
-    @required_acl('auth.users.read')
-    def get(self):
-        ListSchema = schemas.new_list_schema('username')
-        list_params, errors = ListSchema().load(request.args)
-        if errors:
-            raise exceptions.InvalidListParamException(errors)
-
-        for key, value in request.args.iteritems():
-            if key in list_params:
-                continue
-            list_params[key] = value
-
-        user_service = current_app.config['user_service']
-
-        users = user_service.list_users(**list_params)
-        total = user_service.count_users(filtered=False, **list_params)
-        filtered = user_service.count_users(filtered=True, **list_params)
-
-        response = dict(
-            filtered=filtered,
-            total=total,
-            items=users,
-        )
-
-        return response, 200
-
-    def post(self):
-        user_service = current_app.config['user_service']
-        args, errors = schemas.UserRequestSchema().load(request.get_json(force=True))
-        if errors:
-            raise exceptions.UserParamException.from_errors(errors)
-        result = user_service.new_user(**args)
-        return result, 200
-
-
 class Backends(ErrorCatchingResource):
 
     def get(self):
@@ -269,13 +219,18 @@ def new_app(config, backends, policy_service, token_manager, user_service):
     app = Flask('wazo-auth')
     http_helpers.add_logger(app, logger)
     api = Api(app, prefix='/0.1')
+    NamedExtensionManager(
+        namespace='wazo_auth.http',
+        names=['users'],
+        propagate_map_exceptions=True,
+        invoke_on_load=True,
+        invoke_args=(api,),
+    )
     api.add_resource(Policies, '/policies')
     api.add_resource(Policy, '/policies/<string:policy_uuid>')
     api.add_resource(PolicyTemplate, '/policies/<string:policy_uuid>/acl_templates/<template>')
     api.add_resource(Tokens, '/token')
     api.add_resource(Token, '/token/<string:token>')
-    api.add_resource(Users, '/users')
-    api.add_resource(User, '/users/<string:user_uuid>')
     api.add_resource(Backends, '/backends')
     api.add_resource(Swagger, '/api/api.yml')
     app.config.update(config)
