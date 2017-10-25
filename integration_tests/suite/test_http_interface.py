@@ -31,6 +31,7 @@ from hamcrest import contains_string
 from hamcrest import equal_to
 from hamcrest import empty
 from hamcrest import has_entries
+from hamcrest import has_items
 from hamcrest import has_key
 from hamcrest import has_length
 from hamcrest import has_properties
@@ -302,6 +303,10 @@ class TestWazoUserBackend(_BaseTestCase):
             has_entries(
                 'token', uuid_(),
                 'auth_id', user['uuid'],
+                'acls', has_items(
+                    'confd.#',
+                    'plugind.#',
+                ),
             ),
         )
 
