@@ -29,19 +29,15 @@ class WazoUser(BaseAuthenticationBackend, ACLRenderingBackend):
         self._user_service = kwargs['user_service']
 
     def get_acls(self, username, args):
-        logger.debug('get_acls for %s', username)
         acl_templates = args.get('acl_templates', [])
         return self.render_acl(acl_templates, self.get_user_data, username=username)
 
     def get_ids(self, username, args):
-        logger.debug('get_ids for %s', username)
         matching_users = self._user_service.list_users(username=username)
         return matching_users[0]['uuid'], None
 
     def verify_password(self, username, password, args):
-        logger.debug('verify password for %s', username)
         return self._user_service.verify_password(username, password)
 
     def get_user_data(self, *args, **kwargs):
-        logger.debug('getting user data %s %s', args, kwargs)
         return {}
