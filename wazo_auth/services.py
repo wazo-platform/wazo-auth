@@ -84,6 +84,14 @@ class UserService(object):
         # a confirmation email should be sent
         return self._storage.user_create(*args, salt=salt, hash_=hash_, **kwargs)
 
+    def verify_password(self, username, password):
+        try:
+            hash_, salt = self._storage.user_get_credentials(username)
+        except exceptions.UnknownUsernameException:
+            return False
+
+        return hash_ == self._encrypter.compute_password_hash(password, salt)
+
 
 class PasswordEncrypter(object):
 
@@ -92,9 +100,11 @@ class PasswordEncrypter(object):
     _iterations = 250000
 
     def encrypt_password(self, password):
-        password_bytes = password.encode('utf-8')
         salt = os.urandom(self._salt_len)
-        dk = hashlib.pbkdf2_hmac(self._hash_algo, password_bytes, salt, self._iterations)
-        hash_ = binascii.hexlify(dk)
-
+        hash_ = self.compute_password_hash(password, salt)
         return salt, hash_
+
+    def compute_password_hash(self, password, salt):
+        password_bytes = password.encode('utf-8')
+        dk = hashlib.pbkdf2_hmac(self._hash_algo, password_bytes, salt, self._iterations)
+        return binascii.hexlify(dk)

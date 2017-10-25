@@ -20,5 +20,8 @@ enabled_plugins:
   - mock_with_uuid
   - broken_init
   - broken_verify_password
+  - wazo_user
+backend_policies:
+  wazo_user: wazo_default_admin_policy # For testing only, not a legitimate configuration
 
 db_uri: postgresql://asterisk:proformatique@postgres:5432

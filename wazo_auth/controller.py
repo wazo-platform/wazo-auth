@@ -65,13 +65,12 @@ class Controller(object):
             logger.error('Missing configuration to start the application: %s', e)
             sys.exit(1)
 
-        self._backends = self._load_backends()
-        self._config['loaded_plugins'] = self._loaded_plugins_names(self._backends)
-
         storage = database.Storage.from_config(self._config)
         self._token_manager = token.Manager(config, storage)
         policy_service = services.PolicyService(storage)
         self._user_service = services.UserService(storage)
+        self._backends = self._load_backends()
+        self._config['loaded_plugins'] = self._loaded_plugins_names(self._backends)
         self._flask_app = http.new_app(
             config, self._backends, policy_service, self._token_manager, self._user_service)
         self._expired_token_remover = token.ExpiredTokenRemover(config, storage)
@@ -112,7 +111,7 @@ class Controller(object):
         return LocalTokenManager(backend, self._token_manager)
 
     def _load_backends(self):
-        return _PluginLoader(self._config).load()
+        return _PluginLoader(self._config).load(user_service=self._user_service)
 
     def _loaded_plugins_names(self, backends):
         return [backend.name for backend in backends]
@@ -131,8 +130,8 @@ class _PluginLoader(object):
                                                       propagate_map_exceptions=True,
                                                       invoke_on_load=False)
 
-    def load(self):
-        self._backends.map(self._enabled_plugins, self._load)
+    def load(self, *args, **kwargs):
+        self._backends.map(self._enabled_plugins, self._load, *args, **kwargs)
         return self._backends
 
     def _check(self, plugin):
@@ -142,9 +141,9 @@ class _PluginLoader(object):
             logger.info('Plugin %s is not configured', plugin.name)
         return False
 
-    def _load(self, extension):
+    def _load(self, extension, *args, **kwargs):
         try:
-            extension.obj = extension.plugin(self._config)
+            extension.obj = extension.plugin(self._config, *args, **kwargs)
             extension.obj.plugin_name = extension.name
         except Exception:
             logger.exception('Failed to load %s', extension.name)

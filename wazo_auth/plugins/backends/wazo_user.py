@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,30 +17,27 @@
 
 import logging
 
-from wazo_auth import UserAuthenticationBackend
-from xivo_dao.resources.user import dao as user_dao
-from xivo_dao.helpers.db_utils import session_scope
+from wazo_auth import ACLRenderingBackend, BaseAuthenticationBackend
 
 logger = logging.getLogger(__name__)
 
 
-class XiVOUser(UserAuthenticationBackend):
+class WazoUser(BaseAuthenticationBackend, ACLRenderingBackend):
 
     def __init__(self, config, *args, **kwargs):
-        super(XiVOUser, self).__init__(config)
-        self._config = config
-        self._confd_config = config['confd']
+        super(WazoUser, self).__init__(config, *args, **kwargs)
+        self._user_service = kwargs['user_service']
 
-    def get_acls(self, login, args):
+    def get_acls(self, username, args):
         acl_templates = args.get('acl_templates', [])
-        return self.render_acl(acl_templates, self.get_user_data, username=login)
+        return self.render_acl(acl_templates, self.get_user_data, username=username)
 
     def get_ids(self, username, args):
-        with session_scope():
-            user = user_dao.get_by(username=username, enableclient=1)
-            return user.uuid, user.uuid
+        matching_users = self._user_service.list_users(username=username)
+        return matching_users[0]['uuid'], None
 
-    def verify_password(self, login, password, args):
-        with session_scope():
-            user = user_dao.find_by(username=login, password=password, enableclient=1)
-            return user is not None
+    def verify_password(self, username, password, args):
+        return self._user_service.verify_password(username, password)
+
+    def get_user_data(self, *args, **kwargs):
+        return {}

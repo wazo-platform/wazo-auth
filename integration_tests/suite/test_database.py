@@ -30,6 +30,7 @@ from hamcrest import (
     equal_to,
     has_entries,
     has_properties,
+    none,
     not_,
 )
 from mock import ANY
@@ -610,3 +611,14 @@ class TestUserCrud(unittest.TestCase):
             calling(self._crud.delete).with_args(user_uuid),
             raises(exceptions.UnknownUserException),
         )
+
+    @fixtures.user(username='foobar')
+    def test_get_credential(self, user_uuid):
+        assert_that(
+            calling(self._crud.get_credentials).with_args('not-foobar'),
+            raises(exceptions.UnknownUsernameException),
+        )
+
+        hash_, salt = self._crud.get_credentials('foobar')
+        assert_that(hash_, not_(none()))
+        assert_that(salt, not_(none()))

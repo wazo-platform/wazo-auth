@@ -43,6 +43,7 @@ from .exceptions import (
     UnknownPolicyException,
     UnknownTokenException,
     UnknownUserException,
+    UnknownUsernameException,
 )
 
 logger = logging.getLogger(__name__)
@@ -124,6 +125,9 @@ class Storage(object):
             username=username,
             emails=[email],
         )
+
+    def user_get_credentials(self, username):
+        return self._user_crud.get_credentials(username)
 
     def user_list(self, **kwargs):
         term = kwargs.get('search')
@@ -472,6 +476,19 @@ class _UserCRUD(_CRUD):
 
         if not nb_deleted:
             raise UnknownUserException(user_uuid)
+
+    def get_credentials(self, username):
+        filter_ = self._new_strict_filter(username=username)
+        with self.new_session() as s:
+            query = s.query(
+                User.password_salt,
+                User.password_hash,
+            ).filter(filter_)
+
+            for row in query.all():
+                return row.password_hash, row.password_salt
+
+            raise UnknownUsernameException(username)
 
     def list_(self, **kwargs):
         users = OrderedDict()
