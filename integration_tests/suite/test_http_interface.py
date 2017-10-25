@@ -33,9 +33,10 @@ from hamcrest import empty
 from hamcrest import has_entries
 from hamcrest import has_key
 from hamcrest import has_length
+from hamcrest import has_properties
 from hamcrest import is_
 from hamcrest import none
-from hamcrest import raises
+from xivo_test_helpers.hamcrest.raises import raises
 from xivo_auth_client import Client
 
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
@@ -295,11 +296,28 @@ class TestWazoUserBackend(_BaseTestCase):
         username, email, password = 'foobar', 'foobar@example.com', 's3cr37'
         user = self.client.users.new(username=username, email_address=email, password=password)
 
-        response = self._post_token(username, password)
+        response = self._post_token(username, password, backend='wazo_user')
+        assert_that(
+            response,
+            has_entries(
+                'token', uuid_(),
+                'auth_id', user['uuid'],
+            ),
+        )
 
-        print response.status_code
-        print response.data
-        self.fail()
+        assert_that(
+            calling(self._post_token).with_args(username, 'not-our-password', backend='wazo_user'),
+            raises(requests.HTTPError).matching(
+                has_properties('response', has_properties('status_code', 401)),
+            ),
+        )
+
+        assert_that(
+            calling(self._post_token).with_args('not-our-user', password, backend='wazo_user'),
+            raises(requests.HTTPError).matching(
+                has_properties('response', has_properties('status_code', 401)),
+            ),
+        )
 
 
 class TestCoreMockBackend(_BaseTestCase):
@@ -323,9 +341,8 @@ class TestCoreMockBackend(_BaseTestCase):
     def test_backends(self):
         url = 'https://{}:{}/0.1/backends'.format(HOST, self.service_port(9497, 'auth'))
         response = requests.get(url, verify=False)
-
-        assert_that(response.json()['data'],
-                    contains_inanyorder('mock', 'mock_with_uuid', 'broken_init', 'broken_verify_password'))
+        backends = ['mock', 'mock_with_uuid', 'broken_init', 'broken_verify_password', 'wazo_user']
+        assert_that(response.json()['data'], contains_inanyorder(*backends))
 
     def test_that_get_returns_the_auth_id(self):
         token = self._post_token('foo', 'bar')['token']

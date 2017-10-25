@@ -30,7 +30,7 @@ class BaseAuthenticationBackend(object):
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, config):
+    def __init__(self, config, *args, **kwargs):
         """Initialize this backend instance from the given configuration"""
 
     def get_acls(self, login, args):
@@ -75,6 +75,9 @@ class BaseAuthenticationBackend(object):
 
 class ACLRenderingBackend(object):
 
+    def __init__(self, *args, **kwargs):
+        return
+
     def render_acl(self, acl_templates, get_data_fn, *args, **kwargs):
         renderer = LazyTemplateRenderer(acl_templates, get_data_fn, *args, **kwargs)
         return renderer.render()
@@ -84,7 +87,7 @@ class UserAuthenticationBackend(BaseAuthenticationBackend, ACLRenderingBackend):
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, config):
+    def __init__(self, config, *args, **kwargs):
         super(UserAuthenticationBackend, self).__init__(config)
         self._config = config
         self._confd_config = config['confd']

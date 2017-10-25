@@ -24,6 +24,10 @@ logger = logging.getLogger(__name__)
 
 class WazoUser(BaseAuthenticationBackend, ACLRenderingBackend):
 
+    def __init__(self, config, *args, **kwargs):
+        super(WazoUser, self).__init__(config, *args, **kwargs)
+        self._user_service = kwargs['user_service']
+
     def get_acls(self, username, args):
         logger.debug('get_acls for %s', username)
         acl_templates = args.get('acl_templates', [])
@@ -36,7 +40,7 @@ class WazoUser(BaseAuthenticationBackend, ACLRenderingBackend):
 
     def verify_password(self, username, password, args):
         logger.debug('verify password for %s', username)
-        return self._verify_password(username, password)
+        return self._user_service.verify_password(username, password)
 
     def get_user_data(self, *args, **kwargs):
         logger.debug('getting user data %s %s', args, kwargs)
