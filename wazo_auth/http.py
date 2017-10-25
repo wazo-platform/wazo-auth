@@ -79,7 +79,6 @@ class Policies(ErrorCatchingResource):
 
         body, errors = schemas.PolicySchema().load(request.get_json(force=True))
         if errors:
-            print errors
             for field in errors:
                 raise exceptions.InvalidInputException(field)
 
@@ -118,7 +117,6 @@ class Policy(ErrorCatchingResource):
     def put(self, policy_uuid):
         body, errors = schemas.PolicySchema().load(request.get_json(force=True))
         if errors:
-            print errors
             for field in errors:
                 raise exceptions.InvalidInputException(field)
 
