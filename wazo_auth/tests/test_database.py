@@ -18,7 +18,7 @@
 import unittest
 
 from hamcrest import assert_that, calling, equal_to, raises
-from mock import ANY, Mock, sentinel as s
+from mock import Mock, sentinel as s
 
 from ..database import Storage, _PolicyCRUD, UnknownTokenException, _UserCRUD
 from ..token import Token, TokenPayload
