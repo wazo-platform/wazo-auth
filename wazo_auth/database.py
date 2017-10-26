@@ -30,6 +30,7 @@ from .models import (
     Policy,
     Token as TokenModel,
     User,
+    UserEmail,
 )
 from .token import Token
 from .exceptions import (
@@ -440,7 +441,9 @@ class _UserCRUD(_CRUD):
 
         with self.new_session() as s:
             return s.query(User).join(
-                Email, Email.user_uuid == User.uuid
+                UserEmail, UserEmail.user_uuid == User.uuid,
+            ).join(
+                Email, Email.uuid == UserEmail.email_uuid
             ).filter(filter_).count()
 
     def create(self, username, email_address, hash_, salt):
@@ -450,16 +453,19 @@ class _UserCRUD(_CRUD):
                     address=email_address,
                 )
                 s.add(email)
-                s.flush()
                 user = User(
                     username=username,
                     password_hash=hash_,
                     password_salt=salt,
-                    main_email_uuid=email.uuid,
                 )
                 s.add(user)
                 s.flush()
-                email.user_uuid = user.uuid
+                user_email = UserEmail(
+                    user_uuid=user.uuid,
+                    email_uuid=email.uuid,
+                    main=True,
+                )
+                s.add(user_email)
                 s.commit()
             except exc.IntegrityError as e:
                 if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
@@ -472,6 +478,10 @@ class _UserCRUD(_CRUD):
 
     def delete(self, user_uuid):
         with self.new_session() as s:
+            rows = s.query(UserEmail.email_uuid).filter(UserEmail.user_uuid == user_uuid).all()
+            email_ids = [row.email_uuid for row in rows]
+            if email_ids:
+                s.query(Email).filter(Email.uuid.in_(email_ids)).delete(synchronize_session=False)
             nb_deleted = s.query(User).filter(User.uuid == user_uuid).delete()
 
         if not nb_deleted:
@@ -501,15 +511,19 @@ class _UserCRUD(_CRUD):
             query = s.query(
                 User.uuid,
                 User.username,
-                User.main_email_uuid,
+                UserEmail.main,
                 Email.uuid,
                 Email.address,
                 Email.confirmed,
-            ).join(Email, Email.user_uuid == User.uuid).filter(filter_)
+            ).join(
+                UserEmail, User.uuid == UserEmail.user_uuid,
+            ).join(
+                Email, Email.uuid == UserEmail.email_uuid,
+            ).filter(filter_)
             query = self._paginator.update_query(query, **kwargs)
             rows = query.all()
 
-            for user_uuid, username, main_email_uuid, email_uuid, address, confirmed in rows:
+            for user_uuid, username, main_email, email_uuid, address, confirmed in rows:
                 if user_uuid not in users:
                     users[user_uuid] = dict(
                         username=username,
@@ -519,7 +533,7 @@ class _UserCRUD(_CRUD):
 
                 email = dict(
                     address=address,
-                    main=main_email_uuid == email_uuid,
+                    main=main_email,
                     confirmed=confirmed,
                 )
                 users[user_uuid]['emails'].append(email)

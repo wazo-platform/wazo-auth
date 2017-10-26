@@ -296,6 +296,7 @@ class TestUserCrud(unittest.TestCase):
         self._crud = database._UserCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
         with self._crud.new_session() as s:
             s.query(database.User).delete()
+            s.query(database.Email).delete()
 
     def test_user_creation(self):
         username = 'foobar'
@@ -316,12 +317,20 @@ class TestUserCrud(unittest.TestCase):
                 )
             )
 
-            email = s.query(database.Email).filter(database.Email.uuid == user.main_email_uuid).first()
+            email = s.query(
+                database.Email
+            ).join(
+                database.UserEmail, database.Email.uuid == database.UserEmail.email_uuid,
+            ).join(
+                database.User, database.User.uuid == database.UserEmail.user_uuid,
+            ).filter(
+                database.User.uuid == user.uuid,
+                database.UserEmail.main == True,
+            ).first()
             assert_that(
                 email,
                 has_properties(
                     'address', email_address,
-                    'user_uuid', user_uuid,
                     'confirmed', False,
                 )
             )

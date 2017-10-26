@@ -17,7 +17,7 @@
 
 from sqlalchemy import (
     Boolean, Column, ForeignKey, Integer, LargeBinary,
-    String, Text, text, UniqueConstraint,
+    schema, String, Text, text, UniqueConstraint,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -41,7 +41,6 @@ class Email(Base):
     uuid = Column(String(38), server_default=text('uuid_generate_v4()'), primary_key=True)
     address = Column(Text, unique=True, nullable=False)
     confirmed = Column(Boolean, nullable=False, default=False)
-    user_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='CASCADE'))
 
 
 class Token(Base):
@@ -77,7 +76,18 @@ class User(Base):
     username = Column(String(128), unique=True, nullable=False)
     password_hash = Column(Text, nullable=False)
     password_salt = Column(LargeBinary, nullable=False)
-    main_email_uuid = Column(String(38), ForeignKey('auth_email.uuid', ondelete='RESTRICT'))
+
+
+class UserEmail(Base):
+
+    __tablename__ = 'auth_user_email'
+    __table_args__ = (
+        schema.UniqueConstraint('user_uuid', 'main'),
+    )
+
+    user_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='CASCADE'), primary_key=True)
+    email_uuid = Column(String(38), ForeignKey('auth_email.uuid', ondelete='CASCADE'), primary_key=True)
+    main = Column(Boolean, nullable=False, default=False)
 
 
 class ACLTemplate(Base):
