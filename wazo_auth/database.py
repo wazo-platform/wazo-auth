@@ -478,6 +478,10 @@ class _UserCRUD(_CRUD):
 
     def delete(self, user_uuid):
         with self.new_session() as s:
+            rows = s.query(UserEmail.email_uuid).filter(UserEmail.user_uuid == user_uuid).all()
+            email_ids = [row.email_uuid for row in rows]
+            if email_ids:
+                s.query(Email).filter(Email.uuid.in_(email_ids)).delete(synchronize_session=False)
             nb_deleted = s.query(User).filter(User.uuid == user_uuid).delete()
 
         if not nb_deleted:
