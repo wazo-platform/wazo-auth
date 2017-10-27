@@ -72,8 +72,8 @@ class Users(http.ErrorCatchingResource):
 
 class Plugin(object):
 
-    def __init__(self, api):
-        self.add_resources(api)
+    def load(self, dependencies):
+        self.add_resources(dependencies['api'])
 
     def add_resources(self, api):
         api.add_resource(Users, '/users')

@@ -25,7 +25,7 @@ from flask_restful import Api, Resource
 from stevedore.named import NamedExtensionManager
 from xivo.rest_api_helpers import handle_api_exception
 from pkg_resources import resource_string
-from xivo import http_helpers
+from xivo import http_helpers, plugin_helpers
 
 from . import exceptions, schemas
 
@@ -217,14 +217,7 @@ def new_app(config, backends, policy_service, token_manager, user_service):
     app = Flask('wazo-auth')
     http_helpers.add_logger(app, logger)
     api = Api(app, prefix='/0.1')
-    enabled_plugins = [plugin_name for plugin_name, enabled in config['enabled_http_plugins'].iteritems() if enabled]
-    NamedExtensionManager(
-        namespace='wazo_auth.http',
-        names=enabled_plugins,
-        propagate_map_exceptions=True,
-        invoke_on_load=True,
-        invoke_args=(api,),
-    )
+    plugin_helpers.load('wazo_auth.http', config['enabled_http_plugins'], {'api': api})
     api.add_resource(Policies, '/policies')
     api.add_resource(Policy, '/policies/<string:policy_uuid>')
     api.add_resource(PolicyTemplate, '/policies/<string:policy_uuid>/acl_templates/<template>')
