@@ -240,6 +240,35 @@ paths:
           description: Policy not found
           schema:
             $ref: '#/definitions/Error'
+  /tenants:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      summary: Creates a new tenant
+      description: '**Required ACL:** `auth.tenants.create'
+      operationId: createTenant
+      tags:
+      - tenants
+      security:
+      - wazo_auth_token: []
+      parameters:
+        - name: body
+          in: body
+          description: The tenant creation parameters
+          required: true
+          schema:
+            $ref: '#/definitions/TenantCreate'
+      responses:
+        '200':
+          description: The new tenant
+          schema:
+            $ref: '#/definitions/TenantPostResponse'
+        '400':
+          description: Invalid body
+          schema:
+            $ref: '#/definitions/APIError'
   /token:
     post:
       consumes:
@@ -584,6 +613,13 @@ definitions:
     required:
     - total
     - items
+  TenantPostResponse:
+    type: object
+    properties:
+      name:
+        type: string
+      uuid:
+        type: string
   UserEmail:
     type: object
     properties:
@@ -643,6 +679,14 @@ definitions:
       - username
       - password
       - email_address
+  TenantCreate:
+    type: object
+    properties:
+      name:
+        type: string
+        description: "The tenant's name"
+    required:
+      - name
   Token:
     type: object
     properties:
