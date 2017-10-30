@@ -31,7 +31,10 @@ class Tenants(http.ErrorCatchingResource):
         args, errors = schemas.TenantRequestSchema().load(request.get_json())
         if errors:
             raise exceptions.TenantParamException.from_errors(errors)
-        return args, 200
+
+        tenant_service = current_app.config['tenant_service']
+        result = tenant_service.new_tenant(**args)
+        return result, 200
 
 
 class Plugin(object):

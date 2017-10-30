@@ -238,6 +238,7 @@ def new_app(dependencies):
     app.config['policy_service'] = dependencies['policy_service']
     app.config['token_manager'] = dependencies['token_manager']
     app.config['backends'] = dependencies['backends']
+    app.config['tenant_service'] = dependencies['tenant_service']
 
     app.after_request(http_helpers.log_request)
 

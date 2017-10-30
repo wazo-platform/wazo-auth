@@ -81,6 +81,7 @@ class Controller(object):
             'user_service': self._user_service,
             'token_manager': self._token_manager,
             'policy_service': policy_service,
+            'tenant_service': None,
         }
         self._flask_app = http.new_app(dependencies)
         self._expired_token_remover = token.ExpiredTokenRemover(config, storage)

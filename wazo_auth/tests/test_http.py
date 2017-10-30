@@ -32,6 +32,7 @@ class HTTPAppTestCase(TestCase):
     def setUp(self, config):
         self.user_service = Mock()
         self.policy_service = Mock()
+        self.tenant_service = Mock()
         token_manager = Mock()
         dependencies = {
             'config': config,
@@ -39,6 +40,7 @@ class HTTPAppTestCase(TestCase):
             'policy_service': self.policy_service,
             'token_manager': token_manager,
             'user_service': self.user_service,
+            'tenant_service': self.tenant_service,
         }
         self.app = new_app(dependencies).test_client()
 
