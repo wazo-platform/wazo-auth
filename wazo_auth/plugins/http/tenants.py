@@ -28,6 +28,10 @@ class Tenants(http.ErrorCatchingResource):
     @http.required_acl('auth.tenants.create')
     def post(self):
         logger.debug('create tenant %s', request.get_json(force=True))
+        args, errors = schemas.TenantRequestSchema().load(request.get_json())
+        if errors:
+            raise exceptions.TenantParamException.from_errors(errors)
+        return args, 200
 
 
 class Plugin(object):

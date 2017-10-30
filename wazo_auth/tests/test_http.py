@@ -27,12 +27,12 @@ from ..http import new_app
 
 class HTTPAppTestCase(TestCase):
 
-    def setUp(self):
+    headers = {'content-type': 'application/json'}
+
+    def setUp(self, config):
         self.user_service = Mock()
         self.policy_service = Mock()
         token_manager = Mock()
-        config = dict(_DEFAULT_CONFIG)
-        config['enabled_http_plugins']['users'] = True
         dependencies = {
             'config': config,
             'backends': s.backends,
@@ -46,9 +46,10 @@ class HTTPAppTestCase(TestCase):
 class TestUserResource(HTTPAppTestCase):
 
     def setUp(self):
-        super(TestUserResource, self).setUp()
+        config = dict(_DEFAULT_CONFIG)
+        config['enabled_http_plugins']['users'] = True
+        super(TestUserResource, self).setUp(config)
         self.url = '/0.1/users'
-        self.headers = {'content-type': 'application/json'}
 
     def test_that_creating_a_user_calls_the_service(self):
         username, password, email_address = 'foobar', 'b3h01D', 'foobar@example.com'
@@ -283,7 +284,7 @@ class TestUserResource(HTTPAppTestCase):
 class TestPolicyResource(HTTPAppTestCase):
 
     def setUp(self):
-        super(TestPolicyResource, self).setUp()
+        super(TestPolicyResource, self).setUp(_DEFAULT_CONFIG)
         self.url = '/0.1/policies'
         self.headers = {'content-type': 'application/json'}
 
