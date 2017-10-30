@@ -29,7 +29,8 @@ class BrokenVerifyPasswordBackend(BaseAuthenticationBackend):
 
 class BrokenInitBackend(BaseAuthenticationBackend):
 
-    def __init__(self, config, *args, **kwargs):
+    def load(self, dependencies):
+        super(BrokenInitBackend, self).load(dependencies)
         return dict()['foo']['bar']
 
     def get_ids(self, login, args):

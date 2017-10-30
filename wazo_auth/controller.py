@@ -23,7 +23,7 @@ from functools import partial
 
 from cheroot import wsgi
 from stevedore.dispatch import NameDispatchExtensionManager
-from xivo import http_helpers
+from xivo import http_helpers, plugin_helpers
 from xivo.http_helpers import ReverseProxied
 from xivo.consul_helpers import ServiceCatalogRegistration
 from werkzeug.contrib.fixers import ProxyFix
@@ -69,7 +69,11 @@ class Controller(object):
         self._token_manager = token.Manager(config, storage)
         policy_service = services.PolicyService(storage)
         self._user_service = services.UserService(storage)
-        self._backends = self._load_backends()
+        self._backends = plugin_helpers.load(
+            'wazo_auth.backends',
+            plugin_helpers.from_list(self._config['enabled_plugins']),
+            {'user_service': self._user_service, 'config': config},
+        )
         self._config['loaded_plugins'] = self._loaded_plugins_names(self._backends)
         self._flask_app = http.new_app(
             config, self._backends, policy_service, self._token_manager, self._user_service)
@@ -110,40 +114,5 @@ class Controller(object):
 
         return LocalTokenManager(backend, self._token_manager)
 
-    def _load_backends(self):
-        return _PluginLoader(self._config).load(user_service=self._user_service)
-
     def _loaded_plugins_names(self, backends):
         return [backend.name for backend in backends]
-
-
-class _PluginLoader(object):
-
-    namespace = 'wazo_auth.backends'
-
-    def __init__(self, config):
-        self._enabled_plugins = config['enabled_plugins']
-        self._config = config
-        self._backends = NameDispatchExtensionManager(namespace=self.namespace,
-                                                      check_func=self._check,
-                                                      verify_requirements=False,
-                                                      propagate_map_exceptions=True,
-                                                      invoke_on_load=False)
-
-    def load(self, *args, **kwargs):
-        self._backends.map(self._enabled_plugins, self._load, *args, **kwargs)
-        return self._backends
-
-    def _check(self, plugin):
-        if plugin.name in self._enabled_plugins:
-            if plugin.plugin.should_be_loaded(self._config):
-                return True
-            logger.info('Plugin %s is not configured', plugin.name)
-        return False
-
-    def _load(self, extension, *args, **kwargs):
-        try:
-            extension.obj = extension.plugin(self._config, *args, **kwargs)
-            extension.obj.plugin_name = extension.name
-        except Exception:
-            logger.exception('Failed to load %s', extension.name)

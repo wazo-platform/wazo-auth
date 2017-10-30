@@ -24,9 +24,9 @@ logger = logging.getLogger(__name__)
 
 class WazoUser(BaseAuthenticationBackend, ACLRenderingBackend):
 
-    def __init__(self, config, *args, **kwargs):
-        super(WazoUser, self).__init__(config, *args, **kwargs)
-        self._user_service = kwargs['user_service']
+    def load(self, dependencies):
+        super(WazoUser, self).load(dependencies)
+        self._user_service = dependencies['user_service']
 
     def get_acls(self, username, args):
         acl_templates = args.get('acl_templates', [])
