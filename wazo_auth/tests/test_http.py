@@ -33,13 +33,14 @@ class HTTPAppTestCase(TestCase):
         token_manager = Mock()
         config = dict(_DEFAULT_CONFIG)
         config['enabled_http_plugins']['users'] = True
-        self.app = new_app(
-            config,
-            s.backends,
-            self.policy_service,
-            token_manager,
-            self.user_service,
-        ).test_client()
+        dependencies = {
+            'config': config,
+            'backends': s.backends,
+            'policy_service': self.policy_service,
+            'token_manager': token_manager,
+            'user_service': self.user_service,
+        }
+        self.app = new_app(dependencies).test_client()
 
 
 class TestUserResource(HTTPAppTestCase):

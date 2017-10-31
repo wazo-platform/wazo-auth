@@ -75,8 +75,14 @@ class Controller(object):
             {'user_service': self._user_service, 'config': config},
         )
         self._config['loaded_plugins'] = self._loaded_plugins_names(self._backends)
-        self._flask_app = http.new_app(
-            config, self._backends, policy_service, self._token_manager, self._user_service)
+        dependencies = {
+            'backends': self._backends,
+            'config': config,
+            'user_service': self._user_service,
+            'token_manager': self._token_manager,
+            'policy_service': policy_service,
+        }
+        self._flask_app = http.new_app(dependencies)
         self._expired_token_remover = token.ExpiredTokenRemover(config, storage)
 
     def run(self):

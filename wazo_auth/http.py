@@ -211,17 +211,18 @@ class Swagger(Resource):
         return make_response(api_spec, 200, {'Content-Type': 'application/x-yaml'})
 
 
-def new_app(config, backends, policy_service, token_manager, user_service):
+def new_app(dependencies):
+    config = dependencies['config']
     cors_config = dict(config['rest_api']['cors'])
     cors_enabled = cors_config.pop('enabled')
+
     app = Flask('wazo-auth')
     http_helpers.add_logger(app, logger)
     api = Api(app, prefix='/0.1')
-    dependencies = {
-        'api': api,
-        'user_service': user_service,
-    }
+
+    dependencies['api'] = api
     plugin_helpers.load('wazo_auth.http', config['enabled_http_plugins'], dependencies)
+
     api.add_resource(Policies, '/policies')
     api.add_resource(Policy, '/policies/<string:policy_uuid>')
     api.add_resource(PolicyTemplate, '/policies/<string:policy_uuid>/acl_templates/<template>')
@@ -230,12 +231,14 @@ def new_app(config, backends, policy_service, token_manager, user_service):
     api.add_resource(Backends, '/backends')
     api.add_resource(Swagger, '/api/api.yml')
     app.config.update(config)
+
     if cors_enabled:
         CORS(app, **cors_config)
 
-    app.config['policy_service'] = policy_service
-    app.config['token_manager'] = token_manager
-    app.config['backends'] = backends
+    app.config['policy_service'] = dependencies['policy_service']
+    app.config['token_manager'] = dependencies['token_manager']
+    app.config['backends'] = dependencies['backends']
+
     app.after_request(http_helpers.log_request)
 
     return app
