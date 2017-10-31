@@ -217,7 +217,11 @@ def new_app(config, backends, policy_service, token_manager, user_service):
     app = Flask('wazo-auth')
     http_helpers.add_logger(app, logger)
     api = Api(app, prefix='/0.1')
-    plugin_helpers.load('wazo_auth.http', config['enabled_http_plugins'], {'api': api})
+    dependencies = {
+        'api': api,
+        'user_service': user_service,
+    }
+    plugin_helpers.load('wazo_auth.http', config['enabled_http_plugins'], dependencies)
     api.add_resource(Policies, '/policies')
     api.add_resource(Policy, '/policies/<string:policy_uuid>')
     api.add_resource(PolicyTemplate, '/policies/<string:policy_uuid>/acl_templates/<template>')
@@ -232,7 +236,6 @@ def new_app(config, backends, policy_service, token_manager, user_service):
     app.config['policy_service'] = policy_service
     app.config['token_manager'] = token_manager
     app.config['backends'] = backends
-    app.config['user_service'] = user_service
     app.after_request(http_helpers.log_request)
 
     return app
