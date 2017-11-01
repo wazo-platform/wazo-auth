@@ -37,7 +37,8 @@ class TestGetACLS(unittest.TestCase):
             }
         }
         self.args = {'xivo_user_uuid': 'alice-uuid'}
-        self.backend = LDAPUser(config)
+        self.backend = LDAPUser()
+        self.backend.load({'config': config})
 
     def test_get_acls(self, find_by):
         with patch.object(self.backend, 'render_acl') as render_acl:
@@ -58,7 +59,8 @@ class TestGetIDS(unittest.TestCase):
             }
         }
         self.args = {'xivo_user_uuid': 'alice-uuid'}
-        self.backend = LDAPUser(config)
+        self.backend = LDAPUser()
+        self.backend.load({'config': config})
 
     def test_that_get_ids_calls_the_dao(self, find_by):
         expected_result = ('alice-uuid', 'alice-uuid')
@@ -89,7 +91,8 @@ class TestVerifyPassword(unittest.TestCase):
         self.search_obj_result = (self.expected_user_dn, obj)
 
     def test_that_verify_password_return_false_when_ldaperror(self, find_by, xivo_ldap):
-        backend = LDAPUser(self.config)
+        backend = LDAPUser()
+        backend.load({'config': self.config})
         xivo_ldap.side_effect = ldap.LDAPError
         args = {}
 
@@ -97,7 +100,8 @@ class TestVerifyPassword(unittest.TestCase):
         assert_that(result, equal_to(False))
 
     def test_that_verify_password_return_false_when_serverdown(self, find_by, xivo_ldap):
-        backend = LDAPUser(self.config)
+        backend = LDAPUser()
+        backend.load({'config': self.config})
         xivo_ldap.side_effect = ldap.SERVER_DOWN
         args = {}
 
@@ -105,7 +109,8 @@ class TestVerifyPassword(unittest.TestCase):
         assert_that(result, equal_to(False))
 
     def test_that_verify_password_calls_perform_bind(self, find_by, xivo_ldap):
-        backend = LDAPUser(self.config)
+        backend = LDAPUser()
+        backend.load({'config': self.config})
 
         xivo_ldap = xivo_ldap.return_value
         xivo_ldap.perform_bind.return_value = True
@@ -119,7 +124,8 @@ class TestVerifyPassword(unittest.TestCase):
         xivo_ldap.perform_bind.assert_called_once_with(self.expected_user_dn, 'bar')
 
     def test_that_verify_password_escape_dn_chars(self, find_by, xivo_ldap):
-        backend = LDAPUser(self.config)
+        backend = LDAPUser()
+        backend.load({'config': self.config})
 
         xivo_ldap = xivo_ldap.return_value
         xivo_ldap.perform_bind.return_value = True
@@ -139,7 +145,8 @@ class TestVerifyPassword(unittest.TestCase):
             }
         }
         extended_config['ldap'].update(self.config['ldap'])
-        backend = LDAPUser(self.config)
+        backend = LDAPUser()
+        backend.load({'config': self.config})
 
         xivo_ldap = xivo_ldap.return_value
         xivo_ldap.perform_bind.return_value = True
@@ -153,7 +160,8 @@ class TestVerifyPassword(unittest.TestCase):
         xivo_ldap.perform_search.assert_called_once_with('uid=fo\+o,dc=example,dc=com', 0, attrlist=['mail'])
 
     def test_that_verify_password_calls_return_false_when_no_user_bind(self, find_by, xivo_ldap):
-        backend = LDAPUser(self.config)
+        backend = LDAPUser()
+        backend.load({'config': self.config})
         xivo_ldap = xivo_ldap.return_value
         xivo_ldap.perform_bind.return_value = False
         args = {}
@@ -164,7 +172,8 @@ class TestVerifyPassword(unittest.TestCase):
         xivo_ldap.perform_bind.assert_called_once_with(self.expected_user_dn, 'bar')
 
     def test_that_verify_password_calls_return_False_when_no_email_associated(self, find_by, xivo_ldap):
-        backend = LDAPUser(self.config)
+        backend = LDAPUser()
+        backend.load({'config': self.config})
         xivo_ldap = xivo_ldap.return_value
         xivo_ldap.perform_bind.return_value = True
         xivo_ldap.perform_search.return_value = self.search_obj_result
@@ -184,7 +193,8 @@ class TestVerifyPassword(unittest.TestCase):
             }
         }
         extended_config['ldap'].update(self.config['ldap'])
-        backend = LDAPUser(extended_config)
+        backend = LDAPUser()
+        backend.load({'config': extended_config})
         xivo_ldap = xivo_ldap.return_value
         xivo_ldap.perform_bind.return_value = True
         xivo_ldap.perform_search.return_value = self.search_obj_result
@@ -207,7 +217,8 @@ class TestVerifyPassword(unittest.TestCase):
         }
         extended_config['ldap'].update(self.config['ldap'])
         xivo_ldap = xivo_ldap.return_value
-        backend = LDAPUser(extended_config)
+        backend = LDAPUser()
+        backend.load({'config': extended_config})
         xivo_ldap.perform_bind.return_value = False
         args = {}
 
@@ -225,7 +236,8 @@ class TestVerifyPassword(unittest.TestCase):
             }
         }
         extended_config['ldap'].update(self.config['ldap'])
-        backend = LDAPUser(extended_config)
+        backend = LDAPUser()
+        backend.load({'config': extended_config})
         xivo_ldap = xivo_ldap.return_value
         xivo_ldap.perform_bind.return_value = True
         xivo_ldap.perform_search.return_value = self.search_obj_result
@@ -247,7 +259,8 @@ class TestVerifyPassword(unittest.TestCase):
             }
         }
         extended_config['ldap'].update(self.config['ldap'])
-        backend = LDAPUser(extended_config)
+        backend = LDAPUser()
+        backend.load({'config': extended_config})
         xivo_ldap = xivo_ldap.return_value
         xivo_ldap.perform_bind.return_value = True
         xivo_ldap.perform_search.return_value = self.search_obj_result

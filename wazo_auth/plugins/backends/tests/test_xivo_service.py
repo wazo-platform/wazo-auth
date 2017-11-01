@@ -29,7 +29,7 @@ class TestVerifyPassword(unittest.TestCase):
     @patch('wazo_auth.plugins.backends.xivo_service.accesswebservice_dao.check_username_password')
     def test_that_get_uuid_calls_the_dao(self, dao_mock):
         dao_mock.return_value = 'a_return_value'
-        backend = backends.XiVOService('config')
+        backend = backends.XiVOService()
 
         result = backend.verify_password('foo', 'bar', None)
 
@@ -39,7 +39,7 @@ class TestVerifyPassword(unittest.TestCase):
     @patch('wazo_auth.plugins.backends.xivo_service.accesswebservice_dao.get_user_acl',
            Mock(return_value=['confd.#', 'dird.#']))
     def test_that_get_acls_return_acl_for_confd(self):
-        backend = backends.XiVOService({})
+        backend = backends.XiVOService()
 
         acls = backend.get_acls('foo', None)
 
@@ -48,7 +48,7 @@ class TestVerifyPassword(unittest.TestCase):
     @patch('wazo_auth.plugins.backends.xivo_service.accesswebservice_dao.get_user_uuid',
            Mock(return_value='534ede0d-9395-445a-8541-96b99e7b16a5'))
     def test_that_get_ids_returns_the_id_and_None(self):
-        backend = backends.XiVOService({})
+        backend = backends.XiVOService()
 
         auth_id, xivo_user_uuid = backend.get_ids('foo', None)
 
@@ -58,7 +58,7 @@ class TestVerifyPassword(unittest.TestCase):
     @patch('wazo_auth.plugins.backends.xivo_service.accesswebservice_dao.get_user_uuid',
            Mock(side_effect=LookupError))
     def test_that_a_manager_error_is_raised_if_not_found(self):
-        backend = backends.XiVOService({})
+        backend = backends.XiVOService()
 
         assert_that(
             calling(backend.get_ids).with_args('foo', None),

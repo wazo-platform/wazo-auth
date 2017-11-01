@@ -65,7 +65,8 @@ class TestGetIDS(unittest.TestCase):
 
     def test_that_get_ids_calls_the_dao(self, user_dao_mock):
         user_dao_mock.get_by.return_value = Mock(User, uuid='foobars-uuid')
-        backend = XiVOUser({'confd': {'host': 'localhost'}})
+        backend = XiVOUser()
+        backend.load({'config': {'confd': {'host': 'localhost'}}})
         args = None
 
         result = backend.get_ids('foobar', args)
@@ -75,7 +76,8 @@ class TestGetIDS(unittest.TestCase):
 
     def test_that_get_ids_raises_if_no_user(self, user_dao_mock):
         user_dao_mock.get_by.side_effect = InputError
-        backend = XiVOUser({'confd': {'host': 'localhost'}})
+        backend = XiVOUser()
+        backend.load({'config': {'confd': {'host': 'localhost'}}})
 
         self.assertRaises(Exception, backend.get_ids, 'foobar')
 
@@ -85,7 +87,8 @@ class TestVerifyPassword(unittest.TestCase):
 
     def test_that_verify_password_calls_the_dao(self, user_dao_mock):
         user_dao_mock.find_by.return_value = Mock(User)
-        backend = XiVOUser({'confd': {'host': 'localhost'}})
+        backend = XiVOUser()
+        backend.load({'config': {'confd': {'host': 'localhost'}}})
 
         result = backend.verify_password('foo', 'bar', None)
 
@@ -99,7 +102,8 @@ class TestVerifyPassword(unittest.TestCase):
 class TestGetAcls(unittest.TestCase):
 
     def setUp(self):
-        self.backend = XiVOUser({'confd': {'host': 'localhost'}})
+        self.backend = XiVOUser()
+        self.backend.load({'config': {'confd': {'host': 'localhost'}}})
 
     def test_that_get_acls_returns_the_right_acls(self, _ConfdClient):
         result = self.backend.get_acls('foo', {'acl_templates': DEFAULT_USER_ACLS})

@@ -30,8 +30,9 @@ logger = logging.getLogger(__name__)
 
 class LDAPUser(UserAuthenticationBackend):
 
-    def __init__(self, config, *args, **kwargs):
-        super(LDAPUser, self).__init__(config, *args, **kwargs)
+    def load(self, dependencies):
+        super(LDAPUser, self).load(dependencies)
+        config = dependencies['config']
         self.config = config['ldap']
         self.uri = self.config['uri']
         self.bind_dn = self.config.get('bind_dn', '')

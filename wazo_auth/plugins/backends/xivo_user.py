@@ -26,9 +26,9 @@ logger = logging.getLogger(__name__)
 
 class XiVOUser(UserAuthenticationBackend):
 
-    def __init__(self, config, *args, **kwargs):
-        super(XiVOUser, self).__init__(config)
-        self._config = config
+    def load(self, dependencies):
+        super(XiVOUser, self).load(dependencies)
+        config = dependencies['config']
         self._confd_config = config['confd']
 
     def get_acls(self, login, args):
