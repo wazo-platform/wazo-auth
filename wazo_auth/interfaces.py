@@ -70,7 +70,7 @@ class BaseAuthenticationBackend(object):
         """Checks if a plugin should be loaded
 
         This method is called before plugins are loaded. This method is not called
-        if the plugin is not in enabled_plugins.
+        if the plugin is not in enabled_backend_plugins.
 
         Return True if the plugin should be loaded and False otherwise.
         """

@@ -10,8 +10,8 @@ rest_api:
   cors:
     enabled: False
     allow_headers: [Content-Type, authorization, x-auth-token]
-enabled_plugins:
-  - ldap_user
+enabled_backend_plugins:
+  ldap_user: true
 ldap:
   uri: ldap://slapd
   user_base_dn: 'ou=quebec,ou=people,dc=wazo-auth,dc=wazo,dc=community'

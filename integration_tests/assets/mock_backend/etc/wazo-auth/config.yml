@@ -15,12 +15,15 @@ rest_api:
 
 enabled_http_plugins:
   users: true
-enabled_plugins:
-  - mock
-  - mock_with_uuid
-  - broken_init
-  - broken_verify_password
-  - wazo_user
+enabled_backend_plugins:
+  mock: true
+  mock_with_uuid: true
+  broken_init: true
+  broken_verify_password: true
+  wazo_user: true
+  xivo_user: false
+  xivo_service: false
+  xivo_admin: false
 backend_policies:
   wazo_user: wazo_default_admin_policy # For testing only, not a legitimate configuration
 

@@ -36,11 +36,11 @@ rest_api:
 enabled_http_plugins:
   users: false
 
-enabled_plugins:
-  - ldap_user
-  - xivo_admin
-  - xivo_service
-  - xivo_user
+enabled_backend_plugins:
+  ldap_user: false
+  xivo_admin: true
+  xivo_service: true
+  xivo_user: true
 
 amqp:
   uri: amqp://guest:guest@localhost:5672/

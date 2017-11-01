@@ -51,7 +51,7 @@ class Controller(object):
             self._foreground = config['foreground']
             self._consul_config = config['consul']
             self._service_discovery_config = config['service_discovery']
-            self._plugins = config['enabled_plugins']
+            self._plugins = config['enabled_backend_plugins']
             self._bus_config = config['amqp']
             self._log_level = config['log_level']
             self._debug = config['debug']
@@ -71,7 +71,7 @@ class Controller(object):
         self._user_service = services.UserService(storage)
         self._backends = plugin_helpers.load(
             'wazo_auth.backends',
-            plugin_helpers.from_list(self._config['enabled_plugins']),
+            self._config['enabled_backend_plugins'],
             {'user_service': self._user_service, 'config': config},
         )
         self._config['loaded_plugins'] = self._loaded_plugins_names(self._backends)

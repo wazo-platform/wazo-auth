@@ -36,6 +36,11 @@ _DEFAULT_CONFIG = {
     'enabled_http_plugins': {
         'users': False,
     },
+    'enabled_backend_plugins': {
+        'xivo_admin': True,
+        'xivo_service': True,
+        'xivo_user': True,
+    },
     'backend_policies': {
         'ldap_user': 'wazo_default_user_policy',
         'xivo_admin': 'wazo_default_admin_policy',
