@@ -17,13 +17,16 @@
 
 import logging
 
-from flask import current_app, request
+from flask import request
 from wazo_auth import exceptions, http, schemas
 
 logger = logging.getLogger(__name__)
 
 
 class Tenants(http.ErrorCatchingResource):
+
+    def __init__(self, tenant_service):
+        self.tenant_service = tenant_service
 
     @http.required_acl('auth.tenants.create')
     def post(self):
@@ -32,12 +35,14 @@ class Tenants(http.ErrorCatchingResource):
         if errors:
             raise exceptions.TenantParamException.from_errors(errors)
 
-        tenant_service = current_app.config['tenant_service']
-        result = tenant_service.new_tenant(**args)
+        result = self.tenant_service.new_tenant(**args)
         return result, 200
 
 
 class Plugin(object):
 
-    def __init__(self, api):
-        api.add_resource(Tenants, '/tenants')
+    def load(self, dependencies):
+        api = dependencies['api']
+        args = (dependencies['tenant_service'],)
+
+        api.add_resource(Tenants, '/tenants', resource_class_args=args)
