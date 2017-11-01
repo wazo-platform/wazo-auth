@@ -503,6 +503,37 @@ class TestNoSSLKey(_BaseTestCase):
         assert_that(log, contains_string("No such file or directory: '/data/_common/ssl/no_server.key'"))
 
 
+class TestTenants(_BaseTestCase):
+
+    asset = 'mock_backend'
+
+    def setUp(self):
+        super(TestTenants, self).setUp()
+        port = self.service_port(9497, 'auth')
+        self.client = Client(HOST, port, username='foo', password='bar', verify_certificate=False)
+        token = self.client.token.new(backend='mock', expiration=3600)['token']
+        self.client.set_token(token)
+
+    def test_post(self):
+        name = 'foobar'
+
+        tenant = self.client.tenants.new(name=name)
+        assert_that(
+            tenant,
+            has_entries(
+                'uuid', uuid_(),
+                'name', name,
+            ),
+        )
+
+        assert_that(
+            calling(self.client.tenants.new).with_args(name=name),
+            raises(requests.HTTPError).matching(
+                has_properties('response', has_properties('status_code', 409)),
+            ),
+        )
+
+
 class TestUsers(_BaseTestCase):
 
     asset = 'mock_backend'

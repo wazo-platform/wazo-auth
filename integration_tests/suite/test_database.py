@@ -288,6 +288,39 @@ class TestTokenCRUD(unittest.TestCase):
         self._crud.delete(token_uuid)
 
 
+class TestTenantCrud(unittest.TestCase):
+
+    def setUp(self):
+        self._crud = database._TenantCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
+
+    def test_tenant_creation(self):
+        name = 'foobar'
+
+        tenant_uuid = self._crud.create(name)
+
+        assert_that(tenant_uuid, equal_to(ANY_UUID))
+        with self._crud.new_session() as s:
+            tenant = s.query(
+                database.Tenant,
+            ).filter(
+                database.Tenant.uuid == tenant_uuid
+            ).first()
+
+            assert_that(tenant, has_properties('name', name))
+
+        assert_that(
+            calling(self._crud.create).with_args(name),
+            raises(
+                exceptions.ConflictException,
+                has_properties(
+                    'status_code', 409,
+                    'resource', 'tenants',
+                    'details', has_entries('name', ANY),
+                ),
+            )
+        )
+
+
 class TestUserCrud(unittest.TestCase):
 
     salt = os.urandom(64)

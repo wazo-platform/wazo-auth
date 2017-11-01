@@ -56,6 +56,15 @@ class PolicyService(object):
         return dict(uuid=policy_uuid, **body)
 
 
+class TenantService(object):
+
+    def __init__(self, storage):
+        self._storage = storage
+
+    def new_tenant(self, **kwargs):
+        return self._storage.tenant_create(**kwargs)
+
+
 class UserService(object):
 
     def __init__(self, storage, encrypter=None):

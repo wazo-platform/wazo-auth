@@ -28,6 +28,7 @@ from .models import (
     ACLTemplatePolicy,
     Email,
     Policy,
+    Tenant,
     Token as TokenModel,
     User,
     UserEmail,
@@ -52,10 +53,11 @@ logger = logging.getLogger(__name__)
 
 class Storage(object):
 
-    def __init__(self, policy_crud, token_crud, user_crud):
+    def __init__(self, policy_crud, token_crud, user_crud, tenant_crud):
         self._policy_crud = policy_crud
         self._token_crud = token_crud
         self._user_crud = user_crud
+        self._tenant_crud = tenant_crud
 
     def add_policy_acl_template(self, policy_uuid, acl_template):
         self._policy_crud.associate_policy_template(policy_uuid, acl_template)
@@ -104,6 +106,13 @@ class Storage(object):
 
     def update_policy(self, policy_uuid, name, description, acl_templates):
         self._policy_crud.update(policy_uuid, name, description, acl_templates)
+
+    def tenant_create(self, name):
+        tenant_uuid = self._tenant_crud.create(name)
+        return dict(
+            uuid=tenant_uuid,
+            name=name,
+        )
 
     def user_count(self, **kwargs):
         term = kwargs.get('search')
@@ -163,7 +172,8 @@ class Storage(object):
         policy_crud = _PolicyCRUD(config['db_uri'])
         token_crud = _TokenCRUD(config['db_uri'])
         user_crud = _UserCRUD(config['db_uri'])
-        return cls(policy_crud, token_crud, user_crud)
+        tenant_crud = _TenantCRUD(config['db_uri'])
+        return cls(policy_crud, token_crud, user_crud, tenant_crud)
 
 
 class _CRUD(object):
@@ -349,6 +359,28 @@ class _PolicyCRUD(_CRUD):
     def _policy_exists(self, s, policy_uuid):
         policy_count = s.query(Policy).filter(Policy.uuid == policy_uuid).count()
         return policy_count != 0
+
+
+class _TenantCRUD(_CRUD):
+
+    constraint_to_column_map = dict(
+        auth_tenant_name_key='name',
+    )
+
+    def create(self, name):
+        tenant = Tenant(name=name)
+        with self.new_session() as s:
+            s.add(tenant)
+            try:
+                s.commit()
+            except exc.IntegrityError as e:
+                if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                    column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
+                    value = locals().get(column)
+                    if column:
+                        raise ConflictException('tenants', column, value)
+                raise
+            return tenant.uuid
 
 
 class _TokenCRUD(_CRUD):

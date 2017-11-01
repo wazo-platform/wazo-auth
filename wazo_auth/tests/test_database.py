@@ -17,10 +17,16 @@
 
 import unittest
 
-from hamcrest import assert_that, calling, equal_to, raises
+from hamcrest import assert_that, calling, equal_to, has_entries, raises
 from mock import Mock, sentinel as s
 
-from ..database import Storage, _PolicyCRUD, UnknownTokenException, _UserCRUD
+from ..database import (
+    Storage,
+    UnknownTokenException,
+    _PolicyCRUD,
+    _TenantCRUD,
+    _UserCRUD,
+)
 from ..token import Token, TokenPayload
 
 
@@ -30,7 +36,13 @@ class TestStorage(unittest.TestCase):
         self.token_crud = MockedCrud()
         self.policy_crud = Mock(_PolicyCRUD)
         self.user_crud = Mock(_UserCRUD)
-        self.storage = Storage(self.policy_crud, self.token_crud, self.user_crud)
+        self.tenant_crud = Mock(_TenantCRUD)
+        self.storage = Storage(
+            self.policy_crud,
+            self.token_crud,
+            self.user_crud,
+            self.tenant_crud,
+        )
 
     def test_get_policy(self):
         uuid = 'c1647454-8d30-408a-9507-b2a3a9767a3d'
@@ -111,6 +123,17 @@ class TestStorage(unittest.TestCase):
         self.storage.remove_token(s.token_uuid)
 
         self.token_crud.assert_deleted(s.token_uuid)
+
+    def test_tenant_create(self):
+        result = self.storage.tenant_create('foobar')
+
+        assert_that(
+            result,
+            has_entries(
+                'uuid', self.tenant_crud.create.return_value,
+                'name', 'foobar',
+            )
+        )
 
 
 class MockedCrud(object):
