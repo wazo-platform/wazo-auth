@@ -22,7 +22,6 @@ import sys
 from functools import partial
 
 from cheroot import wsgi
-from stevedore.dispatch import NameDispatchExtensionManager
 from xivo import http_helpers, plugin_helpers
 from xivo.http_helpers import ReverseProxied
 from xivo.consul_helpers import ServiceCatalogRegistration
@@ -69,6 +68,7 @@ class Controller(object):
         self._token_manager = token.Manager(config, storage)
         policy_service = services.PolicyService(storage)
         self._user_service = services.UserService(storage)
+        self._tenant_service = services.TenantService(storage)
         self._backends = plugin_helpers.load(
             'wazo_auth.backends',
             self._config['enabled_backend_plugins'],
@@ -81,6 +81,7 @@ class Controller(object):
             'user_service': self._user_service,
             'token_manager': self._token_manager,
             'policy_service': policy_service,
+            'tenant_service': self._tenant_service,
         }
         self._flask_app = http.new_app(dependencies)
         self._expired_token_remover = token.ExpiredTokenRemover(config, storage)

@@ -23,22 +23,25 @@ from unittest import TestCase
 
 from ..config import _DEFAULT_CONFIG
 from ..http import new_app
+from .. import services
 
 
 class HTTPAppTestCase(TestCase):
 
-    def setUp(self):
+    headers = {'content-type': 'application/json'}
+
+    def setUp(self, config):
         self.user_service = Mock()
         self.policy_service = Mock()
+        self.tenant_service = Mock(services.TenantService)
         token_manager = Mock()
-        config = dict(_DEFAULT_CONFIG)
-        config['enabled_http_plugins']['users'] = True
         dependencies = {
             'config': config,
             'backends': s.backends,
             'policy_service': self.policy_service,
             'token_manager': token_manager,
             'user_service': self.user_service,
+            'tenant_service': self.tenant_service,
         }
         self.app = new_app(dependencies).test_client()
 
@@ -46,9 +49,10 @@ class HTTPAppTestCase(TestCase):
 class TestUserResource(HTTPAppTestCase):
 
     def setUp(self):
-        super(TestUserResource, self).setUp()
+        config = dict(_DEFAULT_CONFIG)
+        config['enabled_http_plugins']['users'] = True
+        super(TestUserResource, self).setUp(config)
         self.url = '/0.1/users'
-        self.headers = {'content-type': 'application/json'}
 
     def test_that_creating_a_user_calls_the_service(self):
         username, password, email_address = 'foobar', 'b3h01D', 'foobar@example.com'
@@ -283,7 +287,7 @@ class TestUserResource(HTTPAppTestCase):
 class TestPolicyResource(HTTPAppTestCase):
 
     def setUp(self):
-        super(TestPolicyResource, self).setUp()
+        super(TestPolicyResource, self).setUp(_DEFAULT_CONFIG)
         self.url = '/0.1/policies'
         self.headers = {'content-type': 'application/json'}
 

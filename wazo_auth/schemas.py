@@ -35,6 +35,11 @@ class PolicySchema(BaseSchema):
     acl_templates = fields.List(fields.String(), missing=[])
 
 
+class TenantRequestSchema(BaseSchema):
+
+    name = xfields.String(validate=validate.Length(min=1, max=128), required=True)
+
+
 class TokenRequestSchema(Schema):
     backend = fields.String(required=True)
     expiration = fields.Integer(validate=Range(min=1))

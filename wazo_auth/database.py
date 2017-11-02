@@ -28,6 +28,7 @@ from .models import (
     ACLTemplatePolicy,
     Email,
     Policy,
+    Tenant,
     Token as TokenModel,
     User,
     UserEmail,
@@ -42,6 +43,7 @@ from .exceptions import (
     InvalidSortColumnException,
     InvalidSortDirectionException,
     UnknownPolicyException,
+    UnknownTenantException,
     UnknownTokenException,
     UnknownUserException,
     UnknownUsernameException,
@@ -52,10 +54,11 @@ logger = logging.getLogger(__name__)
 
 class Storage(object):
 
-    def __init__(self, policy_crud, token_crud, user_crud):
+    def __init__(self, policy_crud, token_crud, user_crud, tenant_crud):
         self._policy_crud = policy_crud
         self._token_crud = token_crud
         self._user_crud = user_crud
+        self._tenant_crud = tenant_crud
 
     def add_policy_acl_template(self, policy_uuid, acl_template):
         self._policy_crud.associate_policy_template(policy_uuid, acl_template)
@@ -104,6 +107,28 @@ class Storage(object):
 
     def update_policy(self, policy_uuid, name, description, acl_templates):
         self._policy_crud.update(policy_uuid, name, description, acl_templates)
+
+    def tenant_count(self, **kwargs):
+        term = kwargs.get('search')
+        if term:
+            kwargs['search'] = self._prepare_search_pattern(term)
+        return self._tenant_crud.count(**kwargs)
+
+    def tenant_create(self, name):
+        tenant_uuid = self._tenant_crud.create(name)
+        return dict(
+            uuid=tenant_uuid,
+            name=name,
+        )
+
+    def tenant_delete(self, tenant_uuid):
+        return self._tenant_crud.delete(tenant_uuid)
+
+    def tenant_list(self, **kwargs):
+        term = kwargs.get('search')
+        if term:
+            kwargs['search'] = self._prepare_search_pattern(term)
+        return self._tenant_crud.list_(**kwargs)
 
     def user_count(self, **kwargs):
         term = kwargs.get('search')
@@ -163,7 +188,8 @@ class Storage(object):
         policy_crud = _PolicyCRUD(config['db_uri'])
         token_crud = _TokenCRUD(config['db_uri'])
         user_crud = _UserCRUD(config['db_uri'])
-        return cls(policy_crud, token_crud, user_crud)
+        tenant_crud = _TenantCRUD(config['db_uri'])
+        return cls(policy_crud, token_crud, user_crud, tenant_crud)
 
 
 class _CRUD(object):
@@ -349,6 +375,85 @@ class _PolicyCRUD(_CRUD):
     def _policy_exists(self, s, policy_uuid):
         policy_count = s.query(Policy).filter(Policy.uuid == policy_uuid).count()
         return policy_count != 0
+
+
+class _TenantCRUD(_CRUD):
+
+    constraint_to_column_map = dict(
+        auth_tenant_name_key='name',
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(_TenantCRUD, self).__init__(*args, **kwargs)
+        column_map = dict(
+            name=Tenant.name,
+        )
+        self._paginator = QueryPaginator(column_map)
+
+    def count(self, **kwargs):
+        filtered = kwargs.get('filtered')
+        if filtered is not False:
+            strict_filter = self._new_strict_filter(**kwargs)
+            search_filter = self._new_search_filter(**kwargs)
+            filter_ = and_(strict_filter, search_filter)
+        else:
+            filter_ = text('true')
+
+        with self.new_session() as s:
+            return s.query(Tenant).filter(filter_).count()
+
+    def create(self, name):
+        tenant = Tenant(name=name)
+        with self.new_session() as s:
+            s.add(tenant)
+            try:
+                s.commit()
+            except exc.IntegrityError as e:
+                if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                    column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
+                    value = locals().get(column)
+                    if column:
+                        raise ConflictException('tenants', column, value)
+                raise
+            return tenant.uuid
+
+    def delete(self, uuid):
+        with self.new_session() as s:
+            nb_deleted = s.query(Tenant).filter(Tenant.uuid == uuid).delete()
+
+        if not nb_deleted:
+            raise UnknownTenantException(uuid)
+
+    def list_(self, **kwargs):
+        search_filter = self._new_search_filter(**kwargs)
+        strict_filter = self._new_strict_filter(**kwargs)
+        filter_ = and_(strict_filter, search_filter)
+
+        with self.new_session() as s:
+            query = s.query(
+                Tenant.uuid,
+                Tenant.name,
+            ).filter(filter_)
+            query = self._paginator.update_query(query, **kwargs)
+
+            return [{'uuid': uuid, 'name': name} for uuid, name in query.all()]
+
+    def _new_search_filter(self, search=None, **ignored):
+        if not search:
+            return text('true')
+
+        return or_(
+            Tenant.uuid.ilike(search),
+            Tenant.name.ilike(search),
+        )
+
+    def _new_strict_filter(self, uuid=None, name=None, **ignored):
+        filter_ = text('true')
+        if uuid:
+            filter_ = and_(filter_, Tenant.uuid == uuid)
+        if name:
+            filter_ = and_(filter_, Tenant.name == name)
+        return filter_
 
 
 class _TokenCRUD(_CRUD):

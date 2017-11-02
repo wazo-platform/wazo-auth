@@ -56,6 +56,30 @@ class PolicyService(object):
         return dict(uuid=policy_uuid, **body)
 
 
+class TenantService(object):
+
+    def __init__(self, storage):
+        self._storage = storage
+
+    def count(self, **kwargs):
+        return self._storage.tenant_count(**kwargs)
+
+    def delete(self, uuid):
+        return self._storage.tenant_delete(uuid)
+
+    def get(self, uuid):
+        tenants = self._storage.tenant_list(uuid=uuid, limit=1)
+        for tenant in tenants:
+            return tenant
+        raise exceptions.UnknownTenantException(uuid)
+
+    def list_(self, **kwargs):
+        return self._storage.tenant_list(**kwargs)
+
+    def new(self, **kwargs):
+        return self._storage.tenant_create(**kwargs)
+
+
 class UserService(object):
 
     def __init__(self, storage, encrypter=None):

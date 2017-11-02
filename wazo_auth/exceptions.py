@@ -46,6 +46,14 @@ class InvalidListParamException(APIException):
                 return cls(info['message'], {field: info})
 
 
+class UnknownTenantException(APIException):
+
+    def __init__(self, tenant_uuid):
+        msg = 'No such tenant: "{}"'.format(tenant_uuid)
+        details = dict(uuid=tenant_uuid)
+        super(UnknownTenantException, self).__init__(404, msg, 'unknown_tenant', details, 'tenants')
+
+
 class UnknownUserException(APIException):
 
     def __init__(self, user_uuid):
@@ -61,10 +69,10 @@ class UnknownUsernameException(Exception):
         super(UnknownUsernameException, self).__init__(msg)
 
 
-class UserParamException(APIException):
+class _BaseParamException(APIException):
 
     def __init__(self, message, details=None):
-        super(UserParamException, self).__init__(400, message, 'invalid_data', details, 'users')
+        super(_BaseParamException, self).__init__(400, message, 'invalid_data', details, self.resource)
 
     @classmethod
     def from_errors(cls, errors):
@@ -73,6 +81,16 @@ class UserParamException(APIException):
                 infos = [infos]
             for info in infos:
                 return cls(info['message'], {field: info})
+
+
+class TenantParamException(_BaseParamException):
+
+    resource = 'tenants'
+
+
+class UserParamException(_BaseParamException):
+
+    resource = 'users'
 
 
 class InvalidInputException(ManagerException):
