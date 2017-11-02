@@ -293,6 +293,75 @@ class TestTenantCrud(unittest.TestCase):
     def setUp(self):
         self._crud = database._TenantCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
 
+    @fixtures.tenant(name='c')
+    @fixtures.tenant(name='b')
+    @fixtures.tenant(name='a')
+    def test_count(self, a, b, c):
+        result = self._crud.count()
+        assert_that(result, equal_to(3))
+
+        result = self._crud.count(search='a', filtered=False)
+        assert_that(result, equal_to(3))
+
+        result = self._crud.count(search='a')
+        assert_that(result, equal_to(1))
+
+        result = self._crud.count(name='a', filtered=False)
+        assert_that(result, equal_to(3))
+
+        result = self._crud.count(name='a')
+        assert_that(result, equal_to(1))
+
+    @fixtures.tenant(name='foo c')
+    @fixtures.tenant(name='bar b')
+    @fixtures.tenant(name='baz a')
+    def test_list(self, a, b, c):
+        result = self._crud.list_()
+        assert_that(
+            result,
+            contains_inanyorder(
+                has_entries('name', 'foo c'),
+                has_entries('name', 'bar b'),
+                has_entries('name', 'baz a'),
+            ),
+        )
+
+        result = self._crud.list_(search='%ba%')
+        assert_that(
+            result,
+            contains_inanyorder(
+                has_entries('name', 'bar b'),
+                has_entries('name', 'baz a'),
+            ),
+        )
+
+        result = self._crud.list_(order='name', direction='desc')
+        assert_that(
+            result,
+            contains(
+                has_entries('name', 'foo c'),
+                has_entries('name', 'baz a'),
+                has_entries('name', 'bar b'),
+            ),
+        )
+
+        result = self._crud.list_(limit=1, order='name', direction='asc')
+        assert_that(
+            result,
+            contains(
+                has_entries('name', 'bar b'),
+            ),
+        )
+
+        result = self._crud.list_(offset=1, order='name', direction='asc')
+        assert_that(
+            result,
+            contains(
+                has_entries('name', 'baz a'),
+                has_entries('name', 'foo c'),
+            ),
+        )
+
     @fixtures.tenant(name='foobar')
     def test_tenant_creation(self, tenant_uuid):
         name = 'foobar'

@@ -108,6 +108,12 @@ class Storage(object):
     def update_policy(self, policy_uuid, name, description, acl_templates):
         self._policy_crud.update(policy_uuid, name, description, acl_templates)
 
+    def tenant_count(self, **kwargs):
+        term = kwargs.get('search')
+        if term:
+            kwargs['search'] = self._prepare_search_pattern(term)
+        return self._tenant_crud.count(**kwargs)
+
     def tenant_create(self, name):
         tenant_uuid = self._tenant_crud.create(name)
         return dict(
@@ -117,6 +123,12 @@ class Storage(object):
 
     def tenant_delete(self, tenant_uuid):
         return self._tenant_crud.delete(tenant_uuid)
+
+    def tenant_list(self, **kwargs):
+        term = kwargs.get('search')
+        if term:
+            kwargs['search'] = self._prepare_search_pattern(term)
+        return self._tenant_crud.list_(**kwargs)
 
     def user_count(self, **kwargs):
         term = kwargs.get('search')
@@ -371,6 +383,25 @@ class _TenantCRUD(_CRUD):
         auth_tenant_name_key='name',
     )
 
+    def __init__(self, *args, **kwargs):
+        super(_TenantCRUD, self).__init__(*args, **kwargs)
+        column_map = dict(
+            name=Tenant.name,
+        )
+        self._paginator = QueryPaginator(column_map)
+
+    def count(self, **kwargs):
+        filtered = kwargs.get('filtered')
+        if filtered is not False:
+            strict_filter = self._new_strict_filter(**kwargs)
+            search_filter = self._new_search_filter(**kwargs)
+            filter_ = and_(strict_filter, search_filter)
+        else:
+            filter_ = text('true')
+
+        with self.new_session() as s:
+            return s.query(Tenant).filter(filter_).count()
+
     def create(self, name):
         tenant = Tenant(name=name)
         with self.new_session() as s:
@@ -392,6 +423,37 @@ class _TenantCRUD(_CRUD):
 
         if not nb_deleted:
             raise UnknownTenantException(uuid)
+
+    def list_(self, **kwargs):
+        search_filter = self._new_search_filter(**kwargs)
+        strict_filter = self._new_strict_filter(**kwargs)
+        filter_ = and_(strict_filter, search_filter)
+
+        with self.new_session() as s:
+            query = s.query(
+                Tenant.uuid,
+                Tenant.name,
+            ).filter(filter_)
+            query = self._paginator.update_query(query, **kwargs)
+
+            return [{'uuid': uuid, 'name': name} for uuid, name in query.all()]
+
+    def _new_search_filter(self, search=None, **ignored):
+        if not search:
+            return text('true')
+
+        return or_(
+            Tenant.uuid.ilike(search),
+            Tenant.name.ilike(search),
+        )
+
+    def _new_strict_filter(self, uuid=None, name=None, **ignored):
+        filter_ = text('true')
+        if uuid:
+            filter_ = and_(filter_, Tenant.uuid == uuid)
+        if name:
+            filter_ = and_(filter_, Tenant.name == name)
+        return filter_
 
 
 class _TokenCRUD(_CRUD):
