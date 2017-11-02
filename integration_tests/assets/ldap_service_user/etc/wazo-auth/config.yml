@@ -16,8 +16,8 @@ rest_api:
     enabled: False
     allow_headers: [Content-Type, authorization, x-auth-token]
 
-enabled_plugins:
-  - ldap_user
+enabled_backend_plugins:
+  ldap_user: true
 
 ldap:
   uri: ldap://slapd
