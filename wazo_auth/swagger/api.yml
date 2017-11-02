@@ -241,6 +241,24 @@ paths:
           schema:
             $ref: '#/definitions/Error'
   /tenants:
+    get:
+      tags:
+        - tenants
+      security:
+        - wazo_auth_token: []
+      description: '**Required ACL**: `auth.tenants.read`'
+      summary: 'Retrieves the list of tenants'
+      parameters:
+      - $ref: '#/parameters/order'
+      - $ref: '#/parameters/direction'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
+      - $ref: '#/parameters/search'
+      responses:
+        '200':
+          description: 'The list of tenant'
+          schema:
+            $ref: '#/definitions/TenantList'
     post:
       consumes:
       - application/json
@@ -670,6 +688,20 @@ definitions:
           $ref: '#/definitions/UserEmail'
       uuid:
         type: string
+  TenantList:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: The number of tenants
+      filtered:
+        type: integer
+        description: The number of tenants matching the searched term
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/TenantResult'
+        description: A paginated list of tenants
   UserList:
     type: object
     properties:
@@ -684,6 +716,13 @@ definitions:
         items:
           $ref: '#/definitions/UserResult'
         description: A paginated list of users
+  TenantResult:
+    type: object
+    properties:
+      uuid:
+        type: string
+      name:
+        type: string
   UserResult:
     type: object
     properties:
