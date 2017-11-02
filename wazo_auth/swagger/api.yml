@@ -317,6 +317,36 @@ paths:
           description: System related error
           schema:
             $ref: '#/definitions/Error'
+    get:
+      tags:
+        - tenants
+      security:
+      - wazo_auth_token: []
+      description: '**Required ACL**: `auth.tenants.{tenant_uuid}.read`'
+      parameters:
+      - name: tenant_uuid
+        in: path
+        type: string
+        description: The UUID of the tenant
+        required: true
+      summary: Retrieves the details of a tenant
+      responses:
+        '200':
+          description: "The tenant's data"
+          schema:
+            $ref: '#/definitions/TenantResult'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Tenant not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: System related error
+          schema:
+            $ref: '#/definitions/Error'
   /token:
     post:
       consumes:

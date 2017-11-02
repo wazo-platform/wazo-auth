@@ -67,6 +67,12 @@ class TenantService(object):
     def delete(self, uuid):
         return self._storage.tenant_delete(uuid)
 
+    def get(self, uuid):
+        tenants = self._storage.tenant_list(uuid=uuid, limit=1)
+        for tenant in tenants:
+            return tenant
+        raise exceptions.UnknownTenantException(uuid)
+
     def list_(self, **kwargs):
         return self._storage.tenant_list(**kwargs)
 

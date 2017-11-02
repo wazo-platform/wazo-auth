@@ -34,6 +34,10 @@ class Tenant(http.ErrorCatchingResource):
         self.tenant_service.delete(tenant_uuid)
         return '', 204
 
+    @http.required_acl('auth.tenants.{tenant_uuid}.read')
+    def get(self, tenant_uuid):
+        return self.tenant_service.get(tenant_uuid)
+
 
 class Tenants(http.ErrorCatchingResource):
 
