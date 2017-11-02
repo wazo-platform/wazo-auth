@@ -31,6 +31,13 @@ class TestTenantPost(HTTPAppTestCase):
         config['enabled_http_plugins']['tenants'] = True
         super(TestTenantPost, self).setUp(config)
 
+    def test_delete(self):
+        uuid = 'c6b27903-e0af-43ac-80d9-6ea88e187537'
+        result = self.delete(uuid)
+
+        assert_that(result.status_code, equal_to(204))
+        self.tenant_service.delete.assert_called_once_with(uuid)
+
     def test_invalid_posts(self):
         invalid_datas = [
             None,
@@ -62,7 +69,7 @@ class TestTenantPost(HTTPAppTestCase):
 
     def test_that_validated_args_are_passed_to_the_service(self):
         body = {'name': 'foobar', 'ignored': True}
-        self.tenant_service.new_tenant.return_value = {
+        self.tenant_service.new.return_value = {
             'name': 'foobar',
             'uuid': '022035fe-f5e5-4c16-bd5f-8fea8f4c9d08',
         }
@@ -70,8 +77,12 @@ class TestTenantPost(HTTPAppTestCase):
         result = self.post(body)
 
         assert_that(result.status_code, equal_to(200))
-        assert_that(json.loads(result.data), equal_to(self.tenant_service.new_tenant.return_value))
-        self.tenant_service.new_tenant.assert_called_once_with(name='foobar')
+        assert_that(json.loads(result.data), equal_to(self.tenant_service.new.return_value))
+        self.tenant_service.new.assert_called_once_with(name='foobar')
+
+    def delete(self, tenant_uuid):
+        url = '{}/{}'.format(self.url, tenant_uuid)
+        return self.app.delete(url, headers=self.headers)
 
     def post(self, data):
         return self.app.post(self.url, data=json.dumps(data), headers=self.headers)

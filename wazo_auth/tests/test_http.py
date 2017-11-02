@@ -23,6 +23,7 @@ from unittest import TestCase
 
 from ..config import _DEFAULT_CONFIG
 from ..http import new_app
+from .. import services
 
 
 class HTTPAppTestCase(TestCase):
@@ -32,7 +33,7 @@ class HTTPAppTestCase(TestCase):
     def setUp(self, config):
         self.user_service = Mock()
         self.policy_service = Mock()
-        self.tenant_service = Mock()
+        self.tenant_service = Mock(services.TenantService)
         token_manager = Mock()
         dependencies = {
             'config': config,

@@ -61,7 +61,10 @@ class TenantService(object):
     def __init__(self, storage):
         self._storage = storage
 
-    def new_tenant(self, **kwargs):
+    def delete(self, uuid):
+        pass
+
+    def new(self, **kwargs):
         return self._storage.tenant_create(**kwargs)
 
 
