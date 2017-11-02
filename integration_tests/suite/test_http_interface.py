@@ -44,6 +44,7 @@ from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from xivo_test_helpers import until
 from wazo_auth import database, exceptions
+from .helpers import fixtures
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)
@@ -514,10 +515,10 @@ class TestTenants(_BaseTestCase):
         token = self.client.token.new(backend='mock', expiration=3600)['token']
         self.client.set_token(token)
 
-    def test_post(self):
+    @fixtures.http_tenant(name='foobar')
+    def test_post(self, tenant):
         name = 'foobar'
 
-        tenant = self.client.tenants.new(name=name)
         assert_that(
             tenant,
             has_entries(

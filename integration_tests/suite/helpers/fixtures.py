@@ -18,6 +18,7 @@
 import os
 import random
 import string
+import requests
 
 from functools import wraps
 
@@ -29,6 +30,23 @@ A_SALT = os.urandom(64)
 
 def _random_string(length):
     return ''.join(random.choice(string.ascii_lowercase) for _ in xrange(length))
+
+
+def http_tenant(**tenant_args):
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            tenant = self.client.tenants.new(**tenant_args)
+            try:
+                result = decorated(self, tenant, *args, **kwargs)
+            finally:
+                try:
+                    self.client.tenants.delete(tenant['uuid'])
+                except requests.HTTPError:
+                    pass
+            return result
+        return wrapper
+    return decorator
 
 
 def tenant(**tenant_args):
