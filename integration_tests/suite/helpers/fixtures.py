@@ -33,6 +33,9 @@ def _random_string(length):
 
 
 def http_tenant(**tenant_args):
+    if 'name' not in tenant_args:
+        tenant_args['name'] = _random_string(20)
+
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
