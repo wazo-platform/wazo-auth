@@ -35,6 +35,7 @@ _DEFAULT_CONFIG = {
     'token_cleanup_interval': 60.0,
     'enabled_http_plugins': {
         'users': False,
+        'policies': True,
     },
     'enabled_backend_plugins': {
         'xivo_admin': True,
