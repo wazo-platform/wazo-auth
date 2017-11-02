@@ -293,10 +293,9 @@ class TestTenantCrud(unittest.TestCase):
     def setUp(self):
         self._crud = database._TenantCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
 
-    def test_tenant_creation(self):
+    @fixtures.tenant(name='foobar')
+    def test_tenant_creation(self, tenant_uuid):
         name = 'foobar'
-
-        tenant_uuid = self._crud.create(name)
 
         assert_that(tenant_uuid, equal_to(ANY_UUID))
         with self._crud.new_session() as s:
@@ -318,6 +317,15 @@ class TestTenantCrud(unittest.TestCase):
                     'details', has_entries('name', ANY),
                 ),
             )
+        )
+
+    @fixtures.tenant()
+    def test_delete(self, tenant_uuid):
+        self._crud.delete(tenant_uuid)
+
+        assert_that(
+            calling(self._crud.delete).with_args(tenant_uuid),
+            raises(exceptions.UnknownTenantException),
         )
 
 

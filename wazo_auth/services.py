@@ -62,7 +62,7 @@ class TenantService(object):
         self._storage = storage
 
     def delete(self, uuid):
-        pass
+        return self._storage.tenant_delete(uuid)
 
     def new(self, **kwargs):
         return self._storage.tenant_create(**kwargs)

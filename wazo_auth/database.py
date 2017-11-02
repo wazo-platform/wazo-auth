@@ -43,6 +43,7 @@ from .exceptions import (
     InvalidSortColumnException,
     InvalidSortDirectionException,
     UnknownPolicyException,
+    UnknownTenantException,
     UnknownTokenException,
     UnknownUserException,
     UnknownUsernameException,
@@ -113,6 +114,9 @@ class Storage(object):
             uuid=tenant_uuid,
             name=name,
         )
+
+    def tenant_delete(self, tenant_uuid):
+        return self._tenant_crud.delete(tenant_uuid)
 
     def user_count(self, **kwargs):
         term = kwargs.get('search')
@@ -381,6 +385,13 @@ class _TenantCRUD(_CRUD):
                         raise ConflictException('tenants', column, value)
                 raise
             return tenant.uuid
+
+    def delete(self, uuid):
+        with self.new_session() as s:
+            nb_deleted = s.query(Tenant).filter(Tenant.uuid == uuid).delete()
+
+        if not nb_deleted:
+            raise UnknownTenantException(uuid)
 
 
 class _TokenCRUD(_CRUD):

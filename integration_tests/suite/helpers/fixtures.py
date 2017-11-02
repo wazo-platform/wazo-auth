@@ -21,12 +21,32 @@ import string
 
 from functools import wraps
 
+from wazo_auth import exceptions
+
 
 A_SALT = os.urandom(64)
 
 
 def _random_string(length):
     return ''.join(random.choice(string.ascii_lowercase) for _ in xrange(length))
+
+
+def tenant(**tenant_args):
+    if 'name' not in tenant_args:
+        tenant_args['name'] = _random_string(20)
+
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            tenant_uuid = self._crud.create(**tenant_args)
+            result = decorated(self, tenant_uuid, *args, **kwargs)
+            try:
+                self._crud.delete(tenant_uuid)
+            except exceptions.UnknownTenantException:
+                pass
+            return result
+        return wrapper
+    return decorator
 
 
 def user(**user_args):
