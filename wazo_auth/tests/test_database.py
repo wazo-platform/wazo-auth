@@ -52,7 +52,7 @@ class TestStorage(unittest.TestCase):
         result = self.storage.get_policy(uuid)
 
         assert_that(result, equal_to(uuid))
-        self.policy_crud.get.assert_called_once_with(search=uuid)
+        self.policy_crud.get.assert_called_once_with(uuid=uuid)
 
     def test_get_policy_by_name(self):
         name = 'test'

@@ -72,7 +72,7 @@ class Storage(object):
 
     def get_policy(self, policy_uuid):
         if self._is_uuid(policy_uuid):
-            for policy in self._policy_crud.get(search=policy_uuid):
+            for policy in self._policy_crud.get(uuid=policy_uuid):
                 return policy
         raise UnknownPolicyException()
 
@@ -256,10 +256,17 @@ class _PolicyCRUD(_CRUD):
     def _new_search_filter(self, search=None, **kwargs):
         term = search or '%'
         return or_(
-            Policy.uuid.ilike(term),
             Policy.name.ilike(term),
             Policy.description.ilike(term),
         )
+
+    def _new_strict_filter(self, uuid=None, name=None, **ignored):
+        filter_ = text('true')
+        if uuid:
+            filter_ = and_(filter_, Policy.uuid == uuid)
+        if name:
+            filter_ = and_(filter_, Policy.name == name)
+        return filter_
 
     def count(self, search_pattern):
         filter_ = self._new_search_filter(search=search_pattern)
@@ -289,7 +296,9 @@ class _PolicyCRUD(_CRUD):
             raise UnknownPolicyException()
 
     def get(self, **kwargs):
-        filter_ = self._new_search_filter(**kwargs)
+        strict_filter = self._new_strict_filter(**kwargs)
+        search_filter = self._new_search_filter(**kwargs)
+        filter_ = and_(strict_filter, search_filter)
         with self.new_session() as s:
             query = s.query(
                 Policy.uuid,
@@ -443,7 +452,6 @@ class _TenantCRUD(_CRUD):
             return text('true')
 
         return or_(
-            Tenant.uuid.ilike(search),
             Tenant.name.ilike(search),
         )
 
@@ -520,7 +528,6 @@ class _UserCRUD(_CRUD):
             return text('true')
 
         return or_(
-            User.uuid.ilike(search),
             User.username.ilike(search),
             Email.address.ilike(search),
         )
