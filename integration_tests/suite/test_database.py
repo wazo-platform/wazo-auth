@@ -206,7 +206,7 @@ class TestPolicyCRUD(unittest.TestCase):
                 contains_inanyorder('confd.line.{{ line_id }}', 'dird.#', 'ctid-ng.#'))
 
     def get_policy(self, policy_uuid):
-        for policy in self._crud.get(search=policy_uuid, order='name', direction='asc'):
+        for policy in self._crud.get(uuid=policy_uuid, order='name', direction='asc'):
             return policy
 
     def list_policy(self, order=None, direction=None, limit=None, offset=None):
