@@ -71,75 +71,6 @@ class ErrorCatchingResource(Resource):
     )
 
 
-class Policies(ErrorCatchingResource):
-
-    @required_acl('auth.policies.create')
-    def post(self):
-        policy_service = current_app.config['policy_service']
-
-        body, errors = schemas.PolicySchema().load(request.get_json(force=True))
-        if errors:
-            for field in errors:
-                raise exceptions.InvalidInputException(field)
-
-        policy_uuid = policy_service.create(**body)
-
-        return dict(uuid=policy_uuid, **body), 200
-
-    @required_acl('auth.policies.read')
-    def get(self):
-        ListSchema = schemas.new_list_schema('name')
-        list_params, errors = ListSchema().load(request.args)
-        if errors:
-            raise exceptions.InvalidListParamException(errors)
-
-        policy_service = current_app.config['policy_service']
-        policies = policy_service.list(**list_params)
-        total = policy_service.count(**list_params)
-        return {'items': policies, 'total': total}, 200
-
-
-class Policy(ErrorCatchingResource):
-
-    @required_acl('auth.policies.{policy_uuid}.read')
-    def get(self, policy_uuid):
-        policy_service = current_app.config['policy_service']
-        policy = policy_service.get(policy_uuid)
-        return policy, 200
-
-    @required_acl('auth.policies.{policy_uuid}.delete')
-    def delete(self, policy_uuid):
-        policy_service = current_app.config['policy_service']
-        policy_service.delete(policy_uuid)
-        return '', 204
-
-    @required_acl('auth.policies.{policy_uuid}.edit')
-    def put(self, policy_uuid):
-        body, errors = schemas.PolicySchema().load(request.get_json(force=True))
-        if errors:
-            for field in errors:
-                raise exceptions.InvalidInputException(field)
-
-        policy_service = current_app.config['policy_service']
-        policy = policy_service.update(policy_uuid, **body)
-        return policy, 200
-
-
-class PolicyTemplate(ErrorCatchingResource):
-
-    @required_acl('auth.policies.{policy_uuid}.edit')
-    def delete(self, policy_uuid, template):
-        policy_service = current_app.config['policy_service']
-        policy_service.delete_acl_template(policy_uuid, template)
-        return '', 204
-
-    @required_acl('auth.policies.{policy_uuid}.edit')
-    def put(self, policy_uuid, template):
-        policy_service = current_app.config['policy_service']
-        policy_service.add_acl_template(policy_uuid, template)
-        return '', 204
-
-
 class Tokens(ErrorCatchingResource):
 
     def post(self):
@@ -223,9 +154,6 @@ def new_app(dependencies):
     dependencies['api'] = api
     plugin_helpers.load('wazo_auth.http', config['enabled_http_plugins'], dependencies)
 
-    api.add_resource(Policies, '/policies')
-    api.add_resource(Policy, '/policies/<string:policy_uuid>')
-    api.add_resource(PolicyTemplate, '/policies/<string:policy_uuid>/acl_templates/<template>')
     api.add_resource(Tokens, '/token')
     api.add_resource(Token, '/token/<string:token>')
     api.add_resource(Backends, '/backends')
@@ -235,7 +163,6 @@ def new_app(dependencies):
     if cors_enabled:
         CORS(app, **cors_config)
 
-    app.config['policy_service'] = dependencies['policy_service']
     app.config['token_manager'] = dependencies['token_manager']
     app.config['backends'] = dependencies['backends']
 
