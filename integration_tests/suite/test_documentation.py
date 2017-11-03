@@ -25,7 +25,7 @@ from .test_http_interface import _BaseTestCase
 class TestDocumentation(_BaseTestCase):
 
     asset = 'documentation'
-    service = 'swagger-validator'
+    service = 'auth'
 
     def test_documentation_errors(self):
         api_url = 'https://auth:9497/0.1/api/api.yml'
