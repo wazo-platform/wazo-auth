@@ -98,6 +98,14 @@ class UserEmail(Base):
     main = Column(Boolean, nullable=False, default=False)
 
 
+class UserPolicy(Base):
+
+    __tablename__ = 'auth_user_policy'
+
+    user_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='CASCADE'), primary_key=True)
+    policy_uuid = Column(String(38), ForeignKey('auth_policy.uuid', ondelete='CASCADE'), primary_key=True)
+
+
 class ACLTemplate(Base):
 
     __tablename__ = 'auth_acl_template'

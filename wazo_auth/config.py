@@ -36,6 +36,7 @@ _DEFAULT_CONFIG = {
     'enabled_http_plugins': {
         'users': False,
         'policies': True,
+        'user_policy': True,
     },
     'enabled_backend_plugins': {
         'xivo_admin': True,
