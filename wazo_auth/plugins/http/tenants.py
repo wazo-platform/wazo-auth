@@ -48,7 +48,6 @@ class Tenants(http.ErrorCatchingResource):
     def get(self):
         ListSchema = schemas.new_list_schema('name')
         list_params, errors = ListSchema().load(request.args)
-        print list_params
         if errors:
             raise exceptions.InvalidListParamException(errors)
 
