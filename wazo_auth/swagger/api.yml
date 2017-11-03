@@ -581,6 +581,93 @@ paths:
           description: System related error
           schema:
             $ref: '#/definitions/Error'
+  /users/{user_uuid}/policies:
+    get:
+      tags:
+        - users
+        - policies
+      security:
+      - wazo_auth_token: []
+      description: '**Required ACL**: `auth.users.{user_uuid}.policies.read`'
+      parameters:
+      - name: user_uuid
+        in: path
+        type: string
+        description: The UUID of the user
+        required: true
+      summary: Retrieves the list of policies associated to a user
+      responses:
+        '200':
+          description: "The user's policies"
+          schema:
+            $ref: '#/definitions/GetPoliciesResult'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: User not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: System related error
+          schema:
+            $ref: '#/definitions/Error'
+  /users/{user_uuid}/policies/{policy_uuid}:
+    put:
+      tags:
+        - users
+        - policies
+      security:
+        - wazo_auth_token: []
+      operationId: addUserPolicy
+      description: '**Required ACL:** `auth.users.{user_uuid}.policies.edit`'
+      summary: Associate a policy to a user
+      parameters:
+      - name: policy_uuid
+        in: path
+        type: string
+        description: The UUID of the policy
+        required: true
+      - name: user_uuid
+        in: path
+        type: string
+        description: The UUID of the user
+        required: true
+      responses:
+        '204':
+          description: The policy has been assigned
+        '404':
+          description: User or Policy not found
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      tags:
+        - users
+        - policies
+      security:
+        - wazo_auth_token: []
+      operationId: addUserPolicy
+      description: '**Required ACL:** `auth.users.{user_uuid}.policies.edit`'
+      summary: Dissociate a policy from a user
+      parameters:
+      - name: policy_uuid
+        in: path
+        type: string
+        description: The UUID of the policy
+        required: true
+      - name: user_uuid
+        in: path
+        type: string
+        description: The UUID of the user
+        required: true
+      responses:
+        '204':
+          description: The policy has been unassigned
+        '404':
+          description: User or Policy not found
+          schema:
+            $ref: '#/definitions/Error'
   /backends:
     get:
       tags:
