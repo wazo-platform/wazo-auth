@@ -98,6 +98,15 @@ class UserService(object):
     def delete_user(self, user_uuid):
         self._storage.user_delete(user_uuid)
 
+    def get_acl_templates(self, username):
+        users = self._storage.user_list(username=username, limit=1)
+        acl_templates = []
+        for user in users:
+            policies = self.list_policies(user['uuid'])
+            for policy in policies:
+                acl_templates.extend(policy['acl_templates'])
+        return acl_templates
+
     def get_user(self, user_uuid):
         users = self._storage.user_list(uuid=user_uuid)
         for user in users:

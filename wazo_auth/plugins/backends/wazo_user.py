@@ -30,7 +30,8 @@ class WazoUser(BaseAuthenticationBackend, ACLRenderingBackend):
 
     def get_acls(self, username, args):
         acl_templates = args.get('acl_templates', [])
-        return self.render_acl(acl_templates, self.get_user_data, username=username)
+        user_acl_templates = self._user_service.get_acl_templates(username)
+        return self.render_acl(acl_templates + user_acl_templates, self.get_user_data, username=username)
 
     def get_ids(self, username, args):
         matching_users = self._user_service.list_users(username=username)
@@ -40,4 +41,4 @@ class WazoUser(BaseAuthenticationBackend, ACLRenderingBackend):
         return self._user_service.verify_password(username, password)
 
     def get_user_data(self, *args, **kwargs):
-        return {}
+        return {'username': kwargs['username']}

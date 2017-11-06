@@ -764,9 +764,9 @@ class TestUsers(_BaseTestCase):
             ),
         )
 
-    @fixtures.http_user()
-    @fixtures.http_policy(name='two')
-    @fixtures.http_policy(name='one')
+    @fixtures.http_user(username='foo', password='bar')
+    @fixtures.http_policy(name='two', acl_templates=['acl.one.{{ username }}', 'acl.two'])
+    @fixtures.http_policy(name='one', acl_templates=['this.is.a.test.acl'])
     def test_user_policy(self, policy_1, policy_2, user):
         result = self.client.users.get_policies(user['uuid'])
         assert_that(
@@ -780,6 +780,25 @@ class TestUsers(_BaseTestCase):
         )
 
         self.client.users.add_policy(user['uuid'], policy_1['uuid'])
+        self.client.users.add_policy(user['uuid'], policy_2['uuid'])
+
+        user_client = Client(
+            HOST, port=self.service_port(9497, 'auth'), verify_certificate=False,
+            username='foo', password='bar')
+        token_data = user_client.token.new('wazo_user', expiration=5)
+        assert_that(
+            token_data,
+            has_entries(
+                'acls', has_items(
+                    'acl.one.foo',
+                    'this.is.a.test.acl',
+                    'acl.two',
+                ),
+            ),
+            'generated acl',
+        )
+
+        self.client.users.remove_policy(user['uuid'], policy_2['uuid'])
 
         assert_that(
             calling(
