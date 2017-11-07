@@ -98,3 +98,15 @@ class BaseTestCase(AssetLaunchingTestCase):
             time.sleep(0.2)
         else:
             self.fail('wazo-auth did not stop')
+
+
+class MockBackendTestCase(BaseTestCase):
+
+    asset = 'mock_backend'
+
+    def setUp(self):
+        super(MockBackendTestCase, self).setUp()
+        port = self.service_port(9497, 'auth')
+        self.client = Client(self.get_host(), port, username='foo', password='bar', verify_certificate=False)
+        token = self.client.token.new(backend='mock', expiration=3600)['token']
+        self.client.set_token(token)

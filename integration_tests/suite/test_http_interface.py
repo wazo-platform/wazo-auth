@@ -44,7 +44,7 @@ from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from xivo_test_helpers import until
 from wazo_auth import database, exceptions
 from .helpers import fixtures
-from .helpers.base import BaseTestCase
+from .helpers.base import BaseTestCase, MockBackendTestCase
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)
@@ -56,16 +56,7 @@ def _new_token_id():
     return uuid.uuid4()
 
 
-class TestPolicies(BaseTestCase):
-
-    asset = 'mock_backend'
-
-    def setUp(self):
-        super(TestPolicies, self).setUp()
-        port = self.service_port(9497, 'auth')
-        self.client = Client(self.get_host(), port, username='foo', password='bar', verify_certificate=False)
-        token = self.client.token.new(backend='mock', expiration=3600)['token']
-        self.client.set_token(token)
+class TestPolicies(MockBackendTestCase):
 
     def tearDown(self):
         for policy in self.client.policies.list()['items']:
@@ -207,16 +198,7 @@ class TestPolicies(BaseTestCase):
             'acl_templates': contains_inanyorder(*acl_templates[:-1])}))
 
 
-class TestWazoUserBackend(BaseTestCase):
-
-    asset = 'mock_backend'
-
-    def setUp(self):
-        super(TestWazoUserBackend, self).setUp()
-        port = self.service_port(9497, 'auth')
-        self.client = Client(self.get_host(), port, username='foo', password='bar', verify_certificate=False)
-        token = self.client.token.new(backend='mock', expiration=3600)['token']
-        self.client.set_token(token)
+class TestWazoUserBackend(MockBackendTestCase):
 
     def tearDown(self):
         for user in self.client.users.list()['items']:
@@ -254,9 +236,7 @@ class TestWazoUserBackend(BaseTestCase):
         )
 
 
-class TestCoreMockBackend(BaseTestCase):
-
-    asset = 'mock_backend'
+class TestCoreMockBackend(MockBackendTestCase):
 
     def test_that_the_xivo_uuid_is_included_in_POST_response(self):
         response = self._post_token('foo', 'bar')
@@ -432,16 +412,7 @@ class TestNoSSLKey(BaseTestCase):
         assert_that(log, contains_string("No such file or directory: '/data/_common/ssl/no_server.key'"))
 
 
-class TestTenants(BaseTestCase):
-
-    asset = 'mock_backend'
-
-    def setUp(self):
-        super(TestTenants, self).setUp()
-        port = self.service_port(9497, 'auth')
-        self.client = Client(self.get_host(), port, username='foo', password='bar', verify_certificate=False)
-        token = self.client.token.new(backend='mock', expiration=3600)['token']
-        self.client.set_token(token)
+class TestTenants(MockBackendTestCase):
 
     @fixtures.http_tenant(name='foobar')
     def test_post(self, tenant):
@@ -567,16 +538,7 @@ class TestTenants(BaseTestCase):
         )
 
 
-class TestUsers(BaseTestCase):
-
-    asset = 'mock_backend'
-
-    def setUp(self):
-        super(TestUsers, self).setUp()
-        port = self.service_port(9497, 'auth')
-        self.client = Client(self.get_host(), port, username='foo', password='bar', verify_certificate=False)
-        token = self.client.token.new(backend='mock', expiration=3600)['token']
-        self.client.set_token(token)
+class TestUsers(MockBackendTestCase):
 
     def tearDown(self):
         for user in self.client.users.list()['items']:
