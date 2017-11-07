@@ -383,11 +383,7 @@ paths:
         type: string
         description: The UUID of the policy
         required: true
-      - name: user_uuid
-        in: path
-        type: string
-        description: The UUID of the user
-        required: true
+      - $ref: '#/parameters/user_uuid'
       responses:
         '204':
           description: Association successful
@@ -410,11 +406,7 @@ paths:
         type: string
         description: The UUID of the tenant
         required: true
-      - name: user_uuid
-        in: path
-        type: string
-        description: The UUID of the user
-        required: true
+      - $ref: '#/parameters/user_uuid'
       responses:
         '204':
           description: The association has been removed
@@ -604,11 +596,7 @@ paths:
       - wazo_auth_token: []
       description: '**Required ACL**: `auth.users.{user_uuid}.read`'
       parameters:
-      - name: user_uuid
-        in: path
-        type: string
-        description: The UUID of the user
-        required: true
+      - $ref: '#/parameters/user_uuid'
       summary: Retrieves the details of a user
       responses:
         '200':
@@ -635,11 +623,7 @@ paths:
       - wazo_auth_token: []
       description: '**Required ACL**: `auth.users.{user_uuid}.delete`'
       parameters:
-      - name: user_uuid
-        in: path
-        type: string
-        description: The UUID of the user
-        required: true
+      - $ref: '#/parameters/user_uuid'
       summary: Delete a user
       responses:
         '204':
@@ -669,11 +653,7 @@ paths:
       - $ref: '#/parameters/limit'
       - $ref: '#/parameters/offset'
       - $ref: '#/parameters/search'
-      - name: user_uuid
-        in: path
-        type: string
-        description: The UUID of the user
-        required: true
+      - $ref: '#/parameters/user_uuid'
       summary: Retrieves the details of a user
       responses:
         '200':
@@ -701,11 +681,7 @@ paths:
       - wazo_auth_token: []
       description: '**Required ACL**: `auth.users.{user_uuid}.policies.read`'
       parameters:
-      - name: user_uuid
-        in: path
-        type: string
-        description: The UUID of the user
-        required: true
+      - $ref: '#/parameters/user_uuid'
       - $ref: '#/parameters/order'
       - $ref: '#/parameters/direction'
       - $ref: '#/parameters/limit'
@@ -741,11 +717,7 @@ paths:
       summary: Associate a policy to a user
       parameters:
       - $ref: '#/parameters/policy_uuid'
-      - name: user_uuid
-        in: path
-        type: string
-        description: The UUID of the user
-        required: true
+      - $ref: '#/parameters/user_uuid'
       responses:
         '204':
           description: The policy has been assigned
@@ -764,11 +736,7 @@ paths:
       summary: Dissociate a policy from a user
       parameters:
       - $ref: '#/parameters/policy_uuid'
-      - name: user_uuid
-        in: path
-        type: string
-        description: The UUID of the user
-        required: true
+      - $ref: '#/parameters/user_uuid'
       responses:
         '204':
           description: The policy has been unassigned
@@ -822,6 +790,12 @@ parameters:
     in: path
     type: string
     description: The UUID of the policy
+    required: true
+  user_uuid:
+    name: user_uuid
+    in: path
+    type: string
+    description: The UUID of the user
     required: true
   search:
     required: false
