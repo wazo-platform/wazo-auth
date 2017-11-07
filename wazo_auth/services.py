@@ -86,17 +86,35 @@ class UserService(object):
         self._storage = storage
         self._encrypter = encrypter or PasswordEncrypter()
 
+    def add_policy(self, user_uuid, policy_uuid):
+        self._storage.user_add_policy(user_uuid, policy_uuid)
+
+    def count_policies(self, user_uuid, **kwargs):
+        return self._storage.user_count_policies(user_uuid, **kwargs)
+
     def count_users(self, **kwargs):
         return self._storage.user_count(**kwargs)
 
     def delete_user(self, user_uuid):
         self._storage.user_delete(user_uuid)
 
+    def get_acl_templates(self, username):
+        users = self._storage.user_list(username=username, limit=1)
+        acl_templates = []
+        for user in users:
+            policies = self.list_policies(user['uuid'])
+            for policy in policies:
+                acl_templates.extend(policy['acl_templates'])
+        return acl_templates
+
     def get_user(self, user_uuid):
         users = self._storage.user_list(uuid=user_uuid)
         for user in users:
             return user
         raise exceptions.UnknownUserException(user_uuid)
+
+    def list_policies(self, user_uuid, **kwargs):
+        return self._storage.user_list_policies(user_uuid, **kwargs)
 
     def list_users(self, **kwargs):
         return self._storage.user_list(**kwargs)
@@ -107,6 +125,9 @@ class UserService(object):
         logger.info('creating a new user with params: %s', kwargs)  # log after poping the password
         # a confirmation email should be sent
         return self._storage.user_create(*args, salt=salt, hash_=hash_, **kwargs)
+
+    def remove_policy(self, user_uuid, policy_uuid):
+        self._storage.user_remove_policy(user_uuid, policy_uuid)
 
     def verify_password(self, username, password):
         try:

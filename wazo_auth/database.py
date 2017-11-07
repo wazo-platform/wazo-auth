@@ -32,6 +32,7 @@ from .models import (
     Token as TokenModel,
     User,
     UserEmail,
+    UserPolicy,
 )
 from .token import Token
 from .exceptions import (
@@ -46,6 +47,7 @@ from .exceptions import (
     UnknownTenantException,
     UnknownTokenException,
     UnknownUserException,
+    UnknownUserPolicyException,
     UnknownUsernameException,
 )
 
@@ -130,11 +132,29 @@ class Storage(object):
             kwargs['search'] = self._prepare_search_pattern(term)
         return self._tenant_crud.list_(**kwargs)
 
+    def user_add_policy(self, user_uuid, policy_uuid):
+        self._user_crud.add_policy(user_uuid, policy_uuid)
+
+    def user_remove_policy(self, user_uuid, policy_uuid):
+        self._user_crud.remove_policy(user_uuid, policy_uuid)
+
     def user_count(self, **kwargs):
         term = kwargs.get('search')
         if term:
             kwargs['search'] = self._prepare_search_pattern(term)
         return self._user_crud.count(**kwargs)
+
+    def user_count_policies(self, user_uuid, **kwargs):
+        term = kwargs.get('search')
+        if term:
+            kwargs['search'] = self._prepare_search_pattern(term)
+        return self._user_crud.count_policies(user_uuid, **kwargs)
+
+    def user_list_policies(self, user_uuid, **kwargs):
+        term = kwargs.get('search')
+        if term:
+            kwargs['search'] = self._prepare_search_pattern(term)
+        return self._policy_crud.get(user_uuid=user_uuid, **kwargs)
 
     def user_delete(self, user_uuid):
         self._user_crud.delete(user_uuid)
@@ -195,6 +215,7 @@ class Storage(object):
 class _CRUD(object):
 
     _UNIQUE_CONSTRAINT_CODE = '23505'
+    _FKEY_CONSTRAINT_CODE = '23503'
 
     def __init__(self, db_uri):
         self._Session = scoped_session(sessionmaker())
@@ -207,7 +228,7 @@ class _CRUD(object):
         try:
             yield session
             session.commit()
-        except:
+        except Exception:
             session.rollback()
             raise
         finally:
@@ -253,21 +274,6 @@ class _PolicyCRUD(_CRUD):
                 )
                 s.query(ACLTemplatePolicy).filter(filter_).delete()
 
-    def _new_search_filter(self, search=None, **kwargs):
-        term = search or '%'
-        return or_(
-            Policy.name.ilike(term),
-            Policy.description.ilike(term),
-        )
-
-    def _new_strict_filter(self, uuid=None, name=None, **ignored):
-        filter_ = text('true')
-        if uuid:
-            filter_ = and_(filter_, Policy.uuid == uuid)
-        if name:
-            filter_ = and_(filter_, Policy.name == name)
-        return filter_
-
     def count(self, search_pattern):
         filter_ = self._new_search_filter(search=search_pattern)
         with self.new_session() as s:
@@ -309,6 +315,8 @@ class _PolicyCRUD(_CRUD):
                 ACLTemplatePolicy,
             ).outerjoin(
                 ACLTemplate,
+            ).outerjoin(
+                UserPolicy,
             ).filter(
                 filter_,
             ).group_by(
@@ -384,6 +392,25 @@ class _PolicyCRUD(_CRUD):
     def _policy_exists(self, s, policy_uuid):
         policy_count = s.query(Policy).filter(Policy.uuid == policy_uuid).count()
         return policy_count != 0
+
+    @staticmethod
+    def _new_search_filter(search=None, **kwargs):
+        term = search or '%'
+        return or_(
+            Policy.name.ilike(term),
+            Policy.description.ilike(term),
+        )
+
+    @staticmethod
+    def _new_strict_filter(uuid=None, name=None, user_uuid=None, **ignored):
+        filter_ = text('true')
+        if uuid:
+            filter_ = and_(filter_, Policy.uuid == uuid)
+        if name:
+            filter_ = and_(filter_, Policy.name == name)
+        if user_uuid:
+            filter_ = and_(filter_, UserPolicy.user_uuid == user_uuid)
+        return filter_
 
 
 class _TenantCRUD(_CRUD):
@@ -542,6 +569,37 @@ class _UserCRUD(_CRUD):
             filter_ = and_(filter_, Email.address == email_address)
         return filter_
 
+    def add_policy(self, user_uuid, policy_uuid):
+        user_policy = UserPolicy(user_uuid=user_uuid, policy_uuid=policy_uuid)
+        with self.new_session() as s:
+            s.add(user_policy)
+            try:
+                s.commit()
+            except exc.IntegrityError as e:
+                if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                    # This association already exists.
+                    s.rollback()
+                    return
+                if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
+                    constraint = e.orig.diag.constraint_name
+                    if constraint == 'auth_user_policy_user_uuid_fkey':
+                        raise UnknownUserException(user_uuid)
+                    elif constraint == 'auth_user_policy_policy_uuid_fkey':
+                        raise UnknownPolicyException(policy_uuid)
+                raise
+
+    def remove_policy(self, user_uuid, policy_uuid):
+        with self.new_session() as s:
+            nb_deleted = s.query(UserPolicy).filter(
+                and_(
+                    UserPolicy.user_uuid == user_uuid,
+                    UserPolicy.policy_uuid == policy_uuid,
+                )
+            ).delete()
+
+        if nb_deleted == 0:
+            raise UnknownUserPolicyException(user_uuid, policy_uuid)
+
     def count(self, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:
@@ -556,6 +614,22 @@ class _UserCRUD(_CRUD):
                 UserEmail, UserEmail.user_uuid == User.uuid,
             ).join(
                 Email, Email.uuid == UserEmail.email_uuid
+            ).filter(filter_).count()
+
+    def count_policies(self, user_uuid, **kwargs):
+        filtered = kwargs.get('filtered')
+        if filtered is not False:
+            strict_filter = _PolicyCRUD._new_strict_filter(**kwargs)
+            search_filter = _PolicyCRUD._new_search_filter(**kwargs)
+            filter_ = and_(strict_filter, search_filter)
+        else:
+            filter_ = text('true')
+
+        filter_ = and_(filter_, UserPolicy.user_uuid == user_uuid)
+
+        with self.new_session() as s:
+            return s.query(Policy).join(
+                UserPolicy, UserPolicy.policy_uuid == Policy.uuid,
             ).filter(filter_).count()
 
     def create(self, username, email_address, hash_, salt):
@@ -651,6 +725,18 @@ class _UserCRUD(_CRUD):
                 users[user_uuid]['emails'].append(email)
 
         return users.values()
+
+    def list_policies(self, user_uuid, **kwargs):
+        strict_filter = _PolicyCRUD._new_strict_filter(**kwargs)
+        search_filter = _PolicyCRUD._new_search_filter(**kwargs)
+        filter_ = and_(strict_filter, search_filter)
+
+        filter_ = and_(filter_, UserPolicy.user_uuid == user_uuid)
+
+        with self.new_session() as s:
+            return s.query(Policy).join(
+                UserPolicy, UserPolicy.policy_uuid == Policy.uuid,
+            ).filter(filter_).count()
 
 
 class QueryPaginator(object):

@@ -34,6 +34,7 @@ from hamcrest import (
     not_,
 )
 from mock import ANY
+from sqlalchemy import and_, func
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.mock import ANY_UUID
 from xivo_test_helpers.hamcrest.raises import raises
@@ -67,6 +68,8 @@ class TestPolicyCRUD(unittest.TestCase):
 
     def setUp(self):
         self._crud = database._PolicyCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
+        self._user_crud = database._UserCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
+        self._policy_crud = self._crud
         default_user_policy = self._crud.get(search='wazo_default_user_policy')[0]
         default_admin_policy = self._crud.get(search='wazo_default_admin_policy')[0]
         self._default_user_policy_uuid = default_user_policy['uuid']
@@ -177,6 +180,28 @@ class TestPolicyCRUD(unittest.TestCase):
                     calling(self.list_policy).with_args(order='name', direction='asc', limit=limit),
                     raises(exceptions.InvalidLimitException),
                     limit)
+
+    @fixtures.policy(name='c', description='The third foobar')
+    @fixtures.policy(name='b', description='The second foobar')
+    @fixtures.policy(name='a')
+    @fixtures.user()
+    def test_user_list_policies(self, user_uuid, policy_a, policy_b, policy_c):
+        result = self._crud.get(user_uuid=user_uuid)
+        assert_that(result, empty(), 'empty')
+
+        self._user_crud.add_policy(user_uuid, policy_a)
+        self._user_crud.add_policy(user_uuid, policy_b)
+        self._user_crud.add_policy(user_uuid, policy_c)
+
+        result = self._crud.get(user_uuid=user_uuid)
+        assert_that(
+            result,
+            contains_inanyorder(
+                has_entries('name', 'a'),
+                has_entries('name', 'b'),
+                has_entries('name', 'c'),
+            ),
+        )
 
     def test_delete(self):
         uuid_ = self._crud.create('foobar', '', [])
@@ -403,10 +428,102 @@ class TestUserCrud(unittest.TestCase):
     salt = os.urandom(64)
 
     def setUp(self):
-        self._crud = database._UserCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
+        self._user_crud = database._UserCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
+        self._policy_crud = database._PolicyCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
+        self._crud = self._user_crud
         with self._crud.new_session() as s:
             s.query(database.User).delete()
             s.query(database.Email).delete()
+
+    @fixtures.policy()
+    @fixtures.user()
+    def test_user_policy_association(self, user_uuid, policy_uuid):
+        self._user_crud.add_policy(user_uuid, policy_uuid)
+        with self._user_crud.new_session() as s:
+            count = s.query(
+                func.count(database.UserPolicy.user_uuid),
+            ).filter(
+                and_(
+                    database.UserPolicy.user_uuid == user_uuid,
+                    database.UserPolicy.policy_uuid == policy_uuid,
+                )
+            ).scalar()
+
+            assert_that(count, equal_to(1))
+
+        assert_that(
+            calling(self._user_crud.add_policy).with_args(user_uuid, policy_uuid),
+            not_(raises(Exception)),
+            'associating twice should not fail',
+        )
+
+        assert_that(
+            calling(self._user_crud.add_policy).with_args('unknown', policy_uuid),
+            raises(exceptions.UnknownUserException),
+            'unknown user',
+        )
+
+        assert_that(
+            calling(self._user_crud.add_policy).with_args(user_uuid, 'unknown'),
+            raises(exceptions.UnknownPolicyException),
+            'unknown policy',
+        )
+
+    @fixtures.policy()
+    @fixtures.user()
+    def test_user_policy_dissociation(self, user_uuid, policy_uuid):
+        assert_that(
+            calling(self._user_crud.remove_policy).with_args(user_uuid, policy_uuid),
+            raises(exceptions.UnknownUserPolicyException),
+            'no association',
+        )
+
+        self._user_crud.add_policy(user_uuid, policy_uuid)
+
+        assert_that(
+            calling(self._user_crud.remove_policy).with_args('unknown', policy_uuid),
+            raises(exceptions.UnknownUserPolicyException),
+            'unknown user',
+        )
+
+        assert_that(
+            calling(self._user_crud.remove_policy).with_args(user_uuid, 'unknown'),
+            raises(exceptions.UnknownUserPolicyException),
+            'unknown policy',
+        )
+
+        assert_that(
+            calling(self._user_crud.remove_policy).with_args(user_uuid, policy_uuid),
+            not_(raises(Exception)),
+            'no error when dissociating',
+        )
+
+    @fixtures.policy(name='c', description='The third foobar')
+    @fixtures.policy(name='b', description='The second foobar')
+    @fixtures.policy(name='a')
+    @fixtures.user()
+    def test_user_count_policies(self, user_uuid, policy_a, policy_b, policy_c):
+        result = self._user_crud.count_policies(user_uuid)
+        assert_that(result, equal_to(0), 'none associated')
+
+        self._user_crud.add_policy(user_uuid, policy_a)
+        self._user_crud.add_policy(user_uuid, policy_b)
+        self._user_crud.add_policy(user_uuid, policy_c)
+
+        result = self._user_crud.count_policies(user_uuid)
+        assert_that(result, equal_to(3), 'no filter')
+
+        result = self._user_crud.count_policies(user_uuid, name='a')
+        assert_that(result, equal_to(1), 'strict match')
+
+        result = self._user_crud.count_policies(user_uuid, name='a', filtered=False)
+        assert_that(result, equal_to(3), 'strict not filtered')
+
+        result = self._user_crud.count_policies(user_uuid, search='%foobar%')
+        assert_that(result, equal_to(2), 'search')
+
+        result = self._user_crud.count_policies(user_uuid, search='%foobar%', filtered=False)
+        assert_that(result, equal_to(3), 'search not filtered')
 
     def test_user_creation(self):
         username = 'foobar'

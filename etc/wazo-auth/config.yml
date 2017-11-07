@@ -35,7 +35,6 @@ rest_api:
 
 enabled_http_plugins:
   users: false
-  policies: true
 
 enabled_backend_plugins:
   ldap_user: false

@@ -52,6 +52,74 @@ def http_tenant(**tenant_args):
     return decorator
 
 
+def http_user(**user_args):
+    if 'username' not in user_args:
+        user_args['username'] = _random_string(20)
+    if 'password' not in user_args:
+        user_args['password'] = _random_string(20)
+    if 'email_address' not in user_args:
+        user_args['email_address'] = '{}@example.com'.format(user_args['username'])
+
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            user = self.client.users.new(**user_args)
+            try:
+                result = decorated(self, user, *args, **kwargs)
+            finally:
+                try:
+                    self.client.users.delete(user['uuid'])
+                except requests.HTTPError:
+                    pass
+            return result
+        return wrapper
+    return decorator
+
+
+def http_policy(**policy_args):
+    if 'name' not in policy_args:
+        policy_args['name'] = _random_string(20)
+    policy_args['acl_templates'] = policy_args.get('acl_templates') or []
+    policy_args['description'] = policy_args.get('description', '')
+
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            policy = self.client.policies.new(**policy_args)
+            try:
+                result = decorated(self, policy, *args, **kwargs)
+            finally:
+                try:
+                    self.client.policies.delete(policy['uuid'])
+                except requests.HTTPError:
+                    pass
+            return result
+        return wrapper
+    return decorator
+
+
+def policy(**policy_args):
+    if 'name' not in policy_args:
+        policy_args['name'] = _random_string(20)
+    policy_args['acl_templates'] = policy_args.get('acl_templates') or []
+    policy_args['description'] = policy_args.get('description', '')
+
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            policy_uuid = self._policy_crud.create(**policy_args)
+            try:
+                result = decorated(self, policy_uuid, *args, **kwargs)
+            finally:
+                try:
+                    self._policy_crud.delete(policy_uuid)
+                except exceptions.UnknownPolicyException:
+                    pass
+            return result
+        return wrapper
+    return decorator
+
+
 def tenant(**tenant_args):
     if 'name' not in tenant_args:
         tenant_args['name'] = _random_string(20)
@@ -83,9 +151,11 @@ def user(**user_args):
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
-            user_uuid = self._crud.create(**user_args)
-            result = decorated(self, user_uuid, *args, **kwargs)
-            # TODO delete the user when the delete gets implemented
+            user_uuid = self._user_crud.create(**user_args)
+            try:
+                result = decorated(self, user_uuid, *args, **kwargs)
+            except Exception:
+                self._user_crud.delete(user_uuid)
             return result
         return wrapper
     return decorator
