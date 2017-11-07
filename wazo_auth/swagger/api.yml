@@ -280,11 +280,7 @@ paths:
       - wazo_auth_token: []
       description: '**Required ACL**: `auth.tenants.{tenant_uuid}.delete`'
       parameters:
-      - name: tenant_uuid
-        in: path
-        type: string
-        description: The UUID of the tenant
-        required: true
+      - $ref: '#/parameters/tenant_uuid'
       summary: Delete a tenant
       responses:
         '204':
@@ -308,11 +304,7 @@ paths:
       - wazo_auth_token: []
       description: '**Required ACL**: `auth.tenants.{tenant_uuid}.read`'
       parameters:
-      - name: tenant_uuid
-        in: path
-        type: string
-        description: The UUID of the tenant
-        required: true
+      - $ref: '#/parameters/tenant_uuid'
       summary: Retrieves the details of a tenant
       responses:
         '200':
@@ -344,11 +336,7 @@ paths:
       - $ref: '#/parameters/limit'
       - $ref: '#/parameters/offset'
       - $ref: '#/parameters/search'
-      - name: tenant_uuid
-        in: path
-        type: string
-        description: The UUID of the tenant
-        required: true
+      - $ref: '#/parameters/tenant_uuid'
       summary: Retrieves the details of a tenant
       responses:
         '200':
@@ -378,11 +366,7 @@ paths:
       description: '**Required ACL:** `auth.tenants.{tenant_uuid}.users.edit`'
       summary: Associate a user to a tenant
       parameters:
-      - name: tenant_uuid
-        in: path
-        type: string
-        description: The UUID of the policy
-        required: true
+      - $ref: '#/parameters/tenant_uuid'
       - $ref: '#/parameters/user_uuid'
       responses:
         '204':
@@ -401,11 +385,7 @@ paths:
       description: '**Required ACL:** `auth.tenants.{tenant_uuid}.users.edit`'
       summary: Dissociate a tenant and a user
       parameters:
-      - name: tenant_uuid
-        in: path
-        type: string
-        description: The UUID of the tenant
-        required: true
+      - $ref: '#/parameters/tenant_uuid'
       - $ref: '#/parameters/user_uuid'
       responses:
         '204':
@@ -790,6 +770,12 @@ parameters:
     in: path
     type: string
     description: The UUID of the policy
+    required: true
+  tenant_uuid:
+    name: tenant_uuid
+    in: path
+    type: string
+    description: The UUID of the tenant
     required: true
   user_uuid:
     name: user_uuid
