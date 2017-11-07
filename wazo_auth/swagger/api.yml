@@ -98,11 +98,7 @@ paths:
       - wazo_auth_token: []
       description: '**Required ACL**: `auth.policies.{policy_uuid}.read'
       parameters:
-      - name: policy_uuid
-        in: path
-        type: string
-        description: The UUID of the policy
-        required: true
+      - $ref: '#/parameters/policy_uuid'
       summary: Retrieves the details of a policy
       responses:
         '200':
@@ -163,11 +159,7 @@ paths:
       tags:
         - policies
       parameters:
-      - name: policy_uuid
-        in: path
-        type: string
-        description: The UUID of the policy
-        required: true
+      - $ref: '#/parameters/policy_uuid'
       - name: body
         in: body
         description: The policy edition parameters
@@ -197,11 +189,7 @@ paths:
       description: '**Required ACL:** `auth.policies.{policy_uuid}.edit`'
       summary: Dissociate an ACL template from a policy
       parameters:
-      - name: policy_uuid
-        in: path
-        type: string
-        description: The UUID of the policy
-        required: true
+      - $ref: '#/parameters/policy_uuid'
       - name: acl_template
         in: path
         type: string
@@ -223,11 +211,7 @@ paths:
       description: '**Required ACL:** `auth.policies.{policy_uuid}.edit`'
       summary: Associate an ACL template to a policy
       parameters:
-      - name: policy_uuid
-        in: path
-        type: string
-        description: The UUID of the policy
-        required: true
+      - $ref: '#/parameters/policy_uuid'
       - name: acl_template
         in: path
         type: string
@@ -756,11 +740,7 @@ paths:
       description: '**Required ACL:** `auth.users.{user_uuid}.policies.edit`'
       summary: Associate a policy to a user
       parameters:
-      - name: policy_uuid
-        in: path
-        type: string
-        description: The UUID of the policy
-        required: true
+      - $ref: '#/parameters/policy_uuid'
       - name: user_uuid
         in: path
         type: string
@@ -783,11 +763,7 @@ paths:
       description: '**Required ACL:** `auth.users.{user_uuid}.policies.edit`'
       summary: Dissociate a policy from a user
       parameters:
-      - name: policy_uuid
-        in: path
-        type: string
-        description: The UUID of the policy
-        required: true
+      - $ref: '#/parameters/policy_uuid'
       - name: user_uuid
         in: path
         type: string
@@ -841,6 +817,12 @@ parameters:
     in: query
     type: string
     description: Name of the field to use for sorting the list of items returned.
+  policy_uuid:
+    name: policy_uuid
+    in: path
+    type: string
+    description: The UUID of the policy
+    required: true
   search:
     required: false
     name: search
