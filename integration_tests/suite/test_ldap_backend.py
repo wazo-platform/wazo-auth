@@ -27,7 +27,7 @@ from ldap.modlist import addModlist
 from hamcrest import assert_that
 from hamcrest import equal_to
 
-from .test_http_interface import _BaseTestCase
+from .helpers.base import BaseTestCase
 
 Contact = namedtuple('Contact', ['cn', 'uid', 'password', 'mail', 'login_attribute'])
 
@@ -106,7 +106,7 @@ def add_contacts(contacts, ldap_uri):
         helper.add_contact(contact, 'quebec')
 
 
-class _BaseLDAPTestCase(_BaseTestCase):
+class _BaseLDAPTestCase(BaseTestCase):
 
     @classmethod
     def setUpClass(cls):

@@ -40,102 +40,30 @@ from hamcrest import none
 from xivo_test_helpers.hamcrest.raises import raises
 from xivo_auth_client import Client
 
-from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from xivo_test_helpers import until
 from wazo_auth import database, exceptions
 from .helpers import fixtures
+from .helpers.base import BaseTestCase
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)
 
 ISO_DATETIME = '%Y-%m-%dT%H:%M:%S.%f'
 
-HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
-
 
 def _new_token_id():
     return uuid.uuid4()
 
 
-class _BaseTestCase(AssetLaunchingTestCase):
-
-    assets_root = os.path.join(os.path.dirname(__file__), '..', 'assets')
-    service = 'auth'
-
-    @classmethod
-    def setUpClass(cls):
-        super(_BaseTestCase, cls).setUpClass()
-
-    def _post_token(self, username, password, backend=None, expiration=None):
-        port = self.service_port(9497, 'auth')
-        client = Client(HOST, port, username=username, password=password, verify_certificate=False)
-        backend = backend or 'mock'
-        args = {}
-        if expiration:
-            args['expiration'] = expiration
-        return client.token.new(backend, **args)
-
-    def _post_token_with_expected_exception(self, username, password, backend=None, expiration=None, status_code=None, msg=None):
-        try:
-            self._post_token(username, password, backend, expiration)
-        except requests.HTTPError as e:
-            if status_code:
-                assert_that(e.response.status_code, equal_to(status_code))
-            if msg:
-                assert_that(e.response.json()['reason'][0], equal_to(msg))
-        else:
-            self.fail('Should have raised an exception')
-
-    def _get_token(self, token, acls=None):
-        port = self.service_port(9497, 'auth')
-        client = Client(HOST, port, verify_certificate=False)
-        args = {}
-        if acls:
-            args['required_acl'] = acls
-        return client.token.get(token, **args)
-
-    def _get_token_with_expected_exception(self, token, acls=None, status_code=None, msg=None):
-        try:
-            self._get_token(token, acls)
-        except requests.HTTPError as e:
-            if status_code:
-                assert_that(e.response.status_code, equal_to(status_code))
-            if msg:
-                assert_that(e.response.json()['reason'][0], equal_to(msg))
-        else:
-            self.fail('Should have raised an exception')
-
-    def _delete_token(self, token):
-        port = self.service_port(9497, 'auth')
-        client = Client(HOST, port, verify_certificate=False)
-        return client.token.revoke(token)
-
-    def _is_valid(self, token, acls=None):
-        port = self.service_port(9497, 'auth')
-        client = Client(HOST, port, verify_certificate=False)
-        args = {}
-        if acls:
-            args['required_acl'] = acls
-        return client.token.is_valid(token, **args)
-
-    def _assert_that_wazo_auth_is_stopping(self):
-        for _ in range(5):
-            if not self.service_status('auth')['State']['Running']:
-                break
-            time.sleep(0.2)
-        else:
-            self.fail('wazo-auth did not stop')
-
-
-class TestPolicies(_BaseTestCase):
+class TestPolicies(BaseTestCase):
 
     asset = 'mock_backend'
 
     def setUp(self):
         super(TestPolicies, self).setUp()
         port = self.service_port(9497, 'auth')
-        self.client = Client(HOST, port, username='foo', password='bar', verify_certificate=False)
+        self.client = Client(self.get_host(), port, username='foo', password='bar', verify_certificate=False)
         token = self.client.token.new(backend='mock', expiration=3600)['token']
         self.client.set_token(token)
 
@@ -279,14 +207,14 @@ class TestPolicies(_BaseTestCase):
             'acl_templates': contains_inanyorder(*acl_templates[:-1])}))
 
 
-class TestWazoUserBackend(_BaseTestCase):
+class TestWazoUserBackend(BaseTestCase):
 
     asset = 'mock_backend'
 
     def setUp(self):
         super(TestWazoUserBackend, self).setUp()
         port = self.service_port(9497, 'auth')
-        self.client = Client(HOST, port, username='foo', password='bar', verify_certificate=False)
+        self.client = Client(self.get_host(), port, username='foo', password='bar', verify_certificate=False)
         token = self.client.token.new(backend='mock', expiration=3600)['token']
         self.client.set_token(token)
 
@@ -326,7 +254,7 @@ class TestWazoUserBackend(_BaseTestCase):
         )
 
 
-class TestCoreMockBackend(_BaseTestCase):
+class TestCoreMockBackend(BaseTestCase):
 
     asset = 'mock_backend'
 
@@ -345,7 +273,7 @@ class TestCoreMockBackend(_BaseTestCase):
         assert_that(self._is_valid('abcdef'), is_(False))
 
     def test_backends(self):
-        url = 'https://{}:{}/0.1/backends'.format(HOST, self.service_port(9497, 'auth'))
+        url = 'https://{}:{}/0.1/backends'.format(self.get_host(), self.service_port(9497, 'auth'))
         response = requests.get(url, verify=False)
         backends = ['mock', 'mock_with_uuid', 'broken_init', 'broken_verify_password', 'wazo_user']
         assert_that(response.json()['data'], contains_inanyorder(*backends))
@@ -403,7 +331,7 @@ class TestCoreMockBackend(_BaseTestCase):
         self._post_token_with_expected_exception('foo', 'not_bar', 'broken_verify_password', status_code=401)
 
     def test_that_no_type_returns_400(self):
-        url = 'https://{}:{}/0.1/token'.format(HOST, self.service_port(9497, 'auth'))
+        url = 'https://{}:{}/0.1/token'.format(self.get_host(), self.service_port(9497, 'auth'))
         s = requests.Session()
         s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         s.auth = requests.auth.HTTPBasicAuth('foo', 'bar')
@@ -482,7 +410,7 @@ class TestCoreMockBackend(_BaseTestCase):
             return False
 
 
-class TestNoSSLCertificate(_BaseTestCase):
+class TestNoSSLCertificate(BaseTestCase):
 
     asset = 'no_ssl_certificate'
 
@@ -493,7 +421,7 @@ class TestNoSSLCertificate(_BaseTestCase):
         assert_that(log, contains_string("No such file or directory: '/data/_common/ssl/no_server.crt'"))
 
 
-class TestNoSSLKey(_BaseTestCase):
+class TestNoSSLKey(BaseTestCase):
 
     asset = 'no_ssl_key'
 
@@ -504,14 +432,14 @@ class TestNoSSLKey(_BaseTestCase):
         assert_that(log, contains_string("No such file or directory: '/data/_common/ssl/no_server.key'"))
 
 
-class TestTenants(_BaseTestCase):
+class TestTenants(BaseTestCase):
 
     asset = 'mock_backend'
 
     def setUp(self):
         super(TestTenants, self).setUp()
         port = self.service_port(9497, 'auth')
-        self.client = Client(HOST, port, username='foo', password='bar', verify_certificate=False)
+        self.client = Client(self.get_host(), port, username='foo', password='bar', verify_certificate=False)
         token = self.client.token.new(backend='mock', expiration=3600)['token']
         self.client.set_token(token)
 
@@ -639,14 +567,14 @@ class TestTenants(_BaseTestCase):
         )
 
 
-class TestUsers(_BaseTestCase):
+class TestUsers(BaseTestCase):
 
     asset = 'mock_backend'
 
     def setUp(self):
         super(TestUsers, self).setUp()
         port = self.service_port(9497, 'auth')
-        self.client = Client(HOST, port, username='foo', password='bar', verify_certificate=False)
+        self.client = Client(self.get_host(), port, username='foo', password='bar', verify_certificate=False)
         token = self.client.token.new(backend='mock', expiration=3600)['token']
         self.client.set_token(token)
 
@@ -783,7 +711,7 @@ class TestUsers(_BaseTestCase):
         self.client.users.add_policy(user['uuid'], policy_2['uuid'])
 
         user_client = Client(
-            HOST, port=self.service_port(9497, 'auth'), verify_certificate=False,
+            self.get_host(), port=self.service_port(9497, 'auth'), verify_certificate=False,
             username='foo', password='bar')
         token_data = user_client.token.new('wazo_user', expiration=5)
         assert_that(
