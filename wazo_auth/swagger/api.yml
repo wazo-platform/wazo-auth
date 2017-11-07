@@ -652,7 +652,7 @@ paths:
         - policies
       security:
         - wazo_auth_token: []
-      operationId: addUserPolicy
+      operationId: removeUserPolicy
       description: '**Required ACL:** `auth.users.{user_uuid}.policies.edit`'
       summary: Dissociate a policy from a user
       parameters:
