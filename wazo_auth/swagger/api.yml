@@ -347,6 +347,97 @@ paths:
           description: System related error
           schema:
             $ref: '#/definitions/Error'
+  /tenants/{tenant_uuid}/users:
+    get:
+      tags:
+        - tenants
+      security:
+      - wazo_auth_token: []
+      description: '**Required ACL**: `auth.tenants.{tenant_uuid}.users.read`'
+      parameters:
+      - $ref: '#/parameters/order'
+      - $ref: '#/parameters/direction'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
+      - $ref: '#/parameters/search'
+      - name: tenant_uuid
+        in: path
+        type: string
+        description: The UUID of the tenant
+        required: true
+      summary: Retrieves the details of a tenant
+      responses:
+        '200':
+          description: "The tenant's data"
+          schema:
+            $ref: '#/definitions/UserList'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Tenant not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: System related error
+          schema:
+            $ref: '#/definitions/Error'
+  /tenants/{tenant_uuid}/users/{user_uuid}:
+    put:
+      tags:
+        - users
+        - tenants
+      security:
+        - wazo_auth_token: []
+      operationId: addUserTenant
+      description: '**Required ACL:** `auth.tenants.{tenant_uuid}.users.edit`'
+      summary: Associate a user to a tenant
+      parameters:
+      - name: tenant_uuid
+        in: path
+        type: string
+        description: The UUID of the policy
+        required: true
+      - name: user_uuid
+        in: path
+        type: string
+        description: The UUID of the user
+        required: true
+      responses:
+        '204':
+          description: Association successful
+        '404':
+          description: User or Tenant not found
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      tags:
+        - users
+        - tenants
+      security:
+        - wazo_auth_token: []
+      operationId: removeUserTenant
+      description: '**Required ACL:** `auth.tenants.{tenant_uuid}.users.edit`'
+      summary: Dissociate a tenant and a user
+      parameters:
+      - name: tenant_uuid
+        in: path
+        type: string
+        description: The UUID of the tenant
+        required: true
+      - name: user_uuid
+        in: path
+        type: string
+        description: The UUID of the user
+        required: true
+      responses:
+        '204':
+          description: The association has been removed
+        '404':
+          description: User or Tenant not found
+          schema:
+            $ref: '#/definitions/Error'
   /token:
     post:
       consumes:
@@ -575,6 +666,42 @@ paths:
             $ref: '#/definitions/Error'
         '404':
           description: not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: System related error
+          schema:
+            $ref: '#/definitions/Error'
+  /users/{user_uuid}/tenants:
+    get:
+      tags:
+        - users
+      security:
+      - wazo_auth_token: []
+      description: '**Required ACL**: `auth.users.{user_uuid}.tenants.read`'
+      parameters:
+      - $ref: '#/parameters/order'
+      - $ref: '#/parameters/direction'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
+      - $ref: '#/parameters/search'
+      - name: user_uuid
+        in: path
+        type: string
+        description: The UUID of the user
+        required: true
+      summary: Retrieves the details of a user
+      responses:
+        '200':
+          description: "The user's tenant list"
+          schema:
+            $ref: '#/definitions/TenantList'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: User not found
           schema:
             $ref: '#/definitions/Error'
         '500':
