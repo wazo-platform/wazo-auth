@@ -34,9 +34,10 @@ _DEFAULT_CONFIG = {
     'default_token_lifetime': TWO_HOURS,
     'token_cleanup_interval': 60.0,
     'enabled_http_plugins': {
-        'users': False,
         'policies': True,
+        'tenants': True,
         'user_policy': True,
+        'users': False,
     },
     'enabled_backend_plugins': {
         'xivo_admin': True,
