@@ -46,6 +46,7 @@ from .exceptions import (
     InvalidSortDirectionException,
     UnknownPolicyException,
     UnknownTenantException,
+    UnknownTenantUserException,
     UnknownTokenException,
     UnknownUserException,
     UnknownUserPolicyException,
@@ -145,6 +146,9 @@ class Storage(object):
 
     def tenant_list(self, **kwargs):
         return self._tenant_crud.list_(**kwargs)
+
+    def tenant_remove_user(self, tenant_uuid, user_uuid):
+        self._tenant_crud.remove_user(tenant_uuid, user_uuid)
 
     def user_add_policy(self, user_uuid, policy_uuid):
         self._user_crud.add_policy(user_uuid, policy_uuid)
@@ -489,6 +493,14 @@ class _TenantCRUD(_CRUD):
     @classmethod
     def _new_search_filter(cls, **kwargs):
         return cls.search_filter.new_filter(**kwargs)
+
+    def remove_user(self, tenant_uuid, user_uuid):
+        filter_ = and_(TenantUser.user_uuid == user_uuid, TenantUser.tenant_uuid == tenant_uuid)
+        with self.new_session() as s:
+            nb_deleted = s.query(TenantUser).filter(filter_).delete()
+
+        if not nb_deleted:
+            raise UnknownTenantUserException(tenant_uuid, user_uuid)
 
     @staticmethod
     def _new_strict_filter(uuid=None, name=None, **ignored):

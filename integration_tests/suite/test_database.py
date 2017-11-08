@@ -316,6 +316,8 @@ class TestTokenCRUD(unittest.TestCase):
 
 class TestTenantCrud(unittest.TestCase):
 
+    unknown_uuid = '00000000-0000-0000-0000-000000000000'
+
     def setUp(self):
         self._crud = database._TenantCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
         self._user_crud = database._UserCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
@@ -323,7 +325,6 @@ class TestTenantCrud(unittest.TestCase):
     @fixtures.tenant()
     @fixtures.user()
     def test_add_user(self, user_uuid, tenant_uuid):
-        unknown_uuid = '00000000-0000-0000-0000-000000000000'
         assert_that(self._user_crud.list_(tenant_uuid=tenant_uuid), empty())
 
         self._crud.add_user(tenant_uuid, user_uuid)
@@ -332,15 +333,43 @@ class TestTenantCrud(unittest.TestCase):
         self._crud.add_user(tenant_uuid, user_uuid)  # twice
 
         assert_that(
-            calling(self._crud.add_user).with_args(unknown_uuid, user_uuid),
+            calling(self._crud.add_user).with_args(self.unknown_uuid, user_uuid),
             raises(exceptions.UnknownTenantException),
             'unknown tenant',
         )
 
         assert_that(
-            calling(self._crud.add_user).with_args(tenant_uuid, unknown_uuid),
+            calling(self._crud.add_user).with_args(tenant_uuid, self.unknown_uuid),
             raises(exceptions.UnknownUserException),
             'unknown user',
+        )
+
+    @fixtures.tenant()
+    @fixtures.user()
+    def test_remove_user(self, user_uuid, tenant_uuid):
+        assert_that(
+            calling(self._crud.remove_user).with_args(tenant_uuid, user_uuid),
+            raises(exceptions.UnknownTenantUserException),
+            'no association',
+        )
+
+        assert_that(
+            calling(self._crud.remove_user).with_args(self.unknown_uuid, user_uuid),
+            raises(exceptions.UnknownTenantUserException),
+            'unknown tenant',
+        )
+
+        assert_that(
+            calling(self._crud.remove_user).with_args(tenant_uuid, self.unknown_uuid),
+            raises(exceptions.UnknownTenantUserException),
+            'unknown user'
+        )
+
+        self._crud.add_user(tenant_uuid, user_uuid)
+
+        assert_that(
+            calling(self._crud.remove_user).with_args(tenant_uuid, user_uuid),
+            not_(raises(exceptions.UnknownTenantUserException)),
         )
 
     @fixtures.tenant(name='c')

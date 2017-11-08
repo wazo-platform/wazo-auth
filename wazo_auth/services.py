@@ -85,6 +85,9 @@ class TenantService(object):
     def new(self, **kwargs):
         return self._storage.tenant_create(**kwargs)
 
+    def remove_user(self, tenant_uuid, user_uuid):
+        return self._storage.tenant_remove_user(tenant_uuid, user_uuid)
+
 
 class UserService(object):
 

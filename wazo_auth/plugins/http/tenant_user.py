@@ -33,6 +33,7 @@ class TenantUser(_BaseResource):
     @http.required_acl('auth.tenants.{tenant_uuid}.users.edit')
     def delete(self, tenant_uuid, user_uuid):
         logger.debug('disassociating tenant %s user %s', tenant_uuid, user_uuid)
+        self.tenant_service.remove_user(tenant_uuid, user_uuid)
         return '', 204
 
     @http.required_acl('auth.tenants.{tenant_uuid}.users.edit')
