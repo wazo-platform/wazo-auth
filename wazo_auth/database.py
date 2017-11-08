@@ -29,6 +29,7 @@ from .models import (
     Email,
     Policy,
     Tenant,
+    TenantUser,
     Token as TokenModel,
     User,
     UserEmail,
@@ -125,6 +126,9 @@ class Storage(object):
 
     def update_policy(self, policy_uuid, name, description, acl_templates):
         self._policy_crud.update(policy_uuid, name, description, acl_templates)
+
+    def tenant_add_user(self, tenant_uuid, user_uuid):
+        self._tenant_crud.add_user(tenant_uuid, user_uuid)
 
     def tenant_count(self, **kwargs):
         return self._tenant_crud.count(**kwargs)
@@ -415,6 +419,25 @@ class _TenantCRUD(_CRUD):
         )
         self._paginator = QueryPaginator(column_map)
 
+    def add_user(self, tenant_uuid, user_uuid):
+        tenant_user = TenantUser(tenant_uuid=tenant_uuid, user_uuid=user_uuid)
+        with self.new_session() as s:
+            s.add(tenant_user)
+            try:
+                s.commit()
+            except exc.IntegrityError as e:
+                if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                    # This association already exists.
+                    s.rollback()
+                    return
+                if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
+                    constraint = e.orig.diag.constraint_name
+                    if constraint == 'auth_tenant_user_tenant_uuid_fkey':
+                        raise UnknownTenantException(tenant_uuid)
+                    elif constraint == 'auth_tenant_user_user_uuid_fkey':
+                        raise UnknownUserException(user_uuid)
+                raise
+
     def count(self, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:
@@ -542,7 +565,7 @@ class _UserCRUD(_CRUD):
         return cls.search_filter.new_filter(**kwargs)
 
     @staticmethod
-    def _new_strict_filter(uuid=None, username=None, email_address=None, **ignored):
+    def _new_strict_filter(uuid=None, username=None, email_address=None, tenant_uuid=None, **ignored):
         filter_ = text('true')
         if uuid:
             filter_ = and_(filter_, User.uuid == uuid)
@@ -550,6 +573,8 @@ class _UserCRUD(_CRUD):
             filter_ = and_(filter_, User.username == username)
         if email_address:
             filter_ = and_(filter_, Email.address == email_address)
+        if tenant_uuid:
+            filter_ = and_(filter_, TenantUser.tenant_uuid == tenant_uuid)
         return filter_
 
     def add_policy(self, user_uuid, policy_uuid):
@@ -688,6 +713,8 @@ class _UserCRUD(_CRUD):
                 UserEmail, User.uuid == UserEmail.user_uuid,
             ).join(
                 Email, Email.uuid == UserEmail.email_uuid,
+            ).outerjoin(
+                TenantUser,
             ).filter(filter_)
             query = self._paginator.update_query(query, **kwargs)
             rows = query.all()

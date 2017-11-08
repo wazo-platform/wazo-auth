@@ -51,6 +51,14 @@ class Tenant(Base):
     name = Column(Text, unique=True, nullable=False)
 
 
+class TenantUser(Base):
+
+    __tablename__ = 'auth_tenant_user'
+
+    tenant_uuid = Column(String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), primary_key=True)
+    user_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='CASCADE'), primary_key=True)
+
+
 class Token(Base):
 
     __tablename__ = 'auth_token'

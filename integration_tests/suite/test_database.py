@@ -318,6 +318,30 @@ class TestTenantCrud(unittest.TestCase):
 
     def setUp(self):
         self._crud = database._TenantCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
+        self._user_crud = database._UserCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
+
+    @fixtures.tenant()
+    @fixtures.user()
+    def test_add_user(self, user_uuid, tenant_uuid):
+        unknown_uuid = '00000000-0000-0000-0000-000000000000'
+        assert_that(self._user_crud.list_(tenant_uuid=tenant_uuid), empty())
+
+        self._crud.add_user(tenant_uuid, user_uuid)
+        assert_that(self._user_crud.list_(tenant_uuid=tenant_uuid), contains(has_entries('uuid', user_uuid)))
+
+        self._crud.add_user(tenant_uuid, user_uuid)  # twice
+
+        assert_that(
+            calling(self._crud.add_user).with_args(unknown_uuid, user_uuid),
+            raises(exceptions.UnknownTenantException),
+            'unknown tenant',
+        )
+
+        assert_that(
+            calling(self._crud.add_user).with_args(tenant_uuid, unknown_uuid),
+            raises(exceptions.UnknownUserException),
+            'unknown user',
+        )
 
     @fixtures.tenant(name='c')
     @fixtures.tenant(name='b')
