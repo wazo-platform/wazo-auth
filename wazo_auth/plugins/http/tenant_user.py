@@ -17,7 +17,8 @@
 
 import logging
 
-from wazo_auth import http
+from flask import request
+from wazo_auth import exceptions, http, schemas
 
 logger = logging.getLogger(__name__)
 
@@ -47,10 +48,20 @@ class TenantUsers(_BaseResource):
 
     @http.required_acl('auth.tenants.{tenant_uuid}.users.read')
     def get(self, tenant_uuid):
+        ListSchema = schemas.new_list_schema('username')
+        list_params, errors = ListSchema().load(request.args)
+        if errors:
+            raise exceptions.InvalidListParamException(errors)
+
+        for key, value in request.args.iteritems():
+            if key in list_params:
+                continue
+            list_params[key] = value
+
         return {
-            'items': self.tenant_service.list_users(tenant_uuid),
-            'total': 0,
-            'filtered': 0,
+            'items': self.tenant_service.list_users(tenant_uuid, **list_params),
+            'total': self.tenant_service.count_users(tenant_uuid, filtered=False, **list_params),
+            'filtered': self.tenant_service.count_users(tenant_uuid, filtered=True, **list_params),
         }, 200
 
 

@@ -134,6 +134,9 @@ class Storage(object):
     def tenant_count(self, **kwargs):
         return self._tenant_crud.count(**kwargs)
 
+    def tenant_count_users(self, tenant_uuid, **kwargs):
+        return self._tenant_crud.count_users(tenant_uuid, **kwargs)
+
     def tenant_create(self, name):
         tenant_uuid = self._tenant_crud.create(name)
         return dict(
@@ -453,6 +456,31 @@ class _TenantCRUD(_CRUD):
 
         with self.new_session() as s:
             return s.query(Tenant).filter(filter_).count()
+
+    def count_users(self, tenant_uuid, **kwargs):
+        logger.debug('filtering %s', kwargs)
+        filtered = kwargs.get('filtered')
+        if filtered is not False:
+            logger.debug('filtering')
+            strict_filter = _UserCRUD._new_strict_filter(**kwargs)
+            search_filter = _UserCRUD._new_search_filter(**kwargs)
+            filter_ = and_(strict_filter, search_filter)
+        else:
+            filter_ = text('true')
+
+        filter_ = and_(filter_, TenantUser.tenant_uuid == tenant_uuid)
+        logger.debug(filter_)
+
+        with self.new_session() as s:
+            return s.query(
+                TenantUser
+            ).join(
+                User
+            ).join(
+                UserEmail
+            ).join(
+                Email
+            ).filter(filter_).count()
 
     def create(self, name):
         tenant = Tenant(name=name)

@@ -19,6 +19,7 @@ import requests
 from hamcrest import (
     assert_that,
     calling,
+    contains,
     contains_inanyorder,
     has_entries,
     has_properties,
@@ -64,6 +65,64 @@ class TestTenantUserAssociation(base.MockBackendTestCase):
             has_entries('username', 'foo'),
             has_entries('username', 'bar'),
         )))
+
+    @fixtures.http_user(username='ignored')
+    @fixtures.http_user(username='baz')
+    @fixtures.http_user(username='bar')
+    @fixtures.http_user(username='foo')
+    @fixtures.http_tenant()
+    def test_user_list(self, tenant, foo, bar, baz, ignored):
+        for user in (foo, bar, baz):
+            self.client.tenants.add_user(tenant['uuid'], user['uuid'])
+
+        result = self.client.tenants.get_users(tenant['uuid'])
+        assert_that(result, has_entries(
+            'total', 3,
+            'filtered', 3,
+            'items', contains_inanyorder(
+                has_entries('username', 'foo'),
+                has_entries('username', 'bar'),
+                has_entries('username', 'baz'))))
+
+        result = self.client.tenants.get_users(tenant['uuid'], search='ba')
+        assert_that(result, has_entries(
+            'total', 3,
+            'filtered', 2,
+            'items', contains_inanyorder(
+                has_entries('username', 'bar'),
+                has_entries('username', 'baz'))))
+
+        result = self.client.tenants.get_users(tenant['uuid'], username='foo')
+        assert_that(result, has_entries(
+            'total', 3,
+            'filtered', 1,
+            'items', contains_inanyorder(
+                has_entries('username', 'foo'))))
+
+        result = self.client.tenants.get_users(tenant['uuid'], order='username', direction='desc')
+        assert_that(result, has_entries(
+            'total', 3,
+            'filtered', 3,
+            'items', contains(
+                has_entries('username', 'foo'),
+                has_entries('username', 'baz'),
+                has_entries('username', 'bar'))))
+
+        result = self.client.tenants.get_users(tenant['uuid'], order='username', direction='desc', offset=1)
+        assert_that(result, has_entries(
+            'total', 3,
+            'filtered', 3,
+            'items', contains(
+                has_entries('username', 'baz'),
+                has_entries('username', 'bar'))))
+
+        result = self.client.tenants.get_users(tenant['uuid'], order='username', direction='desc', limit=2)
+        assert_that(result, has_entries(
+            'total', 3,
+            'filtered', 3,
+            'items', contains(
+                has_entries('username', 'foo'),
+                has_entries('username', 'baz'))))
 
 
 def assert_no_error(fn, *args, **kwargs):
