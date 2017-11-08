@@ -61,6 +61,9 @@ class TenantService(object):
     def __init__(self, storage):
         self._storage = storage
 
+    def add_user(self, tenant_uuid, user_uuid):
+        return self._storage.tenant_add_user(tenant_uuid, user_uuid)
+
     def count(self, **kwargs):
         return self._storage.tenant_count(**kwargs)
 
@@ -75,6 +78,9 @@ class TenantService(object):
 
     def list_(self, **kwargs):
         return self._storage.tenant_list(**kwargs)
+
+    def list_users(self, tenant_uuid, **kwargs):
+        return self._storage.user_list(tenant_uuid=tenant_uuid, **kwargs)
 
     def new(self, **kwargs):
         return self._storage.tenant_create(**kwargs)

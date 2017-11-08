@@ -38,6 +38,7 @@ class TenantUser(_BaseResource):
     @http.required_acl('auth.tenants.{tenant_uuid}.users.edit')
     def put(self, tenant_uuid, user_uuid):
         logger.debug('associating tenant %s user %s', tenant_uuid, user_uuid)
+        self.tenant_service.add_user(tenant_uuid, user_uuid)
         return '', 204
 
 
@@ -46,7 +47,7 @@ class TenantUsers(_BaseResource):
     @http.required_acl('auth.tenants.{tenant_uuid}.users.read')
     def get(self, tenant_uuid):
         return {
-            'items': [],
+            'items': self.tenant_service.list_users(tenant_uuid),
             'total': 0,
             'filtered': 0,
         }, 200
