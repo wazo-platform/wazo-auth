@@ -104,6 +104,9 @@ class UserService(object):
     def count_policies(self, user_uuid, **kwargs):
         return self._storage.user_count_policies(user_uuid, **kwargs)
 
+    def count_tenants(self, user_uuid, **kwargs):
+        return self._storage.user_count_tenants(user_uuid, **kwargs)
+
     def count_users(self, **kwargs):
         return self._storage.user_count(**kwargs)
 
@@ -127,6 +130,9 @@ class UserService(object):
 
     def list_policies(self, user_uuid, **kwargs):
         return self._storage.user_list_policies(user_uuid, **kwargs)
+
+    def list_tenants(self, user_uuid, **kwargs):
+        return self._storage.user_list_tenants(user_uuid, **kwargs)
 
     def list_users(self, **kwargs):
         return self._storage.user_list(**kwargs)

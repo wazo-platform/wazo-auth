@@ -165,8 +165,14 @@ class Storage(object):
     def user_count_policies(self, user_uuid, **kwargs):
         return self._user_crud.count_policies(user_uuid, **kwargs)
 
+    def user_count_tenants(self, user_uuid, **kwargs):
+        return self._user_crud.count_tenants(user_uuid, **kwargs)
+
     def user_list_policies(self, user_uuid, **kwargs):
         return self._policy_crud.get(user_uuid=user_uuid, **kwargs)
+
+    def user_list_tenants(self, user_uuid, **kwargs):
+        return self._tenant_crud.list_(user_uuid=user_uuid, **kwargs)
 
     def user_delete(self, user_uuid):
         self._user_crud.delete(user_uuid)
@@ -458,10 +464,8 @@ class _TenantCRUD(_CRUD):
             return s.query(Tenant).filter(filter_).count()
 
     def count_users(self, tenant_uuid, **kwargs):
-        logger.debug('filtering %s', kwargs)
         filtered = kwargs.get('filtered')
         if filtered is not False:
-            logger.debug('filtering')
             strict_filter = _UserCRUD._new_strict_filter(**kwargs)
             search_filter = _UserCRUD._new_search_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
@@ -469,7 +473,6 @@ class _TenantCRUD(_CRUD):
             filter_ = text('true')
 
         filter_ = and_(filter_, TenantUser.tenant_uuid == tenant_uuid)
-        logger.debug(filter_)
 
         with self.new_session() as s:
             return s.query(
@@ -513,7 +516,7 @@ class _TenantCRUD(_CRUD):
             query = s.query(
                 Tenant.uuid,
                 Tenant.name,
-            ).filter(filter_)
+            ).outerjoin(TenantUser).filter(filter_)
             query = self._paginator.update_query(query, **kwargs)
 
             return [{'uuid': uuid, 'name': name} for uuid, name in query.all()]
@@ -531,12 +534,14 @@ class _TenantCRUD(_CRUD):
             raise UnknownTenantUserException(tenant_uuid, user_uuid)
 
     @staticmethod
-    def _new_strict_filter(uuid=None, name=None, **ignored):
+    def _new_strict_filter(uuid=None, name=None, user_uuid=None, **ignored):
         filter_ = text('true')
         if uuid:
             filter_ = and_(filter_, Tenant.uuid == uuid)
         if name:
             filter_ = and_(filter_, Tenant.name == name)
+        if user_uuid:
+            filter_ = and_(filter_, TenantUser.user_uuid == user_uuid)
         return filter_
 
 
@@ -679,6 +684,20 @@ class _UserCRUD(_CRUD):
             return s.query(Policy).join(
                 UserPolicy, UserPolicy.policy_uuid == Policy.uuid,
             ).filter(filter_).count()
+
+    def count_tenants(self, user_uuid, **kwargs):
+        filtered = kwargs.get('filtered')
+        if filtered is not False:
+            strict_filter = _TenantCRUD._new_strict_filter(**kwargs)
+            search_filter = _TenantCRUD._new_search_filter(**kwargs)
+            filter_ = and_(strict_filter, search_filter)
+        else:
+            filter_ = text('true')
+
+        filter_ = and_(filter_, TenantUser.user_uuid == user_uuid)
+
+        with self.new_session() as s:
+            return s.query(Tenant).join(TenantUser).filter(filter_).count()
 
     def create(self, username, email_address, hash_, salt):
         with self.new_session() as s:

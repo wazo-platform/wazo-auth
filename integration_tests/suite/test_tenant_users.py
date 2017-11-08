@@ -66,6 +66,64 @@ class TestTenantUserAssociation(base.MockBackendTestCase):
             has_entries('username', 'bar'),
         )))
 
+    @fixtures.http_tenant(name='ignored')
+    @fixtures.http_tenant(name='baz')
+    @fixtures.http_tenant(name='bar')
+    @fixtures.http_tenant(name='foo')
+    @fixtures.http_user()
+    def test_tenant_list(self, user, foo, bar, baz, ignored):
+        for tenant in (foo, bar, baz):
+            self.client.tenants.add_user(tenant['uuid'], user['uuid'])
+
+        result = self.client.users.get_tenants(user['uuid'])
+        assert_that(result, has_entries(
+            'total', 3,
+            'filtered', 3,
+            'items', contains_inanyorder(
+                has_entries('name', 'foo'),
+                has_entries('name', 'bar'),
+                has_entries('name', 'baz'))))
+
+        result = self.client.users.get_tenants(user['uuid'], search='ba')
+        assert_that(result, has_entries(
+            'total', 3,
+            'filtered', 2,
+            'items', contains_inanyorder(
+                has_entries('name', 'bar'),
+                has_entries('name', 'baz'))))
+
+        result = self.client.users.get_tenants(user['uuid'], name='foo')
+        assert_that(result, has_entries(
+            'total', 3,
+            'filtered', 1,
+            'items', contains_inanyorder(
+                has_entries('name', 'foo'))))
+
+        result = self.client.users.get_tenants(user['uuid'], order='name', direction='desc')
+        assert_that(result, has_entries(
+            'total', 3,
+            'filtered', 3,
+            'items', contains(
+                has_entries('name', 'foo'),
+                has_entries('name', 'baz'),
+                has_entries('name', 'bar'))))
+
+        result = self.client.users.get_tenants(user['uuid'], order='name', direction='desc', offset=1)
+        assert_that(result, has_entries(
+            'total', 3,
+            'filtered', 3,
+            'items', contains(
+                has_entries('name', 'baz'),
+                has_entries('name', 'bar'))))
+
+        result = self.client.users.get_tenants(user['uuid'], order='name', direction='desc', limit=2)
+        assert_that(result, has_entries(
+            'total', 3,
+            'filtered', 3,
+            'items', contains(
+                has_entries('name', 'foo'),
+                has_entries('name', 'baz'))))
+
     @fixtures.http_user(username='ignored')
     @fixtures.http_user(username='baz')
     @fixtures.http_user(username='bar')

@@ -65,14 +65,27 @@ class TenantUsers(_BaseResource):
         }, 200
 
 
-class UserTenants(_BaseResource):
+class UserTenants(http.ErrorCatchingResource):
+
+    def __init__(self, user_service):
+        self.user_service = user_service
 
     @http.required_acl('auth.users.{user_uuid}.tenants.read')
     def get(self, user_uuid):
+        ListSchema = schemas.new_list_schema('name')
+        list_params, errors = ListSchema().load(request.args)
+        if errors:
+            raise exceptions.InvalidListParamException(errors)
+
+        for key, value in request.args.iteritems():
+            if key in list_params:
+                continue
+            list_params[key] = value
+
         return {
-            'items': [],
-            'total': 0,
-            'filtered': 0,
+            'items': self.user_service.list_tenants(user_uuid, **list_params),
+            'total': self.user_service.count_tenants(user_uuid, filtered=False, **list_params),
+            'filtered': self.user_service.count_tenants(user_uuid, filtered=True, **list_params),
         }, 200
 
 
@@ -96,5 +109,5 @@ class Plugin(object):
         api.add_resource(
             UserTenants,
             '/users/<string:user_uuid>/tenants',
-            resource_class_args=args,
+            resource_class_args=(dependencies['user_service'],),
         )
