@@ -113,16 +113,17 @@ class TestPolicyCRUD(unittest.TestCase):
                 calling(self._crud.create).with_args(duplicated_name, '', []),
                 raises(exceptions.DuplicatePolicyException))
 
-    def test_get(self):
-        with self._new_policy('foobar', '') as uuid_:
-            policy = self.get_policy(uuid_)
-            assert_that(policy['uuid'], equal_to(uuid_))
-            assert_that(policy['name'], equal_to('foobar'))
-            assert_that(policy['description'], equal_to(''))
-            assert_that(policy['acl_templates'], empty())
+    @fixtures.policy(name='foobar')
+    def test_get(self, uuid_):
+        policy = self.get_policy(uuid_)
+        assert_that(policy, has_entries(
+            'uuid', uuid_,
+            'name', 'foobar',
+            'description', '',
+            'acl_templates', empty()))
 
-        unknown_uuid = new_uuid()
-        result = self._crud.get(search=unknown_uuid)
+        unknown_uuid = '00000000-0000-0000-0000-000000000000'
+        result = self._crud.get(uuid=unknown_uuid)
         assert_that(result, empty())
 
     def test_get_sort_and_pagination(self):
