@@ -22,8 +22,10 @@ from hamcrest import (
     contains,
     contains_inanyorder,
     has_entries,
+    has_items,
     has_properties,
 )
+from xivo_auth_client import Client
 from xivo_test_helpers.hamcrest.raises import raises
 from .helpers import base, fixtures
 
@@ -48,7 +50,6 @@ class TestTenantUserAssociation(base.MockBackendTestCase):
         assert_that(result, has_entries('items', contains_inanyorder(
             has_entries('username', 'bar'),
         )))
-
 
     @fixtures.http_user(username='bar')
     @fixtures.http_user(username='foo')
@@ -181,6 +182,30 @@ class TestTenantUserAssociation(base.MockBackendTestCase):
             'items', contains(
                 has_entries('username', 'foo'),
                 has_entries('username', 'baz'))))
+
+    @fixtures.http_user(username='foo', password='bar')
+    @fixtures.http_tenant(name='two')
+    @fixtures.http_tenant(name='one')
+    @fixtures.http_policy(name='main', acl_templates=[
+        '{% for tenant in tenants %}\nmain.{{ tenant.name }}.*\n{% endfor %}',
+        '{% for tenant in tenants %}\nmain.{{ tenant.uuid }}\n{% endfor %}',
+    ])
+    def test_generated_acl(self, policy, tenant_1, tenant_2, user):
+        self.client.tenants.add_user(tenant_1['uuid'], user['uuid'])
+        self.client.tenants.add_user(tenant_2['uuid'], user['uuid'])
+        self.client.users.add_policy(user['uuid'], policy['uuid'])
+
+        user_client = Client(self.get_host(), port=self.service_port(9497, 'auth'),
+                             verify_certificate=False, username='foo', password='bar')
+
+        expected_acls = [
+            'main.one.*',
+            'main.two.*',
+            'main.{}'.format(tenant_1['uuid']),
+            'main.{}'.format(tenant_2['uuid']),
+        ]
+        token_data = user_client.token.new('wazo_user', expiration=5)
+        assert_that(token_data, has_entries('acls', has_items(*expected_acls)))
 
 
 def assert_no_error(fn, *args, **kwargs):
