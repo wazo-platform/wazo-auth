@@ -70,8 +70,8 @@ class TestPolicyCRUD(unittest.TestCase):
         self._crud = database._PolicyCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
         self._user_crud = database._UserCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
         self._policy_crud = self._crud
-        default_user_policy = self._crud.get(search='wazo_default_user_policy')[0]
-        default_admin_policy = self._crud.get(search='wazo_default_admin_policy')[0]
+        default_user_policy = self._crud.get(name='wazo_default_user_policy')[0]
+        default_admin_policy = self._crud.get(name='wazo_default_admin_policy')[0]
         self._default_user_policy_uuid = default_user_policy['uuid']
         self._default_admin_policy_uuid = default_admin_policy['uuid']
 
