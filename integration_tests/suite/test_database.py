@@ -236,7 +236,7 @@ class TestPolicyCRUD(unittest.TestCase):
             return policy
 
     def list_policy(self, order=None, direction=None, limit=None, offset=None):
-        policies = self._crud.get(search='%', order=order, direction=direction, limit=limit, offset=offset)
+        policies = self._crud.get(order=order, direction=direction, limit=limit, offset=offset)
         return [policy['uuid'] for policy in policies]
 
     @contextmanager
@@ -352,7 +352,7 @@ class TestTenantCrud(unittest.TestCase):
             ),
         )
 
-        result = self._crud.list_(search='%ba%')
+        result = self._crud.list_(search='ba')
         assert_that(
             result,
             contains_inanyorder(
@@ -520,10 +520,10 @@ class TestUserCrud(unittest.TestCase):
         result = self._user_crud.count_policies(user_uuid, name='a', filtered=False)
         assert_that(result, equal_to(3), 'strict not filtered')
 
-        result = self._user_crud.count_policies(user_uuid, search='%foobar%')
+        result = self._user_crud.count_policies(user_uuid, search='foobar')
         assert_that(result, equal_to(2), 'search')
 
-        result = self._user_crud.count_policies(user_uuid, search='%foobar%', filtered=False)
+        result = self._user_crud.count_policies(user_uuid, search='foobar', filtered=False)
         assert_that(result, equal_to(3), 'search not filtered')
 
     def test_user_creation(self):
@@ -619,21 +619,21 @@ class TestUserCrud(unittest.TestCase):
     @fixtures.user(email_address='foobar@example.com')
     @fixtures.user()
     def test_user_count_search_term(self, a, b, c):
-        result = self._crud.count(search='%foo%')
+        result = self._crud.count(search='foo')
         assert_that(result, equal_to(2))
 
     @fixtures.user(username='foo')
     @fixtures.user(email_address='foobar@example.com')
     @fixtures.user()
     def test_user_count_mixed_strict_and_search(self, a, b, c):
-        result = self._crud.count(search='%foo%', uuid=a)
+        result = self._crud.count(search='foo', uuid=a)
         assert_that(result, equal_to(0))
 
     @fixtures.user(username='foo')
     @fixtures.user(email_address='foobar@example.com')
     @fixtures.user()
     def test_user_count_unfiltered(self, a, b, c):
-        result = self._crud.count(search='%foo%', filtered=False)
+        result = self._crud.count(search='foo', filtered=False)
         assert_that(result, equal_to(3))
 
         result = self._crud.count(uuid=a, filtered=False)
@@ -688,7 +688,7 @@ class TestUserCrud(unittest.TestCase):
     @fixtures.user(username='bar', email_address='bar@example.com')
     @fixtures.user(username='baz', email_address='baz@example.com')
     def test_user_list_with_search_term(self, baz, bar, foo):
-        result = self._crud.list_(search='%@example.%')
+        result = self._crud.list_(search='@example.')
 
         assert_that(
             result,
@@ -792,10 +792,10 @@ class TestUserCrud(unittest.TestCase):
     @fixtures.user(username='bar', email_address='bar@example.com')
     @fixtures.user(username='baz', email_address='baz@example.com')
     def test_user_list_with_strict_filters_and_search(self, baz, bar, foo):
-        result = self._crud.list_(username='foo', search='%baz%')
+        result = self._crud.list_(username='foo', search='baz')
         assert_that(result, empty())
 
-        result = self._crud.list_(uuid=foo, search='%example%')
+        result = self._crud.list_(uuid=foo, search='example')
         assert_that(
             result,
             contains_inanyorder(
