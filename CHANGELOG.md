@@ -17,6 +17,13 @@ Changelog
   * DELETE `0.1/users/<user_uuid>/policies/<policy_uuid>`
   * GET `0.1/users/<user_uuid>/policies/`
 
+* A new resource has been added to assign users to tenants
+
+  * PUT ``0.1/tenants/<tenant_uuid>/users/<user_uuid>``
+  * DELETE ``0.1/tenants/<tenant_uuid>/users/<user_uuid>``
+  * GET ``0.1/tenants/<tenant_uuid>/users/``
+  * GET ``0.1/users/<user_uuid>/tenants/``
+
 
 17.15
 -----
