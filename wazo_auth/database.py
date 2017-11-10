@@ -54,6 +54,24 @@ from .exceptions import (
 logger = logging.getLogger(__name__)
 
 
+class SearchFilter(object):
+
+    def __init__(self, *columns):
+        self._columns = columns
+
+    def new_filter(self, search=None, **ignored):
+        if search is None:
+            return text('true')
+
+        if not search:
+            pattern = '%'
+        else:
+            words = [w for w in search.split(' ') if w]
+            pattern = '%{}%'.format('%'.join(words))
+
+        return or_(column.ilike(pattern) for column in self._columns)
+
+
 class Storage(object):
 
     def __init__(self, policy_crud, token_crud, user_crud, tenant_crud):
@@ -66,8 +84,7 @@ class Storage(object):
         self._policy_crud.associate_policy_template(policy_uuid, acl_template)
 
     def count_policies(self, search):
-        search_pattern = self._prepare_search_pattern(search)
-        return self._policy_crud.count(search_pattern)
+        return self._policy_crud.count(search)
 
     def delete_policy_acl_template(self, policy_uuid, acl_template):
         self._policy_crud.dissociate_policy_template(policy_uuid, acl_template)
@@ -104,16 +121,12 @@ class Storage(object):
         self._policy_crud.delete(policy_uuid)
 
     def list_policies(self, **kwargs):
-        kwargs['search'] = self._prepare_search_pattern(kwargs.get('search'))
         return self._policy_crud.get(**kwargs)
 
     def update_policy(self, policy_uuid, name, description, acl_templates):
         self._policy_crud.update(policy_uuid, name, description, acl_templates)
 
     def tenant_count(self, **kwargs):
-        term = kwargs.get('search')
-        if term:
-            kwargs['search'] = self._prepare_search_pattern(term)
         return self._tenant_crud.count(**kwargs)
 
     def tenant_create(self, name):
@@ -127,9 +140,6 @@ class Storage(object):
         return self._tenant_crud.delete(tenant_uuid)
 
     def tenant_list(self, **kwargs):
-        term = kwargs.get('search')
-        if term:
-            kwargs['search'] = self._prepare_search_pattern(term)
         return self._tenant_crud.list_(**kwargs)
 
     def user_add_policy(self, user_uuid, policy_uuid):
@@ -139,21 +149,12 @@ class Storage(object):
         self._user_crud.remove_policy(user_uuid, policy_uuid)
 
     def user_count(self, **kwargs):
-        term = kwargs.get('search')
-        if term:
-            kwargs['search'] = self._prepare_search_pattern(term)
         return self._user_crud.count(**kwargs)
 
     def user_count_policies(self, user_uuid, **kwargs):
-        term = kwargs.get('search')
-        if term:
-            kwargs['search'] = self._prepare_search_pattern(term)
         return self._user_crud.count_policies(user_uuid, **kwargs)
 
     def user_list_policies(self, user_uuid, **kwargs):
-        term = kwargs.get('search')
-        if term:
-            kwargs['search'] = self._prepare_search_pattern(term)
         return self._policy_crud.get(user_uuid=user_uuid, **kwargs)
 
     def user_delete(self, user_uuid):
@@ -176,9 +177,6 @@ class Storage(object):
         return self._user_crud.get_credentials(username)
 
     def user_list(self, **kwargs):
-        term = kwargs.get('search')
-        if term:
-            kwargs['search'] = self._prepare_search_pattern(term)
         return self._user_crud.list_(**kwargs)
 
     def remove_token(self, token_id):
@@ -186,14 +184,6 @@ class Storage(object):
 
     def remove_expired_tokens(self):
         self._token_crud.delete_expired_tokens()
-
-    @staticmethod
-    def _prepare_search_pattern(term):
-        if not term:
-            return '%'
-
-        words = [w for w in term.split(' ') if w]
-        return '%{}%'.format('%'.join(words))
 
     @staticmethod
     def _is_uuid(value):
@@ -236,6 +226,8 @@ class _CRUD(object):
 
 
 class _PolicyCRUD(_CRUD):
+
+    search_filter = SearchFilter(Policy.name, Policy.description)
 
     def __init__(self, *args, **kwargs):
         super(_PolicyCRUD, self).__init__(*args, **kwargs)
@@ -393,13 +385,9 @@ class _PolicyCRUD(_CRUD):
         policy_count = s.query(Policy).filter(Policy.uuid == policy_uuid).count()
         return policy_count != 0
 
-    @staticmethod
-    def _new_search_filter(search=None, **kwargs):
-        term = search or '%'
-        return or_(
-            Policy.name.ilike(term),
-            Policy.description.ilike(term),
-        )
+    @classmethod
+    def _new_search_filter(cls, **kwargs):
+        return cls.search_filter.new_filter(**kwargs)
 
     @staticmethod
     def _new_strict_filter(uuid=None, name=None, user_uuid=None, **ignored):
@@ -418,6 +406,7 @@ class _TenantCRUD(_CRUD):
     constraint_to_column_map = dict(
         auth_tenant_name_key='name',
     )
+    search_filter = SearchFilter(Tenant.name)
 
     def __init__(self, *args, **kwargs):
         super(_TenantCRUD, self).__init__(*args, **kwargs)
@@ -474,15 +463,12 @@ class _TenantCRUD(_CRUD):
 
             return [{'uuid': uuid, 'name': name} for uuid, name in query.all()]
 
-    def _new_search_filter(self, search=None, **ignored):
-        if not search:
-            return text('true')
+    @classmethod
+    def _new_search_filter(cls, **kwargs):
+        return cls.search_filter.new_filter(**kwargs)
 
-        return or_(
-            Tenant.name.ilike(search),
-        )
-
-    def _new_strict_filter(self, uuid=None, name=None, **ignored):
+    @staticmethod
+    def _new_strict_filter(uuid=None, name=None, **ignored):
         filter_ = text('true')
         if uuid:
             filter_ = and_(filter_, Tenant.uuid == uuid)
@@ -542,6 +528,7 @@ class _UserCRUD(_CRUD):
         auth_user_username_key='username',
         auth_email_address_key='email_address',
     )
+    search_filter = SearchFilter(User.username, Email.address)
 
     def __init__(self, *args, **kwargs):
         super(_UserCRUD, self).__init__(*args, **kwargs)
@@ -550,16 +537,12 @@ class _UserCRUD(_CRUD):
         )
         self._paginator = QueryPaginator(column_map)
 
-    def _new_search_filter(self, search=None, **ignored):
-        if not search:
-            return text('true')
+    @classmethod
+    def _new_search_filter(cls, **kwargs):
+        return cls.search_filter.new_filter(**kwargs)
 
-        return or_(
-            User.username.ilike(search),
-            Email.address.ilike(search),
-        )
-
-    def _new_strict_filter(self, uuid=None, username=None, email_address=None, **ignored):
+    @staticmethod
+    def _new_strict_filter(uuid=None, username=None, email_address=None, **ignored):
         filter_ = text('true')
         if uuid:
             filter_ = and_(filter_, User.uuid == uuid)

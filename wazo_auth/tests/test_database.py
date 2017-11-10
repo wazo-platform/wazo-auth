@@ -106,19 +106,6 @@ class TestStorage(unittest.TestCase):
 
         self.policy_crud.delete.assert_called_once_with(s.token_uuid)
 
-    def test_list_policies(self):
-        result = self.storage.list_policies(search=None)
-        assert_that(result, equal_to(self.policy_crud.get.return_value))
-        self.policy_crud.get.assert_called_once_with(search='%')
-
-        self.policy_crud.get.reset_mock()
-        result = self.storage.list_policies(search='foobar')
-        self.policy_crud.get.assert_called_once_with(search='%foobar%')
-
-        self.policy_crud.get.reset_mock()
-        result = self.storage.list_policies(search='foobar baz')
-        self.policy_crud.get.assert_called_once_with(search='%foobar%baz%')
-
     def test_remove_token(self):
         self.storage.remove_token(s.token_uuid)
 
