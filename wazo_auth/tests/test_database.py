@@ -70,17 +70,6 @@ class TestDAO(unittest.TestCase):
 
         self.token_crud.assert_deleted(s.token_uuid)
 
-    def test_tenant_create(self):
-        result = self.dao.tenant_create('foobar')
-
-        assert_that(
-            result,
-            has_entries(
-                'uuid', self.tenant_crud.create.return_value,
-                'name', 'foobar',
-            )
-        )
-
 
 class MockedCrud(object):
 

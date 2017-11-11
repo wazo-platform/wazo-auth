@@ -82,34 +82,35 @@ class TenantService(object):
         self._dao = dao
 
     def add_user(self, tenant_uuid, user_uuid):
-        return self._dao.tenant_add_user(tenant_uuid, user_uuid)
+        return self._dao.tenant.add_user(tenant_uuid, user_uuid)
 
     def count_users(self, tenant_uuid, **kwargs):
-        return self._dao.tenant_count_users(tenant_uuid, **kwargs)
+        return self._dao.tenant.count_users(tenant_uuid, **kwargs)
 
     def count(self, **kwargs):
-        return self._dao.tenant_count(**kwargs)
+        return self._dao.tenant.count(**kwargs)
 
     def delete(self, uuid):
-        return self._dao.tenant_delete(uuid)
+        return self._dao.tenant.delete(uuid)
 
     def get(self, uuid):
-        tenants = self._dao.tenant_list(uuid=uuid, limit=1)
+        tenants = self._dao.tenant.list_(uuid=uuid, limit=1)
         for tenant in tenants:
             return tenant
         raise exceptions.UnknownTenantException(uuid)
 
     def list_(self, **kwargs):
-        return self._dao.tenant_list(**kwargs)
+        return self._dao.tenant.list_(**kwargs)
 
     def list_users(self, tenant_uuid, **kwargs):
-        return self._dao.user_list(tenant_uuid=tenant_uuid, **kwargs)
+        return self._dao.user.list_(tenant_uuid=tenant_uuid, **kwargs)
 
     def new(self, **kwargs):
-        return self._dao.tenant_create(**kwargs)
+        uuid = self._dao.tenant.create(**kwargs)
+        return dict(uuid=uuid, **kwargs)
 
     def remove_user(self, tenant_uuid, user_uuid):
-        return self._dao.tenant_remove_user(tenant_uuid, user_uuid)
+        return self._dao.tenant.remove_user(tenant_uuid, user_uuid)
 
 
 class UserService(object):

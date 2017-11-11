@@ -87,31 +87,6 @@ class DAO(object):
         token_uuid = self.token.create(token_data)
         return Token(token_uuid, **token_data)
 
-    def tenant_add_user(self, tenant_uuid, user_uuid):
-        self.tenant.add_user(tenant_uuid, user_uuid)
-
-    def tenant_count(self, **kwargs):
-        return self.tenant.count(**kwargs)
-
-    def tenant_count_users(self, tenant_uuid, **kwargs):
-        return self.tenant.count_users(tenant_uuid, **kwargs)
-
-    def tenant_create(self, name):
-        tenant_uuid = self.tenant.create(name)
-        return dict(
-            uuid=tenant_uuid,
-            name=name,
-        )
-
-    def tenant_delete(self, tenant_uuid):
-        return self.tenant.delete(tenant_uuid)
-
-    def tenant_list(self, **kwargs):
-        return self.tenant.list_(**kwargs)
-
-    def tenant_remove_user(self, tenant_uuid, user_uuid):
-        self.tenant.remove_user(tenant_uuid, user_uuid)
-
     def user_add_policy(self, user_uuid, policy_uuid):
         self.user.add_policy(user_uuid, policy_uuid)
 
