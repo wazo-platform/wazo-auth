@@ -108,6 +108,15 @@ class TestGroupCRUD(unittest.TestCase):
                     'resource', 'groups',
                     'details', has_key('name'))))
 
+    @fixtures.group()
+    def test_delete(self, group_uuid):
+        self._group_crud.delete(group_uuid)
+
+        assert_that(
+            calling(self._group_crud.delete).with_args(group_uuid),
+            raises(exceptions.UnknownGroupException),
+        )
+
     @fixtures.group(name='foo')
     @fixtures.group(name='bar')
     @fixtures.group(name='baz')
