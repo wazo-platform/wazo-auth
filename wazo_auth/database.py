@@ -68,35 +68,35 @@ class SearchFilter(object):
 class DAO(object):
 
     def __init__(self, policy_crud, token_crud, user_crud, tenant_crud, group_crud):
-        self.policy_crud = policy_crud
-        self.token_crud = token_crud
-        self.user_crud = user_crud
-        self.tenant_crud = tenant_crud
-        self.group_crud = group_crud
+        self.policy = policy_crud
+        self.token = token_crud
+        self.user = user_crud
+        self.tenant = tenant_crud
+        self.group = group_crud
 
     def add_policy_acl_template(self, policy_uuid, acl_template):
-        self.policy_crud.associate_policy_template(policy_uuid, acl_template)
+        self.policy.associate_policy_template(policy_uuid, acl_template)
 
     def count_policies(self, search):
-        return self.policy_crud.count(search)
+        return self.policy.count(search)
 
     def delete_policy_acl_template(self, policy_uuid, acl_template):
-        self.policy_crud.dissociate_policy_template(policy_uuid, acl_template)
+        self.policy.dissociate_policy_template(policy_uuid, acl_template)
 
     def get_policy(self, policy_uuid):
         if self._is_uuid(policy_uuid):
-            for policy in self.policy_crud.get(uuid=policy_uuid):
+            for policy in self.policy.get(uuid=policy_uuid):
                 return policy
         raise UnknownPolicyException()
 
     def get_policy_by_name(self, policy_name):
-        for policy in self.policy_crud.get(search=policy_name):
+        for policy in self.policy.get(search=policy_name):
             if policy['name'] == policy_name:
                 return policy
         raise UnknownPolicyException()
 
     def get_token(self, token_id):
-        token_data = self.token_crud.get(token_id)
+        token_data = self.token.get(token_id)
         if not token_data:
             raise UnknownTokenException()
 
@@ -104,95 +104,95 @@ class DAO(object):
         return Token(id_, **token_data)
 
     def create_policy(self, name, description, acl_templates):
-        return self.policy_crud.create(name, description, acl_templates)
+        return self.policy.create(name, description, acl_templates)
 
     def create_token(self, token_payload):
         token_data = token_payload.__dict__
-        token_uuid = self.token_crud.create(token_data)
+        token_uuid = self.token.create(token_data)
         return Token(token_uuid, **token_data)
 
     def delete_policy(self, policy_uuid):
-        self.policy_crud.delete(policy_uuid)
+        self.policy.delete(policy_uuid)
 
     def group_count(self, **kwargs):
-        return self.group_crud.count(**kwargs)
+        return self.group.count(**kwargs)
 
     def group_create(self, **kwargs):
-        group_uuid = self.group_crud.create(**kwargs)
+        group_uuid = self.group.create(**kwargs)
         return dict(uuid=group_uuid, **kwargs)
 
     def group_delete(self, group_uuid):
-        return self.group_crud.delete(group_uuid)
+        return self.group.delete(group_uuid)
 
     def group_get(self, group_uuid):
-        groups = self.group_crud.list_(uuid=group_uuid, limit=1)
+        groups = self.group.list_(uuid=group_uuid, limit=1)
         for group in groups:
             return group
         raise UnknownGroupException(group_uuid)
 
     def group_list(self, **kwargs):
-        return self.group_crud.list_(**kwargs)
+        return self.group.list_(**kwargs)
 
     def group_update(self, group_uuid, **kwargs):
-        return self.group_crud.update(group_uuid, **kwargs)
+        return self.group.update(group_uuid, **kwargs)
 
     def list_policies(self, **kwargs):
-        return self.policy_crud.get(**kwargs)
+        return self.policy.get(**kwargs)
 
     def update_policy(self, policy_uuid, name, description, acl_templates):
-        self.policy_crud.update(policy_uuid, name, description, acl_templates)
+        self.policy.update(policy_uuid, name, description, acl_templates)
 
     def tenant_add_user(self, tenant_uuid, user_uuid):
-        self.tenant_crud.add_user(tenant_uuid, user_uuid)
+        self.tenant.add_user(tenant_uuid, user_uuid)
 
     def tenant_count(self, **kwargs):
-        return self.tenant_crud.count(**kwargs)
+        return self.tenant.count(**kwargs)
 
     def tenant_count_users(self, tenant_uuid, **kwargs):
-        return self.tenant_crud.count_users(tenant_uuid, **kwargs)
+        return self.tenant.count_users(tenant_uuid, **kwargs)
 
     def tenant_create(self, name):
-        tenant_uuid = self.tenant_crud.create(name)
+        tenant_uuid = self.tenant.create(name)
         return dict(
             uuid=tenant_uuid,
             name=name,
         )
 
     def tenant_delete(self, tenant_uuid):
-        return self.tenant_crud.delete(tenant_uuid)
+        return self.tenant.delete(tenant_uuid)
 
     def tenant_list(self, **kwargs):
-        return self.tenant_crud.list_(**kwargs)
+        return self.tenant.list_(**kwargs)
 
     def tenant_remove_user(self, tenant_uuid, user_uuid):
-        self.tenant_crud.remove_user(tenant_uuid, user_uuid)
+        self.tenant.remove_user(tenant_uuid, user_uuid)
 
     def user_add_policy(self, user_uuid, policy_uuid):
-        self.user_crud.add_policy(user_uuid, policy_uuid)
+        self.user.add_policy(user_uuid, policy_uuid)
 
     def user_remove_policy(self, user_uuid, policy_uuid):
-        self.user_crud.remove_policy(user_uuid, policy_uuid)
+        self.user.remove_policy(user_uuid, policy_uuid)
 
     def user_count(self, **kwargs):
-        return self.user_crud.count(**kwargs)
+        return self.user.count(**kwargs)
 
     def user_count_policies(self, user_uuid, **kwargs):
-        return self.user_crud.count_policies(user_uuid, **kwargs)
+        return self.user.count_policies(user_uuid, **kwargs)
 
     def user_count_tenants(self, user_uuid, **kwargs):
-        return self.user_crud.count_tenants(user_uuid, **kwargs)
+        return self.user.count_tenants(user_uuid, **kwargs)
 
     def user_list_policies(self, user_uuid, **kwargs):
-        return self.policy_crud.get(user_uuid=user_uuid, **kwargs)
+        return self.policy.get(user_uuid=user_uuid, **kwargs)
 
     def user_list_tenants(self, user_uuid, **kwargs):
-        return self.tenant_crud.list_(user_uuid=user_uuid, **kwargs)
+        return self.tenant.list_(user_uuid=user_uuid, **kwargs)
 
     def user_delete(self, user_uuid):
-        self.user_crud.delete(user_uuid)
+        self.user.delete(user_uuid)
 
     def user_create(self, username, email_address, hash_, salt):
-        user_uuid = self.user_crud.create(username, email_address, hash_, salt)
+        user_uuid = self.user.create(username, email_address, hash_, salt)
         email = dict(
             address=email_address,
             confirmed=False,
@@ -205,16 +205,16 @@ class DAO(object):
         )
 
     def user_get_credentials(self, username):
-        return self.user_crud.get_credentials(username)
+        return self.user.get_credentials(username)
 
     def user_list(self, **kwargs):
-        return self.user_crud.list_(**kwargs)
+        return self.user.list_(**kwargs)
 
     def remove_token(self, token_id):
-        self.token_crud.delete(token_id)
+        self.token.delete(token_id)
 
     def remove_expired_tokens(self):
-        self.token_crud.delete_expired_tokens()
+        self.token.delete_expired_tokens()
 
     @staticmethod
     def _is_uuid(value):
@@ -226,12 +226,12 @@ class DAO(object):
 
     @classmethod
     def from_config(cls, config):
-        group_crud = _GroupCRUD(config['db_uri'])
-        policy_crud = _PolicyCRUD(config['db_uri'])
-        token_crud = _TokenCRUD(config['db_uri'])
-        user_crud = _UserCRUD(config['db_uri'])
-        tenant_crud = _TenantCRUD(config['db_uri'])
-        return cls(policy_crud, token_crud, user_crud, tenant_crud, group_crud)
+        group = _GroupCRUD(config['db_uri'])
+        policy = _PolicyCRUD(config['db_uri'])
+        token = _TokenCRUD(config['db_uri'])
+        user = _UserCRUD(config['db_uri'])
+        tenant = _TenantCRUD(config['db_uri'])
+        return cls(policy, token, user, tenant, group)
 
 
 class _CRUD(object):
