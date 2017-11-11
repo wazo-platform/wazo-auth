@@ -27,6 +27,7 @@ from .models import (
     ACLTemplate,
     ACLTemplatePolicy,
     Email,
+    Group,
     Policy,
     Tenant,
     TenantUser,
@@ -239,6 +240,28 @@ class _CRUD(object):
             raise
         finally:
             self._Session.remove()
+
+
+class _GroupCRUD(_CRUD):
+
+    constraint_to_column_map = dict(
+        auth_group_name_key='name',
+    )
+
+    def create(self, name, **ignored):
+        group = Group(name=name)
+        with self.new_session() as s:
+            s.add(group)
+            try:
+                s.commit()
+            except exc.IntegrityError as e:
+                if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                    column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
+                    value = locals().get(column)
+                    if column:
+                        raise ConflictException('groups', column, value)
+                raise
+            return group.uuid
 
 
 class _PolicyCRUD(_CRUD):

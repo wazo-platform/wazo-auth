@@ -98,6 +98,28 @@ def http_policy(**policy_args):
     return decorator
 
 
+def group(**group_args):
+    if 'name' not in group_args:
+        group_args['name'] = _random_string(20)
+
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            group_uuid = self._group_crud.create(**group_args)
+            try:
+                result = decorated(self, group_uuid, *args, **kwargs)
+            finally:
+                # TODO uncomment when the delete gets implemented
+                # try:
+                #     self._group_crud.delete(group_uuid)
+                # except exceptions.UnknownGroupException:
+                #     pass
+                pass
+            return result
+        return wrapper
+    return decorator
+
+
 def policy(**policy_args):
     if 'name' not in policy_args:
         policy_args['name'] = _random_string(20)

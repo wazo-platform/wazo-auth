@@ -30,6 +30,7 @@ from hamcrest import (
     empty,
     equal_to,
     has_entries,
+    has_key,
     has_properties,
     none,
     not_,
@@ -63,6 +64,30 @@ def setup():
 
 def teardown():
     DBStarter.tearDownClass()
+
+
+class TestGroupCRUD(unittest.TestCase):
+
+    def setUp(self):
+        self._group_crud = database._GroupCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
+
+    @fixtures.group(name='foobar')
+    def test_create(self, group_uuid):
+        name = 'foobar'
+
+        assert_that(group_uuid, equal_to(ANY_UUID))
+        with self._group_crud.new_session() as s:
+            filter_ = database.Group.uuid == group_uuid
+            group = s.query(database.Group).filter(filter_).first()
+            assert_that(group, has_properties('name', name))
+
+        assert_that(
+            calling(self._group_crud.create).with_args(name),
+            raises(exceptions.ConflictException).matching(
+                has_properties(
+                    'status_code', 409,
+                    'resource', 'groups',
+                    'details', has_key('name'))))
 
 
 class TestPolicyCRUD(unittest.TestCase):
