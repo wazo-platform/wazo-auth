@@ -190,13 +190,12 @@ class Manager(object):
         if not policy_name:
             return []
 
-        try:
-            policy = self._dao.get_policy_by_name(policy_name)
-        except UnknownPolicyException:
-            logger.info('Unknown policy name "%s" configured for backend "%s"', policy_name, backend_name)
-            return []
+        matching_policies = self._dao.policy.get(name=policy_name, limit=1)
+        for policy in matching_policies:
+            return policy['acl_templates']
 
-        return policy['acl_templates']
+        logger.info('Unknown policy name "%s" configured for backend "%s"', policy_name, backend_name)
+        return []
 
     def _get_token_hash(self, token):
         return hashlib.sha256('{token}'.format(token=token)).hexdigest()

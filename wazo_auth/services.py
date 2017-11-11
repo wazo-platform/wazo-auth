@@ -48,28 +48,31 @@ class PolicyService(object):
         self._dao = dao
 
     def add_acl_template(self, policy_uuid, acl_template):
-        return self._dao.add_policy_acl_template(policy_uuid, acl_template)
+        return self._dao.policy.associate_policy_template(policy_uuid, acl_template)
 
     def create(self, **kwargs):
-        return self._dao.create_policy(**kwargs)
+        return self._dao.policy.create(**kwargs)
 
-    def count(self, search, **ignored):
-        return self._dao.count_policies(search)
+    def count(self, **kwargs):
+        return self._dao.policy.count(**kwargs)
 
     def delete(self, policy_uuid):
-        return self._dao.delete_policy(policy_uuid)
+        return self._dao.policy.delete(policy_uuid)
 
     def delete_acl_template(self, policy_uuid, acl_template):
-        return self._dao.delete_policy_acl_template(policy_uuid, acl_template)
+        return self._dao.policy.dissociate_policy_template(policy_uuid, acl_template)
 
     def get(self, policy_uuid):
-        return self._dao.get_policy(policy_uuid)
+        matching_policies = self._dao.policy.get(uuid=policy_uuid)
+        for policy in matching_policies:
+            return policy
+        raise exceptions.UnknownPolicyException(policy_uuid)
 
     def list(self, **kwargs):
-        return self._dao.list_policies(**kwargs)
+        return self._dao.policy.get(**kwargs)
 
     def update(self, policy_uuid, **body):
-        self._dao.update_policy(policy_uuid, **body)
+        self._dao.policy.update(policy_uuid, **body)
         return dict(uuid=policy_uuid, **body)
 
 

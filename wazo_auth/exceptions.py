@@ -206,8 +206,11 @@ class UnknownPolicyException(ManagerException):
 
     code = 404
 
+    def __init__(self, policy_uuid):
+        self._policy_uuid = policy_uuid
+
     def __str__(self):
-        return 'No such policy'
+        return 'No such policy "%s"'.format(self._policy_uuid)
 
 
 class UnknownTokenException(ManagerException):

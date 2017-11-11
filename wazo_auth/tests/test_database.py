@@ -36,28 +36,6 @@ class TestDAO(unittest.TestCase):
             self.group_crud,
         )
 
-    def test_get_policy(self):
-        uuid = 'c1647454-8d30-408a-9507-b2a3a9767a3d'
-
-        self.policy_crud.get.return_value = [uuid]
-
-        result = self.dao.get_policy(uuid)
-
-        assert_that(result, equal_to(uuid))
-        self.policy_crud.get.assert_called_once_with(uuid=uuid)
-
-    def test_get_policy_by_name(self):
-        name = 'test'
-        _, expected, __ = self.policy_crud.get.return_value = [
-            {'name': 'testsuffix'},
-            {'name': name},
-            {'name': 'prefixtest'},
-        ]
-        result = self.dao.get_policy_by_name(name)
-
-        assert_that(result, equal_to(expected))
-        self.policy_crud.get.assert_called_once_with(search=name)
-
     def test_get_token(self):
         result = self.dao.get_token(s.token_id)
 
@@ -69,12 +47,6 @@ class TestDAO(unittest.TestCase):
         assert_that(
             calling(self.dao.get_token).with_args(s.inexistant_token),
             raises(UnknownTokenException))
-
-    def test_create_policy(self):
-        result = self.dao.create_policy(s.name, s.description, s.acls)
-
-        assert_that(result, equal_to(self.policy_crud.create.return_value))
-        self.policy_crud.create.assert_called_once_with(s.name, s.description, s.acls)
 
     def test_create_token(self):
         token_data = {
@@ -92,11 +64,6 @@ class TestDAO(unittest.TestCase):
         expected_token = Token(s.token_uuid, **token_data)
         assert_that(result, equal_to(expected_token))
         self.token_crud.assert_created_with(token_data)
-
-    def test_delete_policy(self):
-        self.dao.delete_policy(s.token_uuid)
-
-        self.policy_crud.delete.assert_called_once_with(s.token_uuid)
 
     def test_remove_token(self):
         self.dao.remove_token(s.token_uuid)

@@ -74,27 +74,6 @@ class DAO(object):
         self.tenant = tenant_crud
         self.group = group_crud
 
-    def add_policy_acl_template(self, policy_uuid, acl_template):
-        self.policy.associate_policy_template(policy_uuid, acl_template)
-
-    def count_policies(self, search):
-        return self.policy.count(search)
-
-    def delete_policy_acl_template(self, policy_uuid, acl_template):
-        self.policy.dissociate_policy_template(policy_uuid, acl_template)
-
-    def get_policy(self, policy_uuid):
-        if self._is_uuid(policy_uuid):
-            for policy in self.policy.get(uuid=policy_uuid):
-                return policy
-        raise UnknownPolicyException()
-
-    def get_policy_by_name(self, policy_name):
-        for policy in self.policy.get(search=policy_name):
-            if policy['name'] == policy_name:
-                return policy
-        raise UnknownPolicyException()
-
     def get_token(self, token_id):
         token_data = self.token.get(token_id)
         if not token_data:
@@ -103,22 +82,10 @@ class DAO(object):
         id_ = token_data.pop('uuid')
         return Token(id_, **token_data)
 
-    def create_policy(self, name, description, acl_templates):
-        return self.policy.create(name, description, acl_templates)
-
     def create_token(self, token_payload):
         token_data = token_payload.__dict__
         token_uuid = self.token.create(token_data)
         return Token(token_uuid, **token_data)
-
-    def delete_policy(self, policy_uuid):
-        self.policy.delete(policy_uuid)
-
-    def list_policies(self, **kwargs):
-        return self.policy.get(**kwargs)
-
-    def update_policy(self, policy_uuid, name, description, acl_templates):
-        self.policy.update(policy_uuid, name, description, acl_templates)
 
     def tenant_add_user(self, tenant_uuid, user_uuid):
         self.tenant.add_user(tenant_uuid, user_uuid)
@@ -349,7 +316,7 @@ class _PolicyCRUD(_PaginatorMixin, _CRUD):
     def associate_policy_template(self, policy_uuid, acl_template):
         with self.new_session() as s:
             if not self._policy_exists(s, policy_uuid):
-                raise UnknownPolicyException()
+                raise UnknownPolicyException(policy_uuid)
 
             self._associate_acl_templates(s, policy_uuid, [acl_template])
             try:
@@ -362,7 +329,7 @@ class _PolicyCRUD(_PaginatorMixin, _CRUD):
     def dissociate_policy_template(self, policy_uuid, acl_template):
         with self.new_session() as s:
             if not self._policy_exists(s, policy_uuid):
-                raise UnknownPolicyException()
+                raise UnknownPolicyException(policy_uuid)
 
             filter_ = ACLTemplate.template == acl_template
             templ_ids = [t.id_ for t in s.query(ACLTemplate.id_).filter(filter_).all()]
@@ -374,8 +341,8 @@ class _PolicyCRUD(_PaginatorMixin, _CRUD):
                 )
                 s.query(ACLTemplatePolicy).filter(filter_).delete()
 
-    def count(self, search_pattern):
-        filter_ = self.new_search_filter(search=search_pattern)
+    def count(self, search, **ignored):
+        filter_ = self.new_search_filter(search=search)
         with self.new_session() as s:
             return s.query(Policy).filter(filter_).count()
 
@@ -399,7 +366,7 @@ class _PolicyCRUD(_PaginatorMixin, _CRUD):
             nb_deleted = s.query(Policy).filter(filter_).delete()
 
         if not nb_deleted:
-            raise UnknownPolicyException()
+            raise UnknownPolicyException(policy_uuid)
 
     def get(self, **kwargs):
         strict_filter = self._new_strict_filter(**kwargs)
@@ -449,7 +416,7 @@ class _PolicyCRUD(_PaginatorMixin, _CRUD):
             body = {'name': name, 'description': description}
             affected_rows = s.query(Policy).filter(filter_).update(body)
             if not affected_rows:
-                raise UnknownPolicyException()
+                raise UnknownPolicyException(policy_uuid)
 
             try:
                 s.commit()

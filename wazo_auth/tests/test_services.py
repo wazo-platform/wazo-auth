@@ -11,23 +11,11 @@ from unittest import TestCase
 from .. import services, database
 
 
-class TestPolicyService(TestCase):
-
-    def setUp(self):
-        self.dao = Mock(database.DAO)
-        self.service = services.PolicyService(self.dao)
-
-    def test_delete(self):
-        self.service.delete(s.policy_uuid)
-
-        self.dao.delete_policy.assert_called_once_with(s.policy_uuid)
-
-
 class TestUserService(TestCase):
 
     def setUp(self):
         self.encrypter = Mock(services.PasswordEncrypter)
-        self.dao= Mock(database.DAO)
+        self.dao = Mock(database.DAO)
         self.service = services.UserService(self.dao, encrypter=self.encrypter)
 
     def test_that_new(self):
