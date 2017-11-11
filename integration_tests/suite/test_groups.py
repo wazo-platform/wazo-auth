@@ -45,14 +45,14 @@ class TestGroups(base.MockBackendTestCase):
         result = self.client.groups.get(foobar['uuid'])
         assert_that(result, equal_to(foobar))
 
-    def test_post(self):
+    @fixtures.http_group(name='foobar')
+    def test_post(self, result):
         name = 'foobar'
+
+        assert_that(result, has_entries('uuid', ANY, 'name', name))
 
         for body in self.invalid_bodies:
             base.assert_http_error(400, self.client.groups.new, **body)
-
-        result = self.client.groups.new(name='foobar')
-        base.assert_that(result, has_entries('uuid', ANY, 'name', name))
 
         base.assert_http_error(409, self.client.groups.new, name='foobar')
 
