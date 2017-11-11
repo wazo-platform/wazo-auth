@@ -124,8 +124,8 @@ class TokenPayload(object):
 
 class ExpiredTokenRemover(object):
 
-    def __init__(self, config, storage):
-        self._storage = storage
+    def __init__(self, config, dao):
+        self._dao = dao
         self._cleanup_interval = config['token_cleanup_interval']
         self._debug = config['debug']
 
@@ -135,7 +135,7 @@ class ExpiredTokenRemover(object):
 
     def _cleanup(self):
         try:
-            self._storage.remove_expired_tokens()
+            self._dao.remove_expired_tokens()
         except Exception:
             logger.warning('failed to remove expired tokens', exc_info=self._debug)
 
@@ -147,10 +147,10 @@ class ExpiredTokenRemover(object):
 
 class Manager(object):
 
-    def __init__(self, config, storage):
+    def __init__(self, config, dao):
         self._backend_policies = config.get('backend_policies', {})
         self._default_expiration = config['default_token_lifetime']
-        self._storage = storage
+        self._dao = dao
 
     def new_token(self, backend, login, args):
         auth_id, xivo_user_uuid = backend.get_ids(login, args)
@@ -167,15 +167,15 @@ class Manager(object):
             issued_t=t,
             acls=acls)
 
-        token = self._storage.create_token(token_payload)
+        token = self._dao.create_token(token_payload)
 
         return token
 
     def remove_token(self, token):
-        self._storage.remove_token(token)
+        self._dao.remove_token(token)
 
     def get(self, token_uuid, required_acl):
-        token = self._storage.get_token(token_uuid)
+        token = self._dao.get_token(token_uuid)
 
         if token.is_expired():
             raise UnknownTokenException()
@@ -191,7 +191,7 @@ class Manager(object):
             return []
 
         try:
-            policy = self._storage.get_policy_by_name(policy_name)
+            policy = self._dao.get_policy_by_name(policy_name)
         except UnknownPolicyException:
             logger.info('Unknown policy name "%s" configured for backend "%s"', policy_name, backend_name)
             return []

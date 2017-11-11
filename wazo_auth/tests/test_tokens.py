@@ -41,8 +41,8 @@ class TestManager(unittest.TestCase):
 
     def setUp(self):
         self.config = {'default_token_lifetime': sentinel.default_expiration_delay}
-        self.storage = Mock(database.Storage)
-        self.manager = token.Manager(self.config, self.storage)
+        self.dao = Mock(database.DAO)
+        self.manager = token.Manager(self.config, self.dao)
 
     def _new_backend_mock(self, auth_id=None, uuid=None):
         get_ids = Mock(return_value=(auth_id or sentinel.auth_id,
@@ -55,7 +55,7 @@ class TestManager(unittest.TestCase):
 
         self.manager.remove_token(token_id)
 
-        self.storage.remove_token.assert_called_once_with(token_id)
+        self.dao.remove_token.assert_called_once_with(token_id)
 
 
 class TestToken(unittest.TestCase):

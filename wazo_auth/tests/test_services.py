@@ -14,21 +14,21 @@ from .. import services, database
 class TestPolicyService(TestCase):
 
     def setUp(self):
-        self.storage = Mock(database.Storage)
-        self.service = services.PolicyService(self.storage)
+        self.dao = Mock(database.DAO)
+        self.service = services.PolicyService(self.dao)
 
     def test_delete(self):
         self.service.delete(s.policy_uuid)
 
-        self.storage.delete_policy.assert_called_once_with(s.policy_uuid)
+        self.dao.delete_policy.assert_called_once_with(s.policy_uuid)
 
 
 class TestUserService(TestCase):
 
     def setUp(self):
         self.encrypter = Mock(services.PasswordEncrypter)
-        self.storage = Mock(database.Storage)
-        self.service = services.UserService(self.storage, encrypter=self.encrypter)
+        self.dao= Mock(database.DAO)
+        self.service = services.UserService(self.dao, encrypter=self.encrypter)
 
     def test_that_new(self):
         params = dict(
@@ -46,5 +46,5 @@ class TestUserService(TestCase):
 
         result = self.service.new_user(**params)
 
-        self.storage.user_create.assert_called_once_with(**expected_db_params)
-        assert_that(result, equal_to(self.storage.user_create.return_value))
+        self.dao.user_create.assert_called_once_with(**expected_db_params)
+        assert_that(result, equal_to(self.dao.user_create.return_value))

@@ -65,7 +65,7 @@ class SearchFilter(object):
         return or_(column.ilike(pattern) for column in self._columns)
 
 
-class Storage(object):
+class DAO(object):
 
     def __init__(self, policy_crud, token_crud, user_crud, tenant_crud, group_crud):
         self.policy_crud = policy_crud

@@ -10,7 +10,7 @@ from hamcrest import assert_that, calling, equal_to, has_entries, raises
 from mock import Mock, sentinel as s
 
 from ..database import (
-    Storage,
+    DAO,
     UnknownTokenException,
     _GroupCRUD,
     _PolicyCRUD,
@@ -20,7 +20,7 @@ from ..database import (
 from ..token import Token, TokenPayload
 
 
-class TestStorage(unittest.TestCase):
+class TestDAO(unittest.TestCase):
 
     def setUp(self):
         self.token_crud = MockedCrud()
@@ -28,7 +28,7 @@ class TestStorage(unittest.TestCase):
         self.user_crud = Mock(_UserCRUD)
         self.tenant_crud = Mock(_TenantCRUD)
         self.group_crud = Mock(_GroupCRUD)
-        self.storage = Storage(
+        self.dao = DAO(
             self.policy_crud,
             self.token_crud,
             self.user_crud,
@@ -41,7 +41,7 @@ class TestStorage(unittest.TestCase):
 
         self.policy_crud.get.return_value = [uuid]
 
-        result = self.storage.get_policy(uuid)
+        result = self.dao.get_policy(uuid)
 
         assert_that(result, equal_to(uuid))
         self.policy_crud.get.assert_called_once_with(uuid=uuid)
@@ -53,13 +53,13 @@ class TestStorage(unittest.TestCase):
             {'name': name},
             {'name': 'prefixtest'},
         ]
-        result = self.storage.get_policy_by_name(name)
+        result = self.dao.get_policy_by_name(name)
 
         assert_that(result, equal_to(expected))
         self.policy_crud.get.assert_called_once_with(search=name)
 
     def test_get_token(self):
-        result = self.storage.get_token(s.token_id)
+        result = self.dao.get_token(s.token_id)
 
         expected_token = Token(s.token_id, s.auth_id, s.xivo_user_uuid,
                                s.xivo_uuid, s.issued_t, s.expire_t, s.acls)
@@ -67,11 +67,11 @@ class TestStorage(unittest.TestCase):
 
     def test_get_token_not_found(self):
         assert_that(
-            calling(self.storage.get_token).with_args(s.inexistant_token),
+            calling(self.dao.get_token).with_args(s.inexistant_token),
             raises(UnknownTokenException))
 
     def test_create_policy(self):
-        result = self.storage.create_policy(s.name, s.description, s.acls)
+        result = self.dao.create_policy(s.name, s.description, s.acls)
 
         assert_that(result, equal_to(self.policy_crud.create.return_value))
         self.policy_crud.create.assert_called_once_with(s.name, s.description, s.acls)
@@ -87,24 +87,24 @@ class TestStorage(unittest.TestCase):
         }
         payload = TokenPayload(**token_data)
 
-        result = self.storage.create_token(payload)
+        result = self.dao.create_token(payload)
 
         expected_token = Token(s.token_uuid, **token_data)
         assert_that(result, equal_to(expected_token))
         self.token_crud.assert_created_with(token_data)
 
     def test_delete_policy(self):
-        self.storage.delete_policy(s.token_uuid)
+        self.dao.delete_policy(s.token_uuid)
 
         self.policy_crud.delete.assert_called_once_with(s.token_uuid)
 
     def test_remove_token(self):
-        self.storage.remove_token(s.token_uuid)
+        self.dao.remove_token(s.token_uuid)
 
         self.token_crud.assert_deleted(s.token_uuid)
 
     def test_tenant_create(self):
-        result = self.storage.tenant_create('foobar')
+        result = self.dao.tenant_create('foobar')
 
         assert_that(
             result,
