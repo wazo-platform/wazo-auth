@@ -131,6 +131,9 @@ class Storage(object):
         group_uuid = self._group_crud.create(**kwargs)
         return dict(uuid=group_uuid, **kwargs)
 
+    def group_delete(self, group_uuid):
+        return self._group_crud.delete(group_uuid)
+
     def group_list(self, **kwargs):
         return self._group_crud.list_(**kwargs)
 

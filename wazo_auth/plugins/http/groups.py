@@ -19,10 +19,21 @@ from flask import request
 from wazo_auth import exceptions, http, schemas
 
 
-class Groups(http.ErrorCatchingResource):
+class _BaseGroupResource(http.ErrorCatchingResource):
 
     def __init__(self, group_service):
         self.group_service = group_service
+
+
+class Group(_BaseGroupResource):
+
+    @http.required_acl('auth.groups.{group_uuid}.delete')
+    def delete(self, group_uuid):
+        self.group_service.delete(group_uuid)
+        return '', 204
+
+
+class Groups(_BaseGroupResource):
 
     @http.required_acl('auth.groups.read')
     def get(self):
@@ -63,4 +74,5 @@ class Plugin(object):
         api = dependencies['api']
         args = (dependencies['group_service'],)
 
+        api.add_resource(Group, '/groups/<string:group_uuid>', resource_class_args=args)
         api.add_resource(Groups, '/groups', resource_class_args=args)
