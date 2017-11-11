@@ -23,6 +23,7 @@ from mock import Mock, sentinel as s
 from ..database import (
     Storage,
     UnknownTokenException,
+    _GroupCRUD,
     _PolicyCRUD,
     _TenantCRUD,
     _UserCRUD,
@@ -37,11 +38,13 @@ class TestStorage(unittest.TestCase):
         self.policy_crud = Mock(_PolicyCRUD)
         self.user_crud = Mock(_UserCRUD)
         self.tenant_crud = Mock(_TenantCRUD)
+        self.group_crud = Mock(_GroupCRUD)
         self.storage = Storage(
             self.policy_crud,
             self.token_crud,
             self.user_crud,
             self.tenant_crud,
+            self.group_crud,
         )
 
     def test_get_policy(self):

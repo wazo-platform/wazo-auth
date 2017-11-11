@@ -76,11 +76,12 @@ class SearchFilter(object):
 
 class Storage(object):
 
-    def __init__(self, policy_crud, token_crud, user_crud, tenant_crud):
+    def __init__(self, policy_crud, token_crud, user_crud, tenant_crud, group_crud):
         self._policy_crud = policy_crud
         self._token_crud = token_crud
         self._user_crud = user_crud
         self._tenant_crud = tenant_crud
+        self._group_crud = group_crud
 
     def add_policy_acl_template(self, policy_uuid, acl_template):
         self._policy_crud.associate_policy_template(policy_uuid, acl_template)
@@ -121,6 +122,10 @@ class Storage(object):
 
     def delete_policy(self, policy_uuid):
         self._policy_crud.delete(policy_uuid)
+
+    def group_create(self, **kwargs):
+        group_uuid = self._group_crud.create(**kwargs)
+        return dict(uuid=group_uuid, **kwargs)
 
     def list_policies(self, **kwargs):
         return self._policy_crud.get(**kwargs)
@@ -212,11 +217,12 @@ class Storage(object):
 
     @classmethod
     def from_config(cls, config):
+        group_crud = _GroupCRUD(config['db_uri'])
         policy_crud = _PolicyCRUD(config['db_uri'])
         token_crud = _TokenCRUD(config['db_uri'])
         user_crud = _UserCRUD(config['db_uri'])
         tenant_crud = _TenantCRUD(config['db_uri'])
-        return cls(policy_crud, token_crud, user_crud, tenant_crud)
+        return cls(policy_crud, token_crud, user_crud, tenant_crud, group_crud)
 
 
 class _CRUD(object):

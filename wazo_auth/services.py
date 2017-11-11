@@ -25,6 +25,15 @@ from . import exceptions
 logger = logging.getLogger(__name__)
 
 
+class GroupService(object):
+
+    def __init__(self, storage):
+        self._storage = storage
+
+    def create(self, **kwargs):
+        return self._storage.group_create(**kwargs)
+
+
 class PolicyService(object):
 
     def __init__(self, storage):

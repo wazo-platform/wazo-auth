@@ -15,27 +15,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-from hamcrest import assert_that, has_entries
-from mock import ANY
-from .helpers import base
+from flask import request
+from wazo_auth import exceptions, http, schemas
 
 
-class TestGroups(base.MockBackendTestCase):
+class Groups(http.ErrorCatchingResource):
 
-    def test_post(self):
-        name = 'foobar'
+    def __init__(self, group_service):
+        self.group_service = group_service
 
-        invalid_bodies = [
-            {},
-            {'name': None},
-            {'name': 42},
-            {'not name': name},
-        ]
+    @http.required_acl('auth.groups.create')
+    def post(self):
+        args, errors = schemas.GroupRequestSchema().load(request.get_json())
+        if errors:
+            raise exceptions.GroupParamException.from_errors(errors)
+        result = self.group_service.create(**args)
+        return result, 200
 
-        for body in invalid_bodies:
-            base.assert_http_error(400, self.client.groups.new, **body)
 
-        result = self.client.groups.new(name='foobar')
-        base.assert_that(result, has_entries('uuid', ANY, 'name', name))
+class Plugin(object):
 
-        base.assert_http_error(409, self.client.groups.new, name='foobar')
+    def load(self, dependencies):
+        api = dependencies['api']
+        args = (dependencies['group_service'],)
+
+        api.add_resource(Groups, '/groups', resource_class_args=args)

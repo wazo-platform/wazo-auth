@@ -91,6 +91,11 @@ class _BaseParamException(APIException):
                 return cls(info['message'], {field: info})
 
 
+class GroupParamException(_BaseParamException):
+
+    resource = 'groups'
+
+
 class TenantParamException(_BaseParamException):
 
     resource = 'tenants'

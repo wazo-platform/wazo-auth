@@ -66,6 +66,7 @@ class Controller(object):
 
         storage = database.Storage.from_config(self._config)
         self._token_manager = token.Manager(config, storage)
+        group_service = services.GroupService(storage)
         policy_service = services.PolicyService(storage)
         self._user_service = services.UserService(storage)
         self._tenant_service = services.TenantService(storage)
@@ -78,6 +79,7 @@ class Controller(object):
         dependencies = {
             'backends': self._backends,
             'config': config,
+            'group_service': group_service,
             'user_service': self._user_service,
             'token_manager': self._token_manager,
             'policy_service': policy_service,
