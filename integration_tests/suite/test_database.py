@@ -71,6 +71,25 @@ class TestGroupCRUD(unittest.TestCase):
     def setUp(self):
         self._group_crud = database._GroupCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
 
+    @fixtures.group(name='foo')
+    @fixtures.group(name='bar')
+    @fixtures.group(name='baz')
+    def test_count(self, *ignored):
+        result = self._group_crud.count()
+        assert_that(result, equal_to(3))
+
+        result = self._group_crud.count(name='foo', filtered=False)
+        assert_that(result, equal_to(3))
+
+        result = self._group_crud.count(search='ba', filtered=False)
+        assert_that(result, equal_to(3))
+
+        result = self._group_crud.count(name='foo', filtered=True)
+        assert_that(result, equal_to(1))
+
+        result = self._group_crud.count(search='ba', filtered=True)
+        assert_that(result, equal_to(2))
+
     @fixtures.group(name='foobar')
     def test_create(self, group_uuid):
         name = 'foobar'
