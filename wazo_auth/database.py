@@ -259,6 +259,14 @@ class _GroupCRUD(_CRUD):
         auth_group_name_key='name',
     )
     search_filter = SearchFilter(Group.name)
+    column_map = dict(
+        name=Group.name,
+        uuid=Group.uuid,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(_GroupCRUD, self).__init__(*args, **kwargs)
+        self._paginator = QueryPaginator(self.column_map)
 
     def count(self, **kwargs):
         filtered = kwargs.get('filtered')
@@ -286,6 +294,20 @@ class _GroupCRUD(_CRUD):
                         raise ConflictException('groups', column, value)
                 raise
             return group.uuid
+
+    def list_(self, **kwargs):
+        search_filter = self.new_search_filter(**kwargs)
+        strict_filter = self._new_strict_filter(**kwargs)
+        filter_ = and_(strict_filter, search_filter)
+
+        with self.new_session() as s:
+            query = s.query(
+                Group.uuid,
+                Group.name,
+            ).filter(filter_)
+            query = self._paginator.update_query(query, **kwargs)
+
+            return [{'uuid': uuid, 'name': name} for uuid, name in query.all()]
 
     @staticmethod
     def _new_strict_filter(uuid=None, name=None, **ignored):
