@@ -22,6 +22,17 @@ from .helpers import base, fixtures
 
 class TestGroups(base.MockBackendTestCase):
 
+    unknown_uuid = '00000000-0000-0000-0000-000000000000'
+
+    @fixtures.http_group(name='foobar')
+    def test_delete(self, foobar):
+        base.assert_http_error(404, self.client.groups.delete, self.unknown_uuid)
+        base.assert_no_error(self.client.groups.delete, foobar['uuid'])
+        base.assert_http_error(404, self.client.groups.delete, foobar['uuid'])
+
+        result = self.client.groups.list()
+        assert_list_matches(result, 0, 0)
+
     def test_post(self):
         name = 'foobar'
 
