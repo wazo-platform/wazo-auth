@@ -109,12 +109,10 @@ def http_group(**group_args):
             try:
                 result = decorated(self, group, *args, **kwargs)
             finally:
-                # TODO uncomment when the delete gets implemented
-                # try:
-                #     self.client.groups.delete(group['uuid'])
-                # except requests.HTTPError:
-                #     pass
-                pass
+                try:
+                    self.client.groups.delete(group['uuid'])
+                except requests.HTTPError:
+                    pass
             return result
         return wrapper
     return decorator
@@ -131,12 +129,10 @@ def group(**group_args):
             try:
                 result = decorated(self, group_uuid, *args, **kwargs)
             finally:
-                # TODO uncomment when the delete gets implemented
-                # try:
-                #     self._group_crud.delete(group_uuid)
-                # except exceptions.UnknownGroupException:
-                #     pass
-                pass
+                try:
+                    self._group_crud.delete(group_uuid)
+                except exceptions.UnknownGroupException:
+                    pass
             return result
         return wrapper
     return decorator
