@@ -45,6 +45,7 @@ from .exceptions import (
     InvalidOffsetException,
     InvalidSortColumnException,
     InvalidSortDirectionException,
+    UnknownGroupException,
     UnknownPolicyException,
     UnknownTenantException,
     UnknownTokenException,
@@ -305,6 +306,13 @@ class _GroupCRUD(_PaginatorMixin, _CRUD):
                         raise ConflictException('groups', column, value)
                 raise
             return group.uuid
+
+    def delete(self, uuid):
+        with self.new_session() as s:
+            nb_deleted = s.query(Group).filter(Group.uuid == uuid).delete()
+
+        if not nb_deleted:
+            raise UnknownGroupException(uuid)
 
     def list_(self, **kwargs):
         search_filter = self.new_search_filter(**kwargs)

@@ -46,6 +46,14 @@ class InvalidListParamException(APIException):
                 return cls(info['message'], {field: info})
 
 
+class UnknownGroupException(APIException):
+
+    def __init__(self, group_uuid):
+        msg = 'No such group: "{}"'.format(group_uuid)
+        details = dict(uuid=group_uuid)
+        super(UnknownGroupException, self).__init__(404, msg, 'unknown_group', details, 'groups')
+
+
 class UnknownTenantException(APIException):
 
     def __init__(self, tenant_uuid):
