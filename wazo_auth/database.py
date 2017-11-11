@@ -253,7 +253,16 @@ class _CRUD(object):
         return cls.search_filter.new_filter(**kwargs)
 
 
-class _GroupCRUD(_CRUD):
+class _PaginatorMixin(object):
+
+    column_map = dict()
+
+    def __init__(self, *args, **kwargs):
+        super(_PaginatorMixin, self).__init__(*args, **kwargs)
+        self._paginator = QueryPaginator(self.column_map)
+
+
+class _GroupCRUD(_PaginatorMixin, _CRUD):
 
     constraint_to_column_map = dict(
         auth_group_name_key='name',
@@ -263,10 +272,6 @@ class _GroupCRUD(_CRUD):
         name=Group.name,
         uuid=Group.uuid,
     )
-
-    def __init__(self, *args, **kwargs):
-        super(_GroupCRUD, self).__init__(*args, **kwargs)
-        self._paginator = QueryPaginator(self.column_map)
 
     def count(self, **kwargs):
         filtered = kwargs.get('filtered')
@@ -319,18 +324,14 @@ class _GroupCRUD(_CRUD):
         return filter_
 
 
-class _PolicyCRUD(_CRUD):
+class _PolicyCRUD(_PaginatorMixin, _CRUD):
 
     search_filter = SearchFilter(Policy.name, Policy.description)
-
-    def __init__(self, *args, **kwargs):
-        super(_PolicyCRUD, self).__init__(*args, **kwargs)
-        column_map = dict(
-            name=Policy.name,
-            description=Policy.description,
-            uuid=Policy.uuid,
-        )
-        self._paginator = QueryPaginator(column_map)
+    column_map = dict(
+        name=Policy.name,
+        description=Policy.description,
+        uuid=Policy.uuid,
+    )
 
     def associate_policy_template(self, policy_uuid, acl_template):
         with self.new_session() as s:
@@ -491,19 +492,15 @@ class _PolicyCRUD(_CRUD):
         return filter_
 
 
-class _TenantCRUD(_CRUD):
+class _TenantCRUD(_PaginatorMixin, _CRUD):
 
     constraint_to_column_map = dict(
         auth_tenant_name_key='name',
     )
     search_filter = SearchFilter(Tenant.name)
-
-    def __init__(self, *args, **kwargs):
-        super(_TenantCRUD, self).__init__(*args, **kwargs)
-        column_map = dict(
-            name=Tenant.name,
-        )
-        self._paginator = QueryPaginator(column_map)
+    column_map = dict(
+        name=Tenant.name,
+    )
 
     def add_user(self, tenant_uuid, user_uuid):
         tenant_user = TenantUser(tenant_uuid=str(tenant_uuid), user_uuid=str(user_uuid))
@@ -668,20 +665,16 @@ class _TokenCRUD(_CRUD):
             s.query(TokenModel).filter(filter_).delete()
 
 
-class _UserCRUD(_CRUD):
+class _UserCRUD(_PaginatorMixin, _CRUD):
 
     constraint_to_column_map = dict(
         auth_user_username_key='username',
         auth_email_address_key='email_address',
     )
     search_filter = SearchFilter(User.username, Email.address)
-
-    def __init__(self, *args, **kwargs):
-        super(_UserCRUD, self).__init__(*args, **kwargs)
-        column_map = dict(
-            username=User.username,
-        )
-        self._paginator = QueryPaginator(column_map)
+    column_map = dict(
+        username=User.username,
+    )
 
     @staticmethod
     def _new_strict_filter(uuid=None, username=None, email_address=None, tenant_uuid=None, **ignored):
