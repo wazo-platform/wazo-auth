@@ -229,6 +229,7 @@ class _CRUD(object):
 
     _UNIQUE_CONSTRAINT_CODE = '23505'
     _FKEY_CONSTRAINT_CODE = '23503'
+    search_filter = SearchFilter()
 
     def __init__(self, db_uri):
         self._Session = scoped_session(sessionmaker())
@@ -246,6 +247,10 @@ class _CRUD(object):
             raise
         finally:
             self._Session.remove()
+
+    @classmethod
+    def new_search_filter(cls, **kwargs):
+        return cls.search_filter.new_filter(**kwargs)
 
 
 class _GroupCRUD(_CRUD):
@@ -312,7 +317,7 @@ class _PolicyCRUD(_CRUD):
                 s.query(ACLTemplatePolicy).filter(filter_).delete()
 
     def count(self, search_pattern):
-        filter_ = self._new_search_filter(search=search_pattern)
+        filter_ = self.new_search_filter(search=search_pattern)
         with self.new_session() as s:
             return s.query(Policy).filter(filter_).count()
 
@@ -340,7 +345,7 @@ class _PolicyCRUD(_CRUD):
 
     def get(self, **kwargs):
         strict_filter = self._new_strict_filter(**kwargs)
-        search_filter = self._new_search_filter(**kwargs)
+        search_filter = self.new_search_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
         with self.new_session() as s:
             query = s.query(
@@ -430,10 +435,6 @@ class _PolicyCRUD(_CRUD):
         policy_count = s.query(Policy).filter(Policy.uuid == policy_uuid).count()
         return policy_count != 0
 
-    @classmethod
-    def _new_search_filter(cls, **kwargs):
-        return cls.search_filter.new_filter(**kwargs)
-
     @staticmethod
     def _new_strict_filter(uuid=None, name=None, user_uuid=None, **ignored):
         filter_ = text('true')
@@ -483,7 +484,7 @@ class _TenantCRUD(_CRUD):
         filtered = kwargs.get('filtered')
         if filtered is not False:
             strict_filter = self._new_strict_filter(**kwargs)
-            search_filter = self._new_search_filter(**kwargs)
+            search_filter = self.new_search_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
             filter_ = text('true')
@@ -495,7 +496,7 @@ class _TenantCRUD(_CRUD):
         filtered = kwargs.get('filtered')
         if filtered is not False:
             strict_filter = _UserCRUD._new_strict_filter(**kwargs)
-            search_filter = _UserCRUD._new_search_filter(**kwargs)
+            search_filter = _UserCRUD.new_search_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
             filter_ = text('true')
@@ -539,7 +540,7 @@ class _TenantCRUD(_CRUD):
                 raise UnknownUserException(uuid)
 
     def list_(self, **kwargs):
-        search_filter = self._new_search_filter(**kwargs)
+        search_filter = self.new_search_filter(**kwargs)
         strict_filter = self._new_strict_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
 
@@ -551,10 +552,6 @@ class _TenantCRUD(_CRUD):
             query = self._paginator.update_query(query, **kwargs)
 
             return [{'uuid': uuid, 'name': name} for uuid, name in query.all()]
-
-    @classmethod
-    def _new_search_filter(cls, **kwargs):
-        return cls.search_filter.new_filter(**kwargs)
 
     def remove_user(self, tenant_uuid, user_uuid):
         filter_ = and_(
@@ -642,10 +639,6 @@ class _UserCRUD(_CRUD):
         )
         self._paginator = QueryPaginator(column_map)
 
-    @classmethod
-    def _new_search_filter(cls, **kwargs):
-        return cls.search_filter.new_filter(**kwargs)
-
     @staticmethod
     def _new_strict_filter(uuid=None, username=None, email_address=None, tenant_uuid=None, **ignored):
         filter_ = text('true')
@@ -694,7 +687,7 @@ class _UserCRUD(_CRUD):
         filtered = kwargs.get('filtered')
         if filtered is not False:
             strict_filter = self._new_strict_filter(**kwargs)
-            search_filter = self._new_search_filter(**kwargs)
+            search_filter = self.new_search_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
             filter_ = text('true')
@@ -710,7 +703,7 @@ class _UserCRUD(_CRUD):
         filtered = kwargs.get('filtered')
         if filtered is not False:
             strict_filter = _PolicyCRUD._new_strict_filter(**kwargs)
-            search_filter = _PolicyCRUD._new_search_filter(**kwargs)
+            search_filter = _PolicyCRUD.new_search_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
             filter_ = text('true')
@@ -726,7 +719,7 @@ class _UserCRUD(_CRUD):
         filtered = kwargs.get('filtered')
         if filtered is not False:
             strict_filter = _TenantCRUD._new_strict_filter(**kwargs)
-            search_filter = _TenantCRUD._new_search_filter(**kwargs)
+            search_filter = _TenantCRUD.new_search_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
             filter_ = text('true')
@@ -793,7 +786,7 @@ class _UserCRUD(_CRUD):
     def list_(self, **kwargs):
         users = OrderedDict()
 
-        search_filter = self._new_search_filter(**kwargs)
+        search_filter = self.new_search_filter(**kwargs)
         strict_filter = self._new_strict_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
 
@@ -834,7 +827,7 @@ class _UserCRUD(_CRUD):
 
     def list_policies(self, user_uuid, **kwargs):
         strict_filter = _PolicyCRUD._new_strict_filter(**kwargs)
-        search_filter = _PolicyCRUD._new_search_filter(**kwargs)
+        search_filter = _PolicyCRUD.new_search_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
 
         filter_ = and_(filter_, UserPolicy.user_uuid == user_uuid)
