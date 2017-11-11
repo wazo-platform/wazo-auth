@@ -134,6 +134,12 @@ class Storage(object):
     def group_delete(self, group_uuid):
         return self._group_crud.delete(group_uuid)
 
+    def group_get(self, group_uuid):
+        groups = self._group_crud.list_(uuid=group_uuid, limit=1)
+        for group in groups:
+            return group
+        raise UnknownGroupException(group_uuid)
+
     def group_list(self, **kwargs):
         return self._group_crud.list_(**kwargs)
 

@@ -39,6 +39,9 @@ class GroupService(object):
     def delete(self, group_uuid):
         return self._storage.group_delete(group_uuid)
 
+    def get(self, group_uuid):
+        return self._storage.group_get(group_uuid)
+
     def list_(self, **kwargs):
         return self._storage.group_list(**kwargs)
 

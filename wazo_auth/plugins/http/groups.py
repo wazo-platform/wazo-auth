@@ -32,6 +32,10 @@ class Group(_BaseGroupResource):
         self.group_service.delete(group_uuid)
         return '', 204
 
+    @http.required_acl('auth.groups.{group_uuid}.read')
+    def get(self, group_uuid):
+        return self.group_service.get(group_uuid)
+
 
 class Groups(_BaseGroupResource):
 
