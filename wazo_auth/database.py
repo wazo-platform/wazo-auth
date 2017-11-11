@@ -123,9 +123,15 @@ class Storage(object):
     def delete_policy(self, policy_uuid):
         self._policy_crud.delete(policy_uuid)
 
+    def group_count(self, **kwargs):
+        return self._group_crud.count(**kwargs)
+
     def group_create(self, **kwargs):
         group_uuid = self._group_crud.create(**kwargs)
         return dict(uuid=group_uuid, **kwargs)
+
+    def group_list(self, **kwargs):
+        return self._group_crud.list_(**kwargs)
 
     def list_policies(self, **kwargs):
         return self._policy_crud.get(**kwargs)

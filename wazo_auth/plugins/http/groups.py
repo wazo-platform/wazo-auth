@@ -24,6 +24,30 @@ class Groups(http.ErrorCatchingResource):
     def __init__(self, group_service):
         self.group_service = group_service
 
+    @http.required_acl('auth.groups.read')
+    def get(self):
+        ListSchema = schemas.new_list_schema('name')
+        list_params, errors = ListSchema().load(request.args)
+        if errors:
+            raise exceptions.InvalidListParamException(errors)
+
+        for key, value in request.args.iteritems():
+            if key in list_params:
+                continue
+            list_params[key] = value
+
+        groups = self.group_service.list_(**list_params)
+        total = self.group_service.count(filtered=False, **list_params)
+        filtered = self.group_service.count(filtered=True, **list_params)
+
+        response = dict(
+            filtered=filtered,
+            total=total,
+            items=groups,
+        )
+
+        return response, 200
+
     @http.required_acl('auth.groups.create')
     def post(self):
         args, errors = schemas.GroupRequestSchema().load(request.get_json())

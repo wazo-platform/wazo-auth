@@ -30,8 +30,14 @@ class GroupService(object):
     def __init__(self, storage):
         self._storage = storage
 
+    def count(self, **kwargs):
+        return self._storage.group_count(**kwargs)
+
     def create(self, **kwargs):
         return self._storage.group_create(**kwargs)
+
+    def list_(self, **kwargs):
+        return self._storage.group_list(**kwargs)
 
 
 class PolicyService(object):
