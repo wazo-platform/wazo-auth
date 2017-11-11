@@ -36,6 +36,15 @@ class Group(_BaseGroupResource):
     def get(self, group_uuid):
         return self.group_service.get(group_uuid)
 
+    @http.required_acl('auth.groups.{group_uuid}.edit')
+    def put(self, group_uuid):
+        args, errors = schemas.GroupRequestSchema().load(request.get_json())
+        if errors:
+            raise exceptions.GroupParamException.from_errors(errors)
+
+        group = self.group_service.update(group_uuid, **args)
+        return group, 200
+
 
 class Groups(_BaseGroupResource):
 

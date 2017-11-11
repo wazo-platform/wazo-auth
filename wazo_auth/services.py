@@ -45,6 +45,9 @@ class GroupService(object):
     def list_(self, **kwargs):
         return self._storage.group_list(**kwargs)
 
+    def update(self, group_uuid, **kwargs):
+        return self._storage.group_update(group_uuid, **kwargs)
+
 
 class PolicyService(object):
 

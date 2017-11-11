@@ -39,6 +39,7 @@ from .models import (
 from .token import Token
 from .exceptions import (
     ConflictException,
+    DuplicateGroupException,
     DuplicatePolicyException,
     DuplicateTemplateException,
     InvalidLimitException,
@@ -142,6 +143,9 @@ class Storage(object):
 
     def group_list(self, **kwargs):
         return self._group_crud.list_(**kwargs)
+
+    def group_update(self, group_uuid, **kwargs):
+        return self._group_crud.update(group_uuid, **kwargs)
 
     def list_policies(self, **kwargs):
         return self._policy_crud.get(**kwargs)
@@ -336,6 +340,22 @@ class _GroupCRUD(_PaginatorMixin, _CRUD):
             query = self._paginator.update_query(query, **kwargs)
 
             return [{'uuid': uuid, 'name': name} for uuid, name in query.all()]
+
+    def update(self, group_uuid, **body):
+        with self.new_session() as s:
+            filter_ = Group.uuid == group_uuid
+            try:
+                affected_rows = s.query(Group).filter(filter_).update(body)
+                if not affected_rows:
+                    raise UnknownGroupException(group_uuid)
+
+                s.commit()
+            except exc.IntegrityError as e:
+                if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                    raise DuplicateGroupException(body)
+                raise
+
+        return dict(uuid=group_uuid, **body)
 
     @staticmethod
     def _new_strict_filter(uuid=None, name=None, **ignored):
