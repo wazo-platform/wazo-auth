@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-from hamcrest import assert_that, contains, contains_inanyorder, has_entries
+from hamcrest import assert_that, contains, contains_inanyorder, equal_to, has_entries
 from mock import ANY
 from .helpers import base, fixtures
 
@@ -32,6 +32,12 @@ class TestGroups(base.MockBackendTestCase):
 
         result = self.client.groups.list()
         assert_list_matches(result, 0, 0)
+
+    @fixtures.http_group(name='foobar')
+    def test_get(self, foobar):
+        base.assert_http_error(404, self.client.groups.get, self.unknown_uuid)
+        result = self.client.groups.get(foobar['uuid'])
+        assert_that(result, equal_to(foobar))
 
     def test_post(self):
         name = 'foobar'
