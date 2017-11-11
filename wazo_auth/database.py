@@ -114,28 +114,6 @@ class DAO(object):
     def delete_policy(self, policy_uuid):
         self.policy.delete(policy_uuid)
 
-    def group_count(self, **kwargs):
-        return self.group.count(**kwargs)
-
-    def group_create(self, **kwargs):
-        group_uuid = self.group.create(**kwargs)
-        return dict(uuid=group_uuid, **kwargs)
-
-    def group_delete(self, group_uuid):
-        return self.group.delete(group_uuid)
-
-    def group_get(self, group_uuid):
-        groups = self.group.list_(uuid=group_uuid, limit=1)
-        for group in groups:
-            return group
-        raise UnknownGroupException(group_uuid)
-
-    def group_list(self, **kwargs):
-        return self.group.list_(**kwargs)
-
-    def group_update(self, group_uuid, **kwargs):
-        return self.group.update(group_uuid, **kwargs)
-
     def list_policies(self, **kwargs):
         return self.policy.get(**kwargs)
 

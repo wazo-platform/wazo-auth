@@ -20,22 +20,26 @@ class GroupService(object):
         self._dao = dao
 
     def count(self, **kwargs):
-        return self._dao.group_count(**kwargs)
+        return self._dao.group.count(**kwargs)
 
     def create(self, **kwargs):
-        return self._dao.group_create(**kwargs)
+        uuid = self._dao.group.create(**kwargs)
+        return dict(uuid=uuid, **kwargs)
 
     def delete(self, group_uuid):
-        return self._dao.group_delete(group_uuid)
+        return self._dao.group.delete(group_uuid)
 
     def get(self, group_uuid):
-        return self._dao.group_get(group_uuid)
+        matching_groups = self._dao.group.list_(uuid=group_uuid, limit=1)
+        for group in matching_groups:
+            return group
+        raise exceptions.UnknownGroupException(group_uuid)
 
     def list_(self, **kwargs):
-        return self._dao.group_list(**kwargs)
+        return self._dao.group.list_(**kwargs)
 
     def update(self, group_uuid, **kwargs):
-        return self._dao.group_update(group_uuid, **kwargs)
+        return self._dao.group.update(group_uuid, **kwargs)
 
 
 class PolicyService(object):
