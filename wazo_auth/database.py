@@ -258,6 +258,19 @@ class _GroupCRUD(_CRUD):
     constraint_to_column_map = dict(
         auth_group_name_key='name',
     )
+    search_filter = SearchFilter(Group.name)
+
+    def count(self, **kwargs):
+        filtered = kwargs.get('filtered')
+        if filtered is not False:
+            strict_filter = self._new_strict_filter(**kwargs)
+            search_filter = self.new_search_filter(**kwargs)
+            filter_ = and_(strict_filter, search_filter)
+        else:
+            filter_ = text('true')
+
+        with self.new_session() as s:
+            return s.query(Group).filter(filter_).count()
 
     def create(self, name, **ignored):
         group = Group(name=name)
@@ -273,6 +286,15 @@ class _GroupCRUD(_CRUD):
                         raise ConflictException('groups', column, value)
                 raise
             return group.uuid
+
+    @staticmethod
+    def _new_strict_filter(uuid=None, name=None, **ignored):
+        filter_ = text('true')
+        if uuid:
+            filter_ = and_(filter_, Group.uuid == uuid)
+        if name:
+            filter_ = and_(filter_, Group.name == name)
+        return filter_
 
 
 class _PolicyCRUD(_CRUD):
