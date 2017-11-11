@@ -23,6 +23,12 @@ from .helpers import base, fixtures
 class TestGroups(base.MockBackendTestCase):
 
     unknown_uuid = '00000000-0000-0000-0000-000000000000'
+    invalid_bodies = [
+        {},
+        {'name': None},
+        {'name': 42},
+        {'not name': 'foobar'},
+    ]
 
     @fixtures.http_group(name='foobar')
     def test_delete(self, foobar):
@@ -42,20 +48,28 @@ class TestGroups(base.MockBackendTestCase):
     def test_post(self):
         name = 'foobar'
 
-        invalid_bodies = [
-            {},
-            {'name': None},
-            {'name': 42},
-            {'not name': name},
-        ]
-
-        for body in invalid_bodies:
+        for body in self.invalid_bodies:
             base.assert_http_error(400, self.client.groups.new, **body)
 
         result = self.client.groups.new(name='foobar')
         base.assert_that(result, has_entries('uuid', ANY, 'name', name))
 
         base.assert_http_error(409, self.client.groups.new, name='foobar')
+
+    @fixtures.http_group(name='foobar')
+    @fixtures.http_group(name='duplicate')
+    def test_put(self, duplicate, group):
+        base.assert_http_error(404, self.client.groups.edit, self.unknown_uuid, name='foobaz')
+        base.assert_http_error(409, self.client.groups.edit, duplicate['uuid'], name='foobar')
+
+        for body in self.invalid_bodies:
+            base.assert_http_error(400, self.client.groups.edit, group['uuid'], **body)
+
+        result = self.client.groups.edit(group['uuid'], name='foobaz')
+        assert_that(result, has_entries('uuid', group['uuid'], 'name', 'foobaz'))
+
+        result = self.client.groups.get(group['uuid'])
+        assert_that(result, has_entries('uuid', group['uuid'], 'name', 'foobaz'))
 
     @fixtures.http_group(name='baz')
     @fixtures.http_group(name='bar')
