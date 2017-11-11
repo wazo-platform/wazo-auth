@@ -108,6 +108,38 @@ class TestGroupCRUD(unittest.TestCase):
                     'resource', 'groups',
                     'details', has_key('name'))))
 
+    @fixtures.group(name='foo')
+    @fixtures.group(name='bar')
+    @fixtures.group(name='baz')
+    def test_list(self, *ignored):
+
+        def build_list_matcher(*names):
+            return [has_entries('name', name) for name in names]
+
+        result = self._group_crud.list_()
+        expected = build_list_matcher('foo', 'bar', 'baz')
+        assert_that(result, contains_inanyorder(*expected))
+
+        result = self._group_crud.list_(name='foo')
+        expected = build_list_matcher('foo')
+        assert_that(result, contains_inanyorder(*expected))
+
+        result = self._group_crud.list_(search='ba')
+        expected = build_list_matcher('bar', 'baz')
+        assert_that(result, contains_inanyorder(*expected))
+
+        result = self._group_crud.list_(order='name', direction='desc')
+        expected = build_list_matcher('foo', 'baz', 'bar')
+        assert_that(result, contains(*expected))
+
+        result = self._group_crud.list_(order='name', direction='asc', limit=2)
+        expected = build_list_matcher('bar', 'baz')
+        assert_that(result, contains(*expected))
+
+        result = self._group_crud.list_(order='name', direction='asc', offset=1)
+        expected = build_list_matcher('baz', 'foo')
+        assert_that(result, contains(*expected))
+
 
 class TestPolicyCRUD(unittest.TestCase):
 
