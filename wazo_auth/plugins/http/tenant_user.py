@@ -97,17 +97,17 @@ class Plugin(object):
 
         api.add_resource(
             TenantUser,
-            '/tenants/<string:tenant_uuid>/users/<string:user_uuid>',
+            '/tenants/<uuid:tenant_uuid>/users/<uuid:user_uuid>',
             resource_class_args=args,
         )
         api.add_resource(
             TenantUsers,
-            '/tenants/<string:tenant_uuid>/users',
+            '/tenants/<uuid:tenant_uuid>/users',
             resource_class_args=args,
         )
 
         api.add_resource(
             UserTenants,
-            '/users/<string:user_uuid>/tenants',
+            '/users/<uuid:user_uuid>/tenants',
             resource_class_args=(dependencies['user_service'],),
         )

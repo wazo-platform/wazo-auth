@@ -433,7 +433,7 @@ class _TenantCRUD(_CRUD):
         self._paginator = QueryPaginator(column_map)
 
     def add_user(self, tenant_uuid, user_uuid):
-        tenant_user = TenantUser(tenant_uuid=tenant_uuid, user_uuid=user_uuid)
+        tenant_user = TenantUser(tenant_uuid=str(tenant_uuid), user_uuid=str(user_uuid))
         with self.new_session() as s:
             s.add(tenant_user)
             try:
@@ -472,7 +472,7 @@ class _TenantCRUD(_CRUD):
         else:
             filter_ = text('true')
 
-        filter_ = and_(filter_, TenantUser.tenant_uuid == tenant_uuid)
+        filter_ = and_(filter_, TenantUser.tenant_uuid == str(tenant_uuid))
 
         with self.new_session() as s:
             return s.query(
@@ -502,7 +502,7 @@ class _TenantCRUD(_CRUD):
 
     def delete(self, uuid):
         with self.new_session() as s:
-            nb_deleted = s.query(Tenant).filter(Tenant.uuid == uuid).delete()
+            nb_deleted = s.query(Tenant).filter(Tenant.uuid == str(uuid)).delete()
 
         if not nb_deleted:
             raise UnknownTenantException(uuid)
@@ -526,7 +526,10 @@ class _TenantCRUD(_CRUD):
         return cls.search_filter.new_filter(**kwargs)
 
     def remove_user(self, tenant_uuid, user_uuid):
-        filter_ = and_(TenantUser.user_uuid == user_uuid, TenantUser.tenant_uuid == tenant_uuid)
+        filter_ = and_(
+            TenantUser.user_uuid == str(user_uuid),
+            TenantUser.tenant_uuid == str(tenant_uuid),
+        )
         with self.new_session() as s:
             nb_deleted = s.query(TenantUser).filter(filter_).delete()
 
@@ -537,11 +540,11 @@ class _TenantCRUD(_CRUD):
     def _new_strict_filter(uuid=None, name=None, user_uuid=None, **ignored):
         filter_ = text('true')
         if uuid:
-            filter_ = and_(filter_, Tenant.uuid == uuid)
+            filter_ = and_(filter_, Tenant.uuid == str(uuid))
         if name:
             filter_ = and_(filter_, Tenant.name == name)
         if user_uuid:
-            filter_ = and_(filter_, TenantUser.user_uuid == user_uuid)
+            filter_ = and_(filter_, TenantUser.user_uuid == str(user_uuid))
         return filter_
 
 
@@ -613,13 +616,13 @@ class _UserCRUD(_CRUD):
     def _new_strict_filter(uuid=None, username=None, email_address=None, tenant_uuid=None, **ignored):
         filter_ = text('true')
         if uuid:
-            filter_ = and_(filter_, User.uuid == uuid)
+            filter_ = and_(filter_, User.uuid == str(uuid))
         if username:
             filter_ = and_(filter_, User.username == username)
         if email_address:
             filter_ = and_(filter_, Email.address == email_address)
         if tenant_uuid:
-            filter_ = and_(filter_, TenantUser.tenant_uuid == tenant_uuid)
+            filter_ = and_(filter_, TenantUser.tenant_uuid == str(tenant_uuid))
         return filter_
 
     def add_policy(self, user_uuid, policy_uuid):
@@ -694,7 +697,7 @@ class _UserCRUD(_CRUD):
         else:
             filter_ = text('true')
 
-        filter_ = and_(filter_, TenantUser.user_uuid == user_uuid)
+        filter_ = and_(filter_, TenantUser.user_uuid == str(user_uuid))
 
         with self.new_session() as s:
             return s.query(Tenant).join(TenantUser).filter(filter_).count()
