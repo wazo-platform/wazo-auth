@@ -363,7 +363,7 @@ paths:
       security:
         - wazo_auth_token: []
       operationId: addUserTenant
-      description: '**Required ACL:** `auth.tenants.{tenant_uuid}.users.edit`'
+      description: '**Required ACL:** `auth.tenants.{tenant_uuid}.users.{user_uuid}.create`'
       summary: Associate a user to a tenant
       parameters:
       - $ref: '#/parameters/tenant_uuid'
@@ -382,7 +382,7 @@ paths:
       security:
         - wazo_auth_token: []
       operationId: removeUserTenant
-      description: '**Required ACL:** `auth.tenants.{tenant_uuid}.users.edit`'
+      description: '**Required ACL:** `auth.tenants.{tenant_uuid}.users.{user_uuid}.delete`'
       summary: Dissociate a tenant and a user
       parameters:
       - $ref: '#/parameters/tenant_uuid'
@@ -693,7 +693,7 @@ paths:
       security:
         - wazo_auth_token: []
       operationId: addUserPolicy
-      description: '**Required ACL:** `auth.users.{user_uuid}.policies.edit`'
+      description: '**Required ACL:** `auth.users.{user_uuid}.policies.{policy_uuid}.create`'
       summary: Associate a policy to a user
       parameters:
       - $ref: '#/parameters/policy_uuid'
@@ -712,7 +712,7 @@ paths:
       security:
         - wazo_auth_token: []
       operationId: removeUserPolicy
-      description: '**Required ACL:** `auth.users.{user_uuid}.policies.edit`'
+      description: '**Required ACL:** `auth.users.{user_uuid}.policies.{policy_uuid}.delete`'
       summary: Dissociate a policy from a user
       parameters:
       - $ref: '#/parameters/policy_uuid'

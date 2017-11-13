@@ -31,13 +31,13 @@ class _BaseResource(http.ErrorCatchingResource):
 
 class TenantUser(_BaseResource):
 
-    @http.required_acl('auth.tenants.{tenant_uuid}.users.edit')
+    @http.required_acl('auth.tenants.{tenant_uuid}.users.{user_uuid}.delete')
     def delete(self, tenant_uuid, user_uuid):
         logger.debug('disassociating tenant %s user %s', tenant_uuid, user_uuid)
         self.tenant_service.remove_user(tenant_uuid, user_uuid)
         return '', 204
 
-    @http.required_acl('auth.tenants.{tenant_uuid}.users.edit')
+    @http.required_acl('auth.tenants.{tenant_uuid}.users.{user_uuid}.create')
     def put(self, tenant_uuid, user_uuid):
         logger.debug('associating tenant %s user %s', tenant_uuid, user_uuid)
         self.tenant_service.add_user(tenant_uuid, user_uuid)
