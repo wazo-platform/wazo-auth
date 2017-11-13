@@ -127,12 +127,12 @@ def tenant(**tenant_args):
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
-            tenant_uuid = self._crud.create(**tenant_args)
+            tenant_uuid = self._tenant_crud.create(**tenant_args)
             try:
                 result = decorated(self, tenant_uuid, *args, **kwargs)
             finally:
                 try:
-                    self._crud.delete(tenant_uuid)
+                    self._tenant_crud.delete(tenant_uuid)
                 except exceptions.UnknownTenantException:
                     pass
             return result

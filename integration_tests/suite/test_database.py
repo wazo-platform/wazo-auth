@@ -319,7 +319,7 @@ class TestTenantCrud(unittest.TestCase):
     unknown_uuid = '00000000-0000-0000-0000-000000000000'
 
     def setUp(self):
-        self._crud = database._TenantCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
+        self._tenant_crud = database._TenantCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
         self._user_crud = database._UserCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
 
     @fixtures.tenant()
@@ -327,19 +327,19 @@ class TestTenantCrud(unittest.TestCase):
     def test_add_user(self, user_uuid, tenant_uuid):
         assert_that(self._user_crud.list_(tenant_uuid=tenant_uuid), empty())
 
-        self._crud.add_user(tenant_uuid, user_uuid)
+        self._tenant_crud.add_user(tenant_uuid, user_uuid)
         assert_that(self._user_crud.list_(tenant_uuid=tenant_uuid), contains(has_entries('uuid', user_uuid)))
 
-        self._crud.add_user(tenant_uuid, user_uuid)  # twice
+        self._tenant_crud.add_user(tenant_uuid, user_uuid)  # twice
 
         assert_that(
-            calling(self._crud.add_user).with_args(self.unknown_uuid, user_uuid),
+            calling(self._tenant_crud.add_user).with_args(self.unknown_uuid, user_uuid),
             raises(exceptions.UnknownTenantException),
             'unknown tenant',
         )
 
         assert_that(
-            calling(self._crud.add_user).with_args(tenant_uuid, self.unknown_uuid),
+            calling(self._tenant_crud.add_user).with_args(tenant_uuid, self.unknown_uuid),
             raises(exceptions.UnknownUserException),
             'unknown user',
         )
@@ -348,27 +348,27 @@ class TestTenantCrud(unittest.TestCase):
     @fixtures.user()
     def test_remove_user(self, user_uuid, tenant_uuid):
         assert_that(
-            calling(self._crud.remove_user).with_args(tenant_uuid, user_uuid),
+            calling(self._tenant_crud.remove_user).with_args(tenant_uuid, user_uuid),
             raises(exceptions.UnknownTenantUserException),
             'no association',
         )
 
         assert_that(
-            calling(self._crud.remove_user).with_args(self.unknown_uuid, user_uuid),
+            calling(self._tenant_crud.remove_user).with_args(self.unknown_uuid, user_uuid),
             raises(exceptions.UnknownTenantUserException),
             'unknown tenant',
         )
 
         assert_that(
-            calling(self._crud.remove_user).with_args(tenant_uuid, self.unknown_uuid),
+            calling(self._tenant_crud.remove_user).with_args(tenant_uuid, self.unknown_uuid),
             raises(exceptions.UnknownTenantUserException),
             'unknown user'
         )
 
-        self._crud.add_user(tenant_uuid, user_uuid)
+        self._tenant_crud.add_user(tenant_uuid, user_uuid)
 
         assert_that(
-            calling(self._crud.remove_user).with_args(tenant_uuid, user_uuid),
+            calling(self._tenant_crud.remove_user).with_args(tenant_uuid, user_uuid),
             not_(raises(exceptions.UnknownTenantUserException)),
         )
 
@@ -376,26 +376,26 @@ class TestTenantCrud(unittest.TestCase):
     @fixtures.tenant(name='b')
     @fixtures.tenant(name='a')
     def test_count(self, a, b, c):
-        result = self._crud.count()
+        result = self._tenant_crud.count()
         assert_that(result, equal_to(3))
 
-        result = self._crud.count(search='a', filtered=False)
+        result = self._tenant_crud.count(search='a', filtered=False)
         assert_that(result, equal_to(3))
 
-        result = self._crud.count(search='a')
+        result = self._tenant_crud.count(search='a')
         assert_that(result, equal_to(1))
 
-        result = self._crud.count(name='a', filtered=False)
+        result = self._tenant_crud.count(name='a', filtered=False)
         assert_that(result, equal_to(3))
 
-        result = self._crud.count(name='a')
+        result = self._tenant_crud.count(name='a')
         assert_that(result, equal_to(1))
 
     @fixtures.tenant(name='foo c')
     @fixtures.tenant(name='bar b')
     @fixtures.tenant(name='baz a')
     def test_list(self, a, b, c):
-        result = self._crud.list_()
+        result = self._tenant_crud.list_()
         assert_that(
             result,
             contains_inanyorder(
@@ -405,7 +405,7 @@ class TestTenantCrud(unittest.TestCase):
             ),
         )
 
-        result = self._crud.list_(search='ba')
+        result = self._tenant_crud.list_(search='ba')
         assert_that(
             result,
             contains_inanyorder(
@@ -414,7 +414,7 @@ class TestTenantCrud(unittest.TestCase):
             ),
         )
 
-        result = self._crud.list_(order='name', direction='desc')
+        result = self._tenant_crud.list_(order='name', direction='desc')
         assert_that(
             result,
             contains(
@@ -424,7 +424,7 @@ class TestTenantCrud(unittest.TestCase):
             ),
         )
 
-        result = self._crud.list_(limit=1, order='name', direction='asc')
+        result = self._tenant_crud.list_(limit=1, order='name', direction='asc')
         assert_that(
             result,
             contains(
@@ -432,7 +432,7 @@ class TestTenantCrud(unittest.TestCase):
             ),
         )
 
-        result = self._crud.list_(offset=1, order='name', direction='asc')
+        result = self._tenant_crud.list_(offset=1, order='name', direction='asc')
         assert_that(
             result,
             contains(
@@ -446,7 +446,7 @@ class TestTenantCrud(unittest.TestCase):
         name = 'foobar'
 
         assert_that(tenant_uuid, equal_to(ANY_UUID))
-        with self._crud.new_session() as s:
+        with self._tenant_crud.new_session() as s:
             tenant = s.query(
                 database.Tenant,
             ).filter(
@@ -456,7 +456,7 @@ class TestTenantCrud(unittest.TestCase):
             assert_that(tenant, has_properties('name', name))
 
         assert_that(
-            calling(self._crud.create).with_args(name),
+            calling(self._tenant_crud.create).with_args(name),
             raises(
                 exceptions.ConflictException,
                 has_properties(
@@ -469,10 +469,10 @@ class TestTenantCrud(unittest.TestCase):
 
     @fixtures.tenant()
     def test_delete(self, tenant_uuid):
-        self._crud.delete(tenant_uuid)
+        self._tenant_crud.delete(tenant_uuid)
 
         assert_that(
-            calling(self._crud.delete).with_args(tenant_uuid),
+            calling(self._tenant_crud.delete).with_args(tenant_uuid),
             raises(exceptions.UnknownTenantException),
         )
 
