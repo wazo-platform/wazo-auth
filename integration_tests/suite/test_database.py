@@ -22,6 +22,7 @@ import uuid
 
 from contextlib import contextmanager, nested
 from hamcrest import (
+    any_of,
     assert_that,
     calling,
     contains,
@@ -349,19 +350,22 @@ class TestTenantCrud(unittest.TestCase):
     def test_remove_user(self, user_uuid, tenant_uuid):
         assert_that(
             calling(self._tenant_crud.remove_user).with_args(tenant_uuid, user_uuid),
-            raises(exceptions.UnknownTenantUserException),
-            'no association',
+            any_of(
+                raises(exceptions.UnknownTenantException),
+                raises(exceptions.UnknownUserException),
+            ),
+            'unknown tenant and user',
         )
 
         assert_that(
             calling(self._tenant_crud.remove_user).with_args(self.unknown_uuid, user_uuid),
-            raises(exceptions.UnknownTenantUserException),
+            raises(exceptions.UnknownTenantException),
             'unknown tenant',
         )
 
         assert_that(
             calling(self._tenant_crud.remove_user).with_args(tenant_uuid, self.unknown_uuid),
-            raises(exceptions.UnknownTenantUserException),
+            raises(exceptions.UnknownUserException),
             'unknown user'
         )
 
@@ -369,8 +373,7 @@ class TestTenantCrud(unittest.TestCase):
 
         assert_that(
             calling(self._tenant_crud.remove_user).with_args(tenant_uuid, user_uuid),
-            not_(raises(exceptions.UnknownTenantUserException)),
-        )
+            not_(raises(Exception)))
 
     @fixtures.tenant(name='c')
     @fixtures.tenant(name='b')

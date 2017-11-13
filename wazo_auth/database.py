@@ -46,7 +46,6 @@ from .exceptions import (
     InvalidSortDirectionException,
     UnknownPolicyException,
     UnknownTenantException,
-    UnknownTenantUserException,
     UnknownTokenException,
     UnknownUserException,
     UnknownUserPolicyException,
@@ -505,7 +504,10 @@ class _TenantCRUD(_CRUD):
             nb_deleted = s.query(Tenant).filter(Tenant.uuid == str(uuid)).delete()
 
         if not nb_deleted:
-            raise UnknownTenantException(uuid)
+            if not self.list_(uuid=uuid):
+                raise UnknownTenantException(uuid)
+            else:
+                raise UnknownUserException(uuid)
 
     def list_(self, **kwargs):
         search_filter = self._new_search_filter(**kwargs)
@@ -534,7 +536,10 @@ class _TenantCRUD(_CRUD):
             nb_deleted = s.query(TenantUser).filter(filter_).delete()
 
         if not nb_deleted:
-            raise UnknownTenantUserException(tenant_uuid, user_uuid)
+            if not self.list_(uuid=tenant_uuid):
+                raise UnknownTenantException(tenant_uuid)
+            else:
+                raise UnknownUserException(user_uuid)
 
     @staticmethod
     def _new_strict_filter(uuid=None, name=None, user_uuid=None, **ignored):
