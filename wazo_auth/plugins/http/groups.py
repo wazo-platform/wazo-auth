@@ -87,5 +87,5 @@ class Plugin(object):
         api = dependencies['api']
         args = (dependencies['group_service'],)
 
-        api.add_resource(Group, '/groups/<string:group_uuid>', resource_class_args=args)
+        api.add_resource(Group, '/groups/<uuid:group_uuid>', resource_class_args=args)
         api.add_resource(Groups, '/groups', resource_class_args=args)

@@ -322,7 +322,7 @@ class _GroupCRUD(_PaginatorMixin, _CRUD):
 
     def delete(self, uuid):
         with self.new_session() as s:
-            nb_deleted = s.query(Group).filter(Group.uuid == uuid).delete()
+            nb_deleted = s.query(Group).filter(Group.uuid == str(uuid)).delete()
 
         if not nb_deleted:
             raise UnknownGroupException(uuid)
@@ -343,7 +343,7 @@ class _GroupCRUD(_PaginatorMixin, _CRUD):
 
     def update(self, group_uuid, **body):
         with self.new_session() as s:
-            filter_ = Group.uuid == group_uuid
+            filter_ = Group.uuid == str(group_uuid)
             try:
                 affected_rows = s.query(Group).filter(filter_).update(body)
                 if not affected_rows:
@@ -355,13 +355,13 @@ class _GroupCRUD(_PaginatorMixin, _CRUD):
                     raise DuplicateGroupException(body)
                 raise
 
-        return dict(uuid=group_uuid, **body)
+        return dict(uuid=str(group_uuid), **body)
 
     @staticmethod
     def _new_strict_filter(uuid=None, name=None, **ignored):
         filter_ = text('true')
         if uuid:
-            filter_ = and_(filter_, Group.uuid == uuid)
+            filter_ = and_(filter_, Group.uuid == str(uuid))
         if name:
             filter_ = and_(filter_, Group.name == name)
         return filter_
