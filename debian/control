@@ -26,7 +26,7 @@ Depends: ${python:Depends},
          python-unidecode,
          wazo-uuid,
          xivo-confd-client,
-         xivo-dbms (>= 17.12~20170818.181555.3bff1f8),
+         xivo-dbms (>= 17.15~20171114.180840.c64079f),
          xivo-lib-python,
          xivo-libdao (>= 17.02~20170124.144633.cb56771)
 Conflicts: xivo-auth
