@@ -127,12 +127,14 @@ def tenant(**tenant_args):
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
-            tenant_uuid = self._crud.create(**tenant_args)
-            result = decorated(self, tenant_uuid, *args, **kwargs)
+            tenant_uuid = self._tenant_crud.create(**tenant_args)
             try:
-                self._crud.delete(tenant_uuid)
-            except exceptions.UnknownTenantException:
-                pass
+                result = decorated(self, tenant_uuid, *args, **kwargs)
+            finally:
+                try:
+                    self._tenant_crud.delete(tenant_uuid)
+                except exceptions.UnknownTenantException:
+                    pass
             return result
         return wrapper
     return decorator
@@ -154,8 +156,11 @@ def user(**user_args):
             user_uuid = self._user_crud.create(**user_args)
             try:
                 result = decorated(self, user_uuid, *args, **kwargs)
-            except Exception:
-                self._user_crud.delete(user_uuid)
+            finally:
+                try:
+                    self._user_crud.delete(user_uuid)
+                except exceptions.UnknownUserException:
+                    pass
             return result
         return wrapper
     return decorator

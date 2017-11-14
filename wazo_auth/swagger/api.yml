@@ -98,11 +98,7 @@ paths:
       - wazo_auth_token: []
       description: '**Required ACL**: `auth.policies.{policy_uuid}.read'
       parameters:
-      - name: policy_uuid
-        in: path
-        type: string
-        description: The UUID of the policy
-        required: true
+      - $ref: '#/parameters/policy_uuid'
       summary: Retrieves the details of a policy
       responses:
         '200':
@@ -163,11 +159,7 @@ paths:
       tags:
         - policies
       parameters:
-      - name: policy_uuid
-        in: path
-        type: string
-        description: The UUID of the policy
-        required: true
+      - $ref: '#/parameters/policy_uuid'
       - name: body
         in: body
         description: The policy edition parameters
@@ -197,11 +189,7 @@ paths:
       description: '**Required ACL:** `auth.policies.{policy_uuid}.edit`'
       summary: Dissociate an ACL template from a policy
       parameters:
-      - name: policy_uuid
-        in: path
-        type: string
-        description: The UUID of the policy
-        required: true
+      - $ref: '#/parameters/policy_uuid'
       - name: acl_template
         in: path
         type: string
@@ -223,11 +211,7 @@ paths:
       description: '**Required ACL:** `auth.policies.{policy_uuid}.edit`'
       summary: Associate an ACL template to a policy
       parameters:
-      - name: policy_uuid
-        in: path
-        type: string
-        description: The UUID of the policy
-        required: true
+      - $ref: '#/parameters/policy_uuid'
       - name: acl_template
         in: path
         type: string
@@ -296,11 +280,7 @@ paths:
       - wazo_auth_token: []
       description: '**Required ACL**: `auth.tenants.{tenant_uuid}.delete`'
       parameters:
-      - name: tenant_uuid
-        in: path
-        type: string
-        description: The UUID of the tenant
-        required: true
+      - $ref: '#/parameters/tenant_uuid'
       summary: Delete a tenant
       responses:
         '204':
@@ -324,11 +304,7 @@ paths:
       - wazo_auth_token: []
       description: '**Required ACL**: `auth.tenants.{tenant_uuid}.read`'
       parameters:
-      - name: tenant_uuid
-        in: path
-        type: string
-        description: The UUID of the tenant
-        required: true
+      - $ref: '#/parameters/tenant_uuid'
       summary: Retrieves the details of a tenant
       responses:
         '200':
@@ -345,6 +321,77 @@ paths:
             $ref: '#/definitions/Error'
         '500':
           description: System related error
+          schema:
+            $ref: '#/definitions/Error'
+  /tenants/{tenant_uuid}/users:
+    get:
+      tags:
+        - tenants
+      security:
+      - wazo_auth_token: []
+      description: '**Required ACL**: `auth.tenants.{tenant_uuid}.users.read`'
+      parameters:
+      - $ref: '#/parameters/order'
+      - $ref: '#/parameters/direction'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
+      - $ref: '#/parameters/search'
+      - $ref: '#/parameters/tenant_uuid'
+      summary: Retrieves the details of a tenant
+      responses:
+        '200':
+          description: "The tenant's data"
+          schema:
+            $ref: '#/definitions/UserList'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Tenant not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: System related error
+          schema:
+            $ref: '#/definitions/Error'
+  /tenants/{tenant_uuid}/users/{user_uuid}:
+    put:
+      tags:
+        - users
+        - tenants
+      security:
+        - wazo_auth_token: []
+      operationId: addUserTenant
+      description: '**Required ACL:** `auth.tenants.{tenant_uuid}.users.{user_uuid}.create`'
+      summary: Associate a user to a tenant
+      parameters:
+      - $ref: '#/parameters/tenant_uuid'
+      - $ref: '#/parameters/user_uuid'
+      responses:
+        '204':
+          description: Association successful
+        '404':
+          description: User or Tenant not found
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      tags:
+        - users
+        - tenants
+      security:
+        - wazo_auth_token: []
+      operationId: removeUserTenant
+      description: '**Required ACL:** `auth.tenants.{tenant_uuid}.users.{user_uuid}.delete`'
+      summary: Dissociate a tenant and a user
+      parameters:
+      - $ref: '#/parameters/tenant_uuid'
+      - $ref: '#/parameters/user_uuid'
+      responses:
+        '204':
+          description: The association has been removed
+        '404':
+          description: User or Tenant not found
           schema:
             $ref: '#/definitions/Error'
   /token:
@@ -529,11 +576,7 @@ paths:
       - wazo_auth_token: []
       description: '**Required ACL**: `auth.users.{user_uuid}.read`'
       parameters:
-      - name: user_uuid
-        in: path
-        type: string
-        description: The UUID of the user
-        required: true
+      - $ref: '#/parameters/user_uuid'
       summary: Retrieves the details of a user
       responses:
         '200':
@@ -560,11 +603,7 @@ paths:
       - wazo_auth_token: []
       description: '**Required ACL**: `auth.users.{user_uuid}.delete`'
       parameters:
-      - name: user_uuid
-        in: path
-        type: string
-        description: The UUID of the user
-        required: true
+      - $ref: '#/parameters/user_uuid'
       summary: Delete a user
       responses:
         '204':
@@ -581,6 +620,38 @@ paths:
           description: System related error
           schema:
             $ref: '#/definitions/Error'
+  /users/{user_uuid}/tenants:
+    get:
+      tags:
+        - users
+      security:
+      - wazo_auth_token: []
+      description: '**Required ACL**: `auth.users.{user_uuid}.tenants.read`'
+      parameters:
+      - $ref: '#/parameters/order'
+      - $ref: '#/parameters/direction'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
+      - $ref: '#/parameters/search'
+      - $ref: '#/parameters/user_uuid'
+      summary: Retrieves the details of a user
+      responses:
+        '200':
+          description: "The user's tenant list"
+          schema:
+            $ref: '#/definitions/TenantList'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: User not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: System related error
+          schema:
+            $ref: '#/definitions/Error'
   /users/{user_uuid}/policies:
     get:
       tags:
@@ -590,11 +661,7 @@ paths:
       - wazo_auth_token: []
       description: '**Required ACL**: `auth.users.{user_uuid}.policies.read`'
       parameters:
-      - name: user_uuid
-        in: path
-        type: string
-        description: The UUID of the user
-        required: true
+      - $ref: '#/parameters/user_uuid'
       - $ref: '#/parameters/order'
       - $ref: '#/parameters/direction'
       - $ref: '#/parameters/limit'
@@ -626,19 +693,11 @@ paths:
       security:
         - wazo_auth_token: []
       operationId: addUserPolicy
-      description: '**Required ACL:** `auth.users.{user_uuid}.policies.edit`'
+      description: '**Required ACL:** `auth.users.{user_uuid}.policies.{policy_uuid}.create`'
       summary: Associate a policy to a user
       parameters:
-      - name: policy_uuid
-        in: path
-        type: string
-        description: The UUID of the policy
-        required: true
-      - name: user_uuid
-        in: path
-        type: string
-        description: The UUID of the user
-        required: true
+      - $ref: '#/parameters/policy_uuid'
+      - $ref: '#/parameters/user_uuid'
       responses:
         '204':
           description: The policy has been assigned
@@ -652,20 +711,12 @@ paths:
         - policies
       security:
         - wazo_auth_token: []
-      operationId: addUserPolicy
-      description: '**Required ACL:** `auth.users.{user_uuid}.policies.edit`'
+      operationId: removeUserPolicy
+      description: '**Required ACL:** `auth.users.{user_uuid}.policies.{policy_uuid}.delete`'
       summary: Dissociate a policy from a user
       parameters:
-      - name: policy_uuid
-        in: path
-        type: string
-        description: The UUID of the policy
-        required: true
-      - name: user_uuid
-        in: path
-        type: string
-        description: The UUID of the user
-        required: true
+      - $ref: '#/parameters/policy_uuid'
+      - $ref: '#/parameters/user_uuid'
       responses:
         '204':
           description: The policy has been unassigned
@@ -714,6 +765,24 @@ parameters:
     in: query
     type: string
     description: Name of the field to use for sorting the list of items returned.
+  policy_uuid:
+    name: policy_uuid
+    in: path
+    type: string
+    description: The UUID of the policy
+    required: true
+  tenant_uuid:
+    name: tenant_uuid
+    in: path
+    type: string
+    description: The UUID of the tenant
+    required: true
+  user_uuid:
+    name: user_uuid
+    in: path
+    type: string
+    description: The UUID of the user
+    required: true
   search:
     required: false
     name: search

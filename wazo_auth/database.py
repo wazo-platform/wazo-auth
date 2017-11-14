@@ -29,6 +29,7 @@ from .models import (
     Email,
     Policy,
     Tenant,
+    TenantUser,
     Token as TokenModel,
     User,
     UserEmail,
@@ -126,8 +127,14 @@ class Storage(object):
     def update_policy(self, policy_uuid, name, description, acl_templates):
         self._policy_crud.update(policy_uuid, name, description, acl_templates)
 
+    def tenant_add_user(self, tenant_uuid, user_uuid):
+        self._tenant_crud.add_user(tenant_uuid, user_uuid)
+
     def tenant_count(self, **kwargs):
         return self._tenant_crud.count(**kwargs)
+
+    def tenant_count_users(self, tenant_uuid, **kwargs):
+        return self._tenant_crud.count_users(tenant_uuid, **kwargs)
 
     def tenant_create(self, name):
         tenant_uuid = self._tenant_crud.create(name)
@@ -142,6 +149,9 @@ class Storage(object):
     def tenant_list(self, **kwargs):
         return self._tenant_crud.list_(**kwargs)
 
+    def tenant_remove_user(self, tenant_uuid, user_uuid):
+        self._tenant_crud.remove_user(tenant_uuid, user_uuid)
+
     def user_add_policy(self, user_uuid, policy_uuid):
         self._user_crud.add_policy(user_uuid, policy_uuid)
 
@@ -154,8 +164,14 @@ class Storage(object):
     def user_count_policies(self, user_uuid, **kwargs):
         return self._user_crud.count_policies(user_uuid, **kwargs)
 
+    def user_count_tenants(self, user_uuid, **kwargs):
+        return self._user_crud.count_tenants(user_uuid, **kwargs)
+
     def user_list_policies(self, user_uuid, **kwargs):
         return self._policy_crud.get(user_uuid=user_uuid, **kwargs)
+
+    def user_list_tenants(self, user_uuid, **kwargs):
+        return self._tenant_crud.list_(user_uuid=user_uuid, **kwargs)
 
     def user_delete(self, user_uuid):
         self._user_crud.delete(user_uuid)
@@ -415,6 +431,25 @@ class _TenantCRUD(_CRUD):
         )
         self._paginator = QueryPaginator(column_map)
 
+    def add_user(self, tenant_uuid, user_uuid):
+        tenant_user = TenantUser(tenant_uuid=str(tenant_uuid), user_uuid=str(user_uuid))
+        with self.new_session() as s:
+            s.add(tenant_user)
+            try:
+                s.commit()
+            except exc.IntegrityError as e:
+                if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                    # This association already exists.
+                    s.rollback()
+                    return
+                if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
+                    constraint = e.orig.diag.constraint_name
+                    if constraint == 'auth_tenant_user_tenant_uuid_fkey':
+                        raise UnknownTenantException(tenant_uuid)
+                    elif constraint == 'auth_tenant_user_user_uuid_fkey':
+                        raise UnknownUserException(user_uuid)
+                raise
+
     def count(self, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:
@@ -426,6 +461,28 @@ class _TenantCRUD(_CRUD):
 
         with self.new_session() as s:
             return s.query(Tenant).filter(filter_).count()
+
+    def count_users(self, tenant_uuid, **kwargs):
+        filtered = kwargs.get('filtered')
+        if filtered is not False:
+            strict_filter = _UserCRUD._new_strict_filter(**kwargs)
+            search_filter = _UserCRUD._new_search_filter(**kwargs)
+            filter_ = and_(strict_filter, search_filter)
+        else:
+            filter_ = text('true')
+
+        filter_ = and_(filter_, TenantUser.tenant_uuid == str(tenant_uuid))
+
+        with self.new_session() as s:
+            return s.query(
+                TenantUser
+            ).join(
+                User
+            ).join(
+                UserEmail
+            ).join(
+                Email
+            ).filter(filter_).count()
 
     def create(self, name):
         tenant = Tenant(name=name)
@@ -444,10 +501,13 @@ class _TenantCRUD(_CRUD):
 
     def delete(self, uuid):
         with self.new_session() as s:
-            nb_deleted = s.query(Tenant).filter(Tenant.uuid == uuid).delete()
+            nb_deleted = s.query(Tenant).filter(Tenant.uuid == str(uuid)).delete()
 
         if not nb_deleted:
-            raise UnknownTenantException(uuid)
+            if not self.list_(uuid=uuid):
+                raise UnknownTenantException(uuid)
+            else:
+                raise UnknownUserException(uuid)
 
     def list_(self, **kwargs):
         search_filter = self._new_search_filter(**kwargs)
@@ -458,7 +518,7 @@ class _TenantCRUD(_CRUD):
             query = s.query(
                 Tenant.uuid,
                 Tenant.name,
-            ).filter(filter_)
+            ).outerjoin(TenantUser).filter(filter_)
             query = self._paginator.update_query(query, **kwargs)
 
             return [{'uuid': uuid, 'name': name} for uuid, name in query.all()]
@@ -467,13 +527,29 @@ class _TenantCRUD(_CRUD):
     def _new_search_filter(cls, **kwargs):
         return cls.search_filter.new_filter(**kwargs)
 
+    def remove_user(self, tenant_uuid, user_uuid):
+        filter_ = and_(
+            TenantUser.user_uuid == str(user_uuid),
+            TenantUser.tenant_uuid == str(tenant_uuid),
+        )
+        with self.new_session() as s:
+            nb_deleted = s.query(TenantUser).filter(filter_).delete()
+
+        if not nb_deleted:
+            if not self.list_(uuid=tenant_uuid):
+                raise UnknownTenantException(tenant_uuid)
+            else:
+                raise UnknownUserException(user_uuid)
+
     @staticmethod
-    def _new_strict_filter(uuid=None, name=None, **ignored):
+    def _new_strict_filter(uuid=None, name=None, user_uuid=None, **ignored):
         filter_ = text('true')
         if uuid:
-            filter_ = and_(filter_, Tenant.uuid == uuid)
+            filter_ = and_(filter_, Tenant.uuid == str(uuid))
         if name:
             filter_ = and_(filter_, Tenant.name == name)
+        if user_uuid:
+            filter_ = and_(filter_, TenantUser.user_uuid == str(user_uuid))
         return filter_
 
 
@@ -542,14 +618,16 @@ class _UserCRUD(_CRUD):
         return cls.search_filter.new_filter(**kwargs)
 
     @staticmethod
-    def _new_strict_filter(uuid=None, username=None, email_address=None, **ignored):
+    def _new_strict_filter(uuid=None, username=None, email_address=None, tenant_uuid=None, **ignored):
         filter_ = text('true')
         if uuid:
-            filter_ = and_(filter_, User.uuid == uuid)
+            filter_ = and_(filter_, User.uuid == str(uuid))
         if username:
             filter_ = and_(filter_, User.username == username)
         if email_address:
             filter_ = and_(filter_, Email.address == email_address)
+        if tenant_uuid:
+            filter_ = and_(filter_, TenantUser.tenant_uuid == str(tenant_uuid))
         return filter_
 
     def add_policy(self, user_uuid, policy_uuid):
@@ -614,6 +692,20 @@ class _UserCRUD(_CRUD):
             return s.query(Policy).join(
                 UserPolicy, UserPolicy.policy_uuid == Policy.uuid,
             ).filter(filter_).count()
+
+    def count_tenants(self, user_uuid, **kwargs):
+        filtered = kwargs.get('filtered')
+        if filtered is not False:
+            strict_filter = _TenantCRUD._new_strict_filter(**kwargs)
+            search_filter = _TenantCRUD._new_search_filter(**kwargs)
+            filter_ = and_(strict_filter, search_filter)
+        else:
+            filter_ = text('true')
+
+        filter_ = and_(filter_, TenantUser.user_uuid == str(user_uuid))
+
+        with self.new_session() as s:
+            return s.query(Tenant).join(TenantUser).filter(filter_).count()
 
     def create(self, username, email_address, hash_, salt):
         with self.new_session() as s:
@@ -688,6 +780,8 @@ class _UserCRUD(_CRUD):
                 UserEmail, User.uuid == UserEmail.user_uuid,
             ).join(
                 Email, Email.uuid == UserEmail.email_uuid,
+            ).outerjoin(
+                TenantUser,
             ).filter(filter_)
             query = self._paginator.update_query(query, **kwargs)
             rows = query.all()

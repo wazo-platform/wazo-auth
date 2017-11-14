@@ -36,6 +36,7 @@ _DEFAULT_CONFIG = {
     'enabled_http_plugins': {
         'policies': True,
         'tenants': True,
+        'tenant_user': True,
         'user_policy': True,
         'users': False,
     },

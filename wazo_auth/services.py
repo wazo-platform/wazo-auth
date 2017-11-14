@@ -61,6 +61,12 @@ class TenantService(object):
     def __init__(self, storage):
         self._storage = storage
 
+    def add_user(self, tenant_uuid, user_uuid):
+        return self._storage.tenant_add_user(tenant_uuid, user_uuid)
+
+    def count_users(self, tenant_uuid, **kwargs):
+        return self._storage.tenant_count_users(tenant_uuid, **kwargs)
+
     def count(self, **kwargs):
         return self._storage.tenant_count(**kwargs)
 
@@ -76,8 +82,14 @@ class TenantService(object):
     def list_(self, **kwargs):
         return self._storage.tenant_list(**kwargs)
 
+    def list_users(self, tenant_uuid, **kwargs):
+        return self._storage.user_list(tenant_uuid=tenant_uuid, **kwargs)
+
     def new(self, **kwargs):
         return self._storage.tenant_create(**kwargs)
+
+    def remove_user(self, tenant_uuid, user_uuid):
+        return self._storage.tenant_remove_user(tenant_uuid, user_uuid)
 
 
 class UserService(object):
@@ -91,6 +103,9 @@ class UserService(object):
 
     def count_policies(self, user_uuid, **kwargs):
         return self._storage.user_count_policies(user_uuid, **kwargs)
+
+    def count_tenants(self, user_uuid, **kwargs):
+        return self._storage.user_count_tenants(user_uuid, **kwargs)
 
     def count_users(self, **kwargs):
         return self._storage.user_count(**kwargs)
@@ -115,6 +130,9 @@ class UserService(object):
 
     def list_policies(self, user_uuid, **kwargs):
         return self._storage.user_list_policies(user_uuid, **kwargs)
+
+    def list_tenants(self, user_uuid, **kwargs):
+        return self._storage.user_list_tenants(user_uuid, **kwargs)
 
     def list_users(self, **kwargs):
         return self._storage.user_list(**kwargs)

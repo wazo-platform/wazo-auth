@@ -53,13 +53,13 @@ class UserPolicies(_BaseUserPolicyResource):
 
 class UserPolicy(_BaseUserPolicyResource):
 
-    @http.required_acl('auth.users.{user_uuid}.policies.edit')
+    @http.required_acl('auth.users.{user_uuid}.policies.{policy_uuid}.delete')
     def delete(self, user_uuid, policy_uuid):
         logger.debug('disassociating user %s and policy %s', user_uuid, policy_uuid)
         self.user_service.remove_policy(user_uuid, policy_uuid)
         return '', 204
 
-    @http.required_acl('auth.users.{user_uuid}.policies.edit')
+    @http.required_acl('auth.users.{user_uuid}.policies.{policy_uuid}.create')
     def put(self, user_uuid, policy_uuid):
         logger.debug('associating user %s and policy %s', user_uuid, policy_uuid)
         self.user_service.add_policy(user_uuid, policy_uuid)

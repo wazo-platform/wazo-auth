@@ -50,7 +50,7 @@ class UnknownTenantException(APIException):
 
     def __init__(self, tenant_uuid):
         msg = 'No such tenant: "{}"'.format(tenant_uuid)
-        details = dict(uuid=tenant_uuid)
+        details = dict(uuid=str(tenant_uuid))
         super(UnknownTenantException, self).__init__(404, msg, 'unknown_tenant', details, 'tenants')
 
 
@@ -58,7 +58,7 @@ class UnknownUserException(APIException):
 
     def __init__(self, user_uuid):
         msg = 'No such user: "{}"'.format(user_uuid)
-        details = dict(uuid=user_uuid)
+        details = dict(uuid=str(user_uuid))
         super(UnknownUserException, self).__init__(404, msg, 'unknown_user', details, 'users')
 
 

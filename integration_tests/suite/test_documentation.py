@@ -19,10 +19,10 @@ import pprint
 
 from hamcrest import assert_that, empty
 
-from .test_http_interface import _BaseTestCase
+from .helpers.base import BaseTestCase
 
 
-class TestDocumentation(_BaseTestCase):
+class TestDocumentation(BaseTestCase):
 
     asset = 'documentation'
     service = 'auth'
