@@ -15,8 +15,9 @@ class TestUserService(TestCase):
 
     def setUp(self):
         self.encrypter = Mock(services.PasswordEncrypter)
-        self.dao = Mock(database.DAO)
-        self.service = services.UserService(self.dao, encrypter=self.encrypter)
+        self.user_crud = Mock(database._UserCRUD)
+        dao = database.DAO(Mock(), Mock(), self.user_crud, Mock(), Mock())
+        self.service = services.UserService(dao, encrypter=self.encrypter)
 
     def test_that_new(self):
         params = dict(
@@ -34,5 +35,5 @@ class TestUserService(TestCase):
 
         result = self.service.new_user(**params)
 
-        self.dao.user_create.assert_called_once_with(**expected_db_params)
-        assert_that(result, equal_to(self.dao.user_create.return_value))
+        self.user_crud.create.assert_called_once_with(**expected_db_params)
+        assert_that(result, equal_to(self.user_crud.create.return_value))

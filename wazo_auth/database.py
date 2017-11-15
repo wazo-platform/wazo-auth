@@ -87,49 +87,6 @@ class DAO(object):
         token_uuid = self.token.create(token_data)
         return Token(token_uuid, **token_data)
 
-    def user_add_policy(self, user_uuid, policy_uuid):
-        self.user.add_policy(user_uuid, policy_uuid)
-
-    def user_remove_policy(self, user_uuid, policy_uuid):
-        self.user.remove_policy(user_uuid, policy_uuid)
-
-    def user_count(self, **kwargs):
-        return self.user.count(**kwargs)
-
-    def user_count_policies(self, user_uuid, **kwargs):
-        return self.user.count_policies(user_uuid, **kwargs)
-
-    def user_count_tenants(self, user_uuid, **kwargs):
-        return self.user.count_tenants(user_uuid, **kwargs)
-
-    def user_list_policies(self, user_uuid, **kwargs):
-        return self.policy.get(user_uuid=user_uuid, **kwargs)
-
-    def user_list_tenants(self, user_uuid, **kwargs):
-        return self.tenant.list_(user_uuid=user_uuid, **kwargs)
-
-    def user_delete(self, user_uuid):
-        self.user.delete(user_uuid)
-
-    def user_create(self, username, email_address, hash_, salt):
-        user_uuid = self.user.create(username, email_address, hash_, salt)
-        email = dict(
-            address=email_address,
-            confirmed=False,
-            main=True,
-        )
-        return dict(
-            uuid=user_uuid,
-            username=username,
-            emails=[email],
-        )
-
-    def user_get_credentials(self, username):
-        return self.user.get_credentials(username)
-
-    def user_list(self, **kwargs):
-        return self.user.list_(**kwargs)
-
     def remove_token(self, token_id):
         self.token.delete(token_id)
 
@@ -721,7 +678,7 @@ class _UserCRUD(_PaginatorMixin, _CRUD):
         with self.new_session() as s:
             return s.query(Tenant).join(TenantUser).filter(filter_).count()
 
-    def create(self, username, email_address, hash_, salt):
+    def create(self, username, email_address, hash_, salt, **ignored):
         with self.new_session() as s:
             try:
                 email = Email(
@@ -749,7 +706,12 @@ class _UserCRUD(_PaginatorMixin, _CRUD):
                     if column:
                         raise ConflictException('users', column, value)
                 raise
-            return user.uuid
+
+            return dict(
+                uuid=user.uuid,
+                username=username,
+                emails=[{'address': email_address, 'confirmed': False, 'main': True}],
+            )
 
     def delete(self, user_uuid):
         with self.new_session() as s:

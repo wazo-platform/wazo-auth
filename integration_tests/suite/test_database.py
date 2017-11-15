@@ -661,7 +661,7 @@ class TestUserCrud(unittest.TestCase):
         hash_ = 'the_hashed_password'
         email_address = 'foobar@example.com'
 
-        user_uuid = self._crud.create(username, email_address, hash_, self.salt)
+        user_uuid = self._crud.create(username, email_address, hash_, self.salt)['uuid']
 
         assert_that(user_uuid, equal_to(ANY_UUID))
         with self._crud.new_session() as s:

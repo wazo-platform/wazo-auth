@@ -120,22 +120,22 @@ class UserService(object):
         self._encrypter = encrypter or PasswordEncrypter()
 
     def add_policy(self, user_uuid, policy_uuid):
-        self._dao.user_add_policy(user_uuid, policy_uuid)
+        self._dao.user.add_policy(user_uuid, policy_uuid)
 
     def count_policies(self, user_uuid, **kwargs):
-        return self._dao.user_count_policies(user_uuid, **kwargs)
+        return self._dao.user.count_policies(user_uuid, **kwargs)
 
     def count_tenants(self, user_uuid, **kwargs):
-        return self._dao.user_count_tenants(user_uuid, **kwargs)
+        return self._dao.user.count_tenants(user_uuid, **kwargs)
 
     def count_users(self, **kwargs):
-        return self._dao.user_count(**kwargs)
+        return self._dao.user.count(**kwargs)
 
     def delete_user(self, user_uuid):
-        self._dao.user_delete(user_uuid)
+        self._dao.user.delete(user_uuid)
 
     def get_acl_templates(self, username):
-        users = self._dao.user_list(username=username, limit=1)
+        users = self._dao.user.list_(username=username, limit=1)
         acl_templates = []
         for user in users:
             policies = self.list_policies(user['uuid'])
@@ -144,33 +144,33 @@ class UserService(object):
         return acl_templates
 
     def get_user(self, user_uuid):
-        users = self._dao.user_list(uuid=user_uuid)
+        users = self._dao.user.list_(uuid=user_uuid)
         for user in users:
             return user
         raise exceptions.UnknownUserException(user_uuid)
 
     def list_policies(self, user_uuid, **kwargs):
-        return self._dao.user_list_policies(user_uuid, **kwargs)
+        return self._dao.policy.get(user_uuid=user_uuid, **kwargs)
 
     def list_tenants(self, user_uuid, **kwargs):
-        return self._dao.user_list_tenants(user_uuid, **kwargs)
+        return self._dao.tenant.list_(user_uuid=user_uuid, **kwargs)
 
     def list_users(self, **kwargs):
-        return self._dao.user_list(**kwargs)
+        return self._dao.user.list_(**kwargs)
 
-    def new_user(self, *args, **kwargs):
+    def new_user(self, **kwargs):
         password = kwargs.pop('password')
         salt, hash_ = self._encrypter.encrypt_password(password)
         logger.info('creating a new user with params: %s', kwargs)  # log after poping the password
         # a confirmation email should be sent
-        return self._dao.user_create(*args, salt=salt, hash_=hash_, **kwargs)
+        return self._dao.user.create(salt=salt, hash_=hash_, **kwargs)
 
     def remove_policy(self, user_uuid, policy_uuid):
-        self._dao.user_remove_policy(user_uuid, policy_uuid)
+        self._dao.user.remove_policy(user_uuid, policy_uuid)
 
     def verify_password(self, username, password):
         try:
-            hash_, salt = self._dao.user_get_credentials(username)
+            hash_, salt = self._dao.user.get_credentials(username)
         except exceptions.UnknownUsernameException:
             return False
 

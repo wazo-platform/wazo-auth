@@ -182,7 +182,7 @@ def user(**user_args):
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
-            user_uuid = self._user_crud.create(**user_args)
+            user_uuid = self._user_crud.create(**user_args)['uuid']
             try:
                 result = decorated(self, user_uuid, *args, **kwargs)
             finally:
