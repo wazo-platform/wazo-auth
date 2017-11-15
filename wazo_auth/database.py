@@ -28,7 +28,6 @@ from .models import (
 from .token import Token
 from .exceptions import (
     ConflictException,
-    DuplicateGroupException,
     DuplicatePolicyException,
     DuplicateTemplateException,
     InvalidLimitException,
@@ -92,14 +91,6 @@ class DAO(object):
 
     def remove_expired_tokens(self):
         self.token.delete_expired_tokens()
-
-    @staticmethod
-    def _is_uuid(value):
-        try:
-            uuid.UUID(value)
-            return True
-        except (ValueError, TypeError):
-            return False
 
     @classmethod
     def from_config(cls, config):

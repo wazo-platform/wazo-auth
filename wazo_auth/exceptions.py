@@ -171,13 +171,6 @@ class ConflictException(APIException):
         super(ConflictException, self).__init__(409, 'Conflict detected', 'conflict', details, resource)
 
 
-class DuplicateGroupException(APIException):
-
-    def __init__(self, body):
-        msg = 'Group {} already exists'.format(body)
-        super(DuplicateGroupException, self).__init__(409, msg, 'duplicate_group', {}, 'groups')
-
-
 class DuplicatePolicyException(ManagerException):
 
     code = 409
