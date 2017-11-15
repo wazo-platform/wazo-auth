@@ -352,7 +352,10 @@ class _GroupCRUD(_PaginatorMixin, _CRUD):
                 s.commit()
             except exc.IntegrityError as e:
                 if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                    raise DuplicateGroupException(body)
+                    column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
+                    value = body.get(column)
+                    if column:
+                        raise ConflictException('groups', column, value)
                 raise
 
         return dict(uuid=str(group_uuid), **body)
