@@ -55,10 +55,18 @@ def teardown():
     DBStarter.tearDownClass()
 
 
-class TestGroupDAO(unittest.TestCase):
+class _BaseDAOTestCase(unittest.TestCase):
 
     def setUp(self):
-        self._group_dao = database._GroupDAO(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
+        db_uri = DB_URI.format(port=DBStarter.service_port(5432, 'postgres'))
+        self._group_dao = database._GroupDAO(db_uri)
+        self._policy_dao = database._PolicyDAO(db_uri)
+        self._user_dao = database._UserDAO(db_uri)
+        self._tenant_dao = database._TenantDAO(db_uri)
+        self._token_dao = database._TokenDAO(db_uri)
+
+
+class TestGroupDAO(_BaseDAOTestCase):
 
     @fixtures.group(name='foo')
     @fixtures.group(name='bar')
@@ -139,35 +147,33 @@ class TestGroupDAO(unittest.TestCase):
         assert_that(result, contains(*expected))
 
 
-class TestPolicyDAO(unittest.TestCase):
+class TestPolicyDAO(_BaseDAOTestCase):
 
     def setUp(self):
-        self._dao = database._PolicyDAO(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
-        self._user_dao = database._UserDAO(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
-        self._policy_dao = self._dao
-        default_user_policy = self._dao.get(name='wazo_default_user_policy')[0]
-        default_admin_policy = self._dao.get(name='wazo_default_admin_policy')[0]
+        super(TestPolicyDAO, self).setUp()
+        default_user_policy = self._policy_dao.get(name='wazo_default_user_policy')[0]
+        default_admin_policy = self._policy_dao.get(name='wazo_default_admin_policy')[0]
         self._default_user_policy_uuid = default_user_policy['uuid']
         self._default_admin_policy_uuid = default_admin_policy['uuid']
 
     def test_template_association(self):
         assert_that(
-            calling(self._dao.associate_policy_template).with_args('unknown', '#'),
+            calling(self._policy_dao.associate_policy_template).with_args('unknown', '#'),
             raises(exceptions.UnknownPolicyException))
         assert_that(
-            calling(self._dao.dissociate_policy_template).with_args('unknown', '#'),
+            calling(self._policy_dao.dissociate_policy_template).with_args('unknown', '#'),
             raises(exceptions.UnknownPolicyException))
 
         with self._new_policy(u'testé', u'descriptioñ', []) as uuid_:
-            self._dao.associate_policy_template(uuid_, '#')
+            self._policy_dao.associate_policy_template(uuid_, '#')
             policy = self.get_policy(uuid_)
             assert_that(policy['acl_templates'], contains_inanyorder('#'))
 
             assert_that(
-                calling(self._dao.associate_policy_template).with_args(uuid_, '#'),
+                calling(self._policy_dao.associate_policy_template).with_args(uuid_, '#'),
                 raises(exceptions.DuplicateTemplateException))
 
-            self._dao.dissociate_policy_template(uuid_, '#')
+            self._policy_dao.dissociate_policy_template(uuid_, '#')
             policy = self.get_policy(uuid_)
             assert_that(policy['acl_templates'], empty())
 
@@ -185,7 +191,7 @@ class TestPolicyDAO(unittest.TestCase):
         duplicated_name = 'foobar'
         with self._new_policy(duplicated_name, u'descriptioñ'):
             assert_that(
-                calling(self._dao.create).with_args(duplicated_name, '', []),
+                calling(self._policy_dao.create).with_args(duplicated_name, '', []),
                 raises(exceptions.DuplicatePolicyException))
 
     @fixtures.policy(name='foobar')
@@ -198,7 +204,7 @@ class TestPolicyDAO(unittest.TestCase):
             'acl_templates', empty()))
 
         unknown_uuid = '00000000-0000-0000-0000-000000000000'
-        result = self._dao.get(uuid=unknown_uuid)
+        result = self._policy_dao.get(uuid=unknown_uuid)
         assert_that(result, empty())
 
     def test_get_sort_and_pagination(self):
@@ -262,14 +268,14 @@ class TestPolicyDAO(unittest.TestCase):
     @fixtures.policy(name='a')
     @fixtures.user()
     def test_user_list_policies(self, user_uuid, policy_a, policy_b, policy_c):
-        result = self._dao.get(user_uuid=user_uuid)
+        result = self._policy_dao.get(user_uuid=user_uuid)
         assert_that(result, empty(), 'empty')
 
         self._user_dao.add_policy(user_uuid, policy_a)
         self._user_dao.add_policy(user_uuid, policy_b)
         self._user_dao.add_policy(user_uuid, policy_c)
 
-        result = self._dao.get(user_uuid=user_uuid)
+        result = self._policy_dao.get(user_uuid=user_uuid)
         assert_that(
             result,
             contains_inanyorder(
@@ -280,21 +286,21 @@ class TestPolicyDAO(unittest.TestCase):
         )
 
     def test_delete(self):
-        uuid_ = self._dao.create('foobar', '', [])
-        self._dao.delete(uuid_)
+        uuid_ = self._policy_dao.create('foobar', '', [])
+        self._policy_dao.delete(uuid_)
         assert_that(
-            calling(self._dao.delete).with_args(uuid_),
+            calling(self._policy_dao.delete).with_args(uuid_),
             raises(exceptions.UnknownPolicyException))
 
     def test_update(self):
         assert_that(
-            calling(self._dao.update).with_args('unknown', 'foo', '', []),
+            calling(self._policy_dao.update).with_args('unknown', 'foo', '', []),
             raises(exceptions.UnknownPolicyException))
 
         with self._new_policy('foobar',
                               'This is the description',
                               ['confd.line.{{ line_id }}', 'dird.#']) as uuid_:
-            self._dao.update(
+            self._policy_dao.update(
                 uuid_, 'foobaz', 'A new description',
                 ['confd.line.{{ line_id }}', 'dird.#', 'ctid-ng.#'])
             policy = self.get_policy(uuid_)
@@ -307,51 +313,48 @@ class TestPolicyDAO(unittest.TestCase):
                 contains_inanyorder('confd.line.{{ line_id }}', 'dird.#', 'ctid-ng.#'))
 
     def get_policy(self, policy_uuid):
-        for policy in self._dao.get(uuid=policy_uuid, order='name', direction='asc'):
+        for policy in self._policy_dao.get(uuid=policy_uuid, order='name', direction='asc'):
             return policy
 
     def list_policy(self, order=None, direction=None, limit=None, offset=None):
-        policies = self._dao.get(order=order, direction=direction, limit=limit, offset=offset)
+        policies = self._policy_dao.get(order=order, direction=direction, limit=limit, offset=offset)
         return [policy['uuid'] for policy in policies]
 
     @contextmanager
     def _new_policy(self, name, description, acl_templates=None):
         acl_templates = acl_templates or []
-        uuid_ = self._dao.create(name, description, acl_templates)
+        uuid_ = self._policy_dao.create(name, description, acl_templates)
         try:
             yield uuid_
         finally:
-            self._dao.delete(uuid_)
+            self._policy_dao.delete(uuid_)
 
 
-class TestTokenDAO(unittest.TestCase):
-
-    def setUp(self):
-        self._dao = database._TokenDAO(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
+class TestTokenDAO(_BaseDAOTestCase):
 
     def test_create(self):
         with nested(self._new_token(),
                     self._new_token(acls=['first', 'second'])) as (e1, e2):
-            t1 = self._dao.get(e1['uuid'])
-            t2 = self._dao.get(e2['uuid'])
+            t1 = self._token_dao.get(e1['uuid'])
+            t2 = self._token_dao.get(e2['uuid'])
             assert_that(t1, equal_to(e1))
             assert_that(t2, equal_to(e2))
 
     def test_get(self):
-        self.assertRaises(database.UnknownTokenException, self._dao.get,
+        self.assertRaises(database.UnknownTokenException, self._token_dao.get,
                           'unknown')
         with nested(self._new_token(),
                     self._new_token(),
                     self._new_token()) as (_, expected_token, __):
-            token = self._dao.get(expected_token['uuid'])
+            token = self._token_dao.get(expected_token['uuid'])
         assert_that(token, equal_to(expected_token))
 
     def test_delete(self):
         with self._new_token() as token:
-            self._dao.delete(token['uuid'])
-            self.assertRaises(database.UnknownTokenException, self._dao.get,
+            self._token_dao.delete(token['uuid'])
+            self.assertRaises(database.UnknownTokenException, self._token_dao.get,
                               token['uuid'])
-            self._dao.delete(token['uuid'])  # No error on delete unknown
+            self._token_dao.delete(token['uuid'])  # No error on delete unknown
 
     def test_delete_expired_tokens(self):
         with nested(
@@ -362,13 +365,13 @@ class TestTokenDAO(unittest.TestCase):
             expired = [b, c]
             valid = [a]
 
-            self._dao.delete_expired_tokens()
+            self._token_dao.delete_expired_tokens()
 
             for token in valid:
-                assert_that(calling(self._dao.get).with_args(token['uuid']),
+                assert_that(calling(self._token_dao.get).with_args(token['uuid']),
                             not_(raises(exceptions.UnknownTokenException)))
             for token in expired:
-                assert_that(calling(self._dao.get).with_args(token['uuid']),
+                assert_that(calling(self._token_dao.get).with_args(token['uuid']),
                             raises(exceptions.UnknownTokenException))
 
     @contextmanager
@@ -382,20 +385,16 @@ class TestTokenDAO(unittest.TestCase):
             'expire_t': now + expiration,
             'acls': acls or [],
         }
-        token_uuid = self._dao.create(body)
+        token_uuid = self._token_dao.create(body)
         token_data = dict(body)
         token_data['uuid'] = token_uuid
         yield token_data
-        self._dao.delete(token_uuid)
+        self._token_dao.delete(token_uuid)
 
 
-class TestTenantDAO(unittest.TestCase):
+class TestTenantDAO(_BaseDAOTestCase):
 
     unknown_uuid = '00000000-0000-0000-0000-000000000000'
-
-    def setUp(self):
-        self._tenant_dao = database._TenantDAO(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
-        self._user_dao = database._UserDAO(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
 
     @fixtures.tenant()
     @fixtures.user()
@@ -554,15 +553,13 @@ class TestTenantDAO(unittest.TestCase):
         )
 
 
-class TestUserDAO(unittest.TestCase):
+class TestUserDAO(_BaseDAOTestCase):
 
     salt = os.urandom(64)
 
     def setUp(self):
-        self._user_dao = database._UserDAO(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
-        self._policy_dao = database._PolicyDAO(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
-        self._dao = self._user_dao
-        with self._dao.new_session() as s:
+        super(TestUserDAO, self).setUp()
+        with self._user_dao.new_session() as s:
             s.query(database.User).delete()
             s.query(database.Email).delete()
 
@@ -661,10 +658,10 @@ class TestUserDAO(unittest.TestCase):
         hash_ = 'the_hashed_password'
         email_address = 'foobar@example.com'
 
-        user_uuid = self._dao.create(username, email_address, hash_, self.salt)['uuid']
+        user_uuid = self._user_dao.create(username, email_address, hash_, self.salt)['uuid']
 
         assert_that(user_uuid, equal_to(ANY_UUID))
-        with self._dao.new_session() as s:
+        with self._user_dao.new_session() as s:
             user = s.query(database.User).filter(database.User.uuid == user_uuid).first()
             assert_that(
                 user,
@@ -696,9 +693,9 @@ class TestUserDAO(unittest.TestCase):
     def test_that_the_username_is_unique(self):
         username = 'foobar'
 
-        self._dao.create(username, 'foobar@example.com', 'hash_one', self.salt)
+        self._user_dao.create(username, 'foobar@example.com', 'hash_one', self.salt)
         assert_that(
-            calling(self._dao.create).with_args(username, 'foobar@wazo.community', 'hash_two', self.salt),
+            calling(self._user_dao.create).with_args(username, 'foobar@wazo.community', 'hash_two', self.salt),
             raises(
                 exceptions.ConflictException,
                 has_properties(
@@ -712,9 +709,9 @@ class TestUserDAO(unittest.TestCase):
     def test_that_the_email_is_unique(self):
         email = 'foobar@example.com'
 
-        self._dao.create('foo', email, 'hash_one', self.salt)
+        self._user_dao.create('foo', email, 'hash_one', self.salt)
         assert_that(
-            calling(self._dao.create).with_args('bar', email, 'hash_two', self.salt),
+            calling(self._user_dao.create).with_args('bar', email, 'hash_two', self.salt),
             raises(
                 exceptions.ConflictException,
                 has_properties(
@@ -729,51 +726,51 @@ class TestUserDAO(unittest.TestCase):
     @fixtures.user()
     @fixtures.user()
     def test_user_count_no_search_term_no_strict_filter(self, a, b, c):
-        result = self._dao.count()
+        result = self._user_dao.count()
         assert_that(result, equal_to(3))
 
     @fixtures.user(username='foo')
     @fixtures.user(email_address='foobar@example.com')
     @fixtures.user()
     def test_user_count_no_search_term_strict_filter(self, a, b, c):
-        result = self._dao.count(username='foo')
+        result = self._user_dao.count(username='foo')
         assert_that(result, equal_to(1))
 
-        result = self._dao.count(email_address='foobar@example.com')
+        result = self._user_dao.count(email_address='foobar@example.com')
         assert_that(result, equal_to(1))
 
-        result = self._dao.count(uuid=c)
+        result = self._user_dao.count(uuid=c)
         assert_that(result, equal_to(1))
 
     @fixtures.user(username='foo')
     @fixtures.user(email_address='foobar@example.com')
     @fixtures.user()
     def test_user_count_search_term(self, a, b, c):
-        result = self._dao.count(search='foo')
+        result = self._user_dao.count(search='foo')
         assert_that(result, equal_to(2))
 
     @fixtures.user(username='foo')
     @fixtures.user(email_address='foobar@example.com')
     @fixtures.user()
     def test_user_count_mixed_strict_and_search(self, a, b, c):
-        result = self._dao.count(search='foo', uuid=a)
+        result = self._user_dao.count(search='foo', uuid=a)
         assert_that(result, equal_to(0))
 
     @fixtures.user(username='foo')
     @fixtures.user(email_address='foobar@example.com')
     @fixtures.user()
     def test_user_count_unfiltered(self, a, b, c):
-        result = self._dao.count(search='foo', filtered=False)
+        result = self._user_dao.count(search='foo', filtered=False)
         assert_that(result, equal_to(3))
 
-        result = self._dao.count(uuid=a, filtered=False)
+        result = self._user_dao.count(uuid=a, filtered=False)
         assert_that(result, equal_to(3))
 
     @fixtures.user(username='a', email_address='a@example.com')
     @fixtures.user(username='b', email_address='b@example.com')
     @fixtures.user(username='c', email_address='c@example.com')
     def test_user_list_no_search_term_no_strict_filter(self, c, b, a):
-        result = self._dao.list_()
+        result = self._user_dao.list_()
 
         assert_that(
             result,
@@ -818,7 +815,7 @@ class TestUserDAO(unittest.TestCase):
     @fixtures.user(username='bar', email_address='bar@example.com')
     @fixtures.user(username='baz', email_address='baz@example.com')
     def test_user_list_with_search_term(self, baz, bar, foo):
-        result = self._dao.list_(search='@example.')
+        result = self._user_dao.list_(search='@example.')
 
         assert_that(
             result,
@@ -859,7 +856,7 @@ class TestUserDAO(unittest.TestCase):
             )
         )
 
-        result = self._dao.list_(search='foo')
+        result = self._user_dao.list_(search='foo')
         assert_that(
             result,
             contains_inanyorder(
@@ -881,7 +878,7 @@ class TestUserDAO(unittest.TestCase):
     @fixtures.user(username='bar', email_address='bar@example.com')
     @fixtures.user(username='baz', email_address='baz@example.com')
     def test_user_list_with_strict_filters(self, baz, bar, foo):
-        result = self._dao.list_(username='foo')
+        result = self._user_dao.list_(username='foo')
 
         assert_that(
             result,
@@ -900,7 +897,7 @@ class TestUserDAO(unittest.TestCase):
             )
         )
 
-        result = self._dao.list_(uuid=foo)
+        result = self._user_dao.list_(uuid=foo)
         assert_that(
             result,
             contains_inanyorder(
@@ -922,10 +919,10 @@ class TestUserDAO(unittest.TestCase):
     @fixtures.user(username='bar', email_address='bar@example.com')
     @fixtures.user(username='baz', email_address='baz@example.com')
     def test_user_list_with_strict_filters_and_search(self, baz, bar, foo):
-        result = self._dao.list_(username='foo', search='baz')
+        result = self._user_dao.list_(username='foo', search='baz')
         assert_that(result, empty())
 
-        result = self._dao.list_(uuid=foo, search='example')
+        result = self._user_dao.list_(uuid=foo, search='example')
         assert_that(
             result,
             contains_inanyorder(
@@ -953,18 +950,18 @@ class TestUserDAO(unittest.TestCase):
     @fixtures.user(username='h')
     @fixtures.user(username='i')
     def test_pagination(self, i, h, g, f, e, d, c, b, a):
-        result = self._dao.list_(order='username', direction='desc', limit=1, offset=0)
+        result = self._user_dao.list_(order='username', direction='desc', limit=1, offset=0)
         assert_that(result, contains_inanyorder(
             has_entries('uuid', i),
         ))
 
-        result = self._dao.list_(order='username', direction='asc', limit=2, offset=1)
+        result = self._user_dao.list_(order='username', direction='asc', limit=2, offset=1)
         assert_that(result, contains_inanyorder(
             has_entries('uuid', b),
             has_entries('uuid', c),
         ))
 
-        result = self._dao.list_(order='username', direction='asc', limit=2, offset=1)
+        result = self._user_dao.list_(order='username', direction='asc', limit=2, offset=1)
         assert_that(result, contains_inanyorder(
             has_entries('uuid', b),
             has_entries('uuid', c),
@@ -972,20 +969,20 @@ class TestUserDAO(unittest.TestCase):
 
     @fixtures.user()
     def test_delete(self, user_uuid):
-        self._dao.delete(user_uuid)
+        self._user_dao.delete(user_uuid)
 
         assert_that(
-            calling(self._dao.delete).with_args(user_uuid),
+            calling(self._user_dao.delete).with_args(user_uuid),
             raises(exceptions.UnknownUserException),
         )
 
     @fixtures.user(username='foobar')
     def test_get_credential(self, user_uuid):
         assert_that(
-            calling(self._dao.get_credentials).with_args('not-foobar'),
+            calling(self._user_dao.get_credentials).with_args('not-foobar'),
             raises(exceptions.UnknownUsernameException),
         )
 
-        hash_, salt = self._dao.get_credentials('foobar')
+        hash_, salt = self._user_dao.get_credentials('foobar')
         assert_that(hash_, not_(none()))
         assert_that(salt, not_(none()))
