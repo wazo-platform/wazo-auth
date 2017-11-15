@@ -16,7 +16,6 @@ from datetime import datetime
 
 from .exceptions import (
     MissingACLTokenException,
-    UnknownPolicyException,
     UnknownTokenException,
 )
 
@@ -135,7 +134,7 @@ class ExpiredTokenRemover(object):
 
     def _cleanup(self):
         try:
-            self._dao.remove_expired_tokens()
+            self._dao.token.delete_expired_tokens()
         except Exception:
             logger.warning('failed to remove expired tokens', exc_info=self._debug)
 
@@ -159,23 +158,30 @@ class Manager(object):
         acls = backend.get_acls(login, args)
         expiration = args.get('expiration', self._default_expiration)
         t = time.time()
-        token_payload = TokenPayload(
+        token_payload = dict(
             auth_id=auth_id,
             xivo_user_uuid=xivo_user_uuid,
             xivo_uuid=xivo_uuid,
             expire_t=t + expiration,
             issued_t=t,
-            acls=acls)
+            acls=acls or [],
+        )
 
-        token = self._dao.create_token(token_payload)
+        token_uuid = self._dao.token.create(token_payload)
+        token = Token(token_uuid, **token_payload)
 
         return token
 
     def remove_token(self, token):
-        self._dao.remove_token(token)
+        self._dao.token.delete(token)
 
     def get(self, token_uuid, required_acl):
-        token = self._dao.get_token(token_uuid)
+        token_data = self._dao.token.get(token_uuid)
+        if not token_data:
+            raise UnknownTokenException()
+
+        id_ = token_data.pop('uuid')
+        token = Token(id_, **token_data)
 
         if token.is_expired():
             raise UnknownTokenException()

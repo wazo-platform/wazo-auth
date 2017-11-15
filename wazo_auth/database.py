@@ -4,7 +4,6 @@
 #
 # SPDX-License-Identifier: GPL-3.0+
 
-import uuid
 import time
 import logging
 from collections import OrderedDict
@@ -25,7 +24,6 @@ from .models import (
     UserEmail,
     UserPolicy,
 )
-from .token import Token
 from .exceptions import (
     ConflictException,
     DuplicatePolicyException,
@@ -72,25 +70,6 @@ class DAO(object):
         self.user = user_crud
         self.tenant = tenant_crud
         self.group = group_crud
-
-    def get_token(self, token_id):
-        token_data = self.token.get(token_id)
-        if not token_data:
-            raise UnknownTokenException()
-
-        id_ = token_data.pop('uuid')
-        return Token(id_, **token_data)
-
-    def create_token(self, token_payload):
-        token_data = token_payload.__dict__
-        token_uuid = self.token.create(token_data)
-        return Token(token_uuid, **token_data)
-
-    def remove_token(self, token_id):
-        self.token.delete(token_id)
-
-    def remove_expired_tokens(self):
-        self.token.delete_expired_tokens()
 
     @classmethod
     def from_config(cls, config):
