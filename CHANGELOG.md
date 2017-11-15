@@ -23,6 +23,15 @@ Changelog
   * DELETE ``0.1/tenants/<tenant_uuid>/users/<user_uuid>``
   * GET ``0.1/tenants/<tenant_uuid>/users/``
   * GET ``0.1/users/<user_uuid>/tenants/``
+  
+* A new ressource has been added to manage Groups
+
+  * POST `0.1/groups`
+  * GET `0.1/groups`
+  * GET `0.1/groups/<group_uuid>`
+  * PUT `0.1/groups/<group_uuid>`
+  * DELETE `0.1/groups/<group_uuid>`
+
 
 
 17.15

@@ -25,6 +25,30 @@ from . import exceptions
 logger = logging.getLogger(__name__)
 
 
+class GroupService(object):
+
+    def __init__(self, storage):
+        self._storage = storage
+
+    def count(self, **kwargs):
+        return self._storage.group_count(**kwargs)
+
+    def create(self, **kwargs):
+        return self._storage.group_create(**kwargs)
+
+    def delete(self, group_uuid):
+        return self._storage.group_delete(group_uuid)
+
+    def get(self, group_uuid):
+        return self._storage.group_get(group_uuid)
+
+    def list_(self, **kwargs):
+        return self._storage.group_list(**kwargs)
+
+    def update(self, group_uuid, **kwargs):
+        return self._storage.group_update(group_uuid, **kwargs)
+
+
 class PolicyService(object):
 
     def __init__(self, storage):

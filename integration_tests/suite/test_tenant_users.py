@@ -15,18 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-import requests
 from hamcrest import (
     assert_that,
-    calling,
     contains,
     contains_inanyorder,
     has_entries,
     has_items,
-    has_properties,
 )
 from xivo_auth_client import Client
-from xivo_test_helpers.hamcrest.raises import raises
 from .helpers import base, fixtures
 
 
@@ -41,10 +37,10 @@ class TestTenantUserAssociation(base.MockBackendTestCase):
         self.client.tenants.add_user(tenant['uuid'], foo['uuid'])
         self.client.tenants.add_user(tenant['uuid'], bar['uuid'])
 
-        assert_http_error(404, self.client.tenants.remove_user, self.unknown_uuid, foo['uuid'])
-        assert_http_error(404, self.client.tenants.remove_user, tenant['uuid'], self.unknown_uuid)
-        assert_no_error(self.client.tenants.remove_user, tenant['uuid'], foo['uuid'])
-        assert_http_error(404, self.client.tenants.remove_user, tenant['uuid'], foo['uuid'])  # twice
+        base.assert_http_error(404, self.client.tenants.remove_user, self.unknown_uuid, foo['uuid'])
+        base.assert_http_error(404, self.client.tenants.remove_user, tenant['uuid'], self.unknown_uuid)
+        base.assert_no_error(self.client.tenants.remove_user, tenant['uuid'], foo['uuid'])
+        base.assert_http_error(404, self.client.tenants.remove_user, tenant['uuid'], foo['uuid'])  # twice
 
         result = self.client.tenants.get_users(tenant['uuid'])
         assert_that(result, has_entries('items', contains_inanyorder(
@@ -55,11 +51,11 @@ class TestTenantUserAssociation(base.MockBackendTestCase):
     @fixtures.http_user(username='foo')
     @fixtures.http_tenant()
     def test_put(self, tenant, foo, bar):
-        assert_http_error(404, self.client.tenants.add_user, self.unknown_uuid, foo['uuid'])
-        assert_http_error(404, self.client.tenants.add_user, tenant['uuid'], self.unknown_uuid)
-        assert_no_error(self.client.tenants.add_user, tenant['uuid'], foo['uuid'])
-        assert_no_error(self.client.tenants.add_user, tenant['uuid'], foo['uuid'])  # twice
-        assert_no_error(self.client.tenants.add_user, tenant['uuid'], bar['uuid'])
+        base.assert_http_error(404, self.client.tenants.add_user, self.unknown_uuid, foo['uuid'])
+        base.assert_http_error(404, self.client.tenants.add_user, tenant['uuid'], self.unknown_uuid)
+        base.assert_no_error(self.client.tenants.add_user, tenant['uuid'], foo['uuid'])
+        base.assert_no_error(self.client.tenants.add_user, tenant['uuid'], foo['uuid'])  # twice
+        base.assert_no_error(self.client.tenants.add_user, tenant['uuid'], bar['uuid'])
 
         result = self.client.tenants.get_users(tenant['uuid'])
         assert_that(result, has_entries('items', contains_inanyorder(
@@ -206,14 +202,3 @@ class TestTenantUserAssociation(base.MockBackendTestCase):
         ]
         token_data = user_client.token.new('wazo_user', expiration=5)
         assert_that(token_data, has_entries('acls', has_items(*expected_acls)))
-
-
-def assert_no_error(fn, *args, **kwargs):
-    return fn(*args, **kwargs)
-
-
-def assert_http_error(status_code, fn, *args, **kwargs):
-    assert_that(
-        calling(fn).with_args(*args, **kwargs),
-        raises(requests.HTTPError).matching(
-            has_properties('response', has_properties('status_code', status_code))))

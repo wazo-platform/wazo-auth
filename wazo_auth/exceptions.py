@@ -46,6 +46,14 @@ class InvalidListParamException(APIException):
                 return cls(info['message'], {field: info})
 
 
+class UnknownGroupException(APIException):
+
+    def __init__(self, group_uuid):
+        msg = 'No such group: "{}"'.format(group_uuid)
+        details = dict(uuid=str(group_uuid))
+        super(UnknownGroupException, self).__init__(404, msg, 'unknown_group', details, 'groups')
+
+
 class UnknownTenantException(APIException):
 
     def __init__(self, tenant_uuid):
@@ -89,6 +97,11 @@ class _BaseParamException(APIException):
                 infos = [infos]
             for info in infos:
                 return cls(info['message'], {field: info})
+
+
+class GroupParamException(_BaseParamException):
+
+    resource = 'groups'
 
 
 class TenantParamException(_BaseParamException):
@@ -167,6 +180,13 @@ class ConflictException(APIException):
         msg = 'The {} "{}" is already used'.format(column, username)
         details = {column: {'constraint_id': 'unique', 'message': msg}}
         super(ConflictException, self).__init__(409, 'Conflict detected', 'conflict', details, resource)
+
+
+class DuplicateGroupException(APIException):
+
+    def __init__(self, body):
+        msg = 'Group {} already exists'.format(body)
+        super(DuplicateGroupException, self).__init__(409, msg, 'duplicate_group', {}, 'groups')
 
 
 class DuplicatePolicyException(ManagerException):

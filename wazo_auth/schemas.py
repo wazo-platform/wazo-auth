@@ -28,6 +28,11 @@ class BaseSchema(Schema):
         return data or {}
 
 
+class GroupRequestSchema(BaseSchema):
+
+    name = xfields.String(validate=validate.Length(min=1, max=128), required=True)
+
+
 class PolicySchema(BaseSchema):
 
     name = fields.String(validate=validate.Length(min=1, max=80), required=True)

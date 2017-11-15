@@ -19,7 +19,8 @@ import os
 import time
 import requests
 
-from hamcrest import assert_that, equal_to
+from hamcrest import assert_that, calling, has_properties, equal_to
+from xivo_test_helpers.hamcrest.raises import raises
 from xivo_auth_client import Client
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 
@@ -110,3 +111,14 @@ class MockBackendTestCase(BaseTestCase):
         self.client = Client(self.get_host(), port, username='foo', password='bar', verify_certificate=False)
         token = self.client.token.new(backend='mock', expiration=3600)['token']
         self.client.set_token(token)
+
+
+def assert_no_error(fn, *args, **kwargs):
+    return fn(*args, **kwargs)
+
+
+def assert_http_error(status_code, fn, *args, **kwargs):
+    assert_that(
+        calling(fn).with_args(*args, **kwargs),
+        raises(requests.HTTPError).matching(
+            has_properties('response', has_properties('status_code', status_code))))

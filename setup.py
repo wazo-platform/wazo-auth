@@ -47,6 +47,7 @@ setup(
             'wazo-auth=wazo_auth.main:main',
         ],
         'wazo_auth.http': [
+            'groups = wazo_auth.plugins.http.groups:Plugin',
             'policies = wazo_auth.plugins.http.policies:Plugin',
             'tenants = wazo_auth.plugins.http.tenants:Plugin',
             'tenant_user = wazo_auth.plugins.http.tenant_user:Plugin',

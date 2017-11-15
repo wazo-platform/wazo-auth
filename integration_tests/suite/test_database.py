@@ -30,6 +30,7 @@ from hamcrest import (
     empty,
     equal_to,
     has_entries,
+    has_key,
     has_properties,
     none,
     not_,
@@ -63,6 +64,90 @@ def setup():
 
 def teardown():
     DBStarter.tearDownClass()
+
+
+class TestGroupCRUD(unittest.TestCase):
+
+    def setUp(self):
+        self._group_crud = database._GroupCRUD(DB_URI.format(port=DBStarter.service_port(5432, 'postgres')))
+
+    @fixtures.group(name='foo')
+    @fixtures.group(name='bar')
+    @fixtures.group(name='baz')
+    def test_count(self, *ignored):
+        result = self._group_crud.count()
+        assert_that(result, equal_to(3))
+
+        result = self._group_crud.count(name='foo', filtered=False)
+        assert_that(result, equal_to(3))
+
+        result = self._group_crud.count(search='ba', filtered=False)
+        assert_that(result, equal_to(3))
+
+        result = self._group_crud.count(name='foo', filtered=True)
+        assert_that(result, equal_to(1))
+
+        result = self._group_crud.count(search='ba', filtered=True)
+        assert_that(result, equal_to(2))
+
+    @fixtures.group(name='foobar')
+    def test_create(self, group_uuid):
+        name = 'foobar'
+
+        assert_that(group_uuid, equal_to(ANY_UUID))
+        with self._group_crud.new_session() as s:
+            filter_ = database.Group.uuid == group_uuid
+            group = s.query(database.Group).filter(filter_).first()
+            assert_that(group, has_properties('name', name))
+
+        assert_that(
+            calling(self._group_crud.create).with_args(name),
+            raises(exceptions.ConflictException).matching(
+                has_properties(
+                    'status_code', 409,
+                    'resource', 'groups',
+                    'details', has_key('name'))))
+
+    @fixtures.group()
+    def test_delete(self, group_uuid):
+        self._group_crud.delete(group_uuid)
+
+        assert_that(
+            calling(self._group_crud.delete).with_args(group_uuid),
+            raises(exceptions.UnknownGroupException),
+        )
+
+    @fixtures.group(name='foo')
+    @fixtures.group(name='bar')
+    @fixtures.group(name='baz')
+    def test_list(self, *ignored):
+
+        def build_list_matcher(*names):
+            return [has_entries('name', name) for name in names]
+
+        result = self._group_crud.list_()
+        expected = build_list_matcher('foo', 'bar', 'baz')
+        assert_that(result, contains_inanyorder(*expected))
+
+        result = self._group_crud.list_(name='foo')
+        expected = build_list_matcher('foo')
+        assert_that(result, contains_inanyorder(*expected))
+
+        result = self._group_crud.list_(search='ba')
+        expected = build_list_matcher('bar', 'baz')
+        assert_that(result, contains_inanyorder(*expected))
+
+        result = self._group_crud.list_(order='name', direction='desc')
+        expected = build_list_matcher('foo', 'baz', 'bar')
+        assert_that(result, contains(*expected))
+
+        result = self._group_crud.list_(order='name', direction='asc', limit=2)
+        expected = build_list_matcher('bar', 'baz')
+        assert_that(result, contains(*expected))
+
+        result = self._group_crud.list_(order='name', direction='asc', offset=1)
+        expected = build_list_matcher('baz', 'foo')
+        assert_that(result, contains(*expected))
 
 
 class TestPolicyCRUD(unittest.TestCase):

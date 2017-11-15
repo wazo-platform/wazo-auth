@@ -43,6 +43,14 @@ class Email(Base):
     confirmed = Column(Boolean, nullable=False, default=False)
 
 
+class Group(Base):
+
+    __tablename__ = 'auth_group'
+
+    uuid = Column(String(38), server_default=text('uuid_generate_v4()'), primary_key=True)
+    name = Column(Text, unique=True, nullable=False)
+
+
 class Tenant(Base):
 
     __tablename__ = 'auth_tenant'
