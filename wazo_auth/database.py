@@ -908,18 +908,6 @@ class _UserCRUD(_PaginatorMixin, _CRUD):
 
         return users.values()
 
-    def list_policies(self, user_uuid, **kwargs):
-        strict_filter = _PolicyCRUD._new_strict_filter(**kwargs)
-        search_filter = _PolicyCRUD.new_search_filter(**kwargs)
-        filter_ = and_(strict_filter, search_filter)
-
-        filter_ = and_(filter_, UserPolicy.user_uuid == user_uuid)
-
-        with self.new_session() as s:
-            return s.query(Policy).join(
-                UserPolicy, UserPolicy.policy_uuid == Policy.uuid,
-            ).filter(filter_).count()
-
 
 class QueryPaginator(object):
 
