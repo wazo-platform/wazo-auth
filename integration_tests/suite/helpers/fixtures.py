@@ -114,12 +114,12 @@ def group(**group_args):
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
-            group_uuid = self._group_crud.create(**group_args)
+            group_uuid = self._group_dao.create(**group_args)
             try:
                 result = decorated(self, group_uuid, *args, **kwargs)
             finally:
                 try:
-                    self._group_crud.delete(group_uuid)
+                    self._group_dao.delete(group_uuid)
                 except exceptions.UnknownGroupException:
                     pass
             return result
@@ -136,12 +136,12 @@ def policy(**policy_args):
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
-            policy_uuid = self._policy_crud.create(**policy_args)
+            policy_uuid = self._policy_dao.create(**policy_args)
             try:
                 result = decorated(self, policy_uuid, *args, **kwargs)
             finally:
                 try:
-                    self._policy_crud.delete(policy_uuid)
+                    self._policy_dao.delete(policy_uuid)
                 except exceptions.UnknownPolicyException:
                     pass
             return result
@@ -156,12 +156,12 @@ def tenant(**tenant_args):
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
-            tenant_uuid = self._tenant_crud.create(**tenant_args)
+            tenant_uuid = self._tenant_dao.create(**tenant_args)
             try:
                 result = decorated(self, tenant_uuid, *args, **kwargs)
             finally:
                 try:
-                    self._tenant_crud.delete(tenant_uuid)
+                    self._tenant_dao.delete(tenant_uuid)
                 except exceptions.UnknownTenantException:
                     pass
             return result
@@ -182,12 +182,12 @@ def user(**user_args):
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
-            user_uuid = self._user_crud.create(**user_args)['uuid']
+            user_uuid = self._user_dao.create(**user_args)['uuid']
             try:
                 result = decorated(self, user_uuid, *args, **kwargs)
             finally:
                 try:
-                    self._user_crud.delete(user_uuid)
+                    self._user_dao.delete(user_uuid)
                 except exceptions.UnknownUserException:
                     pass
             return result

@@ -64,24 +64,24 @@ class SearchFilter(object):
 
 class DAO(object):
 
-    def __init__(self, policy_crud, token_crud, user_crud, tenant_crud, group_crud):
-        self.policy = policy_crud
-        self.token = token_crud
-        self.user = user_crud
-        self.tenant = tenant_crud
-        self.group = group_crud
+    def __init__(self, policy_dao, token_dao, user_dao, tenant_dao, group_dao):
+        self.policy = policy_dao
+        self.token = token_dao
+        self.user = user_dao
+        self.tenant = tenant_dao
+        self.group = group_dao
 
     @classmethod
     def from_config(cls, config):
-        group = _GroupCRUD(config['db_uri'])
-        policy = _PolicyCRUD(config['db_uri'])
-        token = _TokenCRUD(config['db_uri'])
-        user = _UserCRUD(config['db_uri'])
-        tenant = _TenantCRUD(config['db_uri'])
+        group = _GroupDAO(config['db_uri'])
+        policy = _PolicyDAO(config['db_uri'])
+        token = _TokenDAO(config['db_uri'])
+        user = _UserDAO(config['db_uri'])
+        tenant = _TenantDAO(config['db_uri'])
         return cls(policy, token, user, tenant, group)
 
 
-class _CRUD(object):
+class _BaseDAO(object):
 
     _UNIQUE_CONSTRAINT_CODE = '23505'
     _FKEY_CONSTRAINT_CODE = '23503'
@@ -118,7 +118,7 @@ class _PaginatorMixin(object):
         self._paginator = QueryPaginator(self.column_map)
 
 
-class _GroupCRUD(_PaginatorMixin, _CRUD):
+class _GroupDAO(_PaginatorMixin, _BaseDAO):
 
     constraint_to_column_map = dict(
         auth_group_name_key='name',
@@ -206,7 +206,7 @@ class _GroupCRUD(_PaginatorMixin, _CRUD):
         return filter_
 
 
-class _PolicyCRUD(_PaginatorMixin, _CRUD):
+class _PolicyDAO(_PaginatorMixin, _BaseDAO):
 
     search_filter = SearchFilter(Policy.name, Policy.description)
     column_map = dict(
@@ -374,7 +374,7 @@ class _PolicyCRUD(_PaginatorMixin, _CRUD):
         return filter_
 
 
-class _TenantCRUD(_PaginatorMixin, _CRUD):
+class _TenantDAO(_PaginatorMixin, _BaseDAO):
 
     constraint_to_column_map = dict(
         auth_tenant_name_key='name',
@@ -418,8 +418,8 @@ class _TenantCRUD(_PaginatorMixin, _CRUD):
     def count_users(self, tenant_uuid, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:
-            strict_filter = _UserCRUD._new_strict_filter(**kwargs)
-            search_filter = _UserCRUD.new_search_filter(**kwargs)
+            strict_filter = _UserDAO._new_strict_filter(**kwargs)
+            search_filter = _UserDAO.new_search_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
             filter_ = text('true')
@@ -502,7 +502,7 @@ class _TenantCRUD(_PaginatorMixin, _CRUD):
         return filter_
 
 
-class _TokenCRUD(_CRUD):
+class _TokenDAO(_BaseDAO):
 
     def create(self, body):
         token = TokenModel(
@@ -547,7 +547,7 @@ class _TokenCRUD(_CRUD):
             s.query(TokenModel).filter(filter_).delete()
 
 
-class _UserCRUD(_PaginatorMixin, _CRUD):
+class _UserDAO(_PaginatorMixin, _BaseDAO):
 
     constraint_to_column_map = dict(
         auth_user_username_key='username',
@@ -621,8 +621,8 @@ class _UserCRUD(_PaginatorMixin, _CRUD):
     def count_policies(self, user_uuid, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:
-            strict_filter = _PolicyCRUD._new_strict_filter(**kwargs)
-            search_filter = _PolicyCRUD.new_search_filter(**kwargs)
+            strict_filter = _PolicyDAO._new_strict_filter(**kwargs)
+            search_filter = _PolicyDAO.new_search_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
             filter_ = text('true')
@@ -637,8 +637,8 @@ class _UserCRUD(_PaginatorMixin, _CRUD):
     def count_tenants(self, user_uuid, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:
-            strict_filter = _TenantCRUD._new_strict_filter(**kwargs)
-            search_filter = _TenantCRUD.new_search_filter(**kwargs)
+            strict_filter = _TenantDAO._new_strict_filter(**kwargs)
+            search_filter = _TenantDAO.new_search_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
             filter_ = text('true')
