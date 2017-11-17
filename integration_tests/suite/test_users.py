@@ -17,7 +17,13 @@ from xivo_auth_client import Client
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from xivo_test_helpers.hamcrest.raises import raises
 from .helpers import fixtures
-from .helpers.base import MockBackendTestCase
+from .helpers.base import (
+    assert_http_error,
+    assert_no_error,
+    MockBackendTestCase,
+)
+
+UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
 
 
 class TestUsers(MockBackendTestCase):
@@ -26,21 +32,11 @@ class TestUsers(MockBackendTestCase):
         for user in self.client.users.list()['items']:
             self.client.users.delete(user['uuid'])
 
-    def test_delete(self):
-        unknown_uuid = '67e7a4e9-8389-40df-b76d-ea6dea79b0ca'
-        assert_that(
-            calling(self.client.users.delete).with_args(unknown_uuid),
-            raises(requests.HTTPError),
-        )
-
-        username, email, password = 'foobar', 'foobar@example.com', 's3cr37'
-        user = self.client.users.new(username=username, email_address=email, password=password)
-
-        self.client.users.delete(user['uuid'])
-        assert_that(
-            calling(self.client.policies.delete).with_args(user['uuid']),
-            raises(requests.HTTPError),
-        )
+    @fixtures.http_user()
+    def test_delete(self, user):
+        assert_http_error(404, self.client.users.delete, UNKNOWN_UUID)
+        assert_no_error(self.client.users.delete, user['uuid'])
+        assert_http_error(404, self.client.users.delete, user['uuid'])
 
     def test_post(self):
         username, email, password = 'foobar', 'foobar@example.com', 's3cr37'
