@@ -56,60 +56,26 @@ class TestUsers(MockBackendTestCase):
         finally:
             self.client.users.delete(user['uuid'])
 
-    def test_list(self):
-        foo = ('foo', 'foo@example.com', 's3cr37')
-        bar = ('bar', 'bar@example.com', '$$bar$$')
-        baz = ('baz', 'baz@example.com', '5fb9359e-4135-4a0b-aaed-97ae6a0b140d')
+    @fixtures.http_user(username='foo', email_address='foo@example.com')
+    @fixtures.http_user(username='bar', email_address='bar@example.com')
+    @fixtures.http_user(username='baz', email_address='baz@example.com')
+    def test_list(self, *users):
+        def check_list_result(result, filtered, item_matcher, *usernames):
+            items = item_matcher(*[has_entries('username', username) for username in usernames])
+            expected = has_entries('total', 3, 'filtered', filtered, 'items', items)
+            assert_that(result, expected)
 
-        for username, email, password in (foo, bar, baz):
-            self.client.users.new(username=username, email_address=email, password=password)
+        result = self.client.users.list(search='ba')
+        check_list_result(result, 2, contains_inanyorder, 'bar', 'baz')
 
-        assert_that(
-            self.client.users.list(search='ba'),
-            has_entries(
-                'total', 3,
-                'filtered', 2,
-                'items', contains_inanyorder(
-                    has_entries('username', 'bar'),
-                    has_entries('username', 'baz'),
-                ),
-            ),
-        )
+        result = self.client.users.list(username='baz')
+        check_list_result(result, 1, contains_inanyorder, 'baz')
 
-        assert_that(
-            self.client.users.list(username='baz'),
-            has_entries(
-                'total', 3,
-                'filtered', 1,
-                'items', contains_inanyorder(
-                    has_entries('username', 'baz'),
-                ),
-            ),
-        )
+        result = self.client.users.list(order='username', direction='desc')
+        check_list_result(result, 3, contains, 'foo', 'baz', 'bar')
 
-        assert_that(
-            self.client.users.list(order='username', direction='desc'),
-            has_entries(
-                'total', 3,
-                'filtered', 3,
-                'items', contains(
-                    has_entries('username', 'foo'),
-                    has_entries('username', 'baz'),
-                    has_entries('username', 'bar'),
-                ),
-            ),
-        )
-
-        assert_that(
-            self.client.users.list(limit=1, offset=1, order='username', direction='asc'),
-            has_entries(
-                'total', 3,
-                'filtered', 3,
-                'items', contains(
-                    has_entries('username', 'baz'),
-                ),
-            ),
-        )
+        result = self.client.users.list(limit=1, offset=1, order='username', direction='asc')
+        check_list_result(result, 3, contains, 'baz')
 
     def test_get(self):
         username, email, password = 'foobar', 'foobar@example.com', 's3cr37'
