@@ -122,20 +122,12 @@ class TestPolicies(MockBackendTestCase):
             'uuid': equal_to(policy['uuid']),
             'acl_templates': contains_inanyorder(*expected_acl_templates)}))
 
-    def test_remove_acl_template(self):
-        unknown_uuid = str(uuid.uuid4())
-        assert_that(
-            calling(self.client.policies.remove_acl_template).with_args(unknown_uuid, 'foo'),
-            raises(requests.HTTPError))
-
-        name, description, acl_templates = 'foobar', 'a test policy', ['dird.me.#', 'ctid-ng.#']
-        policy = self.client.policies.new(name, description, acl_templates)
+    @fixtures.http_policy(acl_templates=['dird.me.#', 'ctid-ng.#'])
+    def test_remove_acl_template(self, policy):
+        assert_http_error(404, self.client.policies.remove_acl_template, UNKNOWN_UUID, '#')
 
         self.client.policies.remove_acl_template(policy['uuid'], 'ctid-ng.#')
 
         response = self.client.policies.get(policy['uuid'])
         assert_that(response, has_entries({
-            'uuid': equal_to(policy['uuid']),
-            'name': equal_to(name),
-            'description': equal_to(description),
-            'acl_templates': contains_inanyorder(*acl_templates[:-1])}))
+            'acl_templates': contains_inanyorder('dird.me.#')}))
