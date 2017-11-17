@@ -28,10 +28,6 @@ UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
 
 class TestUsers(MockBackendTestCase):
 
-    def tearDown(self):
-        for user in self.client.users.list()['items']:
-            self.client.users.delete(user['uuid'])
-
     @fixtures.http_user()
     def test_delete(self, user):
         assert_http_error(404, self.client.users.delete, UNKNOWN_UUID)
