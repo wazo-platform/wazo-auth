@@ -22,6 +22,8 @@ from .helpers.base import (
 )
 from .helpers import fixtures
 
+UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
+
 
 class TestPolicies(MockBackendTestCase):
 
@@ -81,17 +83,13 @@ class TestPolicies(MockBackendTestCase):
             'total': equal_to(3),
             'items': contains(three)}))
 
-    def test_get_policy(self):
-        name, description, acl_templates = 'foobar', 'a test policy', ['dird.me.#', 'ctid-ng.#']
-        policy = self.client.policies.new(name, description, acl_templates)
-
+    @fixtures.http_policy(name='foobar', description='a test policy',
+                          acl_templates=['dird.me.#', 'ctid-ng.#'])
+    def test_get(self, policy):
         response = self.client.policies.get(policy['uuid'])
         assert_that(response, equal_to(policy))
 
-        unknown_uuid = str(uuid.uuid4())
-        assert_that(
-            calling(self.client.policies.get).with_args(unknown_uuid),
-            raises(requests.HTTPError))
+        assert_http_error(404, self.client.policies.get, UNKNOWN_UUID)
 
     def test_delete_policy(self):
         unknown_uuid = str(uuid.uuid4())
