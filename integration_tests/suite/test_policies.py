@@ -98,14 +98,10 @@ class TestPolicies(MockBackendTestCase):
         assert_no_error(self.client.policies.delete, policy['uuid'])
         assert_http_error(404, self.client.policies.delete, policy['uuid'])
 
-    def test_edit_policy(self):
-        unknown_uuid = str(uuid.uuid4())
-        assert_that(
-            calling(self.client.policies.edit).with_args(unknown_uuid, 'foobaz'),
-            raises(requests.HTTPError))
-
-        name, description, acl_templates = 'foobar', 'a test policy', ['dird.me.#', 'ctid-ng.#']
-        policy = self.client.policies.new(name, description, acl_templates)
+    @fixtures.http_policy(name='foobar', description='a test policy',
+                          acl_templates=['dird.me.#', 'ctid-ng.#'])
+    def test_put(self, policy):
+        assert_http_error(404, self.client.policies.edit, UNKNOWN_UUID, 'foobaz')
 
         response = self.client.policies.edit(policy['uuid'], 'foobaz')
         assert_that(response, has_entries({
