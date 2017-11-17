@@ -77,25 +77,19 @@ class TestUsers(MockBackendTestCase):
         result = self.client.users.list(limit=1, offset=1, order='username', direction='asc')
         check_list_result(result, 3, contains, 'baz')
 
-    def test_get(self):
-        username, email, password = 'foobar', 'foobar@example.com', 's3cr37'
-        user = self.client.users.new(username=username, email_address=email, password=password)
-
+    @fixtures.http_user(username='foo', email_address='foo@example.com')
+    def test_get(self, user):
         result = self.client.users.get(user['uuid'])
         assert_that(
             result,
             has_entries(
-                'uuid', uuid_(),
-                'username', username,
+                'uuid', user['uuid'],
+                'username', 'foo',
                 'emails', contains_inanyorder(
                     has_entries(
-                        'address', email,
+                        'address', 'foo@example.com',
                         'confirmed', False,
-                        'main', True,
-                    ),
-                ),
-            ),
-        )
+                        'main', True))))
 
     @fixtures.http_user(username='foo', password='bar')
     @fixtures.http_policy(name='two', acl_templates=['acl.one.{{ username }}', 'acl.two'])
