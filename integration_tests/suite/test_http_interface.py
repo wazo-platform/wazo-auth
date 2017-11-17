@@ -11,25 +11,19 @@ from datetime import datetime, timedelta
 
 import requests
 from hamcrest import assert_that
-from hamcrest import calling
 from hamcrest import contains_inanyorder
 from hamcrest import contains_string
 from hamcrest import equal_to
-from hamcrest import has_entries
-from hamcrest import has_items
 from hamcrest import has_key
 from hamcrest import has_length
 from hamcrest import is_
 
-from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from xivo_test_helpers import until
 from wazo_auth import database, exceptions
 from .helpers.base import (
-    assert_http_error,
     BaseTestCase,
     MockBackendTestCase,
 )
-from .helpers import fixtures
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)
@@ -39,24 +33,6 @@ ISO_DATETIME = '%Y-%m-%dT%H:%M:%S.%f'
 
 def _new_token_id():
     return uuid.uuid4()
-
-
-class TestWazoUserBackend(MockBackendTestCase):
-
-    @fixtures.http_user(username='foobar', email_address='foobar@example.com', password='s3cr37')
-    def test_token_creation(self, user):
-        response = self._post_token(user['username'], 's3cr37', backend='wazo_user')
-        assert_that(
-            response,
-            has_entries(
-                'token', uuid_(),
-                'auth_id', user['uuid'],
-                'acls', has_items(
-                    'confd.#',
-                    'plugind.#')))
-
-        assert_http_error(401, self._post_token, user['username'], 'not-our-password', backend='wazo_user')
-        assert_http_error(401, self._post_token, 'not-foobar', 's3cr37', backend='wazo_user')
 
 
 class TestCoreMockBackend(MockBackendTestCase):
