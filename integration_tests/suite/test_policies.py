@@ -2,11 +2,8 @@
 # Copyright 2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-import uuid
-import requests
 from hamcrest import (
     assert_that,
-    calling,
     contains,
     contains_inanyorder,
     empty,
@@ -14,7 +11,6 @@ from hamcrest import (
     has_entries,
     none,
 )
-from xivo_test_helpers.hamcrest.raises import raises
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers.base import (
     assert_no_error,
