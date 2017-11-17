@@ -42,20 +42,19 @@ class TestUsers(MockBackendTestCase):
         username, email, password = 'foobar', 'foobar@example.com', 's3cr37'
         user = self.client.users.new(username=username, email_address=email, password=password)
 
-        assert_that(
-            user,
-            has_entries(
-                'uuid', uuid_(),
-                'username', username,
-                'emails', contains_inanyorder(
-                    has_entries(
-                        'address', 'foobar@example.com',
-                        'main', True,
-                        'confirmed', False,
-                    ),
-                ),
-            ),
-        )
+        try:
+            assert_that(
+                user,
+                has_entries(
+                    'uuid', uuid_(),
+                    'username', username,
+                    'emails', contains_inanyorder(
+                        has_entries(
+                            'address', 'foobar@example.com',
+                            'main', True,
+                            'confirmed', False))))
+        finally:
+            self.client.users.delete(user['uuid'])
 
     def test_list(self):
         foo = ('foo', 'foo@example.com', 's3cr37')
