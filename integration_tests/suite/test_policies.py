@@ -17,6 +17,7 @@ from hamcrest import (
 from xivo_test_helpers.hamcrest.raises import raises
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers.base import (
+    assert_no_error,
     assert_http_error,
     MockBackendTestCase,
 )
@@ -91,19 +92,11 @@ class TestPolicies(MockBackendTestCase):
 
         assert_http_error(404, self.client.policies.get, UNKNOWN_UUID)
 
-    def test_delete_policy(self):
-        unknown_uuid = str(uuid.uuid4())
-        assert_that(
-            calling(self.client.policies.delete).with_args(unknown_uuid),
-            raises(requests.HTTPError))
-
-        name, description, acl_templates = 'foobar', 'a test policy', ['dird.me.#', 'ctid-ng.#']
-        policy = self.client.policies.new(name, description, acl_templates)
-
-        self.client.policies.delete(policy['uuid'])
-        assert_that(
-            calling(self.client.policies.delete).with_args(policy['uuid']),
-            raises(requests.HTTPError))
+    @fixtures.http_policy()
+    def test_delete(self, policy):
+        assert_http_error(404, self.client.policies.delete, UNKNOWN_UUID)
+        assert_no_error(self.client.policies.delete, policy['uuid'])
+        assert_http_error(404, self.client.policies.delete, policy['uuid'])
 
     def test_edit_policy(self):
         unknown_uuid = str(uuid.uuid4())
