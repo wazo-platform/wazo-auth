@@ -16,7 +16,11 @@ from hamcrest import (
 )
 from xivo_test_helpers.hamcrest.raises import raises
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
-from .helpers.base import MockBackendTestCase
+from .helpers.base import (
+    assert_http_error,
+    MockBackendTestCase,
+)
+from .helpers import fixtures
 
 
 class TestPolicies(MockBackendTestCase):
@@ -25,26 +29,23 @@ class TestPolicies(MockBackendTestCase):
         for policy in self.client.policies.list()['items']:
             self.client.policies.delete(policy['uuid'])
 
-    def test_policies_creation(self):
-        name, description, acl_templates = 'foobar', 'a test policy', ['dird.me.#', 'ctid-ng.#']
-        response = self.client.policies.new(name, description, acl_templates)
-        assert_that(response, has_entries({
+    @fixtures.http_policy(name='foobaz')
+    @fixtures.http_policy(name='foobar', description='a test policy',
+                          acl_templates=['dird.me.#', 'ctid-ng.#'])
+    def test_post(self, foobar, foobaz):
+        assert_that(foobar, has_entries({
             'uuid': uuid_(),
-            'name': equal_to(name),
-            'description': equal_to(description),
-            'acl_templates': contains_inanyorder(*acl_templates)}))
+            'name': equal_to('foobar'),
+            'description': equal_to('a test policy'),
+            'acl_templates': contains_inanyorder('dird.me.#', 'ctid-ng.#')}))
 
-        name = 'foobaz'
-        response = self.client.policies.new(name)
-        assert_that(response, has_entries({
+        assert_that(foobaz, has_entries({
             'uuid': uuid_(),
-            'name': equal_to(name),
+            'name': equal_to('foobaz'),
             'description': none(),
             'acl_templates': empty()}))
 
-        assert_that(
-            calling(self.client.policies.new).with_args(''),
-            raises(requests.HTTPError))
+        assert_http_error(400, self.client.policies.new, '')
 
     def test_list_policies(self):
         one = self.client.policies.new('one')
