@@ -47,11 +47,10 @@ class TestPolicies(MockBackendTestCase):
 
         assert_http_error(400, self.client.policies.new, '')
 
-    def test_list_policies(self):
-        one = self.client.policies.new('one')
-        two = self.client.policies.new('two')
-        three = self.client.policies.new('three')
-
+    @fixtures.http_policy(name='one')
+    @fixtures.http_policy(name='two')
+    @fixtures.http_policy(name='three')
+    def test_list(self, three, two, one):
         response = self.client.policies.list(search='foobar')
         assert_that(response, has_entries({
             'total': equal_to(0),
