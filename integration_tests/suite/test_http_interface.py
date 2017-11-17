@@ -19,14 +19,17 @@ from hamcrest import has_entries
 from hamcrest import has_items
 from hamcrest import has_key
 from hamcrest import has_length
-from hamcrest import has_properties
 from hamcrest import is_
-from xivo_test_helpers.hamcrest.raises import raises
 
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from xivo_test_helpers import until
 from wazo_auth import database, exceptions
-from .helpers.base import BaseTestCase, MockBackendTestCase
+from .helpers.base import (
+    assert_http_error,
+    BaseTestCase,
+    MockBackendTestCase,
+)
+from .helpers import fixtures
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)
@@ -40,15 +43,9 @@ def _new_token_id():
 
 class TestWazoUserBackend(MockBackendTestCase):
 
-    def tearDown(self):
-        for user in self.client.users.list()['items']:
-            self.client.users.delete(user['uuid'])
-
-    def test_token_creation(self):
-        username, email, password = 'foobar', 'foobar@example.com', 's3cr37'
-        user = self.client.users.new(username=username, email_address=email, password=password)
-
-        response = self._post_token(username, password, backend='wazo_user')
+    @fixtures.http_user(username='foobar', email_address='foobar@example.com', password='s3cr37')
+    def test_token_creation(self, user):
+        response = self._post_token(user['username'], 's3cr37', backend='wazo_user')
         assert_that(
             response,
             has_entries(
@@ -56,24 +53,10 @@ class TestWazoUserBackend(MockBackendTestCase):
                 'auth_id', user['uuid'],
                 'acls', has_items(
                     'confd.#',
-                    'plugind.#',
-                ),
-            ),
-        )
+                    'plugind.#')))
 
-        assert_that(
-            calling(self._post_token).with_args(username, 'not-our-password', backend='wazo_user'),
-            raises(requests.HTTPError).matching(
-                has_properties('response', has_properties('status_code', 401)),
-            ),
-        )
-
-        assert_that(
-            calling(self._post_token).with_args('not-our-user', password, backend='wazo_user'),
-            raises(requests.HTTPError).matching(
-                has_properties('response', has_properties('status_code', 401)),
-            ),
-        )
+        assert_http_error(401, self._post_token, user['username'], 'not-our-password', backend='wazo_user')
+        assert_http_error(401, self._post_token, 'not-foobar', 's3cr37', backend='wazo_user')
 
 
 class TestCoreMockBackend(MockBackendTestCase):
