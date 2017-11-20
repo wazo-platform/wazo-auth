@@ -20,6 +20,7 @@ from .models import (
     Token as TokenModel,
     User,
     UserEmail,
+    UserGroup,
     UserPolicy,
 )
 from .exceptions import (
@@ -126,6 +127,25 @@ class _GroupDAO(_PaginatorMixin, _BaseDAO):
         name=Group.name,
         uuid=Group.uuid,
     )
+
+    def add_user(self, group_uuid, user_uuid):
+        user_group = UserGroup(user_uuid=str(user_uuid), group_uuid=str(group_uuid))
+        with self.new_session() as s:
+            s.add(user_group)
+            try:
+                s.commit()
+            except exc.IntegrityError as e:
+                if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                    # This association already exists.
+                    s.rollback()
+                    return
+                if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
+                    constraint = e.orig.diag.constraint_name
+                    if constraint == 'auth_user_group_group_uuid_fkey':
+                        raise UnknownGroupException(group_uuid)
+                    elif constraint == 'auth_user_group_user_uuid_fkey':
+                        raise UnknownUserException(user_uuid)
+                raise
 
     def count(self, **kwargs):
         filtered = kwargs.get('filtered')
@@ -557,7 +577,8 @@ class _UserDAO(_PaginatorMixin, _BaseDAO):
     )
 
     @staticmethod
-    def _new_strict_filter(uuid=None, username=None, email_address=None, tenant_uuid=None, **ignored):
+    def _new_strict_filter(uuid=None, username=None, email_address=None, tenant_uuid=None,
+                           group_uuid=None, **ignored):
         filter_ = text('true')
         if uuid:
             filter_ = and_(filter_, User.uuid == str(uuid))
@@ -567,6 +588,8 @@ class _UserDAO(_PaginatorMixin, _BaseDAO):
             filter_ = and_(filter_, Email.address == email_address)
         if tenant_uuid:
             filter_ = and_(filter_, TenantUser.tenant_uuid == str(tenant_uuid))
+        if group_uuid:
+            filter_ = and_(filter_, UserGroup.group_uuid == str(group_uuid))
         return filter_
 
     def add_policy(self, user_uuid, policy_uuid):

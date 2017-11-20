@@ -101,6 +101,14 @@ class UserEmail(Base):
     main = Column(Boolean, nullable=False, default=False)
 
 
+class UserGroup(Base):
+
+    __tablename__ = 'auth_user_group'
+
+    user_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='CASCADE'), primary_key=True)
+    group_uuid = Column(String(38), ForeignKey('auth_group.uuid', ondelete='CASCADE'), primary_key=True)
+
+
 class UserPolicy(Base):
 
     __tablename__ = 'auth_user_policy'
