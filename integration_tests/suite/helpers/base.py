@@ -12,6 +12,7 @@ from xivo_auth_client import Client
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 
 HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
+UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
 
 
 class BaseTestCase(AssetLaunchingTestCase):
