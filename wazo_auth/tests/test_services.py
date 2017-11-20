@@ -11,24 +11,13 @@ from unittest import TestCase
 from .. import services, database
 
 
-class TestPolicyService(TestCase):
-
-    def setUp(self):
-        self.storage = Mock(database.Storage)
-        self.service = services.PolicyService(self.storage)
-
-    def test_delete(self):
-        self.service.delete(s.policy_uuid)
-
-        self.storage.delete_policy.assert_called_once_with(s.policy_uuid)
-
-
 class TestUserService(TestCase):
 
     def setUp(self):
         self.encrypter = Mock(services.PasswordEncrypter)
-        self.storage = Mock(database.Storage)
-        self.service = services.UserService(self.storage, encrypter=self.encrypter)
+        self.user_dao = Mock(database._UserDAO)
+        dao = database.DAO(Mock(), Mock(), self.user_dao, Mock(), Mock())
+        self.service = services.UserService(dao, encrypter=self.encrypter)
 
     def test_that_new(self):
         params = dict(
@@ -46,5 +35,5 @@ class TestUserService(TestCase):
 
         result = self.service.new_user(**params)
 
-        self.storage.user_create.assert_called_once_with(**expected_db_params)
-        assert_that(result, equal_to(self.storage.user_create.return_value))
+        self.user_dao.create.assert_called_once_with(**expected_db_params)
+        assert_that(result, equal_to(self.user_dao.create.return_value))

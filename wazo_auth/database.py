@@ -4,7 +4,6 @@
 #
 # SPDX-License-Identifier: GPL-3.0+
 
-import uuid
 import time
 import logging
 from collections import OrderedDict
@@ -25,10 +24,8 @@ from .models import (
     UserEmail,
     UserPolicy,
 )
-from .token import Token
 from .exceptions import (
     ConflictException,
-    DuplicateGroupException,
     DuplicatePolicyException,
     DuplicateTemplateException,
     InvalidLimitException,
@@ -65,176 +62,26 @@ class SearchFilter(object):
         return or_(column.ilike(pattern) for column in self._columns)
 
 
-class Storage(object):
+class DAO(object):
 
-    def __init__(self, policy_crud, token_crud, user_crud, tenant_crud, group_crud):
-        self._policy_crud = policy_crud
-        self._token_crud = token_crud
-        self._user_crud = user_crud
-        self._tenant_crud = tenant_crud
-        self._group_crud = group_crud
-
-    def add_policy_acl_template(self, policy_uuid, acl_template):
-        self._policy_crud.associate_policy_template(policy_uuid, acl_template)
-
-    def count_policies(self, search):
-        return self._policy_crud.count(search)
-
-    def delete_policy_acl_template(self, policy_uuid, acl_template):
-        self._policy_crud.dissociate_policy_template(policy_uuid, acl_template)
-
-    def get_policy(self, policy_uuid):
-        if self._is_uuid(policy_uuid):
-            for policy in self._policy_crud.get(uuid=policy_uuid):
-                return policy
-        raise UnknownPolicyException()
-
-    def get_policy_by_name(self, policy_name):
-        for policy in self._policy_crud.get(search=policy_name):
-            if policy['name'] == policy_name:
-                return policy
-        raise UnknownPolicyException()
-
-    def get_token(self, token_id):
-        token_data = self._token_crud.get(token_id)
-        if not token_data:
-            raise UnknownTokenException()
-
-        id_ = token_data.pop('uuid')
-        return Token(id_, **token_data)
-
-    def create_policy(self, name, description, acl_templates):
-        return self._policy_crud.create(name, description, acl_templates)
-
-    def create_token(self, token_payload):
-        token_data = token_payload.__dict__
-        token_uuid = self._token_crud.create(token_data)
-        return Token(token_uuid, **token_data)
-
-    def delete_policy(self, policy_uuid):
-        self._policy_crud.delete(policy_uuid)
-
-    def group_count(self, **kwargs):
-        return self._group_crud.count(**kwargs)
-
-    def group_create(self, **kwargs):
-        group_uuid = self._group_crud.create(**kwargs)
-        return dict(uuid=group_uuid, **kwargs)
-
-    def group_delete(self, group_uuid):
-        return self._group_crud.delete(group_uuid)
-
-    def group_get(self, group_uuid):
-        groups = self._group_crud.list_(uuid=group_uuid, limit=1)
-        for group in groups:
-            return group
-        raise UnknownGroupException(group_uuid)
-
-    def group_list(self, **kwargs):
-        return self._group_crud.list_(**kwargs)
-
-    def group_update(self, group_uuid, **kwargs):
-        return self._group_crud.update(group_uuid, **kwargs)
-
-    def list_policies(self, **kwargs):
-        return self._policy_crud.get(**kwargs)
-
-    def update_policy(self, policy_uuid, name, description, acl_templates):
-        self._policy_crud.update(policy_uuid, name, description, acl_templates)
-
-    def tenant_add_user(self, tenant_uuid, user_uuid):
-        self._tenant_crud.add_user(tenant_uuid, user_uuid)
-
-    def tenant_count(self, **kwargs):
-        return self._tenant_crud.count(**kwargs)
-
-    def tenant_count_users(self, tenant_uuid, **kwargs):
-        return self._tenant_crud.count_users(tenant_uuid, **kwargs)
-
-    def tenant_create(self, name):
-        tenant_uuid = self._tenant_crud.create(name)
-        return dict(
-            uuid=tenant_uuid,
-            name=name,
-        )
-
-    def tenant_delete(self, tenant_uuid):
-        return self._tenant_crud.delete(tenant_uuid)
-
-    def tenant_list(self, **kwargs):
-        return self._tenant_crud.list_(**kwargs)
-
-    def tenant_remove_user(self, tenant_uuid, user_uuid):
-        self._tenant_crud.remove_user(tenant_uuid, user_uuid)
-
-    def user_add_policy(self, user_uuid, policy_uuid):
-        self._user_crud.add_policy(user_uuid, policy_uuid)
-
-    def user_remove_policy(self, user_uuid, policy_uuid):
-        self._user_crud.remove_policy(user_uuid, policy_uuid)
-
-    def user_count(self, **kwargs):
-        return self._user_crud.count(**kwargs)
-
-    def user_count_policies(self, user_uuid, **kwargs):
-        return self._user_crud.count_policies(user_uuid, **kwargs)
-
-    def user_count_tenants(self, user_uuid, **kwargs):
-        return self._user_crud.count_tenants(user_uuid, **kwargs)
-
-    def user_list_policies(self, user_uuid, **kwargs):
-        return self._policy_crud.get(user_uuid=user_uuid, **kwargs)
-
-    def user_list_tenants(self, user_uuid, **kwargs):
-        return self._tenant_crud.list_(user_uuid=user_uuid, **kwargs)
-
-    def user_delete(self, user_uuid):
-        self._user_crud.delete(user_uuid)
-
-    def user_create(self, username, email_address, hash_, salt):
-        user_uuid = self._user_crud.create(username, email_address, hash_, salt)
-        email = dict(
-            address=email_address,
-            confirmed=False,
-            main=True,
-        )
-        return dict(
-            uuid=user_uuid,
-            username=username,
-            emails=[email],
-        )
-
-    def user_get_credentials(self, username):
-        return self._user_crud.get_credentials(username)
-
-    def user_list(self, **kwargs):
-        return self._user_crud.list_(**kwargs)
-
-    def remove_token(self, token_id):
-        self._token_crud.delete(token_id)
-
-    def remove_expired_tokens(self):
-        self._token_crud.delete_expired_tokens()
-
-    @staticmethod
-    def _is_uuid(value):
-        try:
-            uuid.UUID(value)
-            return True
-        except (ValueError, TypeError):
-            return False
+    def __init__(self, policy_dao, token_dao, user_dao, tenant_dao, group_dao):
+        self.policy = policy_dao
+        self.token = token_dao
+        self.user = user_dao
+        self.tenant = tenant_dao
+        self.group = group_dao
 
     @classmethod
     def from_config(cls, config):
-        group_crud = _GroupCRUD(config['db_uri'])
-        policy_crud = _PolicyCRUD(config['db_uri'])
-        token_crud = _TokenCRUD(config['db_uri'])
-        user_crud = _UserCRUD(config['db_uri'])
-        tenant_crud = _TenantCRUD(config['db_uri'])
-        return cls(policy_crud, token_crud, user_crud, tenant_crud, group_crud)
+        group = _GroupDAO(config['db_uri'])
+        policy = _PolicyDAO(config['db_uri'])
+        token = _TokenDAO(config['db_uri'])
+        user = _UserDAO(config['db_uri'])
+        tenant = _TenantDAO(config['db_uri'])
+        return cls(policy, token, user, tenant, group)
 
 
-class _CRUD(object):
+class _BaseDAO(object):
 
     _UNIQUE_CONSTRAINT_CODE = '23505'
     _FKEY_CONSTRAINT_CODE = '23503'
@@ -271,7 +118,7 @@ class _PaginatorMixin(object):
         self._paginator = QueryPaginator(self.column_map)
 
 
-class _GroupCRUD(_PaginatorMixin, _CRUD):
+class _GroupDAO(_PaginatorMixin, _BaseDAO):
 
     constraint_to_column_map = dict(
         auth_group_name_key='name',
@@ -359,7 +206,7 @@ class _GroupCRUD(_PaginatorMixin, _CRUD):
         return filter_
 
 
-class _PolicyCRUD(_PaginatorMixin, _CRUD):
+class _PolicyDAO(_PaginatorMixin, _BaseDAO):
 
     search_filter = SearchFilter(Policy.name, Policy.description)
     column_map = dict(
@@ -371,7 +218,7 @@ class _PolicyCRUD(_PaginatorMixin, _CRUD):
     def associate_policy_template(self, policy_uuid, acl_template):
         with self.new_session() as s:
             if not self._policy_exists(s, policy_uuid):
-                raise UnknownPolicyException()
+                raise UnknownPolicyException(policy_uuid)
 
             self._associate_acl_templates(s, policy_uuid, [acl_template])
             try:
@@ -384,7 +231,7 @@ class _PolicyCRUD(_PaginatorMixin, _CRUD):
     def dissociate_policy_template(self, policy_uuid, acl_template):
         with self.new_session() as s:
             if not self._policy_exists(s, policy_uuid):
-                raise UnknownPolicyException()
+                raise UnknownPolicyException(policy_uuid)
 
             filter_ = ACLTemplate.template == acl_template
             templ_ids = [t.id_ for t in s.query(ACLTemplate.id_).filter(filter_).all()]
@@ -396,8 +243,8 @@ class _PolicyCRUD(_PaginatorMixin, _CRUD):
                 )
                 s.query(ACLTemplatePolicy).filter(filter_).delete()
 
-    def count(self, search_pattern):
-        filter_ = self.new_search_filter(search=search_pattern)
+    def count(self, search, **ignored):
+        filter_ = self.new_search_filter(search=search)
         with self.new_session() as s:
             return s.query(Policy).filter(filter_).count()
 
@@ -421,7 +268,7 @@ class _PolicyCRUD(_PaginatorMixin, _CRUD):
             nb_deleted = s.query(Policy).filter(filter_).delete()
 
         if not nb_deleted:
-            raise UnknownPolicyException()
+            raise UnknownPolicyException(policy_uuid)
 
     def get(self, **kwargs):
         strict_filter = self._new_strict_filter(**kwargs)
@@ -471,7 +318,7 @@ class _PolicyCRUD(_PaginatorMixin, _CRUD):
             body = {'name': name, 'description': description}
             affected_rows = s.query(Policy).filter(filter_).update(body)
             if not affected_rows:
-                raise UnknownPolicyException()
+                raise UnknownPolicyException(policy_uuid)
 
             try:
                 s.commit()
@@ -527,7 +374,7 @@ class _PolicyCRUD(_PaginatorMixin, _CRUD):
         return filter_
 
 
-class _TenantCRUD(_PaginatorMixin, _CRUD):
+class _TenantDAO(_PaginatorMixin, _BaseDAO):
 
     constraint_to_column_map = dict(
         auth_tenant_name_key='name',
@@ -571,8 +418,8 @@ class _TenantCRUD(_PaginatorMixin, _CRUD):
     def count_users(self, tenant_uuid, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:
-            strict_filter = _UserCRUD._new_strict_filter(**kwargs)
-            search_filter = _UserCRUD.new_search_filter(**kwargs)
+            strict_filter = _UserDAO._new_strict_filter(**kwargs)
+            search_filter = _UserDAO.new_search_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
             filter_ = text('true')
@@ -655,7 +502,7 @@ class _TenantCRUD(_PaginatorMixin, _CRUD):
         return filter_
 
 
-class _TokenCRUD(_CRUD):
+class _TokenDAO(_BaseDAO):
 
     def create(self, body):
         token = TokenModel(
@@ -700,7 +547,7 @@ class _TokenCRUD(_CRUD):
             s.query(TokenModel).filter(filter_).delete()
 
 
-class _UserCRUD(_PaginatorMixin, _CRUD):
+class _UserDAO(_PaginatorMixin, _BaseDAO):
 
     constraint_to_column_map = dict(
         auth_user_username_key='username',
@@ -774,8 +621,8 @@ class _UserCRUD(_PaginatorMixin, _CRUD):
     def count_policies(self, user_uuid, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:
-            strict_filter = _PolicyCRUD._new_strict_filter(**kwargs)
-            search_filter = _PolicyCRUD.new_search_filter(**kwargs)
+            strict_filter = _PolicyDAO._new_strict_filter(**kwargs)
+            search_filter = _PolicyDAO.new_search_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
             filter_ = text('true')
@@ -790,8 +637,8 @@ class _UserCRUD(_PaginatorMixin, _CRUD):
     def count_tenants(self, user_uuid, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:
-            strict_filter = _TenantCRUD._new_strict_filter(**kwargs)
-            search_filter = _TenantCRUD.new_search_filter(**kwargs)
+            strict_filter = _TenantDAO._new_strict_filter(**kwargs)
+            search_filter = _TenantDAO.new_search_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
             filter_ = text('true')
@@ -801,7 +648,7 @@ class _UserCRUD(_PaginatorMixin, _CRUD):
         with self.new_session() as s:
             return s.query(Tenant).join(TenantUser).filter(filter_).count()
 
-    def create(self, username, email_address, hash_, salt):
+    def create(self, username, email_address, hash_, salt, **ignored):
         with self.new_session() as s:
             try:
                 email = Email(
@@ -829,7 +676,12 @@ class _UserCRUD(_PaginatorMixin, _CRUD):
                     if column:
                         raise ConflictException('users', column, value)
                 raise
-            return user.uuid
+
+            return dict(
+                uuid=user.uuid,
+                username=username,
+                emails=[{'address': email_address, 'confirmed': False, 'main': True}],
+            )
 
     def delete(self, user_uuid):
         with self.new_session() as s:

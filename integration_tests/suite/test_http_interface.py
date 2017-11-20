@@ -371,9 +371,9 @@ class TestCoreMockBackend(MockBackendTestCase):
 
     def _is_token_in_the_db(self, token):
         db_uri = os.getenv('DB_URI', 'postgresql://asterisk:proformatique@localhost:{port}')
-        crud = database._TokenCRUD(db_uri.format(port=self.service_port(5432, 'postgres')))
+        dao = database._TokenDAO(db_uri.format(port=self.service_port(5432, 'postgres')))
         try:
-            crud.get(token)
+            dao.get(token)
             return True
         except exceptions.UnknownTokenException:
             return False

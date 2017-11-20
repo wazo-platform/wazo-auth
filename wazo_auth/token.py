@@ -16,7 +16,6 @@ from datetime import datetime
 
 from .exceptions import (
     MissingACLTokenException,
-    UnknownPolicyException,
     UnknownTokenException,
 )
 
@@ -124,8 +123,8 @@ class TokenPayload(object):
 
 class ExpiredTokenRemover(object):
 
-    def __init__(self, config, storage):
-        self._storage = storage
+    def __init__(self, config, dao):
+        self._dao = dao
         self._cleanup_interval = config['token_cleanup_interval']
         self._debug = config['debug']
 
@@ -135,7 +134,7 @@ class ExpiredTokenRemover(object):
 
     def _cleanup(self):
         try:
-            self._storage.remove_expired_tokens()
+            self._dao.token.delete_expired_tokens()
         except Exception:
             logger.warning('failed to remove expired tokens', exc_info=self._debug)
 
@@ -147,10 +146,10 @@ class ExpiredTokenRemover(object):
 
 class Manager(object):
 
-    def __init__(self, config, storage):
+    def __init__(self, config, dao):
         self._backend_policies = config.get('backend_policies', {})
         self._default_expiration = config['default_token_lifetime']
-        self._storage = storage
+        self._dao = dao
 
     def new_token(self, backend, login, args):
         auth_id, xivo_user_uuid = backend.get_ids(login, args)
@@ -159,23 +158,30 @@ class Manager(object):
         acls = backend.get_acls(login, args)
         expiration = args.get('expiration', self._default_expiration)
         t = time.time()
-        token_payload = TokenPayload(
+        token_payload = dict(
             auth_id=auth_id,
             xivo_user_uuid=xivo_user_uuid,
             xivo_uuid=xivo_uuid,
             expire_t=t + expiration,
             issued_t=t,
-            acls=acls)
+            acls=acls or [],
+        )
 
-        token = self._storage.create_token(token_payload)
+        token_uuid = self._dao.token.create(token_payload)
+        token = Token(token_uuid, **token_payload)
 
         return token
 
     def remove_token(self, token):
-        self._storage.remove_token(token)
+        self._dao.token.delete(token)
 
     def get(self, token_uuid, required_acl):
-        token = self._storage.get_token(token_uuid)
+        token_data = self._dao.token.get(token_uuid)
+        if not token_data:
+            raise UnknownTokenException()
+
+        id_ = token_data.pop('uuid')
+        token = Token(id_, **token_data)
 
         if token.is_expired():
             raise UnknownTokenException()
@@ -190,13 +196,12 @@ class Manager(object):
         if not policy_name:
             return []
 
-        try:
-            policy = self._storage.get_policy_by_name(policy_name)
-        except UnknownPolicyException:
-            logger.info('Unknown policy name "%s" configured for backend "%s"', policy_name, backend_name)
-            return []
+        matching_policies = self._dao.policy.get(name=policy_name, limit=1)
+        for policy in matching_policies:
+            return policy['acl_templates']
 
-        return policy['acl_templates']
+        logger.info('Unknown policy name "%s" configured for backend "%s"', policy_name, backend_name)
+        return []
 
     def _get_token_hash(self, token):
         return hashlib.sha256('{token}'.format(token=token)).hexdigest()

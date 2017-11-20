@@ -171,13 +171,6 @@ class ConflictException(APIException):
         super(ConflictException, self).__init__(409, 'Conflict detected', 'conflict', details, resource)
 
 
-class DuplicateGroupException(APIException):
-
-    def __init__(self, body):
-        msg = 'Group {} already exists'.format(body)
-        super(DuplicateGroupException, self).__init__(409, msg, 'duplicate_group', {}, 'groups')
-
-
 class DuplicatePolicyException(ManagerException):
 
     code = 409
@@ -206,8 +199,11 @@ class UnknownPolicyException(ManagerException):
 
     code = 404
 
+    def __init__(self, policy_uuid):
+        self._policy_uuid = policy_uuid
+
     def __str__(self):
-        return 'No such policy'
+        return 'No such policy "%s"'.format(self._policy_uuid)
 
 
 class UnknownTokenException(ManagerException):

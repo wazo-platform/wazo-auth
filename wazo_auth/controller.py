@@ -53,12 +53,12 @@ class Controller(object):
             logger.error('Missing configuration to start the application: %s', e)
             sys.exit(1)
 
-        storage = database.Storage.from_config(self._config)
-        self._token_manager = token.Manager(config, storage)
-        group_service = services.GroupService(storage)
-        policy_service = services.PolicyService(storage)
-        self._user_service = services.UserService(storage)
-        self._tenant_service = services.TenantService(storage)
+        dao = database.DAO.from_config(self._config)
+        self._token_manager = token.Manager(config, dao)
+        group_service = services.GroupService(dao)
+        policy_service = services.PolicyService(dao)
+        self._user_service = services.UserService(dao)
+        self._tenant_service = services.TenantService(dao)
         self._backends = plugin_helpers.load(
             'wazo_auth.backends',
             self._config['enabled_backend_plugins'],
@@ -75,7 +75,7 @@ class Controller(object):
             'tenant_service': self._tenant_service,
         }
         self._flask_app = http.new_app(dependencies)
-        self._expired_token_remover = token.ExpiredTokenRemover(config, storage)
+        self._expired_token_remover = token.ExpiredTokenRemover(config, dao)
 
     def run(self):
         signal.signal(signal.SIGTERM, _signal_handler)
