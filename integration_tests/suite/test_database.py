@@ -168,6 +168,36 @@ class TestGroupDAO(_BaseDAOTestCase):
         expected = build_list_matcher('baz', 'foo')
         assert_that(result, contains(*expected))
 
+    @fixtures.group()
+    @fixtures.user()
+    def test_remove_user(self, user_uuid, group_uuid):
+        assert_that(
+            calling(self._group_dao.remove_user).with_args(group_uuid, user_uuid),
+            any_of(
+                raises(exceptions.UnknownGroupException),
+                raises(exceptions.UnknownUserException),
+            ),
+            'unknown group and user',
+        )
+
+        assert_that(
+            calling(self._group_dao.remove_user).with_args(self.unknown_uuid, user_uuid),
+            raises(exceptions.UnknownGroupException),
+            'unknown group',
+        )
+
+        assert_that(
+            calling(self._group_dao.remove_user).with_args(group_uuid, self.unknown_uuid),
+            raises(exceptions.UnknownUserException),
+            'unknown user'
+        )
+
+        self._group_dao.add_user(group_uuid, user_uuid)
+
+        assert_that(
+            calling(self._group_dao.remove_user).with_args(group_uuid, user_uuid),
+            not_(raises(Exception)))
+
 
 class TestPolicyDAO(_BaseDAOTestCase):
 

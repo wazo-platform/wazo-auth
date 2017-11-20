@@ -214,6 +214,20 @@ class _GroupDAO(_PaginatorMixin, _BaseDAO):
 
         return dict(uuid=str(group_uuid), **body)
 
+    def remove_user(self, group_uuid, user_uuid):
+        filter_ = and_(
+            UserGroup.user_uuid == str(user_uuid),
+            UserGroup.group_uuid == str(group_uuid),
+        )
+        with self.new_session() as s:
+            nb_deleted = s.query(UserGroup).filter(filter_).delete()
+
+        if not nb_deleted:
+            if not self.list_(uuid=group_uuid):
+                raise UnknownGroupException(group_uuid)
+            else:
+                raise UnknownUserException(user_uuid)
+
     @staticmethod
     def _new_strict_filter(uuid=None, name=None, **ignored):
         filter_ = text('true')
