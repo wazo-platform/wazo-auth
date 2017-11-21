@@ -159,6 +159,20 @@ class _GroupDAO(_PaginatorMixin, _BaseDAO):
         with self.new_session() as s:
             return s.query(Group).filter(filter_).count()
 
+    def count_users(self, group_uuid, **kwargs):
+        filtered = kwargs.get('filtered')
+        if filtered is not False:
+            strict_filter = _UserDAO._new_strict_filter(**kwargs)
+            search_filter = _UserDAO.new_search_filter(**kwargs)
+            filter_ = and_(strict_filter, search_filter)
+        else:
+            filter_ = text('true')
+
+        filter_ = and_(filter_, UserGroup.group_uuid == str(group_uuid))
+
+        with self.new_session() as s:
+            return s.query(UserGroup).join(User).join(UserEmail).join(Email).filter(filter_).count()
+
     def create(self, name, **ignored):
         group = Group(name=name)
         with self.new_session() as s:
@@ -190,7 +204,7 @@ class _GroupDAO(_PaginatorMixin, _BaseDAO):
             query = s.query(
                 Group.uuid,
                 Group.name,
-            ).filter(filter_)
+            ).outerjoin(UserGroup).filter(filter_)
             query = self._paginator.update_query(query, **kwargs)
 
             return [{'uuid': uuid, 'name': name} for uuid, name in query.all()]
@@ -229,12 +243,14 @@ class _GroupDAO(_PaginatorMixin, _BaseDAO):
                 raise UnknownUserException(user_uuid)
 
     @staticmethod
-    def _new_strict_filter(uuid=None, name=None, **ignored):
+    def _new_strict_filter(uuid=None, name=None, user_uuid=None, **ignored):
         filter_ = text('true')
         if uuid:
             filter_ = and_(filter_, Group.uuid == str(uuid))
         if name:
             filter_ = and_(filter_, Group.name == name)
+        if user_uuid:
+            filter_ = and_(filter_, UserGroup.user_uuid == str(user_uuid))
         return filter_
 
 
@@ -653,6 +669,20 @@ class _UserDAO(_PaginatorMixin, _BaseDAO):
                 Email, Email.uuid == UserEmail.email_uuid
             ).filter(filter_).count()
 
+    def count_groups(self, user_uuid, **kwargs):
+        filtered = kwargs.get('filtered')
+        if filtered is not False:
+            strict_filter = _GroupDAO._new_strict_filter(**kwargs)
+            search_filter = _GroupDAO.new_search_filter(**kwargs)
+            filter_ = and_(strict_filter, search_filter)
+        else:
+            filter_ = text('true')
+
+        filter_ = and_(filter_, UserGroup.user_uuid == str(user_uuid))
+
+        with self.new_session() as s:
+            return s.query(Group).join(UserGroup).filter(filter_).count()
+
     def count_policies(self, user_uuid, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:
@@ -761,9 +791,7 @@ class _UserDAO(_PaginatorMixin, _BaseDAO):
                 UserEmail, User.uuid == UserEmail.user_uuid,
             ).join(
                 Email, Email.uuid == UserEmail.email_uuid,
-            ).outerjoin(
-                TenantUser,
-            ).filter(filter_)
+            ).outerjoin(TenantUser).outerjoin(UserGroup).filter(filter_)
             query = self._paginator.update_query(query, **kwargs)
             rows = query.all()
 

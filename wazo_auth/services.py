@@ -17,8 +17,14 @@ class GroupService(object):
     def __init__(self, dao):
         self._dao = dao
 
+    def add_user(self, group_uuid, user_uuid):
+        return self._dao.group.add_user(group_uuid, user_uuid)
+
     def count(self, **kwargs):
         return self._dao.group.count(**kwargs)
+
+    def count_users(self, tenant_uuid, **kwargs):
+        return self._dao.group.count_users(tenant_uuid, **kwargs)
 
     def create(self, **kwargs):
         uuid = self._dao.group.create(**kwargs)
@@ -35,6 +41,12 @@ class GroupService(object):
 
     def list_(self, **kwargs):
         return self._dao.group.list_(**kwargs)
+
+    def list_users(self, group_uuid, **kwargs):
+        return self._dao.user.list_(group_uuid=group_uuid, **kwargs)
+
+    def remove_user(self, group_uuid, user_uuid):
+        return self._dao.group.remove_user(group_uuid, user_uuid)
 
     def update(self, group_uuid, **kwargs):
         return self._dao.group.update(group_uuid, **kwargs)
@@ -120,6 +132,9 @@ class UserService(object):
     def add_policy(self, user_uuid, policy_uuid):
         self._dao.user.add_policy(user_uuid, policy_uuid)
 
+    def count_groups(self, user_uuid, **kwargs):
+        return self._dao.user.count_groups(user_uuid, **kwargs)
+
     def count_policies(self, user_uuid, **kwargs):
         return self._dao.user.count_policies(user_uuid, **kwargs)
 
@@ -146,6 +161,9 @@ class UserService(object):
         for user in users:
             return user
         raise exceptions.UnknownUserException(user_uuid)
+
+    def list_groups(self, user_uuid, **kwargs):
+        return self._dao.group.list_(user_uuid=user_uuid, **kwargs)
 
     def list_policies(self, user_uuid, **kwargs):
         return self._dao.policy.get(user_uuid=user_uuid, **kwargs)
