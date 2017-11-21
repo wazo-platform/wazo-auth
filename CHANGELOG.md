@@ -1,6 +1,17 @@
 Changelog
 =========
 
+17.17
+-----
+
+* A new resource has been added to assign a User to a Group
+
+  * PUT `0.1/groups/<group_uuid>/users/<user_uuid>`
+  * DELETE `0.1/groups/<group_uuid>/users/<user_uuid>`
+  * GET `0.1/groups/<group_uuid>/users`
+  * GET `0.1/users/<user_uuid>/groups`
+
+
 17.16
 -----
 
