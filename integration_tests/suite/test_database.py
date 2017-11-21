@@ -729,7 +729,7 @@ class TestUserDAO(_BaseDAOTestCase):
 
     @fixtures.user(username='foo')
     @fixtures.user(email_address='foobar@example.com')
-    @fixtures.user()
+    @fixtures.user(username='bar', email_address='bar@example.com')
     def test_user_count_no_search_term_strict_filter(self, a, b, c):
         result = self._user_dao.count(username='foo')
         assert_that(result, equal_to(1))
@@ -742,21 +742,21 @@ class TestUserDAO(_BaseDAOTestCase):
 
     @fixtures.user(username='foo')
     @fixtures.user(email_address='foobar@example.com')
-    @fixtures.user()
+    @fixtures.user(username='bar', email_address='bar@example.com')
     def test_user_count_search_term(self, a, b, c):
         result = self._user_dao.count(search='foo')
         assert_that(result, equal_to(2))
 
     @fixtures.user(username='foo')
     @fixtures.user(email_address='foobar@example.com')
-    @fixtures.user()
+    @fixtures.user(username='bar', email_address='bar@example.com')
     def test_user_count_mixed_strict_and_search(self, a, b, c):
         result = self._user_dao.count(search='foo', uuid=a)
         assert_that(result, equal_to(0))
 
     @fixtures.user(username='foo')
     @fixtures.user(email_address='foobar@example.com')
-    @fixtures.user()
+    @fixtures.user(username='bar', email_address='bar@example.com')
     def test_user_count_unfiltered(self, a, b, c):
         result = self._user_dao.count(search='foo', filtered=False)
         assert_that(result, equal_to(3))
