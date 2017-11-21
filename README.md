@@ -125,3 +125,7 @@ To add a new ACL migration script use the following command from the root of the
 
    % ./alembic_revision.sh -a "<description of the revision>"
 
+Available ACL policies are:
+
+* `wazo_default_admin_policy`
+* `wazo_default_user_policy`
