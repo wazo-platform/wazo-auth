@@ -7,7 +7,9 @@ from hamcrest import (
     contains,
     contains_inanyorder,
     has_entries,
+    has_items,
 )
+from xivo_auth_client import Client
 from .helpers import base, fixtures
 
 
@@ -155,3 +157,27 @@ class TestUserGroupAssociation(base.MockBackendTestCase):
             'items', contains(
                 has_entries('username', 'foo'),
                 has_entries('username', 'baz'))))
+
+    @fixtures.http_user(username='foo', password='bar')
+    @fixtures.http_group(name='two')
+    @fixtures.http_group(name='one')
+    @fixtures.http_policy(name='main', acl_templates=[
+        '{% for group in groups %}\nmain.{{ group.name }}.*\n{% endfor %}',
+        '{% for group in groups %}\nmain.{{ group.uuid }}\n{% endfor %}',
+    ])
+    def test_generated_acl(self, policy, group_1, group_2, user):
+        self.client.groups.add_user(group_1['uuid'], user['uuid'])
+        self.client.groups.add_user(group_2['uuid'], user['uuid'])
+        self.client.users.add_policy(user['uuid'], policy['uuid'])
+
+        user_client = Client(self.get_host(), port=self.service_port(9497, 'auth'),
+                             verify_certificate=False, username='foo', password='bar')
+
+        expected_acls = [
+            'main.one.*',
+            'main.two.*',
+            'main.{}'.format(group_1['uuid']),
+            'main.{}'.format(group_2['uuid']),
+        ]
+        token_data = user_client.token.new('wazo_user', expiration=5)
+        assert_that(token_data, has_entries('acls', has_items(*expected_acls)))
