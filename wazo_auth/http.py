@@ -9,7 +9,6 @@ import time
 from flask import current_app, Flask, request, make_response
 from flask_cors import CORS
 from flask_restful import Api, Resource
-from stevedore.named import NamedExtensionManager
 from xivo.rest_api_helpers import handle_api_exception
 from pkg_resources import resource_string
 from xivo import http_helpers, plugin_helpers
