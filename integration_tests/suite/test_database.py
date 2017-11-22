@@ -555,12 +555,6 @@ class TestUserDAO(_BaseDAOTestCase):
 
     salt = os.urandom(64)
 
-    def setUp(self):
-        super(TestUserDAO, self).setUp()
-        with self._user_dao.new_session() as s:
-            s.query(database.User).delete()
-            s.query(database.Email).delete()
-
     @fixtures.policy()
     @fixtures.user()
     def test_user_policy_association(self, user_uuid, policy_uuid):
@@ -658,42 +652,43 @@ class TestUserDAO(_BaseDAOTestCase):
 
         user_uuid = self._user_dao.create(username, email_address, hash_, self.salt)['uuid']
 
-        assert_that(user_uuid, equal_to(ANY_UUID))
-        with self._user_dao.new_session() as s:
-            user = s.query(database.User).filter(database.User.uuid == user_uuid).first()
-            assert_that(
-                user,
-                has_properties(
-                    'username', username,
-                    'password_hash', hash_,
-                    'password_salt', self.salt,
+        try:
+            assert_that(user_uuid, equal_to(ANY_UUID))
+            with self._user_dao.new_session() as s:
+                user = s.query(database.User).filter(database.User.uuid == user_uuid).first()
+                assert_that(
+                    user,
+                    has_properties(
+                        'username', username,
+                        'password_hash', hash_,
+                        'password_salt', self.salt,
+                    )
                 )
-            )
 
-            email = s.query(
-                database.Email
-            ).join(
-                database.UserEmail, database.Email.uuid == database.UserEmail.email_uuid,
-            ).join(
-                database.User, database.User.uuid == database.UserEmail.user_uuid,
-            ).filter(
-                database.User.uuid == user.uuid,
-                database.UserEmail.main == True,
-            ).first()
-            assert_that(
-                email,
-                has_properties(
-                    'address', email_address,
-                    'confirmed', False,
+                email = s.query(
+                    database.Email
+                ).join(
+                    database.UserEmail, database.Email.uuid == database.UserEmail.email_uuid,
+                ).join(
+                    database.User, database.User.uuid == database.UserEmail.user_uuid,
+                ).filter(
+                    database.User.uuid == user.uuid,
+                    database.UserEmail.main == True,
+                ).first()
+                assert_that(
+                    email,
+                    has_properties(
+                        'address', email_address,
+                        'confirmed', False,
+                    )
                 )
-            )
+        finally:
+            self._user_dao.delete(user_uuid)
 
-    def test_that_the_username_is_unique(self):
-        username = 'foobar'
-
-        self._user_dao.create(username, 'foobar@example.com', 'hash_one', self.salt)
+    @fixtures.user(username='foobar')
+    def test_that_the_username_is_unique(self, user_uuid):
         assert_that(
-            calling(self._user_dao.create).with_args(username, 'foobar@wazo.community', 'hash_two', self.salt),
+            calling(self._user_dao.create).with_args('foobar', 'foo@bar', 'hash_two', self.salt),
             raises(
                 exceptions.ConflictException,
                 has_properties(
@@ -704,12 +699,10 @@ class TestUserDAO(_BaseDAOTestCase):
             ),
         )
 
-    def test_that_the_email_is_unique(self):
-        email = 'foobar@example.com'
-
-        self._user_dao.create('foo', email, 'hash_one', self.salt)
+    @fixtures.user(email_address='foobar@example.com')
+    def test_that_the_email_is_unique(self, user_uuid):
         assert_that(
-            calling(self._user_dao.create).with_args('bar', email, 'hash_two', self.salt),
+            calling(self._user_dao.create).with_args('bar', 'foobar@example.com', 'hash_two', self.salt),
             raises(
                 exceptions.ConflictException,
                 has_properties(
