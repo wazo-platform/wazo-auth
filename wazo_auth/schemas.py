@@ -2,7 +2,7 @@
 # Copyright 2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from marshmallow import Schema, fields, pre_load
+from marshmallow import Schema, fields, pre_load, validates_schema
 from marshmallow.validate import Range
 from xivo.mallow import fields as xfields
 from xivo.mallow import validate
@@ -53,5 +53,10 @@ def new_list_schema(default_sort_column):
         limit = fields.Integer(validate=validate.Range(min=0), missing=None)
         offset = fields.Integer(validate=validate.Range(min=0), missing=0)
         search = fields.String(missing=None)
+
+        @validates_schema(pass_original=True)
+        def add_arbitrary_fields(self, data, original_data):
+            for key, value in original_data.iteritems():
+                data.setdefault(key, value)
 
     return ListSchema

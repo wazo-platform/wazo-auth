@@ -42,11 +42,6 @@ class Groups(_BaseGroupResource):
         if errors:
             raise exceptions.InvalidListParamException(errors)
 
-        for key, value in request.args.iteritems():
-            if key in list_params:
-                continue
-            list_params[key] = value
-
         groups = self.group_service.list_(**list_params)
         total = self.group_service.count(filtered=False, **list_params)
         filtered = self.group_service.count(filtered=True, **list_params)

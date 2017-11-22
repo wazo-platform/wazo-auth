@@ -40,11 +40,6 @@ class GroupUsers(_BaseResource):
         if errors:
             raise exceptions.InvalidListParamException(errors)
 
-        for key, value in request.args.iteritems():
-            if key in list_params:
-                continue
-            list_params[key] = value
-
         return {
             'items': self.group_service.list_users(group_uuid, **list_params),
             'total': self.group_service.count_users(group_uuid, filtered=False, **list_params),
@@ -63,11 +58,6 @@ class UserGroups(http.ErrorCatchingResource):
         list_params, errors = ListSchema().load(request.args)
         if errors:
             raise exceptions.InvalidListParamException(errors)
-
-        for key, value in request.args.iteritems():
-            if key in list_params:
-                continue
-            list_params[key] = value
 
         return {
             'items': self.user_service.list_groups(user_uuid, **list_params),

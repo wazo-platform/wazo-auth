@@ -26,11 +26,6 @@ class UserPolicies(_BaseUserPolicyResource):
         if errors:
             raise exceptions.InvalidListParamException(errors)
 
-        for key, value in request.args.iteritems():
-            if key in list_params:
-                continue
-            list_params[key] = value
-
         return {
             'items': self.user_service.list_policies(user_uuid, **list_params),
             'total': self.user_service.count_policies(user_uuid, filtered=False, **list_params),
