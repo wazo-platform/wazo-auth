@@ -71,15 +71,3 @@ class PolicyTemplate(_BasePolicyRessource):
     def put(self, policy_uuid, template):
         self.policy_service.add_acl_template(policy_uuid, template)
         return '', 204
-
-
-class Plugin(object):
-
-    def load(self, dependencies):
-        api = dependencies['api']
-        args = (dependencies['policy_service'],)
-
-        api.add_resource(Policies, '/policies', resource_class_args=args)
-        api.add_resource(Policy, '/policies/<string:policy_uuid>', resource_class_args=args)
-        api.add_resource(PolicyTemplate, '/policies/<string:policy_uuid>/acl_templates/<template>',
-                         resource_class_args=args)

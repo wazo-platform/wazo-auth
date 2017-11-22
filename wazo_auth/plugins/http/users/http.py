@@ -2,7 +2,7 @@
 # Copyright 2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from flask import current_app, request
+from flask import request
 from wazo_auth import exceptions, http, schemas
 
 
@@ -56,13 +56,3 @@ class Users(http.ErrorCatchingResource):
             raise exceptions.UserParamException.from_errors(errors)
         result = self.user_service.new_user(**args)
         return result, 200
-
-
-class Plugin(object):
-
-    def load(self, dependencies):
-        api = dependencies['api']
-        args = (dependencies['user_service'],)
-
-        api.add_resource(Users, '/users', resource_class_args=args)
-        api.add_resource(User, '/users/<string:user_uuid>', resource_class_args=args)

@@ -64,13 +64,3 @@ class Tenants(http.ErrorCatchingResource):
 
         result = self.tenant_service.new(**args)
         return result, 200
-
-
-class Plugin(object):
-
-    def load(self, dependencies):
-        api = dependencies['api']
-        args = (dependencies['tenant_service'],)
-
-        api.add_resource(Tenants, '/tenants', resource_class_args=args)
-        api.add_resource(Tenant, '/tenants/<string:tenant_uuid>', resource_class_args=args)

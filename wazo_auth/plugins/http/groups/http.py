@@ -66,13 +66,3 @@ class Groups(_BaseGroupResource):
             raise exceptions.GroupParamException.from_errors(errors)
         result = self.group_service.create(**args)
         return result, 200
-
-
-class Plugin(object):
-
-    def load(self, dependencies):
-        api = dependencies['api']
-        args = (dependencies['group_service'],)
-
-        api.add_resource(Group, '/groups/<uuid:group_uuid>', resource_class_args=args)
-        api.add_resource(Groups, '/groups', resource_class_args=args)

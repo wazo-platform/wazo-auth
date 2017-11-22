@@ -51,21 +51,3 @@ class UserPolicy(_BaseUserPolicyResource):
         logger.debug('associating user %s and policy %s', user_uuid, policy_uuid)
         self.user_service.add_policy(user_uuid, policy_uuid)
         return '', 204
-
-
-class Plugin(object):
-
-    def load(self, dependencies):
-        api = dependencies['api']
-        args = (dependencies['user_service'],)
-
-        api.add_resource(
-            UserPolicy,
-            '/users/<string:user_uuid>/policies/<string:policy_uuid>',
-            resource_class_args=args,
-        )
-        api.add_resource(
-            UserPolicies,
-            '/users/<string:user_uuid>/policies',
-            resource_class_args=args,
-        )

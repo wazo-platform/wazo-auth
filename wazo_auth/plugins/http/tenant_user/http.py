@@ -74,27 +74,3 @@ class UserTenants(http.ErrorCatchingResource):
             'total': self.user_service.count_tenants(user_uuid, filtered=False, **list_params),
             'filtered': self.user_service.count_tenants(user_uuid, filtered=True, **list_params),
         }, 200
-
-
-class Plugin(object):
-
-    def load(self, dependencies):
-        api = dependencies['api']
-        args = (dependencies['tenant_service'],)
-
-        api.add_resource(
-            TenantUser,
-            '/tenants/<uuid:tenant_uuid>/users/<uuid:user_uuid>',
-            resource_class_args=args,
-        )
-        api.add_resource(
-            TenantUsers,
-            '/tenants/<uuid:tenant_uuid>/users',
-            resource_class_args=args,
-        )
-
-        api.add_resource(
-            UserTenants,
-            '/users/<uuid:user_uuid>/tenants',
-            resource_class_args=(dependencies['user_service'],),
-        )

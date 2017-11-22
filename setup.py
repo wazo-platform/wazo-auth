@@ -21,11 +21,9 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-
     package_data={
-        'wazo_auth.swagger': ['*.yml'],
+        'wazo_auth.plugins.http': ['*/api.yml'],
     },
-
     scripts=[
         'bin/wazo-auth-init-db',
     ],
@@ -35,13 +33,14 @@ setup(
             'wazo-auth=wazo_auth.main:main',
         ],
         'wazo_auth.http': [
-            'groups = wazo_auth.plugins.http.groups:Plugin',
-            'policies = wazo_auth.plugins.http.policies:Plugin',
-            'tenants = wazo_auth.plugins.http.tenants:Plugin',
-            'tenant_user = wazo_auth.plugins.http.tenant_user:Plugin',
-            'users = wazo_auth.plugins.http.users:Plugin',
-            'user_group = wazo_auth.plugins.http.user_group:Plugin',
-            'user_policy = wazo_auth.plugins.http.user_policy:Plugin',
+            'api = wazo_auth.plugins.http.api.plugin:Plugin',
+            'groups = wazo_auth.plugins.http.groups.plugin:Plugin',
+            'policies = wazo_auth.plugins.http.policies.plugin:Plugin',
+            'tenants = wazo_auth.plugins.http.tenants.plugin:Plugin',
+            'tenant_user = wazo_auth.plugins.http.tenant_user.plugin:Plugin',
+            'users = wazo_auth.plugins.http.users.plugin:Plugin',
+            'user_group = wazo_auth.plugins.http.user_group.plugin:Plugin',
+            'user_policy = wazo_auth.plugins.http.user_policy.plugin:Plugin',
         ],
         'wazo_auth.backends': [
             'wazo_user = wazo_auth.plugins.backends:WazoUser',
