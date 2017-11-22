@@ -1,13 +1,13 @@
 """add the group user table
 
 Revision ID: 4b86dc18c6bb
-Revises: 16ec37be8370
+Revises: 191d15471531
 
 """
 
 # revision identifiers, used by Alembic.
 revision = '4b86dc18c6bb'
-down_revision = '16ec37be8370'
+down_revision = '191d15471531'
 
 from alembic import op
 import sqlalchemy as sa
