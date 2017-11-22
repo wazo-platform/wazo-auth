@@ -1,0 +1,72 @@
+paths:
+  /groups/{group_uuid}/policies:
+    get:
+      tags:
+        - groups
+      security:
+      - wazo_auth_token: []
+      description: '**Required ACL**: `auth.groups.{group_uuid}.policies.read`'
+      parameters:
+      - $ref: '#/parameters/group_uuid'
+      - $ref: '#/parameters/order'
+      - $ref: '#/parameters/direction'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
+      - $ref: '#/parameters/search'
+      summary: Retrieves the list of policies associated to a group
+      responses:
+        '200':
+          description: "The group's policies"
+          schema:
+            $ref: '#/definitions/GetPoliciesResult'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Policy not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: System related error
+          schema:
+            $ref: '#/definitions/Error'
+  /groups/{group_uuid}/policies/{policy_uuid}:
+    put:
+      tags:
+        - groups
+        - policies
+      security:
+        - wazo_auth_token: []
+      operationId: addGroupPolicy
+      description: '**Required ACL:** `auth.groups.{group_uuid}.policies.{policy_uuid}.create`'
+      summary: Associate a group to a policy
+      parameters:
+      - $ref: '#/parameters/group_uuid'
+      - $ref: '#/parameters/policy_uuid'
+      responses:
+        '204':
+          description: The policy has been assigned
+        '404':
+          description: Policy or Group not found
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      tags:
+        - groups
+        - policies
+      security:
+        - wazo_auth_token: []
+      operationId: removeGroupPolicy
+      description: '**Required ACL:** `auth.groups.{group_uuid}.policies.{policy_uuid}.delete`'
+      summary: Dissociate a policy from a group
+      parameters:
+      - $ref: '#/parameters/group_uuid'
+      - $ref: '#/parameters/policy_uuid'
+      responses:
+        '204':
+          description: The policy has been unassigned
+        '404':
+          description: Policy or Group not found
+          schema:
+            $ref: '#/definitions/Error'
