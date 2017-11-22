@@ -29,7 +29,13 @@ class WazoUser(BaseAuthenticationBackend, ACLRenderingBackend):
     def get_user_data(self, *args, **kwargs):
         user_uuid = self._get_user_uuid(kwargs['username'])
         tenants = self._user_service.list_tenants(user_uuid)
-        return {'username': kwargs['username'], 'tenants': tenants}
+        groups = self._user_service.list_groups(user_uuid)
+
+        return {
+            'username': kwargs['username'],
+            'tenants': tenants,
+            'groups': groups,
+        }
 
     def _get_user_uuid(self, username):
         matching_users = self._user_service.list_users(username=username)

@@ -20,6 +20,7 @@ from .models import (
     Token as TokenModel,
     User,
     UserEmail,
+    UserGroup,
     UserPolicy,
 )
 from .exceptions import (
@@ -127,6 +128,25 @@ class _GroupDAO(_PaginatorMixin, _BaseDAO):
         uuid=Group.uuid,
     )
 
+    def add_user(self, group_uuid, user_uuid):
+        user_group = UserGroup(user_uuid=str(user_uuid), group_uuid=str(group_uuid))
+        with self.new_session() as s:
+            s.add(user_group)
+            try:
+                s.commit()
+            except exc.IntegrityError as e:
+                if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                    # This association already exists.
+                    s.rollback()
+                    return
+                if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
+                    constraint = e.orig.diag.constraint_name
+                    if constraint == 'auth_user_group_group_uuid_fkey':
+                        raise UnknownGroupException(group_uuid)
+                    elif constraint == 'auth_user_group_user_uuid_fkey':
+                        raise UnknownUserException(user_uuid)
+                raise
+
     def count(self, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:
@@ -138,6 +158,20 @@ class _GroupDAO(_PaginatorMixin, _BaseDAO):
 
         with self.new_session() as s:
             return s.query(Group).filter(filter_).count()
+
+    def count_users(self, group_uuid, **kwargs):
+        filtered = kwargs.get('filtered')
+        if filtered is not False:
+            strict_filter = _UserDAO._new_strict_filter(**kwargs)
+            search_filter = _UserDAO.new_search_filter(**kwargs)
+            filter_ = and_(strict_filter, search_filter)
+        else:
+            filter_ = text('true')
+
+        filter_ = and_(filter_, UserGroup.group_uuid == str(group_uuid))
+
+        with self.new_session() as s:
+            return s.query(UserGroup).join(User).join(UserEmail).join(Email).filter(filter_).count()
 
     def create(self, name, **ignored):
         group = Group(name=name)
@@ -170,7 +204,7 @@ class _GroupDAO(_PaginatorMixin, _BaseDAO):
             query = s.query(
                 Group.uuid,
                 Group.name,
-            ).filter(filter_)
+            ).outerjoin(UserGroup).filter(filter_)
             query = self._paginator.update_query(query, **kwargs)
 
             return [{'uuid': uuid, 'name': name} for uuid, name in query.all()]
@@ -194,13 +228,29 @@ class _GroupDAO(_PaginatorMixin, _BaseDAO):
 
         return dict(uuid=str(group_uuid), **body)
 
+    def remove_user(self, group_uuid, user_uuid):
+        filter_ = and_(
+            UserGroup.user_uuid == str(user_uuid),
+            UserGroup.group_uuid == str(group_uuid),
+        )
+        with self.new_session() as s:
+            nb_deleted = s.query(UserGroup).filter(filter_).delete()
+
+        if not nb_deleted:
+            if not self.list_(uuid=group_uuid):
+                raise UnknownGroupException(group_uuid)
+            else:
+                raise UnknownUserException(user_uuid)
+
     @staticmethod
-    def _new_strict_filter(uuid=None, name=None, **ignored):
+    def _new_strict_filter(uuid=None, name=None, user_uuid=None, **ignored):
         filter_ = text('true')
         if uuid:
             filter_ = and_(filter_, Group.uuid == str(uuid))
         if name:
             filter_ = and_(filter_, Group.name == name)
+        if user_uuid:
+            filter_ = and_(filter_, UserGroup.user_uuid == str(user_uuid))
         return filter_
 
 
@@ -557,7 +607,8 @@ class _UserDAO(_PaginatorMixin, _BaseDAO):
     )
 
     @staticmethod
-    def _new_strict_filter(uuid=None, username=None, email_address=None, tenant_uuid=None, **ignored):
+    def _new_strict_filter(uuid=None, username=None, email_address=None, tenant_uuid=None,
+                           group_uuid=None, **ignored):
         filter_ = text('true')
         if uuid:
             filter_ = and_(filter_, User.uuid == str(uuid))
@@ -567,6 +618,8 @@ class _UserDAO(_PaginatorMixin, _BaseDAO):
             filter_ = and_(filter_, Email.address == email_address)
         if tenant_uuid:
             filter_ = and_(filter_, TenantUser.tenant_uuid == str(tenant_uuid))
+        if group_uuid:
+            filter_ = and_(filter_, UserGroup.group_uuid == str(group_uuid))
         return filter_
 
     def add_policy(self, user_uuid, policy_uuid):
@@ -615,6 +668,20 @@ class _UserDAO(_PaginatorMixin, _BaseDAO):
             ).join(
                 Email, Email.uuid == UserEmail.email_uuid
             ).filter(filter_).count()
+
+    def count_groups(self, user_uuid, **kwargs):
+        filtered = kwargs.get('filtered')
+        if filtered is not False:
+            strict_filter = _GroupDAO._new_strict_filter(**kwargs)
+            search_filter = _GroupDAO.new_search_filter(**kwargs)
+            filter_ = and_(strict_filter, search_filter)
+        else:
+            filter_ = text('true')
+
+        filter_ = and_(filter_, UserGroup.user_uuid == str(user_uuid))
+
+        with self.new_session() as s:
+            return s.query(Group).join(UserGroup).filter(filter_).count()
 
     def count_policies(self, user_uuid, **kwargs):
         filtered = kwargs.get('filtered')
@@ -724,9 +791,7 @@ class _UserDAO(_PaginatorMixin, _BaseDAO):
                 UserEmail, User.uuid == UserEmail.user_uuid,
             ).join(
                 Email, Email.uuid == UserEmail.email_uuid,
-            ).outerjoin(
-                TenantUser,
-            ).filter(filter_)
+            ).outerjoin(TenantUser).outerjoin(UserGroup).filter(filter_)
             query = self._paginator.update_query(query, **kwargs)
             rows = query.all()
 

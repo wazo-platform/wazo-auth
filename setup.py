@@ -40,6 +40,7 @@ setup(
             'tenants = wazo_auth.plugins.http.tenants:Plugin',
             'tenant_user = wazo_auth.plugins.http.tenant_user:Plugin',
             'users = wazo_auth.plugins.http.users:Plugin',
+            'user_group = wazo_auth.plugins.http.user_group:Plugin',
             'user_policy = wazo_auth.plugins.http.user_policy:Plugin',
         ],
         'wazo_auth.backends': [

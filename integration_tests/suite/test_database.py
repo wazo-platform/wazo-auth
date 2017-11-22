@@ -55,6 +55,8 @@ def teardown():
 
 class _BaseDAOTestCase(unittest.TestCase):
 
+    unknown_uuid = '00000000-0000-0000-0000-000000000000'
+
     def setUp(self):
         db_uri = DB_URI.format(port=DBStarter.service_port(5432, 'postgres'))
         self._group_dao = database._GroupDAO(db_uri)
@@ -65,6 +67,28 @@ class _BaseDAOTestCase(unittest.TestCase):
 
 
 class TestGroupDAO(_BaseDAOTestCase):
+
+    @fixtures.user()
+    @fixtures.group()
+    def test_add_user(self, group_uuid, user_uuid):
+        assert_that(self._user_dao.list_(group_uuid=group_uuid), empty())
+
+        self._group_dao.add_user(group_uuid, user_uuid)
+        assert_that(self._user_dao.list_(group_uuid=group_uuid), contains(has_entries('uuid', user_uuid)))
+
+        self._group_dao.add_user(group_uuid, user_uuid)  # twice
+
+        assert_that(
+            calling(self._group_dao.add_user).with_args(self.unknown_uuid, user_uuid),
+            raises(exceptions.UnknownGroupException),
+            'unknown group',
+        )
+
+        assert_that(
+            calling(self._group_dao.add_user).with_args(group_uuid, self.unknown_uuid),
+            raises(exceptions.UnknownUserException),
+            'unknown user',
+        )
 
     @fixtures.group(name='foo')
     @fixtures.group(name='bar')
@@ -143,6 +167,36 @@ class TestGroupDAO(_BaseDAOTestCase):
         result = self._group_dao.list_(order='name', direction='asc', offset=1)
         expected = build_list_matcher('baz', 'foo')
         assert_that(result, contains(*expected))
+
+    @fixtures.group()
+    @fixtures.user()
+    def test_remove_user(self, user_uuid, group_uuid):
+        assert_that(
+            calling(self._group_dao.remove_user).with_args(group_uuid, user_uuid),
+            any_of(
+                raises(exceptions.UnknownGroupException),
+                raises(exceptions.UnknownUserException),
+            ),
+            'unknown group and user',
+        )
+
+        assert_that(
+            calling(self._group_dao.remove_user).with_args(self.unknown_uuid, user_uuid),
+            raises(exceptions.UnknownGroupException),
+            'unknown group',
+        )
+
+        assert_that(
+            calling(self._group_dao.remove_user).with_args(group_uuid, self.unknown_uuid),
+            raises(exceptions.UnknownUserException),
+            'unknown user'
+        )
+
+        self._group_dao.add_user(group_uuid, user_uuid)
+
+        assert_that(
+            calling(self._group_dao.remove_user).with_args(group_uuid, user_uuid),
+            not_(raises(Exception)))
 
 
 class TestPolicyDAO(_BaseDAOTestCase):
@@ -391,8 +445,6 @@ class TestTokenDAO(_BaseDAOTestCase):
 
 
 class TestTenantDAO(_BaseDAOTestCase):
-
-    unknown_uuid = '00000000-0000-0000-0000-000000000000'
 
     @fixtures.tenant()
     @fixtures.user()
