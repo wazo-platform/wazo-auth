@@ -21,6 +21,7 @@ _DEFAULT_CONFIG = {
     'default_token_lifetime': TWO_HOURS,
     'token_cleanup_interval': 60.0,
     'enabled_http_plugins': {
+        'api': True,
         'groups': True,
         'policies': True,
         'tenants': True,

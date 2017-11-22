@@ -21,11 +21,9 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-
     package_data={
-        'wazo_auth.swagger': ['*.yml'],
+        'wazo_auth.plugins.http': ['*/api.yml'],
     },
-
     scripts=[
         'bin/wazo-auth-init-db',
     ],
@@ -35,6 +33,7 @@ setup(
             'wazo-auth=wazo_auth.main:main',
         ],
         'wazo_auth.http': [
+            'api = wazo_auth.plugins.http.api.plugin:Plugin',
             'groups = wazo_auth.plugins.http.groups.plugin:Plugin',
             'policies = wazo_auth.plugins.http.policies.plugin:Plugin',
             'tenants = wazo_auth.plugins.http.tenants.plugin:Plugin',

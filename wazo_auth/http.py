@@ -6,11 +6,10 @@ import functools
 import logging
 import time
 
-from flask import current_app, Flask, request, make_response
+from flask import current_app, Flask, request
 from flask_cors import CORS
 from flask_restful import Api, Resource
 from xivo.rest_api_helpers import handle_api_exception
-from pkg_resources import resource_string
 from xivo import http_helpers, plugin_helpers
 
 from . import exceptions, schemas
@@ -109,25 +108,6 @@ class Backends(ErrorCatchingResource):
         return {'data': current_app.config['loaded_plugins']}
 
 
-class Swagger(Resource):
-
-    api_package = "wazo_auth.swagger"
-    api_filename = "api.yml"
-    api_path = "/api/api.yml"
-
-    @classmethod
-    def add_resource(cls, api):
-        api.add_resource(cls, cls.api_path)
-
-    def get(self):
-        try:
-            api_spec = resource_string(self.api_package, self.api_filename)
-        except IOError:
-            return {'error': "API spec does not exist"}, 404
-
-        return make_response(api_spec, 200, {'Content-Type': 'application/x-yaml'})
-
-
 def new_app(dependencies):
     config = dependencies['config']
     cors_config = dict(config['rest_api']['cors'])
@@ -143,7 +123,6 @@ def new_app(dependencies):
     api.add_resource(Tokens, '/token')
     api.add_resource(Token, '/token/<string:token>')
     api.add_resource(Backends, '/backends')
-    api.add_resource(Swagger, '/api/api.yml')
     app.config.update(config)
 
     if cors_enabled:
