@@ -7,7 +7,9 @@ from hamcrest import (
     contains,
     contains_inanyorder,
     has_entries,
+    has_items,
 )
+from xivo_auth_client import Client
 from .helpers import base, fixtures
 
 
@@ -79,3 +81,16 @@ class TestGroupPolicyAssociation(base.MockBackendTestCase):
         assert_list_result(
             self.client.groups.get_policies(group['uuid'], order='name', direction='desc', limit=2),
             3, contains, 'foo', 'baz')
+
+    @fixtures.http_user(username='foo', password='bar')
+    @fixtures.http_group(name='one')
+    @fixtures.http_policy(name='main', acl_templates=['foobar'])
+    def test_generated_acl(self, policy, group, user):
+        self.client.groups.add_user(group['uuid'], user['uuid'])
+        self.client.groups.add_policy(group['uuid'], policy['uuid'])
+
+        user_client = Client(self.get_host(), port=self.service_port(9497, 'auth'),
+                             verify_certificate=False, username='foo', password='bar')
+
+        token_data = user_client.token.new('wazo_user', expiration=5)
+        assert_that(token_data, has_entries('acls', has_items('foobar')))

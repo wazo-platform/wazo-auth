@@ -60,7 +60,9 @@ class Controller(object):
         self._backends = plugin_helpers.load(
             'wazo_auth.backends',
             self._config['enabled_backend_plugins'],
-            {'user_service': self._user_service, 'config': config},
+            {'user_service': self._user_service,
+             'group_service': group_service,
+             'config': config},
         )
         self._config['loaded_plugins'] = self._loaded_plugins_names(self._backends)
         dependencies = {

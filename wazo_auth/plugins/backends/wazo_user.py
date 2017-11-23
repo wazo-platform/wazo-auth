@@ -14,11 +14,16 @@ class WazoUser(BaseAuthenticationBackend, ACLRenderingBackend):
     def load(self, dependencies):
         super(WazoUser, self).load(dependencies)
         self._user_service = dependencies['user_service']
+        self._group_service = dependencies['group_service']
 
     def get_acls(self, username, args):
-        acl_templates = args.get('acl_templates', [])
+        backend_acl_templates = args.get('acl_templates', [])
+        group_acl_templates = self._group_service.get_acl_templates(username)
         user_acl_templates = self._user_service.get_acl_templates(username)
-        return self.render_acl(acl_templates + user_acl_templates, self.get_user_data, username=username)
+
+        acl_templates = backend_acl_templates + group_acl_templates + user_acl_templates
+
+        return self.render_acl(acl_templates, self.get_user_data, username=username)
 
     def get_ids(self, username, args):
         return self._get_user_uuid(username), None

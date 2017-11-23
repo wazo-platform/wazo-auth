@@ -45,6 +45,17 @@ class GroupService(object):
             return group
         raise exceptions.UnknownGroupException(group_uuid)
 
+    def get_acl_templates(self, username):
+        users = self._dao.user.list_(username=username, limit=1)
+        acl_templates = []
+        for user in users:
+            groups = self._dao.group.list_(user_uuid=user['uuid'])
+            for group in groups:
+                policies = self.list_policies(group['uuid'])
+                for policy in policies:
+                    acl_templates.extend(policy['acl_templates'])
+        return acl_templates
+
     def list_(self, **kwargs):
         return self._dao.group.list_(**kwargs)
 
