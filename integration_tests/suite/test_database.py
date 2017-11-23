@@ -68,6 +68,28 @@ class _BaseDAOTestCase(unittest.TestCase):
 
 class TestGroupDAO(_BaseDAOTestCase):
 
+    @fixtures.policy()
+    @fixtures.group()
+    def test_add_policy(self, group_uuid, policy_uuid):
+        assert_that(self._policy_dao.get(group_uuid=group_uuid), empty())
+
+        self._group_dao.add_policy(group_uuid, policy_uuid)
+        assert_that(self._policy_dao.get(group_uuid=group_uuid), contains(has_entries('uuid', policy_uuid)))
+
+        self._group_dao.add_policy(group_uuid, policy_uuid)  # twice
+
+        assert_that(
+            calling(self._group_dao.add_policy).with_args(self.unknown_uuid, policy_uuid),
+            raises(exceptions.UnknownGroupException),
+            'unknown group',
+        )
+
+        assert_that(
+            calling(self._group_dao.add_policy).with_args(group_uuid, self.unknown_uuid),
+            raises(exceptions.UnknownPolicyException),
+            'unknown policy',
+        )
+
     @fixtures.user()
     @fixtures.group()
     def test_add_user(self, group_uuid, user_uuid):
@@ -167,6 +189,36 @@ class TestGroupDAO(_BaseDAOTestCase):
         result = self._group_dao.list_(order='name', direction='asc', offset=1)
         expected = build_list_matcher('baz', 'foo')
         assert_that(result, contains(*expected))
+
+    @fixtures.group()
+    @fixtures.policy()
+    def test_remove_policy(self, policy_uuid, group_uuid):
+        assert_that(
+            calling(self._group_dao.remove_policy).with_args(group_uuid, policy_uuid),
+            any_of(
+                raises(exceptions.UnknownGroupException),
+                raises(exceptions.UnknownPolicyException),
+            ),
+            'unknown group and policy',
+        )
+
+        assert_that(
+            calling(self._group_dao.remove_policy).with_args(self.unknown_uuid, policy_uuid),
+            raises(exceptions.UnknownGroupException),
+            'unknown group',
+        )
+
+        assert_that(
+            calling(self._group_dao.remove_policy).with_args(group_uuid, self.unknown_uuid),
+            raises(exceptions.UnknownPolicyException),
+            'unknown policy'
+        )
+
+        self._group_dao.add_policy(group_uuid, policy_uuid)
+
+        assert_that(
+            calling(self._group_dao.remove_policy).with_args(group_uuid, policy_uuid),
+            not_(raises(Exception)))
 
     @fixtures.group()
     @fixtures.user()
