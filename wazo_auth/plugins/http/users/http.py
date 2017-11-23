@@ -33,11 +33,6 @@ class Users(http.ErrorCatchingResource):
         if errors:
             raise exceptions.InvalidListParamException(errors)
 
-        for key, value in request.args.iteritems():
-            if key in list_params:
-                continue
-            list_params[key] = value
-
         users = self.user_service.list_users(**list_params)
         total = self.user_service.count_users(filtered=False, **list_params)
         filtered = self.user_service.count_users(filtered=True, **list_params)

@@ -40,11 +40,6 @@ class TenantUsers(_BaseResource):
         if errors:
             raise exceptions.InvalidListParamException(errors)
 
-        for key, value in request.args.iteritems():
-            if key in list_params:
-                continue
-            list_params[key] = value
-
         return {
             'items': self.tenant_service.list_users(tenant_uuid, **list_params),
             'total': self.tenant_service.count_users(tenant_uuid, filtered=False, **list_params),
@@ -63,11 +58,6 @@ class UserTenants(http.ErrorCatchingResource):
         list_params, errors = ListSchema().load(request.args)
         if errors:
             raise exceptions.InvalidListParamException(errors)
-
-        for key, value in request.args.iteritems():
-            if key in list_params:
-                continue
-            list_params[key] = value
 
         return {
             'items': self.user_service.list_tenants(user_uuid, **list_params),

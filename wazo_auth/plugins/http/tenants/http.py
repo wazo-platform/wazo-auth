@@ -38,11 +38,6 @@ class Tenants(http.ErrorCatchingResource):
         if errors:
             raise exceptions.InvalidListParamException(errors)
 
-        for key, value in request.args.iteritems():
-            if key in list_params:
-                continue
-            list_params[key] = value
-
         tenants = self.tenant_service.list_(**list_params)
         total = self.tenant_service.count(filtered=False, **list_params)
         filtered = self.tenant_service.count(filtered=True, **list_params)
