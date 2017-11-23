@@ -11,6 +11,12 @@ Changelog
   * GET `0.1/groups/<group_uuid>/users`
   * GET `0.1/users/<user_uuid>/groups`
 
+* A new resource has been added to assign a Policies to Groups
+
+  * PUT `0.1/groups/<group_uuid>/policies/<policy_uuid>`
+  * DELETE `0.1/groups/<group_uuid>/policies/<policy_uuid>`
+  * GET `0.1/groups/<group_uuid>/policies`
+
 
 17.16
 -----
@@ -42,7 +48,6 @@ Changelog
   * GET `0.1/groups/<group_uuid>`
   * PUT `0.1/groups/<group_uuid>`
   * DELETE `0.1/groups/<group_uuid>`
-
 
 
 17.15
