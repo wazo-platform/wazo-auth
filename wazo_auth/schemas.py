@@ -58,5 +58,6 @@ def new_list_schema(default_sort_column):
         def add_arbitrary_fields(self, data, original_data):
             for key, value in original_data.iteritems():
                 data.setdefault(key, value)
+            return data
 
     return ListSchema
