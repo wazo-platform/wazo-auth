@@ -94,3 +94,23 @@ class TestGroupPolicyAssociation(base.MockBackendTestCase):
 
         token_data = user_client.token.new('wazo_user', expiration=5)
         assert_that(token_data, has_entries('acls', has_items('foobar')))
+
+    @fixtures.http_user()
+    @fixtures.http_user()
+    @fixtures.http_user(username='foo', password='bar')
+    @fixtures.http_group(name='one')
+    @fixtures.http_policy(name='main', acl_templates=[
+        '{% for group in groups %}\n{% for user in group.users %}\nuser.{{ user.uuid }}.*\n{% endfor %}\n{% endfor %}'
+    ])
+    def test_generated_acl_with_group_data(self, policy, group, *users):
+        for user in users:
+            self.client.groups.add_user(group['uuid'], user['uuid'])
+
+        self.client.groups.add_policy(group['uuid'], policy['uuid'])
+
+        user_client = Client(self.get_host(), port=self.service_port(9497, 'auth'),
+                             verify_certificate=False, username='foo', password='bar')
+
+        expected_acls = ['user.{}.*'.format(user['uuid']) for user in users]
+        token_data = user_client.token.new('wazo_user', expiration=5)
+        assert_that(token_data, has_entries('acls', has_items(*expected_acls)))

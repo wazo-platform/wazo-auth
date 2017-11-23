@@ -35,6 +35,8 @@ class WazoUser(BaseAuthenticationBackend, ACLRenderingBackend):
         user_uuid = self._get_user_uuid(kwargs['username'])
         tenants = self._user_service.list_tenants(user_uuid)
         groups = self._user_service.list_groups(user_uuid)
+        for group in groups:
+            group['users'] = self._group_service.list_users(group['uuid'])
 
         return {
             'username': kwargs['username'],
