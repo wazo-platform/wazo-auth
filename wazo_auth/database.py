@@ -179,6 +179,20 @@ class _GroupDAO(_PaginatorMixin, _BaseDAO):
         with self.new_session() as s:
             return s.query(Group).filter(filter_).count()
 
+    def count_policies(self, group_uuid, **kwargs):
+        filtered = kwargs.get('filtered')
+        if filtered is not False:
+            strict_filter = _PolicyDAO._new_strict_filter(**kwargs)
+            search_filter = _PolicyDAO.new_search_filter(**kwargs)
+            filter_ = and_(strict_filter, search_filter)
+        else:
+            filter_ = text('true')
+
+        filter_ = and_(filter_, GroupPolicy.group_uuid == str(group_uuid))
+
+        with self.new_session() as s:
+            return s.query(GroupPolicy).join(Policy).filter(filter_).count()
+
     def count_users(self, group_uuid, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:

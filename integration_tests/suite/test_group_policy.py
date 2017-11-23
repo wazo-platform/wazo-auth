@@ -47,7 +47,7 @@ class TestGroupPolicyAssociation(base.MockBackendTestCase):
     @fixtures.http_group()
     def test_list_policies(self, group, foo, bar, baz, ignored):
         for policy in (foo, bar, baz):
-            self.client.groups.add_policy(policy)
+            self.client.groups.add_policy(group['uuid'], policy['uuid'])
 
         def assert_list_result(result, filtered, match_fn, *names):
             assert_that(result, has_entries(
