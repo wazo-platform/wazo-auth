@@ -38,6 +38,14 @@ class Group(Base):
     name = Column(Text, unique=True, nullable=False)
 
 
+class GroupPolicy(Base):
+
+    __tablename__ = 'auth_group_policy'
+
+    policy_uuid = Column(String(38), ForeignKey('auth_policy.uuid', ondelete='CASCADE'), primary_key=True)
+    group_uuid = Column(String(38), ForeignKey('auth_group.uuid', ondelete='CASCADE'), primary_key=True)
+
+
 class Tenant(Base):
 
     __tablename__ = 'auth_tenant'

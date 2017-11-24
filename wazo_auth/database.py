@@ -14,6 +14,7 @@ from .models import (
     ACLTemplatePolicy,
     Email,
     Group,
+    GroupPolicy,
     Policy,
     Tenant,
     TenantUser,
@@ -128,6 +129,25 @@ class _GroupDAO(_PaginatorMixin, _BaseDAO):
         uuid=Group.uuid,
     )
 
+    def add_policy(self, group_uuid, policy_uuid):
+        group_policy = GroupPolicy(policy_uuid=str(policy_uuid), group_uuid=str(group_uuid))
+        with self.new_session() as s:
+            s.add(group_policy)
+            try:
+                s.commit()
+            except exc.IntegrityError as e:
+                if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                    # This association already exists.
+                    s.rollback()
+                    return
+                if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
+                    constraint = e.orig.diag.constraint_name
+                    if constraint == 'auth_group_policy_group_uuid_fkey':
+                        raise UnknownGroupException(group_uuid)
+                    elif constraint == 'auth_group_policy_policy_uuid_fkey':
+                        raise UnknownPolicyException(policy_uuid)
+                raise
+
     def add_user(self, group_uuid, user_uuid):
         user_group = UserGroup(user_uuid=str(user_uuid), group_uuid=str(group_uuid))
         with self.new_session() as s:
@@ -158,6 +178,20 @@ class _GroupDAO(_PaginatorMixin, _BaseDAO):
 
         with self.new_session() as s:
             return s.query(Group).filter(filter_).count()
+
+    def count_policies(self, group_uuid, **kwargs):
+        filtered = kwargs.get('filtered')
+        if filtered is not False:
+            strict_filter = _PolicyDAO._new_strict_filter(**kwargs)
+            search_filter = _PolicyDAO.new_search_filter(**kwargs)
+            filter_ = and_(strict_filter, search_filter)
+        else:
+            filter_ = text('true')
+
+        filter_ = and_(filter_, GroupPolicy.group_uuid == str(group_uuid))
+
+        with self.new_session() as s:
+            return s.query(GroupPolicy).join(Policy).filter(filter_).count()
 
     def count_users(self, group_uuid, **kwargs):
         filtered = kwargs.get('filtered')
@@ -227,6 +261,20 @@ class _GroupDAO(_PaginatorMixin, _BaseDAO):
                 raise
 
         return dict(uuid=str(group_uuid), **body)
+
+    def remove_policy(self, group_uuid, policy_uuid):
+        filter_ = and_(
+            GroupPolicy.policy_uuid == str(policy_uuid),
+            GroupPolicy.group_uuid == str(group_uuid),
+        )
+        with self.new_session() as s:
+            nb_deleted = s.query(GroupPolicy).filter(filter_).delete()
+
+        if not nb_deleted:
+            if not self.list_(uuid=group_uuid):
+                raise UnknownGroupException(group_uuid)
+            else:
+                raise UnknownPolicyException(policy_uuid)
 
     def remove_user(self, group_uuid, user_uuid):
         filter_ = and_(
@@ -334,6 +382,8 @@ class _PolicyDAO(_PaginatorMixin, _BaseDAO):
                 ACLTemplate,
             ).outerjoin(
                 UserPolicy,
+            ).outerjoin(
+                GroupPolicy,
             ).filter(
                 filter_,
             ).group_by(
@@ -411,7 +461,7 @@ class _PolicyDAO(_PaginatorMixin, _BaseDAO):
         return policy_count != 0
 
     @staticmethod
-    def _new_strict_filter(uuid=None, name=None, user_uuid=None, **ignored):
+    def _new_strict_filter(uuid=None, name=None, user_uuid=None, group_uuid=None, **ignored):
         filter_ = text('true')
         if uuid:
             filter_ = and_(filter_, Policy.uuid == uuid)
@@ -419,6 +469,8 @@ class _PolicyDAO(_PaginatorMixin, _BaseDAO):
             filter_ = and_(filter_, Policy.name == name)
         if user_uuid:
             filter_ = and_(filter_, UserPolicy.user_uuid == user_uuid)
+        if group_uuid:
+            filter_ = and_(filter_, GroupPolicy.group_uuid == str(group_uuid))
         return filter_
 
 
