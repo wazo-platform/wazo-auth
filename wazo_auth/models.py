@@ -30,6 +30,22 @@ class Email(Base):
     confirmed = Column(Boolean, nullable=False, default=False)
 
 
+class ExternalAuthType(Base):
+
+    __tablename__ = 'auth_external_auth_type'
+
+    uuid = Column(String(38), server_default=text('uuid_generate_v4()'), primary_key=True)
+    name = Column(Text, unique=True, nullable=False)
+
+
+class ExternalAuthData(Base):
+
+    __tablename__ = 'auth_external_auth_data'
+
+    uuid = Column(String(38), server_default=text('uuid_generate_v4()'), primary_key=True)
+    data = Column(Text, nullable=False)
+
+
 class Group(Base):
 
     __tablename__ = 'auth_group'
@@ -107,6 +123,18 @@ class UserEmail(Base):
     user_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='CASCADE'), primary_key=True)
     email_uuid = Column(String(38), ForeignKey('auth_email.uuid', ondelete='CASCADE'), primary_key=True)
     main = Column(Boolean, nullable=False, default=False)
+
+
+class UserExternalAuth(Base):
+
+    __tablename__ = 'auth_user_external_auth'
+    __table_args__ = (
+        schema.UniqueConstraint('user_uuid', 'external_auth_type_uuid'),
+    )
+
+    user_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='CASCADE'),primary_key=True)
+    external_auth_type_uuid = Column(String(38), ForeignKey('auth_external_auth_type.uuid', ondelete='CASCADE'), primary_key=True)
+    external_auth_data_uuid = Column(String(38), ForeignKey('auth_external_auth_data.uuid', ondelete='CASCADE'), primary_key=True)
 
 
 class UserGroup(Base):
