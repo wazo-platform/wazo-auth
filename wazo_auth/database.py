@@ -184,6 +184,10 @@ class _ExternalAuthDAO(_BaseDAO):
             self._assert_user_exists(s, user_uuid)
             raise UnknownExternalAuthException(auth_type)
 
+    def update(self, user_uuid, auth_type, data):
+        self.delete(user_uuid, auth_type)
+        return self.create(user_uuid, auth_type, data)
+
     def _assert_type_exists(self, s, auth_type):
         self._find_type(s, auth_type)
 
