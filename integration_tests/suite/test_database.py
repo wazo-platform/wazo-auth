@@ -88,14 +88,16 @@ class TestExternalAuthDAO(_BaseDAOTestCase):
         assert_that(result, equal_to(self.data))
 
         assert_that(
+            self._external_auth_dao.get(user_uuid, self.auth_type),
+            equal_to(self.data))
+
+        assert_that(
             calling(self._external_auth_dao.create).with_args(user_uuid, self.auth_type, self.data),
             raises(exceptions.ExternalAuthAlreadyExists).matching(
                 has_properties(
                     status_code=409,
                     resource=self.auth_type,
                     details=has_entries('type', self.auth_type))))
-
-        # TODO: get the result back from the dao when the get gets implemented
 
     @fixtures.user()
     @fixtures.user()
