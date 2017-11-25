@@ -151,6 +151,21 @@ class _ExternalAuthDAO(_BaseDAO):
                 raise
             return data
 
+    def delete(self, user_uuid, auth_type):
+        with self.new_session() as s:
+            type_ = self._find_type(s, auth_type)
+            filter_ = and_(
+                UserExternalAuth.user_uuid == str(user_uuid),
+                UserExternalAuth.external_auth_type_uuid == type_.uuid,
+            )
+
+            nb_deleted = s.query(UserExternalAuth).filter(filter_).delete()
+            if nb_deleted:
+                return
+
+            self._assert_user_exists(s, user_uuid)
+            raise UnknownExternalAuthException(auth_type)
+
     def get(self, user_uuid, auth_type):
         filter_ = and_(
             UserExternalAuth.user_uuid == str(user_uuid),
@@ -165,22 +180,29 @@ class _ExternalAuthDAO(_BaseDAO):
             if data:
                 return json.loads(data.data)
 
-            if s.query(ExternalAuthType).filter(ExternalAuthType.name == auth_type).count() == 0:
-                raise UnknownExternalAuthTypeException(auth_type)
-
-            if s.query(User).filter(User.uuid == str(user_uuid)).count() == 0:
-                raise UnknownUserException(user_uuid)
-
+            self._assert_type_exists(s, auth_type)
+            self._assert_user_exists(s, user_uuid)
             raise UnknownExternalAuthException(auth_type)
 
-    def _find_or_create_type(self, s, auth_type):
+    def _assert_type_exists(self, s, auth_type):
+        self._find_type(s, auth_type)
+
+    def _assert_user_exists(self, s, user_uuid):
+        if s.query(User).filter(User.uuid == str(user_uuid)).count() == 0:
+            raise UnknownUserException(user_uuid)
+
+    def _find_type(self, s, auth_type):
         type_ = s.query(ExternalAuthType).filter(ExternalAuthType.name == auth_type).first()
         if type_:
             return type_
+        raise UnknownExternalAuthTypeException(auth_type)
 
-        type_ = ExternalAuthType(name=auth_type)
-        s.add(type_)
-
+    def _find_or_create_type(self, s, auth_type):
+        try:
+            type_ = self._find_type(s, auth_type)
+        except UnknownExternalAuthTypeException:
+            type_ = ExternalAuthType(name=auth_type)
+            s.add(type_)
         return type_
 
 

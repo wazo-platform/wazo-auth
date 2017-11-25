@@ -28,7 +28,7 @@ from xivo_test_helpers.mock import ANY_UUID
 from xivo_test_helpers.hamcrest.raises import raises
 
 from wazo_auth import database, exceptions
-from .helpers import fixtures
+from .helpers import fixtures, base
 
 DB_URI = os.getenv('DB_URI', 'postgresql://asterisk:proformatique@localhost:{port}')
 
@@ -98,6 +98,37 @@ class TestExternalAuthDAO(_BaseDAOTestCase):
                     status_code=409,
                     resource=self.auth_type,
                     details=has_entries('type', self.auth_type))))
+
+    @fixtures.user()
+    @fixtures.user()
+    def test_delete(self, user_1_uuid, user_2_uuid):
+        assert_that(
+            calling(self._external_auth_dao.delete).with_args(self.unknown_uuid, self.auth_type),
+            raises(exceptions.UnknownUserException).matching(
+                has_properties(status_code=404, resource='users')))
+
+        assert_that(
+            calling(self._external_auth_dao.delete).with_args(user_1_uuid, 'the_unknown_service'),
+            raises(exceptions.UnknownExternalAuthTypeException).matching(
+                has_properties(status_code=404, resource='external')))
+
+        # This will create the type in the db
+        self._external_auth_dao.create(user_2_uuid, self.auth_type, self.data)
+
+        assert_that(
+            calling(self._external_auth_dao.delete).with_args(user_1_uuid, self.auth_type),
+            raises(exceptions.UnknownExternalAuthException).matching(
+                has_properties(status_code=404, resource=self.auth_type)))
+
+        self._external_auth_dao.create(user_1_uuid, self.auth_type, self.data)
+
+        base.assert_no_error(self._external_auth_dao.delete, user_1_uuid, self.auth_type)
+
+        assert_that(
+            calling(self._external_auth_dao.delete).with_args(user_1_uuid, self.auth_type),
+            raises(exceptions.UnknownExternalAuthException).matching(
+                has_properties(status_code=404, resource=self.auth_type)))
+
 
     @fixtures.user()
     @fixtures.user()
