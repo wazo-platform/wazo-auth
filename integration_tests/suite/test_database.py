@@ -127,8 +127,30 @@ class TestExternalAuthDAO(_BaseDAOTestCase):
             raises(exceptions.UnknownExternalAuthException).matching(
                 has_properties(status_code=404, resource=self.auth_type)))
 
+    @fixtures.user()
+    def test_update(self, user_uuid):
+        new_data = {'foo': 'bar'}
 
+        assert_that(
+            calling(self._external_auth_dao.update).with_args(self.unknown_uuid, self.auth_type, new_data),
+            raises(exceptions.UnknownUserException).matching(
+                has_properties(status_code=404, resource='users')))
 
+        assert_that(
+            calling(self._external_auth_dao.update).with_args(user_uuid, 'the_unknown_service', new_data),
+            raises(exceptions.UnknownExternalAuthTypeException).matching(
+                has_properties(status_code=404, resource='external')))
+
+        assert_that(
+            calling(self._external_auth_dao.update).with_args(user_uuid, self.auth_type, new_data),
+            raises(exceptions.UnknownExternalAuthException).matching(
+                has_properties(status_code=404, resource=self.auth_type)))
+
+        self._external_auth_dao.create(user_uuid, self.auth_type, self.data)
+
+        result = self._external_auth_dao.update(user_uuid, self.auth_type, new_data)
+        assert_that(result, equal_to(new_data))
+        assert_that(self._external_auth_dao.get(user_uuid, self.auth_type), equal_to(new_data))
 
 class TestGroupDAO(_BaseDAOTestCase):
 
