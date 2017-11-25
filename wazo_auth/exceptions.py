@@ -19,6 +19,14 @@ class AuthenticationFailedException(ManagerException):
         return self._msg
 
 
+class ExternalAuthAlreadyExists(APIException):
+
+    def __init__(self, auth_type):
+        msg = 'This external authentification method has already been set: "{}"'.format(auth_type)
+        details = dict(type=auth_type)
+        super(ExternalAuthAlreadyExists, self).__init__(409, msg, 'conflict', details, auth_type)
+
+
 class InvalidListParamException(APIException):
 
     def __init__(self, message, details=None):

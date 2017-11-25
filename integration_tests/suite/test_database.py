@@ -58,11 +58,45 @@ class _BaseDAOTestCase(unittest.TestCase):
 
     def setUp(self):
         db_uri = DB_URI.format(port=DBStarter.service_port(5432, 'postgres'))
+        self._external_auth_dao = database._ExternalAuthDAO(db_uri)
         self._group_dao = database._GroupDAO(db_uri)
         self._policy_dao = database._PolicyDAO(db_uri)
         self._user_dao = database._UserDAO(db_uri)
         self._tenant_dao = database._TenantDAO(db_uri)
         self._token_dao = database._TokenDAO(db_uri)
+
+
+class TestExternalAuthDAO(_BaseDAOTestCase):
+
+    auth_type = 'foobarcrm'
+
+    @fixtures.user()
+    def test_create(self, user_uuid):
+        data = dict(
+            string_value='an_important_value',
+            list_value=['a', 'list', 'of', 'values'],
+            dict_value={'a': 'dict', 'of': 'values'},
+        )
+
+        assert_that(
+            calling(self._external_auth_dao.create).with_args(self.unknown_uuid, self.auth_type, data),
+            raises(exceptions.UnknownUserException).matching(
+                has_properties(
+                    status_code=404,
+                    resource='users')))
+
+        result = self._external_auth_dao.create(user_uuid, self.auth_type, data)
+        assert_that(result, equal_to(data))
+
+        assert_that(
+            calling(self._external_auth_dao.create).with_args(user_uuid, self.auth_type, data),
+            raises(exceptions.ExternalAuthAlreadyExists).matching(
+                has_properties(
+                    status_code=409,
+                    resource=self.auth_type,
+                    details=has_entries('type', self.auth_type))))
+
+        # TODO: get the result back from the dao when the get gets implemented
 
 
 class TestGroupDAO(_BaseDAOTestCase):

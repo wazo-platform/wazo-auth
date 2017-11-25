@@ -2,8 +2,9 @@
 # Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-import time
+import json
 import logging
+import time
 from collections import OrderedDict
 from contextlib import contextmanager
 from sqlalchemy import and_, create_engine, exc, func, or_, text
@@ -13,6 +14,8 @@ from .models import (
     ACLTemplate,
     ACLTemplatePolicy,
     Email,
+    ExternalAuthData,
+    ExternalAuthType,
     Group,
     GroupPolicy,
     Policy,
@@ -23,11 +26,13 @@ from .models import (
     UserEmail,
     UserGroup,
     UserPolicy,
+    UserExternalAuth,
 )
 from .exceptions import (
     ConflictException,
     DuplicatePolicyException,
     DuplicateTemplateException,
+    ExternalAuthAlreadyExists,
     InvalidLimitException,
     InvalidOffsetException,
     InvalidSortColumnException,
@@ -115,6 +120,44 @@ class _PaginatorMixin(object):
     def __init__(self, *args, **kwargs):
         super(_PaginatorMixin, self).__init__(*args, **kwargs)
         self._paginator = QueryPaginator(self.column_map)
+
+
+class _ExternalAuthDAO(_BaseDAO):
+
+    def create(self, user_uuid, auth_type, data):
+        serialized_data = json.dumps(data)
+        with self.new_session() as s:
+            external_type = self._find_or_create_type(s, auth_type)
+            external_data = ExternalAuthData(data=serialized_data)
+            s.add(external_data)
+            s.commit()
+            user_external_auth = UserExternalAuth(
+                user_uuid=str(user_uuid),
+                external_auth_type_uuid=external_type.uuid,
+                external_auth_data_uuid=external_data.uuid,
+            )
+            s.add(user_external_auth)
+            try:
+                s.commit()
+            except exc.IntegrityError as e:
+                if e.orig.pgcode in (self._UNIQUE_CONSTRAINT_CODE, self._FKEY_CONSTRAINT_CODE):
+                    constraint = e.orig.diag.constraint_name
+                    if constraint == 'auth_external_user_type_auth_constraint':
+                        raise ExternalAuthAlreadyExists(auth_type)
+                    elif constraint == 'auth_user_external_auth_user_uuid_fkey':
+                        raise UnknownUserException(user_uuid)
+                raise
+            return data
+
+    def _find_or_create_type(self, s, auth_type):
+        type_ = s.query(ExternalAuthType).filter(ExternalAuthType.name == auth_type).first()
+        if type_:
+            return type_
+
+        type_ = ExternalAuthType(name=auth_type)
+        s.add(type_)
+
+        return type_
 
 
 class _GroupDAO(_PaginatorMixin, _BaseDAO):
