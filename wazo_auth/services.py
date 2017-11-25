@@ -12,10 +12,13 @@ from . import exceptions
 logger = logging.getLogger(__name__)
 
 
-class GroupService(object):
+class _Service(object):
 
     def __init__(self, dao):
         self._dao = dao
+
+
+class GroupService(_Service):
 
     def add_policy(self, group_uuid, policy_uuid):
         return self._dao.group.add_policy(group_uuid, policy_uuid)
@@ -91,10 +94,7 @@ class GroupService(object):
         return self._dao.group.update(group_uuid, **kwargs)
 
 
-class PolicyService(object):
-
-    def __init__(self, dao):
-        self._dao = dao
+class PolicyService(_Service):
 
     def add_acl_template(self, policy_uuid, acl_template):
         return self._dao.policy.associate_policy_template(policy_uuid, acl_template)
@@ -125,10 +125,7 @@ class PolicyService(object):
         return dict(uuid=policy_uuid, **body)
 
 
-class TenantService(object):
-
-    def __init__(self, dao):
-        self._dao = dao
+class TenantService(_Service):
 
     def add_user(self, tenant_uuid, user_uuid):
         return self._dao.tenant.add_user(tenant_uuid, user_uuid)
@@ -170,10 +167,10 @@ class TenantService(object):
             raise exceptions.UnknownUserException(user_uuid)
 
 
-class UserService(object):
+class UserService(_Service):
 
     def __init__(self, dao, encrypter=None):
-        self._dao = dao
+        super(UserService, self).__init__(dao)
         self._encrypter = encrypter or PasswordEncrypter()
 
     def add_policy(self, user_uuid, policy_uuid):
