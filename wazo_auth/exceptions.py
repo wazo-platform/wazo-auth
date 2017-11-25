@@ -41,6 +41,24 @@ class InvalidListParamException(APIException):
                 return cls(info['message'], {field: info})
 
 
+class UnknownExternalAuthException(APIException):
+
+    def __init__(self, auth_type):
+        msg = 'No such external auth: "{}"'.format(auth_type)
+        details = dict(type=str(auth_type))
+        super(UnknownExternalAuthException, self).__init__(
+            404, msg, 'unknown_external_auth', details, auth_type)
+
+
+class UnknownExternalAuthTypeException(APIException):
+
+    def __init__(self, auth_type):
+        msg = 'No such auth type: "{}"'.format(auth_type)
+        details = dict(type=str(auth_type))
+        super(UnknownExternalAuthTypeException, self).__init__(
+            404, msg, 'unknown_external_auth_type', details, 'external')
+
+
 class UnknownGroupException(APIException):
 
     def __init__(self, group_uuid):

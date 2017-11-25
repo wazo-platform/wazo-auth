@@ -69,27 +69,26 @@ class _BaseDAOTestCase(unittest.TestCase):
 class TestExternalAuthDAO(_BaseDAOTestCase):
 
     auth_type = 'foobarcrm'
+    data = dict(
+        string_value='an_important_value',
+        list_value=['a', 'list', 'of', 'values'],
+        dict_value={'a': 'dict', 'of': 'values'},
+    )
 
     @fixtures.user()
     def test_create(self, user_uuid):
-        data = dict(
-            string_value='an_important_value',
-            list_value=['a', 'list', 'of', 'values'],
-            dict_value={'a': 'dict', 'of': 'values'},
-        )
-
         assert_that(
-            calling(self._external_auth_dao.create).with_args(self.unknown_uuid, self.auth_type, data),
+            calling(self._external_auth_dao.create).with_args(self.unknown_uuid, self.auth_type, self.data),
             raises(exceptions.UnknownUserException).matching(
                 has_properties(
                     status_code=404,
                     resource='users')))
 
-        result = self._external_auth_dao.create(user_uuid, self.auth_type, data)
-        assert_that(result, equal_to(data))
+        result = self._external_auth_dao.create(user_uuid, self.auth_type, self.data)
+        assert_that(result, equal_to(self.data))
 
         assert_that(
-            calling(self._external_auth_dao.create).with_args(user_uuid, self.auth_type, data),
+            calling(self._external_auth_dao.create).with_args(user_uuid, self.auth_type, self.data),
             raises(exceptions.ExternalAuthAlreadyExists).matching(
                 has_properties(
                     status_code=409,
@@ -97,6 +96,36 @@ class TestExternalAuthDAO(_BaseDAOTestCase):
                     details=has_entries('type', self.auth_type))))
 
         # TODO: get the result back from the dao when the get gets implemented
+
+    @fixtures.user()
+    @fixtures.user()
+    def test_get(self, user_1_uuid, user_2_uuid):
+        assert_that(
+            calling(self._external_auth_dao.get).with_args(self.unknown_uuid, self.auth_type),
+            raises(exceptions.UnknownUserException).matching(
+                has_properties(status_code=404, resource='users')))
+
+        assert_that(
+            calling(self._external_auth_dao.get).with_args(user_1_uuid, 'the_unknown_service'),
+            raises(exceptions.UnknownExternalAuthTypeException).matching(
+                has_properties(status_code=404, resource='external')))
+
+        assert_that(
+            calling(self._external_auth_dao.get).with_args(user_1_uuid, self.auth_type),
+            raises(exceptions.UnknownExternalAuthException).matching(
+                has_properties(status_code=404, resource=self.auth_type)))
+
+        self._external_auth_dao.create(user_1_uuid, self.auth_type, self.data)
+
+        result = self._external_auth_dao.get(user_1_uuid, self.auth_type)
+        assert_that(result, equal_to(self.data))
+
+        assert_that(
+            calling(self._external_auth_dao.get).with_args(user_2_uuid, self.auth_type),
+            raises(exceptions.UnknownExternalAuthException).matching(
+                has_properties(status_code=404, resource=self.auth_type)))
+
+
 
 
 class TestGroupDAO(_BaseDAOTestCase):

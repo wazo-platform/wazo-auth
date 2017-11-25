@@ -37,6 +37,8 @@ from .exceptions import (
     InvalidOffsetException,
     InvalidSortColumnException,
     InvalidSortDirectionException,
+    UnknownExternalAuthTypeException,
+    UnknownExternalAuthException,
     UnknownGroupException,
     UnknownPolicyException,
     UnknownTenantException,
@@ -148,6 +150,28 @@ class _ExternalAuthDAO(_BaseDAO):
                         raise UnknownUserException(user_uuid)
                 raise
             return data
+
+    def get(self, user_uuid, auth_type):
+        filter_ = and_(
+            UserExternalAuth.user_uuid == str(user_uuid),
+            ExternalAuthType.name == auth_type,
+        )
+
+        with self.new_session() as s:
+            data = s.query(
+                ExternalAuthData.data,
+            ).join(UserExternalAuth).join(ExternalAuthType).filter(filter_).first()
+
+            if data:
+                return json.loads(data.data)
+
+            if s.query(ExternalAuthType).filter(ExternalAuthType.name == auth_type).count() == 0:
+                raise UnknownExternalAuthTypeException(auth_type)
+
+            if s.query(User).filter(User.uuid == str(user_uuid)).count() == 0:
+                raise UnknownUserException(user_uuid)
+
+            raise UnknownExternalAuthException(auth_type)
 
     def _find_or_create_type(self, s, auth_type):
         type_ = s.query(ExternalAuthType).filter(ExternalAuthType.name == auth_type).first()
