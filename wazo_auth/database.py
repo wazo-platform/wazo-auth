@@ -70,7 +70,8 @@ class SearchFilter(object):
 
 class DAO(object):
 
-    def __init__(self, policy_dao, token_dao, user_dao, tenant_dao, group_dao):
+    def __init__(self, policy_dao, token_dao, user_dao, tenant_dao, group_dao, external_auth_dao):
+        self.external_auth = external_auth_dao
         self.policy = policy_dao
         self.token = token_dao
         self.user = user_dao
@@ -79,12 +80,13 @@ class DAO(object):
 
     @classmethod
     def from_config(cls, config):
+        external_auth = _ExternalAuthDAO(config['db_uri'])
         group = _GroupDAO(config['db_uri'])
         policy = _PolicyDAO(config['db_uri'])
         token = _TokenDAO(config['db_uri'])
         user = _UserDAO(config['db_uri'])
         tenant = _TenantDAO(config['db_uri'])
-        return cls(policy, token, user, tenant, group)
+        return cls(policy, token, user, tenant, group, external_auth)
 
 
 class _BaseDAO(object):

@@ -53,6 +53,7 @@ class Controller(object):
 
         dao = database.DAO.from_config(self._config)
         self._token_manager = token.Manager(config, dao)
+        external_auth_service = services.ExternalAuthService(dao)
         group_service = services.GroupService(dao)
         policy_service = services.PolicyService(dao)
         self._user_service = services.UserService(dao)
@@ -68,6 +69,7 @@ class Controller(object):
         dependencies = {
             'backends': self._backends,
             'config': config,
+            'external_auth_service': external_auth_service,
             'group_service': group_service,
             'user_service': self._user_service,
             'token_manager': self._token_manager,

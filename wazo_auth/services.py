@@ -18,6 +18,21 @@ class _Service(object):
         self._dao = dao
 
 
+class ExternalAuthService(_Service):
+
+    def create(self, user_uuid, auth_type, data):
+        return self._dao.external_auth.create(user_uuid, auth_type, data)
+
+    def delete(self, user_uuid, auth_type):
+        return self._dao.external_auth.delete(user_uuid, auth_type)
+
+    def get(self, user_uuid, auth_type):
+        return self._dao.external_auth.get(user_uuid, auth_type)
+
+    def update(self, user_uuid, auth_type, data):
+        return self._dao.external_auth.update(user_uuid, auth_type, data)
+
+
 class GroupService(_Service):
 
     def add_policy(self, group_uuid, policy_uuid):
