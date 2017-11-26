@@ -24,6 +24,15 @@ class TestExternalAuthAPI(base.MockBackendTestCase):
         base.assert_http_error(404, self.client.external.create, 'foo', base.UNKNOWN_UUID, self.original_data)
 
     @fixtures.http_user()
+    def test_delete(self, user):
+        self.client.external.create('foo', user['uuid'], self.original_data)
+
+        base.assert_http_error(404, self.client.external.delete, 'notfoo', user['uuid'])
+        base.assert_http_error(404, self.client.external.delete, 'foo', base.UNKNOWN_UUID)
+        base.assert_no_error(self.client.external.delete, 'foo', user['uuid'])
+        base.assert_http_error(404, self.client.external.get, 'foo', user['uuid'])
+
+    @fixtures.http_user()
     @fixtures.http_user()
     def test_get(self, user1, user2):
         self.client.external.create('foo', user1['uuid'], self.original_data)
