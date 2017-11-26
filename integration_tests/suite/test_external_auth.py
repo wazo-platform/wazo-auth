@@ -10,16 +10,27 @@ from .helpers import base, fixtures
 class TestExternalAuthAPI(base.MockBackendTestCase):
 
     asset = 'external_auth'
+    original_data = {'secret': str(uuid4())}
 
     @fixtures.http_user()
     def test_create(self, user):
-        original_data = {'secret': str(uuid4())}
-
-        result = self.client.external.create('foo', user['uuid'], original_data)
-        assert_that(result, equal_to(original_data))
+        result = self.client.external.create('foo', user['uuid'], self.original_data)
+        assert_that(result, equal_to(self.original_data))
 
         data = self.client.external.get('foo', user['uuid'])
-        assert_that(data, equal_to(original_data))
+        assert_that(data, equal_to(self.original_data))
 
-        base.assert_http_error(404, self.client.external.create, 'notfoo', user['uuid'], original_data)
-        base.assert_http_error(404, self.client.external.create, 'foo', base.UNKNOWN_UUID, original_data)
+        base.assert_http_error(404, self.client.external.create, 'notfoo', user['uuid'], self.original_data)
+        base.assert_http_error(404, self.client.external.create, 'foo', base.UNKNOWN_UUID, self.original_data)
+
+    @fixtures.http_user()
+    @fixtures.http_user()
+    def test_get(self, user1, user2):
+        self.client.external.create('foo', user1['uuid'], self.original_data)
+
+        base.assert_http_error(404, self.client.external.get, 'foo', user2['uuid'])
+        base.assert_http_error(404, self.client.external.get, 'notfoo', user1['uuid'])
+
+        assert_that(
+            self.client.external.get('foo', user1['uuid']),
+            equal_to(self.original_data))
