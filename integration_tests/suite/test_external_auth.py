@@ -43,3 +43,17 @@ class TestExternalAuthAPI(base.MockBackendTestCase):
         assert_that(
             self.client.external.get('foo', user1['uuid']),
             equal_to(self.original_data))
+
+    @fixtures.http_user()
+    def test_update(self, user):
+        new_data = {'foo': 'bar'}
+
+        base.assert_http_error(404, self.client.external.update, 'foo', user['uuid'], new_data)
+        self.client.external.create('foo', user['uuid'], self.original_data)
+        base.assert_http_error(404, self.client.external.update, 'foo', base.UNKNOWN_UUID, new_data)
+        base.assert_http_error(404, self.client.external.update, 'notfoo', user['uuid'], new_data)
+
+        result = self.client.external.update('foo', user['uuid'], new_data)
+        assert_that(result, equal_to(new_data))
+
+        assert_that(self.client.external.get('foo', user['uuid']), equal_to(new_data))
