@@ -29,6 +29,7 @@ _DEFAULT_CONFIG = {
         'tenants': True,
         'user_group': True,
         'user_policy': True,
+        'user_registration': False,
         'users': False,
     },
     'enabled_backend_plugins': {
