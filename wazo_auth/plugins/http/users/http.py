@@ -4,6 +4,7 @@
 
 from flask import request
 from wazo_auth import exceptions, http, schemas
+from .schemas import UserPostSchema
 
 
 class User(http.ErrorCatchingResource):
@@ -46,7 +47,7 @@ class Users(http.ErrorCatchingResource):
         return response, 200
 
     def post(self):
-        args, errors = schemas.UserRequestSchema().load(request.get_json(force=True))
+        args, errors = UserPostSchema().load(request.get_json())
         if errors:
             raise exceptions.UserParamException.from_errors(errors)
         result = self.user_service.new_user(**args)
