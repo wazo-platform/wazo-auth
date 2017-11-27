@@ -259,6 +259,9 @@ class UserService(_Service):
         except exceptions.UnknownUsernameException:
             return False
 
+        if not hash_ or not salt:
+            return False
+
         return hash_ == self._encrypter.compute_password_hash(password, salt)
 
 
