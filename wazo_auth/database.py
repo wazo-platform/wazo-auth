@@ -854,7 +854,7 @@ class _UserDAO(_PaginatorMixin, _BaseDAO):
         with self.new_session() as s:
             return s.query(Tenant).join(TenantUser).filter(filter_).count()
 
-    def create(self, username, email_address, hash_, salt, email_confirmed=False, **ignored):
+    def create(self, username, email_address, hash_=None, salt=None, email_confirmed=False, **ignored):
         with self.new_session() as s:
             try:
                 email = Email(
