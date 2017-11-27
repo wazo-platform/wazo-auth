@@ -25,6 +25,10 @@ The user creation url now needs a token and does not require a password anymore
 
   * POST `0.1/users`
 
+The user creation url now needs a token and does not require a password anymore
+
+  * POST `0.1/users`
+
 * All DELETE on association now return 204 if the resources are not associated but both exists
 
   * DELETE `0.1/users/<user_uuid>/policies/<policy_uuid>`
