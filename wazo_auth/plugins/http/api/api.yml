@@ -1114,22 +1114,6 @@ definitions:
         type: string
       main_email_address:
         type: string
-  UserCreate:
-    type: object
-    properties:
-      username:
-        type: string
-        description: The username that will identify that new username
-      password:
-        type: string
-        description: The password of the newly created username
-      email_address:
-        type: string
-        description: The main email address of the new username
-    required:
-      - username
-      - password
-      - email_address
   TenantCreate:
     type: object
     properties:

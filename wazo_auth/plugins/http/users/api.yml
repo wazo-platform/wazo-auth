@@ -97,3 +97,19 @@ paths:
           description: System related error
           schema:
             $ref: '#/definitions/Error'
+definitions:
+  UserCreate:
+    type: object
+    properties:
+      username:
+        type: string
+        description: The username that will identify that new username
+      password:
+        type: string
+        description: The password of the newly created username
+      email_address:
+        type: string
+        description: The main email address of the new username
+    required:
+      - username
+      - email_address

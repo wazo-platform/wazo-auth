@@ -16,7 +16,7 @@ paths:
           description: The user creation parameters
           required: true
           schema:
-            $ref: '#/definitions/UserCreate'
+            $ref: '#/definitions/UserRegister'
       responses:
         '200':
           description: The new user data without the password
@@ -26,4 +26,20 @@ paths:
           description: Invalid body
           schema:
             $ref: '#/definitions/APIError'
-
+definitions:
+  UserRegister:
+    type: object
+    properties:
+      username:
+        type: string
+        description: The username that will identify that new username
+      password:
+        type: string
+        description: The password of the newly created username
+      email_address:
+        type: string
+        description: The main email address of the new username
+    required:
+      - username
+      - password
+      - email_address
