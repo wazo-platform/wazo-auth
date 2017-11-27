@@ -50,7 +50,7 @@ def http_user(**user_args):
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
-            user = self.client.users.new(**user_args)
+            user = self.client.users.register(**user_args)
             try:
                 result = decorated(self, user, *args, **kwargs)
             finally:
