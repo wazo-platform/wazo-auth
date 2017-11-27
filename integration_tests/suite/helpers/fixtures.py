@@ -39,7 +39,7 @@ def http_tenant(**tenant_args):
     return decorator
 
 
-def http_user(**user_args):
+def http_user_register(**user_args):
     if 'username' not in user_args:
         user_args['username'] = _random_string(20)
     if 'password' not in user_args:

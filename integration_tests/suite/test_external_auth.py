@@ -12,7 +12,7 @@ class TestExternalAuthAPI(base.MockBackendTestCase):
     asset = 'external_auth'
     original_data = {'secret': str(uuid4())}
 
-    @fixtures.http_user()
+    @fixtures.http_user_register()
     def test_create(self, user):
         result = self.client.external.create('foo', user['uuid'], self.original_data)
         assert_that(result, equal_to(self.original_data))
@@ -23,7 +23,7 @@ class TestExternalAuthAPI(base.MockBackendTestCase):
         base.assert_http_error(404, self.client.external.create, 'notfoo', user['uuid'], self.original_data)
         base.assert_http_error(404, self.client.external.create, 'foo', base.UNKNOWN_UUID, self.original_data)
 
-    @fixtures.http_user()
+    @fixtures.http_user_register()
     def test_delete(self, user):
         self.client.external.create('foo', user['uuid'], self.original_data)
 
@@ -32,8 +32,8 @@ class TestExternalAuthAPI(base.MockBackendTestCase):
         base.assert_no_error(self.client.external.delete, 'foo', user['uuid'])
         base.assert_http_error(404, self.client.external.get, 'foo', user['uuid'])
 
-    @fixtures.http_user()
-    @fixtures.http_user()
+    @fixtures.http_user_register()
+    @fixtures.http_user_register()
     def test_get(self, user1, user2):
         self.client.external.create('foo', user1['uuid'], self.original_data)
 
@@ -44,7 +44,7 @@ class TestExternalAuthAPI(base.MockBackendTestCase):
             self.client.external.get('foo', user1['uuid']),
             equal_to(self.original_data))
 
-    @fixtures.http_user()
+    @fixtures.http_user_register()
     def test_update(self, user):
         new_data = {'foo': 'bar'}
 

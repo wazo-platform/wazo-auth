@@ -29,7 +29,7 @@ UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
 
 class TestUsers(MockBackendTestCase):
 
-    @fixtures.http_user()
+    @fixtures.http_user_register()
     def test_delete(self, user):
         assert_http_error(404, self.client.users.delete, UNKNOWN_UUID)
         assert_no_error(self.client.users.delete, user['uuid'])
@@ -86,9 +86,9 @@ class TestUsers(MockBackendTestCase):
                             'main', True,
                             'confirmed', False))))
 
-    @fixtures.http_user(username='foo', email_address='foo@example.com')
-    @fixtures.http_user(username='bar', email_address='bar@example.com')
-    @fixtures.http_user(username='baz', email_address='baz@example.com')
+    @fixtures.http_user_register(username='foo', email_address='foo@example.com')
+    @fixtures.http_user_register(username='bar', email_address='bar@example.com')
+    @fixtures.http_user_register(username='baz', email_address='baz@example.com')
     def test_list(self, *users):
         def check_list_result(result, filtered, item_matcher, *usernames):
             items = item_matcher(*[has_entries('username', username) for username in usernames])
@@ -107,7 +107,7 @@ class TestUsers(MockBackendTestCase):
         result = self.client.users.list(limit=1, offset=1, order='username', direction='asc')
         check_list_result(result, 3, contains, 'baz')
 
-    @fixtures.http_user(username='foo', email_address='foo@example.com')
+    @fixtures.http_user_register(username='foo', email_address='foo@example.com')
     def test_get(self, user):
         result = self.client.users.get(user['uuid'])
         assert_that(
@@ -121,7 +121,7 @@ class TestUsers(MockBackendTestCase):
                         'confirmed', False,
                         'main', True))))
 
-    @fixtures.http_user(username='foo', password='bar')
+    @fixtures.http_user_register(username='foo', password='bar')
     @fixtures.http_policy(name='two', acl_templates=['acl.one.{{ username }}', 'acl.two'])
     @fixtures.http_policy(name='one', acl_templates=['this.is.a.test.acl'])
     def test_user_policy(self, policy_1, policy_2, user):
