@@ -15,7 +15,7 @@ rest_api:
 
 enabled_http_plugins:
   users: true
-  tenants: true
+  user_registration: true
 enabled_backend_plugins:
   mock: true
   mock_with_uuid: true
