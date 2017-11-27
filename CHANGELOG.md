@@ -17,6 +17,10 @@ Changelog
   * DELETE `0.1/groups/<group_uuid>/policies/<policy_uuid>`
   * GET `0.1/groups/<group_uuid>/policies`
 
+* The URL to create users with a token has been changed
+
+  * POST `0.1/users/register`
+
 
 17.16
 -----

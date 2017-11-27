@@ -52,6 +52,24 @@ class TestUsers(MockBackendTestCase):
         finally:
             self.client.users.delete(user['uuid'])
 
+    def test_register_post(self):
+        username, email, password = 'foobar', 'foobar@example.com', 's3cr37'
+        user = self.client.users.register(username=username, email_address=email, password=password)
+
+        try:
+            assert_that(
+                user,
+                has_entries(
+                    'uuid', uuid_(),
+                    'username', username,
+                    'emails', contains_inanyorder(
+                        has_entries(
+                            'address', 'foobar@example.com',
+                            'main', True,
+                            'confirmed', False))))
+        finally:
+            self.client.users.delete(user['uuid'])
+
     @fixtures.http_user(username='foo', email_address='foo@example.com')
     @fixtures.http_user(username='bar', email_address='bar@example.com')
     @fixtures.http_user(username='baz', email_address='baz@example.com')
