@@ -43,16 +43,29 @@ class TestUsers(MockBackendTestCase):
         )
 
         with self.auto_remove_user(self.client.users.new, **args) as user:
-            assert_that(
-                user,
-                has_entries(
-                    'uuid', uuid_(),
-                    'username', 'foobar',
-                    'emails', contains_inanyorder(
-                        has_entries(
-                            'address', 'foobar@example.com',
-                            'main', True,
-                            'confirmed', False))))
+            assert_that(user, has_entries(
+                'uuid', uuid_(),
+                'username', 'foobar',
+                'emails', contains_inanyorder(
+                    has_entries(
+                        'address', 'foobar@example.com',
+                        'main', True,
+                        'confirmed', True))))
+
+        args = dict(
+            username='foobaz',
+            email_address='foobaz@example.com',
+        )
+
+        with self.auto_remove_user(self.client.users.new, **args) as user:
+            assert_that(user, has_entries(
+                'uuid', uuid_(),
+                'username', 'foobaz',
+                'emails', contains_inanyorder(
+                    has_entries(
+                        'address', 'foobaz@example.com',
+                        'main', True,
+                        'confirmed', True))))
 
     def test_register_post(self):
         args = dict(
