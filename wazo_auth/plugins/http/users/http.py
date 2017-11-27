@@ -50,5 +50,5 @@ class Users(http.ErrorCatchingResource):
         args, errors = UserPostSchema().load(request.get_json())
         if errors:
             raise exceptions.UserParamException.from_errors(errors)
-        result = self.user_service.new_user(**args)
+        result = self.user_service.new_user(email_confirmed=True, **args)
         return result, 200

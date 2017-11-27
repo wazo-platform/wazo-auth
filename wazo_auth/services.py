@@ -237,7 +237,7 @@ class UserService(_Service):
         password = kwargs.pop('password')
         salt, hash_ = self._encrypter.encrypt_password(password)
         logger.info('creating a new user with params: %s', kwargs)  # log after poping the password
-        # a confirmation email should be sent
+        # a confirmation email should be sent if the email is not confirmed
         return self._dao.user.create(salt=salt, hash_=hash_, **kwargs)
 
     def remove_policy(self, user_uuid, policy_uuid):
