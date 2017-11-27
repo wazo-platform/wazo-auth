@@ -13,6 +13,7 @@ from hamcrest import (
     has_items,
     has_properties,
 )
+from contextlib import contextmanager
 from xivo_auth_client import Client
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from xivo_test_helpers.hamcrest.raises import raises
@@ -35,40 +36,42 @@ class TestUsers(MockBackendTestCase):
         assert_http_error(404, self.client.users.delete, user['uuid'])
 
     def test_post(self):
-        username, email, password = 'foobar', 'foobar@example.com', 's3cr37'
-        user = self.client.users.new(username=username, email_address=email, password=password)
+        args = dict(
+            username='foobar',
+            email_address='foobar@example.com',
+            password='s3cr37',
+        )
 
-        try:
+        with self.auto_remove_user(self.client.users.new, **args) as user:
             assert_that(
                 user,
                 has_entries(
                     'uuid', uuid_(),
-                    'username', username,
+                    'username', 'foobar',
                     'emails', contains_inanyorder(
                         has_entries(
                             'address', 'foobar@example.com',
                             'main', True,
                             'confirmed', False))))
-        finally:
-            self.client.users.delete(user['uuid'])
 
     def test_register_post(self):
-        username, email, password = 'foobar', 'foobar@example.com', 's3cr37'
-        user = self.client.users.register(username=username, email_address=email, password=password)
+        args = dict(
+            username='foobar',
+            email_address='foobar@example.com',
+            password='s3cr37',
+        )
 
-        try:
+        with self.auto_remove_user(self.client.users.register, **args) as user:
             assert_that(
                 user,
                 has_entries(
                     'uuid', uuid_(),
-                    'username', username,
+                    'username', 'foobar',
                     'emails', contains_inanyorder(
                         has_entries(
                             'address', 'foobar@example.com',
                             'main', True,
                             'confirmed', False))))
-        finally:
-            self.client.users.delete(user['uuid'])
 
     @fixtures.http_user(username='foo', email_address='foo@example.com')
     @fixtures.http_user(username='bar', email_address='bar@example.com')
@@ -185,4 +188,12 @@ class TestUsers(MockBackendTestCase):
             'not associated',
         )
 
-        self.client.users.remove_policy(user['uuid'], policy_1['uuid'])
+        assert_no_error(self.client.users.remove_policy, user['uuid'], policy_1['uuid'])
+
+    @contextmanager
+    def auto_remove_user(self, fn, *args, **kwargs):
+        user = fn(*args, **kwargs)
+        try:
+            yield user
+        finally:
+            self.client.users.delete(user['uuid'])
