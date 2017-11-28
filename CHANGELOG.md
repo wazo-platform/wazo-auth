@@ -21,6 +21,13 @@ Changelog
 
   * POST `0.1/users/register`
 
+* All DELETE on association now return 204 if the resources are not associated but both exists
+
+  * DELETE `0.1/users/<user_uuid>/policies/<policy_uuid>`
+  * DELETE `0.1/groups/<group_uuid>/policies/<policy_uuid>`
+  * DELETE `0.1/groups/<group_uuid>/users/<user_uuid>`
+  * DELETE `0.1/tenants/<tenant_uuid>/users/<user_uuid>`
+
 
 17.16
 -----
