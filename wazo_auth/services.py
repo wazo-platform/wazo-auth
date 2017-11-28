@@ -74,7 +74,12 @@ class GroupService(object):
             raise exceptions.UnknownPolicyException(policy_uuid)
 
     def remove_user(self, group_uuid, user_uuid):
-        return self._dao.group.remove_user(group_uuid, user_uuid)
+        nb_deleted = self._dao.group.remove_user(group_uuid, user_uuid)
+        if nb_deleted:
+            return
+
+        if not self._dao.user.exists(user_uuid):
+            raise exceptions.UnknownUserException(user_uuid)
 
     def update(self, group_uuid, **kwargs):
         return self._dao.group.update(group_uuid, **kwargs)

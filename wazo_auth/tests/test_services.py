@@ -52,6 +52,25 @@ class TestGroupService(BaseServiceTestCase):
             calling(self.service.remove_policy).with_args(s.group_uuid, s.policy_uuid),
             not_(raises(Exception)))
 
+    def test_remove_user(self):
+        self.group_dao.remove_user.return_value = 0
+        self.user_dao.exists.return_value = False
+        assert_that(
+            calling(self.service.remove_user).with_args(s.group_uuid, s.user_uuid),
+            raises(exceptions.UnknownUserException))
+
+        self.group_dao.remove_user.return_value = 0
+        self.user_dao.exists.return_value = True
+        assert_that(
+            calling(self.service.remove_user).with_args(s.group_uuid, s.user_uuid),
+            not_(raises(Exception)))
+
+        self.group_dao.remove_user.return_value = 1
+        self.user_dao.exists.return_value = True
+        assert_that(
+            calling(self.service.remove_user).with_args(s.group_uuid, s.user_uuid),
+            not_(raises(Exception)))
+
 
 class TestUserService(BaseServiceTestCase):
 
