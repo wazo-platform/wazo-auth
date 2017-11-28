@@ -95,8 +95,8 @@ class MockBackendTestCase(BaseTestCase):
 
     def setUp(self):
         super(MockBackendTestCase, self).setUp()
-        port = self.service_port(9497, 'auth')
-        self.client = Client(self.get_host(), port, username='foo', password='bar', verify_certificate=False)
+        self._auth_port = self.service_port(9497, 'auth')
+        self.client = Client(self.get_host(), self._auth_port, username='foo', password='bar', verify_certificate=False)
         token = self.client.token.new(backend='mock', expiration=3600)['token']
         self.client.set_token(token)
 

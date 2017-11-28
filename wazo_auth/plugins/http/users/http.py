@@ -46,6 +46,7 @@ class Users(http.ErrorCatchingResource):
 
         return response, 200
 
+    @http.required_acl('auth.users.create')
     def post(self):
         args, errors = UserPostSchema().load(request.get_json())
         if errors:

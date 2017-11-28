@@ -2,6 +2,7 @@
 # Copyright 2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+import json
 import requests
 from hamcrest import (
     assert_that,
@@ -9,6 +10,7 @@ from hamcrest import (
     contains,
     contains_inanyorder,
     empty,
+    equal_to,
     has_entries,
     has_items,
     has_properties,
@@ -41,6 +43,11 @@ class TestUsers(MockBackendTestCase):
             email_address='foobar@example.com',
             password='s3cr37',
         )
+
+        url = 'https://{}:{}/0.1/users'.format(self.get_host(), self._auth_port)
+        result = requests.post(url, headers={'Content-Type': 'application/json'},
+                               data=json.dumps(args), verify=False)
+        assert_that(result.status_code, equal_to(401))
 
         with self.auto_remove_user(self.client.users.new, **args) as user:
             assert_that(user, has_entries(
