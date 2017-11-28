@@ -26,7 +26,8 @@ class WazoUser(BaseAuthenticationBackend, ACLRenderingBackend):
         return self.render_acl(acl_templates, self.get_user_data, username=username)
 
     def get_ids(self, username, args):
-        return self._get_user_uuid(username), None
+        uuid = self._get_user_uuid(username)
+        return uuid, uuid
 
     def verify_password(self, username, password, args):
         return self._user_service.verify_password(username, password)
