@@ -4,12 +4,12 @@
 
 import logging
 
-from wazo_auth import ACLRenderingBackend, BaseAuthenticationBackend
+from wazo_auth import UserAuthenticationBackend
 
 logger = logging.getLogger(__name__)
 
 
-class WazoUser(BaseAuthenticationBackend, ACLRenderingBackend):
+class WazoUser(UserAuthenticationBackend):
 
     def load(self, dependencies):
         super(WazoUser, self).load(dependencies)
@@ -34,16 +34,13 @@ class WazoUser(BaseAuthenticationBackend, ACLRenderingBackend):
 
     def get_user_data(self, *args, **kwargs):
         user_uuid = self._get_user_uuid(kwargs['username'])
+        confd_data = super(WazoUser, self).get_user_data(uuid=user_uuid)
         tenants = self._user_service.list_tenants(user_uuid)
         groups = self._user_service.list_groups(user_uuid)
         for group in groups:
             group['users'] = self._group_service.list_users(group['uuid'])
 
-        return {
-            'username': kwargs['username'],
-            'tenants': tenants,
-            'groups': groups,
-        }
+        return dict(username=kwargs['username'], tenants=tenants, groups=groups, **confd_data)
 
     def _get_user_uuid(self, username):
         matching_users = self._user_service.list_users(username=username)
