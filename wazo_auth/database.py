@@ -724,8 +724,13 @@ class _UserDAO(_PaginatorMixin, _BaseDAO):
                 )
             ).delete()
 
-        if nb_deleted == 0:
-            raise UnknownUserPolicyException(user_uuid, policy_uuid)
+        if nb_deleted:
+            return nb_deleted
+
+        if not self.exists(user_uuid):
+            raise UnknownUserException(user_uuid)
+
+        return nb_deleted
 
     def count(self, **kwargs):
         filtered = kwargs.get('filtered')

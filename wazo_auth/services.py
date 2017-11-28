@@ -220,7 +220,12 @@ class UserService(object):
         return self._dao.user.create(salt=salt, hash_=hash_, **kwargs)
 
     def remove_policy(self, user_uuid, policy_uuid):
-        self._dao.user.remove_policy(user_uuid, policy_uuid)
+        nb_deleted = self._dao.user.remove_policy(user_uuid, policy_uuid)
+        if nb_deleted:
+            return
+
+        if not self._dao.policy.exists(policy_uuid):
+            raise exceptions.UnknownPolicyException(policy_uuid)
 
     def verify_password(self, username, password):
         try:

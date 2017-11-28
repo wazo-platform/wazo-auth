@@ -79,6 +79,25 @@ class TestUserService(BaseServiceTestCase):
         self.encrypter = Mock(services.PasswordEncrypter)
         self.service = services.UserService(self.dao, encrypter=self.encrypter)
 
+    def test_remove_policy(self):
+        self.user_dao.remove_policy.return_value = 0
+        self.policy_dao.exists.return_value = False
+        assert_that(
+            calling(self.service.remove_policy).with_args(s.user_uuid, s.policy_uuid),
+            raises(exceptions.UnknownPolicyException))
+
+        self.user_dao.remove_policy.return_value = 0
+        self.policy_dao.exists.return_value = True
+        assert_that(
+            calling(self.service.remove_policy).with_args(s.user_uuid, s.policy_uuid),
+            not_(raises(Exception)))
+
+        self.user_dao.remove_policy.return_value = 1
+        self.policy_dao.exists.return_value = True
+        assert_that(
+            calling(self.service.remove_policy).with_args(s.user_uuid, s.policy_uuid),
+            not_(raises(Exception)))
+
     def test_that_new(self):
         params = dict(
             username='foobar',

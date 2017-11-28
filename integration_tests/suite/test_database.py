@@ -655,30 +655,17 @@ class TestUserDAO(_BaseDAOTestCase):
     @fixtures.policy()
     @fixtures.user()
     def test_user_policy_dissociation(self, user_uuid, policy_uuid):
-        assert_that(
-            calling(self._user_dao.remove_policy).with_args(user_uuid, policy_uuid),
-            raises(exceptions.UnknownUserPolicyException),
-            'no association',
-        )
+        nb_deleted = self._user_dao.remove_policy(user_uuid, policy_uuid)
+        assert_that(nb_deleted, equal_to(0))
 
         self._user_dao.add_policy(user_uuid, policy_uuid)
+        nb_deleted = self._user_dao.remove_policy(user_uuid, policy_uuid)
+        assert_that(nb_deleted, equal_to(1))
 
         assert_that(
             calling(self._user_dao.remove_policy).with_args('unknown', policy_uuid),
-            raises(exceptions.UnknownUserPolicyException),
+            raises(exceptions.UnknownUserException),
             'unknown user',
-        )
-
-        assert_that(
-            calling(self._user_dao.remove_policy).with_args(user_uuid, 'unknown'),
-            raises(exceptions.UnknownUserPolicyException),
-            'unknown policy',
-        )
-
-        assert_that(
-            calling(self._user_dao.remove_policy).with_args(user_uuid, policy_uuid),
-            not_(raises(Exception)),
-            'no error when dissociating',
         )
 
     @fixtures.policy(name='c', description='The third foobar')
