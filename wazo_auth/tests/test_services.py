@@ -27,6 +27,32 @@ class BaseServiceTestCase(TestCase):
         )
 
 
+class TestGroupService(BaseServiceTestCase):
+
+    def setUp(self):
+        super(TestGroupService, self).setUp()
+        self.service = services.GroupService(self.dao)
+
+    def test_remove_policy(self):
+        self.group_dao.remove_policy.return_value = 0
+        self.policy_dao.exists.return_value = False
+        assert_that(
+            calling(self.service.remove_policy).with_args(s.group_uuid, s.policy_uuid),
+            raises(exceptions.UnknownPolicyException))
+
+        self.group_dao.remove_policy.return_value = 0
+        self.policy_dao.exists.return_value = True
+        assert_that(
+            calling(self.service.remove_policy).with_args(s.group_uuid, s.policy_uuid),
+            not_(raises(Exception)))
+
+        self.group_dao.remove_policy.return_value = 1
+        self.policy_dao.exists.return_value = True
+        assert_that(
+            calling(self.service.remove_policy).with_args(s.group_uuid, s.policy_uuid),
+            not_(raises(Exception)))
+
+
 class TestUserService(BaseServiceTestCase):
 
     def setUp(self):

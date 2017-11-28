@@ -193,14 +193,8 @@ class TestGroupDAO(_BaseDAOTestCase):
     @fixtures.group()
     @fixtures.policy()
     def test_remove_policy(self, policy_uuid, group_uuid):
-        assert_that(
-            calling(self._group_dao.remove_policy).with_args(group_uuid, policy_uuid),
-            any_of(
-                raises(exceptions.UnknownGroupException),
-                raises(exceptions.UnknownPolicyException),
-            ),
-            'unknown group and policy',
-        )
+        nb_deleted = self._group_dao.remove_policy(group_uuid, policy_uuid)
+        assert_that(nb_deleted, equal_to(0))
 
         assert_that(
             calling(self._group_dao.remove_policy).with_args(self.unknown_uuid, policy_uuid),
@@ -208,17 +202,9 @@ class TestGroupDAO(_BaseDAOTestCase):
             'unknown group',
         )
 
-        assert_that(
-            calling(self._group_dao.remove_policy).with_args(group_uuid, self.unknown_uuid),
-            raises(exceptions.UnknownPolicyException),
-            'unknown policy'
-        )
-
         self._group_dao.add_policy(group_uuid, policy_uuid)
-
-        assert_that(
-            calling(self._group_dao.remove_policy).with_args(group_uuid, policy_uuid),
-            not_(raises(Exception)))
+        nb_deleted = self._group_dao.remove_policy(group_uuid, policy_uuid)
+        assert_that(nb_deleted, equal_to(1))
 
     @fixtures.group()
     @fixtures.user()

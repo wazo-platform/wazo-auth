@@ -66,7 +66,12 @@ class GroupService(object):
         return self._dao.user.list_(group_uuid=group_uuid, **kwargs)
 
     def remove_policy(self, group_uuid, policy_uuid):
-        return self._dao.group.remove_policy(group_uuid, policy_uuid)
+        nb_deleted = self._dao.group.remove_policy(group_uuid, policy_uuid)
+        if nb_deleted:
+            return
+
+        if not self._dao.policy.exists(policy_uuid):
+            raise exceptions.UnknownPolicyException(policy_uuid)
 
     def remove_user(self, group_uuid, user_uuid):
         return self._dao.group.remove_user(group_uuid, user_uuid)

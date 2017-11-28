@@ -229,6 +229,9 @@ class _GroupDAO(_PaginatorMixin, _BaseDAO):
         if not nb_deleted:
             raise UnknownGroupException(uuid)
 
+    def exists(self, uuid):
+        return self.count(uuid=uuid) != 0
+
     def list_(self, **kwargs):
         search_filter = self.new_search_filter(**kwargs)
         strict_filter = self._new_strict_filter(**kwargs)
@@ -267,14 +270,17 @@ class _GroupDAO(_PaginatorMixin, _BaseDAO):
             GroupPolicy.policy_uuid == str(policy_uuid),
             GroupPolicy.group_uuid == str(group_uuid),
         )
+
         with self.new_session() as s:
             nb_deleted = s.query(GroupPolicy).filter(filter_).delete()
 
-        if not nb_deleted:
-            if not self.list_(uuid=group_uuid):
-                raise UnknownGroupException(group_uuid)
-            else:
-                raise UnknownPolicyException(policy_uuid)
+        if nb_deleted:
+            return nb_deleted
+
+        if not self.exists(group_uuid):
+            raise UnknownGroupException(group_uuid)
+
+        return nb_deleted
 
     def remove_user(self, group_uuid, user_uuid):
         filter_ = and_(
@@ -365,6 +371,10 @@ class _PolicyDAO(_PaginatorMixin, _BaseDAO):
 
         if not nb_deleted:
             raise UnknownPolicyException(policy_uuid)
+
+    def exists(self, uuid):
+        with self.new_session() as s:
+            return self._policy_exists(s, uuid)
 
     def get(self, **kwargs):
         strict_filter = self._new_strict_filter(**kwargs)
@@ -457,14 +467,14 @@ class _PolicyDAO(_PaginatorMixin, _BaseDAO):
         return tpl.id_
 
     def _policy_exists(self, s, policy_uuid):
-        policy_count = s.query(Policy).filter(Policy.uuid == policy_uuid).count()
+        policy_count = s.query(Policy).filter(Policy.uuid == str(policy_uuid)).count()
         return policy_count != 0
 
     @staticmethod
     def _new_strict_filter(uuid=None, name=None, user_uuid=None, group_uuid=None, **ignored):
         filter_ = text('true')
         if uuid:
-            filter_ = and_(filter_, Policy.uuid == uuid)
+            filter_ = and_(filter_, Policy.uuid == str(uuid))
         if name:
             filter_ = and_(filter_, Policy.name == name)
         if user_uuid:
