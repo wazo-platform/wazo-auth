@@ -484,6 +484,9 @@ class _TenantDAO(_PaginatorMixin, _BaseDAO):
         name=Tenant.name,
     )
 
+    def exists(self, tenant_uuid):
+        return self.count(uuid=tenant_uuid) != 0
+
     def add_user(self, tenant_uuid, user_uuid):
         tenant_user = TenantUser(tenant_uuid=str(tenant_uuid), user_uuid=str(user_uuid))
         with self.new_session() as s:
@@ -581,14 +584,17 @@ class _TenantDAO(_PaginatorMixin, _BaseDAO):
             TenantUser.user_uuid == str(user_uuid),
             TenantUser.tenant_uuid == str(tenant_uuid),
         )
+
         with self.new_session() as s:
             nb_deleted = s.query(TenantUser).filter(filter_).delete()
 
-        if not nb_deleted:
-            if not self.list_(uuid=tenant_uuid):
-                raise UnknownTenantException(tenant_uuid)
-            else:
-                raise UnknownUserException(user_uuid)
+        if nb_deleted:
+            return nb_deleted
+
+        if not self.exists(tenant_uuid):
+            raise UnknownTenantException(tenant_uuid)
+
+        return nb_deleted
 
     @staticmethod
     def _new_strict_filter(uuid=None, name=None, user_uuid=None, **ignored):
@@ -692,6 +698,9 @@ class _UserDAO(_PaginatorMixin, _BaseDAO):
                     elif constraint == 'auth_user_policy_policy_uuid_fkey':
                         raise UnknownPolicyException(policy_uuid)
                 raise
+
+    def exists(self, user_uuid):
+        return self.count(uuid=user_uuid) != 0
 
     def remove_policy(self, user_uuid, policy_uuid):
         with self.new_session() as s:

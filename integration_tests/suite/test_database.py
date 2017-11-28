@@ -524,31 +524,18 @@ class TestTenantDAO(_BaseDAOTestCase):
     @fixtures.user()
     def test_remove_user(self, user_uuid, tenant_uuid):
         assert_that(
-            calling(self._tenant_dao.remove_user).with_args(tenant_uuid, user_uuid),
-            any_of(
-                raises(exceptions.UnknownTenantException),
-                raises(exceptions.UnknownUserException),
-            ),
-            'unknown tenant and user',
-        )
-
-        assert_that(
             calling(self._tenant_dao.remove_user).with_args(self.unknown_uuid, user_uuid),
             raises(exceptions.UnknownTenantException),
             'unknown tenant',
         )
 
-        assert_that(
-            calling(self._tenant_dao.remove_user).with_args(tenant_uuid, self.unknown_uuid),
-            raises(exceptions.UnknownUserException),
-            'unknown user'
-        )
-
         self._tenant_dao.add_user(tenant_uuid, user_uuid)
 
-        assert_that(
-            calling(self._tenant_dao.remove_user).with_args(tenant_uuid, user_uuid),
-            not_(raises(Exception)))
+        result = self._tenant_dao.remove_user(tenant_uuid, user_uuid)
+        assert_that(result, equal_to(1))
+
+        result = self._tenant_dao.remove_user(tenant_uuid, user_uuid)
+        assert_that(result, equal_to(0))
 
     @fixtures.tenant(name='c')
     @fixtures.tenant(name='b')

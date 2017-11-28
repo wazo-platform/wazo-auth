@@ -21,13 +21,14 @@ class TestTenantUserAssociation(base.MockBackendTestCase):
     @fixtures.http_user(username='foo')
     @fixtures.http_tenant()
     def test_delete(self, tenant, foo, bar):
+        base.assert_no_error(self.client.tenants.remove_user, tenant['uuid'], foo['uuid'])
+
         self.client.tenants.add_user(tenant['uuid'], foo['uuid'])
         self.client.tenants.add_user(tenant['uuid'], bar['uuid'])
 
         base.assert_http_error(404, self.client.tenants.remove_user, self.unknown_uuid, foo['uuid'])
         base.assert_http_error(404, self.client.tenants.remove_user, tenant['uuid'], self.unknown_uuid)
         base.assert_no_error(self.client.tenants.remove_user, tenant['uuid'], foo['uuid'])
-        base.assert_http_error(404, self.client.tenants.remove_user, tenant['uuid'], foo['uuid'])  # twice
 
         result = self.client.tenants.get_users(tenant['uuid'])
         assert_that(result, has_entries('items', contains_inanyorder(

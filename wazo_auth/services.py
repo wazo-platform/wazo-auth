@@ -143,7 +143,12 @@ class TenantService(object):
         return dict(uuid=uuid, **kwargs)
 
     def remove_user(self, tenant_uuid, user_uuid):
-        return self._dao.tenant.remove_user(tenant_uuid, user_uuid)
+        nb_deleted = self._dao.tenant.remove_user(tenant_uuid, user_uuid)
+        if nb_deleted:
+            return
+
+        if not self._dao.user.exists(user_uuid):
+            raise exceptions.UnknownUserException(user_uuid)
 
 
 class UserService(object):
