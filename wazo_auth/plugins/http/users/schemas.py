@@ -9,6 +9,7 @@ from wazo_auth.schemas import BaseSchema
 
 class UserPostSchema(BaseSchema):
 
+    uuid = fields.UUID()
     username = fields.String(validate=validate.Length(min=1, max=128), required=True)
     password = fields.String(validate=validate.Length(min=1))
     email_address = fields.Email(required=True)

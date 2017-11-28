@@ -101,6 +101,9 @@ definitions:
   UserCreate:
     type: object
     properties:
+      uuid:
+        type: string
+        description: "The user's UUID"
       username:
         type: string
         description: The username that will identify that new username
