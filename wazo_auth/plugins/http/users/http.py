@@ -4,7 +4,7 @@
 
 from flask import request
 from wazo_auth import exceptions, http, schemas
-from .schemas import UserPostSchema
+from .schemas import ChangePasswordSchema, UserPostSchema
 
 
 class BaseUserService(http.ErrorCatchingResource):
@@ -22,6 +22,17 @@ class User(BaseUserService):
     @http.required_acl('auth.users.{user_uuid}.delete')
     def delete(self, user_uuid):
         self.user_service.delete_user(user_uuid)
+        return '', 204
+
+
+class UserPassword(BaseUserService):
+
+    @http.required_acl('auth.users.{user_uuid}.password.edit')
+    def put(self, user_uuid):
+        args, errors = ChangePasswordSchema().load(request.get_json())
+        if errors:
+            raise exceptions.PasswordChangeException.from_errors(errors)
+        self.user_service.change_password(user_uuid, **args)
         return '', 204
 
 

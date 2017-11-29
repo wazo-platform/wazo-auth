@@ -3,10 +3,10 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 from hamcrest import assert_that, calling, equal_to, not_, raises
-from mock import Mock, sentinel as s
+from mock import Mock, patch, sentinel as s
 from unittest import TestCase
 
-from .. import services, database, exceptions
+from .. import database, exceptions, services
 
 
 class BaseServiceTestCase(TestCase):
@@ -18,6 +18,8 @@ class BaseServiceTestCase(TestCase):
         self.tenant_dao = Mock(database._TenantDAO)
         self.token_dao = Mock(database._TokenDAO)
         self.user_dao = Mock(database._UserDAO)
+        self.encrypter = Mock(services.PasswordEncrypter)
+        self.encrypter.encrypt_password.return_value = s.salt, s.hash_
 
         self.dao = database.DAO(
             self.policy_dao,
@@ -92,8 +94,25 @@ class TestUserService(BaseServiceTestCase):
 
     def setUp(self):
         super(TestUserService, self).setUp()
-        self.encrypter = Mock(services.PasswordEncrypter)
         self.service = services.UserService(self.dao, encrypter=self.encrypter)
+
+    def test_change_password(self):
+        self.user_dao.list_.return_value = []
+        assert_that(
+            calling(self.service.change_password).with_args(s.uuid, s.old, s.new),
+            raises(exceptions.UnknownUserException))
+
+        self.user_dao.list_.return_value = [{'username': 'foobar'}]
+        with patch.object(self.service, 'verify_password', return_value=False):
+            assert_that(
+                calling(self.service.change_password).with_args(s.uuid, s.old, s.new),
+                raises(exceptions.AuthenticationFailedException))
+
+        self.user_dao.list_.return_value = [{'username': 'foobar'}]
+        with patch.object(self.service, 'verify_password', return_value=True):
+            self.service.change_password(s.uuid, s.old, s.new)
+
+        self.user_dao.change_password.assert_called_once_with(s.uuid, s.salt, s.hash_)
 
     def test_remove_policy(self):
         def when(nb_deleted, user_exists=True, policy_exists=True):
@@ -133,7 +152,6 @@ class TestUserService(BaseServiceTestCase):
             salt=s.salt,
             hash_=s.hash_,
         )
-        self.encrypter.encrypt_password.return_value = s.salt, s.hash_
 
         result = self.service.new_user(**params)
 

@@ -191,6 +191,14 @@ class UserService(_Service):
     def add_policy(self, user_uuid, policy_uuid):
         self._dao.user.add_policy(user_uuid, policy_uuid)
 
+    def change_password(self, user_uuid, old_password, new_password):
+        user = self.get_user(user_uuid)
+        if not self.verify_password(user['username'], old_password):
+            raise exceptions.AuthenticationFailedException()
+
+        salt, hash_ = self._encrypter.encrypt_password(new_password)
+        self._dao.user.change_password(user_uuid, salt, hash_)
+
     def count_groups(self, user_uuid, **kwargs):
         return self._dao.user.count_groups(user_uuid, **kwargs)
 

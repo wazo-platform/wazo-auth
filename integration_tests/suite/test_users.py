@@ -106,9 +106,12 @@ class TestUsers(MockBackendTestCase):
     def test_put_password(self, user):
         new_password = 'foobaz'
 
-        assert_http_error(404, self.client.users.change_password, UNKNOWN_UUID, 'wrong', new_password)
-        assert_http_error(401, self.client.users.change_password, user['uuid'], 'wrong', new_password)
-        assert_no_error(self.client.users.change_password, user['uuid'], 'foobar', new_password)
+        assert_http_error(404, self.client.users.change_password, UNKNOWN_UUID,
+                          old_password='wrong', new_password=new_password)
+        assert_http_error(401, self.client.users.change_password, user['uuid'],
+                          old_password='wrong', new_password=new_password)
+        assert_no_error(self.client.users.change_password, user['uuid'],
+                        old_password='foobar', new_password=new_password)
 
         user_client = self.new_auth_client('foo', 'foobaz')
         assert_no_error(user_client.token.new, 'wazo_user', expiration=5)
