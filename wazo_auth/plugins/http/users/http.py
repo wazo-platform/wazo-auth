@@ -7,10 +7,13 @@ from wazo_auth import exceptions, http, schemas
 from .schemas import UserPostSchema
 
 
-class User(http.ErrorCatchingResource):
+class BaseUserService(http.ErrorCatchingResource):
 
     def __init__(self, user_service):
         self.user_service = user_service
+
+
+class User(BaseUserService):
 
     @http.required_acl('auth.users.{user_uuid}.read')
     def get(self, user_uuid):
@@ -22,10 +25,7 @@ class User(http.ErrorCatchingResource):
         return '', 204
 
 
-class Users(http.ErrorCatchingResource):
-
-    def __init__(self, user_service):
-        self.user_service = user_service
+class Users(BaseUserService):
 
     @http.required_acl('auth.users.read')
     def get(self):
