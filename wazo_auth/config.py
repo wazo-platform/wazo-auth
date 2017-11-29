@@ -42,6 +42,7 @@ _DEFAULT_CONFIG = {
         'ldap_user': 'wazo_default_user_policy',
         'xivo_admin': 'wazo_default_admin_policy',
         'xivo_user': 'wazo_default_user_policy',
+        'wazo_user': 'wazo_default_user_policy',
     },
     'rest_api': {
         'max_threads': 25,
