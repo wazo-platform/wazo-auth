@@ -98,6 +98,39 @@ paths:
           description: System related error
           schema:
             $ref: '#/definitions/Error'
+  /users/{user_uuid}/password:
+    put:
+      consumes:
+        - application/json
+      tags:
+        - users
+      security:
+        - wazo_auth_token: []
+      description: "**Required ACL**: `auth.users.{user_uuid}.password.edit`
+      Change a user's password"
+      summary: "Change the user's password"
+      parameters:
+        - name: body
+          in: body
+          description: The user creation parameters
+          required: true
+          schema:
+            $ref: '#/definitions/PasswordChange'
+      responses:
+        '204':
+          description: 'Password changed'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: User not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: System related error
+          schema:
+            $ref: '#/definitions/Error'
 definitions:
   UserCreate:
     type: object
@@ -117,3 +150,15 @@ definitions:
     required:
       - username
       - email_address
+  PasswordChange:
+    type: object
+    properties:
+      old_password:
+        type: string
+        description: The old password
+      new_password:
+        type: string
+        description: The desired password
+    required:
+      - old_password
+      - new_password
