@@ -24,8 +24,9 @@ paths:
       produces:
         - application/json
       summary: Create a user
-      description: "Creates a new user that can be used to retrieve a token. The new user privilege
-        are limited until its email address has been confirmed"
+      description: "**Required ACL**: `auth.users.create`
+      Creates a new user that can be used to retrieve a token. The UUID can be used to link this user the a
+      xivo-confd user by using the same UUID"
       operationId: createUser
       tags:
         - users
