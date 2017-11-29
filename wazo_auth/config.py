@@ -36,6 +36,7 @@ _DEFAULT_CONFIG = {
         'xivo_admin': True,
         'xivo_service': True,
         'xivo_user': True,
+        'wazo_user': True,
     },
     'backend_policies': {
         'ldap_user': 'wazo_default_user_policy',
