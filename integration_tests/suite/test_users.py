@@ -16,7 +16,6 @@ from hamcrest import (
     has_properties,
 )
 from contextlib import contextmanager
-from xivo_auth_client import Client
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from xivo_test_helpers.hamcrest.raises import raises
 from .helpers import fixtures
@@ -158,9 +157,7 @@ class TestUsers(MockBackendTestCase):
         self.client.users.add_policy(user['uuid'], policy_1['uuid'])
         self.client.users.add_policy(user['uuid'], policy_2['uuid'])
 
-        user_client = Client(
-            self.get_host(), port=self.service_port(9497, 'auth'), verify_certificate=False,
-            username='foo', password='bar')
+        user_client = self.new_auth_client('foo', 'bar')
         token_data = user_client.token.new('wazo_user', expiration=5)
         assert_that(
             token_data,

@@ -9,7 +9,6 @@ from hamcrest import (
     has_entries,
     has_items,
 )
-from xivo_auth_client import Client
 from .helpers import base, fixtures
 
 
@@ -179,8 +178,7 @@ class TestTenantUserAssociation(base.MockBackendTestCase):
         self.client.tenants.add_user(tenant_2['uuid'], user['uuid'])
         self.client.users.add_policy(user['uuid'], policy['uuid'])
 
-        user_client = Client(self.get_host(), port=self.service_port(9497, 'auth'),
-                             verify_certificate=False, username='foo', password='bar')
+        user_client = self.new_auth_client('foo', 'bar')
 
         expected_acls = [
             'main.one.*',

@@ -96,9 +96,14 @@ class MockBackendTestCase(BaseTestCase):
     def setUp(self):
         super(MockBackendTestCase, self).setUp()
         self._auth_port = self.service_port(9497, 'auth')
-        self.client = Client(self.get_host(), self._auth_port, username='foo', password='bar', verify_certificate=False)
+        self.client = self.new_auth_client('foo', 'bar')
         token = self.client.token.new(backend='mock', expiration=3600)['token']
         self.client.set_token(token)
+
+    def new_auth_client(self, username, password):
+        host = self.get_host()
+        port = self._auth_port
+        return Client(host, port=port, username=username, password=password, verify_certificate=False)
 
 
 def assert_no_error(fn, *args, **kwargs):
