@@ -9,7 +9,6 @@ import uuid
 
 from contextlib import contextmanager, nested
 from hamcrest import (
-    any_of,
     assert_that,
     calling,
     contains,
