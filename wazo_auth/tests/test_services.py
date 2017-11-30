@@ -34,59 +34,53 @@ class TestGroupService(BaseServiceTestCase):
         self.service = services.GroupService(self.dao)
 
     def test_remove_policy(self):
-        self.group_dao.remove_policy.return_value = 0
-        self.group_dao.exists.return_value = False
-        self.policy_dao.exists.return_value = True
+        def when(nb_deleted, group_exists=True, policy_exists=True):
+            self.group_dao.remove_policy.return_value = nb_deleted
+            self.group_dao.exists.return_value = group_exists
+            self.policy_dao.exists.return_value = policy_exists
+
+        when(nb_deleted=0, group_exists=False)
         assert_that(
             calling(self.service.remove_policy).with_args(s.group_uuid, s.policy_uuid),
             raises(exceptions.UnknownGroupException))
 
-        self.group_dao.remove_policy.return_value = 0
-        self.group_dao.exists.return_value = True
-        self.policy_dao.exists.return_value = False
+        when(nb_deleted=0, policy_exists=False)
         assert_that(
             calling(self.service.remove_policy).with_args(s.group_uuid, s.policy_uuid),
             raises(exceptions.UnknownPolicyException))
 
-        self.group_dao.remove_policy.return_value = 0
-        self.group_dao.exists.return_value = True
-        self.policy_dao.exists.return_value = True
+        when(nb_deleted=0)
         assert_that(
             calling(self.service.remove_policy).with_args(s.group_uuid, s.policy_uuid),
             not_(raises(Exception)))
 
-        self.group_dao.remove_policy.return_value = 1
-        self.group_dao.exists.return_value = True
-        self.policy_dao.exists.return_value = True
+        when(nb_deleted=1)
         assert_that(
             calling(self.service.remove_policy).with_args(s.group_uuid, s.policy_uuid),
             not_(raises(Exception)))
 
     def test_remove_user(self):
-        self.group_dao.remove_user.return_value = 0
-        self.group_dao.exists.return_value = False
-        self.user_dao.exists.return_value = True
+        def when(nb_deleted, group_exists=True, user_exists=True):
+            self.group_dao.remove_user.return_value = nb_deleted
+            self.group_dao.exists.return_value = group_exists
+            self.user_dao.exists.return_value = user_exists
+
+        when(nb_deleted=0, group_exists=False)
         assert_that(
             calling(self.service.remove_user).with_args(s.group_uuid, s.user_uuid),
             raises(exceptions.UnknownGroupException))
 
-        self.group_dao.remove_user.return_value = 0
-        self.group_dao.exists.return_value = True
-        self.user_dao.exists.return_value = False
+        when(nb_deleted=0, user_exists=False)
         assert_that(
             calling(self.service.remove_user).with_args(s.group_uuid, s.user_uuid),
             raises(exceptions.UnknownUserException))
 
-        self.group_dao.remove_user.return_value = 0
-        self.group_dao.exists.return_value = True
-        self.user_dao.exists.return_value = True
+        when(nb_deleted=0)
         assert_that(
             calling(self.service.remove_user).with_args(s.group_uuid, s.user_uuid),
             not_(raises(Exception)))
 
-        self.group_dao.remove_user.return_value = 1
-        self.group_dao.exists.return_value = True
-        self.user_dao.exists.return_value = True
+        when(nb_deleted=1)
         assert_that(
             calling(self.service.remove_user).with_args(s.group_uuid, s.user_uuid),
             not_(raises(Exception)))
@@ -100,30 +94,27 @@ class TestUserService(BaseServiceTestCase):
         self.service = services.UserService(self.dao, encrypter=self.encrypter)
 
     def test_remove_policy(self):
-        self.user_dao.remove_policy.return_value = 0
-        self.user_dao.exists.return_value = False
-        self.policy_dao.exists.return_value = True
+        def when(nb_deleted, user_exists=True, policy_exists=True):
+            self.user_dao.remove_policy.return_value = nb_deleted
+            self.user_dao.exists.return_value = user_exists
+            self.policy_dao.exists.return_value = policy_exists
+
+        when(nb_deleted=0, user_exists=False)
         assert_that(
             calling(self.service.remove_policy).with_args(s.user_uuid, s.policy_uuid),
             raises(exceptions.UnknownUserException))
 
-        self.user_dao.remove_policy.return_value = 0
-        self.user_dao.exists.return_value = True
-        self.policy_dao.exists.return_value = False
+        when(nb_deleted=0, policy_exists=False)
         assert_that(
             calling(self.service.remove_policy).with_args(s.user_uuid, s.policy_uuid),
             raises(exceptions.UnknownPolicyException))
 
-        self.user_dao.remove_policy.return_value = 0
-        self.user_dao.exists.return_value = True
-        self.policy_dao.exists.return_value = True
+        when(nb_deleted=0)
         assert_that(
             calling(self.service.remove_policy).with_args(s.user_uuid, s.policy_uuid),
             not_(raises(Exception)))
 
-        self.user_dao.remove_policy.return_value = 1
-        self.user_dao.exists.return_value = True
-        self.policy_dao.exists.return_value = True
+        when(nb_deleted=1)
         assert_that(
             calling(self.service.remove_policy).with_args(s.user_uuid, s.policy_uuid),
             not_(raises(Exception)))
@@ -155,30 +146,27 @@ class TestTenantService(BaseServiceTestCase):
         self.service = services.TenantService(self.dao)
 
     def test_remove_user(self):
-        self.tenant_dao.remove_user.return_value = 0
-        self.tenant_dao.exists.return_value = False
-        self.user_dao.exists.return_value = True
+        def when(nb_deleted, tenant_exists=True, user_exists=True):
+            self.tenant_dao.remove_user.return_value = nb_deleted
+            self.tenant_dao.exists.return_value = tenant_exists
+            self.user_dao.exists.return_value = user_exists
+
+        when(nb_deleted=0, tenant_exists=False)
         assert_that(
             calling(self.service.remove_user).with_args(s.tenant_uuid, s.user_uuid),
             raises(exceptions.UnknownTenantException))
 
-        self.tenant_dao.remove_user.return_value = 0
-        self.tenant_dao.exists.return_value = True
-        self.user_dao.exists.return_value = False
+        when(nb_deleted=0, user_exists=False)
         assert_that(
             calling(self.service.remove_user).with_args(s.tenant_uuid, s.user_uuid),
             raises(exceptions.UnknownUserException))
 
-        self.tenant_dao.remove_user.return_value = 0
-        self.tenant_dao.exists.return_value = True
-        self.user_dao.exists.return_value = True
+        when(nb_deleted=0)
         assert_that(
             calling(self.service.remove_user).with_args(s.tenant_uuid, s.user_uuid),
             not_(raises(Exception)))
 
-        self.tenant_dao.remove_user.return_value = 1
-        self.tenant_dao.exists.return_value = True
-        self.user_dao.exists.return_value = True
+        when(nb_deleted=1)
         assert_that(
             calling(self.service.remove_user).with_args(s.tenant_uuid, s.user_uuid),
             not_(raises(Exception)))
