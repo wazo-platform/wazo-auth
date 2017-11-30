@@ -229,7 +229,7 @@ class _GroupDAO(_PaginatorMixin, _BaseDAO):
             raise UnknownGroupException(uuid)
 
     def exists(self, uuid):
-        return self.count(uuid=uuid) != 0
+        return self.count(uuid=uuid) > 0
 
     def list_(self, **kwargs):
         search_filter = self.new_search_filter(**kwargs)
@@ -470,7 +470,7 @@ class _PolicyDAO(_PaginatorMixin, _BaseDAO):
 
     def _policy_exists(self, s, policy_uuid):
         policy_count = s.query(Policy).filter(Policy.uuid == str(policy_uuid)).count()
-        return policy_count != 0
+        return policy_count > 0
 
     @staticmethod
     def _new_strict_filter(uuid=None, name=None, user_uuid=None, group_uuid=None, **ignored):
@@ -497,7 +497,7 @@ class _TenantDAO(_PaginatorMixin, _BaseDAO):
     )
 
     def exists(self, tenant_uuid):
-        return self.count(uuid=tenant_uuid) != 0
+        return self.count(uuid=tenant_uuid) > 0
 
     def add_user(self, tenant_uuid, user_uuid):
         tenant_user = TenantUser(tenant_uuid=str(tenant_uuid), user_uuid=str(user_uuid))
@@ -712,7 +712,7 @@ class _UserDAO(_PaginatorMixin, _BaseDAO):
                 raise
 
     def exists(self, user_uuid):
-        return self.count(uuid=user_uuid) != 0
+        return self.count(uuid=user_uuid) > 0
 
     def remove_policy(self, user_uuid, policy_uuid):
         with self.new_session() as s:
