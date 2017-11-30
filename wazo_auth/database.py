@@ -37,7 +37,6 @@ from .exceptions import (
     UnknownTenantException,
     UnknownTokenException,
     UnknownUserException,
-    UnknownUserPolicyException,
     UnknownUsernameException,
 )
 

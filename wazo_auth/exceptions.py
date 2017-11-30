@@ -57,14 +57,6 @@ class UnknownUserException(APIException):
         super(UnknownUserException, self).__init__(404, msg, 'unknown_user', details, 'users')
 
 
-class UnknownUserPolicyException(APIException):
-
-    def __init__(self, user_uuid, policy_uuid):
-        msg = 'No such association user({}) policy({})'.format(user_uuid, policy_uuid)
-        details = dict(user_uuid=user_uuid, policy_uuid=policy_uuid)
-        super(UnknownUserPolicyException, self).__init__(404, msg, 'unknown_user_policy', details, 'users')
-
-
 class UnknownUsernameException(Exception):
 
     def __init__(self, username):
