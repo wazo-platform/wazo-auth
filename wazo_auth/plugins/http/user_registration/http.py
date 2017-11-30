@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 from flask import request
-from wazo_auth import exceptions, http, schemas
+from wazo_auth import exceptions, http
+from .schemas import UserRegisterPostSchema
 
 
 class Register(http.ErrorCatchingResource):
@@ -12,7 +13,7 @@ class Register(http.ErrorCatchingResource):
         self.user_service = user_service
 
     def post(self):
-        args, errors = schemas.UserRequestSchema().load(request.get_json(force=True))
+        args, errors = UserRegisterPostSchema().load(request.get_json())
         if errors:
             raise exceptions.UserParamException.from_errors(errors)
         result = self.user_service.new_user(**args)

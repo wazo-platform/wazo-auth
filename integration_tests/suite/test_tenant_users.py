@@ -17,8 +17,8 @@ class TestTenantUserAssociation(base.MockBackendTestCase):
 
     unknown_uuid = '00000000-0000-0000-0000-000000000000'
 
-    @fixtures.http_user(username='bar')
-    @fixtures.http_user(username='foo')
+    @fixtures.http_user_register(username='bar')
+    @fixtures.http_user_register(username='foo')
     @fixtures.http_tenant()
     def test_delete(self, tenant, foo, bar):
         base.assert_no_error(self.client.tenants.remove_user, tenant['uuid'], foo['uuid'])
@@ -35,8 +35,8 @@ class TestTenantUserAssociation(base.MockBackendTestCase):
             has_entries('username', 'bar'),
         )))
 
-    @fixtures.http_user(username='bar')
-    @fixtures.http_user(username='foo')
+    @fixtures.http_user_register(username='bar')
+    @fixtures.http_user_register(username='foo')
     @fixtures.http_tenant()
     def test_put(self, tenant, foo, bar):
         base.assert_http_error(404, self.client.tenants.add_user, self.unknown_uuid, foo['uuid'])
@@ -55,7 +55,7 @@ class TestTenantUserAssociation(base.MockBackendTestCase):
     @fixtures.http_tenant(name='baz')
     @fixtures.http_tenant(name='bar')
     @fixtures.http_tenant(name='foo')
-    @fixtures.http_user()
+    @fixtures.http_user_register()
     def test_tenant_list(self, user, foo, bar, baz, ignored):
         for tenant in (foo, bar, baz):
             self.client.tenants.add_user(tenant['uuid'], user['uuid'])
@@ -109,10 +109,10 @@ class TestTenantUserAssociation(base.MockBackendTestCase):
                 has_entries('name', 'foo'),
                 has_entries('name', 'baz'))))
 
-    @fixtures.http_user(username='ignored')
-    @fixtures.http_user(username='baz')
-    @fixtures.http_user(username='bar')
-    @fixtures.http_user(username='foo')
+    @fixtures.http_user_register(username='ignored')
+    @fixtures.http_user_register(username='baz')
+    @fixtures.http_user_register(username='bar')
+    @fixtures.http_user_register(username='foo')
     @fixtures.http_tenant()
     def test_user_list(self, tenant, foo, bar, baz, ignored):
         for user in (foo, bar, baz):
@@ -167,7 +167,7 @@ class TestTenantUserAssociation(base.MockBackendTestCase):
                 has_entries('username', 'foo'),
                 has_entries('username', 'baz'))))
 
-    @fixtures.http_user(username='foo', password='bar')
+    @fixtures.http_user_register(username='foo', password='bar')
     @fixtures.http_tenant(name='two')
     @fixtures.http_tenant(name='one')
     @fixtures.http_policy(name='main', acl_templates=[

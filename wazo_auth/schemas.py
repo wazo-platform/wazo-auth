@@ -37,13 +37,6 @@ class TokenRequestSchema(Schema):
     expiration = fields.Integer(validate=Range(min=1))
 
 
-class UserRequestSchema(BaseSchema):
-
-    username = xfields.String(validate=validate.Length(min=1, max=128), required=True)
-    password = xfields.String(validate=validate.Length(min=1), required=True)
-    email_address = xfields.Email(required=True)
-
-
 def new_list_schema(default_sort_column):
 
     class ListSchema(BaseSchema):

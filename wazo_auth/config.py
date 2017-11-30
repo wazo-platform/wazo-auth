@@ -30,7 +30,7 @@ _DEFAULT_CONFIG = {
         'user_group': True,
         'user_policy': True,
         'user_registration': False,
-        'users': False,
+        'users': True,
     },
     'enabled_backend_plugins': {
         'xivo_admin': True,

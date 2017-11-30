@@ -821,37 +821,28 @@ class TestUserDAO(_BaseDAOTestCase):
         email_address = 'foobar@example.com'
 
         user_uuid = self._user_dao.create(username, email_address, hash_, self.salt)['uuid']
-
         try:
             assert_that(user_uuid, equal_to(ANY_UUID))
-            with self._user_dao.new_session() as s:
-                user = s.query(database.User).filter(database.User.uuid == user_uuid).first()
-                assert_that(
-                    user,
-                    has_properties(
-                        'username', username,
-                        'password_hash', hash_,
-                        'password_salt', self.salt,
-                    )
-                )
+            result = self._user_dao.list_(uuid=user_uuid)
+            assert_that(result, contains(has_entries(
+                username=username,
+                emails=contains(has_entries(address=email_address, confirmed=False, main=True)))))
+        finally:
+            self._user_dao.delete(user_uuid)
 
-                email = s.query(
-                    database.Email
-                ).join(
-                    database.UserEmail, database.Email.uuid == database.UserEmail.email_uuid,
-                ).join(
-                    database.User, database.User.uuid == database.UserEmail.user_uuid,
-                ).filter(
-                    database.User.uuid == user.uuid,
-                    database.UserEmail.main == True,
-                ).first()
-                assert_that(
-                    email,
-                    has_properties(
-                        'address', email_address,
-                        'confirmed', False,
-                    )
-                )
+    def test_user_creation_email_confirmed(self):
+        username = 'foobar'
+        hash_ = 'the_hashed_password'
+        email_address = 'foobar@example.com'
+
+        user_uuid = self._user_dao.create(username, email_address, hash_, self.salt,
+                                          email_confirmed=True)['uuid']
+
+        result = self._user_dao.list_(uuid=user_uuid)
+        try:
+            assert_that(result, contains(has_entries(
+                username=username,
+                emails=contains(has_entries(address=email_address, confirmed=True)))))
         finally:
             self._user_dao.delete(user_uuid)
 

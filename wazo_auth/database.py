@@ -854,11 +854,12 @@ class _UserDAO(_PaginatorMixin, _BaseDAO):
         with self.new_session() as s:
             return s.query(Tenant).join(TenantUser).filter(filter_).count()
 
-    def create(self, username, email_address, hash_, salt, **ignored):
+    def create(self, username, email_address, hash_=None, salt=None, email_confirmed=False, **ignored):
         with self.new_session() as s:
             try:
                 email = Email(
                     address=email_address,
+                    confirmed=email_confirmed,
                 )
                 s.add(email)
                 user = User(
@@ -886,7 +887,7 @@ class _UserDAO(_PaginatorMixin, _BaseDAO):
             return dict(
                 uuid=user.uuid,
                 username=username,
-                emails=[{'address': email_address, 'confirmed': False, 'main': True}],
+                emails=[{'address': email_address, 'confirmed': email_confirmed, 'main': True}],
             )
 
     def delete(self, user_uuid):

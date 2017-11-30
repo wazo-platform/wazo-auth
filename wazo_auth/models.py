@@ -109,8 +109,8 @@ class User(Base):
 
     uuid = Column(String(38), server_default=text('uuid_generate_v4()'), primary_key=True)
     username = Column(String(128), unique=True, nullable=False)
-    password_hash = Column(Text, nullable=False)
-    password_salt = Column(LargeBinary, nullable=False)
+    password_hash = Column(Text)
+    password_salt = Column(LargeBinary)
 
 
 class UserEmail(Base):

@@ -17,7 +17,7 @@ from xivo_test_helpers.hamcrest.uuid_ import uuid_
 
 class TestWazoUserBackend(MockBackendTestCase):
 
-    @fixtures.http_user(username='foobar', email_address='foobar@example.com', password='s3cr37')
+    @fixtures.http_user_register(username='foobar', email_address='foobar@example.com', password='s3cr37')
     def test_token_creation(self, user):
         response = self._post_token(user['username'], 's3cr37', backend='wazo_user')
         assert_that(
@@ -31,3 +31,10 @@ class TestWazoUserBackend(MockBackendTestCase):
 
         assert_http_error(401, self._post_token, user['username'], 'not-our-password', backend='wazo_user')
         assert_http_error(401, self._post_token, 'not-foobar', 's3cr37', backend='wazo_user')
+
+    def test_no_password(self):
+        user = self.client.users.new(username='foobar', email_address='foobar@example.com')
+        try:
+            assert_http_error(401, self._post_token, user['username'], 'p45sw0rd', backend='wazo_user')
+        finally:
+            self.client.users.delete(user['uuid'])

@@ -15,8 +15,8 @@ from .helpers import base, fixtures
 
 class TestUserGroupAssociation(base.MockBackendTestCase):
 
-    @fixtures.http_user()
-    @fixtures.http_user()
+    @fixtures.http_user_register()
+    @fixtures.http_user_register()
     @fixtures.http_group()
     def test_delete(self, group, user1, user2):
         self.client.groups.add_user(group['uuid'], user1['uuid'])
@@ -30,8 +30,8 @@ class TestUserGroupAssociation(base.MockBackendTestCase):
         result = self.client.groups.get_users(group['uuid'])
         assert_that(result, has_entries('items', contains_inanyorder(user1)))
 
-    @fixtures.http_user()
-    @fixtures.http_user()
+    @fixtures.http_user_register()
+    @fixtures.http_user_register()
     @fixtures.http_group()
     def test_put(self, group, user1, user2):
         base.assert_http_error(404, self.client.groups.add_user, base.UNKNOWN_UUID, user1['uuid'])
@@ -46,7 +46,7 @@ class TestUserGroupAssociation(base.MockBackendTestCase):
     @fixtures.http_group(name='baz')
     @fixtures.http_group(name='bar')
     @fixtures.http_group(name='foo')
-    @fixtures.http_user()
+    @fixtures.http_user_register()
     def test_group_list(self, user, foo, bar, baz, ignored):
         for group in (foo, bar, baz):
             self.client.groups.add_user(group['uuid'], user['uuid'])
@@ -100,10 +100,10 @@ class TestUserGroupAssociation(base.MockBackendTestCase):
                 has_entries('name', 'foo'),
                 has_entries('name', 'baz'))))
 
-    @fixtures.http_user(username='ignored')
-    @fixtures.http_user(username='baz')
-    @fixtures.http_user(username='bar')
-    @fixtures.http_user(username='foo')
+    @fixtures.http_user_register(username='ignored')
+    @fixtures.http_user_register(username='baz')
+    @fixtures.http_user_register(username='bar')
+    @fixtures.http_user_register(username='foo')
     @fixtures.http_group()
     def test_user_list(self, group, foo, bar, baz, ignored):
         for user in (foo, bar, baz):
@@ -158,7 +158,7 @@ class TestUserGroupAssociation(base.MockBackendTestCase):
                 has_entries('username', 'foo'),
                 has_entries('username', 'baz'))))
 
-    @fixtures.http_user(username='foo', password='bar')
+    @fixtures.http_user_register(username='foo', password='bar')
     @fixtures.http_group(name='two')
     @fixtures.http_group(name='one')
     @fixtures.http_policy(name='main', acl_templates=[

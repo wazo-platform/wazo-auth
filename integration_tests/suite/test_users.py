@@ -2,6 +2,7 @@
 # Copyright 2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+import json
 import requests
 from hamcrest import (
     assert_that,
@@ -9,10 +10,12 @@ from hamcrest import (
     contains,
     contains_inanyorder,
     empty,
+    equal_to,
     has_entries,
     has_items,
     has_properties,
 )
+from contextlib import contextmanager
 from xivo_auth_client import Client
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from xivo_test_helpers.hamcrest.raises import raises
@@ -28,51 +31,71 @@ UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
 
 class TestUsers(MockBackendTestCase):
 
-    @fixtures.http_user()
+    @fixtures.http_user_register()
     def test_delete(self, user):
         assert_http_error(404, self.client.users.delete, UNKNOWN_UUID)
         assert_no_error(self.client.users.delete, user['uuid'])
         assert_http_error(404, self.client.users.delete, user['uuid'])
 
     def test_post(self):
-        username, email, password = 'foobar', 'foobar@example.com', 's3cr37'
-        user = self.client.users.new(username=username, email_address=email, password=password)
+        args = dict(
+            username='foobar',
+            email_address='foobar@example.com',
+            password='s3cr37',
+        )
 
-        try:
-            assert_that(
-                user,
-                has_entries(
-                    'uuid', uuid_(),
-                    'username', username,
-                    'emails', contains_inanyorder(
-                        has_entries(
-                            'address', 'foobar@example.com',
-                            'main', True,
-                            'confirmed', False))))
-        finally:
-            self.client.users.delete(user['uuid'])
+        url = 'https://{}:{}/0.1/users'.format(self.get_host(), self._auth_port)
+        result = requests.post(url, headers={'Content-Type': 'application/json'},
+                               data=json.dumps(args), verify=False)
+        assert_that(result.status_code, equal_to(401))
+
+        with self.auto_remove_user(self.client.users.new, **args) as user:
+            assert_that(user, has_entries(
+                'uuid', uuid_(),
+                'username', 'foobar',
+                'emails', contains_inanyorder(
+                    has_entries(
+                        'address', 'foobar@example.com',
+                        'main', True,
+                        'confirmed', True))))
+
+        args = dict(
+            username='foobaz',
+            email_address='foobaz@example.com',
+        )
+
+        with self.auto_remove_user(self.client.users.new, **args) as user:
+            assert_that(user, has_entries(
+                'uuid', uuid_(),
+                'username', 'foobaz',
+                'emails', contains_inanyorder(
+                    has_entries(
+                        'address', 'foobaz@example.com',
+                        'main', True,
+                        'confirmed', True))))
 
     def test_register_post(self):
-        username, email, password = 'foobar', 'foobar@example.com', 's3cr37'
-        user = self.client.users.register(username=username, email_address=email, password=password)
+        args = dict(
+            username='foobar',
+            email_address='foobar@example.com',
+            password='s3cr37',
+        )
 
-        try:
+        with self.auto_remove_user(self.client.users.register, **args) as user:
             assert_that(
                 user,
                 has_entries(
                     'uuid', uuid_(),
-                    'username', username,
+                    'username', 'foobar',
                     'emails', contains_inanyorder(
                         has_entries(
                             'address', 'foobar@example.com',
                             'main', True,
                             'confirmed', False))))
-        finally:
-            self.client.users.delete(user['uuid'])
 
-    @fixtures.http_user(username='foo', email_address='foo@example.com')
-    @fixtures.http_user(username='bar', email_address='bar@example.com')
-    @fixtures.http_user(username='baz', email_address='baz@example.com')
+    @fixtures.http_user_register(username='foo', email_address='foo@example.com')
+    @fixtures.http_user_register(username='bar', email_address='bar@example.com')
+    @fixtures.http_user_register(username='baz', email_address='baz@example.com')
     def test_list(self, *users):
         def check_list_result(result, filtered, item_matcher, *usernames):
             items = item_matcher(*[has_entries('username', username) for username in usernames])
@@ -91,7 +114,7 @@ class TestUsers(MockBackendTestCase):
         result = self.client.users.list(limit=1, offset=1, order='username', direction='asc')
         check_list_result(result, 3, contains, 'baz')
 
-    @fixtures.http_user(username='foo', email_address='foo@example.com')
+    @fixtures.http_user_register(username='foo', email_address='foo@example.com')
     def test_get(self, user):
         result = self.client.users.get(user['uuid'])
         assert_that(
@@ -105,7 +128,7 @@ class TestUsers(MockBackendTestCase):
                         'confirmed', False,
                         'main', True))))
 
-    @fixtures.http_user(username='foo', password='bar')
+    @fixtures.http_user_register(username='foo', password='bar')
     @fixtures.http_policy(name='two', acl_templates=['acl.one.{{ username }}', 'acl.two'])
     @fixtures.http_policy(name='one', acl_templates=['this.is.a.test.acl'])
     def test_user_policy(self, policy_1, policy_2, user):
@@ -185,4 +208,12 @@ class TestUsers(MockBackendTestCase):
             'not associated',
         )
 
-        self.client.users.remove_policy(user['uuid'], policy_1['uuid'])
+        assert_no_error(self.client.users.remove_policy, user['uuid'], policy_1['uuid'])
+
+    @contextmanager
+    def auto_remove_user(self, fn, *args, **kwargs):
+        user = fn(*args, **kwargs)
+        try:
+            yield user
+        finally:
+            self.client.users.delete(user['uuid'])

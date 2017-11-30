@@ -21,6 +21,10 @@ Changelog
 
   * POST `0.1/users/register`
 
+The user creation url now needs a token and does not require a password anymore
+
+  * POST `0.1/users`
+
 * All DELETE on association now return 204 if the resources are not associated but both exists
 
   * DELETE `0.1/users/<user_uuid>/policies/<policy_uuid>`
@@ -51,7 +55,7 @@ Changelog
   * DELETE ``0.1/tenants/<tenant_uuid>/users/<user_uuid>``
   * GET ``0.1/tenants/<tenant_uuid>/users/``
   * GET ``0.1/users/<user_uuid>/tenants/``
-  
+
 * A new ressource has been added to manage Groups
 
   * POST `0.1/groups`
