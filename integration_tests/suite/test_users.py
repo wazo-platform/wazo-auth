@@ -109,6 +109,8 @@ class TestUsers(MockBackendTestCase):
     @fixtures.http_policy(name='two', acl_templates=['acl.one.{{ username }}', 'acl.two'])
     @fixtures.http_policy(name='one', acl_templates=['this.is.a.test.acl'])
     def test_user_policy(self, policy_1, policy_2, user):
+        assert_no_error(self.client.users.remove_policy, user['uuid'], policy_1['uuid'])
+
         result = self.client.users.get_policies(user['uuid'])
         assert_that(
             result,
@@ -184,13 +186,3 @@ class TestUsers(MockBackendTestCase):
         )
 
         self.client.users.remove_policy(user['uuid'], policy_1['uuid'])
-
-        assert_that(
-            calling(
-                self.client.users.remove_policy
-            ).with_args(user['uuid'], policy_1['uuid']),
-            raises(requests.HTTPError).matching(
-                has_properties('response', has_properties('status_code', 404)),
-            ),
-            'no association found',
-        )

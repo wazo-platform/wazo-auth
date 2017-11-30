@@ -9,7 +9,6 @@ import uuid
 
 from contextlib import contextmanager, nested
 from hamcrest import (
-    any_of,
     assert_that,
     calling,
     contains,
@@ -193,62 +192,36 @@ class TestGroupDAO(_BaseDAOTestCase):
     @fixtures.group()
     @fixtures.policy()
     def test_remove_policy(self, policy_uuid, group_uuid):
-        assert_that(
-            calling(self._group_dao.remove_policy).with_args(group_uuid, policy_uuid),
-            any_of(
-                raises(exceptions.UnknownGroupException),
-                raises(exceptions.UnknownPolicyException),
-            ),
-            'unknown group and policy',
-        )
-
-        assert_that(
-            calling(self._group_dao.remove_policy).with_args(self.unknown_uuid, policy_uuid),
-            raises(exceptions.UnknownGroupException),
-            'unknown group',
-        )
-
-        assert_that(
-            calling(self._group_dao.remove_policy).with_args(group_uuid, self.unknown_uuid),
-            raises(exceptions.UnknownPolicyException),
-            'unknown policy'
-        )
+        nb_deleted = self._group_dao.remove_policy(group_uuid, policy_uuid)
+        assert_that(nb_deleted, equal_to(0))
 
         self._group_dao.add_policy(group_uuid, policy_uuid)
 
-        assert_that(
-            calling(self._group_dao.remove_policy).with_args(group_uuid, policy_uuid),
-            not_(raises(Exception)))
+        nb_deleted = self._group_dao.remove_policy(self.unknown_uuid, policy_uuid)
+        assert_that(nb_deleted, equal_to(0))
+
+        nb_deleted = self._group_dao.remove_policy(group_uuid, self.unknown_uuid)
+        assert_that(nb_deleted, equal_to(0))
+
+        nb_deleted = self._group_dao.remove_policy(group_uuid, policy_uuid)
+        assert_that(nb_deleted, equal_to(1))
 
     @fixtures.group()
     @fixtures.user()
     def test_remove_user(self, user_uuid, group_uuid):
-        assert_that(
-            calling(self._group_dao.remove_user).with_args(group_uuid, user_uuid),
-            any_of(
-                raises(exceptions.UnknownGroupException),
-                raises(exceptions.UnknownUserException),
-            ),
-            'unknown group and user',
-        )
-
-        assert_that(
-            calling(self._group_dao.remove_user).with_args(self.unknown_uuid, user_uuid),
-            raises(exceptions.UnknownGroupException),
-            'unknown group',
-        )
-
-        assert_that(
-            calling(self._group_dao.remove_user).with_args(group_uuid, self.unknown_uuid),
-            raises(exceptions.UnknownUserException),
-            'unknown user'
-        )
+        nb_deleted = self._group_dao.remove_user(group_uuid, user_uuid)
+        assert_that(nb_deleted, equal_to(0))
 
         self._group_dao.add_user(group_uuid, user_uuid)
 
-        assert_that(
-            calling(self._group_dao.remove_user).with_args(group_uuid, user_uuid),
-            not_(raises(Exception)))
+        nb_deleted = self._group_dao.remove_user(self.unknown_uuid, user_uuid)
+        assert_that(nb_deleted, equal_to(0))
+
+        nb_deleted = self._group_dao.remove_user(group_uuid, self.unknown_uuid)
+        assert_that(nb_deleted, equal_to(0))
+
+        nb_deleted = self._group_dao.remove_user(group_uuid, user_uuid)
+        assert_that(nb_deleted, equal_to(1))
 
 
 class TestPolicyDAO(_BaseDAOTestCase):
@@ -523,32 +496,19 @@ class TestTenantDAO(_BaseDAOTestCase):
     @fixtures.tenant()
     @fixtures.user()
     def test_remove_user(self, user_uuid, tenant_uuid):
-        assert_that(
-            calling(self._tenant_dao.remove_user).with_args(tenant_uuid, user_uuid),
-            any_of(
-                raises(exceptions.UnknownTenantException),
-                raises(exceptions.UnknownUserException),
-            ),
-            'unknown tenant and user',
-        )
-
-        assert_that(
-            calling(self._tenant_dao.remove_user).with_args(self.unknown_uuid, user_uuid),
-            raises(exceptions.UnknownTenantException),
-            'unknown tenant',
-        )
-
-        assert_that(
-            calling(self._tenant_dao.remove_user).with_args(tenant_uuid, self.unknown_uuid),
-            raises(exceptions.UnknownUserException),
-            'unknown user'
-        )
+        result = self._tenant_dao.remove_user(tenant_uuid, user_uuid)
+        assert_that(result, equal_to(0))
 
         self._tenant_dao.add_user(tenant_uuid, user_uuid)
 
-        assert_that(
-            calling(self._tenant_dao.remove_user).with_args(tenant_uuid, user_uuid),
-            not_(raises(Exception)))
+        result = self._tenant_dao.remove_user(self.unknown_uuid, user_uuid)
+        assert_that(result, equal_to(0))
+
+        result = self._tenant_dao.remove_user(tenant_uuid, self.unknown_uuid)
+        assert_that(result, equal_to(0))
+
+        result = self._tenant_dao.remove_user(tenant_uuid, user_uuid)
+        assert_that(result, equal_to(1))
 
     @fixtures.tenant(name='c')
     @fixtures.tenant(name='b')
@@ -695,32 +655,20 @@ class TestUserDAO(_BaseDAOTestCase):
 
     @fixtures.policy()
     @fixtures.user()
-    def test_user_policy_dissociation(self, user_uuid, policy_uuid):
-        assert_that(
-            calling(self._user_dao.remove_policy).with_args(user_uuid, policy_uuid),
-            raises(exceptions.UnknownUserPolicyException),
-            'no association',
-        )
+    def test_user_remove_policy(self, user_uuid, policy_uuid):
+        nb_deleted = self._user_dao.remove_policy(user_uuid, policy_uuid)
+        assert_that(nb_deleted, equal_to(0))
 
         self._user_dao.add_policy(user_uuid, policy_uuid)
 
-        assert_that(
-            calling(self._user_dao.remove_policy).with_args('unknown', policy_uuid),
-            raises(exceptions.UnknownUserPolicyException),
-            'unknown user',
-        )
+        nb_deleted = self._user_dao.remove_policy(self.unknown_uuid, policy_uuid)
+        assert_that(nb_deleted, equal_to(0))
 
-        assert_that(
-            calling(self._user_dao.remove_policy).with_args(user_uuid, 'unknown'),
-            raises(exceptions.UnknownUserPolicyException),
-            'unknown policy',
-        )
+        nb_deleted = self._user_dao.remove_policy(user_uuid, self.unknown_uuid)
+        assert_that(nb_deleted, equal_to(0))
 
-        assert_that(
-            calling(self._user_dao.remove_policy).with_args(user_uuid, policy_uuid),
-            not_(raises(Exception)),
-            'no error when dissociating',
-        )
+        nb_deleted = self._user_dao.remove_policy(user_uuid, policy_uuid)
+        assert_that(nb_deleted, equal_to(1))
 
     @fixtures.policy(name='c', description='The third foobar')
     @fixtures.policy(name='b', description='The second foobar')

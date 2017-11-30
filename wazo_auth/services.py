@@ -66,10 +66,26 @@ class GroupService(object):
         return self._dao.user.list_(group_uuid=group_uuid, **kwargs)
 
     def remove_policy(self, group_uuid, policy_uuid):
-        return self._dao.group.remove_policy(group_uuid, policy_uuid)
+        nb_deleted = self._dao.group.remove_policy(group_uuid, policy_uuid)
+        if nb_deleted:
+            return
+
+        if not self._dao.group.exists(group_uuid):
+            raise exceptions.UnknownGroupException(group_uuid)
+
+        if not self._dao.policy.exists(policy_uuid):
+            raise exceptions.UnknownPolicyException(policy_uuid)
 
     def remove_user(self, group_uuid, user_uuid):
-        return self._dao.group.remove_user(group_uuid, user_uuid)
+        nb_deleted = self._dao.group.remove_user(group_uuid, user_uuid)
+        if nb_deleted:
+            return
+
+        if not self._dao.group.exists(group_uuid):
+            raise exceptions.UnknownGroupException(group_uuid)
+
+        if not self._dao.user.exists(user_uuid):
+            raise exceptions.UnknownUserException(user_uuid)
 
     def update(self, group_uuid, **kwargs):
         return self._dao.group.update(group_uuid, **kwargs)
@@ -143,7 +159,15 @@ class TenantService(object):
         return dict(uuid=uuid, **kwargs)
 
     def remove_user(self, tenant_uuid, user_uuid):
-        return self._dao.tenant.remove_user(tenant_uuid, user_uuid)
+        nb_deleted = self._dao.tenant.remove_user(tenant_uuid, user_uuid)
+        if nb_deleted:
+            return
+
+        if not self._dao.tenant.exists(tenant_uuid):
+            raise exceptions.UnknownTenantException(tenant_uuid)
+
+        if not self._dao.user.exists(user_uuid):
+            raise exceptions.UnknownUserException(user_uuid)
 
 
 class UserService(object):
@@ -205,7 +229,15 @@ class UserService(object):
         return self._dao.user.create(salt=salt, hash_=hash_, **kwargs)
 
     def remove_policy(self, user_uuid, policy_uuid):
-        self._dao.user.remove_policy(user_uuid, policy_uuid)
+        nb_deleted = self._dao.user.remove_policy(user_uuid, policy_uuid)
+        if nb_deleted:
+            return
+
+        if not self._dao.user.exists(user_uuid):
+            raise exceptions.UnknownUserException(user_uuid)
+
+        if not self._dao.policy.exists(policy_uuid):
+            raise exceptions.UnknownPolicyException(policy_uuid)
 
     def verify_password(self, username, password):
         try:

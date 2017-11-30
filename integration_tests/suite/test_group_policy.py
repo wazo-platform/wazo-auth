@@ -25,7 +25,7 @@ class TestGroupPolicyAssociation(base.MockBackendTestCase):
         base.assert_http_error(404, self.client.groups.remove_policy, base.UNKNOWN_UUID, policy1['uuid'])
         base.assert_http_error(404, self.client.groups.remove_policy, group['uuid'], base.UNKNOWN_UUID)
         base.assert_no_error(self.client.groups.remove_policy, group['uuid'], policy2['uuid'])
-        base.assert_http_error(404, self.client.groups.remove_policy, group['uuid'], policy2['uuid'])  # Twice
+        base.assert_no_error(self.client.groups.remove_policy, group['uuid'], policy2['uuid'])
 
         result = self.client.groups.get_policies(group['uuid'])
         assert_that(result, has_entries('items', contains(policy1)))

@@ -25,7 +25,7 @@ class TestUserGroupAssociation(base.MockBackendTestCase):
         base.assert_http_error(404, self.client.groups.remove_user, base.UNKNOWN_UUID, user1['uuid'])
         base.assert_http_error(404, self.client.groups.remove_user, group['uuid'], base.UNKNOWN_UUID)
         base.assert_no_error(self.client.groups.remove_user, group['uuid'], user2['uuid'])
-        base.assert_http_error(404, self.client.groups.remove_user, group['uuid'], user2['uuid'])  # Twice
+        base.assert_no_error(self.client.groups.remove_user, group['uuid'], user2['uuid'])  # Twice
 
         result = self.client.groups.get_users(group['uuid'])
         assert_that(result, has_entries('items', contains_inanyorder(user1)))
