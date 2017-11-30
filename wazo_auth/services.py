@@ -70,6 +70,9 @@ class GroupService(object):
         if nb_deleted:
             return
 
+        if not self._dao.group.exists(group_uuid):
+            raise exceptions.UnknownGroupException(group_uuid)
+
         if not self._dao.policy.exists(policy_uuid):
             raise exceptions.UnknownPolicyException(policy_uuid)
 
@@ -77,6 +80,9 @@ class GroupService(object):
         nb_deleted = self._dao.group.remove_user(group_uuid, user_uuid)
         if nb_deleted:
             return
+
+        if not self._dao.group.exists(group_uuid):
+            raise exceptions.UnknownGroupException(group_uuid)
 
         if not self._dao.user.exists(user_uuid):
             raise exceptions.UnknownUserException(user_uuid)
@@ -157,6 +163,9 @@ class TenantService(object):
         if nb_deleted:
             return
 
+        if not self._dao.tenant.exists(tenant_uuid):
+            raise exceptions.UnknownTenantException(tenant_uuid)
+
         if not self._dao.user.exists(user_uuid):
             raise exceptions.UnknownUserException(user_uuid)
 
@@ -223,6 +232,9 @@ class UserService(object):
         nb_deleted = self._dao.user.remove_policy(user_uuid, policy_uuid)
         if nb_deleted:
             return
+
+        if not self._dao.user.exists(user_uuid):
+            raise exceptions.UnknownUserException(user_uuid)
 
         if not self._dao.policy.exists(policy_uuid):
             raise exceptions.UnknownPolicyException(policy_uuid)
