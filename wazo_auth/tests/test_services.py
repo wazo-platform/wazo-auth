@@ -12,6 +12,7 @@ from .. import services, database, exceptions
 class BaseServiceTestCase(TestCase):
 
     def setUp(self):
+        self.external_auth_dao = Mock(database._ExternalAuthDAO)
         self.group_dao = Mock(database._GroupDAO)
         self.policy_dao = Mock(database._PolicyDAO)
         self.tenant_dao = Mock(database._TenantDAO)
@@ -24,6 +25,7 @@ class BaseServiceTestCase(TestCase):
             self.user_dao,
             self.tenant_dao,
             self.group_dao,
+            self.external_auth_dao,
         )
 
 

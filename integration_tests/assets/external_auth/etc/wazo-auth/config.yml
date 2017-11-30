@@ -1,0 +1,31 @@
+debug: True
+foreground: True
+log_filename: /tmp/wazo-auth.log
+token_cleanup_interval: 2.0
+
+rest_api:
+  https:
+    listen: 0.0.0.0
+    port: 9497
+    certificate: /data/_common/ssl/server.crt
+    private_key: /data/_common/ssl/server.key
+  cors:
+    enabled: False
+    allow_headers: [Content-Type, authorization, x-auth-token]
+
+enabled_http_plugins:
+  users: true
+  foo_service: true
+enabled_backend_plugins:
+  mock: true
+  mock_with_uuid: true
+  broken_init: true
+  broken_verify_password: true
+  wazo_user: true
+  xivo_user: false
+  xivo_service: false
+  xivo_admin: false
+backend_policies:
+  wazo_user: wazo_default_admin_policy # For testing only, not a legitimate configuration
+
+db_uri: postgresql://asterisk:proformatique@postgres:5432

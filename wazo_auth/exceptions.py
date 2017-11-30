@@ -19,6 +19,14 @@ class AuthenticationFailedException(ManagerException):
         return self._msg
 
 
+class ExternalAuthAlreadyExists(APIException):
+
+    def __init__(self, auth_type):
+        msg = 'This external authentification method has already been set: "{}"'.format(auth_type)
+        details = dict(type=auth_type)
+        super(ExternalAuthAlreadyExists, self).__init__(409, msg, 'conflict', details, auth_type)
+
+
 class InvalidListParamException(APIException):
 
     def __init__(self, message, details=None):
@@ -31,6 +39,24 @@ class InvalidListParamException(APIException):
                 infos = [infos]
             for info in infos:
                 return cls(info['message'], {field: info})
+
+
+class UnknownExternalAuthException(APIException):
+
+    def __init__(self, auth_type):
+        msg = 'No such external auth: "{}"'.format(auth_type)
+        details = dict(type=str(auth_type))
+        super(UnknownExternalAuthException, self).__init__(
+            404, msg, 'unknown_external_auth', details, auth_type)
+
+
+class UnknownExternalAuthTypeException(APIException):
+
+    def __init__(self, auth_type):
+        msg = 'No such auth type: "{}"'.format(auth_type)
+        details = dict(type=str(auth_type))
+        super(UnknownExternalAuthTypeException, self).__init__(
+            404, msg, 'unknown_external_auth_type', details, 'external')
 
 
 class UnknownGroupException(APIException):

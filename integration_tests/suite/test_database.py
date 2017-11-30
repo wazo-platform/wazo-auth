@@ -28,7 +28,7 @@ from xivo_test_helpers.mock import ANY_UUID
 from xivo_test_helpers.hamcrest.raises import raises
 
 from wazo_auth import database, exceptions
-from .helpers import fixtures
+from .helpers import fixtures, base
 
 DB_URI = os.getenv('DB_URI', 'postgresql://asterisk:proformatique@localhost:{port}')
 
@@ -58,12 +58,130 @@ class _BaseDAOTestCase(unittest.TestCase):
 
     def setUp(self):
         db_uri = DB_URI.format(port=DBStarter.service_port(5432, 'postgres'))
+        self._external_auth_dao = database._ExternalAuthDAO(db_uri)
         self._group_dao = database._GroupDAO(db_uri)
         self._policy_dao = database._PolicyDAO(db_uri)
         self._user_dao = database._UserDAO(db_uri)
         self._tenant_dao = database._TenantDAO(db_uri)
         self._token_dao = database._TokenDAO(db_uri)
 
+
+class TestExternalAuthDAO(_BaseDAOTestCase):
+
+    auth_type = 'foobarcrm'
+    data = dict(
+        string_value='an_important_value',
+        list_value=['a', 'list', 'of', 'values'],
+        dict_value={'a': 'dict', 'of': 'values'},
+    )
+
+    @fixtures.user()
+    def test_create(self, user_uuid):
+        assert_that(
+            calling(self._external_auth_dao.create).with_args(self.unknown_uuid, self.auth_type, self.data),
+            raises(exceptions.UnknownUserException).matching(
+                has_properties(
+                    status_code=404,
+                    resource='users')))
+
+        result = self._external_auth_dao.create(user_uuid, self.auth_type, self.data)
+        assert_that(result, equal_to(self.data))
+
+        assert_that(
+            self._external_auth_dao.get(user_uuid, self.auth_type),
+            equal_to(self.data))
+
+        assert_that(
+            calling(self._external_auth_dao.create).with_args(user_uuid, self.auth_type, self.data),
+            raises(exceptions.ExternalAuthAlreadyExists).matching(
+                has_properties(
+                    status_code=409,
+                    resource=self.auth_type,
+                    details=has_entries('type', self.auth_type))))
+
+    @fixtures.user()
+    @fixtures.user()
+    def test_delete(self, user_1_uuid, user_2_uuid):
+        assert_that(
+            calling(self._external_auth_dao.delete).with_args(self.unknown_uuid, self.auth_type),
+            raises(exceptions.UnknownUserException).matching(
+                has_properties(status_code=404, resource='users')))
+
+        assert_that(
+            calling(self._external_auth_dao.delete).with_args(user_1_uuid, 'the_unknown_service'),
+            raises(exceptions.UnknownExternalAuthTypeException).matching(
+                has_properties(status_code=404, resource='external')))
+
+        # This will create the type in the db
+        self._external_auth_dao.create(user_2_uuid, self.auth_type, self.data)
+
+        assert_that(
+            calling(self._external_auth_dao.delete).with_args(user_1_uuid, self.auth_type),
+            raises(exceptions.UnknownExternalAuthException).matching(
+                has_properties(status_code=404, resource=self.auth_type)))
+
+        self._external_auth_dao.create(user_1_uuid, self.auth_type, self.data)
+
+        base.assert_no_error(self._external_auth_dao.delete, user_1_uuid, self.auth_type)
+
+        assert_that(
+            calling(self._external_auth_dao.delete).with_args(user_1_uuid, self.auth_type),
+            raises(exceptions.UnknownExternalAuthException).matching(
+                has_properties(status_code=404, resource=self.auth_type)))
+
+
+    @fixtures.user()
+    @fixtures.user()
+    def test_get(self, user_1_uuid, user_2_uuid):
+        assert_that(
+            calling(self._external_auth_dao.get).with_args(self.unknown_uuid, self.auth_type),
+            raises(exceptions.UnknownUserException).matching(
+                has_properties(status_code=404, resource='users')))
+
+        assert_that(
+            calling(self._external_auth_dao.get).with_args(user_1_uuid, 'the_unknown_service'),
+            raises(exceptions.UnknownExternalAuthTypeException).matching(
+                has_properties(status_code=404, resource='external')))
+
+        assert_that(
+            calling(self._external_auth_dao.get).with_args(user_1_uuid, self.auth_type),
+            raises(exceptions.UnknownExternalAuthException).matching(
+                has_properties(status_code=404, resource=self.auth_type)))
+
+        self._external_auth_dao.create(user_1_uuid, self.auth_type, self.data)
+
+        result = self._external_auth_dao.get(user_1_uuid, self.auth_type)
+        assert_that(result, equal_to(self.data))
+
+        assert_that(
+            calling(self._external_auth_dao.get).with_args(user_2_uuid, self.auth_type),
+            raises(exceptions.UnknownExternalAuthException).matching(
+                has_properties(status_code=404, resource=self.auth_type)))
+
+    @fixtures.user()
+    def test_update(self, user_uuid):
+        new_data = {'foo': 'bar'}
+
+        assert_that(
+            calling(self._external_auth_dao.update).with_args(self.unknown_uuid, self.auth_type, new_data),
+            raises(exceptions.UnknownUserException).matching(
+                has_properties(status_code=404, resource='users')))
+
+        assert_that(
+            calling(self._external_auth_dao.update).with_args(user_uuid, 'the_unknown_service', new_data),
+            raises(exceptions.UnknownExternalAuthTypeException).matching(
+                has_properties(status_code=404, resource='external')))
+
+        assert_that(
+            calling(self._external_auth_dao.update).with_args(user_uuid, self.auth_type, new_data),
+            raises(exceptions.UnknownExternalAuthException).matching(
+                has_properties(status_code=404, resource=self.auth_type)))
+
+        self._external_auth_dao.create(user_uuid, self.auth_type, self.data)
+
+        result = self._external_auth_dao.update(user_uuid, self.auth_type, new_data)
+        assert_that(result, equal_to(new_data))
+        assert_that(self._external_auth_dao.get(user_uuid, self.auth_type), equal_to(new_data))
 
 class TestGroupDAO(_BaseDAOTestCase):
 

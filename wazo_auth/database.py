@@ -2,8 +2,9 @@
 # Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-import time
+import json
 import logging
+import time
 from collections import OrderedDict
 from contextlib import contextmanager
 from sqlalchemy import and_, create_engine, exc, func, or_, text
@@ -13,6 +14,8 @@ from .models import (
     ACLTemplate,
     ACLTemplatePolicy,
     Email,
+    ExternalAuthData,
+    ExternalAuthType,
     Group,
     GroupPolicy,
     Policy,
@@ -23,15 +26,19 @@ from .models import (
     UserEmail,
     UserGroup,
     UserPolicy,
+    UserExternalAuth,
 )
 from .exceptions import (
     ConflictException,
     DuplicatePolicyException,
     DuplicateTemplateException,
+    ExternalAuthAlreadyExists,
     InvalidLimitException,
     InvalidOffsetException,
     InvalidSortColumnException,
     InvalidSortDirectionException,
+    UnknownExternalAuthTypeException,
+    UnknownExternalAuthException,
     UnknownGroupException,
     UnknownPolicyException,
     UnknownTenantException,
@@ -63,7 +70,8 @@ class SearchFilter(object):
 
 class DAO(object):
 
-    def __init__(self, policy_dao, token_dao, user_dao, tenant_dao, group_dao):
+    def __init__(self, policy_dao, token_dao, user_dao, tenant_dao, group_dao, external_auth_dao):
+        self.external_auth = external_auth_dao
         self.policy = policy_dao
         self.token = token_dao
         self.user = user_dao
@@ -72,12 +80,13 @@ class DAO(object):
 
     @classmethod
     def from_config(cls, config):
+        external_auth = _ExternalAuthDAO(config['db_uri'])
         group = _GroupDAO(config['db_uri'])
         policy = _PolicyDAO(config['db_uri'])
         token = _TokenDAO(config['db_uri'])
         user = _UserDAO(config['db_uri'])
         tenant = _TenantDAO(config['db_uri'])
-        return cls(policy, token, user, tenant, group)
+        return cls(policy, token, user, tenant, group, external_auth)
 
 
 class _BaseDAO(object):
@@ -115,6 +124,92 @@ class _PaginatorMixin(object):
     def __init__(self, *args, **kwargs):
         super(_PaginatorMixin, self).__init__(*args, **kwargs)
         self._paginator = QueryPaginator(self.column_map)
+
+
+class _ExternalAuthDAO(_BaseDAO):
+
+    def create(self, user_uuid, auth_type, data):
+        serialized_data = json.dumps(data)
+        with self.new_session() as s:
+            external_type = self._find_or_create_type(s, auth_type)
+            external_data = ExternalAuthData(data=serialized_data)
+            s.add(external_data)
+            s.commit()
+            user_external_auth = UserExternalAuth(
+                user_uuid=str(user_uuid),
+                external_auth_type_uuid=external_type.uuid,
+                external_auth_data_uuid=external_data.uuid,
+            )
+            s.add(user_external_auth)
+            try:
+                s.commit()
+            except exc.IntegrityError as e:
+                if e.orig.pgcode in (self._UNIQUE_CONSTRAINT_CODE, self._FKEY_CONSTRAINT_CODE):
+                    constraint = e.orig.diag.constraint_name
+                    if constraint == 'auth_external_user_type_auth_constraint':
+                        raise ExternalAuthAlreadyExists(auth_type)
+                    elif constraint == 'auth_user_external_auth_user_uuid_fkey':
+                        raise UnknownUserException(user_uuid)
+                raise
+            return data
+
+    def delete(self, user_uuid, auth_type):
+        with self.new_session() as s:
+            type_ = self._find_type(s, auth_type)
+            filter_ = and_(
+                UserExternalAuth.user_uuid == str(user_uuid),
+                UserExternalAuth.external_auth_type_uuid == type_.uuid,
+            )
+
+            nb_deleted = s.query(UserExternalAuth).filter(filter_).delete()
+            if nb_deleted:
+                return
+
+            self._assert_user_exists(s, user_uuid)
+            raise UnknownExternalAuthException(auth_type)
+
+    def get(self, user_uuid, auth_type):
+        filter_ = and_(
+            UserExternalAuth.user_uuid == str(user_uuid),
+            ExternalAuthType.name == auth_type,
+        )
+
+        with self.new_session() as s:
+            data = s.query(
+                ExternalAuthData.data,
+            ).join(UserExternalAuth).join(ExternalAuthType).filter(filter_).first()
+
+            if data:
+                return json.loads(data.data)
+
+            self._assert_type_exists(s, auth_type)
+            self._assert_user_exists(s, user_uuid)
+            raise UnknownExternalAuthException(auth_type)
+
+    def update(self, user_uuid, auth_type, data):
+        self.delete(user_uuid, auth_type)
+        return self.create(user_uuid, auth_type, data)
+
+    def _assert_type_exists(self, s, auth_type):
+        self._find_type(s, auth_type)
+
+    def _assert_user_exists(self, s, user_uuid):
+        if s.query(User).filter(User.uuid == str(user_uuid)).count() == 0:
+            raise UnknownUserException(user_uuid)
+
+    def _find_type(self, s, auth_type):
+        type_ = s.query(ExternalAuthType).filter(ExternalAuthType.name == auth_type).first()
+        if type_:
+            return type_
+        raise UnknownExternalAuthTypeException(auth_type)
+
+    def _find_or_create_type(self, s, auth_type):
+        try:
+            type_ = self._find_type(s, auth_type)
+        except UnknownExternalAuthTypeException:
+            type_ = ExternalAuthType(name=auth_type)
+            s.add(type_)
+        return type_
 
 
 class _GroupDAO(_PaginatorMixin, _BaseDAO):
