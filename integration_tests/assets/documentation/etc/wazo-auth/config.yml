@@ -5,8 +5,6 @@ rest_api:
   https:
     listen: 0.0.0.0
     port: 9497
-    certificate: /data/_common/ssl/server.crt
-    private_key: /data/_common/ssl/server.key
   cors:
     enabled: True
     allow_headers: [Content-Type, authorization, x-auth-token]

@@ -76,15 +76,6 @@ make test-setup
 make test
 ```
 
-If you are using docker-machine you must:
-* change your ip address with the variable WAZO_AUTH_TEST_HOST.
-* remove direct volume mount points
-
-```sh
-export WAZO_AUTH_TEST_HOST=$(docker-machine ip <your-docker-machine>)
-sed -i '/delete-on-docker-machine/d' assets/*/docker-compose.yml
-```
-
 
 Load testing
 ------------

@@ -6,23 +6,17 @@ sync:
     - postgres
   environment:
     PORTS: "9497 8080 5432"
-data:
-  image: wazopbx/wazo-auth-tests-data
-  volumes:
-    - "/data/"
-  command: "sh -c 'while true; do sleep 10; done'"
 auth:
    image: wazopbx/wazo-auth-tests
    links:
     - postgres
    expose:
      - "9497"
-   volumes_from:
-     - data
    volumes:
      - "../../..:/usr/src/wazo-auth"
+     - "./etc/wazo-auth/config.yml:/etc/wazo-auth/config.yml"
      # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/usr/local/lib/python2.7/site-packages/xivo"
-   command: "wazo-auth -c /data/documentation/etc/wazo-auth/config.yml"
+   command: "wazo-auth"
 swagger-validator:
   image: swaggerapi/swagger-validator
   ports:

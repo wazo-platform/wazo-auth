@@ -6,7 +6,6 @@ rest_api:
   https:
     listen: 0.0.0.0
     port: 9497
-    certificate: /data/_common/ssl/server.crt
     private_key: /data/_common/ssl/no_server.key
   cors:
     enabled: False
