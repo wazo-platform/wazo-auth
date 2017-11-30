@@ -271,15 +271,7 @@ class _GroupDAO(_PaginatorMixin, _BaseDAO):
         )
 
         with self.new_session() as s:
-            nb_deleted = s.query(GroupPolicy).filter(filter_).delete()
-
-        if nb_deleted:
-            return nb_deleted
-
-        if not self.exists(group_uuid):
-            raise UnknownGroupException(group_uuid)
-
-        return nb_deleted
+            return s.query(GroupPolicy).filter(filter_).delete()
 
     def remove_user(self, group_uuid, user_uuid):
         filter_ = and_(
@@ -288,15 +280,7 @@ class _GroupDAO(_PaginatorMixin, _BaseDAO):
         )
 
         with self.new_session() as s:
-            nb_deleted = s.query(UserGroup).filter(filter_).delete()
-
-        if nb_deleted:
-            return nb_deleted
-
-        if not self.exists(group_uuid):
-            raise UnknownGroupException(group_uuid)
-
-        return nb_deleted
+            return s.query(UserGroup).filter(filter_).delete()
 
     @staticmethod
     def _new_strict_filter(uuid=None, name=None, user_uuid=None, **ignored):
@@ -598,15 +582,7 @@ class _TenantDAO(_PaginatorMixin, _BaseDAO):
         )
 
         with self.new_session() as s:
-            nb_deleted = s.query(TenantUser).filter(filter_).delete()
-
-        if nb_deleted:
-            return nb_deleted
-
-        if not self.exists(tenant_uuid):
-            raise UnknownTenantException(tenant_uuid)
-
-        return nb_deleted
+            return s.query(TenantUser).filter(filter_).delete()
 
     @staticmethod
     def _new_strict_filter(uuid=None, name=None, user_uuid=None, **ignored):
@@ -715,21 +691,13 @@ class _UserDAO(_PaginatorMixin, _BaseDAO):
         return self.count(uuid=user_uuid) > 0
 
     def remove_policy(self, user_uuid, policy_uuid):
+        filter_ = and_(
+            UserPolicy.user_uuid == user_uuid,
+            UserPolicy.policy_uuid == policy_uuid,
+        )
+
         with self.new_session() as s:
-            nb_deleted = s.query(UserPolicy).filter(
-                and_(
-                    UserPolicy.user_uuid == user_uuid,
-                    UserPolicy.policy_uuid == policy_uuid,
-                )
-            ).delete()
-
-        if nb_deleted:
-            return nb_deleted
-
-        if not self.exists(user_uuid):
-            raise UnknownUserException(user_uuid)
-
-        return nb_deleted
+            return s.query(UserPolicy).filter(filter_).delete()
 
     def count(self, **kwargs):
         filtered = kwargs.get('filtered')
