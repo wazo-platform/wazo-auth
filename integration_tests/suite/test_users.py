@@ -82,6 +82,7 @@ class TestUsers(MockBackendTestCase):
 
         with self.auto_remove_user(self.client.users.new, **args) as user:
             assert_that(user, has_entries(uuid=args['uuid'], username=args['username']))
+            assert_http_error(409, self.client.users.new, **args)
 
     def test_register_post(self):
         args = dict(
