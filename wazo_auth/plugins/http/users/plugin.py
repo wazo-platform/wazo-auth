@@ -13,3 +13,4 @@ class Plugin(object):
 
         api.add_resource(http.Users, '/users', resource_class_args=args)
         api.add_resource(http.User, '/users/<string:user_uuid>', resource_class_args=args)
+        api.add_resource(http.UserPassword, '/users/<string:user_uuid>/password', resource_class_args=args)

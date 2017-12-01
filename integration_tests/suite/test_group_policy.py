@@ -9,7 +9,6 @@ from hamcrest import (
     has_entries,
     has_items,
 )
-from xivo_auth_client import Client
 from .helpers import base, fixtures
 
 
@@ -89,9 +88,7 @@ class TestGroupPolicyAssociation(base.MockBackendTestCase):
         self.client.groups.add_user(group['uuid'], user['uuid'])
         self.client.groups.add_policy(group['uuid'], policy['uuid'])
 
-        user_client = Client(self.get_host(), port=self.service_port(9497, 'auth'),
-                             verify_certificate=False, username='foo', password='bar')
-
+        user_client = self.new_auth_client('foo', 'bar')
         token_data = user_client.token.new('wazo_user', expiration=5)
         assert_that(token_data, has_entries('acls', has_items('foobar')))
 
@@ -108,9 +105,7 @@ class TestGroupPolicyAssociation(base.MockBackendTestCase):
 
         self.client.groups.add_policy(group['uuid'], policy['uuid'])
 
-        user_client = Client(self.get_host(), port=self.service_port(9497, 'auth'),
-                             verify_certificate=False, username='foo', password='bar')
-
+        user_client = self.new_auth_client('foo', 'bar')
         expected_acls = ['user.{}.*'.format(user['uuid']) for user in users]
         token_data = user_client.token.new('wazo_user', expiration=5)
         assert_that(token_data, has_entries('acls', has_items(*expected_acls)))

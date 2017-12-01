@@ -114,6 +114,11 @@ class TenantParamException(_BaseParamException):
     resource = 'tenants'
 
 
+class PasswordChangeException(_BaseParamException):
+
+    resource = 'users'
+
+
 class UserParamException(_BaseParamException):
 
     resource = 'users'

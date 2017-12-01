@@ -783,6 +783,16 @@ class _UserDAO(_PaginatorMixin, _BaseDAO):
                         raise UnknownPolicyException(policy_uuid)
                 raise
 
+    def change_password(self, user_uuid, salt, hash_):
+        filter_ = User.uuid == str(user_uuid)
+        values = dict(
+            password_salt=salt,
+            password_hash=hash_,
+        )
+
+        with self.new_session() as s:
+            s.query(User).filter(filter_).update(values)
+
     def exists(self, user_uuid):
         return self.count(uuid=user_uuid) > 0
 

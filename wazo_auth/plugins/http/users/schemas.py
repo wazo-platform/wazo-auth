@@ -13,3 +13,9 @@ class UserPostSchema(BaseSchema):
     username = fields.String(validate=validate.Length(min=1, max=128), required=True)
     password = fields.String(validate=validate.Length(min=1))
     email_address = fields.Email(required=True)
+
+
+class ChangePasswordSchema(BaseSchema):
+
+    old_password = fields.String(validate=validate.Length(min=1), required=True)
+    new_password = fields.String(validate=validate.Length(min=1), required=True)

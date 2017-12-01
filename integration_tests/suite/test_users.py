@@ -16,7 +16,6 @@ from hamcrest import (
     has_properties,
 )
 from contextlib import contextmanager
-from xivo_auth_client import Client
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from xivo_test_helpers.hamcrest.raises import raises
 from .helpers import fixtures
@@ -103,6 +102,22 @@ class TestUsers(MockBackendTestCase):
                             'main', True,
                             'confirmed', False))))
 
+    @fixtures.http_user_register(username='foo', password='foobar', email_address='foo@example.com')
+    def test_put_password(self, user):
+        new_password = 'foobaz'
+
+        assert_http_error(400, self.client.users.change_password, UNKNOWN_UUID,
+                          new_password=new_password)
+        assert_http_error(404, self.client.users.change_password, UNKNOWN_UUID,
+                          old_password='wrong', new_password=new_password)
+        assert_http_error(401, self.client.users.change_password, user['uuid'],
+                          old_password='wrong', new_password=new_password)
+        assert_no_error(self.client.users.change_password, user['uuid'],
+                        old_password='foobar', new_password=new_password)
+
+        user_client = self.new_auth_client('foo', 'foobaz')
+        assert_no_error(user_client.token.new, 'wazo_user', expiration=5)
+
     @fixtures.http_user_register(username='foo', email_address='foo@example.com')
     @fixtures.http_user_register(username='bar', email_address='bar@example.com')
     @fixtures.http_user_register(username='baz', email_address='baz@example.com')
@@ -158,9 +173,7 @@ class TestUsers(MockBackendTestCase):
         self.client.users.add_policy(user['uuid'], policy_1['uuid'])
         self.client.users.add_policy(user['uuid'], policy_2['uuid'])
 
-        user_client = Client(
-            self.get_host(), port=self.service_port(9497, 'auth'), verify_certificate=False,
-            username='foo', password='bar')
+        user_client = self.new_auth_client('foo', 'bar')
         token_data = user_client.token.new('wazo_user', expiration=5)
         assert_that(
             token_data,
