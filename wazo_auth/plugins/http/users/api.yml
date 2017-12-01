@@ -110,6 +110,7 @@ paths:
       Change a user's password"
       summary: "Change the user's password"
       parameters:
+        - $ref: '#/parameters/user_uuid'
         - name: body
           in: body
           description: The user creation parameters
