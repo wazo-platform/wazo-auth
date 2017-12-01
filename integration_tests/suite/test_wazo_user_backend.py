@@ -25,6 +25,7 @@ class TestWazoUserBackend(MockBackendTestCase):
             has_entries(
                 'token', uuid_(),
                 'auth_id', user['uuid'],
+                'xivo_user_uuid', user['uuid'],
                 'acls', has_items(
                     'confd.#',
                     'plugind.#')))

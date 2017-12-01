@@ -74,6 +74,16 @@ class TestUsers(MockBackendTestCase):
                         'main', True,
                         'confirmed', True))))
 
+        args = dict(
+            uuid='fcf9724a-15aa-4dc5-af3c-a9acdb6a2ab9',
+            username='alice',
+            email_address='alice@example.com',
+        )
+
+        with self.auto_remove_user(self.client.users.new, **args) as user:
+            assert_that(user, has_entries(uuid=args['uuid'], username=args['username']))
+            assert_http_error(409, self.client.users.new, **args)
+
     def test_register_post(self):
         args = dict(
             username='foobar',

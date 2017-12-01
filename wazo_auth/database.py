@@ -739,6 +739,7 @@ class _TokenDAO(_BaseDAO):
 class _UserDAO(_PaginatorMixin, _BaseDAO):
 
     constraint_to_column_map = dict(
+        auth_user_pkey='uuid',
         auth_user_username_key='username',
         auth_email_address_key='email_address',
     )
@@ -854,20 +855,24 @@ class _UserDAO(_PaginatorMixin, _BaseDAO):
         with self.new_session() as s:
             return s.query(Tenant).join(TenantUser).filter(filter_).count()
 
-    def create(self, username, email_address, hash_=None, salt=None, email_confirmed=False, **ignored):
+    def create(self, username, email_address, **kwargs):
+        user_args = dict(
+            username=username,
+            password_hash=kwargs.get('hash_'),
+            password_salt=kwargs.get('salt'),
+        )
+        uuid = kwargs.get('uuid')
+        if uuid:
+            user_args['uuid'] = str(uuid)
+
+        email_confirmed = kwargs.get('email_confirmed', False)
+        email_args = dict(address=email_address, confirmed=email_confirmed)
+
         with self.new_session() as s:
             try:
-                email = Email(
-                    address=email_address,
-                    confirmed=email_confirmed,
-                )
-                s.add(email)
-                user = User(
-                    username=username,
-                    password_hash=hash_,
-                    password_salt=salt,
-                )
-                s.add(user)
+                email = Email(**email_args)
+                user = User(**user_args)
+                s.add_all([user, email])
                 s.flush()
                 user_email = UserEmail(
                     user_uuid=user.uuid,

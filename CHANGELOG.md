@@ -21,7 +21,7 @@ Changelog
 
   * POST `0.1/users/register`
 
-The user creation url now needs a token and does not require a password anymore
+* The user creation url now needs a token and does not require a password anymore
 
   * POST `0.1/users`
 
@@ -31,6 +31,8 @@ The user creation url now needs a token and does not require a password anymore
   * DELETE `0.1/groups/<group_uuid>/policies/<policy_uuid>`
   * DELETE `0.1/groups/<group_uuid>/users/<user_uuid>`
   * DELETE `0.1/tenants/<tenant_uuid>/users/<user_uuid>`
+
+* A UUID can be supplied when creating a user
 
 
 17.16
