@@ -739,6 +739,7 @@ class _TokenDAO(_BaseDAO):
 class _UserDAO(_PaginatorMixin, _BaseDAO):
 
     constraint_to_column_map = dict(
+        auth_user_pkey='uuid',
         auth_user_username_key='username',
         auth_email_address_key='email_address',
     )

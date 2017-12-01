@@ -827,6 +827,14 @@ class TestUserDAO(_BaseDAOTestCase):
             assert_that(result, contains(has_entries(
                 username=username,
                 emails=contains(has_entries(address=email_address, confirmed=False, main=True)))))
+            assert_that(
+                calling(self._user_dao.create).with_args('foo', 'foo@bar.baz', uuid=user_uuid, hash_='', sale=''),
+                raises(
+                    exceptions.ConflictException,
+                    has_properties(
+                        'status_code', 409,
+                        'resource', 'users',
+                        'details', has_entries('uuid', ANY))))
         finally:
             self._user_dao.delete(user_uuid)
 
