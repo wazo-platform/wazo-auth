@@ -106,6 +106,8 @@ class TestUsers(MockBackendTestCase):
     def test_put_password(self, user):
         new_password = 'foobaz'
 
+        assert_http_error(400, self.client.users.change_password, UNKNOWN_UUID,
+                          new_password=new_password)
         assert_http_error(404, self.client.users.change_password, UNKNOWN_UUID,
                           old_password='wrong', new_password=new_password)
         assert_http_error(401, self.client.users.change_password, user['uuid'],
