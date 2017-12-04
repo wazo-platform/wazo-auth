@@ -4,19 +4,24 @@ sync:
     - auth
     - swagger-validator
     - postgres
+    - rabbitmq
   environment:
-    PORTS: "9497 8080 5432"
+    PORTS: "9497 8080 5432 5672"
     TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
 auth:
    image: wazopbx/wazo-auth-tests
    links:
     - postgres
+    - rabbitmq
    expose:
      - "9497"
+   environment:
+     XIVO_UUID: "ad094f0b-8597-4129-a9c9-134993543120"
    volumes:
      - "../../..:/usr/src/wazo-auth"
      - "./etc/wazo-auth/config.yml:/etc/wazo-auth/config.yml"
      # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/usr/local/lib/python2.7/site-packages/xivo"
+     # - "${LOCAL_GIT_REPOS}/xivo-bus/xivo_bus:/usr/local/lib/python2.7/site-packages/xivo_bus"
    command: "wazo-auth"
 swagger-validator:
   image: swaggerapi/swagger-validator
@@ -28,3 +33,7 @@ postgres:
   image: wazopbx/wazo-auth-db
   expose:
     - "5432"
+rabbitmq:
+  image: rabbitmq
+  ports:
+    - "5672"
