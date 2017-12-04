@@ -10,10 +10,13 @@ from wazo_auth import exceptions, http, schemas
 logger = logging.getLogger(__name__)
 
 
-class Tenant(http.ErrorCatchingResource):
+class BaseResource(http.AuthResource):
 
     def __init__(self, tenant_service):
         self.tenant_service = tenant_service
+
+
+class Tenant(BaseResource):
 
     @http.required_acl('auth.tenants.{tenant_uuid}.delete')
     def delete(self, tenant_uuid):
@@ -26,10 +29,7 @@ class Tenant(http.ErrorCatchingResource):
         return self.tenant_service.get(tenant_uuid)
 
 
-class Tenants(http.ErrorCatchingResource):
-
-    def __init__(self, tenant_service):
-        self.tenant_service = tenant_service
+class Tenants(BaseResource):
 
     @http.required_acl('auth.tenants.read')
     def get(self):

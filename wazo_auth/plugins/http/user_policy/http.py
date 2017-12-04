@@ -10,7 +10,7 @@ from wazo_auth import http, schemas, exceptions
 logger = logging.getLogger(__name__)
 
 
-class _BaseUserPolicyResource(http.ErrorCatchingResource):
+class _BaseUserPolicyResource(http.AuthResource):
 
     def __init__(self, user_service):
         self.user_service = user_service
