@@ -10,6 +10,7 @@ from hamcrest import assert_that, calling, has_properties, equal_to
 from xivo_test_helpers.hamcrest.raises import raises
 from xivo_auth_client import Client
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
+from xivo_test_helpers.bus import BusClient
 
 HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
 UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
@@ -19,6 +20,7 @@ class BaseTestCase(AssetLaunchingTestCase):
 
     assets_root = os.path.join(os.path.dirname(__file__), '../..', 'assets')
     service = 'auth'
+    bus_config = dict(username='guest', password='guest', host='localhost')
 
     @classmethod
     def setUpClass(cls):
@@ -26,6 +28,11 @@ class BaseTestCase(AssetLaunchingTestCase):
 
     def get_host(self):
         return HOST
+
+    def new_message_accumulator(self, routing_key):
+        port = self.service_port(5672, service_name='rabbitmq')
+        bus_url = 'amqp://{username}:{password}@{host}:{port}//'.format(port=port, **self.bus_config)
+        return BusClient(bus_url).accumulator(routing_key)
 
     def _post_token(self, username, password, backend=None, expiration=None):
         port = self.service_port(9497, 'auth')
