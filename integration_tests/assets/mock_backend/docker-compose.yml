@@ -16,7 +16,7 @@ auth:
    volumes:
      - "../../..:/usr/src/wazo-auth"
      - "./etc/wazo-auth/config.yml:/etc/wazo-auth/config.yml"
-     - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/usr/local/lib/python2.7/site-packages/xivo"
+     # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/usr/local/lib/python2.7/site-packages/xivo"
    links:
      - "postgres"
    command: "wazo-auth"
