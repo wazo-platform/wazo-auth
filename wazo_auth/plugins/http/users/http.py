@@ -7,7 +7,7 @@ from wazo_auth import exceptions, http, schemas
 from .schemas import ChangePasswordSchema, UserPostSchema
 
 
-class BaseUserService(http.ErrorCatchingResource):
+class BaseUserService(http.AuthResource):
 
     def __init__(self, user_service):
         self.user_service = user_service

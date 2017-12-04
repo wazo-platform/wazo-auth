@@ -6,7 +6,7 @@ from flask import request
 from wazo_auth import exceptions, http, schemas
 
 
-class _BasePolicyRessource(http.ErrorCatchingResource):
+class _BasePolicyRessource(http.AuthResource):
 
     def __init__(self, policy_service):
         self.policy_service = policy_service

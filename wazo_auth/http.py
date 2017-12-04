@@ -10,6 +10,7 @@ from flask import current_app, Flask, request
 from flask_cors import CORS
 from flask_restful import Api, Resource
 from xivo.rest_api_helpers import handle_api_exception
+from xivo.auth_verifier import AuthVerifier, required_acl
 from xivo import http_helpers, plugin_helpers
 
 from . import exceptions, schemas
@@ -23,18 +24,25 @@ def _error(code, msg):
             'status_code': code}, code
 
 
-def required_acl(scope):
-    def wrap(f):
-        @functools.wraps(f)
-        def wrapped_f(*args, **kwargs):
+class AuthClientFacade(object):
+
+    class TokenCommand(object):
+
+        def is_valid(self, token_id, scope):
             try:
-                token = request.headers.get('X-Auth-Token', '')
-                current_app.config['token_manager'].get(token, scope)
-            except exceptions.ManagerException:
-                return _error(401, 'Unauthorized')
-            return f(*args, **kwargs)
-        return wrapped_f
-    return wrap
+                current_app.config['token_manager'].get(token_id, scope)
+                return True
+            except exceptions.UnknownTokenException:
+                return False
+            except exceptions.MissingACLTokenException:
+                return False
+
+    def __init__(self):
+        self.token = self.TokenCommand()
+
+
+auth_verifier = AuthVerifier()
+auth_verifier.set_client(AuthClientFacade())
 
 
 def handle_manager_exception(func):
@@ -54,6 +62,10 @@ class ErrorCatchingResource(Resource):
             handle_api_exception,
         ] + Resource.method_decorators
     )
+
+
+class AuthResource(ErrorCatchingResource):
+    method_decorators = [auth_verifier.verify_token] + ErrorCatchingResource.method_decorators
 
 
 class Tokens(ErrorCatchingResource):

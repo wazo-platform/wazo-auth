@@ -10,7 +10,7 @@ from wazo_auth import exceptions, http, schemas
 logger = logging.getLogger(__name__)
 
 
-class _BaseResource(http.ErrorCatchingResource):
+class _BaseResource(http.AuthResource):
 
     def __init__(self, tenant_service):
         self.tenant_service = tenant_service
@@ -47,7 +47,7 @@ class TenantUsers(_BaseResource):
         }, 200
 
 
-class UserTenants(http.ErrorCatchingResource):
+class UserTenants(http.AuthResource):
 
     def __init__(self, user_service):
         self.user_service = user_service

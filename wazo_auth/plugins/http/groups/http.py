@@ -6,7 +6,7 @@ from flask import request
 from wazo_auth import exceptions, http, schemas
 
 
-class _BaseGroupResource(http.ErrorCatchingResource):
+class _BaseGroupResource(http.AuthResource):
 
     def __init__(self, group_service):
         self.group_service = group_service

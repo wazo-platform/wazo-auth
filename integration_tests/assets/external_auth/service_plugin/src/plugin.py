@@ -6,7 +6,7 @@ from flask import request
 from wazo_auth import http
 
 
-class Foo(http.ErrorCatchingResource):
+class Foo(http.AuthResource):
 
     auth_type = 'foo'
 
