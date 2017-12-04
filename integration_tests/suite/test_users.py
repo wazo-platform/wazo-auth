@@ -103,7 +103,9 @@ class TestUsers(MockBackendTestCase):
                             'confirmed', False))))
 
     @fixtures.http_user_register(username='foo', password='foobar', email_address='foo@example.com')
-    def test_put_password(self, user):
+    @fixtures.http_policy(acl_templates=['auth.users.{{ uuid }}.password.edit'])
+    def test_put_password(self, policy, user):
+        self.client.users.add_policy(user['uuid'], policy['uuid'])
         new_password = 'foobaz'
 
         assert_http_error(400, self.client.users.change_password, UNKNOWN_UUID,
@@ -115,7 +117,14 @@ class TestUsers(MockBackendTestCase):
         assert_no_error(self.client.users.change_password, user['uuid'],
                         old_password='foobar', new_password=new_password)
 
-        user_client = self.new_auth_client('foo', 'foobaz')
+        user_client = self.new_auth_client('foo', new_password)
+        token_data = user_client.token.new('wazo_user', expiration=5)
+        user_client.set_token(token_data['token'])
+
+        assert_no_error(user_client.users.change_password, user['uuid'],
+                        old_password=new_password, new_password='secret')
+
+        user_client = self.new_auth_client('foo', 'secret')
         assert_no_error(user_client.token.new, 'wazo_user', expiration=5)
 
     @fixtures.http_user_register(username='foo', email_address='foo@example.com')
