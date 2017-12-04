@@ -34,6 +34,10 @@ Changelog
 
 * A UUID can be supplied when creating a user
 
+* A new URL has been added to change a user's password
+
+  * PUT `0.1/users/<user_uuid>/password`
+
 
 17.16
 -----
