@@ -40,12 +40,16 @@ class WazoUser(UserAuthenticationBackend):
         for group in groups:
             group['users'] = self._group_service.list_users(group['uuid'])
 
-        return dict(
+        local_data = dict(
             uuid=user_uuid,
             username=kwargs['username'],
             tenants=tenants,
             groups=groups,
-            **confd_data)
+        )
+
+        result = confd_data
+        result.update(local_data)
+        return result
 
     def _get_user_uuid(self, username):
         matching_users = self._user_service.list_users(username=username)
