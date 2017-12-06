@@ -134,7 +134,12 @@ class PolicyService(_Service):
         return self._dao.policy.delete(policy_uuid)
 
     def delete_acl_template(self, policy_uuid, acl_template):
-        return self._dao.policy.dissociate_policy_template(policy_uuid, acl_template)
+        nb_deleted = self._dao.policy.dissociate_policy_template(policy_uuid, acl_template)
+        if nb_deleted:
+            return
+
+        if not self._dao.policy.exists(policy_uuid):
+            raise exceptions.UnknownPolicyException(policy_uuid)
 
     def get(self, policy_uuid):
         matching_policies = self._dao.policy.get(uuid=policy_uuid)

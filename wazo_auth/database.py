@@ -414,22 +414,20 @@ class _PolicyDAO(_PaginatorMixin, _BaseDAO):
 
     def dissociate_policy_template(self, policy_uuid, acl_template):
         with self.new_session() as s:
-            filter_ = ACLTemplate.template == acl_template
-            templ_ids = [t.id_ for t in s.query(ACLTemplate.id_).filter(filter_).all()]
-            nb_deleted = 0
+            filter_ = and_(
+                ACLTemplate.template == acl_template,
+                ACLTemplatePolicy.policy_uuid == policy_uuid,
+            )
 
-            if templ_ids:
-                filter_ = and_(
-                    ACLTemplatePolicy.policy_uuid == policy_uuid,
-                    ACLTemplatePolicy.template_id.in_(templ_ids),
-                )
-                nb_deleted = s.query(ACLTemplatePolicy).filter(filter_).delete(synchronize_session=False)
+            template_id = s.query(ACLTemplate.id_).join(ACLTemplatePolicy).filter(filter_).first()
+            if not template_id:
+                return 0
 
-            if nb_deleted:
-                return
-
-            if not self._policy_exists(s, policy_uuid):
-                raise UnknownPolicyException(policy_uuid)
+            filter_ = and_(
+                ACLTemplatePolicy.policy_uuid == policy_uuid,
+                ACLTemplatePolicy.template_id == template_id,
+            )
+            return s.query(ACLTemplatePolicy).filter(filter_).delete()
 
     def count(self, search, **ignored):
         filter_ = self.new_search_filter(search=search)

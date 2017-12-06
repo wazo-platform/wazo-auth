@@ -355,9 +355,8 @@ class TestPolicyDAO(_BaseDAOTestCase):
         assert_that(
             calling(self._policy_dao.associate_policy_template).with_args('unknown', '#'),
             raises(exceptions.UnknownPolicyException))
-        assert_that(
-            calling(self._policy_dao.dissociate_policy_template).with_args('unknown', '#'),
-            raises(exceptions.UnknownPolicyException))
+
+        assert_that(self._policy_dao.dissociate_policy_template('unknown', '#'), equal_to(0))
 
         with self._new_policy(u'testé', u'descriptioñ', []) as uuid_:
             self._policy_dao.associate_policy_template(uuid_, '#')
