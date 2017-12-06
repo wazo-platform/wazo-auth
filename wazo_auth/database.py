@@ -400,31 +400,36 @@ class _PolicyDAO(_PaginatorMixin, _BaseDAO):
 
     def associate_policy_template(self, policy_uuid, acl_template):
         with self.new_session() as s:
-            if not self._policy_exists(s, policy_uuid):
-                raise UnknownPolicyException(policy_uuid)
-
             self._associate_acl_templates(s, policy_uuid, [acl_template])
             try:
                 s.commit()
             except exc.IntegrityError as e:
                 if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                     raise DuplicateTemplateException(acl_template)
+                if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
+                    constraint = e.orig.diag.constraint_name
+                    if constraint == 'auth_policy_template_policy_uuid_fkey':
+                        raise UnknownPolicyException(policy_uuid)
                 raise
 
     def dissociate_policy_template(self, policy_uuid, acl_template):
         with self.new_session() as s:
-            if not self._policy_exists(s, policy_uuid):
-                raise UnknownPolicyException(policy_uuid)
-
             filter_ = ACLTemplate.template == acl_template
             templ_ids = [t.id_ for t in s.query(ACLTemplate.id_).filter(filter_).all()]
+            nb_deleted = 0
 
-            for templ_id in templ_ids:
+            if templ_ids:
                 filter_ = and_(
                     ACLTemplatePolicy.policy_uuid == policy_uuid,
-                    ACLTemplatePolicy.template_id == templ_id,
+                    ACLTemplatePolicy.template_id.in_(templ_ids),
                 )
-                s.query(ACLTemplatePolicy).filter(filter_).delete()
+                nb_deleted = s.query(ACLTemplatePolicy).filter(filter_).delete(synchronize_session=False)
+
+            if nb_deleted:
+                return
+
+            if not self._policy_exists(s, policy_uuid):
+                raise UnknownPolicyException(policy_uuid)
 
     def count(self, search, **ignored):
         filter_ = self.new_search_filter(search=search)
