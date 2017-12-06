@@ -11,10 +11,13 @@ auth:
   image: wazopbx/wazo-auth-tests
   ports:
     - "9497"
+  environment:
+    - "XIVO_UUID=the-predefined-xivo-uuid"
   volumes:
      - "../../..:/usr/src/wazo-auth"
      - "./etc/wazo-auth/config.yml:/etc/wazo-auth/config.yml"
      # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/usr/local/lib/python2.7/site-packages/xivo"
+     # - "${LOCAL_GIT_REPOS}/xivo-bus/xivo_bus:/usr/local/lib/python2.7/site-packages/xivo_bus"
   links:
     - postgres
     - slapd

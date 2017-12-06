@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 from uuid import uuid4
-from hamcrest import (assert_that, equal_to)
+from hamcrest import (assert_that, contains, equal_to, has_entries)
+from xivo_test_helpers import until
 from .helpers import base, fixtures
 
 
@@ -14,8 +15,18 @@ class TestExternalAuthAPI(base.MockBackendTestCase):
 
     @fixtures.http_user_register()
     def test_create(self, user):
+        routing_key = 'auth.users.{}.external.foo.created'.format(user['uuid'])
+        msg_accumulator = self.new_message_accumulator(routing_key)
+
         result = self.client.external.create('foo', user['uuid'], self.original_data)
         assert_that(result, equal_to(self.original_data))
+
+        def bus_received_msg():
+            assert_that(
+                msg_accumulator.accumulate(),
+                contains(has_entries(data=dict(user_uuid=user['uuid'], external_auth_name='foo'))))
+
+        until.assert_(bus_received_msg, tries=10, interval=0.25)
 
         data = self.client.external.get('foo', user['uuid'])
         assert_that(data, equal_to(self.original_data))
@@ -25,11 +36,22 @@ class TestExternalAuthAPI(base.MockBackendTestCase):
 
     @fixtures.http_user_register()
     def test_delete(self, user):
+        routing_key = 'auth.users.{}.external.foo.deleted'.format(user['uuid'])
+        msg_accumulator = self.new_message_accumulator(routing_key)
+
         self.client.external.create('foo', user['uuid'], self.original_data)
 
         base.assert_http_error(404, self.client.external.delete, 'notfoo', user['uuid'])
         base.assert_http_error(404, self.client.external.delete, 'foo', base.UNKNOWN_UUID)
         base.assert_no_error(self.client.external.delete, 'foo', user['uuid'])
+
+        def bus_received_msg():
+            assert_that(
+                msg_accumulator.accumulate(),
+                contains(has_entries(data=dict(user_uuid=user['uuid'], external_auth_name='foo'))))
+
+        until.assert_(bus_received_msg, tries=10, interval=0.25)
+
         base.assert_http_error(404, self.client.external.get, 'foo', user['uuid'])
 
     @fixtures.http_user_register()

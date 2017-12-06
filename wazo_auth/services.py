@@ -7,6 +7,7 @@ import hashlib
 import logging
 import os
 
+from xivo_bus.resources.auth import events
 from . import exceptions
 
 logger = logging.getLogger(__name__)
@@ -20,11 +21,20 @@ class _Service(object):
 
 class ExternalAuthService(_Service):
 
+    def __init__(self, dao, bus_publisher=None):
+        super(ExternalAuthService, self).__init__(dao)
+        self._bus_publisher = bus_publisher
+
     def create(self, user_uuid, auth_type, data):
-        return self._dao.external_auth.create(user_uuid, auth_type, data)
+        result = self._dao.external_auth.create(user_uuid, auth_type, data)
+        event = events.UserExternalAuthAdded(user_uuid, auth_type)
+        self._bus_publisher.publish(event)
+        return result
 
     def delete(self, user_uuid, auth_type):
-        return self._dao.external_auth.delete(user_uuid, auth_type)
+        self._dao.external_auth.delete(user_uuid, auth_type)
+        event = events.UserExternalAuthDeleted(user_uuid, auth_type)
+        self._bus_publisher.publish(event)
 
     def get(self, user_uuid, auth_type):
         return self._dao.external_auth.get(user_uuid, auth_type)

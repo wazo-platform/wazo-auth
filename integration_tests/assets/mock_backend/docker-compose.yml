@@ -3,9 +3,10 @@ sync:
   links:
     - auth
     - postgres
+    - rabbitmq
   environment:
-    PORTS: "9497 5432"
-    # TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
+    PORTS: "9497 5432 5672"
+    TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
 auth:
    image: wazopbx/wazo-auth-tests
    environment:
@@ -17,10 +18,16 @@ auth:
      - "../../..:/usr/src/wazo-auth"
      - "./etc/wazo-auth/config.yml:/etc/wazo-auth/config.yml"
      # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/usr/local/lib/python2.7/site-packages/xivo"
+     # - "${LOCAL_GIT_REPOS}/xivo-bus/xivo_bus:/usr/local/lib/python2.7/site-packages/xivo_bus"
    links:
      - "postgres"
+     - "rabbitmq"
    command: "wazo-auth"
 postgres:
   image: wazopbx/wazo-auth-db
   ports:
     - "5432"
+rabbitmq:
+  image: rabbitmq
+  ports:
+    - "5672"

@@ -4,6 +4,7 @@ mock
 nose
 pyhamcrest
 python-ldap
+kombu
 
 # for database tests
 -e ..

@@ -18,7 +18,7 @@ from wazo_auth import database, http, token
 from wazo_auth.helpers import LocalTokenManager
 
 from .service_discovery import self_check
-from . import services
+from . import bus, services
 
 logger = logging.getLogger(__name__)
 
@@ -51,9 +51,10 @@ class Controller(object):
             logger.error('Missing configuration to start the application: %s', e)
             sys.exit(1)
 
+        self._bus_publisher = bus.BusPublisher(config)
         dao = database.DAO.from_config(self._config)
         self._token_manager = token.Manager(config, dao)
-        external_auth_service = services.ExternalAuthService(dao)
+        external_auth_service = services.ExternalAuthService(dao, self._bus_publisher)
         group_service = services.GroupService(dao)
         policy_service = services.PolicyService(dao)
         self._user_service = services.UserService(dao)
@@ -88,22 +89,23 @@ class Controller(object):
         server.ssl_adapter = http_helpers.ssl_adapter(self._ssl_cert_file,
                                                       self._ssl_key_file)
 
-        with ServiceCatalogRegistration('wazo-auth',
-                                        self._xivo_uuid,
-                                        self._consul_config,
-                                        self._service_discovery_config,
-                                        self._bus_config,
-                                        partial(self_check,
-                                                self._listen_port,
-                                                self._ssl_cert_file)):
-            self._expired_token_remover.run()
-            local_token_manager = self._get_local_token_manager()
-            self._config['local_token_manager'] = local_token_manager
-            try:
-                server.start()
-            finally:
-                server.stop()
-            local_token_manager.revoke_token()
+        with bus.publisher_thread(self._bus_publisher):
+            with ServiceCatalogRegistration('wazo-auth',
+                                            self._xivo_uuid,
+                                            self._consul_config,
+                                            self._service_discovery_config,
+                                            self._bus_config,
+                                            partial(self_check,
+                                                    self._listen_port,
+                                                    self._ssl_cert_file)):
+                self._expired_token_remover.run()
+                local_token_manager = self._get_local_token_manager()
+                self._config['local_token_manager'] = local_token_manager
+                try:
+                    server.start()
+                finally:
+                    server.stop()
+                local_token_manager.revoke_token()
 
     def _get_local_token_manager(self):
         try:
