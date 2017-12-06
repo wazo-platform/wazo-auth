@@ -5,6 +5,7 @@ sync:
     - postgres
   environment:
     PORTS: "9497 5432"
+    TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
 auth:
    image: wazopbx/wazo-auth-tests
    ports:
