@@ -6,7 +6,7 @@ sync:
     - slapd
   environment:
     PORTS: "389 5432 9497"
-    TIMEOUT: 60
+    TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
 auth:
   image: wazopbx/wazo-auth-tests
   ports:

@@ -2,39 +2,19 @@
 # Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-import docker as docker_client
-import os
-import subprocess
 import ldap
 import time
 
 from collections import namedtuple
-from contextlib import contextmanager
 from ldap.modlist import addModlist
-from hamcrest import assert_that
-from hamcrest import equal_to
+from hamcrest import (
+    assert_that,
+    has_entries,
+)
 
 from .helpers.base import BaseTestCase
 
 Contact = namedtuple('Contact', ['cn', 'uid', 'password', 'mail', 'login_attribute'])
-
-
-@contextmanager
-def cd(newdir):
-    prevdir = os.getcwd()
-    os.chdir(os.path.expanduser(newdir))
-    try:
-        yield
-    finally:
-        os.chdir(prevdir)
-
-
-def _run_cmd(cmd, stderr=True):
-    with open(os.devnull, "w") as null:
-        stderr = subprocess.STDOUT if stderr else null
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=stderr)
-        out, _ = process.communicate()
-    return out
 
 
 class LDAPHelper(object):
@@ -107,19 +87,6 @@ class _BaseLDAPTestCase(BaseTestCase):
             super(_BaseLDAPTestCase, cls).tearDownClass()
             raise
 
-    @classmethod
-    def service_port(cls, internal_port, service_name=None):
-        if not service_name:
-            service_name = cls.service
-
-        docker = docker_client.from_env().api
-        result = docker.port(cls._container_id(service_name), internal_port)
-
-        if not result:
-            raise Exception('No such port: {} {}'.format(service_name, internal_port))
-
-        return int(result[0]['HostPort'])
-
 
 class TestLDAP(_BaseLDAPTestCase):
 
@@ -131,9 +98,7 @@ class TestLDAP(_BaseLDAPTestCase):
 
     def test_ldap_authentication(self):
         response = self._post_token('Alice Wonderland', 'awonderland_password', backend='ldap_user')
-
-        xivo_user_uuid = response['xivo_user_uuid']
-        assert_that(xivo_user_uuid, equal_to('1'))
+        assert_that(response, has_entries(xivo_user_uuid='1'))
 
     def test_ldap_authentication_fail_when_wrong_password(self):
         self._post_token_with_expected_exception('Alice Wonderland', 'wrong_password', backend='ldap_user', status_code=401)
@@ -149,9 +114,7 @@ class TestLDAPAnonymous(_BaseLDAPTestCase):
 
     def test_ldap_authentication(self):
         response = self._post_token('awonderland@wazo-auth.com', 'awonderland_password', backend='ldap_user')
-
-        xivo_user_uuid = response['xivo_user_uuid']
-        assert_that(xivo_user_uuid, equal_to('1'))
+        assert_that(response, has_entries(xivo_user_uuid='1'))
 
     def test_ldap_authentication_fail_when_wrong_password(self):
         self._post_token_with_expected_exception(
@@ -168,9 +131,7 @@ class TestLDAPServiceUser(_BaseLDAPTestCase):
 
     def test_ldap_authentication(self):
         response = self._post_token('awonderland', 'awonderland_password', backend='ldap_user')
-
-        xivo_user_uuid = response['xivo_user_uuid']
-        assert_that(xivo_user_uuid, equal_to('1'))
+        assert_that(response, has_entries(xivo_user_uuid='1'))
 
     def test_ldap_authentication_fail_when_wrong_password(self):
         self._post_token_with_expected_exception(
