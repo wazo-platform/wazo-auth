@@ -7,8 +7,10 @@ import time
 
 from collections import namedtuple
 from ldap.modlist import addModlist
-from hamcrest import assert_that
-from hamcrest import equal_to
+from hamcrest import (
+    assert_that,
+    has_entries,
+)
 
 from .helpers.base import BaseTestCase
 
@@ -96,9 +98,7 @@ class TestLDAP(_BaseLDAPTestCase):
 
     def test_ldap_authentication(self):
         response = self._post_token('Alice Wonderland', 'awonderland_password', backend='ldap_user')
-
-        xivo_user_uuid = response['xivo_user_uuid']
-        assert_that(xivo_user_uuid, equal_to('1'))
+        assert_that(response, has_entries(xivo_user_uuid='1'))
 
     def test_ldap_authentication_fail_when_wrong_password(self):
         self._post_token_with_expected_exception('Alice Wonderland', 'wrong_password', backend='ldap_user', status_code=401)
@@ -114,9 +114,7 @@ class TestLDAPAnonymous(_BaseLDAPTestCase):
 
     def test_ldap_authentication(self):
         response = self._post_token('awonderland@wazo-auth.com', 'awonderland_password', backend='ldap_user')
-
-        xivo_user_uuid = response['xivo_user_uuid']
-        assert_that(xivo_user_uuid, equal_to('1'))
+        assert_that(response, has_entries(xivo_user_uuid='1'))
 
     def test_ldap_authentication_fail_when_wrong_password(self):
         self._post_token_with_expected_exception(
@@ -133,9 +131,7 @@ class TestLDAPServiceUser(_BaseLDAPTestCase):
 
     def test_ldap_authentication(self):
         response = self._post_token('awonderland', 'awonderland_password', backend='ldap_user')
-
-        xivo_user_uuid = response['xivo_user_uuid']
-        assert_that(xivo_user_uuid, equal_to('1'))
+        assert_that(response, has_entries(xivo_user_uuid='1'))
 
     def test_ldap_authentication_fail_when_wrong_password(self):
         self._post_token_with_expected_exception(
