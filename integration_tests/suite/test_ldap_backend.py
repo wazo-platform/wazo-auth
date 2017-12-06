@@ -2,14 +2,10 @@
 # Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-import docker as docker_client
-import os
-import subprocess
 import ldap
 import time
 
 from collections import namedtuple
-from contextlib import contextmanager
 from ldap.modlist import addModlist
 from hamcrest import assert_that
 from hamcrest import equal_to
@@ -17,24 +13,6 @@ from hamcrest import equal_to
 from .helpers.base import BaseTestCase
 
 Contact = namedtuple('Contact', ['cn', 'uid', 'password', 'mail', 'login_attribute'])
-
-
-@contextmanager
-def cd(newdir):
-    prevdir = os.getcwd()
-    os.chdir(os.path.expanduser(newdir))
-    try:
-        yield
-    finally:
-        os.chdir(prevdir)
-
-
-def _run_cmd(cmd, stderr=True):
-    with open(os.devnull, "w") as null:
-        stderr = subprocess.STDOUT if stderr else null
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=stderr)
-        out, _ = process.communicate()
-    return out
 
 
 class LDAPHelper(object):
@@ -106,19 +84,6 @@ class _BaseLDAPTestCase(BaseTestCase):
         except Exception:
             super(_BaseLDAPTestCase, cls).tearDownClass()
             raise
-
-    @classmethod
-    def service_port(cls, internal_port, service_name=None):
-        if not service_name:
-            service_name = cls.service
-
-        docker = docker_client.from_env().api
-        result = docker.port(cls._container_id(service_name), internal_port)
-
-        if not result:
-            raise Exception('No such port: {} {}'.format(service_name, internal_port))
-
-        return int(result[0]['HostPort'])
 
 
 class TestLDAP(_BaseLDAPTestCase):
