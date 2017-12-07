@@ -6,7 +6,7 @@ import logging
 import time
 from collections import OrderedDict
 from sqlalchemy import and_, exc, func, text
-from .base import BaseDAO, SearchFilter
+from .base import BaseDAO, PaginatorMixin, SearchFilter
 from .external_auth import ExternalAuthDAO
 from ..models import (
     ACL,
@@ -64,16 +64,7 @@ class DAO(object):
         return cls(policy, token, user, tenant, group, external_auth)
 
 
-class _PaginatorMixin(object):
-
-    column_map = dict()
-
-    def __init__(self, *args, **kwargs):
-        super(_PaginatorMixin, self).__init__(*args, **kwargs)
-        self._paginator = QueryPaginator(self.column_map)
-
-
-class _GroupDAO(_PaginatorMixin, BaseDAO):
+class _GroupDAO(PaginatorMixin, BaseDAO):
 
     constraint_to_column_map = dict(
         auth_group_name_key='name',
@@ -250,7 +241,7 @@ class _GroupDAO(_PaginatorMixin, BaseDAO):
         return filter_
 
 
-class _PolicyDAO(_PaginatorMixin, BaseDAO):
+class _PolicyDAO(PaginatorMixin, BaseDAO):
 
     search_filter = SearchFilter(Policy.name, Policy.description)
     column_map = dict(
@@ -429,7 +420,7 @@ class _PolicyDAO(_PaginatorMixin, BaseDAO):
         return filter_
 
 
-class _TenantDAO(_PaginatorMixin, BaseDAO):
+class _TenantDAO(PaginatorMixin, BaseDAO):
 
     constraint_to_column_map = dict(
         auth_tenant_name_key='name',
@@ -600,7 +591,7 @@ class _TokenDAO(BaseDAO):
             s.query(TokenModel).filter(filter_).delete()
 
 
-class _UserDAO(_PaginatorMixin, BaseDAO):
+class _UserDAO(PaginatorMixin, BaseDAO):
 
     constraint_to_column_map = dict(
         auth_user_pkey='uuid',
@@ -832,50 +823,3 @@ class _UserDAO(_PaginatorMixin, BaseDAO):
                 users[user_uuid]['emails'].append(email)
 
         return users.values()
-
-
-class QueryPaginator(object):
-
-    _valid_directions = ['asc', 'desc']
-
-    def __init__(self, column_map):
-        self._column_map = column_map
-
-    def update_query(self, query, limit=None, offset=None, order=None, direction=None, **ignored):
-        if order and direction:
-            order_field = self._column_map.get(order)
-            if not order_field:
-                raise InvalidSortColumnException(order)
-
-            if direction not in self._valid_directions:
-                raise InvalidSortDirectionException(direction)
-
-            order_clause = order_field.asc() if direction == 'asc' else order_field.desc()
-            query = query.order_by(order_clause)
-
-        if limit is not None:
-            limit = self._check_valid_limit_or_offset(limit, None, InvalidLimitException)
-            query = query.limit(limit)
-
-        if offset is not None:
-            offset = self._check_valid_limit_or_offset(offset, 0, InvalidOffsetException)
-            query = query.offset(offset)
-
-        return query
-
-    def _check_valid_limit_or_offset(self, value, default, exception):
-        if value is True or value is False:
-            raise exception(value)
-
-        if value is None:
-            return default
-
-        try:
-            value = int(value)
-        except ValueError:
-            raise exception(value)
-
-        if value < 0:
-            raise exception(value)
-
-        return value
