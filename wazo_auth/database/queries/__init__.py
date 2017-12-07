@@ -50,24 +50,6 @@ from ...exceptions import (
 logger = logging.getLogger(__name__)
 
 
-class SearchFilter(object):
-
-    def __init__(self, *columns):
-        self._columns = columns
-
-    def new_filter(self, search=None, **ignored):
-        if search is None:
-            return text('true')
-
-        if not search:
-            pattern = '%'
-        else:
-            words = [w for w in search.split(' ') if w]
-            pattern = '%{}%'.format('%'.join(words))
-
-        return or_(column.ilike(pattern) for column in self._columns)
-
-
 class DAO(object):
 
     def __init__(self, policy_dao, token_dao, user_dao, tenant_dao, group_dao, external_auth_dao):
@@ -89,34 +71,6 @@ class DAO(object):
         return cls(policy, token, user, tenant, group, external_auth)
 
 
-class _BaseDAO(object):
-
-    _UNIQUE_CONSTRAINT_CODE = '23505'
-    _FKEY_CONSTRAINT_CODE = '23503'
-    search_filter = SearchFilter()
-
-    def __init__(self, db_uri):
-        self._Session = scoped_session(sessionmaker())
-        engine = create_engine(db_uri)
-        self._Session.configure(bind=engine)
-
-    @contextmanager
-    def new_session(self):
-        session = self._Session()
-        try:
-            yield session
-            session.commit()
-        except Exception:
-            session.rollback()
-            raise
-        finally:
-            self._Session.remove()
-
-    @classmethod
-    def new_search_filter(cls, **kwargs):
-        return cls.search_filter.new_filter(**kwargs)
-
-
 class _PaginatorMixin(object):
 
     column_map = dict()
@@ -126,7 +80,7 @@ class _PaginatorMixin(object):
         self._paginator = QueryPaginator(self.column_map)
 
 
-class _ExternalAuthDAO(_BaseDAO):
+class _ExternalAuthDAO(BaseDAO):
 
     def create(self, user_uuid, auth_type, data):
         serialized_data = json.dumps(data)
@@ -212,7 +166,7 @@ class _ExternalAuthDAO(_BaseDAO):
         return type_
 
 
-class _GroupDAO(_PaginatorMixin, _BaseDAO):
+class _GroupDAO(_PaginatorMixin, BaseDAO):
 
     constraint_to_column_map = dict(
         auth_group_name_key='name',
@@ -389,7 +343,7 @@ class _GroupDAO(_PaginatorMixin, _BaseDAO):
         return filter_
 
 
-class _PolicyDAO(_PaginatorMixin, _BaseDAO):
+class _PolicyDAO(_PaginatorMixin, BaseDAO):
 
     search_filter = SearchFilter(Policy.name, Policy.description)
     column_map = dict(
@@ -568,7 +522,7 @@ class _PolicyDAO(_PaginatorMixin, _BaseDAO):
         return filter_
 
 
-class _TenantDAO(_PaginatorMixin, _BaseDAO):
+class _TenantDAO(_PaginatorMixin, BaseDAO):
 
     constraint_to_column_map = dict(
         auth_tenant_name_key='name',
@@ -694,7 +648,7 @@ class _TenantDAO(_PaginatorMixin, _BaseDAO):
         return filter_
 
 
-class _TokenDAO(_BaseDAO):
+class _TokenDAO(BaseDAO):
 
     def create(self, body):
         token = TokenModel(
@@ -739,7 +693,7 @@ class _TokenDAO(_BaseDAO):
             s.query(TokenModel).filter(filter_).delete()
 
 
-class _UserDAO(_PaginatorMixin, _BaseDAO):
+class _UserDAO(_PaginatorMixin, BaseDAO):
 
     constraint_to_column_map = dict(
         auth_user_pkey='uuid',
