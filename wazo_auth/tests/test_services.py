@@ -6,22 +6,23 @@ from hamcrest import assert_that, calling, equal_to, not_, raises
 from mock import Mock, patch, sentinel as s
 from unittest import TestCase
 
-from .. import database, exceptions, services
+from .. import exceptions, services
+from ..database import queries
 
 
 class BaseServiceTestCase(TestCase):
 
     def setUp(self):
-        self.external_auth_dao = Mock(database._ExternalAuthDAO)
-        self.group_dao = Mock(database._GroupDAO)
-        self.policy_dao = Mock(database._PolicyDAO)
-        self.tenant_dao = Mock(database._TenantDAO)
-        self.token_dao = Mock(database._TokenDAO)
-        self.user_dao = Mock(database._UserDAO)
+        self.external_auth_dao = Mock(queries._ExternalAuthDAO)
+        self.group_dao = Mock(queries._GroupDAO)
+        self.policy_dao = Mock(queries._PolicyDAO)
+        self.tenant_dao = Mock(queries._TenantDAO)
+        self.token_dao = Mock(queries._TokenDAO)
+        self.user_dao = Mock(queries._UserDAO)
         self.encrypter = Mock(services.PasswordEncrypter)
         self.encrypter.encrypt_password.return_value = s.salt, s.hash_
 
-        self.dao = database.DAO(
+        self.dao = queries.DAO(
             self.policy_dao,
             self.token_dao,
             self.user_dao,

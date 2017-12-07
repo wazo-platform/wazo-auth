@@ -28,7 +28,7 @@ from .models import (
     UserPolicy,
     UserExternalAuth,
 )
-from .exceptions import (
+from ..exceptions import (
     ConflictException,
     DuplicatePolicyException,
     DuplicateTemplateException,
