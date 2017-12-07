@@ -59,7 +59,7 @@ class _BaseDAOTestCase(unittest.TestCase):
 
     def setUp(self):
         db_uri = DB_URI.format(port=DBStarter.service_port(5432, 'postgres'))
-        self._external_auth_dao = queries._ExternalAuthDAO(db_uri)
+        self._external_auth_dao = queries.ExternalAuthDAO(db_uri)
         self._group_dao = queries._GroupDAO(db_uri)
         self._policy_dao = queries._PolicyDAO(db_uri)
         self._user_dao = queries._UserDAO(db_uri)

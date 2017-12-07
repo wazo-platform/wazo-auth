@@ -13,7 +13,7 @@ from ..database import queries
 class BaseServiceTestCase(TestCase):
 
     def setUp(self):
-        self.external_auth_dao = Mock(queries._ExternalAuthDAO)
+        self.external_auth_dao = Mock(queries.ExternalAuthDAO)
         self.group_dao = Mock(queries._GroupDAO)
         self.policy_dao = Mock(queries._PolicyDAO)
         self.tenant_dao = Mock(queries._TenantDAO)
