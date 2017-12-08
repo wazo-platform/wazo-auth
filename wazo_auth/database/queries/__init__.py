@@ -11,6 +11,7 @@ from .external_auth import ExternalAuthDAO
 from . import filters
 from .group import GroupDAO
 from .policy import PolicyDAO
+from .tenant import TenantDAO
 from ..models import (
     ACL,
     ACLTemplate,
@@ -63,124 +64,8 @@ class DAO(object):
         policy = PolicyDAO(config['db_uri'])
         token = _TokenDAO(config['db_uri'])
         user = _UserDAO(config['db_uri'])
-        tenant = _TenantDAO(config['db_uri'])
+        tenant = TenantDAO(config['db_uri'])
         return cls(policy, token, user, tenant, group, external_auth)
-
-
-class _TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
-
-    constraint_to_column_map = dict(
-        auth_tenant_name_key='name',
-    )
-    search_filter = filters.tenant_search_filter
-    strict_filter = filters.tenant_strict_filter
-    column_map = dict(
-        name=Tenant.name,
-    )
-
-    def exists(self, tenant_uuid):
-        return self.count(uuid=tenant_uuid) > 0
-
-    def add_user(self, tenant_uuid, user_uuid):
-        tenant_user = TenantUser(tenant_uuid=str(tenant_uuid), user_uuid=str(user_uuid))
-        with self.new_session() as s:
-            s.add(tenant_user)
-            try:
-                s.commit()
-            except exc.IntegrityError as e:
-                if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                    # This association already exists.
-                    s.rollback()
-                    return
-                if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
-                    constraint = e.orig.diag.constraint_name
-                    if constraint == 'auth_tenant_user_tenant_uuid_fkey':
-                        raise UnknownTenantException(tenant_uuid)
-                    elif constraint == 'auth_tenant_user_user_uuid_fkey':
-                        raise UnknownUserException(user_uuid)
-                raise
-
-    def count(self, **kwargs):
-        filtered = kwargs.get('filtered')
-        if filtered is not False:
-            strict_filter = self.new_strict_filter(**kwargs)
-            search_filter = self.new_search_filter(**kwargs)
-            filter_ = and_(strict_filter, search_filter)
-        else:
-            filter_ = text('true')
-
-        with self.new_session() as s:
-            return s.query(Tenant).filter(filter_).count()
-
-    def count_users(self, tenant_uuid, **kwargs):
-        filtered = kwargs.get('filtered')
-        if filtered is not False:
-            strict_filter = filters.user_strict_filter.new_filter(**kwargs)
-            search_filter = filters.user_search_filter.new_filter(**kwargs)
-            filter_ = and_(strict_filter, search_filter)
-        else:
-            filter_ = text('true')
-
-        filter_ = and_(filter_, TenantUser.tenant_uuid == str(tenant_uuid))
-
-        with self.new_session() as s:
-            return s.query(
-                TenantUser
-            ).join(
-                User
-            ).join(
-                UserEmail
-            ).join(
-                Email
-            ).filter(filter_).count()
-
-    def create(self, name):
-        tenant = Tenant(name=name)
-        with self.new_session() as s:
-            s.add(tenant)
-            try:
-                s.commit()
-            except exc.IntegrityError as e:
-                if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                    column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
-                    value = locals().get(column)
-                    if column:
-                        raise ConflictException('tenants', column, value)
-                raise
-            return tenant.uuid
-
-    def delete(self, uuid):
-        with self.new_session() as s:
-            nb_deleted = s.query(Tenant).filter(Tenant.uuid == str(uuid)).delete()
-
-        if not nb_deleted:
-            if not self.list_(uuid=uuid):
-                raise UnknownTenantException(uuid)
-            else:
-                raise UnknownUserException(uuid)
-
-    def list_(self, **kwargs):
-        search_filter = self.new_search_filter(**kwargs)
-        strict_filter = self.new_strict_filter(**kwargs)
-        filter_ = and_(strict_filter, search_filter)
-
-        with self.new_session() as s:
-            query = s.query(
-                Tenant.uuid,
-                Tenant.name,
-            ).outerjoin(TenantUser).filter(filter_)
-            query = self._paginator.update_query(query, **kwargs)
-
-            return [{'uuid': uuid, 'name': name} for uuid, name in query.all()]
-
-    def remove_user(self, tenant_uuid, user_uuid):
-        filter_ = and_(
-            TenantUser.user_uuid == str(user_uuid),
-            TenantUser.tenant_uuid == str(tenant_uuid),
-        )
-
-        with self.new_session() as s:
-            return s.query(TenantUser).filter(filter_).delete()
 
 
 class _TokenDAO(BaseDAO):

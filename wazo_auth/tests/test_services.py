@@ -8,7 +8,7 @@ from unittest import TestCase
 
 from .. import exceptions, services
 from ..database import queries
-from ..database.queries import group, policy
+from ..database.queries import group, policy, tenant
 
 
 class BaseServiceTestCase(TestCase):
@@ -17,7 +17,7 @@ class BaseServiceTestCase(TestCase):
         self.external_auth_dao = Mock(queries.ExternalAuthDAO)
         self.group_dao = Mock(group.GroupDAO)
         self.policy_dao = Mock(policy.PolicyDAO)
-        self.tenant_dao = Mock(queries._TenantDAO)
+        self.tenant_dao = Mock(tenant.TenantDAO)
         self.token_dao = Mock(queries._TokenDAO)
         self.user_dao = Mock(queries._UserDAO)
         self.encrypter = Mock(services.PasswordEncrypter)

@@ -29,7 +29,7 @@ from xivo_test_helpers.hamcrest.raises import raises
 
 from wazo_auth import exceptions
 from wazo_auth.database import models, queries
-from wazo_auth.database.queries import group, policy
+from wazo_auth.database.queries import group, policy, tenant
 from .helpers import fixtures, base
 
 DB_URI = os.getenv('DB_URI', 'postgresql://asterisk:proformatique@localhost:{port}')
@@ -64,7 +64,7 @@ class _BaseDAOTestCase(unittest.TestCase):
         self._group_dao = group.GroupDAO(db_uri)
         self._policy_dao = policy.PolicyDAO(db_uri)
         self._user_dao = queries._UserDAO(db_uri)
-        self._tenant_dao = queries._TenantDAO(db_uri)
+        self._tenant_dao = tenant.TenantDAO(db_uri)
         self._token_dao = queries._TokenDAO(db_uri)
 
 
