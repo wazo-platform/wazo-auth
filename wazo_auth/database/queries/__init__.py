@@ -144,7 +144,7 @@ class _GroupDAO(PaginatorMixin, BaseDAO):
     def count_users(self, group_uuid, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:
-            strict_filter = _UserDAO._new_strict_filter(**kwargs)
+            strict_filter = filters.user_strict_filter.new_filter(**kwargs)
             search_filter = filters.user_search_filter.new_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
@@ -453,7 +453,7 @@ class _TenantDAO(PaginatorMixin, BaseDAO):
     def count_users(self, tenant_uuid, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:
-            strict_filter = _UserDAO._new_strict_filter(**kwargs)
+            strict_filter = filters.user_strict_filter.new_filter(**kwargs)
             search_filter = filters.user_search_filter.new_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
@@ -577,25 +577,13 @@ class _UserDAO(PaginatorMixin, BaseDAO):
         auth_email_address_key='email_address',
     )
     search_filter = filters.user_search_filter
+    strict_filter = filters.user_strict_filter
     column_map = dict(
         username=User.username,
     )
 
-    @staticmethod
-    def _new_strict_filter(uuid=None, username=None, email_address=None, tenant_uuid=None,
-                           group_uuid=None, **ignored):
-        filter_ = text('true')
-        if uuid:
-            filter_ = and_(filter_, User.uuid == str(uuid))
-        if username:
-            filter_ = and_(filter_, User.username == username)
-        if email_address:
-            filter_ = and_(filter_, Email.address == email_address)
-        if tenant_uuid:
-            filter_ = and_(filter_, TenantUser.tenant_uuid == str(tenant_uuid))
-        if group_uuid:
-            filter_ = and_(filter_, UserGroup.group_uuid == str(group_uuid))
-        return filter_
+    def _new_strict_filter(self, **kwargs):
+        return self.strict_filter.new_filter(**kwargs)
 
     def add_policy(self, user_uuid, policy_uuid):
         user_policy = UserPolicy(user_uuid=user_uuid, policy_uuid=policy_uuid)

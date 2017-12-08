@@ -67,6 +67,13 @@ tenant_strict_filter = StrictFilter(
     ('name', Tenant.name, None),
     ('user_uuid', TenantUser.user_uuid, str),
 )
+user_strict_filter = StrictFilter(
+    ('uuid', User.uuid, str),
+    ('username', User.username, None),
+    ('email_address', Email.address, None),
+    ('tenant_uuid', TenantUser.tenant_uuid, str),
+    ('group_uuid', UserGroup.group_uuid, str),
+)
 
 default_search_filter = SearchFilter()
 group_search_filter = SearchFilter(Group.name)
