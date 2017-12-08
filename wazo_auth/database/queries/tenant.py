@@ -116,7 +116,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             query = s.query(
                 Tenant.uuid,
                 Tenant.name,
-            ).outerjoin(TenantUser).filter(filter_)
+            ).outerjoin(TenantUser).filter(filter_).group_by(Tenant)
             query = self._paginator.update_query(query, **kwargs)
 
             return [{'uuid': uuid, 'name': name} for uuid, name in query.all()]
