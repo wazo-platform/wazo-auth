@@ -3,30 +3,12 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
-import time
-from collections import OrderedDict
-from sqlalchemy import and_, exc, func, text
 from .external_auth import ExternalAuthDAO
 from .group import GroupDAO
 from .policy import PolicyDAO
 from .tenant import TenantDAO
 from .token import TokenDAO
 from .user import UserDAO
-from ...exceptions import (
-    ConflictException,
-    DuplicatePolicyException,
-    DuplicateTemplateException,
-    InvalidLimitException,
-    InvalidOffsetException,
-    InvalidSortColumnException,
-    InvalidSortDirectionException,
-    UnknownGroupException,
-    UnknownPolicyException,
-    UnknownTenantException,
-    UnknownTokenException,
-    UnknownUserException,
-    UnknownUsernameException,
-)
 
 logger = logging.getLogger(__name__)
 
