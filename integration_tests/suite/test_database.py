@@ -660,9 +660,19 @@ class TestTenantDAO(_BaseDAOTestCase):
     @fixtures.tenant(name='foo c')
     @fixtures.tenant(name='bar b')
     @fixtures.tenant(name='baz a')
-    def test_list(self, a, b, c):
+    @fixtures.user()
+    @fixtures.user()
+    def test_list(self, user1_uuid, user2_uuid, a, b, c):
         def build_list_matcher(*names):
             return [has_entries('name', name) for name in names]
+
+        result = self._tenant_dao.list_()
+        expected = build_list_matcher('foo c', 'bar b', 'baz a')
+        assert_that(result, contains_inanyorder(*expected))
+
+        for tenant_uuid in (a, b, c):
+            self._tenant_dao.add_user(tenant_uuid, user1_uuid)
+            self._tenant_dao.add_user(tenant_uuid, user2_uuid)
 
         result = self._tenant_dao.list_()
         expected = build_list_matcher('foo c', 'bar b', 'baz a')
