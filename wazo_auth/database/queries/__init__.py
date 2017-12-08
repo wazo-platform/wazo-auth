@@ -130,7 +130,7 @@ class _GroupDAO(PaginatorMixin, BaseDAO):
     def count_policies(self, group_uuid, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:
-            strict_filter = _PolicyDAO._new_strict_filter(**kwargs)
+            strict_filter = filters.policy_strict_filter.new_filter(**kwargs)
             search_filter = filters.policy_search_filter.new_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
@@ -238,6 +238,7 @@ class _GroupDAO(PaginatorMixin, BaseDAO):
 class _PolicyDAO(PaginatorMixin, BaseDAO):
 
     search_filter = filters.policy_search_filter
+    strict_filter = filters.policy_strict_filter
     column_map = dict(
         name=Policy.name,
         description=Policy.description,
@@ -400,18 +401,8 @@ class _PolicyDAO(PaginatorMixin, BaseDAO):
         policy_count = s.query(Policy).filter(Policy.uuid == str(policy_uuid)).count()
         return policy_count > 0
 
-    @staticmethod
-    def _new_strict_filter(uuid=None, name=None, user_uuid=None, group_uuid=None, **ignored):
-        filter_ = text('true')
-        if uuid:
-            filter_ = and_(filter_, Policy.uuid == str(uuid))
-        if name:
-            filter_ = and_(filter_, Policy.name == name)
-        if user_uuid:
-            filter_ = and_(filter_, UserPolicy.user_uuid == user_uuid)
-        if group_uuid:
-            filter_ = and_(filter_, GroupPolicy.group_uuid == str(group_uuid))
-        return filter_
+    def _new_strict_filter(self, **kwargs):
+        return self.strict_filter.new_filter(**kwargs)
 
 
 class _TenantDAO(PaginatorMixin, BaseDAO):
@@ -687,7 +678,7 @@ class _UserDAO(PaginatorMixin, BaseDAO):
     def count_policies(self, user_uuid, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:
-            strict_filter = _PolicyDAO._new_strict_filter(**kwargs)
+            strict_filter = filters.policy_strict_filter.new_filter(**kwargs)
             search_filter = filters.policy_search_filter.new_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:

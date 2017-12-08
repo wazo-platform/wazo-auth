@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 from sqlalchemy import and_, or_, text
-from ..models import Email, Group, Policy, Tenant, User, UserGroup
+from ..models import Email, Group, GroupPolicy, Policy, Tenant, User, UserGroup, UserPolicy
 
 
 class SearchFilter(object):
@@ -45,6 +45,12 @@ group_strict_filter = StrictFilter(
     ('uuid', Group.uuid, str),
     ('name', Group.name, None),
     ('user_uuid', UserGroup.user_uuid, str),
+)
+policy_strict_filter = StrictFilter(
+    ('uuid', Policy.uuid, str),
+    ('name', Policy.name, None),
+    ('user_uuid', UserPolicy.user_uuid, str),
+    ('group_uuid', GroupPolicy.group_uuid, str),
 )
 
 default_search_filter = SearchFilter()
