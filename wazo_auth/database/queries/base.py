@@ -3,8 +3,9 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 from contextlib import contextmanager
-from sqlalchemy import create_engine, or_, text
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
+from .filters import default_search_filter
 from ... import exceptions
 
 
@@ -64,29 +65,11 @@ class PaginatorMixin(object):
         self._paginator = QueryPaginator(self.column_map)
 
 
-class SearchFilter(object):
-
-    def __init__(self, *columns):
-        self._columns = columns
-
-    def new_filter(self, search=None, **ignored):
-        if search is None:
-            return text('true')
-
-        if not search:
-            pattern = '%'
-        else:
-            words = [w for w in search.split(' ') if w]
-            pattern = '%{}%'.format('%'.join(words))
-
-        return or_(column.ilike(pattern) for column in self._columns)
-
-
 class BaseDAO(object):
 
     _UNIQUE_CONSTRAINT_CODE = '23505'
     _FKEY_CONSTRAINT_CODE = '23503'
-    search_filter = SearchFilter()
+    search_filter = default_search_filter
 
     def __init__(self, db_uri):
         self._Session = scoped_session(sessionmaker())

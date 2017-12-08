@@ -6,8 +6,9 @@ import logging
 import time
 from collections import OrderedDict
 from sqlalchemy import and_, exc, func, text
-from .base import BaseDAO, PaginatorMixin, SearchFilter
+from .base import BaseDAO, PaginatorMixin
 from .external_auth import ExternalAuthDAO
+from . import filters
 from ..models import (
     ACL,
     ACLTemplate,
@@ -69,7 +70,7 @@ class _GroupDAO(PaginatorMixin, BaseDAO):
     constraint_to_column_map = dict(
         auth_group_name_key='name',
     )
-    search_filter = SearchFilter(Group.name)
+    search_filter = filters.group_search_filter
     column_map = dict(
         name=Group.name,
         uuid=Group.uuid,
@@ -129,7 +130,7 @@ class _GroupDAO(PaginatorMixin, BaseDAO):
         filtered = kwargs.get('filtered')
         if filtered is not False:
             strict_filter = _PolicyDAO._new_strict_filter(**kwargs)
-            search_filter = _PolicyDAO.new_search_filter(**kwargs)
+            search_filter = filters.policy_search_filter.new_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
             filter_ = text('true')
@@ -143,7 +144,7 @@ class _GroupDAO(PaginatorMixin, BaseDAO):
         filtered = kwargs.get('filtered')
         if filtered is not False:
             strict_filter = _UserDAO._new_strict_filter(**kwargs)
-            search_filter = _UserDAO.new_search_filter(**kwargs)
+            search_filter = filters.user_search_filter.new_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
             filter_ = text('true')
@@ -243,7 +244,7 @@ class _GroupDAO(PaginatorMixin, BaseDAO):
 
 class _PolicyDAO(PaginatorMixin, BaseDAO):
 
-    search_filter = SearchFilter(Policy.name, Policy.description)
+    search_filter = filters.policy_search_filter
     column_map = dict(
         name=Policy.name,
         description=Policy.description,
@@ -425,7 +426,7 @@ class _TenantDAO(PaginatorMixin, BaseDAO):
     constraint_to_column_map = dict(
         auth_tenant_name_key='name',
     )
-    search_filter = SearchFilter(Tenant.name)
+    search_filter = filters.tenant_search_filter
     column_map = dict(
         name=Tenant.name,
     )
@@ -468,7 +469,7 @@ class _TenantDAO(PaginatorMixin, BaseDAO):
         filtered = kwargs.get('filtered')
         if filtered is not False:
             strict_filter = _UserDAO._new_strict_filter(**kwargs)
-            search_filter = _UserDAO.new_search_filter(**kwargs)
+            search_filter = filters.user_search_filter.new_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
             filter_ = text('true')
@@ -598,7 +599,7 @@ class _UserDAO(PaginatorMixin, BaseDAO):
         auth_user_username_key='username',
         auth_email_address_key='email_address',
     )
-    search_filter = SearchFilter(User.username, Email.address)
+    search_filter = filters.user_search_filter
     column_map = dict(
         username=User.username,
     )
@@ -680,7 +681,7 @@ class _UserDAO(PaginatorMixin, BaseDAO):
         filtered = kwargs.get('filtered')
         if filtered is not False:
             strict_filter = _GroupDAO._new_strict_filter(**kwargs)
-            search_filter = _GroupDAO.new_search_filter(**kwargs)
+            search_filter = filters.group_search_filter.new_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
             filter_ = text('true')
@@ -694,7 +695,7 @@ class _UserDAO(PaginatorMixin, BaseDAO):
         filtered = kwargs.get('filtered')
         if filtered is not False:
             strict_filter = _PolicyDAO._new_strict_filter(**kwargs)
-            search_filter = _PolicyDAO.new_search_filter(**kwargs)
+            search_filter = filters.policy_search_filter.new_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
             filter_ = text('true')
@@ -710,7 +711,7 @@ class _UserDAO(PaginatorMixin, BaseDAO):
         filtered = kwargs.get('filtered')
         if filtered is not False:
             strict_filter = _TenantDAO._new_strict_filter(**kwargs)
-            search_filter = _TenantDAO.new_search_filter(**kwargs)
+            search_filter = filters.tenant_search_filter.new_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
             filter_ = text('true')
