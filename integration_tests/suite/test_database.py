@@ -280,10 +280,19 @@ class TestGroupDAO(_BaseDAOTestCase):
     @fixtures.group(name='foo')
     @fixtures.group(name='bar')
     @fixtures.group(name='baz')
-    def test_list(self, *ignored):
-
+    @fixtures.user()
+    @fixtures.user()
+    def test_list(self, user1_uuid, user2_uuid, *group_uuids):
         def build_list_matcher(*names):
             return [has_entries('name', name) for name in names]
+
+        result = self._group_dao.list_()
+        expected = build_list_matcher('foo', 'bar', 'baz')
+        assert_that(result, contains_inanyorder(*expected))
+
+        for group_uuid in group_uuids:
+            self._group_dao.add_user(group_uuid, user1_uuid)
+            self._group_dao.add_user(group_uuid, user2_uuid)
 
         result = self._group_dao.list_()
         expected = build_list_matcher('foo', 'bar', 'baz')
