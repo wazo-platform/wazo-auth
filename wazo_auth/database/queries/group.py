@@ -133,7 +133,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             query = s.query(
                 Group.uuid,
                 Group.name,
-            ).outerjoin(UserGroup).filter(filter_)
+            ).outerjoin(UserGroup).filter(filter_).group_by(Group)
             query = self._paginator.update_query(query, **kwargs)
 
             return [{'uuid': uuid, 'name': name} for uuid, name in query.all()]
