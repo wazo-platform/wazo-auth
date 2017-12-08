@@ -71,6 +71,7 @@ class _GroupDAO(PaginatorMixin, BaseDAO):
         auth_group_name_key='name',
     )
     search_filter = filters.group_search_filter
+    strict_filter = filters.group_strict_filter
     column_map = dict(
         name=Group.name,
         uuid=Group.uuid,
@@ -230,16 +231,8 @@ class _GroupDAO(PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             return s.query(UserGroup).filter(filter_).delete()
 
-    @staticmethod
-    def _new_strict_filter(uuid=None, name=None, user_uuid=None, **ignored):
-        filter_ = text('true')
-        if uuid:
-            filter_ = and_(filter_, Group.uuid == str(uuid))
-        if name:
-            filter_ = and_(filter_, Group.name == name)
-        if user_uuid:
-            filter_ = and_(filter_, UserGroup.user_uuid == str(user_uuid))
-        return filter_
+    def _new_strict_filter(self, **kwargs):
+        return self.strict_filter.new_filter(**kwargs)
 
 
 class _PolicyDAO(PaginatorMixin, BaseDAO):
@@ -680,7 +673,7 @@ class _UserDAO(PaginatorMixin, BaseDAO):
     def count_groups(self, user_uuid, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:
-            strict_filter = _GroupDAO._new_strict_filter(**kwargs)
+            strict_filter = filters.group_strict_filter.new_filter(**kwargs)
             search_filter = filters.group_search_filter.new_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
