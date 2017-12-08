@@ -8,7 +8,7 @@ from unittest import TestCase
 
 from .. import exceptions, services
 from ..database import queries
-from ..database.queries import group, policy, tenant, token
+from ..database.queries import group, policy, tenant, token, user
 
 
 class BaseServiceTestCase(TestCase):
@@ -19,7 +19,7 @@ class BaseServiceTestCase(TestCase):
         self.policy_dao = Mock(policy.PolicyDAO)
         self.tenant_dao = Mock(tenant.TenantDAO)
         self.token_dao = Mock(token.TokenDAO)
-        self.user_dao = Mock(queries._UserDAO)
+        self.user_dao = Mock(user.UserDAO)
         self.encrypter = Mock(services.PasswordEncrypter)
         self.encrypter.encrypt_password.return_value = s.salt, s.hash_
 
