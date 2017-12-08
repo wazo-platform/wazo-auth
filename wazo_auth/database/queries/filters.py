@@ -2,7 +2,7 @@
 # Copyright 2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from sqlalchemy import or_, text
+from sqlalchemy import and_, or_, text
 from ..models import Email, Group, Policy, Tenant, User
 
 
@@ -22,6 +22,23 @@ class SearchFilter(object):
             pattern = '%{}%'.format('%'.join(words))
 
         return or_(column.ilike(pattern) for column in self._columns)
+
+
+class StrictFilter(object):
+
+    def __init__(self, *column_configs):
+        self._column_configs = column_configs
+
+    def new_filter(self, **kwargs):
+        filter_ = text('true')
+
+        for key, column, type_ in self._column_configs:
+            if key not in kwargs:
+                continue
+            value = type_(kwargs[key]) if type_ else kwargs[key]
+            filter_ = and_(filter_, column == value)
+
+        return filter_
 
 
 default_search_filter = SearchFilter()
