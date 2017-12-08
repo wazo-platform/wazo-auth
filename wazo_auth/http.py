@@ -114,12 +114,6 @@ class Token(ErrorCatchingResource):
         return '', 204
 
 
-class Backends(ErrorCatchingResource):
-
-    def get(self):
-        return {'data': current_app.config['loaded_plugins']}
-
-
 def new_app(dependencies):
     config = dependencies['config']
     cors_config = dict(config['rest_api']['cors'])
@@ -134,7 +128,6 @@ def new_app(dependencies):
 
     api.add_resource(Tokens, '/token')
     api.add_resource(Token, '/token/<string:token>')
-    api.add_resource(Backends, '/backends')
     app.config.update(config)
 
     if cors_enabled:

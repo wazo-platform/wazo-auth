@@ -22,6 +22,7 @@ _DEFAULT_CONFIG = {
     'token_cleanup_interval': 60.0,
     'enabled_http_plugins': {
         'api': True,
+        'backends': True,
         'group_policy': True,
         'groups': True,
         'policies': True,
