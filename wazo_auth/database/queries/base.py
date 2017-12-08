@@ -5,7 +5,6 @@
 from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
-from .filters import default_search_filter
 from ... import exceptions
 
 
@@ -69,7 +68,6 @@ class BaseDAO(object):
 
     _UNIQUE_CONSTRAINT_CODE = '23505'
     _FKEY_CONSTRAINT_CODE = '23503'
-    search_filter = default_search_filter
 
     def __init__(self, db_uri):
         self._Session = scoped_session(sessionmaker())
@@ -87,7 +85,3 @@ class BaseDAO(object):
             raise
         finally:
             self._Session.remove()
-
-    @classmethod
-    def new_search_filter(cls, **kwargs):
-        return cls.search_filter.new_filter(**kwargs)

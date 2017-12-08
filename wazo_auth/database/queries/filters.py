@@ -51,6 +51,18 @@ class StrictFilter(object):
         return filter_
 
 
+class FilterMixin(object):
+
+    search_filter = SearchFilter()
+    strict_filter = StrictFilter()
+
+    def new_search_filter(self, **kwargs):
+        return self.search_filter.new_filter(**kwargs)
+
+    def new_strict_filter(self, **kwargs):
+        return self.strict_filter.new_filter(**kwargs)
+
+
 group_strict_filter = StrictFilter(
     ('uuid', Group.uuid, str),
     ('name', Group.name, None),
@@ -75,7 +87,6 @@ user_strict_filter = StrictFilter(
     ('group_uuid', UserGroup.group_uuid, str),
 )
 
-default_search_filter = SearchFilter()
 group_search_filter = SearchFilter(Group.name)
 policy_search_filter = SearchFilter(Policy.name, Policy.description)
 tenant_search_filter = SearchFilter(Tenant.name)

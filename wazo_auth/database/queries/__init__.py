@@ -65,7 +65,7 @@ class DAO(object):
         return cls(policy, token, user, tenant, group, external_auth)
 
 
-class _GroupDAO(PaginatorMixin, BaseDAO):
+class _GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     constraint_to_column_map = dict(
         auth_group_name_key='name',
@@ -118,7 +118,7 @@ class _GroupDAO(PaginatorMixin, BaseDAO):
     def count(self, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:
-            strict_filter = self._new_strict_filter(**kwargs)
+            strict_filter = self.new_strict_filter(**kwargs)
             search_filter = self.new_search_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
@@ -182,7 +182,7 @@ class _GroupDAO(PaginatorMixin, BaseDAO):
 
     def list_(self, **kwargs):
         search_filter = self.new_search_filter(**kwargs)
-        strict_filter = self._new_strict_filter(**kwargs)
+        strict_filter = self.new_strict_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
 
         with self.new_session() as s:
@@ -231,11 +231,8 @@ class _GroupDAO(PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             return s.query(UserGroup).filter(filter_).delete()
 
-    def _new_strict_filter(self, **kwargs):
-        return self.strict_filter.new_filter(**kwargs)
 
-
-class _PolicyDAO(PaginatorMixin, BaseDAO):
+class _PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     search_filter = filters.policy_search_filter
     strict_filter = filters.policy_strict_filter
@@ -308,7 +305,7 @@ class _PolicyDAO(PaginatorMixin, BaseDAO):
             return self._policy_exists(s, uuid)
 
     def get(self, **kwargs):
-        strict_filter = self._new_strict_filter(**kwargs)
+        strict_filter = self.new_strict_filter(**kwargs)
         search_filter = self.new_search_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
         with self.new_session() as s:
@@ -401,11 +398,8 @@ class _PolicyDAO(PaginatorMixin, BaseDAO):
         policy_count = s.query(Policy).filter(Policy.uuid == str(policy_uuid)).count()
         return policy_count > 0
 
-    def _new_strict_filter(self, **kwargs):
-        return self.strict_filter.new_filter(**kwargs)
 
-
-class _TenantDAO(PaginatorMixin, BaseDAO):
+class _TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     constraint_to_column_map = dict(
         auth_tenant_name_key='name',
@@ -441,7 +435,7 @@ class _TenantDAO(PaginatorMixin, BaseDAO):
     def count(self, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:
-            strict_filter = self._new_strict_filter(**kwargs)
+            strict_filter = self.new_strict_filter(**kwargs)
             search_filter = self.new_search_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
@@ -499,7 +493,7 @@ class _TenantDAO(PaginatorMixin, BaseDAO):
 
     def list_(self, **kwargs):
         search_filter = self.new_search_filter(**kwargs)
-        strict_filter = self._new_strict_filter(**kwargs)
+        strict_filter = self.new_strict_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
 
         with self.new_session() as s:
@@ -519,9 +513,6 @@ class _TenantDAO(PaginatorMixin, BaseDAO):
 
         with self.new_session() as s:
             return s.query(TenantUser).filter(filter_).delete()
-
-    def _new_strict_filter(self, **kwargs):
-        return self.strict_filter.new_filter(**kwargs)
 
 
 class _TokenDAO(BaseDAO):
@@ -569,7 +560,7 @@ class _TokenDAO(BaseDAO):
             s.query(TokenModel).filter(filter_).delete()
 
 
-class _UserDAO(PaginatorMixin, BaseDAO):
+class _UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     constraint_to_column_map = dict(
         auth_user_pkey='uuid',
@@ -581,9 +572,6 @@ class _UserDAO(PaginatorMixin, BaseDAO):
     column_map = dict(
         username=User.username,
     )
-
-    def _new_strict_filter(self, **kwargs):
-        return self.strict_filter.new_filter(**kwargs)
 
     def add_policy(self, user_uuid, policy_uuid):
         user_policy = UserPolicy(user_uuid=user_uuid, policy_uuid=policy_uuid)
@@ -629,7 +617,7 @@ class _UserDAO(PaginatorMixin, BaseDAO):
     def count(self, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:
-            strict_filter = self._new_strict_filter(**kwargs)
+            strict_filter = self.new_strict_filter(**kwargs)
             search_filter = self.new_search_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
@@ -738,7 +726,7 @@ class _UserDAO(PaginatorMixin, BaseDAO):
             raise UnknownUserException(user_uuid)
 
     def get_credentials(self, username):
-        filter_ = self._new_strict_filter(username=username)
+        filter_ = self.new_strict_filter(username=username)
         with self.new_session() as s:
             query = s.query(
                 User.password_salt,
@@ -754,7 +742,7 @@ class _UserDAO(PaginatorMixin, BaseDAO):
         users = OrderedDict()
 
         search_filter = self.new_search_filter(**kwargs)
-        strict_filter = self._new_strict_filter(**kwargs)
+        strict_filter = self.new_strict_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
 
         with self.new_session() as s:
