@@ -20,7 +20,7 @@ from hamcrest import is_
 
 from xivo_test_helpers import until
 from wazo_auth import exceptions
-from wazo_auth.database import queries
+from wazo_auth.database.queries.token import TokenDAO
 from .helpers.base import (
     BaseTestCase,
     MockBackendTestCase,
@@ -182,7 +182,7 @@ class TestCoreMockBackend(MockBackendTestCase):
 
     def _is_token_in_the_db(self, token):
         db_uri = os.getenv('DB_URI', 'postgresql://asterisk:proformatique@localhost:{port}')
-        dao = queries._TokenDAO(db_uri.format(port=self.service_port(5432, 'postgres')))
+        dao = TokenDAO(db_uri.format(port=self.service_port(5432, 'postgres')))
         try:
             dao.get(token)
             return True

@@ -13,6 +13,7 @@ from mock import Mock, sentinel
 
 from wazo_auth import token, BaseAuthenticationBackend
 from ..database import queries
+from ..database.queries.token import TokenDAO
 
 
 def later(expiration):
@@ -40,7 +41,7 @@ class TestManager(unittest.TestCase):
 
     def setUp(self):
         self.config = {'default_token_lifetime': sentinel.default_expiration_delay}
-        self.token_dao = Mock(queries._TokenDAO)
+        self.token_dao = Mock(TokenDAO)
         dao = queries.DAO(Mock(), self.token_dao, Mock(), Mock(), Mock(), Mock())
         self.manager = token.Manager(self.config, dao)
 
