@@ -2,15 +2,12 @@
 # Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-import logging
 from .external_auth import ExternalAuthDAO
 from .group import GroupDAO
 from .policy import PolicyDAO
 from .tenant import TenantDAO
 from .token import TokenDAO
 from .user import UserDAO
-
-logger = logging.getLogger(__name__)
 
 
 class DAO(object):
