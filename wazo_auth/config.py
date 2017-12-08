@@ -28,6 +28,7 @@ _DEFAULT_CONFIG = {
         'policies': True,
         'tenant_user': True,
         'tenants': True,
+        'tokens': True,
         'user_group': True,
         'user_policy': True,
         'user_registration': False,
