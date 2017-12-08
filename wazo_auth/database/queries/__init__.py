@@ -411,6 +411,7 @@ class _TenantDAO(PaginatorMixin, BaseDAO):
         auth_tenant_name_key='name',
     )
     search_filter = filters.tenant_search_filter
+    strict_filter = filters.tenant_strict_filter
     column_map = dict(
         name=Tenant.name,
     )
@@ -519,16 +520,8 @@ class _TenantDAO(PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             return s.query(TenantUser).filter(filter_).delete()
 
-    @staticmethod
-    def _new_strict_filter(uuid=None, name=None, user_uuid=None, **ignored):
-        filter_ = text('true')
-        if uuid:
-            filter_ = and_(filter_, Tenant.uuid == str(uuid))
-        if name:
-            filter_ = and_(filter_, Tenant.name == name)
-        if user_uuid:
-            filter_ = and_(filter_, TenantUser.user_uuid == str(user_uuid))
-        return filter_
+    def _new_strict_filter(self, **kwargs):
+        return self.strict_filter.new_filter(**kwargs)
 
 
 class _TokenDAO(BaseDAO):
@@ -694,7 +687,7 @@ class _UserDAO(PaginatorMixin, BaseDAO):
     def count_tenants(self, user_uuid, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:
-            strict_filter = _TenantDAO._new_strict_filter(**kwargs)
+            strict_filter = filters.tenant_strict_filter.new_filter(**kwargs)
             search_filter = filters.tenant_search_filter.new_filter(**kwargs)
             filter_ = and_(strict_filter, search_filter)
         else:
