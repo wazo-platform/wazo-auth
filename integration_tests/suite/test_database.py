@@ -661,51 +661,28 @@ class TestTenantDAO(_BaseDAOTestCase):
     @fixtures.tenant(name='bar b')
     @fixtures.tenant(name='baz a')
     def test_list(self, a, b, c):
+        def build_list_matcher(*names):
+            return [has_entries('name', name) for name in names]
+
         result = self._tenant_dao.list_()
-        assert_that(
-            result,
-            contains_inanyorder(
-                has_entries('name', 'foo c'),
-                has_entries('name', 'bar b'),
-                has_entries('name', 'baz a'),
-            ),
-        )
+        expected = build_list_matcher('foo c', 'bar b', 'baz a')
+        assert_that(result, contains_inanyorder(*expected))
 
         result = self._tenant_dao.list_(search='ba')
-        assert_that(
-            result,
-            contains_inanyorder(
-                has_entries('name', 'bar b'),
-                has_entries('name', 'baz a'),
-            ),
-        )
+        expected = build_list_matcher('bar b', 'baz a')
+        assert_that(result, contains_inanyorder(*expected))
 
         result = self._tenant_dao.list_(order='name', direction='desc')
-        assert_that(
-            result,
-            contains(
-                has_entries('name', 'foo c'),
-                has_entries('name', 'baz a'),
-                has_entries('name', 'bar b'),
-            ),
-        )
+        expected = build_list_matcher('foo c', 'baz a', 'bar b')
+        assert_that(result, contains(*expected))
 
         result = self._tenant_dao.list_(limit=1, order='name', direction='asc')
-        assert_that(
-            result,
-            contains(
-                has_entries('name', 'bar b'),
-            ),
-        )
+        expected = build_list_matcher('bar b')
+        assert_that(result, contains(*expected))
 
         result = self._tenant_dao.list_(offset=1, order='name', direction='asc')
-        assert_that(
-            result,
-            contains(
-                has_entries('name', 'baz a'),
-                has_entries('name', 'foo c'),
-            ),
-        )
+        expected = build_list_matcher('baz a', 'foo c')
+        assert_that(result, contains(*expected))
 
     @fixtures.tenant(name='foobar')
     def test_tenant_creation(self, tenant_uuid):
