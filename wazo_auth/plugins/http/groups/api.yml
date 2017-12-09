@@ -144,6 +144,13 @@ paths:
           description: Duplicate Group
           schema:
             $ref: '#/definitions/Error'
+parameters:
+  group_uuid:
+    name: group_uuid
+    in: path
+    type: string
+    description: The UUID of the group
+    required: true
 definitions:
   GetGroupsResult:
     type: object
