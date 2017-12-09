@@ -27,105 +27,6 @@ securityDefinitions:
     name: X-Auth-Token
     in: header
 paths:
-  /tenants:
-    get:
-      tags:
-        - tenants
-      security:
-        - wazo_auth_token: []
-      description: '**Required ACL**: `auth.tenants.read`'
-      summary: 'Retrieves the list of tenants'
-      parameters:
-      - $ref: '#/parameters/order'
-      - $ref: '#/parameters/direction'
-      - $ref: '#/parameters/limit'
-      - $ref: '#/parameters/offset'
-      - $ref: '#/parameters/search'
-      responses:
-        '200':
-          description: 'The list of tenant'
-          schema:
-            $ref: '#/definitions/TenantList'
-    post:
-      consumes:
-      - application/json
-      produces:
-      - application/json
-      summary: Creates a new tenant
-      description: '**Required ACL:** `auth.tenants.create'
-      operationId: createTenant
-      tags:
-      - tenants
-      security:
-      - wazo_auth_token: []
-      parameters:
-        - name: body
-          in: body
-          description: The tenant creation parameters
-          required: true
-          schema:
-            $ref: '#/definitions/TenantCreate'
-      responses:
-        '200':
-          description: The new tenant
-          schema:
-            $ref: '#/definitions/TenantPostResponse'
-        '400':
-          description: Invalid body
-          schema:
-            $ref: '#/definitions/APIError'
-  /tenants/{tenant_uuid}:
-    delete:
-      operationId: delete_tenant
-      tags:
-        - tenants
-      security:
-      - wazo_auth_token: []
-      description: '**Required ACL**: `auth.tenants.{tenant_uuid}.delete`'
-      parameters:
-      - $ref: '#/parameters/tenant_uuid'
-      summary: Delete a tenant
-      responses:
-        '204':
-          description: The tenant has been removed
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/Error'
-        '404':
-          description: Tenant not found
-          schema:
-            $ref: '#/definitions/Error'
-        '500':
-          description: System related error
-          schema:
-            $ref: '#/definitions/Error'
-    get:
-      tags:
-        - tenants
-      security:
-      - wazo_auth_token: []
-      description: '**Required ACL**: `auth.tenants.{tenant_uuid}.read`'
-      parameters:
-      - $ref: '#/parameters/tenant_uuid'
-      summary: Retrieves the details of a tenant
-      responses:
-        '200':
-          description: "The tenant's data"
-          schema:
-            $ref: '#/definitions/TenantResult'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/Error'
-        '404':
-          description: Tenant not found
-          schema:
-            $ref: '#/definitions/Error'
-        '500':
-          description: System related error
-          schema:
-            $ref: '#/definitions/Error'
   /tenants/{tenant_uuid}/users:
     get:
       tags:
@@ -374,12 +275,6 @@ parameters:
     type: string
     description: The UUID of the policy
     required: true
-  tenant_uuid:
-    name: tenant_uuid
-    in: path
-    type: string
-    description: The UUID of the tenant
-    required: true
   user_uuid:
     name: user_uuid
     in: path
@@ -405,13 +300,6 @@ definitions:
         type: string
       details:
         type: object
-  TenantPostResponse:
-    type: object
-    properties:
-      name:
-        type: string
-      uuid:
-        type: string
   UserEmail:
     type: object
     properties:
@@ -432,20 +320,6 @@ definitions:
           $ref: '#/definitions/UserEmail'
       uuid:
         type: string
-  TenantList:
-    type: object
-    properties:
-      total:
-        type: integer
-        description: The number of tenants
-      filtered:
-        type: integer
-        description: The number of tenants matching the searched term
-      items:
-        type: array
-        items:
-          $ref: '#/definitions/TenantResult'
-        description: A paginated list of tenants
   UserList:
     type: object
     properties:
@@ -460,13 +334,6 @@ definitions:
         items:
           $ref: '#/definitions/UserResult'
         description: A paginated list of users
-  TenantResult:
-    type: object
-    properties:
-      uuid:
-        type: string
-      name:
-        type: string
   UserResult:
     type: object
     properties:
@@ -476,14 +343,6 @@ definitions:
         type: string
       main_email_address:
         type: string
-  TenantCreate:
-    type: object
-    properties:
-      name:
-        type: string
-        description: "The tenant's name"
-    required:
-      - name
   Error:
     type: object
     properties:
