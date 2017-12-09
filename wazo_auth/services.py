@@ -26,6 +26,9 @@ class ExternalAuthService(_Service):
         self._bus_publisher = bus_publisher
         self._safe_models = {}
 
+    def count(self, user_uuid, **kwargs):
+        return self._dao.external_auth.count(user_uuid, **kwargs)
+
     def create(self, user_uuid, auth_type, data):
         result = self._dao.external_auth.create(user_uuid, auth_type, data)
         event = events.UserExternalAuthAdded(user_uuid, auth_type)
