@@ -196,6 +196,13 @@ paths:
           description: Policy not found
           schema:
             $ref: '#/definitions/Error'
+parameters:
+  policy_uuid:
+    name: policy_uuid
+    in: path
+    type: string
+    description: The UUID of the policy
+    required: true
 definitions:
   Policy:
     type: object
