@@ -1,0 +1,242 @@
+paths:
+  /policies:
+    get:
+      security:
+        - wazo_auth_token: []
+      produces:
+        - application/json
+      summary: List ACL policies
+      description: '**Required ACL:** `auth.policies.read`'
+      operationId: listPolicies
+      tags:
+        - policies
+      parameters:
+      - $ref: '#/parameters/order'
+      - $ref: '#/parameters/direction'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
+      - $ref: '#/parameters/search'
+      responses:
+        '200':
+          description: A list of policies
+          schema:
+            $ref: '#/definitions/GetPoliciesResult'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+    post:
+      security:
+        - wazo_auth_token: []
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Create a new ACL policy
+      description: '**Required ACL:** `auth.policies.create`
+
+        Create a new ACL policy set that can be associated to a user, an administrator, a service or a backend.
+        An ACL policy is a list of ACL or ACL templates that is used to create a token'
+      operationId: createPolicies
+      tags:
+        - policies
+      parameters:
+      - name: body
+        in: body
+        description: The policy creation parameters
+        required: true
+        schema:
+          $ref: '#/definitions/Policy'
+          required:
+            - name
+      responses:
+        '200':
+          description: The created policy's data
+          schema:
+            $ref: '#/definitions/PolicyResult'
+        '401':
+          description: Invalid data has been supplied'
+          schema:
+            $ref: '#/definitions/Error'
+        '409':
+          description: Duplicate Policy
+          schema:
+            $ref: '#/definitions/Error'
+  /policies/{policy_uuid}:
+    get:
+      tags:
+        - policies
+      security:
+      - wazo_auth_token: []
+      description: '**Required ACL**: `auth.policies.{policy_uuid}.read'
+      parameters:
+      - $ref: '#/parameters/policy_uuid'
+      summary: Retrieves the details of a policy
+      responses:
+        '200':
+          description: "The policy's data"
+          schema:
+            $ref: '#/definitions/PolicyResult'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Policy not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: System related error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      operationId: delete_policy
+      tags:
+        - policies
+      security:
+      - wazo_auth_token: []
+      description: '**Required ACL**: `auth.policies.{policy_uuid}.delete`'
+      parameters:
+      - name: policy_uuid
+        in: path
+        type: string
+        description: The UUID of the policy
+        required: true
+      summary: Delete a policy
+      responses:
+        '204':
+          description: The policy has been removed
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Policy not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: System related error
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      security:
+        - wazo_auth_token: []
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Modify an ACL policy
+      description: '**Required ACL:** `auth.policies.{policy_uuid}.edit`'
+      operationId: editPolicies
+      tags:
+        - policies
+      parameters:
+      - $ref: '#/parameters/policy_uuid'
+      - name: body
+        in: body
+        description: The policy edition parameters
+        required: true
+        schema:
+          $ref: '#/definitions/Policy'
+      responses:
+        '200':
+          description: The modified policy's data
+          schema:
+            $ref: '#/definitions/PolicyResult'
+        '401':
+          description: Invalid data has been supplied'
+          schema:
+            $ref: '#/definitions/Error'
+        '409':
+          description: Duplicate Policy
+          schema:
+            $ref: '#/definitions/Error'
+  /policies/{policy_uuid}/acl_templates/{acl_template}:
+    delete:
+      security:
+        - wazo_auth_token: []
+      operationId: deletePolicyACLTemplate
+      tags:
+        - policies
+      description: '**Required ACL:** `auth.policies.{policy_uuid}.edit`'
+      summary: Dissociate an ACL template from a policy
+      parameters:
+      - $ref: '#/parameters/policy_uuid'
+      - name: acl_template
+        in: path
+        type: string
+        description: The ACL template to removed
+        required: true
+      responses:
+        '204':
+          description: The policy has been modified
+        '404':
+          description: Policy or ACL template not found
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      security:
+        - wazo_auth_token: []
+      operationId: addPolicyACLTemplate
+      tags:
+        - policies
+      description: '**Required ACL:** `auth.policies.{policy_uuid}.edit`'
+      summary: Associate an ACL template to a policy
+      parameters:
+      - $ref: '#/parameters/policy_uuid'
+      - name: acl_template
+        in: path
+        type: string
+        description: The ACL template to add
+        required: true
+      responses:
+        '204':
+          description: The policy has been modified
+        '404':
+          description: Policy not found
+          schema:
+            $ref: '#/definitions/Error'
+definitions:
+  Policy:
+    type: object
+    properties:
+      name:
+        type: string
+      description:
+        type: string
+      acl_templates:
+        type: array
+        items:
+          type: string
+  PolicyResult:
+    type: object
+    properties:
+      uuid:
+        type: string
+      name:
+        type: string
+      description:
+        type: string
+      acl_templates:
+        type: array
+        items:
+          type: string
+    required:
+    - uuid
+    - name
+    - description
+    - acl_templates
+  GetPoliciesResult:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: The number of policies matching the searched term
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/PolicyResult'
+        description: A paginated list of policies
+    required:
+    - total
+    - items
