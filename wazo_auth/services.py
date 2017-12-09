@@ -24,6 +24,7 @@ class ExternalAuthService(_Service):
     def __init__(self, dao, bus_publisher=None):
         super(ExternalAuthService, self).__init__(dao)
         self._bus_publisher = bus_publisher
+        self._safe_models = {}
 
     def create(self, user_uuid, auth_type, data):
         result = self._dao.external_auth.create(user_uuid, auth_type, data)
@@ -38,6 +39,24 @@ class ExternalAuthService(_Service):
 
     def get(self, user_uuid, auth_type):
         return self._dao.external_auth.get(user_uuid, auth_type)
+
+    def list_(self, user_uuid, **kwargs):
+        raw_external_auth_info = self._dao.external_auth.list_(user_uuid, **kwargs)
+        result = []
+        for external_auth in raw_external_auth_info:
+            auth_type = external_auth['type']
+            Model = self._safe_models.get(auth_type)
+            filtered_data = {}
+            if Model:
+                data = external_auth.get('data')
+                filtered_data, errors = Model().load(data)
+                if errors:
+                    logger.info('Failed to parse %s data for user %s: %s', auth_type, user_uuid, errors)
+            result.append({'type': auth_type, 'data': filtered_data})
+        return result
+
+    def register_safe_auth_model(self, auth_type, model_class):
+        self._safe_models[auth_type] = model_class
 
     def update(self, user_uuid, auth_type, data):
         return self._dao.external_auth.update(user_uuid, auth_type, data)
