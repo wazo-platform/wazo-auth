@@ -55,12 +55,6 @@ parameters:
     in: query
     type: string
     description: Name of the field to use for sorting the list of items returned.
-  user_uuid:
-    name: user_uuid
-    in: path
-    type: string
-    description: The UUID of the user
-    required: true
   search:
     required: false
     name: search
@@ -80,49 +74,6 @@ definitions:
         type: string
       details:
         type: object
-  UserEmail:
-    type: object
-    properties:
-      address:
-        type: string
-      main:
-        type: boolean
-      confirmed:
-        type: boolean
-  UserPostResponse:
-    type: object
-    properties:
-      username:
-        type: string
-      emails:
-        type: array
-        items:
-          $ref: '#/definitions/UserEmail'
-      uuid:
-        type: string
-  UserList:
-    type: object
-    properties:
-      total:
-        type: integer
-        description: The number of users
-      filtered:
-        type: integer
-        description: The number of users matching the searched term
-      items:
-        type: array
-        items:
-          $ref: '#/definitions/UserResult'
-        description: A paginated list of users
-  UserResult:
-    type: object
-    properties:
-      uuid:
-        type: string
-      username:
-        type: string
-      main_email_address:
-        type: string
   Error:
     type: object
     properties:
