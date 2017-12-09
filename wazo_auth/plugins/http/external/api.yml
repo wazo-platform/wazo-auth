@@ -1,0 +1,47 @@
+paths:
+  /users/{user_uuid}/external:
+    get:
+      tags:
+        - users
+        - external
+      security:
+        - wazo_auth_token: []
+      description: '**Required ACL**: `auth.users.{user_uuid}.external.read`
+
+      This list should not contain any sensible information'
+      summary: 'Retrieves the list of the users external auth data'
+      parameters:
+      - $ref: '#/parameters/user_uuid'
+      - $ref: '#/parameters/order'
+      - $ref: '#/parameters/direction'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
+      - $ref: '#/parameters/search'
+      responses:
+        '200':
+          description: 'The list of external auth data'
+          schema:
+            $ref: '#/definitions/ExternalAuthList'
+definitions:
+  ExternalAuthList:
+    type: object
+    properties:
+      total:
+        type: integer
+      filtered:
+        type: integer
+        description: The number of items matching the searched term
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/ExternalAuthResult'
+        description: A paginated list of user external auth
+  ExternalAuthResult:
+    type: object
+    properties:
+      type:
+        type: string
+        description: The name of the auth type
+      data:
+        type: object
+        description: A cleaned up copy of the user auth data without sensible information

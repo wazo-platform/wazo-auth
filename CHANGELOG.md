@@ -1,6 +1,13 @@
 Changelog
 =========
 
+18.01
+-----
+
+* A new resource has been added to list a user external authencation methods
+
+  * GET `0.1/users/<user_uuid>/external`
+
 17.17
 -----
 
