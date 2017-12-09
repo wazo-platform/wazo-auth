@@ -1,0 +1,72 @@
+paths:
+  /groups/{group_uuid}/users:
+    get:
+      tags:
+        - groups
+      security:
+      - wazo_auth_token: []
+      description: '**Required ACL**: `auth.groups.{group_uuid}.users.read`'
+      parameters:
+      - $ref: '#/parameters/group_uuid'
+      - $ref: '#/parameters/order'
+      - $ref: '#/parameters/direction'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
+      - $ref: '#/parameters/search'
+      summary: Retrieves the list of users associated to a group
+      responses:
+        '200':
+          description: "The group's users"
+          schema:
+            $ref: '#/definitions/UserList'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Group not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: System related error
+          schema:
+            $ref: '#/definitions/Error'
+  /groups/{group_uuid}/users/{user_uuid}:
+    put:
+      tags:
+        - groups
+        - users
+      security:
+        - wazo_auth_token: []
+      operationId: addUserGroup
+      description: '**Required ACL:** `auth.groups.{group_uuid}.users.{user_uuid}.create`'
+      summary: Associate a group to a user
+      parameters:
+      - $ref: '#/parameters/group_uuid'
+      - $ref: '#/parameters/user_uuid'
+      responses:
+        '204':
+          description: The user has been assigned
+        '404':
+          description: User or Group not found
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      tags:
+        - groups
+        - users
+      security:
+        - wazo_auth_token: []
+      operationId: removeUserGroup
+      description: '**Required ACL:** `auth.groups.{group_uuid}.users.{user_uuid}.delete`'
+      summary: Dissociate a user from a group
+      parameters:
+      - $ref: '#/parameters/group_uuid'
+      - $ref: '#/parameters/user_uuid'
+      responses:
+        '204':
+          description: The user has been unassigned
+        '404':
+          description: User or Group not found
+          schema:
+            $ref: '#/definitions/Error'
