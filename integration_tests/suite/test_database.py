@@ -78,6 +78,37 @@ class TestExternalAuthDAO(_BaseDAOTestCase):
     )
 
     @fixtures.user()
+    @fixtures.user()
+    def test_count(self, user_1_uuid, user_2_uuid):
+        self._external_auth_dao.create(user_2_uuid, self.auth_type, self.data)
+
+        result = self._external_auth_dao.count(user_1_uuid, filtered=False)
+        assert_that(result, equal_to(0))
+
+        result = self._external_auth_dao.count(user_1_uuid, filtered=True)
+        assert_that(result, equal_to(0))
+
+        data_one = {'username': 'foo', 'password': 'baz'}
+        data_two = {'key': 'foo', 'secret': 'bar'}
+        self._external_auth_dao.create(user_1_uuid, 'one', data_one)
+        self._external_auth_dao.create(user_1_uuid, 'two', data_two)
+
+        result = self._external_auth_dao.count(user_1_uuid, filtered=False)
+        assert_that(result, equal_to(2))
+        result = self._external_auth_dao.count(user_1_uuid, filtered=True)
+        assert_that(result, equal_to(2))
+
+        result = self._external_auth_dao.count(user_1_uuid, search='two', filtered=False)
+        assert_that(result, equal_to(2))
+        result = self._external_auth_dao.count(user_1_uuid, search='two', filtered=True)
+        assert_that(result, equal_to(1))
+
+        result = self._external_auth_dao.count(user_1_uuid, type='two', filtered=False)
+        assert_that(result, equal_to(2))
+        result = self._external_auth_dao.count(user_1_uuid, type='two', filtered=True)
+        assert_that(result, equal_to(1))
+
+    @fixtures.user()
     def test_create(self, user_uuid):
         assert_that(
             calling(self._external_auth_dao.create).with_args(self.unknown_uuid, self.auth_type, self.data),

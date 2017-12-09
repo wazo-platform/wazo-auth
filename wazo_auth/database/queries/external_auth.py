@@ -18,6 +18,19 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         type=ExternalAuthType.name,
     )
 
+    def count(self, user_uuid, **kwargs):
+        filtered = kwargs.get('filtered')
+        if filtered is not False:
+            kwargs['user_uuid'] = user_uuid
+            search_filter = self.new_search_filter(**kwargs)
+            strict_filter = self.new_strict_filter(**kwargs)
+            filter_ = and_(search_filter, strict_filter)
+        else:
+            filter_ = self.new_strict_filter(user_uuid=user_uuid)
+
+        with self.new_session() as s:
+            return s.query(UserExternalAuth).join(ExternalAuthType).filter(filter_).count()
+
     def create(self, user_uuid, auth_type, data):
         serialized_data = json.dumps(data)
         with self.new_session() as s:
