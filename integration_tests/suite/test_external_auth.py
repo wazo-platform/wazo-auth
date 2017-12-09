@@ -11,7 +11,8 @@ from .helpers import base, fixtures
 class TestExternalAuthAPI(base.MockBackendTestCase):
 
     asset = 'external_auth'
-    original_data = {'secret': str(uuid4())}
+    safe_data = {'scope': ['one', 'two', 'three']}
+    original_data = dict(secret=str(uuid4()), **safe_data)
 
     @fixtures.http_user_register()
     def test_create(self, user):
@@ -78,11 +79,11 @@ class TestExternalAuthAPI(base.MockBackendTestCase):
         assert_that(result, has_entries(items=empty(), total=0, filtered=0))
 
         result = self.client.external.list_(user1['uuid'])
-        expected = [{'type': 'foo', 'data': {}}, {'type': 'bar', 'data': {}}]
+        expected = [{'type': 'foo', 'data': {}}, {'type': 'bar', 'data': self.safe_data}]
         assert_that(result, has_entries(items=contains_inanyorder(*expected), total=2, filtered=2))
 
         result = self.client.external.list_(user1['uuid'], type='bar')
-        expected = [{'type': 'bar', 'data': {}}]
+        expected = [{'type': 'bar', 'data': self.safe_data}]
         assert_that(result, has_entries(items=contains(*expected), total=2, filtered=1))
 
     @fixtures.http_user_register()
