@@ -4,12 +4,19 @@
 
 import json
 from sqlalchemy import and_, exc
-from .base import BaseDAO
+from .base import BaseDAO, PaginatorMixin
+from . import filters
 from ..models import ExternalAuthData, ExternalAuthType, User, UserExternalAuth
 from ... import exceptions
 
 
-class ExternalAuthDAO(BaseDAO):
+class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
+
+    search_filter = filters.external_auth_search_filter
+    strict_filter = filters.external_auth_strict_filter
+    column_map = dict(
+        type=ExternalAuthType.name,
+    )
 
     def create(self, user_uuid, auth_type, data):
         serialized_data = json.dumps(data)
@@ -68,6 +75,25 @@ class ExternalAuthDAO(BaseDAO):
             self._assert_type_exists(s, auth_type)
             self._assert_user_exists(s, user_uuid)
             raise exceptions.UnknownExternalAuthException(auth_type)
+
+    def list_(self, user_uuid, **kwargs):
+        kwargs['user_uuid'] = user_uuid
+        search_filter = self.new_search_filter(**kwargs)
+        strict_filter = self.new_strict_filter(**kwargs)
+        filter_ = and_(search_filter, strict_filter)
+
+        result = []
+
+        with self.new_session() as s:
+            query = s.query(
+                ExternalAuthData.data,
+                ExternalAuthType.name,
+            ).join(UserExternalAuth).join(ExternalAuthType).filter(filter_)
+            query = self._paginator.update_query(query, **kwargs)
+            for row in query.all():
+                result.append({'type': row.name, 'data': json.loads(row.data)})
+
+        return result
 
     def update(self, user_uuid, auth_type, data):
         self.delete(user_uuid, auth_type)

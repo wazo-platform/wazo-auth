@@ -5,12 +5,14 @@
 from sqlalchemy import and_, or_, text
 from ..models import (
     Email,
+    ExternalAuthType,
     Group,
     GroupPolicy,
     Policy,
     Tenant,
     TenantUser,
     User,
+    UserExternalAuth,
     UserGroup,
     UserPolicy,
 )
@@ -63,6 +65,10 @@ class FilterMixin(object):
         return self.strict_filter.new_filter(**kwargs)
 
 
+external_auth_strict_filter = StrictFilter(
+    ('user_uuid', UserExternalAuth.user_uuid, str),
+    ('type', ExternalAuthType.name, None),
+)
 group_strict_filter = StrictFilter(
     ('uuid', Group.uuid, str),
     ('name', Group.name, None),
@@ -87,6 +93,7 @@ user_strict_filter = StrictFilter(
     ('group_uuid', UserGroup.group_uuid, str),
 )
 
+external_auth_search_filter = SearchFilter(ExternalAuthType.name)
 group_search_filter = SearchFilter(Group.name)
 policy_search_filter = SearchFilter(Policy.name, Policy.description)
 tenant_search_filter = SearchFilter(Tenant.name)
