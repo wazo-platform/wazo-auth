@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 from uuid import uuid4
-from hamcrest import (assert_that, contains, equal_to, has_entries)
+from hamcrest import (assert_that, contains, contains_inanyorder, empty, equal_to, has_entries)
 from xivo_test_helpers import until
 from .helpers import base, fixtures
 
@@ -65,6 +65,25 @@ class TestExternalAuthAPI(base.MockBackendTestCase):
         assert_that(
             self.client.external.get('foo', user1['uuid']),
             equal_to(self.original_data))
+
+    @fixtures.http_user_register()
+    @fixtures.http_user_register()
+    @fixtures.http_user_register()
+    def test_list(self, user1, user2, user3):
+        self.client.external.create('foo', user1['uuid'], self.original_data)
+        self.client.external.create('bar', user1['uuid'], self.original_data)
+        self.client.external.create('foo', user2['uuid'], self.original_data)
+
+        result = self.client.external.list_(user3['uuid'])
+        assert_that(result, has_entries(items=empty(), total=0, filtered=0))
+
+        result = self.client.external.list_(user1['uuid'])
+        expected = [{'type': 'foo', 'data': {}}, {'type': 'bar', 'data': {}}]
+        assert_that(result, has_entries(items=contains_inanyorder(*expected), total=2, filtered=2))
+
+        result = self.client.external.list_(user1['uuid'], type='bar')
+        expected = [{'type': 'bar', 'data': {}}]
+        assert_that(result, has_entries(items=contains(*expected), total=2, filtered=1))
 
     @fixtures.http_user_register()
     def test_update(self, user):
