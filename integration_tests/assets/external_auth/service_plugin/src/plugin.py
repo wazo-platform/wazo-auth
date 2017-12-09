@@ -6,7 +6,7 @@ from flask import request
 from wazo_auth import http
 
 
-class Foo(http.AuthResource):
+class FooService(http.AuthResource):
 
     auth_type = 'foo'
 
@@ -33,10 +33,46 @@ class Foo(http.AuthResource):
         return self.external_auth_service.update(user_uuid, self.auth_type, data), 200
 
 
-class Plugin(object):
+class BarService(http.AuthResource):
+
+    auth_type = 'bar'
+
+    def __init__(self, external_auth_service):
+        self.external_auth_service = external_auth_service
+
+    @http.required_acl('auth.users.{user_uuid}.external.bar.delete')
+    def delete(self, user_uuid):
+        self.external_auth_service.delete(user_uuid, self.auth_type)
+        return '', 204
+
+    @http.required_acl('auth.users.{user_uuid}.external.bar.read')
+    def get(self, user_uuid):
+        return self.external_auth_service.get(user_uuid, self.auth_type), 200
+
+    @http.required_acl('auth.users.{user_uuid}.external.bar.create')
+    def post(self, user_uuid):
+        data = request.get_json(force=True)
+        return self.external_auth_service.create(user_uuid, self.auth_type, data), 200
+
+    @http.required_acl('auth.users.{user_uuid}.external.bar.edit')
+    def put(self, user_uuid):
+        data = request.get_json(force=True)
+        return self.external_auth_service.update(user_uuid, self.auth_type, data), 200
+
+
+class BarPlugin(object):
 
     def load(self, dependencies):
         api = dependencies['api']
         args = (dependencies['external_auth_service'],)
 
-        api.add_resource(Foo, '/users/<uuid:user_uuid>/external/foo', resource_class_args=args)
+        api.add_resource(BarService, '/users/<uuid:user_uuid>/external/bar', resource_class_args=args)
+
+
+class FooPlugin(object):
+
+    def load(self, dependencies):
+        api = dependencies['api']
+        args = (dependencies['external_auth_service'],)
+
+        api.add_resource(FooService, '/users/<uuid:user_uuid>/external/foo', resource_class_args=args)
