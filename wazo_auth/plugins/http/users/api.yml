@@ -132,7 +132,26 @@ paths:
           description: System related error
           schema:
             $ref: '#/definitions/Error'
+parameters:
+  user_uuid:
+    name: user_uuid
+    in: path
+    type: string
+    description: The UUID of the user
+    required: true
 definitions:
+  PasswordChange:
+    type: object
+    properties:
+      old_password:
+        type: string
+        description: The old password
+      new_password:
+        type: string
+        description: The desired password
+    required:
+      - old_password
+      - new_password
   UserCreate:
     type: object
     properties:
@@ -151,15 +170,46 @@ definitions:
     required:
       - username
       - email_address
-  PasswordChange:
+  UserEmail:
     type: object
     properties:
-      old_password:
+      address:
         type: string
-        description: The old password
-      new_password:
+      main:
+        type: boolean
+      confirmed:
+        type: boolean
+  UserList:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: The number of users
+      filtered:
+        type: integer
+        description: The number of users matching the searched term
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/UserResult'
+        description: A paginated list of users
+  UserPostResponse:
+    type: object
+    properties:
+      username:
         type: string
-        description: The desired password
-    required:
-      - old_password
-      - new_password
+      emails:
+        type: array
+        items:
+          $ref: '#/definitions/UserEmail'
+      uuid:
+        type: string
+  UserResult:
+    type: object
+    properties:
+      uuid:
+        type: string
+      username:
+        type: string
+      main_email_address:
+        type: string

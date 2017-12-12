@@ -1,0 +1,189 @@
+paths:
+  /groups:
+    get:
+      security:
+        - wazo_auth_token: []
+      produces:
+        - application/json
+      summary: List groups
+      description: '**Required ACL:** `auth.groups.read`'
+      operationId: listGroups
+      tags:
+        - groups
+      parameters:
+      - $ref: '#/parameters/order'
+      - $ref: '#/parameters/direction'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
+      - $ref: '#/parameters/search'
+      responses:
+        '200':
+          description: A list of group
+          schema:
+            $ref: '#/definitions/GetGroupsResult'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+    post:
+      security:
+        - wazo_auth_token: []
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Create a new group
+      description: '**Required ACL:** `auth.groups.create`'
+      operationId: createGroups
+      tags:
+        - groups
+      parameters:
+      - name: body
+        in: body
+        description: The group creation parameters
+        required: true
+        schema:
+          $ref: '#/definitions/Group'
+          required:
+            - name
+      responses:
+        '200':
+          description: The created group's data
+          schema:
+            $ref: '#/definitions/GroupResult'
+        '401':
+          description: Invalid data has been supplied'
+          schema:
+            $ref: '#/definitions/Error'
+        '409':
+          description: Duplicate Group
+          schema:
+            $ref: '#/definitions/Error'
+  /groups/{group_uuid}:
+    get:
+      tags:
+        - groups
+      security:
+      - wazo_auth_token: []
+      description: '**Required ACL**: `auth.groups.{policy_uuid}.read'
+      parameters:
+        - $ref: '#/parameters/group_uuid'
+      summary: Retrieves the details of a group
+      responses:
+        '200':
+          description: "The group's data"
+          schema:
+            $ref: '#/definitions/GroupResult'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Group not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: System related error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      operationId: delete_group
+      tags:
+        - groups
+      security:
+      - wazo_auth_token: []
+      description: '**Required ACL**: `auth.groups.{group_uuid}.delete`'
+      parameters:
+        - $ref: '#/parameters/group_uuid'
+      summary: Delete a group
+      responses:
+        '204':
+          description: The group has been removed
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Group not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: System related error
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      security:
+        - wazo_auth_token: []
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Modify a group
+      description: '**Required ACL:** `auth.groups.{group_uuid}.edit`'
+      operationId: editGroups
+      tags:
+        - groups
+      parameters:
+      - $ref: '#/parameters/group_uuid'
+      - name: body
+        in: body
+        description: The group parameters
+        required: true
+        schema:
+          $ref: '#/definitions/Group'
+      responses:
+        '200':
+          description: "The modified group's data"
+          schema:
+            $ref: '#/definitions/GroupResult'
+        '401':
+          description: Invalid data has been supplied
+          schema:
+            $ref: '#/definitions/Error'
+        '409':
+          description: Duplicate Group
+          schema:
+            $ref: '#/definitions/Error'
+parameters:
+  group_uuid:
+    name: group_uuid
+    in: path
+    type: string
+    description: The UUID of the group
+    required: true
+definitions:
+  GetGroupsResult:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: The number of groups.
+      filtered:
+        type: integer
+        description: The number of groups matching the searched term.
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/GroupResult'
+        description: A paginated list of groups
+    required:
+    - filtered
+    - total
+    - items
+  Group:
+    type: object
+    properties:
+      name:
+        type: string
+    required:
+      - name
+  GroupResult:
+    type: object
+    properties:
+      uuid:
+        type: string
+      name:
+        type: string
+    required:
+    - uuid
+    - name
