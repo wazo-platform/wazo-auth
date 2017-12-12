@@ -13,6 +13,7 @@ rest_api:
 
 enabled_http_plugins:
   user_registration: true
+enabled_external_auth_plugins:
   foo_service: true
 enabled_backend_plugins:
   mock: true

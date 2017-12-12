@@ -78,7 +78,11 @@ def new_app(dependencies):
     api = Api(app, prefix='/0.1')
 
     dependencies['api'] = api
-    plugin_helpers.load('wazo_auth.http', config['enabled_http_plugins'], dependencies)
+
+    http_plugins = config['enabled_http_plugins']
+    external_auth_plugins = config['enabled_external_auth_plugins']
+    plugin_helpers.load('wazo_auth.http', http_plugins, dependencies)
+    plugin_helpers.load('wazo_auth.external_auth', external_auth_plugins, dependencies)
 
     app.config.update(config)
 
