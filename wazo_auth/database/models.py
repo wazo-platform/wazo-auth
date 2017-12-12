@@ -36,6 +36,7 @@ class ExternalAuthType(Base):
 
     uuid = Column(String(38), server_default=text('uuid_generate_v4()'), primary_key=True)
     name = Column(Text, unique=True, nullable=False)
+    enabled = Column(Boolean, server_default='false')
 
 
 class ExternalAuthData(Base):
