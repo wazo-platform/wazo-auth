@@ -280,10 +280,19 @@ class TestGroupDAO(_BaseDAOTestCase):
     @fixtures.group(name='foo')
     @fixtures.group(name='bar')
     @fixtures.group(name='baz')
-    def test_list(self, *ignored):
-
+    @fixtures.user()
+    @fixtures.user()
+    def test_list(self, user1_uuid, user2_uuid, *group_uuids):
         def build_list_matcher(*names):
             return [has_entries('name', name) for name in names]
+
+        result = self._group_dao.list_()
+        expected = build_list_matcher('foo', 'bar', 'baz')
+        assert_that(result, contains_inanyorder(*expected))
+
+        for group_uuid in group_uuids:
+            self._group_dao.add_user(group_uuid, user1_uuid)
+            self._group_dao.add_user(group_uuid, user2_uuid)
 
         result = self._group_dao.list_()
         expected = build_list_matcher('foo', 'bar', 'baz')
@@ -651,52 +660,39 @@ class TestTenantDAO(_BaseDAOTestCase):
     @fixtures.tenant(name='foo c')
     @fixtures.tenant(name='bar b')
     @fixtures.tenant(name='baz a')
-    def test_list(self, a, b, c):
+    @fixtures.user()
+    @fixtures.user()
+    def test_list(self, user1_uuid, user2_uuid, a, b, c):
+        def build_list_matcher(*names):
+            return [has_entries('name', name) for name in names]
+
         result = self._tenant_dao.list_()
-        assert_that(
-            result,
-            contains_inanyorder(
-                has_entries('name', 'foo c'),
-                has_entries('name', 'bar b'),
-                has_entries('name', 'baz a'),
-            ),
-        )
+        expected = build_list_matcher('foo c', 'bar b', 'baz a')
+        assert_that(result, contains_inanyorder(*expected))
+
+        for tenant_uuid in (a, b, c):
+            self._tenant_dao.add_user(tenant_uuid, user1_uuid)
+            self._tenant_dao.add_user(tenant_uuid, user2_uuid)
+
+        result = self._tenant_dao.list_()
+        expected = build_list_matcher('foo c', 'bar b', 'baz a')
+        assert_that(result, contains_inanyorder(*expected))
 
         result = self._tenant_dao.list_(search='ba')
-        assert_that(
-            result,
-            contains_inanyorder(
-                has_entries('name', 'bar b'),
-                has_entries('name', 'baz a'),
-            ),
-        )
+        expected = build_list_matcher('bar b', 'baz a')
+        assert_that(result, contains_inanyorder(*expected))
 
         result = self._tenant_dao.list_(order='name', direction='desc')
-        assert_that(
-            result,
-            contains(
-                has_entries('name', 'foo c'),
-                has_entries('name', 'baz a'),
-                has_entries('name', 'bar b'),
-            ),
-        )
+        expected = build_list_matcher('foo c', 'baz a', 'bar b')
+        assert_that(result, contains(*expected))
 
         result = self._tenant_dao.list_(limit=1, order='name', direction='asc')
-        assert_that(
-            result,
-            contains(
-                has_entries('name', 'bar b'),
-            ),
-        )
+        expected = build_list_matcher('bar b')
+        assert_that(result, contains(*expected))
 
         result = self._tenant_dao.list_(offset=1, order='name', direction='asc')
-        assert_that(
-            result,
-            contains(
-                has_entries('name', 'baz a'),
-                has_entries('name', 'foo c'),
-            ),
-        )
+        expected = build_list_matcher('baz a', 'foo c')
+        assert_that(result, contains(*expected))
 
     @fixtures.tenant(name='foobar')
     def test_tenant_creation(self, tenant_uuid):
