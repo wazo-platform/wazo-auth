@@ -76,14 +76,23 @@ class TestExternalAuthAPI(base.MockBackendTestCase):
         self.client.external.create('foo', user2['uuid'], self.original_data)
 
         result = self.client.external.list_(user3['uuid'])
-        assert_that(result, has_entries(items=empty(), total=0, filtered=0))
+        expected = [
+            {'type': 'foo', 'data': {}, 'enabled': False},
+            {'type': 'bar', 'data': {}, 'enabled': False},
+        ]
+        assert_that(result, has_entries(items=contains_inanyorder(*expected), total=2, filtered=2))
 
         result = self.client.external.list_(user1['uuid'])
-        expected = [{'type': 'foo', 'data': {}}, {'type': 'bar', 'data': self.safe_data}]
+        expected = [
+            {'type': 'foo', 'data': {}, 'enabled': True},
+            {'type': 'bar', 'data': self.safe_data, 'enabled': True},
+        ]
         assert_that(result, has_entries(items=contains_inanyorder(*expected), total=2, filtered=2))
 
         result = self.client.external.list_(user1['uuid'], type='bar')
-        expected = [{'type': 'bar', 'data': self.safe_data}]
+        expected = [
+            {'type': 'bar', 'data': self.safe_data, 'enabled': True},
+        ]
         assert_that(result, has_entries(items=contains(*expected), total=2, filtered=1))
 
     @fixtures.http_user_register()
