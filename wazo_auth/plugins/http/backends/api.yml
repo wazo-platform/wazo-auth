@@ -1,0 +1,21 @@
+paths:
+  /backends:
+    get:
+      tags:
+      - backends
+      security:
+      - {}
+      description: Retrieves the list of activated backends
+      responses:
+        '200':
+          description: The list of activated backends
+          schema:
+            $ref: '#/definitions/BackendList'
+definitions:
+  BackendList:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          type: string

@@ -874,18 +874,6 @@ paths:
           description: User or Policy not found
           schema:
             $ref: '#/definitions/Error'
-  /backends:
-    get:
-      tags:
-      - backends
-      security:
-      - {}
-      description: Retrieves the list of activated backends
-      responses:
-        '200':
-          description: The list of activated backends
-          schema:
-            $ref: '#/definitions/BackendList'
 parameters:
   direction:
     required: false
@@ -958,13 +946,6 @@ definitions:
         type: string
       details:
         type: object
-  BackendList:
-    type: object
-    properties:
-      data:
-        type: array
-        items:
-          type: string
   Group:
     type: object
     properties:
