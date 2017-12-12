@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 from marshmallow import Schema, fields, pre_load, post_load
-from marshmallow.validate import Range
 from xivo.mallow import fields as xfields
 from xivo.mallow import validate
 
@@ -30,11 +29,6 @@ class PolicySchema(BaseSchema):
 class TenantRequestSchema(BaseSchema):
 
     name = xfields.String(validate=validate.Length(min=1, max=128), required=True)
-
-
-class TokenRequestSchema(Schema):
-    backend = fields.String(required=True)
-    expiration = fields.Integer(validate=Range(min=1))
 
 
 def new_list_schema(default_sort_column):

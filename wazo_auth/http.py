@@ -6,14 +6,14 @@ import functools
 import logging
 import time
 
-from flask import current_app, Flask, request
+from flask import current_app, Flask
 from flask_cors import CORS
 from flask_restful import Api, Resource
 from xivo.rest_api_helpers import handle_api_exception
 from xivo.auth_verifier import AuthVerifier, required_acl
 from xivo import http_helpers, plugin_helpers
 
-from . import exceptions, schemas
+from . import exceptions
 
 logger = logging.getLogger(__name__)
 
@@ -68,52 +68,6 @@ class AuthResource(ErrorCatchingResource):
     method_decorators = [auth_verifier.verify_token] + ErrorCatchingResource.method_decorators
 
 
-class Tokens(ErrorCatchingResource):
-
-    def post(self):
-        if request.authorization:
-            login = request.authorization.username
-            password = request.authorization.password
-        else:
-            login = ''
-            password = ''
-
-        args, error = schemas.TokenRequestSchema().load(request.get_json(force=True))
-        if error:
-            return _error(400, unicode(error))
-
-        backend_name = args['backend']
-        try:
-            backend = current_app.config['backends'][backend_name].obj
-        except KeyError:
-            return _error(401, 'Authentication Failed')
-
-        if not backend.verify_password(login, password, args):
-            return _error(401, 'Authentication Failed')
-
-        token = current_app.config['token_manager'].new_token(backend, login, args)
-
-        return {'data': token.to_dict()}, 200
-
-
-class Token(ErrorCatchingResource):
-
-    def delete(self, token):
-        current_app.config['token_manager'].remove_token(token)
-
-        return {'data': {'message': 'success'}}
-
-    def get(self, token):
-        scope = request.args.get('scope')
-        token = current_app.config['token_manager'].get(token, scope)
-        return {'data': token.to_dict()}
-
-    def head(self, token):
-        scope = request.args.get('scope')
-        token = current_app.config['token_manager'].get(token, scope)
-        return '', 204
-
-
 def new_app(dependencies):
     config = dependencies['config']
     cors_config = dict(config['rest_api']['cors'])
@@ -126,15 +80,12 @@ def new_app(dependencies):
     dependencies['api'] = api
     plugin_helpers.load('wazo_auth.http', config['enabled_http_plugins'], dependencies)
 
-    api.add_resource(Tokens, '/token')
-    api.add_resource(Token, '/token/<string:token>')
     app.config.update(config)
 
     if cors_enabled:
         CORS(app, **cors_config)
 
     app.config['token_manager'] = dependencies['token_manager']
-    app.config['backends'] = dependencies['backends']
 
     app.after_request(http_helpers.log_request)
 
