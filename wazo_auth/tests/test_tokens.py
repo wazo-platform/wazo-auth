@@ -11,7 +11,9 @@ from datetime import datetime, timedelta
 from hamcrest import assert_that, equal_to
 from mock import Mock, sentinel
 
-from wazo_auth import database, token, BaseAuthenticationBackend
+from wazo_auth import token, BaseAuthenticationBackend
+from ..database import queries
+from ..database.queries.token import TokenDAO
 
 
 def later(expiration):
@@ -39,8 +41,8 @@ class TestManager(unittest.TestCase):
 
     def setUp(self):
         self.config = {'default_token_lifetime': sentinel.default_expiration_delay}
-        self.token_dao = Mock(database._TokenDAO)
-        dao = database.DAO(Mock(), self.token_dao, Mock(), Mock(), Mock(), Mock())
+        self.token_dao = Mock(TokenDAO)
+        dao = queries.DAO(Mock(), self.token_dao, Mock(), Mock(), Mock(), Mock())
         self.manager = token.Manager(self.config, dao)
 
     def _new_backend_mock(self, auth_id=None, uuid=None):

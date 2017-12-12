@@ -27,7 +27,9 @@ from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.mock import ANY_UUID
 from xivo_test_helpers.hamcrest.raises import raises
 
-from wazo_auth import database, exceptions
+from wazo_auth import exceptions
+from wazo_auth.database import models, queries
+from wazo_auth.database.queries import group, policy, tenant, token, user
 from .helpers import fixtures, base
 
 DB_URI = os.getenv('DB_URI', 'postgresql://asterisk:proformatique@localhost:{port}')
@@ -58,12 +60,12 @@ class _BaseDAOTestCase(unittest.TestCase):
 
     def setUp(self):
         db_uri = DB_URI.format(port=DBStarter.service_port(5432, 'postgres'))
-        self._external_auth_dao = database._ExternalAuthDAO(db_uri)
-        self._group_dao = database._GroupDAO(db_uri)
-        self._policy_dao = database._PolicyDAO(db_uri)
-        self._user_dao = database._UserDAO(db_uri)
-        self._tenant_dao = database._TenantDAO(db_uri)
-        self._token_dao = database._TokenDAO(db_uri)
+        self._external_auth_dao = queries.ExternalAuthDAO(db_uri)
+        self._group_dao = group.GroupDAO(db_uri)
+        self._policy_dao = policy.PolicyDAO(db_uri)
+        self._user_dao = user.UserDAO(db_uri)
+        self._tenant_dao = tenant.TenantDAO(db_uri)
+        self._token_dao = token.TokenDAO(db_uri)
 
 
 class TestExternalAuthDAO(_BaseDAOTestCase):
@@ -129,7 +131,6 @@ class TestExternalAuthDAO(_BaseDAOTestCase):
             raises(exceptions.UnknownExternalAuthException).matching(
                 has_properties(status_code=404, resource=self.auth_type)))
 
-
     @fixtures.user()
     @fixtures.user()
     def test_get(self, user_1_uuid, user_2_uuid):
@@ -182,6 +183,7 @@ class TestExternalAuthDAO(_BaseDAOTestCase):
         result = self._external_auth_dao.update(user_uuid, self.auth_type, new_data)
         assert_that(result, equal_to(new_data))
         assert_that(self._external_auth_dao.get(user_uuid, self.auth_type), equal_to(new_data))
+
 
 class TestGroupDAO(_BaseDAOTestCase):
 
@@ -254,8 +256,8 @@ class TestGroupDAO(_BaseDAOTestCase):
 
         assert_that(group_uuid, equal_to(ANY_UUID))
         with self._group_dao.new_session() as s:
-            filter_ = database.Group.uuid == group_uuid
-            group = s.query(database.Group).filter(filter_).first()
+            filter_ = models.Group.uuid == group_uuid
+            group = s.query(models.Group).filter(filter_).first()
             assert_that(group, has_properties('name', name))
 
         assert_that(
@@ -535,7 +537,7 @@ class TestTokenDAO(_BaseDAOTestCase):
             assert_that(t2, equal_to(e2))
 
     def test_get(self):
-        self.assertRaises(database.UnknownTokenException, self._token_dao.get,
+        self.assertRaises(exceptions.UnknownTokenException, self._token_dao.get,
                           'unknown')
         with nested(self._new_token(),
                     self._new_token(),
@@ -546,7 +548,7 @@ class TestTokenDAO(_BaseDAOTestCase):
     def test_delete(self):
         with self._new_token() as token:
             self._token_dao.delete(token['uuid'])
-            self.assertRaises(database.UnknownTokenException, self._token_dao.get,
+            self.assertRaises(exceptions.UnknownTokenException, self._token_dao.get,
                               token['uuid'])
             self._token_dao.delete(token['uuid'])  # No error on delete unknown
 
@@ -703,9 +705,9 @@ class TestTenantDAO(_BaseDAOTestCase):
         assert_that(tenant_uuid, equal_to(ANY_UUID))
         with self._tenant_dao.new_session() as s:
             tenant = s.query(
-                database.Tenant,
+                models.Tenant,
             ).filter(
-                database.Tenant.uuid == tenant_uuid
+                models.Tenant.uuid == tenant_uuid
             ).first()
 
             assert_that(tenant, has_properties('name', name))
@@ -742,11 +744,11 @@ class TestUserDAO(_BaseDAOTestCase):
         self._user_dao.add_policy(user_uuid, policy_uuid)
         with self._user_dao.new_session() as s:
             count = s.query(
-                func.count(database.UserPolicy.user_uuid),
+                func.count(models.UserPolicy.user_uuid),
             ).filter(
                 and_(
-                    database.UserPolicy.user_uuid == user_uuid,
-                    database.UserPolicy.policy_uuid == policy_uuid,
+                    models.UserPolicy.user_uuid == user_uuid,
+                    models.UserPolicy.policy_uuid == policy_uuid,
                 )
             ).scalar()
 
@@ -827,7 +829,7 @@ class TestUserDAO(_BaseDAOTestCase):
                 username=username,
                 emails=contains(has_entries(address=email_address, confirmed=False, main=True)))))
             assert_that(
-                calling(self._user_dao.create).with_args('foo', 'foo@bar.baz', uuid=user_uuid, hash_='', sale=''),
+                calling(self._user_dao.create).with_args('foo', 'foo@bar.baz', uuid=user_uuid, hash_='', salt=''),
                 raises(
                     exceptions.ConflictException,
                     has_properties(

@@ -14,11 +14,10 @@ from xivo.http_helpers import ReverseProxied
 from xivo.consul_helpers import ServiceCatalogRegistration
 from werkzeug.contrib.fixers import ProxyFix
 
-from wazo_auth import database, http, token
-from wazo_auth.helpers import LocalTokenManager
-
+from . import bus, http, services, token
+from .database import queries
+from .helpers import LocalTokenManager
 from .service_discovery import self_check
-from . import bus, services
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +51,7 @@ class Controller(object):
             sys.exit(1)
 
         self._bus_publisher = bus.BusPublisher(config)
-        dao = database.DAO.from_config(self._config)
+        dao = queries.DAO.from_config(self._config)
         self._token_manager = token.Manager(config, dao)
         external_auth_service = services.ExternalAuthService(dao, self._bus_publisher)
         group_service = services.GroupService(dao)
