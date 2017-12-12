@@ -9,5 +9,6 @@ class Plugin(object):
 
     def load(self, dependencies):
         api = dependencies['api']
+        args = (dependencies['config'],)
 
-        api.add_resource(http.Backends, '/backends')
+        api.add_resource(http.Backends, '/backends', resource_class_args=args)
