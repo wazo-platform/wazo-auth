@@ -32,6 +32,17 @@ setup(
         'console_scripts': [
             'wazo-auth=wazo_auth.main:main',
         ],
+        'wazo_auth.backends': [
+            'wazo_user = wazo_auth.plugins.backends:WazoUser',
+            'xivo_admin = wazo_auth.plugins.backends:XiVOAdmin',
+            'xivo_service = wazo_auth.plugins.backends:XiVOService',
+            'xivo_user = wazo_auth.plugins.backends:XiVOUser',
+            'ldap_user = wazo_auth.plugins.backends:LDAPUser',
+            'mock = wazo_auth.plugins.backends:BackendMock',
+            'mock_with_uuid = wazo_auth.plugins.backends:BackendMockWithUUID',
+            'broken_init = wazo_auth.plugins.backends:BrokenInitBackend',
+            'broken_verify_password = wazo_auth.plugins.backends:BrokenVerifyPasswordBackend',
+        ],
         'wazo_auth.http': [
             'api = wazo_auth.plugins.http.api.plugin:Plugin',
             'backends = wazo_auth.plugins.http.backends.plugin:Plugin',
@@ -45,17 +56,6 @@ setup(
             'user_registration = wazo_auth.plugins.http.user_registration.plugin:Plugin',
             'user_group = wazo_auth.plugins.http.user_group.plugin:Plugin',
             'user_policy = wazo_auth.plugins.http.user_policy.plugin:Plugin',
-        ],
-        'wazo_auth.backends': [
-            'wazo_user = wazo_auth.plugins.backends:WazoUser',
-            'xivo_admin = wazo_auth.plugins.backends:XiVOAdmin',
-            'xivo_service = wazo_auth.plugins.backends:XiVOService',
-            'xivo_user = wazo_auth.plugins.backends:XiVOUser',
-            'ldap_user = wazo_auth.plugins.backends:LDAPUser',
-            'mock = wazo_auth.plugins.backends:BackendMock',
-            'mock_with_uuid = wazo_auth.plugins.backends:BackendMockWithUUID',
-            'broken_init = wazo_auth.plugins.backends:BrokenInitBackend',
-            'broken_verify_password = wazo_auth.plugins.backends:BrokenVerifyPasswordBackend',
         ],
     }
 )
