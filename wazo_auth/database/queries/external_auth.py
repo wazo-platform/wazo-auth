@@ -20,16 +20,17 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def count(self, user_uuid, **kwargs):
         filtered = kwargs.get('filtered')
-        if filtered is not False:
-            kwargs['user_uuid'] = user_uuid
+        base_filter = ExternalAuthType.enabled == True
+
+        if filtered is False:
+            filter_ = base_filter
+        else:
             search_filter = self.new_search_filter(**kwargs)
             strict_filter = self.new_strict_filter(**kwargs)
-            filter_ = and_(search_filter, strict_filter)
-        else:
-            filter_ = self.new_strict_filter(user_uuid=user_uuid)
+            filter_ = and_(base_filter, search_filter, strict_filter)
 
         with self.new_session() as s:
-            return s.query(UserExternalAuth).join(ExternalAuthType).filter(filter_).count()
+            return s.query(ExternalAuthType).filter(filter_).count()
 
     def create(self, user_uuid, auth_type, data):
         serialized_data = json.dumps(data)
@@ -111,23 +112,28 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             raise exceptions.UnknownExternalAuthException(auth_type)
 
     def list_(self, user_uuid, **kwargs):
-        kwargs['user_uuid'] = user_uuid
+        base_filter = ExternalAuthType.enabled == True
         search_filter = self.new_search_filter(**kwargs)
         strict_filter = self.new_strict_filter(**kwargs)
-        filter_ = and_(search_filter, strict_filter)
+        filter_ = and_(base_filter, search_filter, strict_filter)
 
         result = []
 
         with self.new_session() as s:
-            query = s.query(
-                ExternalAuthData.data,
-                ExternalAuthType.name,
-            ).join(UserExternalAuth).join(ExternalAuthType).filter(filter_)
+            query = s.query(ExternalAuthType).filter(filter_)
             query = self._paginator.update_query(query, **kwargs)
-            for row in query.all():
-                result.append({'type': row.name,
-                               'data': json.loads(row.data),
-                               'enabled': True})
+            result = [{'type': r.name, 'data': {}, 'enabled': False} for r in query.all()]
+
+            filter_ = and_(filter_, UserExternalAuth.user_uuid == str(user_uuid))
+            query = s.query(
+                ExternalAuthType.name,
+                ExternalAuthData.data,
+            ).join(UserExternalAuth).join(ExternalAuthData).filter(filter_)
+            for type_, data in query.all():
+                for row in result:
+                    if row['type'] != type_:
+                        continue
+                    row.update(dict(enabled=True, data=json.loads(data)))
 
         return result
 

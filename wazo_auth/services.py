@@ -21,10 +21,11 @@ class _Service(object):
 
 class ExternalAuthService(_Service):
 
-    def __init__(self, dao, bus_publisher=None):
+    def __init__(self, dao, bus_publisher=None, enabled_external_auth=None):
         super(ExternalAuthService, self).__init__(dao)
         self._bus_publisher = bus_publisher
         self._safe_models = {}
+        self._dao.external_auth.enable_all(enabled_external_auth or [])
 
     def count(self, user_uuid, **kwargs):
         return self._dao.external_auth.count(user_uuid, **kwargs)
@@ -48,6 +49,7 @@ class ExternalAuthService(_Service):
         result = []
         for external_auth in raw_external_auth_info:
             auth_type = external_auth['type']
+            enabled = external_auth['enabled']
             Model = self._safe_models.get(auth_type)
             filtered_data = {}
             if Model:
@@ -55,7 +57,7 @@ class ExternalAuthService(_Service):
                 filtered_data, errors = Model().load(data)
                 if errors:
                     logger.info('Failed to parse %s data for user %s: %s', auth_type, user_uuid, errors)
-            result.append({'type': auth_type, 'data': filtered_data})
+            result.append({'type': auth_type, 'data': filtered_data, 'enabled': enabled})
         return result
 
     def register_safe_auth_model(self, auth_type, model_class):

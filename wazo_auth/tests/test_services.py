@@ -48,33 +48,33 @@ class TestExternalAuthService(BaseServiceTestCase):
     def test_list_external_auth(self):
         # No safe model registered for any auth type
         self.external_auth_dao.list_.return_value = [
-            {'type': 'auth_1', 'data': {'scope': ['scope'], 'token': 'supersecret'}},
-            {'type': 'auth_2', 'data': {'scope': ['one', 'two', 42], 'password': 'l337'}},
+            {'type': 'auth_1', 'data': {'scope': ['scope'], 'token': 'supersecret'}, 'enabled': True},
+            {'type': 'auth_2', 'data': {'scope': ['one', 'two', 42], 'password': 'l337'}, 'enabled': True},
         ]
 
         result = self.service.list_(s.user_uuid)
         assert_that(result, contains(
-            {'type': 'auth_1', 'data': {}},
-            {'type': 'auth_2', 'data': {}},
+            {'type': 'auth_1', 'data': {}, 'enabled': True},
+            {'type': 'auth_2', 'data': {}, 'enabled': True},
         ))
 
         # With a safe model for auth_1
         self.service.register_safe_auth_model('auth_1', self.Auth1SafeFields)
         result = self.service.list_(s.user_uuid)
         assert_that(result, contains(
-            {'type': 'auth_1', 'data': {'scope': ['scope']}},
-            {'type': 'auth_2', 'data': {}},
+            {'type': 'auth_1', 'data': {'scope': ['scope']}, 'enabled': True},
+            {'type': 'auth_2', 'data': {}, 'enabled': True},
         ))
 
         # With data not matching the model fallback to {}
         self.external_auth_dao.list_.return_value = [
-            {'type': 'auth_1', 'data': {'scope': 42, 'token': 'supersecret'}},
-            {'type': 'auth_2', 'data': {'scope': ['one', 'two', 42], 'password': 'l337'}},
+            {'type': 'auth_1', 'data': {'scope': 42, 'token': 'supersecret'}, 'enabled': True},
+            {'type': 'auth_2', 'data': {'scope': ['one', 'two', 42], 'password': 'l337'}, 'enabled': True},
         ]
         result = self.service.list_(s.user_uuid)
         assert_that(result, contains(
-            {'type': 'auth_1', 'data': {}},
-            {'type': 'auth_2', 'data': {}},
+            {'type': 'auth_1', 'data': {}, 'enabled': True},
+            {'type': 'auth_2', 'data': {}, 'enabled': True},
         ))
 
 

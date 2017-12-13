@@ -77,16 +77,17 @@ class TestExternalAuthDAO(_BaseDAOTestCase):
         dict_value={'a': 'dict', 'of': 'values'},
     )
 
+    @fixtures.external_auth('one', 'two')
     @fixtures.user()
     @fixtures.user()
-    def test_count(self, user_1_uuid, user_2_uuid):
+    def test_count(self, user_1_uuid, user_2_uuid, external_auth_types):
         self._external_auth_dao.create(user_2_uuid, self.auth_type, self.data)
 
         result = self._external_auth_dao.count(user_1_uuid, filtered=False)
-        assert_that(result, equal_to(0))
+        assert_that(result, equal_to(2))
 
         result = self._external_auth_dao.count(user_1_uuid, filtered=True)
-        assert_that(result, equal_to(0))
+        assert_that(result, equal_to(2))
 
         data_one = {'username': 'foo', 'password': 'baz'}
         data_two = {'key': 'foo', 'secret': 'bar'}
@@ -168,7 +169,6 @@ class TestExternalAuthDAO(_BaseDAOTestCase):
             with self._external_auth_dao.new_session() as s:
                 query = s.query(models.ExternalAuthType.name, models.ExternalAuthType.enabled)
                 result = {r.name: r.enabled for r in query.all()}
-            print result
             expected = has_entries({t: True for t in enabled_types})
             assert_that(result, expected)
             nb_enabled = len([t for t, enabled in result.iteritems() if enabled])
@@ -225,7 +225,12 @@ class TestExternalAuthDAO(_BaseDAOTestCase):
         self._external_auth_dao.create(user_2_uuid, self.auth_type, self.data)
 
         result = self._external_auth_dao.list_(user_1_uuid)
-        assert_that(result, empty())
+        expected = [
+            {'type': 'one', 'data': {}, 'enabled': False},
+            {'type': 'two', 'data': {}, 'enabled': False},
+            {'type': 'unused', 'data': {}, 'enabled': False},
+        ]
+        assert_that(result, contains_inanyorder(*expected))
 
         data_one = {'username': 'foo', 'password': 'baz'}
         data_two = {'key': 'foo', 'secret': 'bar'}
@@ -236,6 +241,7 @@ class TestExternalAuthDAO(_BaseDAOTestCase):
         expected = [
             {'type': 'one', 'data': data_one, 'enabled': True},
             {'type': 'two', 'data': data_two, 'enabled': True},
+            {'type': 'unused', 'data': {}, 'enabled': False},
         ]
         assert_that(result, contains_inanyorder(*expected))
 
@@ -253,6 +259,7 @@ class TestExternalAuthDAO(_BaseDAOTestCase):
 
         result = self._external_auth_dao.list_(user_1_uuid, order='type', direction='desc')
         expected = [
+            {'type': 'unused', 'data': {}, 'enabled': False},
             {'type': 'two', 'data': data_two, 'enabled': True},
             {'type': 'one', 'data': data_one, 'enabled': True},
         ]

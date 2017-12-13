@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 from uuid import uuid4
-from hamcrest import (assert_that, contains, contains_inanyorder, empty, equal_to, has_entries)
+from hamcrest import (assert_that, contains, contains_inanyorder, equal_to, has_entries)
 from xivo_test_helpers import until
 from .helpers import base, fixtures
 
@@ -93,6 +93,7 @@ class TestExternalAuthAPI(base.MockBackendTestCase):
         expected = [
             {'type': 'bar', 'data': self.safe_data, 'enabled': True},
         ]
+        print result
         assert_that(result, has_entries(items=contains(*expected), total=2, filtered=1))
 
     @fixtures.http_user_register()

@@ -66,7 +66,6 @@ class FilterMixin(object):
 
 
 external_auth_strict_filter = StrictFilter(
-    ('user_uuid', UserExternalAuth.user_uuid, str),
     ('type', ExternalAuthType.name, None),
 )
 group_strict_filter = StrictFilter(
