@@ -163,6 +163,34 @@ class TestExternalAuthDAO(_BaseDAOTestCase):
                 has_properties(status_code=404, resource=self.auth_type)))
 
     @fixtures.user()
+    def test_enable_all(self, user_uuid):
+        def assert_enabled(enabled_types):
+            with self._external_auth_dao.new_session() as s:
+                query = s.query(models.ExternalAuthType.name, models.ExternalAuthType.enabled)
+                result = {r.name: r.enabled for r in query.all()}
+            print result
+            expected = has_entries({t: True for t in enabled_types})
+            assert_that(result, expected)
+            nb_enabled = len([t for t, enabled in result.iteritems() if enabled])
+            assert_that(nb_enabled, equal_to(len(enabled_types)))
+
+        auth_types = ['foo', 'bar', 'baz', 'inga']
+        self._external_auth_dao.enable_all(auth_types)
+        assert_enabled(auth_types)
+
+        auth_types = ['one', 'two']
+        self._external_auth_dao.enable_all(auth_types)
+        assert_enabled(auth_types)
+
+        auth_types = ['one', 'baz', 'foobar']
+        self._external_auth_dao.enable_all(auth_types)
+        assert_enabled(auth_types)
+
+        auth_types = []
+        self._external_auth_dao.enable_all(auth_types)
+        assert_enabled(auth_types)
+
+    @fixtures.user()
     @fixtures.user()
     def test_get(self, user_1_uuid, user_2_uuid):
         assert_that(

@@ -71,6 +71,27 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             self._assert_user_exists(s, user_uuid)
             raise exceptions.UnknownExternalAuthException(auth_type)
 
+    def enable_all(self, auth_types):
+        with self.new_session() as s:
+            query = s.query(ExternalAuthType.name, ExternalAuthType.enabled)
+            all_types = {r.name: r.enabled for r in query.all()}
+
+            for type_ in auth_types:
+                if type_ in all_types:
+                    continue
+                s.add(ExternalAuthType(name=type_, enabled=True))
+
+            for type_, enabled in all_types.iteritems():
+                if type_ in auth_types and enabled:
+                    continue
+
+                if type_ not in auth_types and not enabled:
+                    continue
+
+                filter_ = ExternalAuthType.name == type_
+                value = type_ in auth_types and not enabled
+                s.query(ExternalAuthType).filter(filter_).update({'enabled': value})
+
     def get(self, user_uuid, auth_type):
         filter_ = and_(
             UserExternalAuth.user_uuid == str(user_uuid),
