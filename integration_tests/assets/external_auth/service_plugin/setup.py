@@ -14,8 +14,8 @@ setup(
     packages=find_packages(),
     entry_points={
         'wazo_auth.external_auth': [
-            'foo_service = src.plugin:FooPlugin',
-            'bar_service = src.plugin:BarPlugin',
+            'foo = src.plugin:FooPlugin',
+            'bar = src.plugin:BarPlugin',
         ],
     }
 )
