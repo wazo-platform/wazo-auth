@@ -218,9 +218,10 @@ class TestExternalAuthDAO(_BaseDAOTestCase):
             raises(exceptions.UnknownExternalAuthException).matching(
                 has_properties(status_code=404, resource=self.auth_type)))
 
+    @fixtures.external_auth('one', 'two', 'unused')
     @fixtures.user()
     @fixtures.user()
-    def test_list(self, user_1_uuid, user_2_uuid):
+    def test_list(self, user_1_uuid, user_2_uuid, auth_types):
         self._external_auth_dao.create(user_2_uuid, self.auth_type, self.data)
 
         result = self._external_auth_dao.list_(user_1_uuid)
@@ -232,25 +233,35 @@ class TestExternalAuthDAO(_BaseDAOTestCase):
         self._external_auth_dao.create(user_1_uuid, 'two', data_two)
 
         result = self._external_auth_dao.list_(user_1_uuid)
-        expected = [{'type': 'one', 'data': data_one}, {'type': 'two', 'data': data_two}]
+        expected = [
+            {'type': 'one', 'data': data_one, 'enabled': True},
+            {'type': 'two', 'data': data_two, 'enabled': True},
+        ]
         assert_that(result, contains_inanyorder(*expected))
 
         result = self._external_auth_dao.list_(user_1_uuid, search='two')
-        expected = [{'type': 'two', 'data': data_two}]
+        expected = [
+            {'type': 'two', 'data': data_two, 'enabled': True},
+        ]
         assert_that(result, contains_inanyorder(*expected))
 
         result = self._external_auth_dao.list_(user_1_uuid, type='two')
-        expected = [{'type': 'two', 'data': data_two}]
+        expected = [
+            {'type': 'two', 'data': data_two, 'enabled': True},
+        ]
         assert_that(result, contains_inanyorder(*expected))
 
         result = self._external_auth_dao.list_(user_1_uuid, order='type', direction='desc')
-        expected = [{'type': 'two', 'data': data_two}, {'type': 'one', 'data': data_one}]
-        print result
+        expected = [
+            {'type': 'two', 'data': data_two, 'enabled': True},
+            {'type': 'one', 'data': data_one, 'enabled': True},
+        ]
         assert_that(result, contains(*expected))
 
         result = self._external_auth_dao.list_(user_1_uuid, order='type', direction='asc', limit=1)
-        print result
-        expected = [{'type': 'one', 'data': data_one}]
+        expected = [
+            {'type': 'one', 'data': data_one, 'enabled': True},
+        ]
         assert_that(result, contains(*expected))
 
     @fixtures.user()

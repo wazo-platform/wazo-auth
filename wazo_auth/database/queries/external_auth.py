@@ -125,7 +125,9 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             ).join(UserExternalAuth).join(ExternalAuthType).filter(filter_)
             query = self._paginator.update_query(query, **kwargs)
             for row in query.all():
-                result.append({'type': row.name, 'data': json.loads(row.data)})
+                result.append({'type': row.name,
+                               'data': json.loads(row.data),
+                               'enabled': True})
 
         return result
 

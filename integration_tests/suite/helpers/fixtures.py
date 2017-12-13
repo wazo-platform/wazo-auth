@@ -19,6 +19,20 @@ def _random_string(length):
     return ''.join(random.choice(string.ascii_lowercase) for _ in xrange(length))
 
 
+def external_auth(*auth_types):
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            self._external_auth_dao.enable_all(auth_types)
+            try:
+                result = decorated(self, auth_types, *args, **kwargs)
+            finally:
+                self._external_auth_dao.enable_all([])
+            return result
+        return wrapper
+    return decorator
+
+
 def http_tenant(**tenant_args):
     if 'name' not in tenant_args:
         tenant_args['name'] = _random_string(20)
