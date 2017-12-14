@@ -82,7 +82,12 @@ def new_app(dependencies):
     http_plugins = config['enabled_http_plugins']
     external_auth_plugins = config['enabled_external_auth_plugins']
     plugin_helpers.load('wazo_auth.http', http_plugins, dependencies)
-    plugin_helpers.load('wazo_auth.external_auth', external_auth_plugins, dependencies)
+    manager = plugin_helpers.load('wazo_auth.external_auth', external_auth_plugins, dependencies)
+    config['external_auth_plugin_info'] = {}
+    if manager:
+        for extension in manager:
+            plugin_info = getattr(extension.obj, 'plugin_info', {})
+            config['external_auth_plugin_info'][extension.name] = plugin_info
 
     app.config.update(config)
 

@@ -2,7 +2,7 @@
 # Copyright 2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from flask import request
+from flask import current_app, request
 from wazo_auth import exceptions, http, schemas
 
 
@@ -21,6 +21,10 @@ class External(http.AuthResource):
         items = self.external_auth_service.list_(user_uuid, **list_params)
         total = self.external_auth_service.count(user_uuid, filtered=False, **list_params)
         filtered = self.external_auth_service.count(user_uuid, filtered=True, **list_params)
+
+        for item in items:
+            plugin_info = current_app.config['external_auth_plugin_info'][item['type']]
+            item['plugin_info'] = plugin_info
 
         response = dict(
             filtered=filtered,

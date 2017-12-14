@@ -72,6 +72,8 @@ class BarSafeData(Schema):
 
 class BarPlugin(object):
 
+    plugin_info = {'foo': 'bar'}
+
     def load(self, dependencies):
         api = dependencies['api']
         external_auth_service = dependencies['external_auth_service']

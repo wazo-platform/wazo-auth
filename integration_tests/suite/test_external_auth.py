@@ -77,23 +77,22 @@ class TestExternalAuthAPI(base.MockBackendTestCase):
 
         result = self.client.external.list_(user3['uuid'])
         expected = [
-            {'type': 'foo', 'data': {}, 'enabled': False},
-            {'type': 'bar', 'data': {}, 'enabled': False},
+            {'type': 'foo', 'data': {}, 'plugin_info': {}, 'enabled': False},
+            {'type': 'bar', 'data': {}, 'plugin_info': {'foo': 'bar'}, 'enabled': False},
         ]
         assert_that(result, has_entries(items=contains_inanyorder(*expected), total=2, filtered=2))
 
         result = self.client.external.list_(user1['uuid'])
         expected = [
-            {'type': 'foo', 'data': {}, 'enabled': True},
-            {'type': 'bar', 'data': self.safe_data, 'enabled': True},
+            {'type': 'foo', 'data': {}, 'plugin_info': {}, 'enabled': True},
+            {'type': 'bar', 'data': self.safe_data, 'plugin_info': {'foo': 'bar'}, 'enabled': True},
         ]
         assert_that(result, has_entries(items=contains_inanyorder(*expected), total=2, filtered=2))
 
         result = self.client.external.list_(user1['uuid'], type='bar')
         expected = [
-            {'type': 'bar', 'data': self.safe_data, 'enabled': True},
+            {'type': 'bar', 'data': self.safe_data, 'plugin_info': {'foo': 'bar'}, 'enabled': True},
         ]
-        print result
         assert_that(result, has_entries(items=contains(*expected), total=2, filtered=1))
 
     @fixtures.http_user_register()
