@@ -40,6 +40,8 @@ _DEFAULT_CONFIG = {
         'xivo_user': True,
         'wazo_user': True,
     },
+    'enabled_external_auth_plugins': {
+    },
     'backend_policies': {
         'ldap_user': 'wazo_default_user_policy',
         'xivo_admin': 'wazo_default_admin_policy',
