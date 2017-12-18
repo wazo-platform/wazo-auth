@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import yaml
+from itertools import chain
 
 from flask import make_response
 from flask_restful import Resource
@@ -15,7 +16,11 @@ class Swagger(Resource):
     api_filename = "api.yml"
 
     def get(self):
-        api_spec = ChainMap(*load_all_api_specs('wazo_auth.http', self.api_filename))
+        http_specs = load_all_api_specs('wazo_auth.http', self.api_filename)
+        external_auth_specs = load_all_api_specs('wazo_auth.external_auth', self.api_filename)
+        specs = chain(http_specs, external_auth_specs)
+
+        api_spec = ChainMap(*specs)
         if not api_spec.get('info'):
             return {'error': "API spec does not exist"}, 404
 
