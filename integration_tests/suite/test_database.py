@@ -77,6 +77,38 @@ class TestExternalAuthDAO(_BaseDAOTestCase):
         dict_value={'a': 'dict', 'of': 'values'},
     )
 
+    @fixtures.external_auth('one', 'two')
+    @fixtures.user()
+    @fixtures.user()
+    def test_count(self, user_1_uuid, user_2_uuid, external_auth_types):
+        self._external_auth_dao.create(user_2_uuid, self.auth_type, self.data)
+
+        result = self._external_auth_dao.count(user_1_uuid, filtered=False)
+        assert_that(result, equal_to(2))
+
+        result = self._external_auth_dao.count(user_1_uuid, filtered=True)
+        assert_that(result, equal_to(2))
+
+        data_one = {'username': 'foo', 'password': 'baz'}
+        data_two = {'key': 'foo', 'secret': 'bar'}
+        self._external_auth_dao.create(user_1_uuid, 'one', data_one)
+        self._external_auth_dao.create(user_1_uuid, 'two', data_two)
+
+        result = self._external_auth_dao.count(user_1_uuid, filtered=False)
+        assert_that(result, equal_to(2))
+        result = self._external_auth_dao.count(user_1_uuid, filtered=True)
+        assert_that(result, equal_to(2))
+
+        result = self._external_auth_dao.count(user_1_uuid, search='two', filtered=False)
+        assert_that(result, equal_to(2))
+        result = self._external_auth_dao.count(user_1_uuid, search='two', filtered=True)
+        assert_that(result, equal_to(1))
+
+        result = self._external_auth_dao.count(user_1_uuid, type='two', filtered=False)
+        assert_that(result, equal_to(2))
+        result = self._external_auth_dao.count(user_1_uuid, type='two', filtered=True)
+        assert_that(result, equal_to(1))
+
     @fixtures.user()
     def test_create(self, user_uuid):
         assert_that(
@@ -132,6 +164,33 @@ class TestExternalAuthDAO(_BaseDAOTestCase):
                 has_properties(status_code=404, resource=self.auth_type)))
 
     @fixtures.user()
+    def test_enable_all(self, user_uuid):
+        def assert_enabled(enabled_types):
+            with self._external_auth_dao.new_session() as s:
+                query = s.query(models.ExternalAuthType.name, models.ExternalAuthType.enabled)
+                result = {r.name: r.enabled for r in query.all()}
+            expected = has_entries({t: True for t in enabled_types})
+            assert_that(result, expected)
+            nb_enabled = len([t for t, enabled in result.iteritems() if enabled])
+            assert_that(nb_enabled, equal_to(len(enabled_types)))
+
+        auth_types = ['foo', 'bar', 'baz', 'inga']
+        self._external_auth_dao.enable_all(auth_types)
+        assert_enabled(auth_types)
+
+        auth_types = ['one', 'two']
+        self._external_auth_dao.enable_all(auth_types)
+        assert_enabled(auth_types)
+
+        auth_types = ['one', 'baz', 'foobar']
+        self._external_auth_dao.enable_all(auth_types)
+        assert_enabled(auth_types)
+
+        auth_types = []
+        self._external_auth_dao.enable_all(auth_types)
+        assert_enabled(auth_types)
+
+    @fixtures.user()
     @fixtures.user()
     def test_get(self, user_1_uuid, user_2_uuid):
         assert_that(
@@ -158,6 +217,59 @@ class TestExternalAuthDAO(_BaseDAOTestCase):
             calling(self._external_auth_dao.get).with_args(user_2_uuid, self.auth_type),
             raises(exceptions.UnknownExternalAuthException).matching(
                 has_properties(status_code=404, resource=self.auth_type)))
+
+    @fixtures.external_auth('one', 'two', 'unused')
+    @fixtures.user()
+    @fixtures.user()
+    def test_list(self, user_1_uuid, user_2_uuid, auth_types):
+        self._external_auth_dao.create(user_2_uuid, self.auth_type, self.data)
+
+        result = self._external_auth_dao.list_(user_1_uuid)
+        expected = [
+            {'type': 'one', 'data': {}, 'enabled': False},
+            {'type': 'two', 'data': {}, 'enabled': False},
+            {'type': 'unused', 'data': {}, 'enabled': False},
+        ]
+        assert_that(result, contains_inanyorder(*expected))
+
+        data_one = {'username': 'foo', 'password': 'baz'}
+        data_two = {'key': 'foo', 'secret': 'bar'}
+        self._external_auth_dao.create(user_1_uuid, 'one', data_one)
+        self._external_auth_dao.create(user_1_uuid, 'two', data_two)
+
+        result = self._external_auth_dao.list_(user_1_uuid)
+        expected = [
+            {'type': 'one', 'data': data_one, 'enabled': True},
+            {'type': 'two', 'data': data_two, 'enabled': True},
+            {'type': 'unused', 'data': {}, 'enabled': False},
+        ]
+        assert_that(result, contains_inanyorder(*expected))
+
+        result = self._external_auth_dao.list_(user_1_uuid, search='two')
+        expected = [
+            {'type': 'two', 'data': data_two, 'enabled': True},
+        ]
+        assert_that(result, contains_inanyorder(*expected))
+
+        result = self._external_auth_dao.list_(user_1_uuid, type='two')
+        expected = [
+            {'type': 'two', 'data': data_two, 'enabled': True},
+        ]
+        assert_that(result, contains_inanyorder(*expected))
+
+        result = self._external_auth_dao.list_(user_1_uuid, order='type', direction='desc')
+        expected = [
+            {'type': 'unused', 'data': {}, 'enabled': False},
+            {'type': 'two', 'data': data_two, 'enabled': True},
+            {'type': 'one', 'data': data_one, 'enabled': True},
+        ]
+        assert_that(result, contains(*expected))
+
+        result = self._external_auth_dao.list_(user_1_uuid, order='type', direction='asc', limit=1)
+        expected = [
+            {'type': 'one', 'data': data_one, 'enabled': True},
+        ]
+        assert_that(result, contains(*expected))
 
     @fixtures.user()
     def test_update(self, user_uuid):

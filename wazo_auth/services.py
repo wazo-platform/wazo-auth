@@ -21,9 +21,22 @@ class _Service(object):
 
 class ExternalAuthService(_Service):
 
-    def __init__(self, dao, bus_publisher=None):
+    def __init__(self, dao, bus_publisher=None, enabled_external_auth=None):
         super(ExternalAuthService, self).__init__(dao)
         self._bus_publisher = bus_publisher
+        self._safe_models = {}
+        self._enabled_external_auth = enabled_external_auth or []
+        self._enabled_external_auth_populated = False
+
+    def _populate_enabled_external_auth(self):
+        if self._enabled_external_auth_populated:
+            return
+        self._dao.external_auth.enable_all(self._enabled_external_auth)
+        self._enabled_external_auth_populated = True
+
+    def count(self, user_uuid, **kwargs):
+        self._populate_enabled_external_auth()
+        return self._dao.external_auth.count(user_uuid, **kwargs)
 
     def create(self, user_uuid, auth_type, data):
         result = self._dao.external_auth.create(user_uuid, auth_type, data)
@@ -38,6 +51,26 @@ class ExternalAuthService(_Service):
 
     def get(self, user_uuid, auth_type):
         return self._dao.external_auth.get(user_uuid, auth_type)
+
+    def list_(self, user_uuid, **kwargs):
+        self._populate_enabled_external_auth()
+        raw_external_auth_info = self._dao.external_auth.list_(user_uuid, **kwargs)
+        result = []
+        for external_auth in raw_external_auth_info:
+            auth_type = external_auth['type']
+            enabled = external_auth['enabled']
+            Model = self._safe_models.get(auth_type)
+            filtered_data = {}
+            if Model:
+                data = external_auth.get('data')
+                filtered_data, errors = Model().load(data)
+                if errors:
+                    logger.info('Failed to parse %s data for user %s: %s', auth_type, user_uuid, errors)
+            result.append({'type': auth_type, 'data': filtered_data, 'enabled': enabled})
+        return result
+
+    def register_safe_auth_model(self, auth_type, model_class):
+        self._safe_models[auth_type] = model_class
 
     def update(self, user_uuid, auth_type, data):
         return self._dao.external_auth.update(user_uuid, auth_type, data)

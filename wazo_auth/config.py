@@ -23,6 +23,7 @@ _DEFAULT_CONFIG = {
     'enabled_http_plugins': {
         'api': True,
         'backends': True,
+        'external': True,
         'group_policy': True,
         'groups': True,
         'policies': True,

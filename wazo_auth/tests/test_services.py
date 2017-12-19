@@ -2,7 +2,9 @@
 # Copyright 2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from hamcrest import assert_that, calling, equal_to, not_, raises
+from hamcrest import assert_that, contains, calling, equal_to, not_, raises
+from ..schemas import BaseSchema
+from marshmallow import fields
 from mock import Mock, patch, sentinel as s
 from unittest import TestCase
 
@@ -31,6 +33,49 @@ class BaseServiceTestCase(TestCase):
             self.group_dao,
             self.external_auth_dao,
         )
+
+
+class TestExternalAuthService(BaseServiceTestCase):
+
+    class Auth1SafeFields(BaseSchema):
+
+        scope = fields.List(fields.String)
+
+    def setUp(self):
+        super(TestExternalAuthService, self).setUp()
+        self.service = services.ExternalAuthService(self.dao)
+
+    def test_list_external_auth(self):
+        # No safe model registered for any auth type
+        self.external_auth_dao.list_.return_value = [
+            {'type': 'auth_1', 'data': {'scope': ['scope'], 'token': 'supersecret'}, 'enabled': True},
+            {'type': 'auth_2', 'data': {'scope': ['one', 'two', 42], 'password': 'l337'}, 'enabled': True},
+        ]
+
+        result = self.service.list_(s.user_uuid)
+        assert_that(result, contains(
+            {'type': 'auth_1', 'data': {}, 'enabled': True},
+            {'type': 'auth_2', 'data': {}, 'enabled': True},
+        ))
+
+        # With a safe model for auth_1
+        self.service.register_safe_auth_model('auth_1', self.Auth1SafeFields)
+        result = self.service.list_(s.user_uuid)
+        assert_that(result, contains(
+            {'type': 'auth_1', 'data': {'scope': ['scope']}, 'enabled': True},
+            {'type': 'auth_2', 'data': {}, 'enabled': True},
+        ))
+
+        # With data not matching the model fallback to {}
+        self.external_auth_dao.list_.return_value = [
+            {'type': 'auth_1', 'data': {'scope': 42, 'token': 'supersecret'}, 'enabled': True},
+            {'type': 'auth_2', 'data': {'scope': ['one', 'two', 42], 'password': 'l337'}, 'enabled': True},
+        ]
+        result = self.service.list_(s.user_uuid)
+        assert_that(result, contains(
+            {'type': 'auth_1', 'data': {}, 'enabled': True},
+            {'type': 'auth_2', 'data': {}, 'enabled': True},
+        ))
 
 
 class TestGroupService(BaseServiceTestCase):

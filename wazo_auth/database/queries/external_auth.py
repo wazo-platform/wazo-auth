@@ -4,12 +4,33 @@
 
 import json
 from sqlalchemy import and_, exc
-from .base import BaseDAO
+from .base import BaseDAO, PaginatorMixin
+from . import filters
 from ..models import ExternalAuthData, ExternalAuthType, User, UserExternalAuth
 from ... import exceptions
 
 
-class ExternalAuthDAO(BaseDAO):
+class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
+
+    search_filter = filters.external_auth_search_filter
+    strict_filter = filters.external_auth_strict_filter
+    column_map = dict(
+        type=ExternalAuthType.name,
+    )
+
+    def count(self, user_uuid, **kwargs):
+        filtered = kwargs.get('filtered')
+        base_filter = ExternalAuthType.enabled == True
+
+        if filtered is False:
+            filter_ = base_filter
+        else:
+            search_filter = self.new_search_filter(**kwargs)
+            strict_filter = self.new_strict_filter(**kwargs)
+            filter_ = and_(base_filter, search_filter, strict_filter)
+
+        with self.new_session() as s:
+            return s.query(ExternalAuthType).filter(filter_).count()
 
     def create(self, user_uuid, auth_type, data):
         serialized_data = json.dumps(data)
@@ -51,6 +72,27 @@ class ExternalAuthDAO(BaseDAO):
             self._assert_user_exists(s, user_uuid)
             raise exceptions.UnknownExternalAuthException(auth_type)
 
+    def enable_all(self, auth_types):
+        with self.new_session() as s:
+            query = s.query(ExternalAuthType.name, ExternalAuthType.enabled)
+            all_types = {r.name: r.enabled for r in query.all()}
+
+            for type_ in auth_types:
+                if type_ in all_types:
+                    continue
+                s.add(ExternalAuthType(name=type_, enabled=True))
+
+            for type_, enabled in all_types.iteritems():
+                if type_ in auth_types and enabled:
+                    continue
+
+                if type_ not in auth_types and not enabled:
+                    continue
+
+                filter_ = ExternalAuthType.name == type_
+                value = type_ in auth_types and not enabled
+                s.query(ExternalAuthType).filter(filter_).update({'enabled': value})
+
     def get(self, user_uuid, auth_type):
         filter_ = and_(
             UserExternalAuth.user_uuid == str(user_uuid),
@@ -68,6 +110,32 @@ class ExternalAuthDAO(BaseDAO):
             self._assert_type_exists(s, auth_type)
             self._assert_user_exists(s, user_uuid)
             raise exceptions.UnknownExternalAuthException(auth_type)
+
+    def list_(self, user_uuid, **kwargs):
+        base_filter = ExternalAuthType.enabled == True
+        search_filter = self.new_search_filter(**kwargs)
+        strict_filter = self.new_strict_filter(**kwargs)
+        filter_ = and_(base_filter, search_filter, strict_filter)
+
+        result = []
+
+        with self.new_session() as s:
+            query = s.query(ExternalAuthType).filter(filter_)
+            query = self._paginator.update_query(query, **kwargs)
+            result = [{'type': r.name, 'data': {}, 'enabled': False} for r in query.all()]
+
+            filter_ = and_(filter_, UserExternalAuth.user_uuid == str(user_uuid))
+            query = s.query(
+                ExternalAuthType.name,
+                ExternalAuthData.data,
+            ).join(UserExternalAuth).join(ExternalAuthData).filter(filter_)
+            for type_, data in query.all():
+                for row in result:
+                    if row['type'] != type_:
+                        continue
+                    row.update(dict(enabled=True, data=json.loads(data)))
+
+        return result
 
     def update(self, user_uuid, auth_type, data):
         self.delete(user_uuid, auth_type)

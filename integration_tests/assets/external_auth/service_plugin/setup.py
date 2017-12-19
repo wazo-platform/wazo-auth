@@ -8,13 +8,14 @@ from setuptools import find_packages
 from setuptools import setup
 
 setup(
-    name='foo service auth plugin',
+    name='foo and bar service auth plugin',
     version='0.1',
 
     packages=find_packages(),
     entry_points={
         'wazo_auth.external_auth': [
-            'foo_service = src.plugin:Plugin',
+            'foo = src.plugin:FooPlugin',
+            'bar = src.plugin:BarPlugin',
         ],
     }
 )
