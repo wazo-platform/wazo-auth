@@ -4,6 +4,7 @@ set -e
 
 DAEMONNAME='wazo-auth'
 USER='wazo-auth'
+HOME="/var/lib/${USER}"
 GROUP=$USER
 LOG_FILENAME="/var/log/${DAEMONNAME}.log"
 ALEMBIC_INI_PATH="/usr/share/${DAEMONNAME}"
@@ -21,8 +22,8 @@ case "$1" in
         # add/update user
         if ! getent passwd $USER > /dev/null ; then
             echo "Adding system user $USER" 1>&2
-            adduser --quiet --system --group --no-create-home \
-                    --home "/var/lib/${USER}" \
+            adduser --quiet --system --group \
+                    --home "${HOME}" \
                     $USER
         fi
         adduser --quiet $USER www-data
@@ -80,6 +81,12 @@ case "$1" in
             for f in ${OLD_NGINX_CONFIG}; do
                 rm -f ${f}
             done
+        fi
+
+        # The HOME directory was not created before Wazo 18.01
+        if dpkg --compare-versions "$2" lt '18.01~'; then
+            mkdir -p "${HOME}"
+            chown -R "${USER}:${GROUP}" "${HOME}"
         fi
 
         # Database initialization and migrations
