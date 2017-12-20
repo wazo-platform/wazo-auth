@@ -21,6 +21,7 @@ _DEFAULT_CONFIG = {
     'default_token_lifetime': TWO_HOURS,
     'token_cleanup_interval': 60.0,
     'init_key_filename': None,
+    'init_policy_name': 'wazo_default_master_user_policy',
     'enabled_http_plugins': {
         'api': True,
         'backends': True,

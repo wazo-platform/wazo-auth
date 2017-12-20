@@ -11,6 +11,7 @@ class Plugin(object):
         api = dependencies['api']
         config = dependencies['config']
         args = (
+            dependencies['policy_service'],
             dependencies['user_service'],
             config,
         )
