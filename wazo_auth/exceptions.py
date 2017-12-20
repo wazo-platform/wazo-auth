@@ -117,6 +117,11 @@ class GroupParamException(_BaseParamException):
     resource = 'groups'
 
 
+class InitParamException(_BaseParamException):
+
+    resource = 'init'
+
+
 class TenantParamException(_BaseParamException):
 
     resource = 'tenants'

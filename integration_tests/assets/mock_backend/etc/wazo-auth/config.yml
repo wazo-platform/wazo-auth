@@ -14,6 +14,7 @@ rest_api:
 enabled_http_plugins:
   users: true
   user_registration: true
+  init: true
 enabled_backend_plugins:
   mock: true
   mock_with_uuid: true

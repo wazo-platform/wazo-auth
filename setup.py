@@ -50,6 +50,7 @@ setup(
             'external = wazo_auth.plugins.http.external.plugin:Plugin',
             'groups = wazo_auth.plugins.http.groups.plugin:Plugin',
             'group_policy = wazo_auth.plugins.http.group_policy.plugin:Plugin',
+            'init = wazo_auth.plugins.http.init.plugin:Plugin',
             'policies = wazo_auth.plugins.http.policies.plugin:Plugin',
             'tenants = wazo_auth.plugins.http.tenants.plugin:Plugin',
             'tenant_user = wazo_auth.plugins.http.tenant_user.plugin:Plugin',
