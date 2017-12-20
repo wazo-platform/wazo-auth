@@ -929,7 +929,8 @@ class TestUserDAO(_BaseDAOTestCase):
         hash_ = 'the_hashed_password'
         email_address = 'foobar@example.com'
 
-        user_uuid = self._user_dao.create(username, email_address, hash_=hash_, salt=self.salt)['uuid']
+        user_uuid = self._user_dao.create(
+            username, email_address=email_address, hash_=hash_, salt=self.salt)['uuid']
         try:
             assert_that(user_uuid, equal_to(ANY_UUID))
             result = self._user_dao.list_(uuid=user_uuid)
@@ -937,7 +938,8 @@ class TestUserDAO(_BaseDAOTestCase):
                 username=username,
                 emails=contains(has_entries(address=email_address, confirmed=False, main=True)))))
             assert_that(
-                calling(self._user_dao.create).with_args('foo', 'foo@bar.baz', uuid=user_uuid, hash_='', salt=''),
+                calling(self._user_dao.create).with_args(
+                    'foo', email_address='foo@bar.baz', uuid=user_uuid, hash_='', salt=''),
                 raises(
                     exceptions.ConflictException,
                     has_properties(
@@ -952,8 +954,8 @@ class TestUserDAO(_BaseDAOTestCase):
         hash_ = 'the_hashed_password'
         email_address = 'foobar@example.com'
 
-        user_uuid = self._user_dao.create(username, email_address, hash_=hash_, salt=self.salt,
-                                          email_confirmed=True)['uuid']
+        user_uuid = self._user_dao.create(
+            username, email_address=email_address, hash_=hash_, salt=self.salt, email_confirmed=True)['uuid']
 
         result = self._user_dao.list_(uuid=user_uuid)
         try:
@@ -966,7 +968,8 @@ class TestUserDAO(_BaseDAOTestCase):
     @fixtures.user(username='foobar')
     def test_that_the_username_is_unique(self, user_uuid):
         assert_that(
-            calling(self._user_dao.create).with_args('foobar', 'foo@bar', hash_='hash_two', salt=self.salt),
+            calling(self._user_dao.create).with_args(
+                'foobar', email_address='foo@bar', hash_='hash_two', salt=self.salt),
             raises(
                 exceptions.ConflictException,
                 has_properties(
@@ -980,7 +983,8 @@ class TestUserDAO(_BaseDAOTestCase):
     @fixtures.user(email_address='foobar@example.com')
     def test_that_the_email_is_unique(self, user_uuid):
         assert_that(
-            calling(self._user_dao.create).with_args('bar', 'foobar@example.com', hash_='hash_two', salt=self.salt),
+            calling(self._user_dao.create).with_args(
+                'bar', email_address='foobar@example.com', hash_='hash_two', salt=self.salt),
             raises(
                 exceptions.ConflictException,
                 has_properties(

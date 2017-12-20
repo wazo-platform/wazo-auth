@@ -77,7 +77,7 @@ class TestUserResource(HTTPAppTestCase):
             'email_address': email_address,
         }
 
-        for field in ['username', 'email_address']:
+        for field in ['username']:
             body = dict(valid_body)
             del body[field]
             data = json.dumps(body)

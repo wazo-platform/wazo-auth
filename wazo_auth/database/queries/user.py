@@ -134,7 +134,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             return s.query(Tenant).join(TenantUser).filter(filter_).count()
 
-    def create(self, username, email_address, **kwargs):
+    def create(self, username, **kwargs):
         user_args = dict(
             username=username,
             password_hash=kwargs.get('hash_'),
@@ -145,21 +145,25 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             user_args['uuid'] = str(uuid)
 
         email_confirmed = kwargs.get('email_confirmed', False)
-        email_args = dict(address=email_address, confirmed=email_confirmed)
-
+        email_address = kwargs.get('email_address', None)
         with self.new_session() as s:
             try:
-                email = Email(**email_args)
+                if email_address:
+                    email_args = dict(address=email_address, confirmed=email_confirmed)
+                    email = Email(**email_args)
+                    s.add(email)
+
                 user = User(**user_args)
-                s.add_all([user, email])
+                s.add(user)
                 s.flush()
-                user_email = UserEmail(
-                    user_uuid=user.uuid,
-                    email_uuid=email.uuid,
-                    main=True,
-                )
-                s.add(user_email)
-                s.commit()
+                if email_address:
+                    user_email = UserEmail(
+                        user_uuid=user.uuid,
+                        email_uuid=email.uuid,
+                        main=True,
+                    )
+                    s.add(user_email)
+                    s.commit()
             except exc.IntegrityError as e:
                 if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                     column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
@@ -168,10 +172,15 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                         raise exceptions.ConflictException('users', column, value)
                 raise
 
+            if email_address:
+                emails = [{'address': email_address, 'confirmed': email_confirmed, 'main': True}]
+            else:
+                emails = []
+
             return dict(
                 uuid=user.uuid,
                 username=username,
-                emails=[{'address': email_address, 'confirmed': email_confirmed, 'main': True}],
+                emails=emails
             )
 
     def delete(self, user_uuid):
