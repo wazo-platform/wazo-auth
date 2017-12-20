@@ -20,6 +20,7 @@ _DEFAULT_CONFIG = {
     'pid_filename': '/var/run/wazo-auth/wazo-auth.pid',
     'default_token_lifetime': TWO_HOURS,
     'token_cleanup_interval': 60.0,
+    'init_key_filename': None,
     'enabled_http_plugins': {
         'api': True,
         'backends': True,
@@ -27,6 +28,7 @@ _DEFAULT_CONFIG = {
         'email_confirm': True,
         'group_policy': True,
         'groups': True,
+        'init': False,
         'policies': True,
         'tenant_user': True,
         'tenants': True,
