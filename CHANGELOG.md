@@ -7,6 +7,9 @@ Changelog
 * A new resource has been added to list a user external authencation methods
 
   * GET `0.1/users/<user_uuid>/external`
+  
+* The `email_address` field is no longer required when creating a user
+
 
 17.17
 -----
