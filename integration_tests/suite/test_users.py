@@ -83,6 +83,9 @@ class TestUsers(MockBackendTestCase):
             assert_that(user, has_entries(uuid=args['uuid'], username=args['username']))
             assert_http_error(409, self.client.users.new, **args)
 
+        with self.auto_remove_user(self.client.users.new, username='bob') as user:
+            assert_that(user, has_entries(username='bob', emails=empty()))
+
     def test_register_post(self):
         args = dict(
             username='foobar',
@@ -128,13 +131,16 @@ class TestUsers(MockBackendTestCase):
         assert_no_error(user_client.token.new, 'wazo_user', expiration=5)
 
     @fixtures.http_user_register(username='foo', email_address='foo@example.com')
-    @fixtures.http_user_register(username='bar', email_address='bar@example.com')
+    @fixtures.http_user(username='bar')
     @fixtures.http_user_register(username='baz', email_address='baz@example.com')
     def test_list(self, *users):
         def check_list_result(result, filtered, item_matcher, *usernames):
             items = item_matcher(*[has_entries('username', username) for username in usernames])
             expected = has_entries('total', 3, 'filtered', filtered, 'items', items)
             assert_that(result, expected)
+
+        result = self.client.users.list(username='bar')
+        assert_that(result, has_entries(items=contains(has_entries(username='bar', emails=empty()))))
 
         result = self.client.users.list(search='ba')
         check_list_result(result, 2, contains_inanyorder, 'bar', 'baz')

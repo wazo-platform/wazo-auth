@@ -169,7 +169,6 @@ definitions:
         description: The main email address of the new username
     required:
       - username
-      - email_address
   UserEmail:
     type: object
     properties:
