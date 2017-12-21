@@ -238,11 +238,12 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                         emails=[],
                     )
 
-                email = dict(
-                    address=address,
-                    main=main_email,
-                    confirmed=confirmed,
-                )
-                users[user_uuid]['emails'].append(email)
+                if address:
+                    email = dict(
+                        address=address,
+                        main=main_email,
+                        confirmed=confirmed,
+                    )
+                    users[user_uuid]['emails'].append(email)
 
         return users.values()

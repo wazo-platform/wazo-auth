@@ -139,6 +139,9 @@ class TestUsers(MockBackendTestCase):
             expected = has_entries('total', 3, 'filtered', filtered, 'items', items)
             assert_that(result, expected)
 
+        result = self.client.users.list(username='bar')
+        assert_that(result, has_entries(items=contains(has_entries(username='bar', emails=empty()))))
+
         result = self.client.users.list(search='ba')
         check_list_result(result, 2, contains_inanyorder, 'bar', 'baz')
 
