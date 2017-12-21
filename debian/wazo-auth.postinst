@@ -89,6 +89,11 @@ case "$1" in
             chown -R "${USER}:${GROUP}" "${HOME}"
         fi
 
+        # On new installs or upgrade from before 18.01 we enable the /init resource
+        if [ -z "${previous_version}" ] || dpkg --compare-versions "${previous_version}" lt '18.01~' ; then
+            wazo-auth-bootstrap
+        fi
+
         # Database initialization and migrations
         if pg_is_running ; then
             wazo-auth-init-db --user postgres
