@@ -53,6 +53,28 @@ def http_tenant(**tenant_args):
     return decorator
 
 
+def http_user(**user_args):
+    if 'username' not in user_args:
+        user_args['username'] = _random_string(20)
+    if 'password' not in user_args:
+        user_args['password'] = _random_string(20)
+
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            user = self.client.users.new(**user_args)
+            try:
+                result = decorated(self, user, *args, **kwargs)
+            finally:
+                try:
+                    self.client.users.delete(user['uuid'])
+                except requests.HTTPError:
+                    pass
+            return result
+        return wrapper
+    return decorator
+
+
 def http_user_register(**user_args):
     if 'username' not in user_args:
         user_args['username'] = _random_string(20)

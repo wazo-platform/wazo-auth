@@ -131,7 +131,7 @@ class TestUsers(MockBackendTestCase):
         assert_no_error(user_client.token.new, 'wazo_user', expiration=5)
 
     @fixtures.http_user_register(username='foo', email_address='foo@example.com')
-    @fixtures.http_user_register(username='bar', email_address='bar@example.com')
+    @fixtures.http_user(username='bar')
     @fixtures.http_user_register(username='baz', email_address='baz@example.com')
     def test_list(self, *users):
         def check_list_result(result, filtered, item_matcher, *usernames):

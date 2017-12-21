@@ -84,9 +84,9 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             filter_ = text('true')
 
         with self.new_session() as s:
-            return s.query(User).join(
+            return s.query(User).outerjoin(
                 UserEmail, UserEmail.user_uuid == User.uuid,
-            ).join(
+            ).outerjoin(
                 Email, Email.uuid == UserEmail.email_uuid
             ).filter(filter_).count()
 
@@ -222,9 +222,9 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 Email.uuid,
                 Email.address,
                 Email.confirmed,
-            ).join(
+            ).outerjoin(
                 UserEmail, User.uuid == UserEmail.user_uuid,
-            ).join(
+            ).outerjoin(
                 Email, Email.uuid == UserEmail.email_uuid,
             ).outerjoin(TenantUser).outerjoin(UserGroup).filter(filter_)
             query = self._paginator.update_query(query, **kwargs)
