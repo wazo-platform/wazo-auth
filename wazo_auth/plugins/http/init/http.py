@@ -5,11 +5,32 @@
 import logging
 import os
 
+from contextlib import contextmanager
 from flask import request
 from wazo_auth import exceptions, http
 from .schemas import InitPostSchema
 
 logger = logging.getLogger(__name__)
+
+
+@contextmanager
+def delete_after_usage(filename):
+    try:
+        with open(filename, 'r') as f:
+            for line in f:
+                key = line.strip()
+                break
+    except IOError:
+        raise exceptions.AuthenticationFailedException()
+
+    # Do not wrap this call in a try finally
+    # We do not want to erase the key if the operaion fail
+    yield key
+
+    try:
+        os.remove(filename)
+    except OSError:
+        logger.info('failed to remove the key file')
 
 
 class Init(http.ErrorCatchingResource):
@@ -25,24 +46,12 @@ class Init(http.ErrorCatchingResource):
         if errors:
             raise exceptions.InitParamException.from_errors(errors)
 
-        try:
-            with open(self._init_key_filename, 'r') as f:
-                for line in f:
-                    key = line.strip()
-                    break
-        except IOError:
-            raise exceptions.AuthenticationFailedException()
+        with delete_after_usage(self._init_key_filename) as key:
+            if args.pop('key') != key:
+                raise exceptions.AuthenticationFailedException()
 
-        if args.pop('key') != key:
-            raise exceptions.AuthenticationFailedException()
-
-        result = self._user_service.new_user(**args)
-        policy_uuid = self._policy_service.list(name=self._policy_name)[0]['uuid']
-        self._user_service.add_policy(result['uuid'], policy_uuid)
-
-        try:
-            os.remove(self._init_key_filename)
-        except OSError:
-            logger.info('failed to remove the key file')
+            result = self._user_service.new_user(**args)
+            policy_uuid = self._policy_service.list(name=self._policy_name)[0]['uuid']
+            self._user_service.add_policy(result['uuid'], policy_uuid)
 
         return result, 200
