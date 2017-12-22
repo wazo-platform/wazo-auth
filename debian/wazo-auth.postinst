@@ -91,7 +91,7 @@ case "$1" in
 
         # On new installs or upgrade from before 18.01 we enable the /init resource
         if [ -z "${previous_version}" ] || dpkg --compare-versions "${previous_version}" lt '18.01~' ; then
-            wazo-auth-bootstrap
+            wazo-auth-bootstrap setup
         fi
 
         # Database initialization and migrations
