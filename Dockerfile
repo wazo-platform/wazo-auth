@@ -1,4 +1,4 @@
-FROM python:2.7.9
+FROM python:2.7.13
 MAINTAINER Wazo Maintainers <dev@wazo.community>
 
 ADD . /usr/src/wazo-auth
