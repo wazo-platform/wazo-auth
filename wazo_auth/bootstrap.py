@@ -2,12 +2,16 @@
 # Copyright 2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+from __future__ import print_function
+
 import argparse
 import json
 import os
 import random
 import requests
 import string
+import time
+import sys
 from xivo.config_helper import read_config_file_hierarchy
 
 from pwd import getpwnam
@@ -39,6 +43,11 @@ USERNAME = 'wazo-auth-cli'
 URL = 'https://localhost:{}/0.1/init'
 HEADERS = {'Accept': 'application/json', 'Content-Type': 'application/json'}
 
+ERROR_MSG = '''\
+Failed to bootstrap wazo-auth. Use the following command to bootstrap manually
+wazo-auth && sleep 5 && wazo-auth-bootstrap complete && killall wazo-auth
+'''
+
 
 def main():
     parser = argparse.ArgumentParser(description='Initialize wazo-auth')
@@ -48,7 +57,11 @@ def main():
     if args.action == 'setup':
         setup()
     elif args.action == 'complete':
-        complete()
+        try:
+            complete()
+        except Exception:
+            print(ERROR_MSG, file=sys.stderr)
+            sys.exit(1)
     else:
         parser.print_help()
 
@@ -72,7 +85,15 @@ def complete():
     wazo_auth_config = read_config_file_hierarchy({'config_file': DEFAULT_WAZO_AUTH_CONFIG_FILE})
     port = wazo_auth_config['rest_api']['https']['port']
     url = URL.format(port)
-    response = requests.post(url, data=json.dumps(body), headers=HEADERS, verify=False)
+    for _ in xrange(40):
+        try:
+            response = requests.post(url, data=json.dumps(body), headers=HEADERS, verify=False)
+            break
+        except requests.exceptions.ConnectionError:
+            time.sleep(0.25)
+    else:
+        raise Exception('failed to connect to wazo-auth')
+
     response.raise_for_status()
 
     try:
