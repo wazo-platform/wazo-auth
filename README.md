@@ -22,6 +22,37 @@ Retrieving token data
 curl -k -i -X GET -H 'Content-Type: application/json' "https://localhost:9497/0.1/token/${TOKEN}"
 ```
 
+## Boostraping wazo-auth
+
+In order to be able to create users, groups and policies you have to be authenticated. The bootstrap
+process allows the administrator to create a first user with the necessary rights to be able to add
+other users.
+
+
+### Preparing wazo-auth to be bootstrapped
+
+To be able to bootstrap wazo-auth, you will have to enable the init plugin and create a key file in
+wazo-auth's HOME directory. This can be done using the `wazo-auth-bootstrap` command.
+
+```sh
+wazo-auth-bootstrap setup && systemctl restart wazo-auth
+```
+
+
+### Bootstrapping wazo-auth
+
+Once wazo-auth is ready to be bootstraped, calling the init resource with a username, password and
+the content of the key file will create a new user. The username and password can then be used to create
+a token with the `auth.#` acl. This can be done using the `wazo-auth-bootstrap` command.
+
+```sh
+wazo-auth-bootstrap complete
+```
+
+This script will create a configuration file named `/root/.config/wazo-auth-cli/050-credentials.yml`
+containing all necessary information to be used from the `wazo-auth-cli`.
+
+
 # Docker
 
 The wazopbx/wazo-auth image can be built using the following command:
