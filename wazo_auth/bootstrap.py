@@ -73,8 +73,7 @@ def complete():
     port = wazo_auth_config['rest_api']['https']['port']
     url = URL.format(port)
     response = requests.post(url, data=json.dumps(body), headers=HEADERS, verify=False)
-    if response.status_code != 200:
-        return
+    response.raise_for_status()
 
     try:
         os.mkdir(CLI_CONFIG_DIR)
