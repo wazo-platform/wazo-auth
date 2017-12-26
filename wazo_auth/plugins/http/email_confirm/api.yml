@@ -1,0 +1,25 @@
+paths:
+  /emails/{email_uuid}/confirm:
+    put:
+      tags:
+        - emails
+      security:
+        - wazo_auth_token: []
+      description: '**Required ACL**: `auth.emails.{email_uuid}.confirm.edit`'
+      summary: 'Confirm an email address'
+      parameters:
+        - $ref: '#/parameters/email_uuid'
+      responses:
+        '204':
+          description: 'The email address has been confirmed'
+        '404':
+          description: 'Email not found'
+          schema:
+            $ref: '#/definitions/Error'
+parameters:
+  email_uuid:
+    name: email_uuid
+    in: path
+    type: string
+    description: The UUID of the email
+    required: true
