@@ -19,6 +19,26 @@ def _random_string(length):
     return ''.join(random.choice(string.ascii_lowercase) for _ in xrange(length))
 
 
+def email(**email_args):
+    if 'address' not in email_args:
+        email_args['address'] = '{}@{}'.format(_random_string(5), _random_string(5))
+
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            email_uuid = self._email_dao.create(**email_args)
+            try:
+                result = decorated(self, email_uuid, *args, **kwargs)
+            finally:
+                try:
+                    self._email_dao.delete(email_uuid)
+                except exceptions.UnknownEmailException:
+                    pass
+            return result
+        return wrapper
+    return decorator
+
+
 def external_auth(*auth_types):
     def decorator(decorated):
         @wraps(decorated)

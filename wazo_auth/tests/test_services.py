@@ -10,12 +10,13 @@ from unittest import TestCase
 
 from .. import exceptions, services
 from ..database import queries
-from ..database.queries import external_auth, group, policy, tenant, token, user
+from ..database.queries import email, external_auth, group, policy, tenant, token, user
 
 
 class BaseServiceTestCase(TestCase):
 
     def setUp(self):
+        self.email_dao = Mock(email.EmailDAO)
         self.external_auth_dao = Mock(external_auth.ExternalAuthDAO)
         self.group_dao = Mock(group.GroupDAO)
         self.policy_dao = Mock(policy.PolicyDAO)
@@ -32,6 +33,7 @@ class BaseServiceTestCase(TestCase):
             self.tenant_dao,
             self.group_dao,
             self.external_auth_dao,
+            self.email_dao,
         )
 
 
