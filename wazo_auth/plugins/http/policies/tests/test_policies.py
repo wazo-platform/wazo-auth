@@ -18,6 +18,7 @@ class TestPolicyResource(test_http.HTTPAppTestCase):
         self.headers = {'content-type': 'application/json'}
 
     def test_create_policy_valid(self):
+        self.policy_service.create.return_value = {}
         name = 'valid'
         desc = 'A Valid description'
         input_and_expected = [
