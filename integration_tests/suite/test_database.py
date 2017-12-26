@@ -25,6 +25,7 @@ from mock import ANY
 from sqlalchemy import and_, func
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.mock import ANY_UUID
+from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from xivo_test_helpers.hamcrest.raises import raises
 
 from wazo_auth import exceptions
@@ -961,7 +962,7 @@ class TestUserDAO(_BaseDAOTestCase):
         try:
             assert_that(result, contains(has_entries(
                 username=username,
-                emails=contains(has_entries(address=email_address, confirmed=True)))))
+                emails=contains(has_entries(uuid=uuid_(), address=email_address, confirmed=True)))))
         finally:
             self._user_dao.delete(user_uuid)
 
