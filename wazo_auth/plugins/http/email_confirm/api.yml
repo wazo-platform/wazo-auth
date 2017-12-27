@@ -27,7 +27,7 @@ paths:
         - $ref: '#/parameters/email_uuid'
         - $ref: '#/parameters/email_confirm_token'
       responses:
-        '204':
+        '200':
           description: 'The email address has been confirmed'
         '404':
           description: 'Email not found'
