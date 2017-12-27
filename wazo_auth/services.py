@@ -19,6 +19,12 @@ class _Service(object):
         self._dao = dao
 
 
+class EmailService(_Service):
+
+    def confirm(self, email_uuid):
+        self._dao.email.confirm(email_uuid)
+
+
 class ExternalAuthService(_Service):
 
     def __init__(self, dao, bus_publisher=None, enabled_external_auth=None):

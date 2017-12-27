@@ -25,6 +25,7 @@ from mock import ANY
 from sqlalchemy import and_, func
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.mock import ANY_UUID
+from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from xivo_test_helpers.hamcrest.raises import raises
 
 from wazo_auth import exceptions
@@ -60,12 +61,32 @@ class _BaseDAOTestCase(unittest.TestCase):
 
     def setUp(self):
         db_uri = DB_URI.format(port=DBStarter.service_port(5432, 'postgres'))
+        self._email_dao = queries.EmailDAO(db_uri)
         self._external_auth_dao = queries.ExternalAuthDAO(db_uri)
         self._group_dao = group.GroupDAO(db_uri)
         self._policy_dao = policy.PolicyDAO(db_uri)
         self._user_dao = user.UserDAO(db_uri)
         self._tenant_dao = tenant.TenantDAO(db_uri)
         self._token_dao = token.TokenDAO(db_uri)
+
+
+class TestEmailDAO(_BaseDAOTestCase):
+
+    @fixtures.email()
+    def test_confirm(self, email_uuid):
+        assert_that(self.is_email_confirmed(email_uuid), equal_to(False))
+        assert_that(
+            calling(self._email_dao.confirm).with_args(base.UNKNOWN_UUID),
+            raises(exceptions.UnknownEmailException))
+        self._email_dao.confirm(email_uuid)
+        assert_that(self.is_email_confirmed(email_uuid), equal_to(True))
+
+    def is_email_confirmed(self, email_uuid):
+        with self._email_dao.new_session() as s:
+            emails = s.query(models.Email).filter(models.Email.uuid == str(email_uuid))
+            for email in emails.all():
+                return email.confirmed
+        return False
 
 
 class TestExternalAuthDAO(_BaseDAOTestCase):
@@ -961,7 +982,7 @@ class TestUserDAO(_BaseDAOTestCase):
         try:
             assert_that(result, contains(has_entries(
                 username=username,
-                emails=contains(has_entries(address=email_address, confirmed=True)))))
+                emails=contains(has_entries(uuid=uuid_(), address=email_address, confirmed=True)))))
         finally:
             self._user_dao.delete(user_uuid)
 

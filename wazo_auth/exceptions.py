@@ -75,6 +75,14 @@ class UnknownTenantException(APIException):
         super(UnknownTenantException, self).__init__(404, msg, 'unknown_tenant', details, 'tenants')
 
 
+class UnknownEmailException(APIException):
+
+    def __init__(self, email_uuid):
+        msg = 'No such email: "{}"'.format(email_uuid)
+        details = dict(uuid=str(email_uuid))
+        super(UnknownEmailException, self).__init__(404, msg, 'unknown_email', details, 'emails')
+
+
 class UnknownUserException(APIException):
 
     def __init__(self, user_uuid):

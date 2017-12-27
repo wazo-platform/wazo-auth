@@ -173,7 +173,13 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 raise
 
             if email_address:
-                emails = [{'address': email_address, 'confirmed': email_confirmed, 'main': True}]
+                email = dict(
+                    uuid=email.uuid,
+                    address=email_address,
+                    confirmed=email_confirmed,
+                    main=True,
+                )
+                emails = [email]
             else:
                 emails = []
 
@@ -240,6 +246,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
                 if address:
                     email = dict(
+                        uuid=email_uuid,
                         address=address,
                         main=main_email,
                         confirmed=confirmed,

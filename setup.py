@@ -46,6 +46,7 @@ setup(
         'wazo_auth.http': [
             'api = wazo_auth.plugins.http.api.plugin:Plugin',
             'backends = wazo_auth.plugins.http.backends.plugin:Plugin',
+            'email_confirm = wazo_auth.plugins.http.email_confirm.plugin:Plugin',
             'external = wazo_auth.plugins.http.external.plugin:Plugin',
             'groups = wazo_auth.plugins.http.groups.plugin:Plugin',
             'group_policy = wazo_auth.plugins.http.group_policy.plugin:Plugin',

@@ -24,6 +24,7 @@ _DEFAULT_CONFIG = {
         'api': True,
         'backends': True,
         'external': True,
+        'email_confirm': True,
         'group_policy': True,
         'groups': True,
         'policies': True,

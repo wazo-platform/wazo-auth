@@ -54,6 +54,7 @@ class TestUsers(MockBackendTestCase):
                 'username', 'foobar',
                 'emails', contains_inanyorder(
                     has_entries(
+                        'uuid', uuid_(),
                         'address', 'foobar@example.com',
                         'main', True,
                         'confirmed', True))))
@@ -101,6 +102,7 @@ class TestUsers(MockBackendTestCase):
                     'username', 'foobar',
                     'emails', contains_inanyorder(
                         has_entries(
+                            'uuid', uuid_(),
                             'address', 'foobar@example.com',
                             'main', True,
                             'confirmed', False))))

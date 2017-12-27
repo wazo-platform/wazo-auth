@@ -42,7 +42,7 @@ class TestManager(unittest.TestCase):
     def setUp(self):
         self.config = {'default_token_lifetime': sentinel.default_expiration_delay}
         self.token_dao = Mock(TokenDAO)
-        dao = queries.DAO(Mock(), self.token_dao, Mock(), Mock(), Mock(), Mock())
+        dao = queries.DAO(Mock(), self.token_dao, Mock(), Mock(), Mock(), Mock(), Mock())
         self.manager = token.Manager(self.config, dao)
 
     def _new_backend_mock(self, auth_id=None, uuid=None):
