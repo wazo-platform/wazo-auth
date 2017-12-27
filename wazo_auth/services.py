@@ -6,6 +6,7 @@ import binascii
 import hashlib
 import logging
 import os
+import time
 
 from xivo_bus.resources.auth import events
 from . import exceptions
@@ -301,8 +302,31 @@ class UserService(_Service):
             kwargs['salt'], kwargs['hash_'] = self._encrypter.encrypt_password(password)
 
         logger.info('creating a new user with params: %s', kwargs)  # log after poping the password
-        # a confirmation email should be sent if the email is not confirmed
-        return self._dao.user.create(**kwargs)
+        result = self._dao.user.create(**kwargs)
+
+        if not kwargs.get('email_confirmed', False):
+            for email in result['emails']:
+                if email['confirmed']:
+                    continue
+                self._send_confirmation_email(email['uuid'], email['address'])
+
+        return result
+
+    def _send_confirmation_email(self, email_uuid, email_address):
+        logger.info('sending a confirmation email to %s for email %s', email_address, email_uuid)
+        t = time.time()
+        expiration = 3600 * 2 * 24  # 2 days
+        token_payload = dict(
+            auth_id='wazo-auth',
+            xivo_user_uuid=None,
+            xivo_uuid=None,
+            expire_t=t+expiration,
+            issued_t=t,
+            acls=['auth.emails.{}.confirm.edit'.format(email_uuid)],
+        )
+        token = self._dao.token.create(token_payload)
+        logger.debug('Generating body from %s %s %s', email_uuid, email_address, token)
+        logger.debug('https://%s:%s/0.1/emails/%s/confirm?token=%s', '10.37.0.254', 9497, email_uuid, token)
 
     def remove_policy(self, user_uuid, policy_uuid):
         nb_deleted = self._dao.user.remove_policy(user_uuid, policy_uuid)
