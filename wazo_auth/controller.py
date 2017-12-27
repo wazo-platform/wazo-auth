@@ -51,6 +51,7 @@ class Controller(object):
             sys.exit(1)
 
         self._bus_publisher = bus.BusPublisher(config)
+        email_formatter = services.EmailFormatter(config)
         dao = queries.DAO.from_config(self._config)
         self._token_manager = token.Manager(config, dao)
         email_service = services.EmailService(dao)
@@ -58,7 +59,7 @@ class Controller(object):
             dao, self._bus_publisher, config['enabled_external_auth_plugins'])
         group_service = services.GroupService(dao)
         policy_service = services.PolicyService(dao)
-        self._user_service = services.UserService(dao)
+        self._user_service = services.UserService(dao, email_formatter)
         self._tenant_service = services.TenantService(dao)
         self._backends = plugin_helpers.load(
             'wazo_auth.backends',

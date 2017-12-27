@@ -22,6 +22,7 @@ _DEFAULT_CONFIG = {
     'token_cleanup_interval': 60.0,
     'init_key_filename': None,
     'init_policy_name': 'wazo_default_master_user_policy',
+    'email_confirmation_template': '/var/lib/wazo-auth/templates/email_confirmation.jinja',
     'enabled_http_plugins': {
         'api': True,
         'backends': True,
