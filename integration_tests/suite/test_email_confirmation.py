@@ -30,7 +30,7 @@ class TestEmailConfirmation(MockBackendTestCase):
         url = 'https://{}:{}/0.1/emails/{}/confirm'.format(self.get_host(), self._auth_port, email_uuid)
         token = self.client.token.new(backend='mock', expiration=3600)['token']
         response = requests.get(url, params={'token': token}, verify=False)
-        assert_that(response.status_code, equal_to(204))
+        assert_that(response.status_code, equal_to(200))
 
         updated_user = self.client.users.get(user['uuid'])
         assert_that(
