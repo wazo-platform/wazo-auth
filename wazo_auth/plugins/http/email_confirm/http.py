@@ -11,6 +11,11 @@ class EmailConfirm(http.AuthResource):
         self.email_service = email_service
 
     @http.required_acl('auth.emails.{email_uuid}.confirm.edit')
+    def get(self, email_uuid):
+        self.email_service.confirm(email_uuid)
+        return '', 204
+
+    @http.required_acl('auth.emails.{email_uuid}.confirm.edit')
     def put(self, email_uuid):
         self.email_service.confirm(email_uuid)
         return '', 204

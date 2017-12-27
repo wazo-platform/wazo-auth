@@ -10,7 +10,7 @@ from flask import current_app, Flask
 from flask_cors import CORS
 from flask_restful import Api, Resource
 from xivo.rest_api_helpers import handle_api_exception
-from xivo.auth_verifier import AuthVerifier, required_acl
+from xivo.auth_verifier import AuthVerifier, extract_token_id_from_query_or_header, required_acl
 from xivo import http_helpers, plugin_helpers
 
 from . import exceptions
@@ -41,7 +41,7 @@ class AuthClientFacade(object):
         self.token = self.TokenCommand()
 
 
-auth_verifier = AuthVerifier()
+auth_verifier = AuthVerifier(extract_token_id=extract_token_id_from_query_or_header)
 auth_verifier.set_client(AuthClientFacade())
 
 
