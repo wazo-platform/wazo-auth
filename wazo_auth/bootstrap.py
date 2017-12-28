@@ -28,7 +28,8 @@ enabled_http_plugins:
   init: true
 '''
 
-CLI_CONFIG_DIR = '/root/.config/wazo-auth-cli'
+USER_CONFIG_DIR = '/root/.config'
+CLI_CONFIG_DIR = os.path.join(USER_CONFIG_DIR, 'wazo-auth-cli')
 CLI_CONFIG_FILENAME = os.path.join(CLI_CONFIG_DIR, '050-credentials.yml')
 CLI_CONFIG = '''\
 auth:
@@ -96,10 +97,11 @@ def complete():
 
     response.raise_for_status()
 
-    try:
-        os.mkdir(CLI_CONFIG_DIR)
-    except OSError:
-        pass  # Directory already exists
+    for d in [USER_CONFIG_DIR, CLI_CONFIG_DIR]:
+        try:
+            os.mkdir(d)
+        except OSError:
+            pass  # Directory already exists
 
     cli_config = CLI_CONFIG.format(**body)
     write_private_file(CLI_CONFIG_FILENAME, USER, cli_config)
