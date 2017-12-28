@@ -1,0 +1,40 @@
+paths:
+  /init:
+    post:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Initialize wazo-auth
+      description: "Create a master user that will have the auth.# acl"
+      tags:
+        - init
+      parameters:
+        - name: body
+          in: body
+          description: The initialization parameters
+          required: true
+          schema:
+            $ref: '#/definitions/InitPost'
+      responses:
+        '200':
+          description: Successfully created the initial user
+          schema:
+            $ref: '#/definitions/UserPostResponse'
+definitions:
+  InitPost:
+    type: object
+    properties:
+      key:
+        type: string
+        description: "The authorization key for the initialization"
+      username:
+        type: string
+        description: The username that will identify that new username
+      password:
+        type: string
+        description: The password of the newly created username
+    required:
+      - key
+      - username
+      - password

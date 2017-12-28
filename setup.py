@@ -9,7 +9,7 @@ from setuptools import setup
 
 setup(
     name='wazo_auth',
-    version='0.1',
+    version='1.0',
 
     description='Wazo auth',
 
@@ -30,7 +30,8 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'wazo-auth=wazo_auth.main:main',
+            'wazo-auth = wazo_auth.main:main',
+            'wazo-auth-bootstrap = wazo_auth.bootstrap:main',
         ],
         'wazo_auth.backends': [
             'wazo_user = wazo_auth.plugins.backends:WazoUser',
@@ -50,6 +51,7 @@ setup(
             'external = wazo_auth.plugins.http.external.plugin:Plugin',
             'groups = wazo_auth.plugins.http.groups.plugin:Plugin',
             'group_policy = wazo_auth.plugins.http.group_policy.plugin:Plugin',
+            'init = wazo_auth.plugins.http.init.plugin:Plugin',
             'policies = wazo_auth.plugins.http.policies.plugin:Plugin',
             'tenants = wazo_auth.plugins.http.tenants.plugin:Plugin',
             'tenant_user = wazo_auth.plugins.http.tenant_user.plugin:Plugin',

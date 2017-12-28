@@ -7,4 +7,6 @@ RUN true \
     && cd /usr/src/service_plugin \
     && python setup.py install \
     && cd /usr/src/wazo-auth \
-    && python setup.py develop
+    && python setup.py develop \
+    && wazo-auth-bootstrap setup \
+    && true

@@ -26,6 +26,7 @@ class TestPolicies(MockBackendTestCase):
 
     wazo_default_admin_policy = has_entries('name', 'wazo_default_admin_policy')
     wazo_default_user_policy = has_entries('name', 'wazo_default_user_policy')
+    wazo_default_master_user_policy = has_entries('name', 'wazo_default_master_user_policy')
 
     @fixtures.http_policy(name='foobaz')
     @fixtures.http_policy(name='foobar', description='a test policy',
@@ -56,9 +57,14 @@ class TestPolicies(MockBackendTestCase):
 
         response = self.client.policies.list()
         assert_that(response, has_entries({
-            'total': equal_to(5),
+            'total': equal_to(6),
             'items': contains_inanyorder(
-                one, two, three, self.wazo_default_user_policy, self.wazo_default_admin_policy)}))
+                one,
+                two,
+                three,
+                self.wazo_default_user_policy,
+                self.wazo_default_master_user_policy,
+                self.wazo_default_admin_policy)}))
 
         response = self.client.policies.list(search='one')
         assert_that(response, has_entries({
@@ -67,17 +73,23 @@ class TestPolicies(MockBackendTestCase):
 
         response = self.client.policies.list(order='name', direction='asc')
         assert_that(response, has_entries({
-            'total': equal_to(5),
-            'items': contains(one, three, two, self.wazo_default_admin_policy, self.wazo_default_user_policy)}))
+            'total': equal_to(6),
+            'items': contains(
+                one,
+                three,
+                two,
+                self.wazo_default_admin_policy,
+                self.wazo_default_master_user_policy,
+                self.wazo_default_user_policy)}))
 
         response = self.client.policies.list(order='name', direction='asc', limit=1)
         assert_that(response, has_entries({
-            'total': equal_to(5),
+            'total': equal_to(6),
             'items': contains(one)}))
 
         response = self.client.policies.list(order='name', direction='asc', limit=1, offset=1)
         assert_that(response, has_entries({
-            'total': equal_to(5),
+            'total': equal_to(6),
             'items': contains(three)}))
 
     @fixtures.http_policy(name='foobar', description='a test policy',

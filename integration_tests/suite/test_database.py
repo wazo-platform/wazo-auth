@@ -490,8 +490,10 @@ class TestPolicyDAO(_BaseDAOTestCase):
 
     def setUp(self):
         super(TestPolicyDAO, self).setUp()
+        default_master_user_policy = self._policy_dao.get(name='wazo_default_master_user_policy')[0]
         default_user_policy = self._policy_dao.get(name='wazo_default_user_policy')[0]
         default_admin_policy = self._policy_dao.get(name='wazo_default_admin_policy')[0]
+        self._default_master_user_policy_uuid = default_master_user_policy['uuid']
         self._default_user_policy_uuid = default_user_policy['uuid']
         self._default_admin_policy_uuid = default_admin_policy['uuid']
 
@@ -554,22 +556,46 @@ class TestPolicyDAO(_BaseDAOTestCase):
             result = self.list_policy(order='name', direction='asc')
             assert_that(
                 result,
-                contains(a, b, c, self._default_admin_policy_uuid, self._default_user_policy_uuid))
+                contains(
+                    a,
+                    b,
+                    c,
+                    self._default_admin_policy_uuid,
+                    self._default_master_user_policy_uuid,
+                    self._default_user_policy_uuid))
 
             result = self.list_policy(order='name', direction='desc')
             assert_that(
                 result,
-                contains(self._default_user_policy_uuid, self._default_admin_policy_uuid, c, b, a))
+                contains(
+                    self._default_user_policy_uuid,
+                    self._default_master_user_policy_uuid,
+                    self._default_admin_policy_uuid,
+                    c,
+                    b,
+                    a))
 
             result = self.list_policy(order='description', direction='asc')
             assert_that(
                 result,
-                contains(self._default_admin_policy_uuid, self._default_user_policy_uuid, c, b, a))
+                contains(
+                    self._default_admin_policy_uuid,
+                    self._default_master_user_policy_uuid,
+                    self._default_user_policy_uuid,
+                    c,
+                    b,
+                    a))
 
             result = self.list_policy(order='description', direction='desc')
             assert_that(
                 result,
-                contains(a, b, c, self._default_user_policy_uuid, self._default_admin_policy_uuid))
+                contains(
+                    a,
+                    b,
+                    c,
+                    self._default_user_policy_uuid,
+                    self._default_master_user_policy_uuid,
+                    self._default_admin_policy_uuid))
 
             assert_that(
                 calling(self.list_policy).with_args(order='foobar', direction='asc'),
@@ -585,7 +611,12 @@ class TestPolicyDAO(_BaseDAOTestCase):
             result = self.list_policy(order='name', direction='asc', offset=1)
             assert_that(
                 result,
-                contains(b, c, self._default_admin_policy_uuid, self._default_user_policy_uuid))
+                contains(
+                    b,
+                    c,
+                    self._default_admin_policy_uuid,
+                    self._default_master_user_policy_uuid,
+                    self._default_user_policy_uuid))
 
             invalid_offsets = [-1, 'two', True, False]
             for offset in invalid_offsets:
