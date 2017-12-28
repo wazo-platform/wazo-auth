@@ -74,8 +74,8 @@ Configuration
 
 The default config is /etc/wazo-auth/config.yml, you could override in /etc/wazo-auth/conf.d/
 
-Enabling the users API
----------------------------
+Enabling the users resgistration API
+------------------------------------
 
 To enable the users registration (/users/register) API endpoint, add a file containing the following lines to the /etc/wazo-auth/conf.d directory and
 restart wazo-auth
