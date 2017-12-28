@@ -29,8 +29,55 @@ class _Service(object):
 
 class EmailService(_Service):
 
+    # from and subject should be configurable
+    _from = ('wazo-auth', 'noreply@wazo.community')
+    _subject = 'Email confirmation'
+
+    def __init__(self, dao, config):
+        super(EmailService, self).__init__(dao)
+        self._email_formatter = EmailFormatter(config)
+
     def confirm(self, email_uuid):
         self._dao.email.confirm(email_uuid)
+
+    def send_confirmation_email(self, username, email_uuid, email_address):
+        template_context = dict(
+            token=self._new_email_confirmation_token(email_uuid),
+            username=username,
+            email_uuid=email_uuid,
+            email_address=email_address,
+        )
+
+        body = self._email_formatter.format_confirmation_email(template_context)
+        to = (username, email_address)
+        self._send_msg(to, self._from, self._subject, body)
+
+    def _send_msg(self, to, from_, subject, body):
+        msg = MIMEText(body)
+        msg['To'] = email_utils.formataddr(to)
+        msg['From'] = email_utils.formataddr(from_)
+        msg['Subject'] = subject
+
+        # host and port should be configurable
+        server = smtplib.SMTP('localhost', 25)
+        try:
+            logger.debug('from: %s to: %s', from_[1], to[1])
+            server.sendmail(from_[1], [to[1]], msg.as_string())
+        finally:
+            server.close()
+
+    def _new_email_confirmation_token(self, email_uuid):
+        t = time.time()
+        expiration = 3600 * 2 * 24  # 2 days  # TODO make it configurable
+        token_payload = dict(
+            auth_id='wazo-auth',
+            xivo_user_uuid=None,
+            xivo_uuid=None,
+            expire_t=t+expiration,
+            issued_t=t,
+            acls=['auth.emails.{}.confirm.edit'.format(email_uuid)],
+        )
+        return self._dao.token.create(token_payload)
 
 
 class ExternalAuthService(_Service):
@@ -246,10 +293,9 @@ class TenantService(_Service):
 
 class UserService(_Service):
 
-    def __init__(self, dao, email_formatter, encrypter=None):
+    def __init__(self, dao, encrypter=None):
         super(UserService, self).__init__(dao)
         self._encrypter = encrypter or PasswordEncrypter()
-        self._email_formatter = email_formatter
 
     def add_policy(self, user_uuid, policy_uuid):
         self._dao.user.add_policy(user_uuid, policy_uuid)
@@ -310,56 +356,7 @@ class UserService(_Service):
             kwargs['salt'], kwargs['hash_'] = self._encrypter.encrypt_password(password)
 
         logger.info('creating a new user with params: %s', kwargs)  # log after poping the password
-        result = self._dao.user.create(**kwargs)
-
-        if not kwargs.get('email_confirmed', False):
-            try:
-                for email in result['emails']:
-                    if email['confirmed']:
-                        continue
-                    self._send_confirmation_email(kwargs['username'], email['uuid'], email['address'])
-            except Exception:
-                logger.info('Failed to send the confirmation email')
-                self._dao.user.delete(result['uuid'])
-                raise
-
-        return result
-
-    def _send_confirmation_email(self, username, email_uuid, email_address):
-        logger.info('sending a confirmation email to %s for email %s', email_address, email_uuid)
-        t = time.time()
-        expiration = 3600 * 2 * 24  # 2 days
-        token_payload = dict(
-            auth_id='wazo-auth',
-            xivo_user_uuid=None,
-            xivo_uuid=None,
-            expire_t=t+expiration,
-            issued_t=t,
-            acls=['auth.emails.{}.confirm.edit'.format(email_uuid)],
-        )
-        token = self._dao.token.create(token_payload)
-        context = dict(
-            username=username,
-            email_uuid=email_uuid,
-            email_address=email_address,
-            token=token,
-        )
-        email_text = self._email_formatter.format_confirmation_email(context)
-
-        msg = MIMEText(email_text)
-        msg['To'] = email_utils.formataddr((username, email_address))
-        msg['From'] = email_utils.formataddr(('wazo-auth', 'noreply@wazo.community'))
-        msg['Subject'] = 'Email confirmation'
-
-        server = smtplib.SMTP('localhost', 25)
-        try:
-            server.sendmail(
-                'noreply@wazo.community',
-                [email_address],
-                msg.as_string(),
-            )
-        finally:
-            server.quit()
+        return self._dao.user.create(**kwargs)
 
     def remove_policy(self, user_uuid, policy_uuid):
         nb_deleted = self._dao.user.remove_policy(user_uuid, policy_uuid)
