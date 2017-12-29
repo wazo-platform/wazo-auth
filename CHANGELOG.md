@@ -4,6 +4,7 @@ Changelog
 18.01
 -----
 
+* Add the `firstname` and `lastname` fields to a user
 * A new resource has been added to list a user external authencation methods
 
   * GET `0.1/users/<user_uuid>/external`
