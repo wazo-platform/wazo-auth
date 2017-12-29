@@ -90,8 +90,11 @@ case "$1" in
         fi
 
         # On new installs or upgrade from before 18.01 we enable the /init resource
-        if [ -z "${previous_version}" ] || dpkg --compare-versions "${previous_version}" lt '18.01~' ; then
-            wazo-auth-bootstrap setup
+        if [ -z "${previous_version}" ] || dpkg --compare-versions "${previous_version}" lt '18.01' ; then
+            # If root's configuration file is already there do not bootstrap again
+            if [ ! -f "/root/.config/wazo-auth-cli/050-credentials.yml" ]; then
+                wazo-auth-bootstrap setup
+            fi
         fi
 
         # Database initialization and migrations
