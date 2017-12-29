@@ -12,6 +12,8 @@ RUN apt-get update \
     && touch /var/log/wazo-auth.log \
     && mkdir -p /etc/wazo-auth/conf.d \
     && cp /usr/src/wazo-auth/etc/wazo-auth/*.yml /etc/wazo-auth/ \
+    && mkdir -p /var/lib/wazo-auth/templates \
+    && cp /usr/src/wazo-auth/templates/*.jinja /var/lib/wazo-auth/templates/ \
     && adduser --quiet --system --group --home /var/lib/wazo-auth wazo-auth \
     && install -d -o wazo-auth -g wazo-auth /var/run/wazo-auth/ \
     && true
