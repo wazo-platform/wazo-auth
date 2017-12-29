@@ -232,6 +232,10 @@ def user(**user_args):
         user_args['hash_'] = _random_string(64)
     if 'salt' not in user_args:
         user_args['salt'] = A_SALT
+    if 'firstname' not in user_args:
+        user_args['firstname'] = _random_string(20)
+    if 'lastname' not in user_args:
+        user_args['lastname'] = _random_string(20)
 
     def decorator(decorated):
         @wraps(decorated)
