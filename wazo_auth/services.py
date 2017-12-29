@@ -9,6 +9,7 @@ import os
 import time
 
 import smtplib
+from collections import namedtuple
 from email import utils as email_utils
 from email.mime.text import MIMEText
 
@@ -19,6 +20,9 @@ from xivo.consul_helpers import address_from_config
 from . import exceptions
 
 logger = logging.getLogger(__name__)
+
+
+EmailDestination = namedtuple('EmailDestination', ['name', 'address'])
 
 
 class _Service(object):
@@ -35,7 +39,10 @@ class EmailService(_Service):
         self._smtp_host = config['smtp']['hostname']
         self._smtp_port = config['smtp']['port']
         self._token_expiration = config['email_confirmation_expiration']
-        self._from = config['email_confirmation_from_name'], config['email_confirmation_from_address']
+        self._from = EmailDestination(
+            config['email_confirmation_from_name'],
+            config['email_confirmation_from_address'],
+        )
 
     def confirm(self, email_uuid):
         self._dao.email.confirm(email_uuid)
@@ -50,7 +57,7 @@ class EmailService(_Service):
 
         body = self._email_formatter.format_confirmation_email(template_context)
         subject = self._email_formatter.format_confirmation_subject(template_context)
-        to = (username, email_address)
+        to = EmailDestination(username, email_address)
         self._send_msg(to, self._from, subject, body)
 
     def _send_msg(self, to, from_, subject, body):
@@ -61,7 +68,7 @@ class EmailService(_Service):
 
         server = smtplib.SMTP(self._smtp_host, self._smtp_port)
         try:
-            server.sendmail(from_[1], [to[1]], msg.as_string())
+            server.sendmail(from_.address, [to.address], msg.as_string())
         finally:
             server.close()
 
