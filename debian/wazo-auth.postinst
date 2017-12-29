@@ -84,7 +84,7 @@ case "$1" in
         fi
 
         # The HOME directory was not created before Wazo 18.01
-        if dpkg --compare-versions "$2" lt '18.01~'; then
+        if dpkg --compare-versions "$2" lt '18.01'; then
             mkdir -p "${HOME}"
             chown -R "${USER}:${GROUP}" "${HOME}"
         fi
