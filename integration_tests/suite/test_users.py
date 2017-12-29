@@ -39,6 +39,7 @@ class TestUsers(MockBackendTestCase):
     def test_post(self):
         args = dict(
             username='foobar',
+            firstname='Alice',
             email_address='foobar@example.com',
             password='s3cr37',
         )
@@ -52,6 +53,8 @@ class TestUsers(MockBackendTestCase):
             assert_that(user, has_entries(
                 'uuid', uuid_(),
                 'username', 'foobar',
+                'firstname', 'Alice',
+                'lastname', None,
                 'emails', contains_inanyorder(
                     has_entries(
                         'uuid', uuid_(),
@@ -90,6 +93,7 @@ class TestUsers(MockBackendTestCase):
     def test_register_post(self):
         args = dict(
             username='foobar',
+            lastname='Denver',
             email_address='foobar@example.com',
             password='s3cr37',
         )
@@ -100,6 +104,8 @@ class TestUsers(MockBackendTestCase):
                 has_entries(
                     'uuid', uuid_(),
                     'username', 'foobar',
+                    'firstname', None,
+                    'lastname', 'Denver',
                     'emails', contains_inanyorder(
                         has_entries(
                             'uuid', uuid_(),

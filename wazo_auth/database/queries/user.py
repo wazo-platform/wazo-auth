@@ -137,6 +137,8 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def create(self, username, **kwargs):
         user_args = dict(
             username=username,
+            firstname=kwargs['firstname'],
+            lastname=kwargs['lastname'],
             password_hash=kwargs.get('hash_'),
             password_salt=kwargs.get('salt'),
         )
@@ -186,6 +188,8 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             return dict(
                 uuid=user.uuid,
                 username=username,
+                firstname=user.firstname,
+                lastname=user.lastname,
                 emails=emails
             )
 
