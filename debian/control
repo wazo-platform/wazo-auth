@@ -27,7 +27,7 @@ Depends: ${python:Depends},
          python-unidecode,
          wazo-uuid,
          xivo-bus (>> 17.16),
-         xivo-confd-client,
+         xivo-confd-client (>> 15.16),
          xivo-dbms (>= 17.15~20171114.180840.c64079f),
          xivo-lib-python,
          xivo-libdao (>= 17.02~20170124.144633.cb56771)
