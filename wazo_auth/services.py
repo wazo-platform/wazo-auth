@@ -31,7 +31,6 @@ class EmailService(_Service):
 
     # from and subject should be configurable
     _from = ('wazo-auth', 'noreply@wazo.community')
-    _subject = 'Email confirmation'
 
     def __init__(self, dao, config):
         super(EmailService, self).__init__(dao)
@@ -51,8 +50,9 @@ class EmailService(_Service):
         )
 
         body = self._email_formatter.format_confirmation_email(template_context)
+        subject = self._email_formatter.format_confirmation_subject(template_context)
         to = (username, email_address)
-        self._send_msg(to, self._from, self._subject, body)
+        self._send_msg(to, self._from, subject, body)
 
     def _send_msg(self, to, from_, subject, body):
         msg = MIMEText(body)
@@ -387,6 +387,7 @@ class TemplateLoader(BaseLoader):
 
     _templates = dict(
         email_confirmation='email_confirmation_template',
+        email_confirmation_subject='email_confirmation_subject_template',
     )
 
     def __init__(self, config):
@@ -420,6 +421,10 @@ class EmailFormatter(object):
 
     def format_confirmation_email(self, context):
         template = self.environment.get_template('email_confirmation')
+        return template.render(**context)
+
+    def format_confirmation_subject(self, context):
+        template = self.environment.get_template('email_confirmation_subject')
         return template.render(**context)
 
 
