@@ -29,15 +29,13 @@ class _Service(object):
 
 class EmailService(_Service):
 
-    # from and subject should be configurable
-    _from = ('wazo-auth', 'noreply@wazo.community')
-
     def __init__(self, dao, config):
         super(EmailService, self).__init__(dao)
         self._email_formatter = EmailFormatter(config)
         self._smtp_host = config['smtp']['hostname']
         self._smtp_port = config['smtp']['port']
         self._token_expiration = config['email_confirmation_expiration']
+        self._from = config['email_confirmation_from_name'], config['email_confirmation_from_address']
 
     def confirm(self, email_uuid):
         self._dao.email.confirm(email_uuid)
@@ -63,7 +61,6 @@ class EmailService(_Service):
 
         server = smtplib.SMTP(self._smtp_host, self._smtp_port)
         try:
-            logger.debug('from: %s to: %s', from_[1], to[1])
             server.sendmail(from_[1], [to[1]], msg.as_string())
         finally:
             server.close()

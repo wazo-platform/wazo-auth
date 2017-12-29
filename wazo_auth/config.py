@@ -25,6 +25,8 @@ _DEFAULT_CONFIG = {
     'email_confirmation_expiration': 172800,
     'email_confirmation_template': '/var/lib/wazo-auth/templates/email_confirmation.jinja',
     'email_confirmation_subject_template': '/var/lib/wazo-auth/templates/email_confirmation_subject.jinja',
+    'email_confirmation_from_name': 'wazo-auth',
+    'email_confirmation_from_address': 'noreply@wazo.community',
     'enabled_http_plugins': {
         'api': True,
         'backends': True,
