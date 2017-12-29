@@ -44,6 +44,11 @@ amqp:
   exchange_name: xivo
   exchange_type: topic
 
+# Local SMTP configuration
+smtp:
+  hostname: localhost
+  port: 25
+
 consul:
   scheme: https
   host: localhost

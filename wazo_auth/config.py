@@ -93,6 +93,10 @@ _DEFAULT_CONFIG = {
         'exchange_name': 'xivo',
         'exchange_type': 'topic',
     },
+    'smtp': {
+        'hostname': 'localhost',
+        'port': 25,
+    },
 }
 
 

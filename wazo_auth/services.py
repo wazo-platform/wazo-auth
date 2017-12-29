@@ -36,6 +36,8 @@ class EmailService(_Service):
     def __init__(self, dao, config):
         super(EmailService, self).__init__(dao)
         self._email_formatter = EmailFormatter(config)
+        self._smtp_host = config['smtp']['hostname']
+        self._smtp_port = config['smtp']['port']
 
     def confirm(self, email_uuid):
         self._dao.email.confirm(email_uuid)
@@ -59,7 +61,7 @@ class EmailService(_Service):
         msg['Subject'] = subject
 
         # host and port should be configurable
-        server = smtplib.SMTP('localhost', 25)
+        server = smtplib.SMTP(self._smtp_host, self._smtp_port)
         try:
             logger.debug('from: %s to: %s', from_[1], to[1])
             server.sendmail(from_[1], [to[1]], msg.as_string())
