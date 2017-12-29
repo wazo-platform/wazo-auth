@@ -137,8 +137,8 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def create(self, username, **kwargs):
         user_args = dict(
             username=username,
-            firstname=kwargs['firstname'],
-            lastname=kwargs['lastname'],
+            firstname=kwargs.get('firstname'),
+            lastname=kwargs.get('lastname'),
             password_hash=kwargs.get('hash_'),
             password_salt=kwargs.get('salt'),
         )
@@ -228,6 +228,8 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             query = s.query(
                 User.uuid,
                 User.username,
+                User.firstname,
+                User.lastname,
                 UserEmail.main,
                 Email.uuid,
                 Email.address,
@@ -240,12 +242,14 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             query = self._paginator.update_query(query, **kwargs)
             rows = query.all()
 
-            for user_uuid, username, main_email, email_uuid, address, confirmed in rows:
+            for user_uuid, username, firstname, lastname, main_email, email_uuid, address, confirmed in rows:
                 if user_uuid not in users:
                     users[user_uuid] = dict(
                         username=username,
                         uuid=user_uuid,
                         emails=[],
+                        firstname=firstname,
+                        lastname=lastname,
                     )
 
                 if address:
