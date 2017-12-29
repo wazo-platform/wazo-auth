@@ -37,6 +37,7 @@ class EmailService(_Service):
         self._email_formatter = EmailFormatter(config)
         self._smtp_host = config['smtp']['hostname']
         self._smtp_port = config['smtp']['port']
+        self._token_expiration = config['email_confirmation_expiration']
 
     def confirm(self, email_uuid):
         self._dao.email.confirm(email_uuid)
@@ -60,7 +61,6 @@ class EmailService(_Service):
         msg['From'] = email_utils.formataddr(from_)
         msg['Subject'] = subject
 
-        # host and port should be configurable
         server = smtplib.SMTP(self._smtp_host, self._smtp_port)
         try:
             logger.debug('from: %s to: %s', from_[1], to[1])
@@ -70,12 +70,11 @@ class EmailService(_Service):
 
     def _new_email_confirmation_token(self, email_uuid):
         t = time.time()
-        expiration = 3600 * 2 * 24  # 2 days  # TODO make it configurable
         token_payload = dict(
             auth_id='wazo-auth',
             xivo_user_uuid=None,
             xivo_uuid=None,
-            expire_t=t+expiration,
+            expire_t=t+self._token_expiration,
             issued_t=t,
             acls=['auth.emails.{}.confirm.edit'.format(email_uuid)],
         )

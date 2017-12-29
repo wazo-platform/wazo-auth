@@ -15,6 +15,7 @@ debug: False
 default_token_lifetime: 7200
 
 # Templates
+email_confirmation_expiration: 172800
 email_confirmation_template: '/var/lib/wazo-auth/templates/email_confirmation.jinja'
 email_confirmation_subject_template: '/var/lib/wazo-auth/templates/email_confirmation_subject.jinja'
 
