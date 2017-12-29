@@ -133,9 +133,14 @@ def write_private_file(filename, username, content):
     except KeyError:
         raise Exception('Unknown user {user}'.format(user=username))
 
+    try:
+        os.unlink(filename)
+    except OSError:
+        pass
+
     os.mknod(filename)
     os.chown(filename, uid, gid)
-    with open(filename, 'a') as f:
+    with open(filename, 'w') as f:
         f.write(content)
 
 
