@@ -4,8 +4,9 @@ sync:
     - auth
     - postgres
     - rabbitmq
+    - smtp
   environment:
-    PORTS: "9497 5432 5672"
+    PORTS: "25 9497 5432 5672"
     TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
 auth:
    image: wazopbx/wazo-auth-tests
@@ -22,6 +23,7 @@ auth:
    links:
      - "postgres"
      - "rabbitmq"
+     - "smtp"
    command: "wazo-auth"
 postgres:
   image: wazopbx/wazo-auth-db
@@ -31,3 +33,7 @@ rabbitmq:
   image: rabbitmq
   ports:
     - "5672"
+smtp:
+  image: munkyboy/fakesmtp
+  ports:
+    - "25"

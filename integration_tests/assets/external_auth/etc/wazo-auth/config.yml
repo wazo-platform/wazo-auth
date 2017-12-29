@@ -29,3 +29,5 @@ backend_policies:
   wazo_user: wazo_default_admin_policy # For testing only, not a legitimate configuration
 
 db_uri: postgresql://asterisk:proformatique@postgres:5432
+smtp:
+  hostname: smtp
