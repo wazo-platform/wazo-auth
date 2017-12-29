@@ -6,11 +6,23 @@ import binascii
 import hashlib
 import logging
 import os
+import time
 
+import smtplib
+from collections import namedtuple
+from email import utils as email_utils
+from email.mime.text import MIMEText
+
+from jinja2 import BaseLoader, Environment, TemplateNotFound
+from os import path
 from xivo_bus.resources.auth import events
+from xivo.consul_helpers import address_from_config
 from . import exceptions
 
 logger = logging.getLogger(__name__)
+
+
+EmailDestination = namedtuple('EmailDestination', ['name', 'address'])
 
 
 class _Service(object):
@@ -21,8 +33,56 @@ class _Service(object):
 
 class EmailService(_Service):
 
+    def __init__(self, dao, config):
+        super(EmailService, self).__init__(dao)
+        self._email_formatter = EmailFormatter(config)
+        self._smtp_host = config['smtp']['hostname']
+        self._smtp_port = config['smtp']['port']
+        self._token_expiration = config['email_confirmation_expiration']
+        self._from = EmailDestination(
+            config['email_confirmation_from_name'],
+            config['email_confirmation_from_address'],
+        )
+
     def confirm(self, email_uuid):
         self._dao.email.confirm(email_uuid)
+
+    def send_confirmation_email(self, username, email_uuid, email_address):
+        template_context = dict(
+            token=self._new_email_confirmation_token(email_uuid),
+            username=username,
+            email_uuid=email_uuid,
+            email_address=email_address,
+        )
+
+        body = self._email_formatter.format_confirmation_email(template_context)
+        subject = self._email_formatter.format_confirmation_subject(template_context)
+        to = EmailDestination(username, email_address)
+        self._send_msg(to, self._from, subject, body)
+
+    def _send_msg(self, to, from_, subject, body):
+        msg = MIMEText(body)
+        msg['To'] = email_utils.formataddr(to)
+        msg['From'] = email_utils.formataddr(from_)
+        msg['Subject'] = subject
+
+        server = smtplib.SMTP(self._smtp_host, self._smtp_port)
+        try:
+            server.sendmail(from_.address, [to.address], msg.as_string())
+        finally:
+            server.close()
+
+    def _new_email_confirmation_token(self, email_uuid):
+        t = time.time()
+        token_payload = dict(
+            auth_id='wazo-auth',
+            xivo_user_uuid=None,
+            xivo_uuid=None,
+            expire_t=t+self._token_expiration,
+            issued_t=t,
+            acls=['auth.emails.{}.confirm.edit'.format(email_uuid)],
+        )
+        return self._dao.token.create(token_payload)
 
 
 class ExternalAuthService(_Service):
@@ -301,7 +361,6 @@ class UserService(_Service):
             kwargs['salt'], kwargs['hash_'] = self._encrypter.encrypt_password(password)
 
         logger.info('creating a new user with params: %s', kwargs)  # log after poping the password
-        # a confirmation email should be sent if the email is not confirmed
         return self._dao.user.create(**kwargs)
 
     def remove_policy(self, user_uuid, policy_uuid):
@@ -325,6 +384,51 @@ class UserService(_Service):
             return False
 
         return hash_ == self._encrypter.compute_password_hash(password, salt)
+
+
+class TemplateLoader(BaseLoader):
+
+    _templates = dict(
+        email_confirmation='email_confirmation_template',
+        email_confirmation_subject='email_confirmation_subject_template',
+    )
+
+    def __init__(self, config):
+        self._config = config
+
+    def get_source(self, environment, template):
+        config_key = self._templates.get(template)
+        if not config_key:
+            raise TemplateNotFound(template)
+
+        logger.debug('config: %s', self._config)
+        template_path = self._config[config_key]
+        if not path.exists(template_path):
+            raise TemplateNotFound(template)
+
+        mtime = path.getmtime(template_path)
+        with file(template_path) as f:
+            source = f.read().decode('utf-8')
+
+        return source, template_path, lambda: mtime == path.getmtime(template_path)
+
+
+class EmailFormatter(object):
+
+    def __init__(self, config):
+        self.environment = Environment(
+            loader=TemplateLoader(config),
+        )
+        self.environment.globals['port'] = config['service_discovery']['advertise_port']
+        self.environment.globals['hostname'] = address_from_config(config['service_discovery'])
+
+    def format_confirmation_email(self, context):
+        template = self.environment.get_template('email_confirmation')
+        return template.render(**context)
+
+    def format_confirmation_subject(self, context):
+        template = self.environment.get_template('email_confirmation_subject')
+        return template.render(**context)
 
 
 class PasswordEncrypter(object):

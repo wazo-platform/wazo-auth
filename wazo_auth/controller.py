@@ -53,7 +53,7 @@ class Controller(object):
         self._bus_publisher = bus.BusPublisher(config)
         dao = queries.DAO.from_config(self._config)
         self._token_manager = token.Manager(config, dao)
-        email_service = services.EmailService(dao)
+        email_service = services.EmailService(dao, config)
         external_auth_service = services.ExternalAuthService(
             dao, self._bus_publisher, config['enabled_external_auth_plugins'])
         group_service = services.GroupService(dao)

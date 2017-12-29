@@ -10,6 +10,7 @@ test-prerequisite:
 	docker pull wazopbx/wazo-base-db
 	docker pull swaggerapi/swagger-validator
 	docker pull rabbitmq
+	docker pull munkyboy/fakesmtp
 
 test-image:
 	docker build --no-cache -t wazopbx/wazo-auth ..

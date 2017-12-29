@@ -9,6 +9,6 @@ class Plugin(object):
 
     def load(self, dependencies):
         api = dependencies['api']
-        args = (dependencies['user_service'],)
+        args = (dependencies['user_service'], dependencies['email_service'])
 
         api.add_resource(http.Register, '/users/register', resource_class_args=args)

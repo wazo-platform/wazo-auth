@@ -107,6 +107,17 @@ class TestUsers(MockBackendTestCase):
                             'main', True,
                             'confirmed', False))))
 
+            email_files = self.docker_exec(['ls', '/var/mail'], 'smtp').split('\n')
+            for email_file in email_files:
+                body = self.docker_exec(['cat', '/var/mail/{}'.format(email_file)], 'smtp')
+                for line in body.split('\n'):
+                    if not line.startswith('https://'):
+                        continue
+                    requests.get(line, verify=False)
+
+            updated_user = self.client.users.get(user['uuid'])
+            assert_that(updated_user, has_entries(emails=contains(has_entries(confirmed=True))))
+
     @fixtures.http_user_register(username='foo', password='foobar', email_address='foo@example.com')
     @fixtures.http_policy(acl_templates=['auth.users.{{ uuid }}.password.edit'])
     def test_put_password(self, policy, user):

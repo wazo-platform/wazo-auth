@@ -22,6 +22,11 @@ _DEFAULT_CONFIG = {
     'token_cleanup_interval': 60.0,
     'init_key_filename': None,
     'init_policy_name': 'wazo_default_master_user_policy',
+    'email_confirmation_expiration': 172800,
+    'email_confirmation_template': '/var/lib/wazo-auth/templates/email_confirmation.jinja',
+    'email_confirmation_subject_template': '/var/lib/wazo-auth/templates/email_confirmation_subject.jinja',
+    'email_confirmation_from_name': 'wazo-auth',
+    'email_confirmation_from_address': 'noreply@wazo.community',
     'enabled_http_plugins': {
         'api': True,
         'backends': True,
@@ -91,6 +96,10 @@ _DEFAULT_CONFIG = {
         'uri': 'amqp://guest:guest@localhost:5672/',
         'exchange_name': 'xivo',
         'exchange_type': 'topic',
+    },
+    'smtp': {
+        'hostname': 'localhost',
+        'port': 25,
     },
 }
 
