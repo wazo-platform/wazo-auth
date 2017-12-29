@@ -26,11 +26,6 @@ class PolicySchema(BaseSchema):
     acl_templates = fields.List(fields.String(), missing=[])
 
 
-class TenantRequestSchema(BaseSchema):
-
-    name = xfields.String(validate=validate.Length(min=1, max=128), required=True)
-
-
 def new_list_schema(default_sort_column):
 
     class ListSchema(BaseSchema):

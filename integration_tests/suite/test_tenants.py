@@ -21,23 +21,19 @@ from .helpers.base import MockBackendTestCase
 class TestTenants(MockBackendTestCase):
 
     @fixtures.http_tenant(name='foobar')
-    def test_post(self, tenant):
-        name = 'foobar'
-
+    @fixtures.http_tenant()
+    def test_post(self, other, foobar):
         assert_that(
-            tenant,
+            other,
             has_entries(
                 'uuid', uuid_(),
-                'name', name,
-            ),
-        )
+                'name', None))
 
         assert_that(
-            calling(self.client.tenants.new).with_args(name=name),
-            raises(requests.HTTPError).matching(
-                has_properties('response', has_properties('status_code', 409)),
-            ),
-        )
+            foobar,
+            has_entries(
+                'uuid', uuid_(),
+                'name', 'foobar'))
 
     @fixtures.http_tenant()
     def test_delete(self, tenant):
