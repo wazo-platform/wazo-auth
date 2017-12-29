@@ -140,5 +140,3 @@ definitions:
       name:
         type: string
         description: "The tenant's name"
-    required:
-      - name
