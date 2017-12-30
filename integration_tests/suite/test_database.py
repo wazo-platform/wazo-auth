@@ -872,18 +872,6 @@ class TestTenantDAO(_BaseDAOTestCase):
 
             assert_that(tenant, has_properties('name', name))
 
-        assert_that(
-            calling(self._tenant_dao.create).with_args(name),
-            raises(
-                exceptions.ConflictException,
-                has_properties(
-                    'status_code', 409,
-                    'resource', 'tenants',
-                    'details', has_entries('name', ANY),
-                ),
-            )
-        )
-
     @fixtures.tenant()
     def test_delete(self, tenant_uuid):
         self._tenant_dao.delete(tenant_uuid)
