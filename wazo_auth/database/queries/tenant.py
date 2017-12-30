@@ -83,7 +83,9 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             ).filter(filter_).count()
 
     def create(self, name):
-        tenant = Tenant(name=name)
+        tenant = Tenant()
+        if name:
+            tenant.name = name
         with self.new_session() as s:
             s.add(tenant)
             try:

@@ -27,9 +27,6 @@ class TestTenantPost(HTTPAppTestCase):
 
     def test_invalid_posts(self):
         invalid_datas = [
-            None,
-            {'not_name': 'foobar'},
-            {'name': ''},
             {'name': 42},
             {'name': 100 * 'foobar'},
         ]
