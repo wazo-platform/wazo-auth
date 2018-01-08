@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
@@ -123,6 +123,9 @@ class TestUsers(MockBackendTestCase):
 
             updated_user = self.client.users.get(user['uuid'])
             assert_that(updated_user, has_entries(emails=contains(has_entries(confirmed=True))))
+
+            tenants = self.client.users.get_tenants(user['uuid'])
+            assert_that(tenants, has_entries('items', contains(has_entries('uuid', uuid_()))))
 
     @fixtures.http_user_register(username='foo', password='foobar', email_address='foo@example.com')
     @fixtures.http_policy(acl_templates=['auth.users.{{ uuid }}.password.edit'])
