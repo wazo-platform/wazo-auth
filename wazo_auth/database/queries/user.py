@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from collections import OrderedDict
@@ -262,3 +262,9 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     users[user_uuid]['emails'].append(email)
 
         return users.values()
+
+    def update(self, user_uuid, **kwargs):
+        filter_ = User.uuid == str(user_uuid)
+
+        with self.new_session() as s:
+            s.query(User).filter(filter_).update(kwargs)

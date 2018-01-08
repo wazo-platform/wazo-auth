@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from flask import request
 from wazo_auth import exceptions, http, schemas
-from .schemas import ChangePasswordSchema, UserPostSchema
+from .schemas import ChangePasswordSchema, UserPostSchema, UserPutSchema
 
 
 class BaseUserService(http.AuthResource):
@@ -23,6 +23,15 @@ class User(BaseUserService):
     def delete(self, user_uuid):
         self.user_service.delete_user(user_uuid)
         return '', 204
+
+    @http.required_acl('auth.users.{user_uuid}.edit')
+    def put(self, user_uuid):
+        args, errors = UserPutSchema().load(request.get_json())
+        if errors:
+            raise exceptions.UserParamException.from_errors(errors)
+
+        result = self.user_service.update(user_uuid, **args)
+        return result, 200
 
 
 class UserPassword(BaseUserService):

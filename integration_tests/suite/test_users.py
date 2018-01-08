@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
@@ -89,6 +89,24 @@ class TestUsers(MockBackendTestCase):
 
         with self.auto_remove_user(self.client.users.new, username='bob') as user:
             assert_that(user, has_entries(username='bob', emails=empty()))
+
+    @fixtures.http_user(username='foobar', firstname='foo', lastname='bar')
+    def test_put(self, user):
+        user_uuid = user['uuid']
+        body = dict(
+            username='foobaz',
+            firstname='baz',
+        )
+
+        assert_http_error(404, self.client.users.edit, UNKNOWN_UUID, **body)
+
+        result = self.client.users.edit(user_uuid, **body)
+        assert_that(result, has_entries(
+            uuid=user_uuid,
+            username='foobaz',
+            firstname='baz',
+            lastname=None,
+        ))
 
     def test_register_post(self):
         args = dict(

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from xivo.mallow import fields
@@ -15,6 +15,13 @@ class UserPostSchema(BaseSchema):
     firstname = fields.String(missing=None)
     lastname = fields.String(missing=None)
     email_address = fields.Email()
+
+
+class UserPutSchema(BaseSchema):
+
+    username = fields.String(validate=validate.Length(min=1, max=128), required=True)
+    firstname = fields.String(missing=None)
+    lastname = fields.String(missing=None)
 
 
 class ChangePasswordSchema(BaseSchema):
