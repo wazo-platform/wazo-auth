@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from hamcrest import (
@@ -54,7 +54,7 @@ class TestTenantUserAssociation(base.MockBackendTestCase):
     @fixtures.http_tenant(name='baz')
     @fixtures.http_tenant(name='bar')
     @fixtures.http_tenant(name='foo')
-    @fixtures.http_user_register()
+    @fixtures.http_user()
     def test_tenant_list(self, user, foo, bar, baz, ignored):
         for tenant in (foo, bar, baz):
             self.client.tenants.add_user(tenant['uuid'], user['uuid'])

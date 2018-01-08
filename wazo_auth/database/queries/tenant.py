@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from sqlalchemy import and_, exc, text
@@ -82,10 +82,10 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 Email
             ).filter(filter_).count()
 
-    def create(self, name):
+    def create(self, **kwargs):
         tenant = Tenant()
-        if name:
-            tenant.name = name
+        if 'name' in kwargs:
+            tenant.name = kwargs['name']
         with self.new_session() as s:
             s.add(tenant)
             try:

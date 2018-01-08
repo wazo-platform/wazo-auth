@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from flask import request
@@ -9,15 +9,19 @@ from .schemas import UserRegisterPostSchema
 
 class Register(http.ErrorCatchingResource):
 
-    def __init__(self, user_service, email_service):
-        self.user_service = user_service
+    def __init__(self, email_service, tenant_service, user_service):
         self.email_service = email_service
+        self.tenant_service = tenant_service
+        self.user_service = user_service
 
     def post(self):
         args, errors = UserRegisterPostSchema().load(request.get_json())
         if errors:
             raise exceptions.UserParamException.from_errors(errors)
+
         result = self.user_service.new_user(**args)
+        tenant = self.tenant_service.new()
+        self.tenant_service.add_user(tenant['uuid'], result['uuid'])
 
         try:
             address = args['email_address']
