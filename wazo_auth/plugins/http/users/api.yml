@@ -164,6 +164,12 @@ definitions:
       password:
         type: string
         description: The password of the newly created username
+      firstname:
+        type: string
+        description: "The user's firstname"
+      lastname:
+        type: string
+        description: "The user's lastname"
       email_address:
         type: string
         description: The main email address of the new username
