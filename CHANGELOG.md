@@ -15,6 +15,10 @@ Changelog
 
   * PUT `0.1/users/<user_uuid>`
 
+* Add a new URL to edit tenants
+
+  * PUT `0.1/tenants/<tenant_uuid>`
+
 
 17.17
 -----
