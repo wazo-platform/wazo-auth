@@ -8,13 +8,13 @@ kombu
 
 # for database tests
 -e ..
-unidecode==0.04.19
-psycopg2
 https://github.com/wazo-pbx/xivo-lib-rest-client/archive/master.zip
 https://github.com/wazo-pbx/xivo-auth-client/archive/master.zip
 https://github.com/wazo-pbx/xivo-confd-client/archive/master.zip
 https://github.com/wazo-pbx/xivo-test-helpers/archive/master.zip
 https://github.com/wazo-pbx/xivo-lib-python/archive/master.zip
 alembic==0.8.8
-stevedore==1.17.1
 jinja2==2.8
+psycopg2
+stevedore==1.17.1
+unidecode==0.04.19
