@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -28,6 +28,15 @@ class Tenant(BaseResource):
     @http.required_acl('auth.tenants.{tenant_uuid}.read')
     def get(self, tenant_uuid):
         return self.tenant_service.get(tenant_uuid)
+
+    @http.required_acl('auth.tenants.{tenant_uuid}.edit')
+    def put(self, tenant_uuid):
+        args, errors = TenantRequestSchema().load(request.get_json())
+        if errors:
+            raise exceptions.TenantParamException.from_errors(errors)
+
+        result = self.tenant_service.update(tenant_uuid, **args)
+        return result, 200
 
 
 class Tenants(BaseResource):

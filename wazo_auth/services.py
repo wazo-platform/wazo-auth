@@ -295,6 +295,10 @@ class TenantService(_Service):
         if not self._dao.user.exists(user_uuid):
             raise exceptions.UnknownUserException(user_uuid)
 
+    def update(self, tenant_uuid, **kwargs):
+        self._dao.tenant.update(tenant_uuid, **kwargs)
+        return self.get(tenant_uuid)
+
 
 class UserService(_Service):
 

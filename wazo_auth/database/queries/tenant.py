@@ -131,3 +131,9 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         with self.new_session() as s:
             return s.query(TenantUser).filter(filter_).delete()
+
+    def update(self, tenant_uuid, **kwargs):
+        filter_ = Tenant.uuid == str(tenant_uuid)
+
+        with self.new_session() as s:
+            return s.query(Tenant).filter(filter_).update(kwargs)
