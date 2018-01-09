@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import requests
@@ -15,7 +15,7 @@ from hamcrest import (
 from xivo_test_helpers.hamcrest.raises import raises
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers import fixtures
-from .helpers.base import MockBackendTestCase
+from .helpers.base import assert_http_error, MockBackendTestCase, UNKNOWN_UUID
 
 
 class TestTenants(MockBackendTestCase):
@@ -138,3 +138,15 @@ class TestTenants(MockBackendTestCase):
             ),
             'invalid offset',
         )
+
+    @fixtures.http_tenant()
+    def test_put(self, tenant):
+        name = 'foobar'
+        body = dict(name=name)
+
+        assert_http_error(400, self.client.tenants.edit, tenant['uuid'], name=False)
+        assert_http_error(404, self.client.tenants.edit, UNKNOWN_UUID, **body)
+
+        result = self.client.tenants.edit(tenant['uuid'], **body)
+
+        assert_that(result, has_entries(uuid=tenant['uuid'], **body))
