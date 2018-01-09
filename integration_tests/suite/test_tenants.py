@@ -40,67 +40,28 @@ class TestTenants(MockBackendTestCase):
     @fixtures.http_tenant(name='foobaz')
     @fixtures.http_tenant(name='foobarbaz')
     def test_list(self, foobarbaz, foobaz, foobar):
+        def then(result, total=3, filtered=3, item_matcher=contains()):
+            assert_that(result, has_entries(items=item_matcher, total=total, filtered=filtered))
+
         result = self.client.tenants.list()
-        assert_that(
-            result,
-            has_entries(
-                'items', contains_inanyorder(
-                    equal_to(foobaz),
-                    equal_to(foobar),
-                    equal_to(foobarbaz),
-                ),
-                'total', 3,
-                'filtered', 3,
-            ),
-            'no args',
-        )
+        matcher = contains_inanyorder(foobaz, foobar, foobarbaz)
+        then(result, item_matcher=matcher)
 
         result = self.client.tenants.list(uuid=foobaz['uuid'])
-        assert_that(
-            result,
-            has_entries(
-                'items', contains_inanyorder(
-                    equal_to(foobaz),
-                ),
-                'total', 3,
-                'filtered', 1,
-            ),
-            'strict match',
-        )
+        matcher = contains_inanyorder(foobaz)
+        then(result, filtered=1, item_matcher=matcher)
 
         result = self.client.tenants.list(search='bar')
-        assert_that(
-            result,
-            has_entries(
-                'items', contains_inanyorder(
-                    equal_to(foobar),
-                    equal_to(foobarbaz),
-                ),
-                'total', 3,
-                'filtered', 2,
-            ),
-            'search',
-        )
+        matcher = contains_inanyorder(foobar, foobarbaz)
+        then(result, filtered=2, item_matcher=matcher)
 
         result = self.client.tenants.list(limit=1, offset=1, order='name')
-        assert_that(
-            result,
-            has_entries('items', contains(
-                equal_to(foobarbaz),
-            )),
-            'limit and offset',
-        )
+        matcher = contains(foobarbaz)
+        then(result, item_matcher=matcher)
 
         result = self.client.tenants.list(order='name', direction='desc')
-        assert_that(
-            result,
-            has_entries('items', contains(
-                equal_to(foobaz),
-                equal_to(foobarbaz),
-                equal_to(foobar),
-            )),
-            'sort',
-        )
+        matcher = contains(foobaz, foobarbaz, foobar)
+        then(result, item_matcher=matcher)
 
         assert_http_error(400, self.client.tenants.list, limit='foo')
         assert_http_error(400, self.client.tenants.list, offset=-1)
