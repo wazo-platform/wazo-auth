@@ -98,6 +98,37 @@ paths:
           description: System related error
           schema:
             $ref: '#/definitions/Error'
+    put:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Update an existing user
+      description: "**Required ACL**: `auth.users.{user_uuid}.edit`"
+      operationId: updateUser
+      tags:
+        - users
+      parameters:
+        - $ref: '#/parameters/user_uuid'
+        - name: body
+          in: body
+          description: The user parameters
+          required: true
+          schema:
+            $ref: '#/definitions/UserEdit'
+      responses:
+        '200':
+          description: The new user data without the password
+          schema:
+            $ref: '#/definitions/UserPostResponse'
+        '400':
+          description: Invalid body
+          schema:
+            $ref: '#/definitions/APIError'
+        '404':
+          description: not found
+          schema:
+            $ref: '#/definitions/Error'
   /users/{user_uuid}/password:
     put:
       consumes:
@@ -164,9 +195,29 @@ definitions:
       password:
         type: string
         description: The password of the newly created username
+      firstname:
+        type: string
+        description: "The user's firstname"
+      lastname:
+        type: string
+        description: "The user's lastname"
       email_address:
         type: string
         description: The main email address of the new username
+    required:
+      - username
+  UserEdit:
+    type: object
+    properties:
+      username:
+        type: string
+        description: The username that will identify that new username
+      firstname:
+        type: string
+        description: "The user's firstname"
+      lastname:
+        type: string
+        description: "The user's lastname"
     required:
       - username
   UserEmail:

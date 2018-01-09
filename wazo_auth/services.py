@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import binascii
@@ -373,6 +373,10 @@ class UserService(_Service):
 
         if not self._dao.policy.exists(policy_uuid):
             raise exceptions.UnknownPolicyException(policy_uuid)
+
+    def update(self, user_uuid, **kwargs):
+        self._dao.user.update(user_uuid, **kwargs)
+        return self.get_user(user_uuid)
 
     def verify_password(self, username, password):
         try:

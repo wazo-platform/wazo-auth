@@ -11,6 +11,9 @@ Changelog
   * GET `0.1/users/<user_uuid>/external`
   
 * The `email_address` field is no longer required when creating a user
+* Add a new URL to edit users
+
+  * PUT `0.1/users/<user_uuid>`
 
 
 17.17
