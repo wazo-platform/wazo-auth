@@ -98,6 +98,39 @@ paths:
           description: System related error
           schema:
             $ref: '#/definitions/Error'
+    put:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      summary: Modify a tenant
+      description: '**Required ACL:** `auth.tenants.{tenant_uuid}.edit'
+      operationId: updateTenant
+      tags:
+      - tenants
+      security:
+      - wazo_auth_token: []
+      parameters:
+        - $ref: '#/parameters/tenant_uuid'
+        - name: body
+          in: body
+          description: The tenant parameters
+          required: true
+          schema:
+            $ref: '#/definitions/TenantCreate'
+      responses:
+        '200':
+          description: The new tenant
+          schema:
+            $ref: '#/definitions/TenantPostResponse'
+        '400':
+          description: Invalid body
+          schema:
+            $ref: '#/definitions/APIError'
+        '404':
+          description: Tenant not found
+          schema:
+            $ref: '#/definitions/Error'
 parameters:
   tenant_uuid:
     name: tenant_uuid
