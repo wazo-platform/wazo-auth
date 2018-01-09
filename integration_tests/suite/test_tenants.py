@@ -2,17 +2,13 @@
 # Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-import requests
 from hamcrest import (
     assert_that,
-    calling,
     contains,
     contains_inanyorder,
     equal_to,
     has_entries,
-    has_properties,
 )
-from xivo_test_helpers.hamcrest.raises import raises
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers import fixtures
 from .helpers.base import assert_http_error, MockBackendTestCase, UNKNOWN_UUID
@@ -39,24 +35,15 @@ class TestTenants(MockBackendTestCase):
     def test_delete(self, tenant):
         self.client.tenants.delete(tenant['uuid'])
 
-        assert_that(
-            calling(self.client.tenants.delete).with_args(tenant['uuid']),
-            raises(requests.HTTPError).matching(
-                has_properties('response', has_properties('status_code', 404)),
-            )
-        )
+        assert_http_error(404, self.client.tenants.delete, tenant['uuid'])
 
     @fixtures.http_tenant()
     def test_get_one(self, tenant):
         result = self.client.tenants.get(tenant['uuid'])
+
         assert_that(result, equal_to(tenant))
 
-        assert_that(
-            calling(self.client.tenants.get).with_args('unknown-uuid'),
-            raises(requests.HTTPError).matching(
-                has_properties('response', has_properties('status_code', 404)),
-            )
-        )
+        assert_http_error(404, self.client.tenants.get, UNKNOWN_UUID)
 
     @fixtures.http_tenant(name='foobar')
     @fixtures.http_tenant(name='foobaz')
@@ -124,20 +111,8 @@ class TestTenants(MockBackendTestCase):
             'sort',
         )
 
-        assert_that(
-            calling(self.client.tenants.list).with_args(limit='foo'),
-            raises(requests.HTTPError).matching(
-                has_properties('response', has_properties('status_code', 400)),
-            ),
-            'invalid limit',
-        )
-        assert_that(
-            calling(self.client.tenants.list).with_args(offset=-1),
-            raises(requests.HTTPError).matching(
-                has_properties('response', has_properties('status_code', 400)),
-            ),
-            'invalid offset',
-        )
+        assert_http_error(400, self.client.tenants.list, limit='foo')
+        assert_http_error(400, self.client.tenants.list, offset=-1)
 
     @fixtures.http_tenant()
     def test_put(self, tenant):
