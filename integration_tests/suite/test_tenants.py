@@ -19,17 +19,8 @@ class TestTenants(MockBackendTestCase):
     @fixtures.http_tenant(name='foobar')
     @fixtures.http_tenant()
     def test_post(self, other, foobar):
-        assert_that(
-            other,
-            has_entries(
-                'uuid', uuid_(),
-                'name', None))
-
-        assert_that(
-            foobar,
-            has_entries(
-                'uuid', uuid_(),
-                'name', 'foobar'))
+        assert_that(other, has_entries(uuid=uuid_(), name=None))
+        assert_that(foobar, has_entries(uuid=uuid_(), name='foobar'))
 
     @fixtures.http_tenant()
     def test_delete(self, tenant):
