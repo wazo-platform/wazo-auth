@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import argparse
@@ -35,6 +35,7 @@ _DEFAULT_CONFIG = {
         'group_policy': True,
         'groups': True,
         'init': False,
+        'password_reset': True,
         'policies': True,
         'tenant_user': True,
         'tenants': True,

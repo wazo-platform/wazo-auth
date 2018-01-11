@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 
@@ -52,6 +52,7 @@ setup(
             'groups = wazo_auth.plugins.http.groups.plugin:Plugin',
             'group_policy = wazo_auth.plugins.http.group_policy.plugin:Plugin',
             'init = wazo_auth.plugins.http.init.plugin:Plugin',
+            'password_reset = wazo_auth.plugins.http.password_reset.plugin:Plugin',
             'policies = wazo_auth.plugins.http.policies.plugin:Plugin',
             'tenants = wazo_auth.plugins.http.tenants.plugin:Plugin',
             'tenant_user = wazo_auth.plugins.http.tenant_user.plugin:Plugin',
