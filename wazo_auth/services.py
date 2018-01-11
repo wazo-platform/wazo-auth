@@ -281,7 +281,8 @@ class TenantService(_Service):
         return self._dao.user.list_(tenant_uuid=tenant_uuid, **kwargs)
 
     def new(self, **kwargs):
-        uuid = self._dao.tenant.create(**kwargs)
+        address_id = self._dao.address.new(**kwargs['address'])
+        uuid = self._dao.tenant.create(address_id=address_id, **kwargs)
         return dict(uuid=uuid, **kwargs)
 
     def remove_user(self, tenant_uuid, user_uuid):
@@ -296,7 +297,14 @@ class TenantService(_Service):
             raise exceptions.UnknownUserException(user_uuid)
 
     def update(self, tenant_uuid, **kwargs):
-        self._dao.tenant.update(tenant_uuid, **kwargs)
+        address_id = self._dao.tenant.get_address_id(tenant_uuid)
+        if not address_id:
+            address_id = self._dao.address.new(**kwargs['address'])
+        else:
+            address_id, self._dao.address.update(address_id, **kwargs['address'])
+
+        self._dao.tenant.update(tenant_uuid, address_id=address_id, **kwargs)
+
         return self.get(tenant_uuid)
 
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import unittest
@@ -42,7 +42,7 @@ class TestManager(unittest.TestCase):
     def setUp(self):
         self.config = {'default_token_lifetime': sentinel.default_expiration_delay}
         self.token_dao = Mock(TokenDAO)
-        dao = queries.DAO(Mock(), self.token_dao, Mock(), Mock(), Mock(), Mock(), Mock())
+        dao = queries.DAO(token=self.token_dao)
         self.manager = token.Manager(self.config, dao)
 
     def _new_backend_mock(self, auth_id=None, uuid=None):

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from marshmallow import Schema, fields, pre_load, post_load
+from marshmallow import Schema, fields, pre_load, post_dump, post_load
 from xivo.mallow import fields as xfields
 from xivo.mallow import validate
 
@@ -24,6 +24,30 @@ class PolicySchema(BaseSchema):
     name = fields.String(validate=validate.Length(min=1, max=80), required=True)
     description = fields.String(allow_none=True, missing=None)
     acl_templates = fields.List(fields.String(), missing=[])
+
+
+class TenantAddress(BaseSchema):
+
+    line_1 = xfields.String(validate=validate.Length(min=1, max=256), missing=None, default=None)
+    line_2 = xfields.String(validate=validate.Length(min=1, max=256), missing=None, default=None)
+    city = xfields.String(validate=validate.Length(min=1, max=128), missing=None, default=None)
+    state = xfields.String(validate=validate.Length(min=1, max=128), missing=None, default=None)
+    country = xfields.String(validate=validate.Length(min=1, max=128), missing=None, default=None)
+    zip_code = xfields.String(validate=validate.Length(min=1, max=16), missing=None, default=None)
+
+
+class TenantSchema(BaseSchema):
+
+    uuid = xfields.UUID(dump_only=True)
+    name = xfields.String(validate=validate.Length(min=1, max=128), default=None, missing=None)
+    contact = xfields.UUID(missing=None, default=None)
+    phone = xfields.String(validate=validate.Length(min=1, max=32), default=None, missing=None)
+    address = xfields.Nested(TenantAddress, missing=dict, default=dict, allow_none=False)
+
+    @post_dump
+    def add_empty_address(self, data):
+        data['address'] = data['address'] or TenantAddress().dump(data['address']).data
+        return data
 
 
 def new_list_schema(default_sort_column):

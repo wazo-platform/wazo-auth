@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
@@ -62,7 +62,17 @@ class TestTenantPost(HTTPAppTestCase):
 
         assert_that(result.status_code, equal_to(200))
         assert_that(json.loads(result.data), equal_to(self.tenant_service.new.return_value))
-        self.tenant_service.new.assert_called_once_with(name='foobar')
+        self.tenant_service.new.assert_called_once_with(
+            name='foobar',
+            phone=None,
+            contact=None,
+            address=dict(
+                line_1=None,
+                line_2=None,
+                city=None,
+                state=None,
+                zip_code=None,
+                country=None))
 
     def test_get(self):
         self.tenant_service.count.side_effect = expected_total, expected_filtered = 5, 2

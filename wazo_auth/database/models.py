@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from sqlalchemy import (
@@ -19,6 +19,19 @@ class ACL(Base):
     id_ = Column(Integer, name='id', primary_key=True)
     value = Column(Text, nullable=False)
     token_uuid = Column(String(38), ForeignKey('auth_token.uuid', ondelete='CASCADE'), nullable=False)
+
+
+class Address(Base):
+
+    __tablename__ = 'auth_address'
+
+    id_ = Column(Integer, name='id', primary_key=True)
+    line_1 = Column(Text)
+    line_2 = Column(Text)
+    city = Column(Text)
+    state = Column(Text)
+    zip_code = Column(Text)
+    country = Column(Text)
 
 
 class Email(Base):
@@ -69,6 +82,9 @@ class Tenant(Base):
 
     uuid = Column(String(38), server_default=text('uuid_generate_v4()'), primary_key=True)
     name = Column(Text)
+    phone = Column(Text)
+    address_id = Column(Integer, ForeignKey('auth_address.id', ondelete='SET NULL'))
+    contact_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='SET NULL'))
 
 
 class TenantUser(Base):

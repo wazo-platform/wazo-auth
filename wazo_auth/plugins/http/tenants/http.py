@@ -6,7 +6,6 @@ import logging
 
 from flask import request
 from wazo_auth import exceptions, http, schemas
-from .schemas import TenantRequestSchema
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +30,7 @@ class Tenant(BaseResource):
 
     @http.required_acl('auth.tenants.{tenant_uuid}.edit')
     def put(self, tenant_uuid):
-        args, errors = TenantRequestSchema().load(request.get_json())
+        args, errors = schemas.TenantSchema().load(request.get_json())
         if errors:
             raise exceptions.TenantParamException.from_errors(errors)
 
@@ -63,7 +62,7 @@ class Tenants(BaseResource):
     @http.required_acl('auth.tenants.create')
     def post(self):
         logger.debug('create tenant %s', request.get_json(force=True))
-        args, errors = TenantRequestSchema().load(request.get_json())
+        args, errors = schemas.TenantSchema().load(request.get_json())
         if errors:
             raise exceptions.TenantParamException.from_errors(errors)
 

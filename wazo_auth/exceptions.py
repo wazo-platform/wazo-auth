@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from unidecode import unidecode
@@ -39,6 +39,14 @@ class InvalidListParamException(APIException):
                 infos = [infos]
             for info in infos:
                 return cls(info['message'], {field: info})
+
+
+class UnknownAddressException(APIException):
+
+    def __init__(self, address_id):
+        msg = 'No such address: "{}"'.format(address_id)
+        details = dict(id=address_id)
+        super(UnknownAddressException, self).__init__(404, msg, 'unknown_address', details, 'addresses')
 
 
 class UnknownExternalAuthException(APIException):

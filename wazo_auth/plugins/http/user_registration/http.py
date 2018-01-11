@@ -4,6 +4,7 @@
 
 from flask import request
 from wazo_auth import exceptions, http
+from wazo_auth.schemas import TenantSchema
 from .schemas import UserRegisterPostSchema
 
 
@@ -13,6 +14,7 @@ class Register(http.ErrorCatchingResource):
         self.email_service = email_service
         self.tenant_service = tenant_service
         self.user_service = user_service
+        self.tenant_body = TenantSchema().load({}).data
 
     def post(self):
         args, errors = UserRegisterPostSchema().load(request.get_json())
@@ -20,7 +22,7 @@ class Register(http.ErrorCatchingResource):
             raise exceptions.UserParamException.from_errors(errors)
 
         result = self.user_service.new_user(**args)
-        tenant = self.tenant_service.new()
+        tenant = self.tenant_service.new(**self.tenant_body)
         self.tenant_service.add_user(tenant['uuid'], result['uuid'])
 
         try:
