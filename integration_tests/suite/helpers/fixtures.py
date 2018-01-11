@@ -201,9 +201,8 @@ def policy(**policy_args):
 
 
 def tenant(**tenant_args):
-    # TODO: change the name to be None instead of a random string
     if 'name' not in tenant_args:
-        tenant_args['name'] = _random_string(20)
+        tenant_args['name'] = None
     if 'phone' not in tenant_args:
         tenant_args['phone'] = None
     if 'contact' not in tenant_args:
