@@ -173,3 +173,28 @@ definitions:
       name:
         type: string
         description: "The tenant's name"
+      contact:
+        type: string
+        description: "The contact user's UUID"
+      phone:
+        type: string
+        description: "The tenant's contact phone number"
+      address:
+        $ref: '#/definitions/TenantAddress'
+  TenantAddress:
+    type: object
+    properties:
+      line_1:
+        type: string
+        description: The first line of the address
+      line_2:
+        type: string
+        description: The second line of the address
+      city:
+        type: string
+      state:
+        type: string
+      country:
+        type: string
+      zip_code:
+        type: string

@@ -3,8 +3,10 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 from sqlalchemy import and_, exc, text
+from wazo_auth import schemas
 from .base import BaseDAO, PaginatorMixin
 from ..models import (
+    Address,
     Email,
     Tenant,
     TenantUser,
@@ -83,9 +85,13 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             ).filter(filter_).count()
 
     def create(self, **kwargs):
-        tenant = Tenant()
-        if 'name' in kwargs:
-            tenant.name = kwargs['name']
+        tenant = Tenant(
+            name=kwargs['name'],
+            phone=kwargs['phone'],
+            contact_uuid=kwargs['contact'],
+            address_id=kwargs['address_id'],
+        )
+
         with self.new_session() as s:
             s.add(tenant)
             try:
@@ -96,6 +102,10 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     value = locals().get(column)
                     if column:
                         raise exceptions.ConflictException('tenants', column, value)
+                elif e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
+                    constraint = e.orig.diag.constraint_name
+                    if constraint == 'auth_tenant_contact_uuid_fkey':
+                        raise exceptions.UnknownUserException(kwargs['contact'])
                 raise
             return tenant.uuid
 
@@ -109,19 +119,29 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             else:
                 raise exceptions.UnknownUserException(uuid)
 
+    def get_address_id(self, tenant_uuid):
+        with self.new_session() as s:
+            return s.query(Tenant.address_id).filter(Tenant.uuid == str(tenant_uuid)).scalar()
+
     def list_(self, **kwargs):
+        schema = schemas.TenantSchema()
+
         search_filter = self.new_search_filter(**kwargs)
         strict_filter = self.new_strict_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
 
         with self.new_session() as s:
             query = s.query(
-                Tenant.uuid,
-                Tenant.name,
-            ).outerjoin(TenantUser).filter(filter_).group_by(Tenant)
+                Tenant,
+                Address,
+            ).outerjoin(Address).outerjoin(TenantUser).filter(filter_).group_by(Tenant, Address)
             query = self._paginator.update_query(query, **kwargs)
 
-            return [{'uuid': uuid, 'name': name} for uuid, name in query.all()]
+            def to_dict(tenant, address):
+                tenant.address = address
+                return schema.dump(tenant).data
+
+            return [to_dict(*row) for row in query.all()]
 
     def remove_user(self, tenant_uuid, user_uuid):
         filter_ = and_(
@@ -134,6 +154,19 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def update(self, tenant_uuid, **kwargs):
         filter_ = Tenant.uuid == str(tenant_uuid)
+        values = dict(
+            name=kwargs.get('name'),
+            contact_uuid=kwargs.get('contact'),
+            phone=kwargs.get('phone'),
+            address_id=kwargs.get('address_id'),
+        )
 
         with self.new_session() as s:
-            return s.query(Tenant).filter(filter_).update(kwargs)
+            try:
+                s.query(Tenant).filter(filter_).update(values)
+            except exc.IntegrityError as e:
+                if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
+                    constraint = e.orig.diag.constraint_name
+                    if constraint == 'auth_tenant_contact_uuid_fkey':
+                        raise exceptions.UnknownUserException(kwargs['contact'])
+                raise

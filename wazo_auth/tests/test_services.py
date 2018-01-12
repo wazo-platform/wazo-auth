@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from hamcrest import assert_that, contains, calling, equal_to, not_, raises
@@ -10,12 +10,13 @@ from unittest import TestCase
 
 from .. import exceptions, services
 from ..database import queries
-from ..database.queries import email, external_auth, group, policy, tenant, token, user
+from ..database.queries import address, email, external_auth, group, policy, tenant, token, user
 
 
 class BaseServiceTestCase(TestCase):
 
     def setUp(self):
+        self.address_dao = Mock(address.AddressDAO)
         self.email_dao = Mock(email.EmailDAO)
         self.external_auth_dao = Mock(external_auth.ExternalAuthDAO)
         self.group_dao = Mock(group.GroupDAO)
@@ -27,13 +28,14 @@ class BaseServiceTestCase(TestCase):
         self.encrypter.encrypt_password.return_value = s.salt, s.hash_
 
         self.dao = queries.DAO(
-            self.policy_dao,
-            self.token_dao,
-            self.user_dao,
-            self.tenant_dao,
-            self.group_dao,
-            self.external_auth_dao,
-            self.email_dao,
+            address=self.address_dao,
+            email=self.email_dao,
+            external_auth=self.external_auth_dao,
+            group=self.group_dao,
+            policy=self.policy_dao,
+            tenant=self.tenant_dao,
+            token=self.token_dao,
+            user=self.user_dao,
         )
 
 

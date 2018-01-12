@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import os
@@ -18,6 +18,7 @@ from hamcrest import (
     has_entries,
     has_key,
     has_properties,
+    instance_of,
     none,
     not_,
 )
@@ -61,6 +62,7 @@ class _BaseDAOTestCase(unittest.TestCase):
 
     def setUp(self):
         db_uri = DB_URI.format(port=DBStarter.service_port(5432, 'postgres'))
+        self._address_dao = queries.AddressDAO(db_uri)
         self._email_dao = queries.EmailDAO(db_uri)
         self._external_auth_dao = queries.ExternalAuthDAO(db_uri)
         self._group_dao = group.GroupDAO(db_uri)
@@ -68,6 +70,45 @@ class _BaseDAOTestCase(unittest.TestCase):
         self._user_dao = user.UserDAO(db_uri)
         self._tenant_dao = tenant.TenantDAO(db_uri)
         self._token_dao = token.TokenDAO(db_uri)
+
+
+class TestAddressDAO(_BaseDAOTestCase):
+
+    def setUp(self):
+        super(TestAddressDAO, self).setUp()
+        self._null_address = self._address()
+
+    def test_new_address(self):
+        result = self._address_dao.new(**self._null_address)
+        assert_that(result, equal_to(None))
+
+        address = self._address(line_1='here')
+        result = self._address_dao.new(**address)
+        assert_that(result, instance_of(int))
+
+    def test_update(self):
+        address = self._address(line_1='here')
+        address_id = self._address_dao.new(**address)
+
+        updated_address = self._address(line_1='here', country='Canada')
+        result = self._address_dao.update(address_id, **updated_address)
+        assert_that(result, equal_to(address_id))
+        assert_that(self._address_dao.get(address_id), equal_to(updated_address))
+
+        result = self._address_dao.update(address_id, **self._null_address)
+        assert_that(result, equal_to(None))
+        assert_that(calling(self._address_dao.get).with_args(address_id), raises(Exception))
+
+    @staticmethod
+    def _address(line_1=None, line_2=None, city=None, state=None, country=None, zip_code=None):
+        return dict(
+            line_1=line_1,
+            line_2=line_2,
+            city=city,
+            state=state,
+            country=country,
+            zip_code=zip_code,
+        )
 
 
 class TestEmailDAO(_BaseDAOTestCase):
@@ -828,7 +869,7 @@ class TestTenantDAO(_BaseDAOTestCase):
     @fixtures.user()
     def test_list(self, user1_uuid, user2_uuid, a, b, c):
         def build_list_matcher(*names):
-            return [has_entries('name', name) for name in names]
+            return [has_entries(name=name, address=base.ADDRESS_NULL) for name in names]
 
         result = self._tenant_dao.list_()
         expected = build_list_matcher('foo c', 'bar b', 'baz a')

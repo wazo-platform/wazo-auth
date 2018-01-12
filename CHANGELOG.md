@@ -19,6 +19,19 @@ Changelog
 
   * PUT `0.1/tenants/<tenant_uuid>`
 
+* A tenant now accepts the following fields:
+
+  * phone: The tenant's phone number to reach the contact
+  * contact: The user UUID of the user to contact for this tenant
+  * address: The tenant's address
+
+    * line_1
+    * line_2
+    * city
+    * state
+    * country
+    * zip_code
+
 
 17.17
 -----

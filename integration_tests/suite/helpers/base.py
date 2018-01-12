@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import os
@@ -14,6 +14,14 @@ from xivo_test_helpers.bus import BusClient
 
 HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
 UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
+ADDRESS_NULL = dict(
+    line_1=None,
+    line_2=None,
+    city=None,
+    state=None,
+    country=None,
+    zip_code=None,
+)
 
 
 class BaseTestCase(AssetLaunchingTestCase):
