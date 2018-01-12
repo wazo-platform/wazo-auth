@@ -7,13 +7,18 @@ from wazo_auth.schemas import BaseSchema
 from xivo.mallow import fields, validate
 
 
+class PasswordResetPostParameters(BaseSchema):
+
+    password = fields.String(validate=validate.Length(min=1), required=True)
+
+
 class PasswordResetQueryParameters(BaseSchema):
 
     username = fields.String(validate=validate.Length(min=1, max=128), missing=None)
     email = fields.Email(missing=None)
 
     @validates_schema
-    def validate(self, data):
+    def validate_mutually_exclusive_fields(self, data):
         username = data['username']
         email = data['email']
 

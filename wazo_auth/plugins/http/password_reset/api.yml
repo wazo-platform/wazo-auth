@@ -21,3 +21,37 @@ paths:
       responses:
         '204':
           description: A mail will be sent if the username or email were found
+    post:
+      security:
+      - wazo_auth_token: []
+      summary: Set the user password
+      description: "**Required ACL**: `auth.users.password.reset.{user_uuid}`\n
+      \n
+      Set a new password for the user after the user used the GET on the reset URL"
+      operationId: reset_password_change
+      tags:
+        - users
+      parameters:
+        - name: user_uuid
+          in: query
+          type: string
+          description: "The user's UUID"
+          required: true
+        - name: body
+          in: body
+          description: The password change parameters
+          required: true
+          schema:
+            $ref: '#/definitions/PostPasswordReset'
+      response:
+        '204':
+          description: Password changed
+definitions:
+  PostPasswordReset:
+    type: object
+    properties:
+      password:
+        type: string
+        description: The desired password
+    required:
+      - password
