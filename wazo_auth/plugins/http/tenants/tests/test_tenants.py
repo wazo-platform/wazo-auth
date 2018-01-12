@@ -65,7 +65,7 @@ class TestTenantPost(HTTPAppTestCase):
         self.tenant_service.new.assert_called_once_with(
             name='foobar',
             phone=None,
-            contact=None,
+            contact_uuid=None,
             address=dict(
                 line_1=None,
                 line_2=None,

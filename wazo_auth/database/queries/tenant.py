@@ -88,7 +88,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         tenant = Tenant(
             name=kwargs['name'],
             phone=kwargs['phone'],
-            contact_uuid=kwargs['contact'],
+            contact_uuid=kwargs['contact_uuid'],
             address_id=kwargs['address_id'],
         )
 
@@ -105,7 +105,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 elif e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
                     constraint = e.orig.diag.constraint_name
                     if constraint == 'auth_tenant_contact_uuid_fkey':
-                        raise exceptions.UnknownUserException(kwargs['contact'])
+                        raise exceptions.UnknownUserException(kwargs['contact_uuid'])
                 raise
             return tenant.uuid
 
@@ -156,7 +156,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         filter_ = Tenant.uuid == str(tenant_uuid)
         values = dict(
             name=kwargs.get('name'),
-            contact_uuid=kwargs.get('contact'),
+            contact_uuid=kwargs.get('contact_uuid'),
             phone=kwargs.get('phone'),
             address_id=kwargs.get('address_id'),
         )
@@ -168,5 +168,5 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
                     constraint = e.orig.diag.constraint_name
                     if constraint == 'auth_tenant_contact_uuid_fkey':
-                        raise exceptions.UnknownUserException(kwargs['contact'])
+                        raise exceptions.UnknownUserException(kwargs['contact_uuid'])
                 raise

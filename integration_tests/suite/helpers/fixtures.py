@@ -205,8 +205,8 @@ def tenant(**tenant_args):
         tenant_args['name'] = None
     if 'phone' not in tenant_args:
         tenant_args['phone'] = None
-    if 'contact' not in tenant_args:
-        tenant_args['contact'] = None
+    if 'contact_uuid' not in tenant_args:
+        tenant_args['contact_uuid'] = None
     if 'address_id' not in tenant_args:
         tenant_args['address_id'] = None
 

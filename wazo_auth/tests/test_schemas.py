@@ -52,10 +52,11 @@ class _Address(object):
 
 class _Tenant(object):
 
-    def __init__(self, uuid=None, name=None, address=None):
+    def __init__(self, contact=None, uuid=None, name=None, address=None):
         self.uuid = uuid
         self.name = name
         self.address = address
+        self.contact_uuid = contact
 
 
 class TenantSchema(TestCase):
@@ -110,7 +111,7 @@ class TenantSchema(TestCase):
 
         assert_that(result, equal_to(dict(
             name='foobar',
-            contact=None,
+            contact_uuid=None,
             phone=None,
             address=dict(
                 line_1=None,
@@ -119,3 +120,28 @@ class TenantSchema(TestCase):
                 state=None,
                 country=None,
                 zip_code=None))))
+
+    def test_that_a_null_contact_is_accepted(self):
+        body = dict(contact=None)
+
+        result = self.schema.load(body).data
+
+        assert_that(result, equal_to(dict(
+            name=None,
+            contact_uuid=None,
+            phone=None,
+            address=dict(
+                line_1=None,
+                line_2=None,
+                city=None,
+                state=None,
+                country=None,
+                zip_code=None))))
+
+    def test_contact_uuid_fields_when_serializing(self):
+        contact = 'e04f397c-0d52-4a83-aa8e-7ee374e9eed3'
+        tenant = _Tenant(contact=contact)
+
+        result = self.schema.dump(tenant).data
+
+        assert_that(result, has_entries(contact=contact))

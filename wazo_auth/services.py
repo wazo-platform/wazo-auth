@@ -283,7 +283,7 @@ class TenantService(_Service):
     def new(self, **kwargs):
         address_id = self._dao.address.new(**kwargs['address'])
         uuid = self._dao.tenant.create(address_id=address_id, **kwargs)
-        return dict(uuid=uuid, **kwargs)
+        return self.get(uuid)
 
     def remove_user(self, tenant_uuid, user_uuid):
         nb_deleted = self._dao.tenant.remove_user(tenant_uuid, user_uuid)

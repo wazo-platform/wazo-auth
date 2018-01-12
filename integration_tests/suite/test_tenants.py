@@ -88,20 +88,25 @@ class TestTenants(MockBackendTestCase):
         assert_http_error(400, self.client.tenants.list, offset=-1)
 
     @fixtures.http_tenant()
-    def test_put(self, tenant):
+    @fixtures.http_user()
+    def test_put(self, user, tenant):
         name = 'foobar'
         body = dict(
             name=name,
             address=ADDRESS_1,
+            contact=user['uuid'],
         )
+        body_with_unknown_contact = dict(body)
+        body_with_unknown_contact['contact'] = UNKNOWN_UUID
 
         assert_http_error(400, self.client.tenants.edit, tenant['uuid'], name=False)
         assert_http_error(404, self.client.tenants.edit, UNKNOWN_UUID, **body)
-        assert_http_error(404, self.client.tenants.edit, tenant['uuid'], contact=UNKNOWN_UUID, **body)
+        assert_http_error(404, self.client.tenants.edit, tenant['uuid'], **body_with_unknown_contact)
 
         result = self.client.tenants.edit(tenant['uuid'], **body)
 
         assert_that(result, has_entries(
             uuid=tenant['uuid'],
             name=name,
+            contact=user['uuid'],
             address=has_entries(**ADDRESS_1)))
