@@ -9,5 +9,8 @@ class Plugin(object):
 
     def load(self, dependencies):
         api = dependencies['api']
+        args = (
+            dependencies['user_service'],
+        )
 
-        api.add_resource(http.PasswordReset, '/users/password/reset')
+        api.add_resource(http.PasswordReset, '/users/password/reset', resource_class_args=args)

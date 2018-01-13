@@ -325,6 +325,18 @@ class UserService(_Service):
         salt, hash_ = self._encrypter.encrypt_password(new_password)
         self._dao.user.change_password(user_uuid, salt, hash_)
 
+    def delete_password(self, **kwargs):
+        search_params = {k: v for k, v in kwargs.iteritems() if v}
+        identifier = search_params.values()[0]
+
+        logger.debug('removing password for user %s', identifier)
+        users = self._dao.user.list_(limit=1, **search_params)
+        if not users:
+            raise exceptions.UnknownUserException(identifier, details=kwargs)
+
+        for user in users:
+            self._dao.user.change_password(user['uuid'], salt=None, hash_=None)
+
     def count_groups(self, user_uuid, **kwargs):
         return self._dao.user.count_groups(user_uuid, **kwargs)
 

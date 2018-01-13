@@ -7,6 +7,7 @@ import logging
 from flask import request
 from xivo.auth_verifier import no_auth
 from wazo_auth import http
+from wazo_auth.exceptions import UnknownUserException
 from .schemas import (PasswordResetPostParameters, PasswordResetQueryParameters)
 from .exceptions import PasswordResetException
 
@@ -15,6 +16,9 @@ logger = logging.getLogger(__name__)
 
 class PasswordReset(http.AuthResource):
 
+    def __init__(self, user_service):
+        self.user_service = user_service
+
     @no_auth
     def get(self):
         args, errors = PasswordResetQueryParameters().load(request.args)
@@ -22,6 +26,11 @@ class PasswordReset(http.AuthResource):
             raise PasswordResetException.from_errors(errors)
 
         logger.debug('resetting password for %s', args['username'] or args['email_address'])
+        try:
+            self.user_service.delete_password(**args)
+        except UnknownUserException:
+            # We do not want to leak the information if a user exists or not
+            pass
 
         return '', 204
 

@@ -192,6 +192,20 @@ class TestUserService(BaseServiceTestCase):
 
         self.user_dao.change_password.assert_called_once_with(s.uuid, s.salt, s.hash_)
 
+    def test_delete_password(self):
+        self.user_dao.list_.return_value = []
+        assert_that(
+            calling(self.service.delete_password).with_args(username=s.username, email_address=None),
+            raises(exceptions.UnknownUserException))
+        self.user_dao.list_.assert_called_once_with(username=s.username)
+
+        user_uuid = '4a2c93b6-4045-4116-8d53-263e3eac83dd'
+        self.user_dao.list_.return_value = [{'uuid': user_uuid}]
+
+        self.service.delete_password(email_address=s.email_address)
+
+        self.user_dao.change_password.assert_called_once_with(user_uuid, salt=None, hash_=None)
+
     def test_remove_policy(self):
         def when(nb_deleted, user_exists=True, policy_exists=True):
             self.user_dao.remove_policy.return_value = nb_deleted

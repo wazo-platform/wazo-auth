@@ -36,6 +36,23 @@ class TestUsers(MockBackendTestCase):
         assert_no_error(self.client.users.delete, user['uuid'])
         assert_http_error(404, self.client.users.delete, user['uuid'])
 
+    @fixtures.http_user(username='foobar', password='foobar', email_address='foobar@example.com')
+    @fixtures.http_user(username='foobaz', password='foobaz', email_address='foobaz@example.com')
+    def test_password_reset(self, foobaz, foobar):
+        assert_no_error(self.client.users.reset_password, username='unknown')
+        assert_no_error(self.client.users.reset_password, email='unknown@example.com')
+        assert_http_error(400, self.client.users.reset_password, username='foobar', email='foobar@example.com')
+
+        self.client.users.reset_password(username='foobar')
+
+        user_client = self.new_auth_client('foobar', 'foobar')
+        assert_http_error(401, user_client.token.new, 'wazo_user')
+
+        self.client.users.reset_password(email='foobaz@example.com')
+
+        user_client = self.new_auth_client('foobaz', 'foobaz')
+        assert_http_error(401, user_client.token.new, 'wazo_user')
+
     def test_post(self):
         args = dict(
             username='foobar',

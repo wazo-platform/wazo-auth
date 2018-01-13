@@ -93,9 +93,9 @@ class UnknownEmailException(APIException):
 
 class UnknownUserException(APIException):
 
-    def __init__(self, user_uuid):
-        msg = 'No such user: "{}"'.format(user_uuid)
-        details = dict(uuid=str(user_uuid))
+    def __init__(self, identifier, details=None):
+        msg = 'No such user: "{}"'.format(identifier)
+        details = details or dict(uuid=str(identifier))
         super(UnknownUserException, self).__init__(404, msg, 'unknown_user', details, 'users')
 
 
