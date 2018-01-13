@@ -15,12 +15,12 @@ class PasswordResetPostParameters(BaseSchema):
 class PasswordResetQueryParameters(BaseSchema):
 
     username = fields.String(validate=validate.Length(min=1, max=128), missing=None)
-    email = fields.Email(missing=None)
+    email_address = fields.Email(load_from='email', missing=None)
 
     @validates_schema
     def validate_mutually_exclusive_fields(self, data):
         username = data['username']
-        email = data['email']
+        email = data['email_address']
 
         if (username, email).count(None) != 1:
             msg = '"username" or "email" should be used'

@@ -21,7 +21,7 @@ class PasswordReset(http.AuthResource):
         if errors:
             raise PasswordResetException.from_errors(errors)
 
-        logger.debug('resetting password for %s', args['username'] or args['email'])
+        logger.debug('resetting password for %s', args['username'] or args['email_address'])
 
         return '', 204
 
