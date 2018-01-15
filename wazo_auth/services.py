@@ -336,6 +336,7 @@ class UserService(_Service):
 
         for user in users:
             self._dao.user.change_password(user['uuid'], salt=None, hash_=None)
+            return user
 
     def count_groups(self, user_uuid, **kwargs):
         return self._dao.user.count_groups(user_uuid, **kwargs)

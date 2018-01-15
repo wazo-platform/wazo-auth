@@ -2,7 +2,7 @@
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from hamcrest import assert_that, contains, calling, equal_to, not_, raises
+from hamcrest import assert_that, contains, calling, equal_to, has_entries, not_, raises
 from ..schemas import BaseSchema
 from marshmallow import fields
 from mock import Mock, patch, sentinel as s
@@ -208,9 +208,10 @@ class TestUserService(BaseServiceTestCase):
         user_uuid = '4a2c93b6-4045-4116-8d53-263e3eac83dd'
         self.user_dao.list_.return_value = [{'uuid': user_uuid}]
 
-        self.service.delete_password(email_address=s.email_address)
+        result = self.service.delete_password(email_address=s.email_address)
 
         self.user_dao.change_password.assert_called_once_with(user_uuid, salt=None, hash_=None)
+        assert_that(result, has_entries(uuid=user_uuid))
 
     def test_remove_policy(self):
         def when(nb_deleted, user_exists=True, policy_exists=True):
