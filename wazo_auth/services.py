@@ -73,14 +73,18 @@ class EmailService(_Service):
             server.close()
 
     def _new_email_confirmation_token(self, email_uuid):
+        acl = 'auth.emails.{}.confirm.edit'.format(email_uuid)
+        return self._new_generic_token(self._token_expiration, acl)
+
+    def _new_generic_token(self, expiration, *acls):
         t = time.time()
         token_payload = dict(
             auth_id='wazo-auth',
             xivo_user_uuid=None,
             xivo_uuid=None,
-            expire_t=t+self._token_expiration,
+            expire_t=t+expiration,
             issued_t=t,
-            acls=['auth.emails.{}.confirm.edit'.format(email_uuid)],
+            acls=acls,
         )
         return self._dao.token.create(token_payload)
 
