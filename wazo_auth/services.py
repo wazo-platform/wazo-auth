@@ -420,6 +420,8 @@ class TemplateLoader(BaseLoader):
     _templates = dict(
         email_confirmation='email_confirmation_template',
         email_confirmation_subject='email_confirmation_subject_template',
+        reset_password='reset_password_email_template',
+        reset_password_subject='reset_password_email_subject_template',
     )
 
     def __init__(self, config):
@@ -456,6 +458,14 @@ class EmailFormatter(object):
 
     def format_confirmation_subject(self, context):
         template = self.environment.get_template('email_confirmation_subject')
+        return template.render(**context)
+
+    def format_password_reset_email(self, context):
+        template = self.environment.get_template('reset_password')
+        return template.render(**context)
+
+    def format_password_reset_subject(self, context):
+        template = self.environment.get_template('reset_password_subject')
         return template.render(**context)
 
 

@@ -27,6 +27,8 @@ _DEFAULT_CONFIG = {
     'email_confirmation_subject_template': '/var/lib/wazo-auth/templates/email_confirmation_subject.jinja',
     'email_confirmation_from_name': 'wazo-auth',
     'email_confirmation_from_address': 'noreply@wazo.community',
+    'reset_password_email_template': '/var/lib/wazo-auth/templates/password_reset_email.jinja',
+    'reset_password_email_subject_template': '/var/lib/wazo-auth/templates/password_reset_email_subject.jinja',
     'enabled_http_plugins': {
         'api': True,
         'backends': True,
