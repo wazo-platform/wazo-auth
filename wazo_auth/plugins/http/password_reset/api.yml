@@ -25,7 +25,7 @@ paths:
       security:
       - wazo_auth_token: []
       summary: Set the user password
-      description: "**Required ACL**: `auth.users.password.reset.{user_uuid}`\n
+      description: "**Required ACL**: `auth.users.password.reset.{user_uuid}.create`\n
       \n
       Set a new password for the user after the user used the GET on the reset URL"
       operationId: reset_password_change

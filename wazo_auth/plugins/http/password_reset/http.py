@@ -38,7 +38,7 @@ class PasswordReset(http.AuthResource):
     def post(self):
 
         @self.auth_verifier.verify_token
-        @http.required_acl('auth.users.password.reset.{user_uuid}')
+        @http.required_acl('auth.users.password.reset.{user_uuid}.create')
         def verify_token(user_uuid):
             # This function will raise an exception returning a 401 if the token
             # does not have the necessary acl to change the password
