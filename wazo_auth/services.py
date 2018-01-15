@@ -38,7 +38,7 @@ class EmailService(_Service):
         self._email_formatter = EmailFormatter(config)
         self._smtp_host = config['smtp']['hostname']
         self._smtp_port = config['smtp']['port']
-        self._token_expiration = config['email_confirmation_expiration']  # TODO rename
+        self._confirmation_token_expiration = config['email_confirmation_expiration']
         self._reset_token_expiration = 3600 * 24 * 2  # TODO make configurable
         self._from = EmailDestination(  # TODO rename
             config['email_confirmation_from_name'],
@@ -92,7 +92,7 @@ class EmailService(_Service):
 
     def _new_email_confirmation_token(self, email_uuid):
         acl = 'auth.emails.{}.confirm.edit'.format(email_uuid)
-        return self._new_generic_token(self._token_expiration, acl)
+        return self._new_generic_token(self._confirmation_token_expiration, acl)
 
     def _new_email_reset_token(self, user_uuid):
         acl = 'auth.users.password.reset.{}.create'.format(user_uuid)
