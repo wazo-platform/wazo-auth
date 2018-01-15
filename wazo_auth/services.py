@@ -38,11 +38,16 @@ class EmailService(_Service):
         self._email_formatter = EmailFormatter(config)
         self._smtp_host = config['smtp']['hostname']
         self._smtp_port = config['smtp']['port']
-        self._token_expiration = config['email_confirmation_expiration']
-        self._from = EmailDestination(
+        self._token_expiration = config['email_confirmation_expiration']  # TODO rename
+        self._reset_token_expiration = 3600 * 24 * 2  # TODO make configurable
+        self._from = EmailDestination(  # TODO rename
             config['email_confirmation_from_name'],
             config['email_confirmation_from_address'],
         )
+        self._password_reset_from = EmailDestination(
+            'wazo-auth',  # TODO make configurable
+            'noreply@wazo.community',
+        ),
 
     def confirm(self, email_uuid):
         self._dao.email.confirm(email_uuid)
@@ -57,6 +62,19 @@ class EmailService(_Service):
 
         body = self._email_formatter.format_confirmation_email(template_context)
         subject = self._email_formatter.format_confirmation_subject(template_context)
+        to = EmailDestination(username, email_address)
+        self._send_msg(to, self._from, subject, body)
+
+    def send_reset_email(self, user_uuid, username, email_address):
+        template_context = dict(
+            token=self._new_email_reset_token(user_uuid),
+            username=username,
+            user_uuid=user_uuid,
+            email_address=email_address,
+        )
+
+        body = self._email_formatter.format_password_reset_email(template_context)
+        subject = self._email_formatter.format_password_reset_subject(template_context)
         to = EmailDestination(username, email_address)
         self._send_msg(to, self._from, subject, body)
 
@@ -75,6 +93,10 @@ class EmailService(_Service):
     def _new_email_confirmation_token(self, email_uuid):
         acl = 'auth.emails.{}.confirm.edit'.format(email_uuid)
         return self._new_generic_token(self._token_expiration, acl)
+
+    def _new_email_reset_token(self, user_uuid):
+        acl = 'auth.users.password.reset.{}.create'.format(user_uuid)
+        return self._new_generic_token(self._reset_token_expiration, acl)
 
     def _new_generic_token(self, expiration, *acls):
         t = time.time()

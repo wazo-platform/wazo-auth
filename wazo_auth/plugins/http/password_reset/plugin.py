@@ -10,6 +10,7 @@ class Plugin(object):
     def load(self, dependencies):
         api = dependencies['api']
         args = (
+            dependencies['email_service'],
             dependencies['user_service'],
         )
 
