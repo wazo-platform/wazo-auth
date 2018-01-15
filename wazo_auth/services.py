@@ -430,7 +430,6 @@ class TemplateLoader(BaseLoader):
         if not config_key:
             raise TemplateNotFound(template)
 
-        logger.debug('config: %s', self._config)
         template_path = self._config[config_key]
         if not path.exists(template_path):
             raise TemplateNotFound(template)
