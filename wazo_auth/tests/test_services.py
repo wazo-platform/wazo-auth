@@ -197,7 +197,13 @@ class TestUserService(BaseServiceTestCase):
         assert_that(
             calling(self.service.delete_password).with_args(username=s.username, email_address=None),
             raises(exceptions.UnknownUserException))
-        self.user_dao.list_.assert_called_once_with(username=s.username)
+        self.user_dao.list_.assert_called_once_with(username=s.username, limit=1)
+
+        self.user_dao.list_.reset_mock()
+        assert_that(
+            calling(self.service.delete_password).with_args(username=None, email_address=s.email_address),
+            raises(exceptions.UnknownUserException))
+        self.user_dao.list_.assert_called_once_with(email_address=s.email_address, limit=1)
 
         user_uuid = '4a2c93b6-4045-4116-8d53-263e3eac83dd'
         self.user_dao.list_.return_value = [{'uuid': user_uuid}]
