@@ -40,7 +40,7 @@ class EmailService(_Service):
         self._smtp_port = config['smtp']['port']
         self._confirmation_token_expiration = config['email_confirmation_expiration']
         self._reset_token_expiration = 3600 * 24 * 2  # TODO make configurable
-        self._from = EmailDestination(  # TODO rename
+        self._confirmation_from = EmailDestination(
             config['email_confirmation_from_name'],
             config['email_confirmation_from_address'],
         )
@@ -63,7 +63,7 @@ class EmailService(_Service):
         body = self._email_formatter.format_confirmation_email(template_context)
         subject = self._email_formatter.format_confirmation_subject(template_context)
         to = EmailDestination(username, email_address)
-        self._send_msg(to, self._from, subject, body)
+        self._send_msg(to, self._confirmation_from, subject, body)
 
     def send_reset_email(self, user_uuid, username, email_address):
         template_context = dict(
@@ -76,7 +76,7 @@ class EmailService(_Service):
         body = self._email_formatter.format_password_reset_email(template_context)
         subject = self._email_formatter.format_password_reset_subject(template_context)
         to = EmailDestination(username, email_address)
-        self._send_msg(to, self._from, subject, body)
+        self._send_msg(to, self._confirmation_from, subject, body)
 
     def _send_msg(self, to, from_, subject, body):
         msg = MIMEText(body)
