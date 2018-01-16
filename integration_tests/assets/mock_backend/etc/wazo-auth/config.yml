@@ -28,5 +28,6 @@ backend_policies:
   wazo_user: wazo_default_admin_policy # For testing only, not a legitimate configuration
 smtp:
   hostname: smtp
+password_reset_email_template: '/var/lib/wazo-auth/templates/raw_password_reset_email.jinja'
 
 db_uri: postgresql://asterisk:proformatique@postgres:5432
