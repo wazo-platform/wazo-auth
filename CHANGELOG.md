@@ -32,6 +32,11 @@ Changelog
     * country
     * zip_code
 
+* Add a new route to change reset the user's password when forgotten
+
+  * GET /users/password/reset
+  * POST /users/password/reset
+
 
 17.17
 -----
