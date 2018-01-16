@@ -2,14 +2,19 @@
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from wazo_auth.exceptions import APIException
+from wazo_auth.exceptions import _BaseParamException
 
 
-class PasswordResetException(APIException):
+class PasswordResetException(_BaseParamException):
+
+    resource = 'reset'
 
     def __init__(self, message, details=None):
-        super(PasswordResetException, self).__init__(400, message, 'invalid_param', {}, 'reset')
+        super(PasswordResetException, self).__init__(message)
 
     @classmethod
     def from_errors(cls, errors):
-        return cls(errors['_schema'])
+        if '_schema' in errors:
+            return cls(errors['_schema'])
+        else:
+            return super(PasswordResetException, cls).from_errors(errors)
