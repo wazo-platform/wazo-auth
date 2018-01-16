@@ -59,7 +59,8 @@ class PasswordReset(http.AuthResource):
         if errors:
             raise PasswordResetException.from_errors(errors)
 
-        logger.debug('changing password for %s: %s', user_uuid, args)
+        logger.debug('changing password for %s', user_uuid)
+        self.user_service.change_password(user_uuid, None, args['password'], reset=True)
 
         return '', 204
 

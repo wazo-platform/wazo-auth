@@ -343,9 +343,9 @@ class UserService(_Service):
     def add_policy(self, user_uuid, policy_uuid):
         self._dao.user.add_policy(user_uuid, policy_uuid)
 
-    def change_password(self, user_uuid, old_password, new_password):
+    def change_password(self, user_uuid, old_password, new_password, reset=False):
         user = self.get_user(user_uuid)
-        if not self.verify_password(user['username'], old_password):
+        if not self.verify_password(user['username'], old_password, reset):
             raise exceptions.AuthenticationFailedException()
 
         salt, hash_ = self._encrypter.encrypt_password(new_password)
@@ -429,7 +429,10 @@ class UserService(_Service):
         self._dao.user.update(user_uuid, **kwargs)
         return self.get_user(user_uuid)
 
-    def verify_password(self, username, password):
+    def verify_password(self, username, password, reset=False):
+        if reset:
+            return True
+
         try:
             hash_, salt = self._dao.user.get_credentials(username)
         except exceptions.UnknownUsernameException:
