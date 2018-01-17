@@ -19,8 +19,8 @@ class PasswordResetQueryParameters(BaseSchema):
 
     @validates_schema
     def validate_mutually_exclusive_fields(self, data):
-        username = data['username']
-        email = data['email_address']
+        username = data.get('username')
+        email = data.get('email_address')
 
         if (username, email).count(None) != 1:
             msg = '"username" or "email" should be used'

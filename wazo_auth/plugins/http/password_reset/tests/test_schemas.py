@@ -6,7 +6,9 @@ import unittest
 from hamcrest import (
     assert_that,
     contains,
+    equal_to,
     has_entries,
+    not_,
 )
 
 from ..schemas import (
@@ -33,3 +35,26 @@ class TestSchema(unittest.TestCase):
         result, errors = self.password_query_parameters_schema.load(query_string)
 
         assert_that(errors, has_entries(_schema=contains('"username" or "email" should be used')))
+
+    def test_username_only(self):
+        query_string = dict(username='foobar')
+
+        result, errors = self.password_query_parameters_schema.load(query_string)
+
+        assert_that(result, has_entries(username='foobar', email_address=None))
+
+    def test_email_only(self):
+        query_string = dict(email='foobar@example.com')
+
+        result, errors = self.password_query_parameters_schema.load(query_string)
+
+        assert_that(result, has_entries(username=None, email_address='foobar@example.com'))
+
+    def test_invalid_field(self):
+        query_string = dict(username=129*'a')
+        result, errors = self.password_query_parameters_schema.load(query_string)
+        assert_that(errors, not_(equal_to(None)))
+
+        query_string = dict(email='patate')
+        result, errors = self.password_query_parameters_schema.load(query_string)
+        assert_that(errors, not_(equal_to(None)))
