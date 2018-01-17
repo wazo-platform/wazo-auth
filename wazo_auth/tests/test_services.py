@@ -2,7 +2,7 @@
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from hamcrest import assert_that, contains, calling, equal_to, not_, raises
+from hamcrest import assert_that, contains, calling, equal_to, has_entries, not_, raises
 from ..schemas import BaseSchema
 from marshmallow import fields
 from mock import Mock, patch, sentinel as s
@@ -191,6 +191,27 @@ class TestUserService(BaseServiceTestCase):
             self.service.change_password(s.uuid, s.old, s.new)
 
         self.user_dao.change_password.assert_called_once_with(s.uuid, s.salt, s.hash_)
+
+    def test_delete_password(self):
+        self.user_dao.list_.return_value = []
+        assert_that(
+            calling(self.service.delete_password).with_args(username=s.username, email_address=None),
+            raises(exceptions.UnknownUserException))
+        self.user_dao.list_.assert_called_once_with(username=s.username, limit=1)
+
+        self.user_dao.list_.reset_mock()
+        assert_that(
+            calling(self.service.delete_password).with_args(username=None, email_address=s.email_address),
+            raises(exceptions.UnknownUserException))
+        self.user_dao.list_.assert_called_once_with(email_address=s.email_address, limit=1)
+
+        user_uuid = '4a2c93b6-4045-4116-8d53-263e3eac83dd'
+        self.user_dao.list_.return_value = [{'uuid': user_uuid}]
+
+        result = self.service.delete_password(email_address=s.email_address)
+
+        self.user_dao.change_password.assert_called_once_with(user_uuid, salt=None, hash_=None)
+        assert_that(result, has_entries(uuid=user_uuid))
 
     def test_remove_policy(self):
         def when(nb_deleted, user_exists=True, policy_exists=True):

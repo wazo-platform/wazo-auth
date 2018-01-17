@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import argparse
@@ -22,11 +22,19 @@ _DEFAULT_CONFIG = {
     'token_cleanup_interval': 60.0,
     'init_key_filename': None,
     'init_policy_name': 'wazo_default_master_user_policy',
+
+    'password_reset_expiration': 172800,
+    'password_reset_from_name': 'wazo-auth',
+    'password_reset_from_address': 'noreply@wazo.community',
+    'password_reset_email_template': '/var/lib/wazo-auth/templates/password_reset_email.jinja',
+    'password_reset_email_subject_template': '/var/lib/wazo-auth/templates/password_reset_email_subject.jinja',
+
     'email_confirmation_expiration': 172800,
     'email_confirmation_template': '/var/lib/wazo-auth/templates/email_confirmation.jinja',
     'email_confirmation_subject_template': '/var/lib/wazo-auth/templates/email_confirmation_subject.jinja',
     'email_confirmation_from_name': 'wazo-auth',
     'email_confirmation_from_address': 'noreply@wazo.community',
+
     'enabled_http_plugins': {
         'api': True,
         'backends': True,
@@ -35,6 +43,7 @@ _DEFAULT_CONFIG = {
         'group_policy': True,
         'groups': True,
         'init': False,
+        'password_reset': True,
         'policies': True,
         'tenant_user': True,
         'tenants': True,

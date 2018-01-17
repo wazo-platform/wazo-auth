@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import functools
@@ -28,9 +28,9 @@ class AuthClientFacade(object):
 
     class TokenCommand(object):
 
-        def is_valid(self, token_id, scope):
+        def is_valid(self, token_id, required_acl):
             try:
-                current_app.config['token_manager'].get(token_id, scope)
+                current_app.config['token_manager'].get(token_id, required_acl)
                 return True
             except exceptions.UnknownTokenException:
                 return False
@@ -65,6 +65,7 @@ class ErrorCatchingResource(Resource):
 
 
 class AuthResource(ErrorCatchingResource):
+    auth_verifier = auth_verifier
     method_decorators = [auth_verifier.verify_token] + ErrorCatchingResource.method_decorators
 
 

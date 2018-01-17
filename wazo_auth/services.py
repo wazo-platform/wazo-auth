@@ -38,11 +38,16 @@ class EmailService(_Service):
         self._email_formatter = EmailFormatter(config)
         self._smtp_host = config['smtp']['hostname']
         self._smtp_port = config['smtp']['port']
-        self._token_expiration = config['email_confirmation_expiration']
-        self._from = EmailDestination(
+        self._confirmation_token_expiration = config['email_confirmation_expiration']
+        self._reset_token_expiration = config['password_reset_expiration']
+        self._confirmation_from = EmailDestination(
             config['email_confirmation_from_name'],
             config['email_confirmation_from_address'],
         )
+        self._password_reset_from = EmailDestination(
+            config['password_reset_from_name'],
+            config['password_reset_from_address'],
+        ),
 
     def confirm(self, email_uuid):
         self._dao.email.confirm(email_uuid)
@@ -58,7 +63,20 @@ class EmailService(_Service):
         body = self._email_formatter.format_confirmation_email(template_context)
         subject = self._email_formatter.format_confirmation_subject(template_context)
         to = EmailDestination(username, email_address)
-        self._send_msg(to, self._from, subject, body)
+        self._send_msg(to, self._confirmation_from, subject, body)
+
+    def send_reset_email(self, user_uuid, username, email_address):
+        template_context = dict(
+            token=self._new_email_reset_token(user_uuid),
+            username=username,
+            user_uuid=user_uuid,
+            email_address=email_address,
+        )
+
+        body = self._email_formatter.format_password_reset_email(template_context)
+        subject = self._email_formatter.format_password_reset_subject(template_context)
+        to = EmailDestination(username, email_address)
+        self._send_msg(to, self._confirmation_from, subject, body)
 
     def _send_msg(self, to, from_, subject, body):
         msg = MIMEText(body)
@@ -73,14 +91,22 @@ class EmailService(_Service):
             server.close()
 
     def _new_email_confirmation_token(self, email_uuid):
+        acl = 'auth.emails.{}.confirm.edit'.format(email_uuid)
+        return self._new_generic_token(self._confirmation_token_expiration, acl)
+
+    def _new_email_reset_token(self, user_uuid):
+        acl = 'auth.users.password.reset.{}.create'.format(user_uuid)
+        return self._new_generic_token(self._reset_token_expiration, acl)
+
+    def _new_generic_token(self, expiration, *acls):
         t = time.time()
         token_payload = dict(
             auth_id='wazo-auth',
             xivo_user_uuid=None,
             xivo_uuid=None,
-            expire_t=t+self._token_expiration,
+            expire_t=t+expiration,
             issued_t=t,
-            acls=['auth.emails.{}.confirm.edit'.format(email_uuid)],
+            acls=acls,
         )
         return self._dao.token.create(token_payload)
 
@@ -317,13 +343,26 @@ class UserService(_Service):
     def add_policy(self, user_uuid, policy_uuid):
         self._dao.user.add_policy(user_uuid, policy_uuid)
 
-    def change_password(self, user_uuid, old_password, new_password):
+    def change_password(self, user_uuid, old_password, new_password, reset=False):
         user = self.get_user(user_uuid)
-        if not self.verify_password(user['username'], old_password):
+        if not self.verify_password(user['username'], old_password, reset):
             raise exceptions.AuthenticationFailedException()
 
         salt, hash_ = self._encrypter.encrypt_password(new_password)
         self._dao.user.change_password(user_uuid, salt, hash_)
+
+    def delete_password(self, **kwargs):
+        search_params = {k: v for k, v in kwargs.iteritems() if v}
+        identifier = search_params.values()[0]
+
+        logger.debug('removing password for user %s', identifier)
+        users = self._dao.user.list_(limit=1, **search_params)
+        if not users:
+            raise exceptions.UnknownUserException(identifier, details=kwargs)
+
+        for user in users:
+            self._dao.user.change_password(user['uuid'], salt=None, hash_=None)
+            return user
 
     def count_groups(self, user_uuid, **kwargs):
         return self._dao.user.count_groups(user_uuid, **kwargs)
@@ -390,7 +429,10 @@ class UserService(_Service):
         self._dao.user.update(user_uuid, **kwargs)
         return self.get_user(user_uuid)
 
-    def verify_password(self, username, password):
+    def verify_password(self, username, password, reset=False):
+        if reset:
+            return True
+
         try:
             hash_, salt = self._dao.user.get_credentials(username)
         except exceptions.UnknownUsernameException:
@@ -407,6 +449,8 @@ class TemplateLoader(BaseLoader):
     _templates = dict(
         email_confirmation='email_confirmation_template',
         email_confirmation_subject='email_confirmation_subject_template',
+        reset_password='password_reset_email_template',
+        reset_password_subject='password_reset_email_subject_template',
     )
 
     def __init__(self, config):
@@ -417,7 +461,6 @@ class TemplateLoader(BaseLoader):
         if not config_key:
             raise TemplateNotFound(template)
 
-        logger.debug('config: %s', self._config)
         template_path = self._config[config_key]
         if not path.exists(template_path):
             raise TemplateNotFound(template)
@@ -444,6 +487,14 @@ class EmailFormatter(object):
 
     def format_confirmation_subject(self, context):
         template = self.environment.get_template('email_confirmation_subject')
+        return template.render(**context)
+
+    def format_password_reset_email(self, context):
+        template = self.environment.get_template('reset_password')
+        return template.render(**context)
+
+    def format_password_reset_subject(self, context):
+        template = self.environment.get_template('reset_password_subject')
         return template.render(**context)
 
 
