@@ -5,6 +5,7 @@ paths:
       description: "This action will disable the current password for the user and send
       an email containing instructions to set a new password.
 
+
       The username or email address should be supplied as query string to find the user"
       operationId: reset_password
       tags:
@@ -25,8 +26,9 @@ paths:
       security:
       - wazo_auth_token: []
       summary: Set the user password
-      description: "**Required ACL**: `auth.users.password.reset.{user_uuid}.create`\n
-      \n
+      description: "**Required ACL**: `auth.users.password.reset.{user_uuid}.create`
+
+
       Set a new password for the user after the user used the GET on the reset URL"
       operationId: reset_password_change
       tags:

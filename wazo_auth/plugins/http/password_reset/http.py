@@ -8,7 +8,7 @@ from flask import request
 from xivo.auth_verifier import no_auth
 from wazo_auth import http
 from wazo_auth.exceptions import UnknownUserException
-from .schemas import (PasswordResetPostParameters, PasswordResetQueryParameters)
+from .schemas import PasswordResetPostParameters, PasswordResetQueryParameters
 from .exceptions import PasswordResetException
 
 logger = logging.getLogger(__name__)
