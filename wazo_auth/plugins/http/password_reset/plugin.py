@@ -2,6 +2,7 @@
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+from wazo_auth.http import AuthClientFacade
 from . import http
 
 
@@ -10,6 +11,7 @@ class Plugin(object):
     def load(self, dependencies):
         api = dependencies['api']
         args = (
+            AuthClientFacade(),
             dependencies['email_service'],
             dependencies['user_service'],
         )

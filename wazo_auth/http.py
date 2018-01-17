@@ -28,9 +28,9 @@ class AuthClientFacade(object):
 
     class TokenCommand(object):
 
-        def is_valid(self, token_id, scope):
+        def is_valid(self, token_id, required_acl):
             try:
-                current_app.config['token_manager'].get(token_id, scope)
+                current_app.config['token_manager'].get(token_id, required_acl)
                 return True
             except exceptions.UnknownTokenException:
                 return False

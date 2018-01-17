@@ -5,7 +5,7 @@
 import logging
 
 from flask import request
-from xivo.auth_verifier import no_auth
+from xivo.auth_verifier import extract_token_id_from_query_or_header, Unauthorized
 from wazo_auth import http
 from wazo_auth.exceptions import UnknownUserException
 from .schemas import PasswordResetPostParameters, PasswordResetQueryParameters
@@ -14,13 +14,13 @@ from .exceptions import PasswordResetException
 logger = logging.getLogger(__name__)
 
 
-class PasswordReset(http.AuthResource):
+class PasswordReset(http.ErrorCatchingResource):
 
-    def __init__(self, email_service, user_service):
+    def __init__(self, auth_client, email_service, user_service):
+        self.auth_client = auth_client
         self.email_service = email_service
         self.user_service = user_service
 
-    @no_auth
     def get(self):
         args, errors = PasswordResetQueryParameters().load(request.args)
         if errors:
@@ -42,18 +42,13 @@ class PasswordReset(http.AuthResource):
 
         return '', 204
 
-    @no_auth
     def post(self):
-
-        @self.auth_verifier.verify_token
-        @http.required_acl('auth.users.password.reset.{user_uuid}.create')
-        def verify_token(user_uuid):
-            # This function will raise an exception returning a 401 if the token
-            # does not have the necessary acl to change the password
-            return
-
+        token_id = extract_token_id_from_query_or_header()
         user_uuid = request.args.get('user_uuid')
-        verify_token(user_uuid=user_uuid)
+        acl = 'auth.users.password.reset.{}.create'.format(user_uuid)
+
+        if not self.auth_client.token.is_valid(token_id, required_acl=acl):
+            raise Unauthorized(token_id)
 
         args, errors = PasswordResetPostParameters().load(request.get_json())
         if errors:
