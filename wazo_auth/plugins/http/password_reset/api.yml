@@ -45,7 +45,7 @@ paths:
           required: true
           schema:
             $ref: '#/definitions/PostPasswordReset'
-      response:
+      responses:
         '204':
           description: Password changed
 definitions:
