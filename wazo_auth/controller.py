@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -98,8 +98,7 @@ class Controller(object):
                                             self._service_discovery_config,
                                             self._bus_config,
                                             partial(self_check,
-                                                    self._listen_port,
-                                                    self._ssl_cert_file)):
+                                                    self._listen_port)):
                 self._expired_token_remover.run()
                 local_token_manager = self._get_local_token_manager()
                 self._config['local_token_manager'] = local_token_manager
