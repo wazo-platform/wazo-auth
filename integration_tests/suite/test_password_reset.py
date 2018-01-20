@@ -11,15 +11,13 @@ from .helpers.base import assert_no_error, MockBackendTestCase
 
 class TestResetPassword(MockBackendTestCase):
 
-    email_dir = '/var/mail'
-
     @fixtures.http_user(username='foo', email_address='foo@example.com')
     @fixtures.http_user(username='bar', email_address='bar@example.com')
     def test_password_reset(self, bar, foo):
         self.client.users.reset_password(username='foo')
         self.client.users.reset_password(email='bar@example.com')
 
-        emails = self._get_emails()
+        emails = self.get_emails()
 
         assert_that(emails, contains_inanyorder(
             contains_string('username: foo'),
@@ -41,12 +39,3 @@ class TestResetPassword(MockBackendTestCase):
         user_uuid = email_fields['user_uuid']
 
         return self.client.users.set_password(user_uuid, password, token)
-
-    def _get_emails(self):
-        return [self._email_body(f) for f in self._get_email_filenames()]
-
-    def _email_body(self, filename):
-        return self.docker_exec(['cat', '{}/{}'.format(self.email_dir, filename)], 'smtp')
-
-    def _get_email_filenames(self):
-        return self.docker_exec(['ls', self.email_dir], 'smtp').strip().split('\n')
