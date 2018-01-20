@@ -1,6 +1,14 @@
 Changelog
 =========
 
+18.02
+-----
+
+* A new resource has been added to trigger a new email confirmation email
+
+  * GET `0.1/users/<user_uuid>/emails/<email_uuid>/confirm`
+
+
 18.01
 -----
 
