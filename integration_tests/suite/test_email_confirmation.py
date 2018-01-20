@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import requests
@@ -38,3 +38,24 @@ class TestEmailConfirmation(MockBackendTestCase):
             has_entries(emails=contains(has_entries(
                 address='foobar@example.com',
                 confirmed=True))))
+
+    @fixtures.http_user_register(email_address='foobar@example.com')
+    def test_sending_a_new_confirmation_mail(self, user):
+        email_uuid = user['emails'][0]['uuid']
+
+        self.client.users.request_confirmation_email(user['uuid'], email_uuid)
+
+        last_email = self.get_emails()[-1]
+        url = [l for l in last_email.split('\n') if l.startswith('https://')][0]
+        requests.get(url, verify=False)
+
+        updated_user = self.client.users.get(user['uuid'])
+        assert_that(
+            updated_user,
+            has_entries(emails=contains(has_entries(
+                address='foobar@example.com',
+                confirmed=True))))
+
+        assert_http_error(409, self.client.users.request_confirmation_email, user['uuid'], email_uuid)
+        assert_http_error(404, self.client.users.request_confirmation_email, UNKNOWN_UUID, email_uuid)
+        assert_http_error(404, self.client.users.request_confirmation_email, user['uuid'], UNKNOWN_UUID)
