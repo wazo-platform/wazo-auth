@@ -23,6 +23,14 @@ class UserEmailConfirm(http.AuthResource):
                      user_uuid, email_uuid)
 
         user = self.user_service.get_user(user_uuid)
+        email = self._get_email_details(user, email_uuid)
+
+        username, uuid, address = user['username'], str(email_uuid), email['address']
+        self.email_service.send_confirmation_email(username, uuid, address)
+
+        return '', 204
+
+    def _get_email_details(self, user, email_uuid):
         emails = [email for email in user['emails'] if email['uuid'] == str(email_uuid)]
         if not emails:
             raise exceptions.UnknownEmailException(email_uuid)
@@ -31,7 +39,4 @@ class UserEmailConfirm(http.AuthResource):
             if email['confirmed']:
                 raise EmailAlreadyConfirmedException(email_uuid)
 
-            username, uuid, address = user['username'], str(email_uuid), email['address']
-            self.email_service.send_confirmation_email(username, uuid, address)
-
-        return '', 204
+            return email
