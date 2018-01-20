@@ -9,8 +9,13 @@ class Plugin(object):
 
     def load(self, dependencies):
         api = dependencies['api']
+        args = (
+            dependencies['email_service'],
+            dependencies['user_service'],
+        )
 
         api.add_resource(
             http.UserEmailConfirm,
             '/users/<uuid:user_uuid>/emails/<uuid:email_uuid>/confirm',
+            resource_class_args=args,
         )

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
@@ -18,12 +18,12 @@ class HTTPAppTestCase(TestCase):
     headers = {'content-type': 'application/json'}
 
     def setUp(self, config):
-        self.user_service = Mock()
+        self.user_service = Mock(services.UserService)
         self.policy_service = Mock()
         self.tenant_service = Mock(services.TenantService)
         token_manager = Mock()
         group_service = Mock()
-        email_service = Mock()
+        self.email_service = Mock(services.EmailService)
         external_auth_service = Mock()
         dependencies = {
             'config': config,
@@ -33,7 +33,7 @@ class HTTPAppTestCase(TestCase):
             'user_service': self.user_service,
             'tenant_service': self.tenant_service,
             'group_service': group_service,
-            'email_service': email_service,
+            'email_service': self.email_service,
             'external_auth_service': external_auth_service,
         }
         self.app = new_app(dependencies).test_client()
