@@ -106,6 +106,7 @@ class Token(Base):
     issued_t = Column(Integer)
     expire_t = Column(Integer)
     acls = relationship('ACL')
+    metadata_ = Column(Text, name='metadata')
 
 
 class Policy(Base):
