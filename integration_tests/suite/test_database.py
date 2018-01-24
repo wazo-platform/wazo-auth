@@ -743,8 +743,15 @@ class TestPolicyDAO(_BaseDAOTestCase):
 class TestTokenDAO(_BaseDAOTestCase):
 
     def test_create(self):
-        with nested(self._new_token(),
+        metadata = dict(
+            uuid='08b213da-9963-4d25-96a3-f02d717e82f2',
+            id=42,
+            msg='a string field',
+        )
+
+        with nested(self._new_token(metadata=metadata),
                     self._new_token(acls=['first', 'second'])) as (e1, e2):
+            assert_that(e1['metadata'], has_entries(**metadata))
             t1 = self._token_dao.get(e1['uuid'])
             t2 = self._token_dao.get(e2['uuid'])
             assert_that(t1, equal_to(e1))
@@ -785,7 +792,7 @@ class TestTokenDAO(_BaseDAOTestCase):
                             raises(exceptions.UnknownTokenException))
 
     @contextmanager
-    def _new_token(self, acls=None, expiration=120):
+    def _new_token(self, acls=None, metadata=None, expiration=120):
         now = int(time.time())
         body = {
             'auth_id': 'test',
@@ -794,6 +801,7 @@ class TestTokenDAO(_BaseDAOTestCase):
             'issued_t': now,
             'expire_t': now + expiration,
             'acls': acls or [],
+            'metadata': metadata or {},
         }
         token_uuid = self._token_dao.create(body)
         token_data = dict(body)

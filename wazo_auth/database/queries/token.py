@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+import json
 import time
 
 from .base import BaseDAO
@@ -12,12 +13,14 @@ from ... import exceptions
 class TokenDAO(BaseDAO):
 
     def create(self, body):
+        serialized_metadata = json.dumps(body.get('metadata', {}))
         token = TokenModel(
             auth_id=body['auth_id'],
             user_uuid=body['xivo_user_uuid'],
             xivo_uuid=body['xivo_uuid'],
             issued_t=int(body['issued_t']),
             expire_t=int(body['expire_t']),
+            metadata_=serialized_metadata,
         )
         token.acls = [ACL(token_uuid=token.uuid, value=acl) for acl in body.get('acls') or []]
         with self.new_session() as s:
@@ -37,6 +40,7 @@ class TokenDAO(BaseDAO):
                     'issued_t': token.issued_t,
                     'expire_t': token.expire_t,
                     'acls': [acl.value for acl in token.acls],
+                    'metadata': json.loads(token.metadata_) if token.metadata_ else {}
                 }
 
             raise exceptions.UnknownTokenException()
