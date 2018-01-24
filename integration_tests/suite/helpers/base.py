@@ -29,6 +29,7 @@ class BaseTestCase(AssetLaunchingTestCase):
     assets_root = os.path.join(os.path.dirname(__file__), '../..', 'assets')
     service = 'auth'
     bus_config = dict(username='guest', password='guest', host='localhost')
+    email_dir = '/var/mail'
 
     @classmethod
     def setUpClass(cls):
@@ -41,6 +42,15 @@ class BaseTestCase(AssetLaunchingTestCase):
         port = self.service_port(5672, service_name='rabbitmq')
         bus_url = 'amqp://{username}:{password}@{host}:{port}//'.format(port=port, **self.bus_config)
         return BusClient(bus_url).accumulator(routing_key)
+
+    def get_emails(self):
+        return [self._email_body(f) for f in self._get_email_filenames()]
+
+    def _email_body(self, filename):
+        return self.docker_exec(['cat', '{}/{}'.format(self.email_dir, filename)], 'smtp')
+
+    def _get_email_filenames(self):
+        return self.docker_exec(['ls', self.email_dir], 'smtp').strip().split('\n')
 
     def _post_token(self, username, password, backend=None, expiration=None):
         port = self.service_port(9497, 'auth')

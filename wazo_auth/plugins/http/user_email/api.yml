@@ -1,0 +1,22 @@
+paths:
+  /users/{user_uuid}/emails/{email_uuid}/confirm:
+    get:
+      tags:
+        - users
+        - emails
+      security:
+        - wazo_auth_token: []
+      description: '**Required ACL**: `auth.users.{user_uuid}.emails.{email_uuid}.confirm.read`'
+      summary: 'Ask a new confirmation email'
+      parameters:
+        - $ref: '#/parameters/user_uuid'
+        - $ref: '#/parameters/email_uuid'
+      responses:
+        '204':
+          description: 'The new email confirmation email has been sent'
+        '404':
+          description: 'User or Email not found'
+          schema:
+            $ref: '#/definitions/Error'
+        '409':
+          description: 'Already confirmed'

@@ -48,6 +48,7 @@ _DEFAULT_CONFIG = {
         'tenant_user': True,
         'tenants': True,
         'tokens': True,
+        'user_email': True,
         'user_group': True,
         'user_policy': True,
         'user_registration': False,
