@@ -7,7 +7,7 @@ paths:
       security:
         - wazo_auth_token: []
       description: '**Required ACL**: `auth.users.{user_uuid}.emails.{email_uuid}.confirm.read`'
-      summary: 'Asks for wazo-auth to send a new confirmation email for this email address'
+      summary: 'Ask a new confirmation email'
       parameters:
         - $ref: '#/parameters/user_uuid'
         - $ref: '#/parameters/email_uuid'
