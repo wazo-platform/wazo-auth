@@ -31,12 +31,17 @@ class UserEmailConfirm(http.AuthResource):
         return '', 204
 
     def _get_email_details(self, user, email_uuid):
-        emails = [email for email in user['emails'] if email['uuid'] == str(email_uuid)]
-        if not emails:
+        email = self._find_email(user['emails'], email_uuid)
+        if not email:
             raise exceptions.UnknownEmailException(email_uuid)
 
-        for email in emails:
-            if email['confirmed']:
-                raise EmailAlreadyConfirmedException(email_uuid)
+        if email['confirmed']:
+            raise EmailAlreadyConfirmedException(email_uuid)
 
-            return email
+        return email
+
+    def _find_email(self, user_emails, email_uuid):
+        for email in user_emails:
+            if email['uuid'] == str(email_uuid):
+                return email
+        return None
