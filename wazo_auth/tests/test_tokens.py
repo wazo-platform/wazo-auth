@@ -8,7 +8,7 @@ import time
 from hamcrest import assert_that, equal_to
 from mock import Mock, sentinel
 
-from wazo_auth import token, BaseAuthenticationBackend
+from wazo_auth import token
 from ..database import queries
 from ..database.queries.token import TokenDAO
 
@@ -20,11 +20,6 @@ class TestManager(unittest.TestCase):
         self.token_dao = Mock(TokenDAO)
         dao = queries.DAO(token=self.token_dao)
         self.manager = token.Manager(self.config, dao)
-
-    def _new_backend_mock(self, auth_id=None, uuid=None):
-        get_ids = Mock(return_value=(auth_id or sentinel.auth_id,
-                                     uuid or sentinel.uuid))
-        return Mock(BaseAuthenticationBackend, get_ids=get_ids)
 
     def test_remove_token(self):
         token_id = 'my-token'
