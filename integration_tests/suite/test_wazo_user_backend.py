@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from hamcrest import (
     assert_that,
+    contains,
     has_entries,
     has_items,
 )
@@ -32,6 +33,22 @@ class TestWazoUserBackend(MockBackendTestCase):
 
         assert_http_error(401, self._post_token, user['username'], 'not-our-password', backend='wazo_user')
         assert_http_error(401, self._post_token, 'not-foobar', 's3cr37', backend='wazo_user')
+
+    @fixtures.http_group()
+    @fixtures.http_tenant()
+    @fixtures.http_user(password='s3cr37')
+    def test_token_metadata(self, user, tenant, group):
+        self.client.groups.add_user(group['uuid'], user['uuid'])
+        self.client.tenants.add_user(tenant['uuid'], user['uuid'])
+
+        token_data = self._post_token(user['username'], 's3cr37', backend='wazo_user')
+
+        assert_that(token_data['metadata'], has_entries(
+            xivo_uuid='the-predefined-xivo-uuid',
+            uuid=user['uuid'],
+            tenants=contains(has_entries(uuid=tenant['uuid'])),
+            groups=contains(has_entries(uuid=group['uuid'])),
+        ))
 
     def test_no_password(self):
         user = self.client.users.new(username='foobar', email_address='foobar@example.com')

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import abc
@@ -25,7 +25,7 @@ class BaseAuthenticationBackend(object):
         pass
 
     def get_acls(self, login, args):
-        """returns a list of XiVO acls"""
+        """returns a list of acls"""
         return []
 
     def get_xivo_uuid(self, _args):
@@ -36,13 +36,21 @@ class BaseAuthenticationBackend(object):
         """
         return DEFAULT_XIVO_UUID
 
-    @abc.abstractmethod
-    def get_ids(self, login, args):
-        """Find the identifiers for a given login and arguments in the body request.
+    def get_metadata(self, login, args):
+        """return user related data
 
-        Returns a tuple containing the unique identifier for this backend and
-        the xivo user uuid for the the given login.
+        these data are used in the body of the GET and POST of the /token and
+        also used for ACL rendering
         """
+        metadata = dict(xivo_uuid=self.get_xivo_uuid(args))
+
+        # Old plugin had a get_ids method that returned the auth_id and the xivo_user_uuid
+        if hasattr(self, 'get_ids'):
+            auth_id, xivo_user_uuid = self.get_ids(login, args)
+            metadata['auth_id'] = auth_id
+            metadata['xivo_user_uuid'] = xivo_user_uuid
+
+        return metadata
 
     @abc.abstractmethod
     def verify_password(self, login, passwd, args):

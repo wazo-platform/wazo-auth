@@ -69,6 +69,12 @@ class TestToken(unittest.TestCase):
         self.issued_at = 1480011471.53537
         self.expires_at = 1480011513.53537
         self.acls = ['confd']
+        self.metadata = {
+            'uuid': self.xivo_user_uuid,
+            'auth_id': self.auth_id,
+            'xivo_user_uuid': self.xivo_user_uuid,
+        }
+
         self.token = token.Token(
             self.id_,
             auth_id=self.auth_id,
@@ -76,7 +82,8 @@ class TestToken(unittest.TestCase):
             xivo_uuid=self.xivo_uuid,
             issued_t=self.issued_at,
             expire_t=self.expires_at,
-            acls=self.acls)
+            acls=self.acls,
+            metadata=self.metadata)
         self.utc_issued_at = '2016-11-24T18:17:51.535370'
         self.utc_expires_at = '2016-11-24T18:18:33.535370'
 

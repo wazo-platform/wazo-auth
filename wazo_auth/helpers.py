@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import time
@@ -15,7 +15,7 @@ class LazyTemplateRenderer(object):
         self._get_data_fn = get_data_fn
         self._args = args
         self._kwargs = kwargs
-        self._data = {}
+        self._data = kwargs.get('metadata', {})
         self._initialized = False
 
     def render(self):
@@ -37,7 +37,9 @@ class LazyTemplateRenderer(object):
             if self._initialized:
                 return
             self._initialized = True
-            self._data = self._get_data_fn(*self._args, **self._kwargs)
+            remote_data = self._get_data_fn(*self._args, **self._kwargs)
+            remote_data.update(self._data)
+            self._data = remote_data
             for acl in self._evaluate_template(acl_template):
                 if acl:
                     yield acl
