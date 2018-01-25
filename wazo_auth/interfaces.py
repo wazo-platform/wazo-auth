@@ -42,7 +42,7 @@ class BaseAuthenticationBackend(object):
         these data are used in the body of the GET and POST of the /token and
         also used for ACL rendering
         """
-        metadata = dict(xivo_uuid=self.get_xivo_uuid(args))
+        metadata = dict(username=login, xivo_uuid=self.get_xivo_uuid(args))
 
         # Old plugin had a get_ids method that returned the auth_id and the xivo_user_uuid
         if hasattr(self, 'get_ids'):
@@ -87,10 +87,6 @@ class UserAuthenticationBackend(BaseAuthenticationBackend, ACLRenderingBackend):
         super(UserAuthenticationBackend, self).load(dependencies)
         self._config = dependencies['config']
         self._confd_config = self._config['confd']
-
-    @abc.abstractmethod
-    def get_ids(self, login, args):
-        super(UserAuthenticationBackend, self).get_ids(login, args)
 
     @abc.abstractmethod
     def verify_password(self, login, passwd, args):

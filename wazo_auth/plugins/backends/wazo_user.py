@@ -4,7 +4,7 @@
 
 import logging
 
-from wazo_auth import DEFAULT_XIVO_UUID, UserAuthenticationBackend
+from wazo_auth import UserAuthenticationBackend
 
 logger = logging.getLogger(__name__)
 
@@ -26,27 +26,25 @@ class WazoUser(UserAuthenticationBackend):
 
         return self.render_acl(acl_templates, self.get_user_data, username=username, metadata=metadata)
 
-    def get_ids(self, username, args):
-        uuid = self._get_user_uuid(username)
-        return uuid, uuid
-
     def verify_password(self, username, password, args):
         return self._user_service.verify_password(username, password)
 
     def get_metadata(self, login, args):
+        metadata = super(WazoUser, self).get_metadata(login, args)
         user_uuid = self._get_user_uuid(login)
         tenants = self._get_tenants(user_uuid)
         groups = self._get_groups(user_uuid)
 
-        return dict(
-            username=login,
+        user_data = dict(
             auth_id=user_uuid,
             xivo_user_uuid=user_uuid,
             uuid=user_uuid,
-            xivo_uuid=DEFAULT_XIVO_UUID,
             tenants=tenants,
             groups=groups,
         )
+        metadata.update(user_data)
+
+        return metadata
 
     def get_user_data(self, *args, **kwargs):
         metadata = kwargs['metadata']
