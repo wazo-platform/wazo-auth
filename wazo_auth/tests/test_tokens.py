@@ -4,9 +4,6 @@
 
 import unittest
 import time
-import uuid
-
-from datetime import datetime, timedelta
 
 from hamcrest import assert_that, equal_to
 from mock import Mock, sentinel
@@ -14,27 +11,6 @@ from mock import Mock, sentinel
 from wazo_auth import token, BaseAuthenticationBackend
 from ..database import queries
 from ..database.queries.token import TokenDAO
-
-
-def later(expiration):
-    delta = timedelta(seconds=expiration)
-    return (datetime.now() + delta).isoformat()
-
-
-class AnyUUID(object):
-
-    def __eq__(self, other):
-        try:
-            uuid.UUID(other)
-            return True
-        except ValueError:
-            return False
-
-    def __ne__(self, other):
-        return not self == other
-
-
-ANY_UUID = AnyUUID()
 
 
 class TestManager(unittest.TestCase):

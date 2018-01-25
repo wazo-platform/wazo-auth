@@ -2,14 +2,12 @@
 # Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-import hashlib
 import logging
 import os
 import re
 import time
 from threading import Timer
 
-from uuid import uuid4
 from datetime import datetime
 
 from .exceptions import (
@@ -97,31 +95,6 @@ class Token(object):
         if acl_regex.endswith('\.me'):
             acl_regex = '{acl_start}\.(me|{auth_id})'.format(acl_start=acl_regex[:-4], auth_id=self.auth_id)
         return acl_regex
-
-    @classmethod
-    def from_payload(cls, payload):
-        id_ = str(uuid4())
-        return Token(
-            id_,
-            auth_id=payload.auth_id,
-            xivo_user_uuid=payload.xivo_user_uuid,
-            xivo_uuid=payload.xivo_uuid,
-            issued_t=payload.issued_t,
-            expire_t=payload.expire_t,
-            acls=payload.acls,
-            metadata=payload.metadata)
-
-
-class TokenPayload(object):
-
-    def __init__(self, auth_id, xivo_user_uuid, xivo_uuid, issued_t, expire_t, acls, metadata):
-        self.auth_id = auth_id
-        self.xivo_user_uuid = xivo_user_uuid
-        self.xivo_uuid = xivo_uuid
-        self.issued_t = issued_t
-        self.expire_t = expire_t
-        self.acls = acls or []
-        self.metadata = metadata
 
 
 class ExpiredTokenRemover(object):
@@ -213,6 +186,3 @@ class Manager(object):
 
         logger.info('Unknown policy name "%s" configured for backend "%s"', policy_name, backend_name)
         return []
-
-    def _get_token_hash(self, token):
-        return hashlib.sha256('{token}'.format(token=token)).hexdigest()
