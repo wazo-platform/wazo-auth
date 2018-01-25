@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -19,15 +19,14 @@ class XiVOService(BaseAuthenticationBackend):
         with session_scope():
             return accesswebservice_dao.get_user_acl(login)
 
-    def get_ids(self, login, args):
+    def get_metadata(self, login, args):
+        metadata = super(XiVOService, self).get_metadata(login, args)
         with session_scope():
             try:
-                auth_id = accesswebservice_dao.get_user_uuid(login)
+                metadata['auth_id'] = accesswebservice_dao.get_user_uuid(login)
             except LookupError:
                 raise AuthenticationFailedException()
-
-        user_uuid = None
-        return auth_id, user_uuid
+        return metadata
 
     def verify_password(self, login, password, args):
         with session_scope():
