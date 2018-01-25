@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import unittest
@@ -8,7 +8,7 @@ from xivo_dao.alchemy.userfeatures import UserFeatures as User
 from xivo_dao.helpers.exception import InputError
 
 from mock import patch, Mock
-from hamcrest import assert_that, equal_to, is_
+from hamcrest import assert_that, equal_to, has_entries, is_
 
 from wazo_auth.plugins.backends.xivo_user import XiVOUser
 
@@ -48,25 +48,25 @@ DEFAULT_USER_ACLS = [
 
 
 @patch('wazo_auth.plugins.backends.xivo_user.user_dao')
-class TestGetIDS(unittest.TestCase):
+class TestGetMetadata(unittest.TestCase):
 
-    def test_that_get_ids_calls_the_dao(self, user_dao_mock):
+    def test_that_get_metadata_calls_the_dao(self, user_dao_mock):
         user_dao_mock.get_by.return_value = Mock(User, uuid='foobars-uuid')
         backend = XiVOUser()
         backend.load({'config': {'confd': {'host': 'localhost'}}})
         args = None
 
-        result = backend.get_ids('foobar', args)
+        result = backend.get_metadata('foobar', args)
 
-        assert_that(result, equal_to(('foobars-uuid', 'foobars-uuid')))
+        assert_that(result, has_entries(auth_id='foobars-uuid', xivo_user_uuid='foobars-uuid'))
         user_dao_mock.get_by.assert_called_once_with(username='foobar', enableclient=1)
 
-    def test_that_get_ids_raises_if_no_user(self, user_dao_mock):
+    def test_that_get_metadata_raises_if_no_user(self, user_dao_mock):
         user_dao_mock.get_by.side_effect = InputError
         backend = XiVOUser()
         backend.load({'config': {'confd': {'host': 'localhost'}}})
 
-        self.assertRaises(Exception, backend.get_ids, 'foobar')
+        self.assertRaises(Exception, backend.get_metadata, 'foobar', None)
 
 
 @patch('wazo_auth.plugins.backends.xivo_user.user_dao')
