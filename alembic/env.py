@@ -3,7 +3,8 @@
 import os
 from logging.config import fileConfig
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import create_engine
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -22,6 +23,16 @@ VERSION_TABLE = 'alembic_version_auth'
 URI = os.getenv('ALEMBIC_DB_URI', None)
 
 
+def get_url():
+    # The import should not be top level to allow the usage of the ALEMBIC_DB_URI
+    # environment variable when the DB is not hosted on the same host as wazo-auth.
+    # When building the docker image for the database for example.
+    from wazo_auth.config import get_config
+
+    wazo_config = get_config('')
+    return wazo_config.get('db_uri')
+
+
 def run_migrations_offline():
     """Run migrations in 'offline' mode.
 
@@ -34,7 +45,7 @@ def run_migrations_offline():
     script output.
 
     """
-    url = URI or config.get_main_option("sqlalchemy.url")
+    url = URI or get_url()
     context.configure(url=url, version_table=VERSION_TABLE)
 
     with context.begin_transaction():
@@ -48,13 +59,8 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
-    if URI:
-        config.set_section_option('alembic', 'sqlalchemy.url', URI)
-
-    engine = engine_from_config(
-        config.get_section(config.config_ini_section),
-        prefix='sqlalchemy.',
-        poolclass=pool.NullPool)
+    url = URI or get_url()
+    engine = create_engine(url)
 
     connection = engine.connect()
     context.configure(connection=connection, version_table=VERSION_TABLE)

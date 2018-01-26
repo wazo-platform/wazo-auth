@@ -4,6 +4,7 @@ USER root
 
 ADD . /usr/src/wazo-auth
 WORKDIR /usr/src/wazo-auth
+ENV ALEMBIC_DB_URI postgresql://asterisk:proformatique@localhost/asterisk
 
 RUN true \
     && python3 setup.py install \
