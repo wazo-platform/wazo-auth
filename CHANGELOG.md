@@ -8,6 +8,11 @@ Changelog
 
   * GET `0.1/users/<user_uuid>/emails/<email_uuid>/confirm`
 
+* Add the "metadata" field on the token body
+
+  * POST `0.1/token`
+  * GET `0.1/token/<token_uuid>`
+
 
 18.01
 -----

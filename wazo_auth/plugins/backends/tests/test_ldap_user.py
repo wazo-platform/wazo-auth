@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import unittest
 import ldap
 
 from mock import patch, Mock, call
-from hamcrest import assert_that, equal_to
+from hamcrest import assert_that, equal_to, has_entries
 
 from wazo_auth.plugins.backends.ldap_user import LDAPUser, _XivoLDAP
 
@@ -34,7 +34,7 @@ class TestGetACLS(unittest.TestCase):
 
 
 @patch('wazo_auth.plugins.backends.ldap_user.find_by')
-class TestGetIDS(unittest.TestCase):
+class TestGetMetadata(unittest.TestCase):
 
     def setUp(self):
         config = {
@@ -49,13 +49,13 @@ class TestGetIDS(unittest.TestCase):
         self.backend = LDAPUser()
         self.backend.load({'config': config})
 
-    def test_that_get_ids_calls_the_dao(self, find_by):
-        expected_result = ('alice-uuid', 'alice-uuid')
-        result = self.backend.get_ids('alice', self.args)
-        assert_that(result, equal_to(expected_result))
+    def test_that_get_metadata_calls_the_dao(self, find_by):
+        expected_result = has_entries(auth_id='alice-uuid', xivo_user_uuid='alice-uuid')
+        result = self.backend.get_metadata('alice', self.args)
+        assert_that(result, expected_result)
 
-    def test_that_get_ids_raises_if_no_user(self, find_by):
-        self.assertRaises(Exception, self.backend.get_ids, 'alice')
+    def test_that_get_metadata_raises_if_no_user(self, find_by):
+        self.assertRaises(Exception, self.backend.get_metadata, 'alice', None)
 
 
 @patch('wazo_auth.plugins.backends.ldap_user._XivoLDAP')

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -22,10 +22,13 @@ class XiVOUser(UserAuthenticationBackend):
         acl_templates = args.get('acl_templates', [])
         return self.render_acl(acl_templates, self.get_user_data, username=login)
 
-    def get_ids(self, username, args):
+    def get_metadata(self, login, args):
+        metadata = super(XiVOUser, self).get_metadata(login, args)
         with session_scope():
-            user = user_dao.get_by(username=username, enableclient=1)
-            return user.uuid, user.uuid
+            user = user_dao.get_by(username=login, enableclient=1)
+            metadata['xivo_user_uuid'] = user.uuid
+            metadata['auth_id'] = user.uuid
+        return metadata
 
     def verify_password(self, login, password, args):
         with session_scope():

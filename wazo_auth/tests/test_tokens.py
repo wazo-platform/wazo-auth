@@ -4,37 +4,13 @@
 
 import unittest
 import time
-import uuid
-
-from datetime import datetime, timedelta
 
 from hamcrest import assert_that, equal_to
 from mock import Mock, sentinel
 
-from wazo_auth import token, BaseAuthenticationBackend
+from wazo_auth import token
 from ..database import queries
 from ..database.queries.token import TokenDAO
-
-
-def later(expiration):
-    delta = timedelta(seconds=expiration)
-    return (datetime.now() + delta).isoformat()
-
-
-class AnyUUID(object):
-
-    def __eq__(self, other):
-        try:
-            uuid.UUID(other)
-            return True
-        except ValueError:
-            return False
-
-    def __ne__(self, other):
-        return not self == other
-
-
-ANY_UUID = AnyUUID()
 
 
 class TestManager(unittest.TestCase):
@@ -44,11 +20,6 @@ class TestManager(unittest.TestCase):
         self.token_dao = Mock(TokenDAO)
         dao = queries.DAO(token=self.token_dao)
         self.manager = token.Manager(self.config, dao)
-
-    def _new_backend_mock(self, auth_id=None, uuid=None):
-        get_ids = Mock(return_value=(auth_id or sentinel.auth_id,
-                                     uuid or sentinel.uuid))
-        return Mock(BaseAuthenticationBackend, get_ids=get_ids)
 
     def test_remove_token(self):
         token_id = 'my-token'
@@ -69,6 +40,12 @@ class TestToken(unittest.TestCase):
         self.issued_at = 1480011471.53537
         self.expires_at = 1480011513.53537
         self.acls = ['confd']
+        self.metadata = {
+            'uuid': self.xivo_user_uuid,
+            'auth_id': self.auth_id,
+            'xivo_user_uuid': self.xivo_user_uuid,
+        }
+
         self.token = token.Token(
             self.id_,
             auth_id=self.auth_id,
@@ -76,7 +53,8 @@ class TestToken(unittest.TestCase):
             xivo_uuid=self.xivo_uuid,
             issued_t=self.issued_at,
             expire_t=self.expires_at,
-            acls=self.acls)
+            acls=self.acls,
+            metadata=self.metadata)
         self.utc_issued_at = '2016-11-24T18:17:51.535370'
         self.utc_expires_at = '2016-11-24T18:18:33.535370'
 

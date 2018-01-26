@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-import hashlib
 import logging
 import os
 import re
 import time
 from threading import Timer
 
-from uuid import uuid4
 from datetime import datetime
 
 from .exceptions import (
@@ -25,7 +23,7 @@ DEFAULT_XIVO_UUID = os.getenv('XIVO_UUID')
 
 class Token(object):
 
-    def __init__(self, id_, auth_id, xivo_user_uuid, xivo_uuid, issued_t, expire_t, acls):
+    def __init__(self, id_, auth_id, xivo_user_uuid, xivo_uuid, issued_t, expire_t, acls, metadata):
         self.token = id_
         self.auth_id = auth_id
         self.xivo_user_uuid = xivo_user_uuid
@@ -33,6 +31,7 @@ class Token(object):
         self.issued_t = issued_t
         self.expire_t = expire_t
         self.acls = acls
+        self.metadata = metadata
 
     def __eq__(self, other):
         return (
@@ -43,6 +42,7 @@ class Token(object):
             and self.issued_t == other.issued_t
             and self.expire_t == other.expire_t
             and self.acls == other.acls
+            and self.metadata == other.metadata
         )
 
     def __ne__(self, other):
@@ -69,7 +69,8 @@ class Token(object):
                 'expires_at': self._format_local_time(self.expire_t),
                 'utc_issued_at': self._format_utc_time(self.issued_t),
                 'utc_expires_at': self._format_utc_time(self.expire_t),
-                'acls': self.acls}
+                'acls': self.acls,
+                'metadata': self.metadata}
 
     def is_expired(self):
         return self.expire_t and time.time() > self.expire_t
@@ -94,29 +95,6 @@ class Token(object):
         if acl_regex.endswith('\.me'):
             acl_regex = '{acl_start}\.(me|{auth_id})'.format(acl_start=acl_regex[:-4], auth_id=self.auth_id)
         return acl_regex
-
-    @classmethod
-    def from_payload(cls, payload):
-        id_ = str(uuid4())
-        return Token(
-            id_,
-            auth_id=payload.auth_id,
-            xivo_user_uuid=payload.xivo_user_uuid,
-            xivo_uuid=payload.xivo_uuid,
-            issued_t=payload.issued_t,
-            expire_t=payload.expire_t,
-            acls=payload.acls)
-
-
-class TokenPayload(object):
-
-    def __init__(self, auth_id, xivo_user_uuid, xivo_uuid, issued_t, expire_t, acls):
-        self.auth_id = auth_id
-        self.xivo_user_uuid = xivo_user_uuid
-        self.xivo_uuid = xivo_uuid
-        self.issued_t = issued_t
-        self.expire_t = expire_t
-        self.acls = acls or []
 
 
 class ExpiredTokenRemover(object):
@@ -150,9 +128,16 @@ class Manager(object):
         self._dao = dao
 
     def new_token(self, backend, login, args):
-        auth_id, xivo_user_uuid = backend.get_ids(login, args)
-        xivo_uuid = backend.get_xivo_uuid(args)
+        metadata = backend.get_metadata(login, args)
+        logger.debug('metadata for %s: %s', login, metadata)
+
+        auth_id = metadata['auth_id']
+        xivo_user_uuid = metadata.get('xivo_user_uuid')
+        xivo_uuid = metadata['xivo_uuid']
+
         args['acl_templates'] = self._get_acl_templates(args['backend'])
+        args['metadata'] = metadata
+
         acls = backend.get_acls(login, args)
         expiration = args.get('expiration', self._default_expiration)
         t = time.time()
@@ -163,6 +148,7 @@ class Manager(object):
             expire_t=t + expiration,
             issued_t=t,
             acls=acls or [],
+            metadata=metadata,
         )
 
         token_uuid = self._dao.token.create(token_payload)
@@ -200,6 +186,3 @@ class Manager(object):
 
         logger.info('Unknown policy name "%s" configured for backend "%s"', policy_name, backend_name)
         return []
-
-    def _get_token_hash(self, token):
-        return hashlib.sha256('{token}'.format(token=token)).hexdigest()

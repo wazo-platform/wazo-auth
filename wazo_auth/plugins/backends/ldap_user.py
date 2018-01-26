@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -34,9 +34,14 @@ class LDAPUser(UserAuthenticationBackend):
         xivo_user_uuid = args.get('xivo_user_uuid')
         return self.render_acl(acl_templates, self.get_user_data, uuid=xivo_user_uuid)
 
-    def get_ids(self, username, args):
-        user_uuid = args['xivo_user_uuid']
-        return user_uuid, user_uuid
+    def get_metadata(self, username, args):
+        metadata = super(LDAPUser, self).get_metadata(username, args)
+        user_data = dict(
+            auth_id=args['xivo_user_uuid'],
+            xivo_user_uuid=args['xivo_user_uuid'],
+        )
+        metadata.update(user_data)
+        return metadata
 
     def verify_password(self, username, password, args):
         try:

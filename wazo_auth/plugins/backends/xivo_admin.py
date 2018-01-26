@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 
@@ -15,23 +15,19 @@ class XiVOAdmin(BaseAuthenticationBackend, ACLRenderingBackend):
 
     def get_acls(self, login, args):
         acl_templates = args.get('acl_templates', [])
-        return self.render_acl(acl_templates, self.get_admin_data, username=login)
+        return self.render_acl(acl_templates, lambda: args['metadata'])
 
-    def get_admin_data(self, username):
-        with session_scope():
-            entity = admin_dao.get_admin_entity(username)
-
-        return {'entity': entity}
-
-    def get_ids(self, username, args):
+    def get_metadata(self, login, args=None):
+        metadata = super(XiVOAdmin, self).get_metadata(login, args)
         with session_scope():
             try:
-                auth_id = admin_dao.get_admin_uuid(username)
+                metadata['auth_id'] = admin_dao.get_admin_uuid(login)
             except NotFoundError:
                 raise AuthenticationFailedException()
 
-        user_uuid = None
-        return auth_id, user_uuid
+            metadata['entity'] = admin_dao.get_admin_entity(login)
+
+        return metadata
 
     def verify_password(self, login, password, args):
         with session_scope():
