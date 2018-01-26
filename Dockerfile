@@ -1,4 +1,4 @@
-FROM python:2.7.13
+FROM python:2.7.13-stretch
 MAINTAINER Wazo Maintainers <dev@wazo.community>
 
 ADD . /usr/src/wazo-auth
