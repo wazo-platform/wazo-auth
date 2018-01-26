@@ -95,11 +95,7 @@ paths:
       - wazo_auth_token: []
       description: '**Required ACL**: `auth.policies.{policy_uuid}.delete`'
       parameters:
-      - name: policy_uuid
-        in: path
-        type: string
-        description: The UUID of the policy
-        required: true
+      - $ref: '#/parameters/policy_uuid'
       summary: Delete a policy
       responses:
         '204':
@@ -160,11 +156,7 @@ paths:
       summary: Dissociate an ACL template from a policy
       parameters:
       - $ref: '#/parameters/policy_uuid'
-      - name: acl_template
-        in: path
-        type: string
-        description: The ACL template to removed
-        required: true
+      - $ref: '#/parameters/acl_template'
       responses:
         '204':
           description: The policy has been modified
@@ -182,11 +174,7 @@ paths:
       summary: Associate an ACL template to a policy
       parameters:
       - $ref: '#/parameters/policy_uuid'
-      - name: acl_template
-        in: path
-        type: string
-        description: The ACL template to add
-        required: true
+      - $ref: '#/parameters/acl_template'
       responses:
         '204':
           description: The policy has been modified
@@ -200,6 +188,12 @@ parameters:
     in: path
     type: string
     description: The UUID of the policy
+    required: true
+  acl_template:
+    name: acl_template
+    in: path
+    type: string
+    description: The ACL template to add
     required: true
 definitions:
   Policy:
