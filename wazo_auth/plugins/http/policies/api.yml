@@ -47,8 +47,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/Policy'
-          required:
-            - name
       responses:
         '200':
           description: The created policy's data
@@ -215,6 +213,8 @@ definitions:
         type: array
         items:
           type: string
+    required:
+      - name
   PolicyResult:
     type: object
     properties:

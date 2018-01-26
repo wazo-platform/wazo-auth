@@ -44,8 +44,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/Group'
-          required:
-            - name
       responses:
         '200':
           description: The created group's data
