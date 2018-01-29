@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from marshmallow import Schema, fields, pre_load
@@ -26,12 +26,18 @@ class FooService(http.AuthResource):
     @http.required_acl('auth.users.{user_uuid}.external.foo.create')
     def post(self, user_uuid):
         data = request.get_json(force=True)
+        self.external_auth_service.register_oauth2_callback(self.create_first_token, user_uuid)
         return self.external_auth_service.create(user_uuid, self.auth_type, data), 200
 
     @http.required_acl('auth.users.{user_uuid}.external.foo.edit')
     def put(self, user_uuid):
         data = request.get_json(force=True)
         return self.external_auth_service.update(user_uuid, self.auth_type, data), 200
+
+    def create_first_token(self, user_uuid, msg):
+        data = self.external_auth_service.get(user_uuid, self.auth_type)
+        data['access_token'] = msg['access_token']
+        self.external_auth_service.update(user_uuid, self.auth_type, data)
 
 
 class BarService(http.AuthResource):

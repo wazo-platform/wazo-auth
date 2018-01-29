@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from uuid import uuid4
 from hamcrest import (assert_that, contains, contains_inanyorder, equal_to, has_entries)
 from xivo_test_helpers import until
 from .helpers import base, fixtures
+
+THE_VALID_FOO_TOKEN = 's3cre7'
 
 
 class TestExternalAuthAPI(base.MockBackendTestCase):
@@ -108,3 +110,13 @@ class TestExternalAuthAPI(base.MockBackendTestCase):
         assert_that(result, equal_to(new_data))
 
         assert_that(self.client.external.get('foo', user['uuid']), equal_to(new_data))
+
+    @fixtures.http_user()
+    def test_external_oauth2(self, user):
+        self.client.external.create('foo', user['uuid'], self.original_data)
+
+        def token_is_stored():
+            data = self.client.external.get('foo', user['uuid'])
+            assert_that(data, has_entries(access_token=THE_VALID_FOO_TOKEN))
+
+        until.assert_(token_is_stored, tries=10, interval=0.25)
