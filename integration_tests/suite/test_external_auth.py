@@ -2,12 +2,12 @@
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+import time
+import requests
 from uuid import uuid4
 from hamcrest import (assert_that, contains, contains_inanyorder, equal_to, has_entries)
 from xivo_test_helpers import until
 from .helpers import base, fixtures
-
-THE_VALID_FOO_TOKEN = 's3cre7'
 
 
 class TestExternalAuthAPI(base.MockBackendTestCase):
@@ -22,7 +22,7 @@ class TestExternalAuthAPI(base.MockBackendTestCase):
         msg_accumulator = self.new_message_accumulator(routing_key)
 
         result = self.client.external.create('foo', user['uuid'], self.original_data)
-        assert_that(result, equal_to(self.original_data))
+        assert_that(result, has_entries(**self.original_data))
 
         def bus_received_msg():
             assert_that(
@@ -32,7 +32,7 @@ class TestExternalAuthAPI(base.MockBackendTestCase):
         until.assert_(bus_received_msg, tries=10, interval=0.25)
 
         data = self.client.external.get('foo', user['uuid'])
-        assert_that(data, equal_to(self.original_data))
+        assert_that(data, has_entries(**self.original_data))
 
         base.assert_http_error(404, self.client.external.create, 'notfoo', user['uuid'], self.original_data)
         base.assert_http_error(404, self.client.external.create, 'foo', base.UNKNOWN_UUID, self.original_data)
@@ -67,7 +67,7 @@ class TestExternalAuthAPI(base.MockBackendTestCase):
 
         assert_that(
             self.client.external.get('foo', user1['uuid']),
-            equal_to(self.original_data))
+            has_entries(**self.original_data))
 
     @fixtures.http_user_register()
     @fixtures.http_user_register()
@@ -113,10 +113,19 @@ class TestExternalAuthAPI(base.MockBackendTestCase):
 
     @fixtures.http_user()
     def test_external_oauth2(self, user):
-        self.client.external.create('foo', user['uuid'], self.original_data)
+        token = 'a-token'
+        result = self.client.external.create('foo', user['uuid'], self.original_data)
+        time.sleep(1)  # wazo-auth needs some time to connect its websocket
+        self.authorize_oauth2('foo', result['state'], token)
 
         def token_is_stored():
             data = self.client.external.get('foo', user['uuid'])
-            assert_that(data, has_entries(access_token=THE_VALID_FOO_TOKEN))
+            assert_that(data, has_entries(access_token=token))
 
         until.assert_(token_is_stored, tries=10, interval=0.25)
+
+    def authorize_oauth2(self, auth_type, state, token):
+        port = self.service_port(80, 'oauth2sync')
+        url = 'http://localhost:{}/{}/authorize/{}'.format(port, auth_type, state)
+        result = requests.get(url, params={'access_token': token})
+        result.raise_for_status()

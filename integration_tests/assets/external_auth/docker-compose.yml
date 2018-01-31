@@ -5,8 +5,9 @@ sync:
     - postgres
     - rabbitmq
     - smtp
+    - oauth2sync
   environment:
-    PORTS: "25 9497 5432 5672"
+    PORTS: "25 80 9497 5432 5672"
     TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
 auth:
    image: wazopbx/wazo-auth-tests
@@ -21,9 +22,10 @@ auth:
      # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/usr/local/lib/python2.7/site-packages/xivo"
      # - "${LOCAL_GIT_REPOS}/xivo-bus/xivo_bus:/usr/local/lib/python2.7/site-packages/xivo_bus"
    links:
-     - "postgres"
-     - "rabbitmq"
-     - "smtp"
+     - postgres
+     - rabbitmq
+     - smtp
+     - oauth2sync
    command: "wazo-auth"
 postgres:
   image: wazopbx/wazo-auth-db
@@ -37,3 +39,7 @@ smtp:
   image: munkyboy/fakesmtp
   ports:
     - "25"
+oauth2sync:
+  image: oauth2-synchronization-service
+  ports:
+    - "80"

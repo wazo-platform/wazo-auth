@@ -8,6 +8,7 @@ from marshmallow import fields
 from mock import Mock, patch, sentinel as s
 from unittest import TestCase
 
+from wazo_auth.config import _DEFAULT_CONFIG
 from .. import exceptions, services
 from ..database import queries
 from ..database.queries import address, email, external_auth, group, policy, tenant, token, user
@@ -47,7 +48,7 @@ class TestExternalAuthService(BaseServiceTestCase):
 
     def setUp(self):
         super(TestExternalAuthService, self).setUp()
-        self.service = services.ExternalAuthService(self.dao)
+        self.service = services.ExternalAuthService(self.dao, _DEFAULT_CONFIG)
 
     def test_list_external_auth(self):
         # No safe model registered for any auth type

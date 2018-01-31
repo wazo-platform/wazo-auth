@@ -21,3 +21,4 @@ alembic==0.8.8
 marshmallow==2.10.3
 jinja2==2.8
 netifaces==0.10.4
+websocket-client==0.37.0
