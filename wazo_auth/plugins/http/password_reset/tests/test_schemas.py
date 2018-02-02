@@ -51,7 +51,7 @@ class TestSchema(unittest.TestCase):
         assert_that(result, has_entries(username=None, email_address='foobar@example.com'))
 
     def test_invalid_field(self):
-        query_string = dict(username=129*'a')
+        query_string = dict(username=129 * 'a')
         result, errors = self.password_query_parameters_schema.load(query_string)
         assert_that(errors, not_(equal_to(None)))
 

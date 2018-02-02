@@ -35,14 +35,14 @@ class Token(object):
 
     def __eq__(self, other):
         return (
-            self.token == other.token
-            and self.auth_id == other.auth_id
-            and self.xivo_user_uuid == other.xivo_user_uuid
-            and self.xivo_uuid == other.xivo_uuid
-            and self.issued_t == other.issued_t
-            and self.expire_t == other.expire_t
-            and self.acls == other.acls
-            and self.metadata == other.metadata
+            self.token == other.token and
+            self.auth_id == other.auth_id and
+            self.xivo_user_uuid == other.xivo_user_uuid and
+            self.xivo_uuid == other.xivo_uuid and
+            self.issued_t == other.issued_t and
+            self.expire_t == other.expire_t and
+            self.acls == other.acls and
+            self.metadata == other.metadata
         )
 
     def __ne__(self, other):
