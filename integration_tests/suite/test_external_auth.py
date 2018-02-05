@@ -113,6 +113,8 @@ class TestExternalAuthAPI(base.MockBackendTestCase):
 
     @fixtures.http_user()
     def test_external_oauth2(self, user):
+        routing_key = 'auth.users.{}.external.foo.authorized'.format(user['uuid'])
+        msg_accumulator = self.new_message_accumulator(routing_key)
         token = 'a-token'
         result = self.client.external.create('foo', user['uuid'], self.original_data)
         time.sleep(1)  # wazo-auth needs some time to connect its websocket
@@ -123,6 +125,13 @@ class TestExternalAuthAPI(base.MockBackendTestCase):
             assert_that(data, has_entries(access_token=token))
 
         until.assert_(token_is_stored, tries=10, interval=0.25)
+
+        def bus_received_msg():
+            assert_that(
+                msg_accumulator.accumulate(),
+                contains(has_entries(data=dict(user_uuid=user['uuid'], external_auth_name='foo'))))
+
+        until.assert_(bus_received_msg, tries=10, interval=0.25)
 
     def authorize_oauth2(self, auth_type, state, token):
         port = self.service_port(80, 'oauth2sync')
