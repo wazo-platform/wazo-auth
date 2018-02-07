@@ -17,32 +17,34 @@ logger = logging.getLogger(__name__)
 
 class _OAuth2Synchronizer(object):
 
-    def __init__(self, config):
+    def __init__(self, config, bus_publisher):
         self._url_tpl = config['oauth2_synchronization_ws_url_template']
+        self._bus_publisher = bus_publisher
 
-    def synchronize(self, state, success_cb):
+    def synchronize(self, event, state, success_cb):
         logger.debug('starting synchronization')
-        websocket_client_thread = threading.Thread(target=self._synchronize, args=(state, success_cb))
+        websocket_client_thread = threading.Thread(target=self._synchronize, args=(event, state, success_cb))
         websocket_client_thread.daemon = True
         websocket_client_thread.start()
         logger.debug('synchronization started')
 
-    def _synchronize(self, state, success_cb):
+    def _synchronize(self, event, state, success_cb):
         url = self._url_tpl.format(state=state)
         logger.debug('waiting on external authentication to complete %s...', url)
         ws = websocket.WebSocketApp(
             url,
-            on_message=partial(self._on_message, success_cb),
+            on_message=partial(self._on_message, event, success_cb),
             on_error=self._on_error,
             on_close=self._on_close,
         )
         ws.run_forever()
 
-    def _on_message(self, success_cb, ws, msg):
+    def _on_message(self, event, success_cb, ws, msg):
         logger.debug('ws message received: %s', msg)
         try:
             msg = json.loads(msg)
             success_cb(msg)
+            self._bus_publisher.publish(event)
         finally:
             ws.close()
 
@@ -62,7 +64,7 @@ class ExternalAuthService(BaseService):
         self._enabled_external_auth = enabled_external_auth or []
         self._enabled_external_auth_populated = False
         self._url_tpl = config['oauth2_synchronization_redirect_url_template']
-        self._oauth2_synchronizer = _OAuth2Synchronizer(config)
+        self._oauth2_synchronizer = _OAuth2Synchronizer(config, bus_publisher)
 
     def _populate_enabled_external_auth(self):
         if self._enabled_external_auth_populated:
@@ -108,8 +110,9 @@ class ExternalAuthService(BaseService):
     def build_oauth2_redirect_url(self, auth_type):
         return self._url_tpl.format(auth_type=auth_type)
 
-    def register_oauth2_callback(self, state, cb, *args, **kwargs):
-        self._oauth2_synchronizer.synchronize(state, partial(cb, *args, **kwargs))
+    def register_oauth2_callback(self, auth_type, user_uuid, state, cb, *args, **kwargs):
+        event = events.UserExternalAuthAuthorized(user_uuid, auth_type)
+        self._oauth2_synchronizer.synchronize(event, state, partial(cb, *args, **kwargs))
 
     def register_safe_auth_model(self, auth_type, model_class):
         self._safe_models[auth_type] = model_class

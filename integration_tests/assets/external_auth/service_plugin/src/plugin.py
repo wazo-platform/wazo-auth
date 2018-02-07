@@ -39,6 +39,8 @@ class FooService(http.AuthResource):
         data = request.get_json(force=True)
         data['state'] = state
         self.external_auth_service.register_oauth2_callback(
+            self.auth_type,
+            user_uuid,
             state,
             self.create_first_token,
             user_uuid,
