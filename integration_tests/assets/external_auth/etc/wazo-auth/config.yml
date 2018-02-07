@@ -11,6 +11,9 @@ rest_api:
     enabled: False
     allow_headers: [Content-Type, authorization, x-auth-token]
 
+oauth2_synchronization_ws_url_template: 'ws://oauth2sync:80/ws/{state}'
+oauth2_synchronization_redirect_url_template: 'http://oauth2sync:80/{auth_type}/authorize/{state}'
+
 enabled_http_plugins:
   user_registration: true
 enabled_external_auth_plugins:

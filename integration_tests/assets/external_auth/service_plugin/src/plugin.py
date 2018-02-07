@@ -1,15 +1,25 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+import logging
+import random
+import string
 from marshmallow import Schema, fields, pre_load
 from flask import request
 from wazo_auth import http
+
+logger = logging.getLogger(__name__)
+
+
+def new_state():
+    return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(16))
 
 
 class FooService(http.AuthResource):
 
     auth_type = 'foo'
+    states = {}
 
     def __init__(self, external_auth_service):
         self.external_auth_service = external_auth_service
@@ -25,13 +35,27 @@ class FooService(http.AuthResource):
 
     @http.required_acl('auth.users.{user_uuid}.external.foo.create')
     def post(self, user_uuid):
+        state = self.states[user_uuid] = new_state()
         data = request.get_json(force=True)
+        data['state'] = state
+        self.external_auth_service.register_oauth2_callback(
+            state,
+            self.create_first_token,
+            user_uuid,
+        )
         return self.external_auth_service.create(user_uuid, self.auth_type, data), 200
 
     @http.required_acl('auth.users.{user_uuid}.external.foo.edit')
     def put(self, user_uuid):
         data = request.get_json(force=True)
         return self.external_auth_service.update(user_uuid, self.auth_type, data), 200
+
+    def create_first_token(self, user_uuid, msg):
+        logger.debug('received the oauth2 callback %s %s', user_uuid, msg)
+        data = self.external_auth_service.get(user_uuid, self.auth_type)
+        data['access_token'] = msg['access_token'][0]
+        self.external_auth_service.update(user_uuid, self.auth_type, data)
+        logger.debug('callback done')
 
 
 class BarService(http.AuthResource):
