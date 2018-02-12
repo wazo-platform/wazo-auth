@@ -6,9 +6,10 @@ paths:
         - external
       security:
         - wazo_auth_token: []
-      description: '**Required ACL**: `auth.users.{user_uuid}.external.read`
+      description: |
+        **Required ACL**: `auth.users.{user_uuid}.external.read`
 
-      This list should not contain any sensible information'
+        This list should not contain any sensible information
       summary: 'Retrieves the list of the users external auth data'
       parameters:
       - $ref: '#/parameters/user_uuid'

@@ -33,10 +33,11 @@ paths:
       produces:
         - application/json
       summary: Create a new ACL policy
-      description: '**Required ACL:** `auth.policies.create`
+      description: |
+        **Required ACL:** `auth.policies.create`
 
         Create a new ACL policy set that can be associated to a user, an administrator, a service or a backend.
-        An ACL policy is a list of ACL or ACL templates that is used to create a token'
+        An ACL policy is a list of ACL or ACL templates that is used to create a token
       operationId: createPolicies
       tags:
         - policies

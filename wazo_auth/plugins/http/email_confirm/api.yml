@@ -19,9 +19,10 @@ paths:
     get:
       tags:
         - emails
-      description: '**Required ACL**: `auth.emails.{email_uuid}.confirm.edit`
+      description: |
+        **Required ACL**: `auth.emails.{email_uuid}.confirm.edit`
 
-      The token should be in the URL instead of being in the HTTP headers'
+        The token should be in the URL instead of being in the HTTP headers
       summary: 'Confirm an email address'
       parameters:
         - $ref: '#/parameters/email_uuid'

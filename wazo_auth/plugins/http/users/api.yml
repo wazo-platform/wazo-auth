@@ -24,9 +24,11 @@ paths:
       produces:
         - application/json
       summary: Create a user
-      description: "**Required ACL**: `auth.users.create`
-      Creates a new user that can be used to retrieve a token. The UUID can be used to link this user the a
-      xivo-confd user by using the same UUID"
+      description: |
+        **Required ACL**: `auth.users.create`
+
+        Creates a new user that can be used to retrieve a token. The UUID can be used to link this user the a
+        xivo-confd user by using the same UUID
       operationId: createUser
       tags:
         - users
@@ -137,8 +139,7 @@ paths:
         - users
       security:
         - wazo_auth_token: []
-      description: "**Required ACL**: `auth.users.{user_uuid}.password.edit`
-      Change a user's password"
+      description: "**Required ACL**: `auth.users.{user_uuid}.password.edit`"
       summary: "Change the user's password"
       parameters:
         - $ref: '#/parameters/user_uuid'
