@@ -35,8 +35,8 @@ _DEFAULT_CONFIG = {
     'email_confirmation_from_name': 'wazo-auth',
     'email_confirmation_from_address': 'noreply@wazo.community',
 
-    'oauth2_synchronization_ws_url_template': 'wss://auth.wazo.io/ws/{state}',
-    'oauth2_synchronization_redirect_url_template': 'https://auth.wazo.io/{auth_type}/authorize',
+    'oauth2_synchronization_ws_url_template': 'wss://oauth.wazo.io/ws/{state}',
+    'oauth2_synchronization_redirect_url_template': 'https://oauth.wazo.io/{auth_type}/authorize',
 
     'enabled_http_plugins': {
         'api': True,
