@@ -1339,9 +1339,15 @@ class TestUserDAO(_BaseDAOTestCase):
         )
 
     @fixtures.user(username='foobar')
-    def test_get_credential(self, user_uuid):
+    @fixtures.user(username='foobaz', enabled=False)
+    def test_get_credential(self, *ignored_uuids):
         assert_that(
             calling(self._user_dao.get_credentials).with_args('not-foobar'),
+            raises(exceptions.UnknownUsernameException),
+        )
+
+        assert_that(
+            calling(self._user_dao.get_credentials).with_args('foobaz'),
             raises(exceptions.UnknownUsernameException),
         )
 
