@@ -191,7 +191,8 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 username=username,
                 firstname=user.firstname,
                 lastname=user.lastname,
-                emails=emails
+                emails=emails,
+                enabled=user.enabled,
             )
 
     def delete(self, user_uuid):

@@ -72,6 +72,7 @@ class TestUsers(MockBackendTestCase):
                 'username', 'foobar',
                 'firstname', 'Alice',
                 'lastname', None,
+                'enabled', True,
                 'emails', contains_inanyorder(
                     has_entries(
                         'uuid', uuid_(),
@@ -126,6 +127,7 @@ class TestUsers(MockBackendTestCase):
 
         user_args = dict(username='foobar', password='foobaz', enabled=False)
         with self.auto_remove_user(self.client.users.new, **user_args) as user:
+            assert_that(user, has_entries('enabled', False))
             user_client = self.new_auth_client('foobar', 'foobaz')
             assert_http_error(401, user_client.token.new, 'wazo_user')
 
