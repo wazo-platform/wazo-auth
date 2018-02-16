@@ -12,16 +12,16 @@ class UserPostSchema(BaseSchema):
     uuid = fields.UUID()
     username = fields.String(validate=validate.Length(min=1, max=128), required=True)
     password = fields.String(validate=validate.Length(min=1))
-    firstname = fields.String(missing=None)
-    lastname = fields.String(missing=None)
     email_address = fields.Email()
+    firstname = fields.String(missing=None, allow_none=True)
+    lastname = fields.String(missing=None, allow_none=True)
 
 
 class UserPutSchema(BaseSchema):
 
     username = fields.String(validate=validate.Length(min=1, max=128), required=True)
-    firstname = fields.String(missing=None)
-    lastname = fields.String(missing=None)
+    firstname = fields.String(missing=None, allow_none=True)
+    lastname = fields.String(missing=None, allow_none=True)
 
 
 class ChangePasswordSchema(BaseSchema):
