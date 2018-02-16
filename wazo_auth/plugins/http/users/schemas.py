@@ -15,6 +15,7 @@ class UserPostSchema(BaseSchema):
     firstname = fields.String(missing=None, allow_none=True)
     lastname = fields.String(missing=None, allow_none=True)
     email_address = fields.Email(allow_none=True)
+    enabled = fields.Boolean(missing=True)
 
 
 class UserPutSchema(BaseSchema):

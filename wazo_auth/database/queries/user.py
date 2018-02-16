@@ -141,6 +141,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             lastname=kwargs.get('lastname'),
             password_hash=kwargs.get('hash_'),
             password_salt=kwargs.get('salt'),
+            enabled=kwargs.get('enabled'),
         )
         uuid = kwargs.get('uuid')
         if uuid:
@@ -205,7 +206,11 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             raise exceptions.UnknownUserException(user_uuid)
 
     def get_credentials(self, username):
-        filter_ = self.new_strict_filter(username=username)
+        filter_ = and_(
+            self.new_strict_filter(username=username),
+            User.enabled.is_(True),
+        )
+
         with self.new_session() as s:
             query = s.query(
                 User.password_salt,

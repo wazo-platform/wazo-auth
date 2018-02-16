@@ -63,7 +63,14 @@ class TestUserResource(HTTPAppTestCase):
         result = self.app.post(self.url, data=data, headers=self.headers)
 
         assert_that(result.status_code, equal_to(200))
-        self.user_service.new_user.assert_called_once_with(email_confirmed=True, firstname=None, lastname=None, **body)
+        self.user_service.new_user.assert_called_once_with(
+            email_confirmed=True,
+            firstname=None,
+            lastname=None,
+            enabled=True,
+            **body
+        )
+
         assert_that(
             json.loads(result.data.decode(encoding='utf-8')),
             has_entries(
