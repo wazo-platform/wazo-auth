@@ -115,6 +115,13 @@ class TestUsers(MockBackendTestCase):
         with self.auto_remove_user(self.client.users.new, **args) as user:
             assert_that(user, has_entries(**args))
 
+        args = dict(
+            username='bob',
+            email_address=None,
+        )
+        with self.auto_remove_user(self.client.users.new, **args) as user:
+            assert_that(user, has_entries(emails=empty()))
+
     @fixtures.http_user(username='foobar', firstname='foo', lastname='bar')
     def test_put(self, user):
         user_uuid = user['uuid']
