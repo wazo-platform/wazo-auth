@@ -6,7 +6,11 @@ import yaml
 from hamcrest import assert_that, contains_inanyorder, contains_string
 
 from .helpers import fixtures
-from .helpers.base import assert_no_error, MockBackendTestCase
+from .helpers.base import (
+    assert_http_error,
+    assert_no_error,
+    MockBackendTestCase,
+)
 
 
 class TestResetPassword(MockBackendTestCase):
@@ -39,3 +43,19 @@ class TestResetPassword(MockBackendTestCase):
         user_uuid = email_fields['user_uuid']
 
         return self.client.users.set_password(user_uuid, password, token)
+
+    @fixtures.http_user()
+    def test_set_password(self, user):
+        new_password = '5ecr37'
+
+        self.client.users.set_password(user['uuid'], new_password)
+
+        user_client = self.new_auth_client(user['username'], new_password)
+        assert_no_error(user_client.token.new, 'wazo_user', expiration=1)
+
+        new_password = None
+
+        self.client.users.set_password(user['uuid'], new_password)
+
+        user_client = self.new_auth_client(user['username'], new_password)
+        assert_http_error(401, user_client.token.new, 'wazo_user', expiration=1)

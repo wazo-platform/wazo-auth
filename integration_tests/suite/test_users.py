@@ -111,8 +111,10 @@ class TestUsers(MockBackendTestCase):
             username='bob',
             firstname=None,
             lastname=None,
+            password=None,
         )
         with self.auto_remove_user(self.client.users.new, **args) as user:
+            del(args['password'])
             assert_that(user, has_entries(**args))
 
         args = dict(
