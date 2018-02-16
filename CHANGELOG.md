@@ -1,6 +1,12 @@
 Changelog
 =========
 
+18.03
+-----
+
+* Add the "enabled" field to a users
+
+
 18.02
 -----
 
