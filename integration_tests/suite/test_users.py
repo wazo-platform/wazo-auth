@@ -173,6 +173,7 @@ class TestUsers(MockBackendTestCase):
                     'username', 'foobar',
                     'firstname', None,
                     'lastname', 'Denver',
+                    'enabed', True,
                     'emails', contains_inanyorder(
                         has_entries(
                             'uuid', uuid_(),
