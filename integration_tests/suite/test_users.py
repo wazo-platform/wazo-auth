@@ -137,6 +137,7 @@ class TestUsers(MockBackendTestCase):
         body = dict(
             username='foobaz',
             firstname='baz',
+            enabled=False,
         )
 
         assert_http_error(404, self.client.users.edit, UNKNOWN_UUID, **body)
@@ -147,6 +148,7 @@ class TestUsers(MockBackendTestCase):
             username='foobaz',
             firstname='baz',
             lastname=None,
+            enabled=False,
         ))
 
         body = dict(
@@ -173,7 +175,7 @@ class TestUsers(MockBackendTestCase):
                     'username', 'foobar',
                     'firstname', None,
                     'lastname', 'Denver',
-                    'enabed', True,
+                    'enabled', True,
                     'emails', contains_inanyorder(
                         has_entries(
                             'uuid', uuid_(),

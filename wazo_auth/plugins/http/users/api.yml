@@ -221,6 +221,8 @@ definitions:
       lastname:
         type: string
         description: "The user's lastname"
+      enabled:
+        type: boolean
     required:
       - username
   UserEmail:
