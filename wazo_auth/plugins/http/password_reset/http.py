@@ -54,8 +54,13 @@ class PasswordReset(http.ErrorCatchingResource):
         if errors:
             raise PasswordResetException.from_errors(errors)
 
-        logger.debug('changing password for %s', user_uuid)
-        self.user_service.change_password(user_uuid, None, args['password'], reset=True)
+        if args['password'] is None:
+            logger.debug('resetting password for %s', user_uuid)
+            args['user_uuid'] = user_uuid
+            self.user_service.delete_password(**args)
+        else:
+            logger.debug('changing password for %s', user_uuid)
+            self.user_service.change_password(user_uuid, None, args['password'], reset=True)
 
         return '', 204
 

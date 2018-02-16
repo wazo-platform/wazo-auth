@@ -9,7 +9,7 @@ from xivo.mallow import fields, validate
 
 class PasswordResetPostParameters(BaseSchema):
 
-    password = fields.String(validate=validate.Length(min=1), required=True)
+    password = fields.String(validate=validate.Length(min=1), required=True, allow_none=True)
 
 
 class PasswordResetQueryParameters(BaseSchema):

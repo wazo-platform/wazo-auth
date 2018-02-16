@@ -134,14 +134,12 @@ class TestUserResource(HTTPAppTestCase):
             )
 
     def test_that_null_fields_are_not_valid(self):
-        username, password, email_address = 'foobar', 'b3h01D', 'foobar@example.com'
+        username = 'foobar'
         valid_body = {
             'username': username,
-            'password': password,
-            'email_address': email_address,
         }
 
-        for field in ['username', 'password', 'email_address']:
+        for field in ('username',):
             body = dict(valid_body)
             body[field] = None
             data = json.dumps(body)

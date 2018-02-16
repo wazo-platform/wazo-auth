@@ -107,6 +107,23 @@ class TestUsers(MockBackendTestCase):
         with self.auto_remove_user(self.client.users.new, username='bob') as user:
             assert_that(user, has_entries(username='bob', emails=empty()))
 
+        args = dict(
+            username='bob',
+            firstname=None,
+            lastname=None,
+            password=None,
+        )
+        with self.auto_remove_user(self.client.users.new, **args) as user:
+            del(args['password'])
+            assert_that(user, has_entries(**args))
+
+        args = dict(
+            username='bob',
+            email_address=None,
+        )
+        with self.auto_remove_user(self.client.users.new, **args) as user:
+            assert_that(user, has_entries(emails=empty()))
+
     @fixtures.http_user(username='foobar', firstname='foo', lastname='bar')
     def test_put(self, user):
         user_uuid = user['uuid']
@@ -124,6 +141,14 @@ class TestUsers(MockBackendTestCase):
             firstname='baz',
             lastname=None,
         ))
+
+        body = dict(
+            username='foobaz',
+            firstname=None,
+            lastname=None,
+        )
+        result = self.client.users.edit(user_uuid, **body)
+        assert_that(result, has_entries(**body))
 
     def test_register_post(self):
         args = dict(
