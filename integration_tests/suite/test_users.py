@@ -221,7 +221,8 @@ class TestUsers(MockBackendTestCase):
     @fixtures.http_user_register(username='baz', email_address='baz@example.com')
     def test_list(self, *users):
         def check_list_result(result, filtered, item_matcher, *usernames):
-            items = item_matcher(*[has_entries('username', username) for username in usernames])
+            items = item_matcher(*[has_entries('username', username,
+                                               'enabled', True) for username in usernames])
             expected = has_entries('total', 3, 'filtered', filtered, 'items', items)
             assert_that(result, expected)
 
@@ -248,6 +249,7 @@ class TestUsers(MockBackendTestCase):
             has_entries(
                 'uuid', user['uuid'],
                 'username', 'foo',
+                'enabled', True,
                 'emails', contains_inanyorder(
                     has_entries(
                         'address', 'foo@example.com',

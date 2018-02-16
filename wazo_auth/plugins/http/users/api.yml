@@ -266,3 +266,5 @@ definitions:
         type: string
       main_email_address:
         type: string
+      enabled:
+        type: boolean

@@ -236,6 +236,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 User.username,
                 User.firstname,
                 User.lastname,
+                User.enabled,
                 UserEmail.main,
                 Email.uuid,
                 Email.address,
@@ -248,11 +249,24 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             query = self._paginator.update_query(query, **kwargs)
             rows = query.all()
 
-            for user_uuid, username, firstname, lastname, main_email, email_uuid, address, confirmed in rows:
+            for row in rows:
+                (
+                    user_uuid,
+                    username,
+                    firstname,
+                    lastname,
+                    enabled,
+                    main_email,
+                    email_uuid,
+                    address,
+                    confirmed,
+                ) = row
+
                 if user_uuid not in users:
                     users[user_uuid] = dict(
                         username=username,
                         uuid=user_uuid,
+                        enabled=enabled,
                         emails=[],
                         firstname=firstname,
                         lastname=lastname,
