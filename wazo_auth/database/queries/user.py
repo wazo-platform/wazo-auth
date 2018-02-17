@@ -330,6 +330,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return emails
 
     def _add_user_email(self, s, user_uuid, args):
+        args.setdefault('confirmed', False)
         email = Email(address=args['address'])
         email.confirmed = args['confirmed']
         s.add(email)
@@ -363,7 +364,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             if uuid not in old:
                 continue
 
-            if 'confirmed' not in email:
+            if email.get('confirmed') is None:
                 email['confirmed'] = old[uuid]['confirmed']
 
         return new

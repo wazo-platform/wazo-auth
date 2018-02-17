@@ -1007,6 +1007,17 @@ class TestUserDAO(_BaseDAOTestCase):
         ))
         assert_that(self._user_dao.get_emails(user_uuid), contains_inanyorder(*result))
 
+        emails = [
+            dict(address='bazinga@example.com', main=True, confirmed=None),
+            dict(address='foobaz@example.com', main=False, confirmed=None),
+        ]
+        result = self._user_dao.update_emails(user_uuid, emails)
+        assert_that(result, contains_inanyorder(
+            has_entries(address='bazinga@example.com', main=True, confirmed=False),
+            has_entries(address='foobaz@example.com', main=False, confirmed=True),
+        ))
+        assert_that(self._user_dao.get_emails(user_uuid), contains_inanyorder(*result))
+
     @fixtures.policy()
     @fixtures.user()
     def test_user_policy_association(self, user_uuid, policy_uuid):
