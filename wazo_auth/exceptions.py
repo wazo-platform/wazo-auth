@@ -145,6 +145,11 @@ class UserParamException(_BaseParamException):
     resource = 'users'
 
 
+class EmailUpdateException(_BaseParamException):
+
+    resource = 'emails'
+
+
 class InvalidInputException(ManagerException):
 
     code = 400
