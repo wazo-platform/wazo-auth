@@ -935,6 +935,78 @@ class TestUserDAO(_BaseDAOTestCase):
 
     salt = os.urandom(64)
 
+    @staticmethod
+    def _email(address, main=False, confirmed=None):
+        email = dict(
+            address=address,
+            main=main,
+        )
+        if confirmed is not None:
+            email['confirmed'] = confirmed
+        return email
+
+    @fixtures.user(email_address='foobar@example.com', email_confirmed=False)
+    def test_user_email_association(self, user_uuid):
+        emails = []
+
+        assert_that(
+            calling(self._user_dao.update_emails).with_args(base.UNKNOWN_UUID, emails),
+            raises(exceptions.UnknownUserException))
+
+        result = self._user_dao.update_emails(user_uuid, emails)
+        assert_that(result, empty())
+        assert_that(self._user_dao.get_emails(user_uuid), equal_to(result))
+        with self._user_dao.new_session() as s:
+            for email in s.query(models.Email.uuid).filter(
+                    models.Email.address == 'foobar@example.com',
+            ).all():
+                self.fail('email was not deleted')
+
+        emails = [
+            self._email('foobar@example.com', main=True, confirmed=False),
+        ]
+        result = self._user_dao.update_emails(user_uuid, emails)
+        assert_that(result, contains(
+            *[has_entries(**email) for email in emails]
+        ))
+        assert_that(self._user_dao.get_emails(user_uuid), contains_inanyorder(*result))
+
+        emails = [
+            self._email('foobar@example.com'),
+            self._email('foobaz@example.com', main=True, confirmed=True),
+        ]
+        result = self._user_dao.update_emails(user_uuid, emails)
+        assert_that(result, contains_inanyorder(
+            # foobar "lost"" main and stayed unconfirmed
+            has_entries(address='foobar@example.com', main=False, confirmed=False),
+            has_entries(address='foobaz@example.com', main=True, confirmed=True),
+        ))
+        assert_that(self._user_dao.get_emails(user_uuid), contains_inanyorder(*result))
+
+        emails = [
+            self._email('foobar@example.com', main=False, confirmed=True),
+            self._email('foobaz@example.com', main=True),
+        ]
+        result = self._user_dao.update_emails(user_uuid, emails)
+        assert_that(result, contains_inanyorder(
+            has_entries(address='foobar@example.com', main=False, confirmed=True),
+            # confirmed does not change if unspecified for an existing address
+            has_entries(address='foobaz@example.com', main=True, confirmed=True),
+        ))
+        assert_that(self._user_dao.get_emails(user_uuid), contains_inanyorder(*result))
+
+        emails = [
+            self._email('bazinga@example.com', main=True),  # <-- new address
+            self._email('foobaz@example.com', main=False),
+        ]
+        result = self._user_dao.update_emails(user_uuid, emails)
+        assert_that(result, contains_inanyorder(
+            # confirmed is false when unspecified and inexistant
+            has_entries(address='bazinga@example.com', main=True, confirmed=False),
+            has_entries(address='foobaz@example.com', main=False, confirmed=True),
+        ))
+        assert_that(self._user_dao.get_emails(user_uuid), contains_inanyorder(*result))
+
     @fixtures.policy()
     @fixtures.user()
     def test_user_policy_association(self, user_uuid, policy_uuid):
