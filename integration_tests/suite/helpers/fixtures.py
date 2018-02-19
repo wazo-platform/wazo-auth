@@ -239,6 +239,8 @@ def user(**user_args):
         user_args['firstname'] = _random_string(20)
     if 'lastname' not in user_args:
         user_args['lastname'] = _random_string(20)
+    if 'enabled' not in user_args:
+        user_args['enabled'] = True
 
     def decorator(decorated):
         @wraps(decorated)

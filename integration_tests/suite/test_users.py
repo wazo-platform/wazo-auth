@@ -72,6 +72,7 @@ class TestUsers(MockBackendTestCase):
                 'username', 'foobar',
                 'firstname', 'Alice',
                 'lastname', None,
+                'enabled', True,
                 'emails', contains_inanyorder(
                     has_entries(
                         'uuid', uuid_(),
@@ -124,12 +125,19 @@ class TestUsers(MockBackendTestCase):
         with self.auto_remove_user(self.client.users.new, **args) as user:
             assert_that(user, has_entries(emails=empty()))
 
+        user_args = dict(username='foobar', password='foobaz', enabled=False)
+        with self.auto_remove_user(self.client.users.new, **user_args) as user:
+            assert_that(user, has_entries('enabled', False))
+            user_client = self.new_auth_client('foobar', 'foobaz')
+            assert_http_error(401, user_client.token.new, 'wazo_user')
+
     @fixtures.http_user(username='foobar', firstname='foo', lastname='bar')
     def test_put(self, user):
         user_uuid = user['uuid']
         body = dict(
             username='foobaz',
             firstname='baz',
+            enabled=False,
         )
 
         assert_http_error(404, self.client.users.edit, UNKNOWN_UUID, **body)
@@ -140,6 +148,7 @@ class TestUsers(MockBackendTestCase):
             username='foobaz',
             firstname='baz',
             lastname=None,
+            enabled=False,
         ))
 
         body = dict(
@@ -166,6 +175,7 @@ class TestUsers(MockBackendTestCase):
                     'username', 'foobar',
                     'firstname', None,
                     'lastname', 'Denver',
+                    'enabled', True,
                     'emails', contains_inanyorder(
                         has_entries(
                             'uuid', uuid_(),
@@ -213,7 +223,8 @@ class TestUsers(MockBackendTestCase):
     @fixtures.http_user_register(username='baz', email_address='baz@example.com')
     def test_list(self, *users):
         def check_list_result(result, filtered, item_matcher, *usernames):
-            items = item_matcher(*[has_entries('username', username) for username in usernames])
+            items = item_matcher(*[has_entries('username', username,
+                                               'enabled', True) for username in usernames])
             expected = has_entries('total', 3, 'filtered', filtered, 'items', items)
             assert_that(result, expected)
 
@@ -240,6 +251,7 @@ class TestUsers(MockBackendTestCase):
             has_entries(
                 'uuid', user['uuid'],
                 'username', 'foo',
+                'enabled', True,
                 'emails', contains_inanyorder(
                     has_entries(
                         'address', 'foo@example.com',

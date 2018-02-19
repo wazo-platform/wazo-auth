@@ -141,6 +141,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             lastname=kwargs.get('lastname'),
             password_hash=kwargs.get('hash_'),
             password_salt=kwargs.get('salt'),
+            enabled=kwargs.get('enabled'),
         )
         uuid = kwargs.get('uuid')
         if uuid:
@@ -190,7 +191,8 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 username=username,
                 firstname=user.firstname,
                 lastname=user.lastname,
-                emails=emails
+                emails=emails,
+                enabled=user.enabled,
             )
 
     def delete(self, user_uuid):
@@ -205,7 +207,11 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             raise exceptions.UnknownUserException(user_uuid)
 
     def get_credentials(self, username):
-        filter_ = self.new_strict_filter(username=username)
+        filter_ = and_(
+            self.new_strict_filter(username=username),
+            User.enabled.is_(True),
+        )
+
         with self.new_session() as s:
             query = s.query(
                 User.password_salt,
@@ -230,6 +236,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 User.username,
                 User.firstname,
                 User.lastname,
+                User.enabled,
                 UserEmail.main,
                 Email.uuid,
                 Email.address,
@@ -242,11 +249,24 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             query = self._paginator.update_query(query, **kwargs)
             rows = query.all()
 
-            for user_uuid, username, firstname, lastname, main_email, email_uuid, address, confirmed in rows:
+            for row in rows:
+                (
+                    user_uuid,
+                    username,
+                    firstname,
+                    lastname,
+                    enabled,
+                    main_email,
+                    email_uuid,
+                    address,
+                    confirmed,
+                ) = row
+
                 if user_uuid not in users:
                     users[user_uuid] = dict(
                         username=username,
                         uuid=user_uuid,
+                        enabled=enabled,
                         emails=[],
                         firstname=firstname,
                         lastname=lastname,

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -50,7 +50,7 @@ class Init(http.ErrorCatchingResource):
             if args.pop('key') != key:
                 raise exceptions.AuthenticationFailedException()
 
-            result = self._user_service.new_user(**args)
+            result = self._user_service.new_user(enabled=True, **args)
             policy_uuid = self._policy_service.list(name=self._policy_name)[0]['uuid']
             self._user_service.add_policy(result['uuid'], policy_uuid)
 

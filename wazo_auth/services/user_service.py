@@ -87,10 +87,10 @@ class UserService(BaseService):
 
     def new_user(self, **kwargs):
         password = kwargs.pop('password', None)
+        logger.info('creating a new user with params: %s', kwargs)  # log after poping the password
         if password:
             kwargs['salt'], kwargs['hash_'] = self._encrypter.encrypt_password(password)
 
-        logger.info('creating a new user with params: %s', kwargs)  # log after poping the password
         return self._dao.user.create(**kwargs)
 
     def remove_policy(self, user_uuid, policy_uuid):

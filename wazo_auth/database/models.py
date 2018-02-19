@@ -131,6 +131,7 @@ class User(Base):
     lastname = Column(Text)
     password_hash = Column(Text)
     password_salt = Column(LargeBinary)
+    enabled = Column(Boolean)
 
 
 class UserEmail(Base):
