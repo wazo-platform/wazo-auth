@@ -360,11 +360,11 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     @staticmethod
     def _merge_existing_emails(new, old):
-        for uuid, email in new.iteritems():
-            if uuid not in old:
+        for address, email in new.iteritems():
+            if address not in old:
                 continue
 
             if email.get('confirmed') is None:
-                email['confirmed'] = old[uuid]['confirmed']
+                email['confirmed'] = old[address]['confirmed']
 
         return new
