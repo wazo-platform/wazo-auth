@@ -33,6 +33,38 @@ paths:
           description: 'User not found'
           schema:
             $ref: '#/definitions/Error'
+  /users/{user_uuid}/emails:
+    put:
+      tags:
+        - users
+        - emails
+      security:
+        - wazo_auth_token: []
+      description: '**Required ACL**: `auth.users.{user_uuid}.emails.edit`
+
+      Update all of the users email address at the same time.
+
+      If an existing address is missing from the list, it will be removed.
+      An empty list will remove all addresses.
+      If addresses are defined, one and only one address should be main.
+      All new address are created unconfirmed.
+      '
+      summary: 'Update email addresses'
+      parameters:
+        - $ref: '#/parameters/user_uuid'
+        - name: body
+          in: body
+          description: EmailAddressList
+          required: true
+          schema:
+            $ref: '#/definitions/UserEmailList'
+      responses:
+        '200':
+          description: 'The updated email list'
+        '404':
+          description: 'User not found'
+          schema:
+            $ref: '#/definitions/Error'
   /users/{user_uuid}/emails/{email_uuid}/confirm:
     get:
       tags:
@@ -68,6 +100,21 @@ definitions:
             main:
               type: boolean
             confirmed:
+              type: boolean
+          required:
+            - addresses
+            - main
+  UserEmailList:
+    type: object
+    properties:
+      emails:
+        type: array
+        items:
+          type: object
+          properties:
+            address:
+              type: string
+            main:
               type: boolean
           required:
             - addresses

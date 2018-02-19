@@ -8,25 +8,44 @@ from flask import request
 from wazo_auth import exceptions, http
 
 from .exceptions import EmailAlreadyConfirmedException
-from .schemas import AdminUserEmailPutSchema
+from .schemas import new_email_put_schema
 
 logger = logging.getLogger(__name__)
 
+AdminUserEmailPutSchema = new_email_put_schema('admin')
 
-class AdminUserEmailUpdate(http.AuthResource):
+
+class _EmailUpdate(http.AuthResource):
 
     def __init__(self, user_service):
         self.user_service = user_service
 
-    @http.required_acl('auth.admin.users.{user_uuid}.emails.edit')
     def put(self, user_uuid):
-        args, errors = AdminUserEmailPutSchema().load(request.get_json())
+        args, errors = self.EmailPutSchema().load(request.get_json())
         if errors:
             raise exceptions.EmailUpdateException(errors)
 
         logger.debug('updating user %s emails: %s', user_uuid, args)
         result = self.user_service.update_emails(user_uuid, args)
         return result, 200
+
+
+class AdminUserEmailUpdate(_EmailUpdate):
+
+    EmailPutSchema = new_email_put_schema('admin')
+
+    @http.required_acl('auth.admin.users.{user_uuid}.emails.edit')
+    def put(self, user_uuid):
+        return super(AdminUserEmailUpdate, self).put(user_uuid)
+
+
+class UserEmailUpdate(_EmailUpdate):
+
+    EmailPutSchema = new_email_put_schema('user')
+
+    @http.required_acl('auth.users.{user_uuid}.emails.edit')
+    def put(self, user_uuid):
+        return super(UserEmailUpdate, self).put(user_uuid)
 
 
 class UserEmailConfirm(http.AuthResource):

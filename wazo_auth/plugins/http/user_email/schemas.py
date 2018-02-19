@@ -14,42 +14,56 @@ class _AdminEmailSchema(BaseSchema):
     main = fields.Boolean(missing=False)
 
 
-class AdminUserEmailPutSchema(BaseSchema):
+class _UserEmailSchema(BaseSchema):
 
-    emails = fields.Nested(_AdminEmailSchema, many=True)
+    address = fields.Email(required=True)
+    main = fields.Boolean(missing=False)
 
-    @post_load
-    def as_list(self, data):
-        return data['emails']
 
-    @validates_schema
-    def validate_only_one_main(self, data):
-        main = 0
+def new_email_put_schema(user_type):
+    if user_type == 'admin':
+        EmailSchema = _AdminEmailSchema
+    else:
+        EmailSchema = _UserEmailSchema
 
-        emails = data['emails']
-        if not emails:
-            return
+    class EmailPutSchema(BaseSchema):
 
-        for email in emails:
-            if email['main']:
-                main += 1
+        emails = fields.Nested(EmailSchema, many=True)
 
-        if main > 1:
-            raise ValidationError('Only one address should be main')
+        @post_load
+        def as_list(self, data):
+            return data['emails']
 
-        if main == 0:
-            raise ValidationError('At least one address should be main')
+        @validates_schema
+        def validate_only_one_main(self, data):
+            main = 0
 
-    @validates_schema
-    def validate_no_duplicates(self, data):
-        addresses = set()
+            emails = data['emails']
+            if not emails:
+                return
 
-        for email in data['emails']:
-            address = email.get('address')
-            if not address:
-                continue
+            for email in emails:
+                if email['main']:
+                    main += 1
 
-            if address in addresses:
-                raise ValidationError('The same address can only be used once')
+            if main > 1:
+                raise ValidationError('Only one address should be main')
 
-            addresses.add(address)
+            if main == 0:
+                raise ValidationError('At least one address should be main')
+
+        @validates_schema
+        def validate_no_duplicates(self, data):
+            addresses = set()
+
+            for email in data['emails']:
+                address = email.get('address')
+                if not address:
+                    continue
+
+                if address in addresses:
+                    raise ValidationError('The same address can only be used once')
+
+                addresses.add(address)
+
+    return EmailPutSchema

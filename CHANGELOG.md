@@ -5,9 +5,10 @@ Changelog
 -----
 
 * Add the "enabled" field to a users
-* A new resource has been added to update all of a user's emails
+* New resources have been added to update all of a user's emails
 
   * PUT `0.1/admin/users/<user_uuid>/emails`
+  * PUT `0.1/users/<user_uuid>/emails`
   
   
 18.02

@@ -23,3 +23,9 @@ class Plugin(object):
             '/admin/users/<uuid:user_uuid>/emails',
             resource_class_args=(user_service,),
         )
+
+        api.add_resource(
+            http.UserEmailUpdate,
+            '/users/<uuid:user_uuid>/emails',
+            resource_class_args=(user_service,),
+        )
