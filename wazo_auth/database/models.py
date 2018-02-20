@@ -87,6 +87,14 @@ class Tenant(Base):
     contact_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='SET NULL'))
 
 
+class TenantPolicy(Base):
+
+    __tablename__ = 'auth_tenant_policy'
+
+    tenant_uuid = Column(String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), primary_key=True)
+    policy_uuid = Column(String(38), ForeignKey('auth_policy.uuid', ondelete='CASCADE'), primary_key=True)
+
+
 class TenantUser(Base):
 
     __tablename__ = 'auth_tenant_user'
