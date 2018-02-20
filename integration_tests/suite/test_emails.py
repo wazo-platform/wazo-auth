@@ -25,14 +25,14 @@ class TestEmails(MockBackendTestCase):
 
     @fixtures.http_user(username='foobar')
     def test_email_updates_as_admin(self, foobar):
-        assert_http_error(404, self.client.users.update_emails, UNKNOWN_UUID, [], admin=True)
+        assert_http_error(404, self.client.admin.update_user_emails, UNKNOWN_UUID, [])
         assert_http_error(
             400,
             self.client.users.update_emails,
-            foobar['uuid'], [ONE, ONE], admin=True,
+            foobar['uuid'], [ONE, ONE],
         )
 
-        result = self.client.users.update_emails(foobar['uuid'], [ONE, TWO], admin=True)
+        result = self.client.admin.update_user_emails(foobar['uuid'], [ONE, TWO])
         assert_that(
             result,
             contains_inanyorder(
@@ -42,7 +42,7 @@ class TestEmails(MockBackendTestCase):
         )
 
         one_uuid = [entry['uuid'] for entry in result if entry['address'] == 'one@example.com'][0]
-        result = self.client.users.update_emails(foobar['uuid'], [ONE, THREE], admin=True)
+        result = self.client.admin.update_user_emails(foobar['uuid'], [ONE, THREE])
         assert_that(
             result,
             contains_inanyorder(
