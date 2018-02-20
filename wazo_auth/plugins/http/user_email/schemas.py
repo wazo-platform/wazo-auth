@@ -36,34 +36,22 @@ def new_email_put_schema(user_type):
 
         @validates_schema
         def validate_only_one_main(self, data):
-            main = 0
-
             emails = data['emails']
             if not emails:
                 return
 
-            for email in emails:
-                if email['main']:
-                    main += 1
+            main_emails_count = [email['main'] for email in emails].count(True)
 
-            if main > 1:
+            if main_emails_count > 1:
                 raise ValidationError('Only one address should be main')
 
-            if main == 0:
+            if main_emails_count == 0:
                 raise ValidationError('At least one address should be main')
 
         @validates_schema
         def validate_no_duplicates(self, data):
-            addresses = set()
-
-            for email in data['emails']:
-                address = email.get('address')
-                if not address:
-                    continue
-
-                if address in addresses:
-                    raise ValidationError('The same address can only be used once')
-
-                addresses.add(address)
+            addresses = list(email['address'] for email in data['emails'] if email.get('address'))
+            if len(addresses) != len(set(addresses)):
+                raise ValidationError('The same address can only be used once')
 
     return EmailPutSchema
