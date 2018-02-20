@@ -10,6 +10,13 @@ Changelog
   * PUT `0.1/admin/users/<user_uuid>/emails`
   * PUT `0.1/users/<user_uuid>/emails`
   
+* Add an association between tenants and policies
+
+  * PUT `0.1/tenants/<tenant_uuid>/policies/<policy_uuid>`
+  * DELETE `0.1/tenants/<tenant_uuid>/policies/<policy_uuid>`
+  * GET `0.1/tenants/<tenant_uuid>/policies/`
+  * GET `0.1/policies/<policy_uuid>/tenants/`
+
   
 18.02
 -----
