@@ -108,6 +108,9 @@ class UserService(BaseService):
         self._dao.user.update(user_uuid, **kwargs)
         return self.get_user(user_uuid)
 
+    def update_emails(self, user_uuid, emails):
+        return self._dao.user.update_emails(user_uuid, emails)
+
     def verify_password(self, username, password, reset=False):
         if reset:
             return True

@@ -223,6 +223,33 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
             raise exceptions.UnknownUsernameException(username)
 
+    def get_emails(self, user_uuid):
+        filter_ = UserEmail.user_uuid == str(user_uuid)
+        result = []
+
+        with self.new_session() as s:
+            query = s.query(
+                Email.uuid,
+                Email.address,
+                Email.confirmed,
+                UserEmail.main,
+            ).outerjoin(UserEmail).filter(filter_)
+
+            for row in query.all():
+                result.append(
+                    dict(
+                        uuid=row.uuid,
+                        address=row.address,
+                        main=row.main,
+                        confirmed=row.confirmed,
+                    )
+                )
+
+        if not result and not self.exists(user_uuid):
+            raise exceptions.UnknownUserException(user_uuid)
+
+        return result
+
     def list_(self, **kwargs):
         users = OrderedDict()
 
@@ -288,3 +315,60 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         with self.new_session() as s:
             s.query(User).filter(filter_).update(kwargs)
+
+    def update_emails(self, user_uuid, emails):
+        existing_addresses = self._emails_to_dict(self.get_emails(user_uuid))
+        emails_as_dict = self._emails_to_dict(emails)
+        updated_emails = self._merge_existing_emails(emails_as_dict, existing_addresses)
+
+        with self.new_session() as s:
+            self._delete_all_emails(s, user_uuid)
+
+            for email in updated_emails.itervalues():
+                self._add_user_email(s, user_uuid, email)
+
+        return emails
+
+    def _add_user_email(self, s, user_uuid, args):
+        args.setdefault('confirmed', False)
+        email = Email(address=args['address'])
+        email.confirmed = args['confirmed']
+        uuid = args.get('uuid')
+        if uuid:
+            email.uuid = uuid
+        s.add(email)
+        s.flush()
+        s.add(UserEmail(
+            email_uuid=email.uuid,
+            user_uuid=user_uuid,
+            main=args['main'],
+        ))
+        s.flush()
+        args['uuid'] = email.uuid
+
+    def _delete_all_emails(self, s, user_uuid):
+        filter_ = UserEmail.user_uuid == str(user_uuid)
+
+        query = s.query(UserEmail.email_uuid).filter(filter_)
+        email_uuids = [row.email_uuid for row in query.all()]
+        if email_uuids:
+            s.query(Email).filter(Email.uuid.in_(email_uuids)).delete(synchronize_session=False)
+
+    @staticmethod
+    def _emails_to_dict(emails):
+        result = {}
+        for email in emails:
+            result[email['address']] = email
+        return result
+
+    @staticmethod
+    def _merge_existing_emails(new, old):
+        for address, email in new.iteritems():
+            if address not in old:
+                continue
+
+            email['uuid'] = old[address]['uuid']
+            if email.get('confirmed') is None:
+                email['confirmed'] = old[address]['confirmed']
+
+        return new
