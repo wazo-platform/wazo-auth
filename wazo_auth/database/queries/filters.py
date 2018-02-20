@@ -10,9 +10,9 @@ from ..models import (
     GroupPolicy,
     Policy,
     Tenant,
+    TenantPolicy,
     TenantUser,
     User,
-    UserExternalAuth,
     UserGroup,
     UserPolicy,
 )
@@ -78,6 +78,7 @@ policy_strict_filter = StrictFilter(
     ('name', Policy.name, None),
     ('user_uuid', UserPolicy.user_uuid, str),
     ('group_uuid', GroupPolicy.group_uuid, str),
+    ('tenant_uuid', TenantPolicy.tenant_uuid, str),
 )
 tenant_strict_filter = StrictFilter(
     ('uuid', Tenant.uuid, str),

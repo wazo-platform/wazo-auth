@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from sqlalchemy import and_, exc, func
@@ -10,6 +10,7 @@ from ..models import (
     ACLTemplatePolicy,
     GroupPolicy,
     Policy,
+    TenantPolicy,
     UserPolicy,
 )
 from ... import exceptions
@@ -130,6 +131,20 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 policies.append(body)
 
         return policies
+
+    def list_(self, **kwargs):
+        search_filter = self.new_search_filter(**kwargs)
+        strict_filter = self.new_strict_filter(**kwargs)
+        filter_ = and_(strict_filter, search_filter)
+
+        with self.new_session() as s:
+            query = s.query(
+                Policy.uuid,
+                Policy.name,
+            ).outerjoin(TenantPolicy).filter(filter_).group_by(Policy)
+            query = self._paginator.update_query(query, **kwargs)
+
+            return [{'uuid': uuid, 'name': name} for uuid, name in query.all()]
 
     def update(self, policy_uuid, name, description, acl_templates):
         with self.new_session() as s:

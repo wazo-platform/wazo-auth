@@ -813,6 +813,31 @@ class TestTokenDAO(_BaseDAOTestCase):
 class TestTenantDAO(_BaseDAOTestCase):
 
     @fixtures.tenant()
+    @fixtures.policy()
+    def test_add_policy(self, policy_uuid, tenant_uuid):
+        assert_that(self._policy_dao.list_(tenant_uuid=tenant_uuid), empty())
+
+        self._tenant_dao.add_policy(tenant_uuid, policy_uuid)
+        assert_that(
+            self._policy_dao.list_(tenant_uuid=tenant_uuid),
+            contains(has_entries('uuid', policy_uuid)),
+        )
+
+        self._tenant_dao.add_policy(tenant_uuid, policy_uuid)  # twice
+
+        assert_that(
+            calling(self._tenant_dao.add_policy).with_args(self.unknown_uuid, policy_uuid),
+            raises(exceptions.UnknownTenantException),
+            'unknown tenant',
+        )
+
+        assert_that(
+            calling(self._tenant_dao.add_policy).with_args(tenant_uuid, self.unknown_uuid),
+            raises(exceptions.UnknownPolicyException),
+            'unknown policy',
+        )
+
+    @fixtures.tenant()
     @fixtures.user()
     def test_add_user(self, user_uuid, tenant_uuid):
         assert_that(self._user_dao.list_(tenant_uuid=tenant_uuid), empty())
@@ -833,6 +858,23 @@ class TestTenantDAO(_BaseDAOTestCase):
             raises(exceptions.UnknownUserException),
             'unknown user',
         )
+
+    @fixtures.tenant()
+    @fixtures.policy()
+    def test_remove_policy(self, policy_uuid, tenant_uuid):
+        result = self._tenant_dao.remove_policy(tenant_uuid, policy_uuid)
+        assert_that(result, equal_to(0))
+
+        self._tenant_dao.add_policy(tenant_uuid, policy_uuid)
+
+        result = self._tenant_dao.remove_policy(self.unknown_uuid, policy_uuid)
+        assert_that(result, equal_to(0))
+
+        result = self._tenant_dao.remove_policy(tenant_uuid, self.unknown_uuid)
+        assert_that(result, equal_to(0))
+
+        result = self._tenant_dao.remove_policy(tenant_uuid, policy_uuid)
+        assert_that(result, equal_to(1))
 
     @fixtures.tenant()
     @fixtures.user()
