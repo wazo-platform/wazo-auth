@@ -14,6 +14,9 @@ class TenantService(BaseService):
     def add_user(self, tenant_uuid, user_uuid):
         return self._dao.tenant.add_user(tenant_uuid, user_uuid)
 
+    def count_policies(self, tenant_uuid, **kwargs):
+        return self._dao.tenant.count_policies(tenant_uuid, **kwargs)
+
     def count_users(self, tenant_uuid, **kwargs):
         return self._dao.tenant.count_users(tenant_uuid, **kwargs)
 
@@ -31,6 +34,9 @@ class TenantService(BaseService):
 
     def list_(self, **kwargs):
         return self._dao.tenant.list_(**kwargs)
+
+    def list_policies(self, tenant_uuid, **kwargs):
+        return self._dao.policy.list_(tenant_uuid=tenant_uuid, **kwargs)
 
     def list_users(self, tenant_uuid, **kwargs):
         return self._dao.user.list_(tenant_uuid=tenant_uuid, **kwargs)

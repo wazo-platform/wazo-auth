@@ -8,6 +8,7 @@ from .base import BaseDAO, PaginatorMixin
 from ..models import (
     Address,
     Email,
+    Policy,
     Tenant,
     TenantPolicy,
     TenantUser,
@@ -82,6 +83,20 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             return s.query(Tenant).filter(filter_).count()
 
+    def count_policies(self, tenant_uuid, **kwargs):
+        filtered = kwargs.get('filtered')
+        if filtered is not False:
+            strict_filter = filters.policy_strict_filter.new_filter(**kwargs)
+            search_filter = filters.policy_search_filter.new_filter(**kwargs)
+            filter_ = and_(strict_filter, search_filter)
+        else:
+            filter_ = text('true')
+
+        filter_ = and_(filter_, TenantPolicy.tenant_uuid == str(tenant_uuid))
+
+        with self.new_session() as s:
+            return s.query(Policy.uuid).join(TenantPolicy).filter(filter_).count()
+
     def count_users(self, tenant_uuid, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:
@@ -154,7 +169,13 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             query = s.query(
                 Tenant,
                 Address,
-            ).outerjoin(Address).outerjoin(TenantUser).filter(filter_).group_by(Tenant, Address)
+            ).outerjoin(
+                Address
+            ).outerjoin(
+                TenantUser
+            ).outerjoin(
+                TenantPolicy
+            ).filter(filter_).group_by(Tenant, Address)
             query = self._paginator.update_query(query, **kwargs)
 
             def to_dict(tenant, address):

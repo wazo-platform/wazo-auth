@@ -84,6 +84,7 @@ tenant_strict_filter = StrictFilter(
     ('uuid', Tenant.uuid, str),
     ('name', Tenant.name, None),
     ('user_uuid', TenantUser.user_uuid, str),
+    ('policy_uuid', TenantPolicy.policy_uuid, str),
 )
 user_strict_filter = StrictFilter(
     ('uuid', User.uuid, str),

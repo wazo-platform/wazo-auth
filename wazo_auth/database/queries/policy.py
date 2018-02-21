@@ -2,7 +2,7 @@
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from sqlalchemy import and_, exc, func
+from sqlalchemy import and_, exc, func, text
 from .base import BaseDAO, PaginatorMixin
 from . import filters
 from ..models import (
@@ -10,6 +10,7 @@ from ..models import (
     ACLTemplatePolicy,
     GroupPolicy,
     Policy,
+    Tenant,
     TenantPolicy,
     UserPolicy,
 )
@@ -56,6 +57,20 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 ACLTemplatePolicy.template_id == template_id,
             )
             return s.query(ACLTemplatePolicy).filter(filter_).delete()
+
+    def count_tenants(self, policy_uuid, **kwargs):
+        filtered = kwargs.get('filtered')
+        if filtered is not False:
+            strict_filter = filters.tenant_strict_filter.new_filter(**kwargs)
+            search_filter = filters.tenant_search_filter.new_filter(**kwargs)
+            filter_ = and_(strict_filter, search_filter)
+        else:
+            filter_ = text('true')
+
+        filter_ = and_(filter_, TenantPolicy.policy_uuid == str(policy_uuid))
+
+        with self.new_session() as s:
+            return s.query(Tenant).join(TenantPolicy).filter(filter_).count()
 
     def count(self, search, **ignored):
         filter_ = self.new_search_filter(search=search)
@@ -141,7 +156,9 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             query = s.query(
                 Policy.uuid,
                 Policy.name,
-            ).outerjoin(TenantPolicy).filter(filter_).group_by(Policy)
+            ).outerjoin(
+                TenantPolicy
+            ).filter(filter_).group_by(Policy)
             query = self._paginator.update_query(query, **kwargs)
 
             return [{'uuid': uuid, 'name': name} for uuid, name in query.all()]

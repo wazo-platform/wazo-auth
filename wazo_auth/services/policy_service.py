@@ -17,6 +17,9 @@ class PolicyService(BaseService):
     def count(self, **kwargs):
         return self._dao.policy.count(**kwargs)
 
+    def count_tenants(self, policy_uuid, **kwargs):
+        return self._dao.policy.count_tenants(policy_uuid, **kwargs)
+
     def delete(self, policy_uuid):
         return self._dao.policy.delete(policy_uuid)
 
@@ -36,6 +39,9 @@ class PolicyService(BaseService):
 
     def list(self, **kwargs):
         return self._dao.policy.get(**kwargs)
+
+    def list_tenants(self, policy_uuid, **kwargs):
+        return self._dao.tenant.list_(policy_uuid=policy_uuid, **kwargs)
 
     def update(self, policy_uuid, **body):
         self._dao.policy.update(policy_uuid, **body)
