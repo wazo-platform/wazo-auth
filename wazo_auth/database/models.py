@@ -134,7 +134,7 @@ class User(Base):
     __tablename__ = 'auth_user'
 
     uuid = Column(String(38), server_default=text('uuid_generate_v4()'), primary_key=True)
-    username = Column(String(128), unique=True, nullable=False)
+    username = Column(String(256), unique=True, nullable=False)
     firstname = Column(Text)
     lastname = Column(Text)
     password_hash = Column(Text)

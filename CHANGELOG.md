@@ -9,6 +9,8 @@ Changelog
 
   * PUT `0.1/admin/users/<user_uuid>/emails`
   * PUT `0.1/users/<user_uuid>/emails`
+
+* The "username" field of a user can now be 256 characters long
   
 * Add an association between tenants and policies
 
