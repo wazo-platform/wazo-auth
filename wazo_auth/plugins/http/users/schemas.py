@@ -10,7 +10,7 @@ from wazo_auth.schemas import BaseSchema
 class UserPostSchema(BaseSchema):
 
     uuid = fields.UUID()
-    username = fields.String(validate=validate.Length(min=1, max=128), required=True)
+    username = fields.String(validate=validate.Length(min=1, max=256), required=True)
     password = fields.String(validate=validate.Length(min=1), allow_none=True)
     firstname = fields.String(missing=None, allow_none=True)
     lastname = fields.String(missing=None, allow_none=True)
@@ -20,7 +20,7 @@ class UserPostSchema(BaseSchema):
 
 class UserPutSchema(BaseSchema):
 
-    username = fields.String(validate=validate.Length(min=1, max=128), required=True)
+    username = fields.String(validate=validate.Length(min=1, max=256), required=True)
     firstname = fields.String(missing=None, allow_none=True)
     lastname = fields.String(missing=None, allow_none=True)
     enabled = fields.Boolean(missing=True)

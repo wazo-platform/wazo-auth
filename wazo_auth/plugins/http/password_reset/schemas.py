@@ -14,7 +14,7 @@ class PasswordResetPostParameters(BaseSchema):
 
 class PasswordResetQueryParameters(BaseSchema):
 
-    username = fields.String(validate=validate.Length(min=1, max=128), missing=None)
+    username = fields.String(validate=validate.Length(min=1, max=256), missing=None)
     email_address = fields.Email(load_from='email', missing=None)
 
     @validates_schema
