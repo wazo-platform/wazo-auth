@@ -56,6 +56,7 @@ setup(
             'policies = wazo_auth.plugins.http.policies.plugin:Plugin',
             'tenants = wazo_auth.plugins.http.tenants.plugin:Plugin',
             'tenant_user = wazo_auth.plugins.http.tenant_user.plugin:Plugin',
+            'tenant_policy = wazo_auth.plugins.http.tenant_policy.plugin:Plugin',
             'tokens = wazo_auth.plugins.http.tokens.plugin:Plugin',
             'users = wazo_auth.plugins.http.users.plugin:Plugin',
             'user_email = wazo_auth.plugins.http.user_email.plugin:Plugin',

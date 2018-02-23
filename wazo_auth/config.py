@@ -49,6 +49,7 @@ _DEFAULT_CONFIG = {
         'password_reset': True,
         'policies': True,
         'tenant_user': True,
+        'tenant_policy': True,
         'tenants': True,
         'tokens': True,
         'user_email': True,

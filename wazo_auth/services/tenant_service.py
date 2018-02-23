@@ -8,8 +8,14 @@ from wazo_auth.services.helpers import BaseService
 
 class TenantService(BaseService):
 
+    def add_policy(self, tenant_uuid, policy_uuid):
+        return self._dao.tenant.add_policy(tenant_uuid, policy_uuid)
+
     def add_user(self, tenant_uuid, user_uuid):
         return self._dao.tenant.add_user(tenant_uuid, user_uuid)
+
+    def count_policies(self, tenant_uuid, **kwargs):
+        return self._dao.tenant.count_policies(tenant_uuid, **kwargs)
 
     def count_users(self, tenant_uuid, **kwargs):
         return self._dao.tenant.count_users(tenant_uuid, **kwargs)
@@ -29,6 +35,9 @@ class TenantService(BaseService):
     def list_(self, **kwargs):
         return self._dao.tenant.list_(**kwargs)
 
+    def list_policies(self, tenant_uuid, **kwargs):
+        return self._dao.policy.list_(tenant_uuid=tenant_uuid, **kwargs)
+
     def list_users(self, tenant_uuid, **kwargs):
         return self._dao.user.list_(tenant_uuid=tenant_uuid, **kwargs)
 
@@ -36,6 +45,17 @@ class TenantService(BaseService):
         address_id = self._dao.address.new(**kwargs['address'])
         uuid = self._dao.tenant.create(address_id=address_id, **kwargs)
         return self.get(uuid)
+
+    def remove_policy(self, tenant_uuid, policy_uuid):
+        nb_deleted = self._dao.tenant.remove_policy(tenant_uuid, policy_uuid)
+        if nb_deleted:
+            return
+
+        if not self._dao.tenant.exists(tenant_uuid):
+            raise exceptions.UnknownTenantException(tenant_uuid)
+
+        if not self._dao.policy.exists(policy_uuid):
+            raise exceptions.UnknownPolicyException(policy_uuid)
 
     def remove_user(self, tenant_uuid, user_uuid):
         nb_deleted = self._dao.tenant.remove_user(tenant_uuid, user_uuid)
