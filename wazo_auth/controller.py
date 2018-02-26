@@ -50,10 +50,11 @@ class Controller(object):
             logger.error('Missing configuration to start the application: %s', e)
             sys.exit(1)
 
+        template_formatter = services.helpers.TemplateFormatter(config)
         self._bus_publisher = bus.BusPublisher(config)
         dao = queries.DAO.from_config(self._config)
         self._token_manager = token.Manager(config, dao)
-        email_service = services.EmailService(dao, config)
+        email_service = services.EmailService(dao, config, template_formatter)
         external_auth_service = services.ExternalAuthService(
             dao, config, self._bus_publisher, config['enabled_external_auth_plugins'])
         group_service = services.GroupService(dao)
@@ -78,6 +79,7 @@ class Controller(object):
             'token_manager': self._token_manager,
             'policy_service': policy_service,
             'tenant_service': self._tenant_service,
+            'template_formatter': template_formatter,
         }
         self._flask_app = http.new_app(dependencies)
         self._expired_token_remover = token.ExpiredTokenRemover(config, dao)
