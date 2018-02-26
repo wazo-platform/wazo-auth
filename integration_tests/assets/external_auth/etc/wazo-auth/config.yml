@@ -25,7 +25,6 @@ enabled_backend_plugins:
   broken_init: true
   broken_verify_password: true
   wazo_user: true
-  xivo_user: false
   xivo_service: false
   xivo_admin: false
 backend_policies:

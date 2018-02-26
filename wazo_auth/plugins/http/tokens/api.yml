@@ -7,7 +7,7 @@ paths:
       - application/json
       summary: Creates a token
       description: 'Creates a valid token for the supplied username and password combination
-        using the specified backend. The stock backends are: ``wazo_user``, ``xivo_user``, ``xivo_service``,
+        using the specified backend. The stock backends are: ``wazo_user``, ``xivo_service``,
         ``xivo_admin``, ``ldap_user``. For more details about the backends, see http://documentation.wazo.community/en/latest/system/wazo-auth/stock_plugins.html#backends-plugins'
       operationId: createToken
       tags:
