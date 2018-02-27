@@ -29,5 +29,8 @@ backend_policies:
 smtp:
   hostname: smtp
 password_reset_email_template: '/var/lib/wazo-auth/templates/raw_password_reset_email.jinja'
+email_confirmation_get_response_body_template: '/var/lib/wazo-auth/templates/email_confirmation_get_body.jinja'
+email_confirmation_get_mimetype: 'text/x-test'
+
 
 db_uri: postgresql://asterisk:proformatique@postgres:5432

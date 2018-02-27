@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import requests
-from hamcrest import assert_that, contains, equal_to, has_entries
+from hamcrest import assert_that, contains, equal_to, has_entries, has_properties, starts_with
 from .helpers import fixtures
 from .helpers.base import assert_http_error, assert_no_error, MockBackendTestCase, UNKNOWN_UUID
 
@@ -47,7 +47,15 @@ class TestEmailConfirmation(MockBackendTestCase):
 
         last_email = self.get_emails()[-1]
         url = [l for l in last_email.split('\n') if l.startswith('https://')][0]
-        requests.get(url, verify=False)
+        result = requests.get(url, verify=False)
+        assert_that(
+            result,
+            has_properties(
+                status_code=200,
+                headers=has_entries('Content-Type', starts_with('text/x-test; charset=')),
+                text='Custom template',
+            ),
+        )
 
         updated_user = self.client.users.get(user['uuid'])
         assert_that(
