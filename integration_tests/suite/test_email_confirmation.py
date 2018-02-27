@@ -52,8 +52,8 @@ class TestEmailConfirmation(MockBackendTestCase):
             result,
             has_properties(
                 status_code=200,
-                headers=has_entries('Content-Type', starts_with('text/html; charset=')),
-                text='Email address confirmed',
+                headers=has_entries('Content-Type', starts_with('text/x-test; charset=')),
+                text='Custom template',
             ),
         )
 

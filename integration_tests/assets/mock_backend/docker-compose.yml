@@ -19,6 +19,7 @@ auth:
      - "../../..:/usr/src/wazo-auth"
      - "./etc/wazo-auth/config.yml:/etc/wazo-auth/config.yml"
      - "./var/lib/wazo-auth/templates/raw_password_reset_email.jinja:/var/lib/wazo-auth/templates/raw_password_reset_email.jinja"
+     - "./var/lib/wazo-auth/templates/email_confirmation_get_body.jinja:/var/lib/wazo-auth/templates/email_confirmation_get_body.jinja"
      # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/usr/local/lib/python2.7/site-packages/xivo"
      # - "${LOCAL_GIT_REPOS}/xivo-bus/xivo_bus:/usr/local/lib/python2.7/site-packages/xivo_bus"
    links:
