@@ -9,6 +9,7 @@ from hamcrest import (
     contains_inanyorder,
     equal_to,
     has_entries,
+    has_key,
 )
 
 from ..schemas import new_email_put_schema
@@ -65,6 +66,10 @@ class TestUserEmailPutSchema(TestCase):
         params = dict(emails=[ONE, TWO, TWO])
         body, error = self.user_schema.load(params)
         assert_that(error, has_entries(_schema=contains('The same address can only be used once')))
+
+        params = dict()
+        body, error = self.user_schema.load(params)
+        assert_that(error, has_key('emails'))
 
 
 class TestAdminUserEmailPutSchema(TestCase):

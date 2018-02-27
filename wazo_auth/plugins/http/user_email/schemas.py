@@ -28,7 +28,7 @@ def new_email_put_schema(user_type):
 
     class EmailPutSchema(BaseSchema):
 
-        emails = fields.Nested(EmailSchema, many=True)
+        emails = fields.Nested(EmailSchema, required=True, many=True)
 
         @post_load
         def as_list(self, data):
@@ -36,7 +36,7 @@ def new_email_put_schema(user_type):
 
         @validates_schema
         def validate_only_one_main(self, data):
-            emails = data['emails']
+            emails = data.get('emails')
             if not emails:
                 return
 
@@ -50,7 +50,11 @@ def new_email_put_schema(user_type):
 
         @validates_schema
         def validate_no_duplicates(self, data):
-            addresses = list(email['address'] for email in data['emails'] if email.get('address'))
+            emails = data.get('emails')
+            if not emails:
+                return
+
+            addresses = list(email['address'] for email in emails if email.get('address'))
             if len(addresses) != len(set(addresses)):
                 raise ValidationError('The same address can only be used once')
 
