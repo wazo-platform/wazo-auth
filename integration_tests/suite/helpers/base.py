@@ -14,21 +14,21 @@ from xivo_test_helpers.bus import BusClient
 
 HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
 UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
-ADDRESS_NULL = dict(
-    line_1=None,
-    line_2=None,
-    city=None,
-    state=None,
-    country=None,
-    zip_code=None,
-)
+ADDRESS_NULL = {
+    'line_1': None,
+    'line_2': None,
+    'city': None,
+    'state': None,
+    'country': None,
+    'zip_code': None,
+}
 
 
 class BaseTestCase(AssetLaunchingTestCase):
 
     assets_root = os.path.join(os.path.dirname(__file__), '../..', 'assets')
     service = 'auth'
-    bus_config = dict(username='guest', password='guest', host='localhost')
+    bus_config = {'username': 'guest', 'password': 'guest', 'host': 'localhost'}
     email_dir = '/var/mail'
 
     @classmethod

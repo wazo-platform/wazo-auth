@@ -36,12 +36,12 @@ class EmailService(BaseService):
         self._dao.email.confirm(email_uuid)
 
     def send_confirmation_email(self, username, email_uuid, email_address):
-        template_context = dict(
-            token=self._new_email_confirmation_token(email_uuid),
-            username=username,
-            email_uuid=email_uuid,
-            email_address=email_address,
-        )
+        template_context = {
+            'token': self._new_email_confirmation_token(email_uuid),
+            'username': username,
+            'email_uuid': email_uuid,
+            'email_address': email_address,
+        }
 
         body = self._formatter.format_confirmation_email(template_context)
         subject = self._formatter.format_confirmation_subject(template_context)
@@ -49,12 +49,12 @@ class EmailService(BaseService):
         self._send_msg(to, self._confirmation_from, subject, body)
 
     def send_reset_email(self, user_uuid, username, email_address):
-        template_context = dict(
-            token=self._new_email_reset_token(user_uuid),
-            username=username,
-            user_uuid=user_uuid,
-            email_address=email_address,
-        )
+        template_context = {
+            'token': self._new_email_reset_token(user_uuid),
+            'username': username,
+            'user_uuid': user_uuid,
+            'email_address': email_address,
+        }
 
         body = self._formatter.format_password_reset_email(template_context)
         subject = self._formatter.format_password_reset_subject(template_context)
@@ -83,12 +83,12 @@ class EmailService(BaseService):
 
     def _new_generic_token(self, expiration, *acls):
         t = time.time()
-        token_payload = dict(
-            auth_id='wazo-auth',
-            xivo_user_uuid=None,
-            xivo_uuid=None,
-            expire_t=t + expiration,
-            issued_t=t,
-            acls=acls,
-        )
+        token_payload = {
+            'auth_id': 'wazo-auth',
+            'xivo_user_uuid': None,
+            'xivo_uuid': None,
+            'expire_t': t + expiration,
+            'issued_t': t,
+            'acls': acls,
+        }
         return self._dao.token.create(token_payload)

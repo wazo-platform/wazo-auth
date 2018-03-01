@@ -21,11 +21,11 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     search_filter = filters.policy_search_filter
     strict_filter = filters.policy_strict_filter
-    column_map = dict(
-        name=Policy.name,
-        description=Policy.description,
-        uuid=Policy.uuid,
-    )
+    column_map = {
+        'name': Policy.name,
+        'description': Policy.description,
+        'uuid': Policy.uuid,
+    }
 
     def associate_policy_template(self, policy_uuid, acl_template):
         with self.new_session() as s:

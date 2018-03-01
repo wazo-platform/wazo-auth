@@ -21,14 +21,12 @@ from ... import exceptions
 
 class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
-    constraint_to_column_map = dict(
-        auth_tenant_name_key='name',
-    )
+    constraint_to_column_map = {
+        'auth_tenant_name_key': 'name',
+    }
     search_filter = filters.tenant_search_filter
     strict_filter = filters.tenant_strict_filter
-    column_map = dict(
-        name=Tenant.name,
-    )
+    column_map = {'name': Tenant.name}
 
     def exists(self, tenant_uuid):
         return self.count(uuid=tenant_uuid) > 0
@@ -204,12 +202,12 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def update(self, tenant_uuid, **kwargs):
         filter_ = Tenant.uuid == str(tenant_uuid)
-        values = dict(
-            name=kwargs.get('name'),
-            contact_uuid=kwargs.get('contact_uuid'),
-            phone=kwargs.get('phone'),
-            address_id=kwargs.get('address_id'),
-        )
+        values = {
+            'name': kwargs.get('name'),
+            'contact_uuid': kwargs.get('contact_uuid'),
+            'phone': kwargs.get('phone'),
+            'address_id': kwargs.get('address_id'),
+        }
 
         with self.new_session() as s:
             try:

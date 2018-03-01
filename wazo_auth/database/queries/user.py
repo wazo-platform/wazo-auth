@@ -22,16 +22,14 @@ from ... import exceptions
 
 class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
-    constraint_to_column_map = dict(
-        auth_user_pkey='uuid',
-        auth_user_username_key='username',
-        auth_email_address_key='email_address',
-    )
+    constraint_to_column_map = {
+        'auth_user_pkey': 'uuid',
+        'auth_user_username_key': 'username',
+        'auth_email_address_key': 'email_address',
+    }
     search_filter = filters.user_search_filter
     strict_filter = filters.user_strict_filter
-    column_map = dict(
-        username=User.username,
-    )
+    column_map = {'username': User.username}
 
     def add_policy(self, user_uuid, policy_uuid):
         user_policy = UserPolicy(user_uuid=user_uuid, policy_uuid=policy_uuid)
@@ -54,10 +52,10 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def change_password(self, user_uuid, salt, hash_):
         filter_ = User.uuid == str(user_uuid)
-        values = dict(
-            password_salt=salt,
-            password_hash=hash_,
-        )
+        values = {
+            'password_salt': salt,
+            'password_hash': hash_,
+        }
 
         with self.new_session() as s:
             s.query(User).filter(filter_).update(values)
@@ -135,14 +133,14 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             return s.query(Tenant).join(TenantUser).filter(filter_).count()
 
     def create(self, username, **kwargs):
-        user_args = dict(
-            username=username,
-            firstname=kwargs.get('firstname'),
-            lastname=kwargs.get('lastname'),
-            password_hash=kwargs.get('hash_'),
-            password_salt=kwargs.get('salt'),
-            enabled=kwargs.get('enabled'),
-        )
+        user_args = {
+            'username': username,
+            'firstname': kwargs.get('firstname'),
+            'lastname': kwargs.get('lastname'),
+            'password_hash': kwargs.get('hash_'),
+            'password_salt': kwargs.get('salt'),
+            'enabled': kwargs.get('enabled'),
+        }
         uuid = kwargs.get('uuid')
         if uuid:
             user_args['uuid'] = str(uuid)
@@ -152,7 +150,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             try:
                 if email_address:
-                    email_args = dict(address=email_address, confirmed=email_confirmed)
+                    email_args = {'address': email_address, 'confirmed': email_confirmed}
                     email = Email(**email_args)
                     s.add(email)
 
@@ -176,24 +174,24 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 raise
 
             if email_address:
-                email = dict(
-                    uuid=email.uuid,
-                    address=email_address,
-                    confirmed=email_confirmed,
-                    main=True,
-                )
+                email = {
+                    'uuid': email.uuid,
+                    'address': email_address,
+                    'confirmed': email_confirmed,
+                    'main': True,
+                }
                 emails = [email]
             else:
                 emails = []
 
-            return dict(
-                uuid=user.uuid,
-                username=username,
-                firstname=user.firstname,
-                lastname=user.lastname,
-                emails=emails,
-                enabled=user.enabled,
-            )
+            return {
+                'uuid': user.uuid,
+                'username': username,
+                'firstname': user.firstname,
+                'lastname': user.lastname,
+                'emails': emails,
+                'enabled': user.enabled,
+            }
 
     def delete(self, user_uuid):
         with self.new_session() as s:
@@ -237,12 +235,12 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
             for row in query.all():
                 result.append(
-                    dict(
-                        uuid=row.uuid,
-                        address=row.address,
-                        main=row.main,
-                        confirmed=row.confirmed,
-                    )
+                    {
+                        'uuid': row.uuid,
+                        'address': row.address,
+                        'main': row.main,
+                        'confirmed': row.confirmed,
+                    }
                 )
 
         if not result and not self.exists(user_uuid):
@@ -290,22 +288,22 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 ) = row
 
                 if user_uuid not in users:
-                    users[user_uuid] = dict(
-                        username=username,
-                        uuid=user_uuid,
-                        enabled=enabled,
-                        emails=[],
-                        firstname=firstname,
-                        lastname=lastname,
-                    )
+                    users[user_uuid] = {
+                        'username': username,
+                        'uuid': user_uuid,
+                        'enabled': enabled,
+                        'emails': [],
+                        'firstname': firstname,
+                        'lastname': lastname,
+                    }
 
                 if address:
-                    email = dict(
-                        uuid=email_uuid,
-                        address=address,
-                        main=main_email,
-                        confirmed=confirmed,
-                    )
+                    email = {
+                        'uuid': email_uuid,
+                        'address': address,
+                        'main': main_email,
+                        'confirmed': confirmed,
+                    }
                     users[user_uuid]['emails'].append(email)
 
         return users.values()

@@ -35,13 +35,13 @@ class WazoUser(UserAuthenticationBackend):
         tenants = self._get_tenants(user_uuid)
         groups = self._get_groups(user_uuid)
 
-        user_data = dict(
-            auth_id=user_uuid,
-            xivo_user_uuid=user_uuid,
-            uuid=user_uuid,
-            tenants=tenants,
-            groups=groups,
-        )
+        user_data = {
+            'auth_id': user_uuid,
+            'xivo_user_uuid': user_uuid,
+            'uuid': user_uuid,
+            'tenants': tenants,
+            'groups': groups,
+        }
         metadata.update(user_data)
 
         return metadata
@@ -60,10 +60,10 @@ class WazoUser(UserAuthenticationBackend):
 
         for tenant in tenants:
             result.append(
-                dict(
-                    uuid=tenant['uuid'],
-                    name=tenant['name'],
-                )
+                {
+                    'uuid': tenant['uuid'],
+                    'name': tenant['name'],
+                }
             )
 
         return result
@@ -76,11 +76,11 @@ class WazoUser(UserAuthenticationBackend):
             group_members = self._group_service.list_users(group['uuid'])
             member_uuids = [{'uuid': u['uuid']} for u in group_members]
             result.append(
-                dict(
-                    uuid=group['uuid'],
-                    name=group['name'],
-                    users=member_uuids,
-                )
+                {
+                    'uuid': group['uuid'],
+                    'name': group['name'],
+                    'users': member_uuids,
+                }
             )
 
         return result

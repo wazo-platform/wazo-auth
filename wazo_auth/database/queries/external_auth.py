@@ -14,9 +14,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     search_filter = filters.external_auth_search_filter
     strict_filter = filters.external_auth_strict_filter
-    column_map = dict(
-        type=ExternalAuthType.name,
-    )
+    column_map = {'type': ExternalAuthType.name}
 
     def count(self, user_uuid, **kwargs):
         filtered = kwargs.get('filtered')
@@ -133,7 +131,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 for row in result:
                     if row['type'] != type_:
                         continue
-                    row.update(dict(enabled=True, data=json.loads(data)))
+                    row.update({'enabled': True, 'data': json.loads(data)})
 
         return result
 

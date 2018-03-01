@@ -14,16 +14,16 @@ from .user import UserDAO
 
 class DAO(object):
 
-    _daos = dict(
-        address=AddressDAO,
-        email=EmailDAO,
-        external_auth=ExternalAuthDAO,
-        group=GroupDAO,
-        policy=PolicyDAO,
-        tenant=TenantDAO,
-        token=TokenDAO,
-        user=UserDAO,
-    )
+    _daos = {
+        'address': AddressDAO,
+        'email': EmailDAO,
+        'external_auth': ExternalAuthDAO,
+        'group': GroupDAO,
+        'policy': PolicyDAO,
+        'tenant': TenantDAO,
+        'token': TokenDAO,
+        'user': UserDAO,
+    }
 
     def __init__(self, **kwargs):
         for name, dao in kwargs.iteritems():

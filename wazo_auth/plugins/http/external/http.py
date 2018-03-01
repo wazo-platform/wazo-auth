@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from flask import current_app, request
@@ -26,10 +26,10 @@ class External(http.AuthResource):
             plugin_info = current_app.config['external_auth_plugin_info'][item['type']]
             item['plugin_info'] = plugin_info
 
-        response = dict(
-            filtered=filtered,
-            total=total,
-            items=items,
-        )
+        response = {
+            'filtered': filtered,
+            'total': total,
+            'items': items,
+        }
 
         return response, 200

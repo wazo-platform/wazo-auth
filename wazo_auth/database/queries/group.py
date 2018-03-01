@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from sqlalchemy import and_, exc, text
@@ -11,15 +11,15 @@ from ... import exceptions
 
 class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
-    constraint_to_column_map = dict(
-        auth_group_name_key='name',
-    )
+    constraint_to_column_map = {
+        'auth_group_name_key': 'name',
+    }
     search_filter = filters.group_search_filter
     strict_filter = filters.group_strict_filter
-    column_map = dict(
-        name=Group.name,
-        uuid=Group.uuid,
-    )
+    column_map = {
+        'name': Group.name,
+        'uuid': Group.uuid,
+    }
 
     def add_policy(self, group_uuid, policy_uuid):
         group_policy = GroupPolicy(policy_uuid=str(policy_uuid), group_uuid=str(group_uuid))

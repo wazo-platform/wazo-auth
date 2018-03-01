@@ -46,11 +46,11 @@ class Groups(_BaseGroupResource):
         total = self.group_service.count(filtered=False, **list_params)
         filtered = self.group_service.count(filtered=True, **list_params)
 
-        response = dict(
-            filtered=filtered,
-            total=total,
-            items=groups,
-        )
+        response = {
+            'filtered': filtered,
+            'total': total,
+            'items': groups,
+        }
 
         return response, 200
 

@@ -36,10 +36,10 @@ class LDAPUser(UserAuthenticationBackend):
 
     def get_metadata(self, username, args):
         metadata = super(LDAPUser, self).get_metadata(username, args)
-        user_data = dict(
-            auth_id=args['xivo_user_uuid'],
-            xivo_user_uuid=args['xivo_user_uuid'],
-        )
+        user_data = {
+            'auth_id': args['xivo_user_uuid'],
+            'xivo_user_uuid': args['xivo_user_uuid'],
+        }
         metadata.update(user_data)
         return metadata
 
