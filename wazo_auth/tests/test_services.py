@@ -241,17 +241,17 @@ class TestUserService(BaseServiceTestCase):
             not_(raises(Exception)))
 
     def test_that_new(self):
-        params = dict(
-            username='foobar',
-            password='s3cre7',
-            email_address='foobar@example.com',
-        )
-        expected_db_params = dict(
-            username='foobar',
-            email_address='foobar@example.com',
-            salt=s.salt,
-            hash_=s.hash_,
-        )
+        params = {
+            'username': 'foobar',
+            'password': 's3cre7',
+            'email_address': 'foobar@example.com',
+        }
+        expected_db_params = {
+            'username': 'foobar',
+            'email_address': 'foobar@example.com',
+            'salt': s.salt,
+            'hash_': s.hash_,
+        }
 
         result = self.service.new_user(**params)
 

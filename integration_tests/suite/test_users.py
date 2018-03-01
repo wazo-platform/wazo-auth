@@ -54,12 +54,12 @@ class TestUsers(MockBackendTestCase):
         assert_http_error(401, user_client.token.new, 'wazo_user')
 
     def test_post(self):
-        args = dict(
-            username='foobar',
-            firstname='Alice',
-            email_address='foobar@example.com',
-            password='s3cr37',
-        )
+        args = {
+            'username': 'foobar',
+            'firstname': 'Alice',
+            'email_address': 'foobar@example.com',
+            'password': 's3cr37',
+        }
 
         url = 'https://{}:{}/0.1/users'.format(self.get_host(), self._auth_port)
         result = requests.post(url, headers={'Content-Type': 'application/json'},
@@ -80,10 +80,7 @@ class TestUsers(MockBackendTestCase):
                         'main', True,
                         'confirmed', True))))
 
-        args = dict(
-            username='foobaz',
-            email_address='foobaz@example.com',
-        )
+        args = {'username': 'foobaz', 'email_address': 'foobaz@example.com'}
 
         with self.auto_remove_user(self.client.users.new, **args) as user:
             assert_that(user, has_entries(
@@ -95,11 +92,11 @@ class TestUsers(MockBackendTestCase):
                         'main', True,
                         'confirmed', True))))
 
-        args = dict(
-            uuid='fcf9724a-15aa-4dc5-af3c-a9acdb6a2ab9',
-            username='alice',
-            email_address='alice@example.com',
-        )
+        args = {
+            'uuid': 'fcf9724a-15aa-4dc5-af3c-a9acdb6a2ab9',
+            'username': 'alice',
+            'email_address': 'alice@example.com',
+        }
 
         with self.auto_remove_user(self.client.users.new, **args) as user:
             assert_that(user, has_entries(uuid=args['uuid'], username=args['username']))
@@ -112,24 +109,21 @@ class TestUsers(MockBackendTestCase):
         with self.auto_remove_user(self.client.users.new, username='bob') as user:
             assert_that(user, has_entries(username='bob', emails=empty()))
 
-        args = dict(
-            username='bob',
-            firstname=None,
-            lastname=None,
-            password=None,
-        )
+        args = {
+            'username': 'bob',
+            'firstname': None,
+            'lastname': None,
+            'password': None,
+        }
         with self.auto_remove_user(self.client.users.new, **args) as user:
             del(args['password'])
             assert_that(user, has_entries(**args))
 
-        args = dict(
-            username='bob',
-            email_address=None,
-        )
+        args = {'username': 'bob', 'email_address': None}
         with self.auto_remove_user(self.client.users.new, **args) as user:
             assert_that(user, has_entries(emails=empty()))
 
-        user_args = dict(username='foobar', password='foobaz', enabled=False)
+        user_args = {'username': 'foobar', 'password': 'foobaz', 'enabled': False}
         with self.auto_remove_user(self.client.users.new, **user_args) as user:
             assert_that(user, has_entries('enabled', False))
             user_client = self.new_auth_client('foobar', 'foobaz')
@@ -138,11 +132,11 @@ class TestUsers(MockBackendTestCase):
     @fixtures.http_user(username='foobar', firstname='foo', lastname='bar')
     def test_put(self, user):
         user_uuid = user['uuid']
-        body = dict(
-            username='foobaz',
-            firstname='baz',
-            enabled=False,
-        )
+        body = {
+            'username': 'foobaz',
+            'firstname': 'baz',
+            'enabled': False,
+        }
 
         assert_http_error(404, self.client.users.edit, UNKNOWN_UUID, **body)
 
@@ -155,21 +149,21 @@ class TestUsers(MockBackendTestCase):
             enabled=False,
         ))
 
-        body = dict(
-            username='foobaz',
-            firstname=None,
-            lastname=None,
-        )
+        body = {
+            'username': 'foobaz',
+            'firstname': None,
+            'lastname': None,
+        }
         result = self.client.users.edit(user_uuid, **body)
         assert_that(result, has_entries(**body))
 
     def test_register_post(self):
-        args = dict(
-            username='foobar',
-            lastname='Denver',
-            email_address='foobar@example.com',
-            password='s3cr37',
-        )
+        args = {
+            'username': 'foobar',
+            'lastname': 'Denver',
+            'email_address': 'foobar@example.com',
+            'password': 's3cr37',
+        }
 
         with self.auto_remove_user(self.client.users.register, **args) as user:
             assert_that(

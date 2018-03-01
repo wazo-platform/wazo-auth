@@ -54,11 +54,11 @@ class TestUserResource(HTTPAppTestCase):
             'email_address': email_address,
         }
         data = json.dumps(body)
-        self.user_service.new_user.return_value = dict(
-            uuid=uuid,
-            username=username,
-            email_address=email_address,
-        )
+        self.user_service.new_user.return_value = {
+            'uuid': uuid,
+            'username': username,
+            'email_address': email_address,
+        }
 
         result = self.app.post(self.url, data=data, headers=self.headers)
 
@@ -163,21 +163,21 @@ class TestUserResource(HTTPAppTestCase):
             )
 
     def test_user_list(self):
-        params = dict(
-            direction='desc',
-            order='email_address',
-            limit=5,
-            offset=42,
-            search='foo',
-            uuid='5941aabb-9e4a-4d2e-9e1e-7f9929354458',
-        )
+        params = {
+            'direction': 'desc',
+            'order': 'email_address',
+            'limit': 5,
+            'offset': 42,
+            'search': 'foo',
+            'uuid': '5941aabb-9e4a-4d2e-9e1e-7f9929354458',
+        }
         expected_total, expected_filtered = 100, 1
         expected_result = [
-            dict(
-                username='foobar',
-                email_address='foobar@example.com',
-                uuid='5941aabb-9e4a-4d2e-9e1e-7f9929354458',
-            ),
+            {
+                'username': 'foobar',
+                'email_address': 'foobar@example.com',
+                'uuid': '5941aabb-9e4a-4d2e-9e1e-7f9929354458',
+            },
         ]
         self.user_service.list_users.return_value = expected_result
         self.user_service.count_users.side_effect = [expected_total, expected_filtered]
@@ -195,14 +195,14 @@ class TestUserResource(HTTPAppTestCase):
         )
 
     def test_user_list_invalid_list_params(self):
-        params = dict(
-            direction='desc',
-            order='email_address',
-            limit=5,
-            offset=42,
-            search='foo',
-            uuid='5941aabb-9e4a-4d2e-9e1e-7f9929354458',
-        )
+        params = {
+            'direction': 'desc',
+            'order': 'email_address',
+            'limit': 5,
+            'offset': 42,
+            'search': 'foo',
+            'uuid': '5941aabb-9e4a-4d2e-9e1e-7f9929354458',
+        }
 
         invalid_params = dict(params)
         invalid_params['limit'] = -1
@@ -255,13 +255,13 @@ class TestUserResource(HTTPAppTestCase):
     def test_user_get(self):
         uuid = '5730c531-5e47-4de6-be60-c3e28de00de4'
         url = '/'.join([self.url, uuid])
-        expected_result = dict(
-            username='foobar',
-            uuid=uuid,
-            emails=[
+        expected_result = {
+            'username': 'foobar',
+            'uuid': uuid,
+            'emails': [
                 {'address': 'foobar@example.com', 'confirmed': True, 'main': True},
             ],
-        )
+        }
         self.user_service.get_user.return_value = expected_result
 
         result = self.app.get(url, headers=self.headers)

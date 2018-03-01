@@ -15,13 +15,13 @@ from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers import fixtures
 from .helpers.base import ADDRESS_NULL, assert_http_error, MockBackendTestCase, UNKNOWN_UUID
 
-ADDRESS_1 = dict(
-    line_1='Here',
-    city='Québec',
-    state='Québec',
-    country='Canada',
-    zip_code='H0H 0H0',
-)
+ADDRESS_1 = {
+    'line_1': 'Here',
+    'city': 'Québec',
+    'state': 'Québec',
+    'country': 'Canada',
+    'zip_code': 'H0H 0H0',
+}
 PHONE_1 = '555-555-5555'
 
 
@@ -91,11 +91,11 @@ class TestTenants(MockBackendTestCase):
     @fixtures.http_user()
     def test_put(self, user, tenant):
         name = 'foobar'
-        body = dict(
-            name=name,
-            address=ADDRESS_1,
-            contact=user['uuid'],
-        )
+        body = {
+            'name': name,
+            'address': ADDRESS_1,
+            'contact': user['uuid'],
+        }
         body_with_unknown_contact = dict(body)
         body_with_unknown_contact['contact'] = UNKNOWN_UUID
 
