@@ -1,40 +1,39 @@
-sync:
-  image: n3llyb0y/wait
-  links:
-    - auth
-    - postgres
-    - slapd
-  environment:
-    PORTS: "389 5432 9497"
-    TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
-auth:
-  image: wazopbx/wazo-auth-tests
-  ports:
-    - "9497"
-  environment:
-    - "XIVO_UUID=the-predefined-xivo-uuid"
-  volumes:
-     - "../../..:/usr/src/wazo-auth"
-     - "./etc/wazo-auth/config.yml:/etc/wazo-auth/config.yml"
-     # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/usr/local/lib/python2.7/site-packages/xivo"
-     # - "${LOCAL_GIT_REPOS}/xivo-bus/xivo_bus:/usr/local/lib/python2.7/site-packages/xivo_bus"
-  links:
-    - postgres
-    - slapd
-  command: "wazo-auth"
-slapd:
-  image: nickstenning/slapd
-  environment:
-    LDAP_DOMAIN: wazo-auth.wazo.community
-    LDAP_ORGANISATION: acme
-    LDAP_ROOTPASS: wazopassword
-  expose:
-    - "389"
-  ports:
-    - "389"
-postgres:
-  image: wazopbx/wazo-auth-db
-  ports:
-    - "5432"
-  volumes:
-      - "./etc/xivo-postgres/populate.sql:/pg-init-db/populate.sql"
+version: '3'
+services:
+  sync:
+    image: waisbrot/wait
+    depends_on:
+      - auth
+      - postgres
+      - slapd
+    environment:
+      TARGETS: "slapd:389 postgres:5432 rabbitmq:9497"
+      TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
+  auth:
+    image: wazopbx/wazo-auth-tests
+    ports:
+      - "9497"
+    environment:
+      XIVO_UUID: the-predefined-xivo-uuid
+    volumes:
+      - "../../..:/usr/src/wazo-auth"
+      - "./etc/wazo-auth/config.yml:/etc/wazo-auth/config.yml"
+      # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/usr/local/lib/python2.7/site-packages/xivo"
+      # - "${LOCAL_GIT_REPOS}/xivo-bus/xivo_bus:/usr/local/lib/python2.7/site-packages/xivo_bus"
+    command: "wazo-auth"
+  slapd:
+    image: nickstenning/slapd
+    environment:
+      LDAP_DOMAIN: wazo-auth.wazo.community
+      LDAP_ORGANISATION: acme
+      LDAP_ROOTPASS: wazopassword
+    expose:
+      - "389"
+    ports:
+      - "389"
+  postgres:
+    image: wazopbx/wazo-auth-db
+    ports:
+      - "5432"
+    volumes:
+        - "./etc/xivo-postgres/populate.sql:/pg-init-db/populate.sql"

@@ -1,41 +1,39 @@
-sync:
-  image: n3llyb0y/wait
-  links:
-    - auth
-    - postgres
-    - rabbitmq
-    - smtp
-  environment:
-    PORTS: "9497 5432 5672 25"
-    TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
-auth:
-   image: wazopbx/wazo-auth-tests
-   environment:
-    - "TZ=UTC+1"
-    - "XIVO_UUID=the-predefined-xivo-uuid"
-   ports:
-     - "9497"
-   volumes:
-     - "../../..:/usr/src/wazo-auth"
-     - "./etc/wazo-auth/config.yml:/etc/wazo-auth/config.yml"
-     - "./var/lib/wazo-auth/templates/raw_password_reset_email.jinja:/var/lib/wazo-auth/templates/raw_password_reset_email.jinja"
-     - "./var/lib/wazo-auth/templates/email_confirmation_get_body.jinja:/var/lib/wazo-auth/templates/email_confirmation_get_body.jinja"
-     # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/usr/local/lib/python2.7/site-packages/xivo"
-     # - "${LOCAL_GIT_REPOS}/xivo-bus/xivo_bus:/usr/local/lib/python2.7/site-packages/xivo_bus"
-   links:
-     - "postgres"
-     - "rabbitmq"
-     - "smtp"
-   command: "wazo-auth"
-postgres:
-  image: wazopbx/wazo-auth-db
-  ports:
-    - "5432"
-rabbitmq:
-  image: rabbitmq
-  ports:
-    - "5672"
-smtp:
-  image: munkyboy/fakesmtp
-  ports:
-    - "25"
+version: '3'
+services:
+  sync:
+    image: waisbrot/wait
+    depends_on:
+      - auth
+      - postgres
+      - rabbitmq
+      - smtp
+    environment:
+      TARGETS: "auth:9497 postgres:5432 rabbitmq:5672 slapd:25"
+      TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
+  auth:
+    image: wazopbx/wazo-auth-tests
+    environment:
+      TZ: UTC+1
+      XIVO_UUID: the-predefined-xivo-uuid
+    ports:
+      - "9497"
+    volumes:
+      - "../../..:/usr/src/wazo-auth"
+      - "./etc/wazo-auth/config.yml:/etc/wazo-auth/config.yml"
+      - "./var/lib/wazo-auth/templates/raw_password_reset_email.jinja:/var/lib/wazo-auth/templates/raw_password_reset_email.jinja"
+      - "./var/lib/wazo-auth/templates/email_confirmation_get_body.jinja:/var/lib/wazo-auth/templates/email_confirmation_get_body.jinja"
+      # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/usr/local/lib/python2.7/site-packages/xivo"
+      # - "${LOCAL_GIT_REPOS}/xivo-bus/xivo_bus:/usr/local/lib/python2.7/site-packages/xivo_bus"
+    command: "wazo-auth"
+  postgres:
+    image: wazopbx/wazo-auth-db
+    ports:
+      - "5432"
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - "5672"
+  smtp:
+    image: munkyboy/fakesmtp
+    ports:
+      - "25"
