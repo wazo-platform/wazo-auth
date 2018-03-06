@@ -23,11 +23,11 @@ class _BaseMockBackend(BaseAuthenticationBackend):
 
 class BackendMock(_BaseMockBackend):
 
-    _base_metadata = dict(auth_id='a-mocked-uuid')
+    _base_metadata = {'auth_id': 'a-mocked-uuid'}
     _acls = ['foo', 'bar', 'auth.#']
 
 
 class BackendMockWithUUID(_BaseMockBackend):
 
-    _base_metadata = dict(auth_id='a-mocked-auth-id', xivo_user_uuid='a-mocked-xivo-user-uuid')
+    _base_metadata = {'auth_id': 'a-mocked-auth-id', 'xivo_user_uuid': 'a-mocked-xivo-user-uuid'}
     _acls = ['foo', 'bar']

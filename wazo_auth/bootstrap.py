@@ -77,11 +77,11 @@ def complete():
             break
 
     password = random_string(28)
-    body = dict(
-        key=key,
-        username=USERNAME,
-        password=password,
-    )
+    body = {
+        'key': key,
+        'username': USERNAME,
+        'password': password,
+    }
 
     wazo_auth_config = read_config_file_hierarchy({'config_file': DEFAULT_WAZO_AUTH_CONFIG_FILE})
     port = wazo_auth_config['rest_api']['https']['port']

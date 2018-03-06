@@ -57,7 +57,7 @@ class QueryPaginator(object):
 
 class PaginatorMixin(object):
 
-    column_map = dict()
+    column_map = {}
 
     def __init__(self, *args, **kwargs):
         super(PaginatorMixin, self).__init__(*args, **kwargs)

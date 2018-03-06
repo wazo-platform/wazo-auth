@@ -33,15 +33,15 @@ class TestUserEmailConfirmResource(HTTPAppTestCase):
             details=has_entries(uuid=str(UNKNOWN_UUID))))
 
     def test_unknown_email(self):
-        user_data = dict(
-            username=USERNAME,
-            emails=[
-                dict(
-                    uuid=str(EMAIL_UUID),
-                    address=EMAIL_ADDRESS,
-                    confirmed=False,
-                    main=True,
-                )])
+        user_data = {
+            'username': USERNAME,
+            'emails': [
+                {
+                    'uuid': str(EMAIL_UUID),
+                    'address': EMAIL_ADDRESS,
+                    'confirmed': False,
+                    'main': True,
+                }]}
         self.user_service.get_user.return_value = user_data
 
         url = self.url.format(USER_UUID, UNKNOWN_UUID)
@@ -53,15 +53,15 @@ class TestUserEmailConfirmResource(HTTPAppTestCase):
             details=has_entries(uuid=str(UNKNOWN_UUID))))
 
     def test_already_confirmed_email(self):
-        user_data = dict(
-            username=USERNAME,
-            emails=[
-                dict(
-                    uuid=str(EMAIL_UUID),
-                    address=EMAIL_ADDRESS,
-                    confirmed=True,
-                    main=True,
-                )])
+        user_data = {
+            'username': USERNAME,
+            'emails': [
+                {
+                    'uuid': str(EMAIL_UUID),
+                    'address': EMAIL_ADDRESS,
+                    'confirmed': True,
+                    'main': True,
+                }]}
         self.user_service.get_user.return_value = user_data
 
         url = self.url.format(USER_UUID, EMAIL_UUID)
@@ -73,15 +73,15 @@ class TestUserEmailConfirmResource(HTTPAppTestCase):
             details=has_entries(uuid=str(EMAIL_UUID))))
 
     def test_get(self):
-        user_data = dict(
-            username=USERNAME,
-            emails=[
-                dict(
-                    uuid=str(EMAIL_UUID),
-                    address=EMAIL_ADDRESS,
-                    confirmed=False,
-                    main=True,
-                )])
+        user_data = {
+            'username': USERNAME,
+            'emails': [
+                {
+                    'uuid': str(EMAIL_UUID),
+                    'address': EMAIL_ADDRESS,
+                    'confirmed': False,
+                    'main': True,
+                }]}
         self.user_service.get_user.return_value = user_data
 
         url = self.url.format(USER_UUID, EMAIL_UUID)

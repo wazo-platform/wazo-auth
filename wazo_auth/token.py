@@ -141,15 +141,15 @@ class Manager(object):
         acls = backend.get_acls(login, args)
         expiration = args.get('expiration', self._default_expiration)
         t = time.time()
-        token_payload = dict(
-            auth_id=auth_id,
-            xivo_user_uuid=xivo_user_uuid,
-            xivo_uuid=xivo_uuid,
-            expire_t=t + expiration,
-            issued_t=t,
-            acls=acls or [],
-            metadata=metadata,
-        )
+        token_payload = {
+            'auth_id': auth_id,
+            'xivo_user_uuid': xivo_user_uuid,
+            'xivo_uuid': xivo_uuid,
+            'expire_t': t + expiration,
+            'issued_t': t,
+            'acls': acls or [],
+            'metadata': metadata,
+        }
 
         token_uuid = self._dao.token.create(token_payload)
         token = Token(token_uuid, **token_payload)

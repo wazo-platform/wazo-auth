@@ -101,14 +101,14 @@ class TestAddressDAO(_BaseDAOTestCase):
 
     @staticmethod
     def _address(line_1=None, line_2=None, city=None, state=None, country=None, zip_code=None):
-        return dict(
-            line_1=line_1,
-            line_2=line_2,
-            city=city,
-            state=state,
-            country=country,
-            zip_code=zip_code,
-        )
+        return {
+            'line_1': line_1,
+            'line_2': line_2,
+            'city': city,
+            'state': state,
+            'country': country,
+            'zip_code': zip_code,
+        }
 
 
 class TestEmailDAO(_BaseDAOTestCase):
@@ -133,11 +133,11 @@ class TestEmailDAO(_BaseDAOTestCase):
 class TestExternalAuthDAO(_BaseDAOTestCase):
 
     auth_type = 'foobarcrm'
-    data = dict(
-        string_value='an_important_value',
-        list_value=['a', 'list', 'of', 'values'],
-        dict_value={'a': 'dict', 'of': 'values'},
-    )
+    data = {
+        'string_value': 'an_important_value',
+        'list_value': ['a', 'list', 'of', 'values'],
+        'dict_value': {'a': 'dict', 'of': 'values'},
+    }
 
     @fixtures.external_auth('one', 'two')
     @fixtures.user()
@@ -743,11 +743,11 @@ class TestPolicyDAO(_BaseDAOTestCase):
 class TestTokenDAO(_BaseDAOTestCase):
 
     def test_create(self):
-        metadata = dict(
-            uuid='08b213da-9963-4d25-96a3-f02d717e82f2',
-            id=42,
-            msg='a string field',
-        )
+        metadata = {
+            'uuid': '08b213da-9963-4d25-96a3-f02d717e82f2',
+            'id': 42,
+            'msg': 'a string field',
+        }
 
         with nested(self._new_token(metadata=metadata),
                     self._new_token(acls=['first', 'second'])) as (e1, e2):
@@ -979,10 +979,7 @@ class TestUserDAO(_BaseDAOTestCase):
 
     @staticmethod
     def _email(address, main=False, confirmed=None):
-        email = dict(
-            address=address,
-            main=main,
-        )
+        email = {'address': address, 'main': main}
         if confirmed is not None:
             email['confirmed'] = confirmed
         return email
@@ -1050,8 +1047,8 @@ class TestUserDAO(_BaseDAOTestCase):
         assert_that(self._user_dao.get_emails(user_uuid), contains_inanyorder(*result))
 
         emails = [
-            dict(address='bazinga@example.com', main=True, confirmed=None),
-            dict(address='foobaz@example.com', main=False, confirmed=None),
+            {'address': 'bazinga@example.com', 'main': True, 'confirmed': None},
+            {'address': 'foobaz@example.com', 'main': False, 'confirmed': None},
         ]
         result = self._user_dao.update_emails(user_uuid, emails)
         assert_that(result, contains_inanyorder(

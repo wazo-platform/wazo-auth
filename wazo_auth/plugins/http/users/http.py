@@ -58,11 +58,11 @@ class Users(BaseUserService):
         total = self.user_service.count_users(filtered=False, **list_params)
         filtered = self.user_service.count_users(filtered=True, **list_params)
 
-        response = dict(
-            filtered=filtered,
-            total=total,
-            items=users,
-        )
+        response = {
+            'filtered': filtered,
+            'total': total,
+            'items': users,
+        }
 
         return response, 200
 

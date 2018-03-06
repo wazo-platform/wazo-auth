@@ -23,7 +23,7 @@ class ExternalAuthAlreadyExists(APIException):
 
     def __init__(self, auth_type):
         msg = 'This external authentification method has already been set: "{}"'.format(auth_type)
-        details = dict(type=auth_type)
+        details = {'type': auth_type}
         super(ExternalAuthAlreadyExists, self).__init__(409, msg, 'conflict', details, auth_type)
 
 
@@ -45,7 +45,7 @@ class UnknownAddressException(APIException):
 
     def __init__(self, address_id):
         msg = 'No such address: "{}"'.format(address_id)
-        details = dict(id=address_id)
+        details = {'id': address_id}
         super(UnknownAddressException, self).__init__(404, msg, 'unknown_address', details, 'addresses')
 
 
@@ -53,7 +53,7 @@ class UnknownExternalAuthException(APIException):
 
     def __init__(self, auth_type):
         msg = 'No such external auth: "{}"'.format(auth_type)
-        details = dict(type=str(auth_type))
+        details = {'type': str(auth_type)}
         super(UnknownExternalAuthException, self).__init__(
             404, msg, 'unknown_external_auth', details, auth_type)
 
@@ -62,7 +62,7 @@ class UnknownExternalAuthTypeException(APIException):
 
     def __init__(self, auth_type):
         msg = 'No such auth type: "{}"'.format(auth_type)
-        details = dict(type=str(auth_type))
+        details = {'type': str(auth_type)}
         super(UnknownExternalAuthTypeException, self).__init__(
             404, msg, 'unknown_external_auth_type', details, 'external')
 
@@ -71,7 +71,7 @@ class UnknownGroupException(APIException):
 
     def __init__(self, group_uuid):
         msg = 'No such group: "{}"'.format(group_uuid)
-        details = dict(uuid=str(group_uuid))
+        details = {'uuid': str(group_uuid)}
         super(UnknownGroupException, self).__init__(404, msg, 'unknown_group', details, 'groups')
 
 
@@ -79,7 +79,7 @@ class UnknownTenantException(APIException):
 
     def __init__(self, tenant_uuid):
         msg = 'No such tenant: "{}"'.format(tenant_uuid)
-        details = dict(uuid=str(tenant_uuid))
+        details = {'uuid': str(tenant_uuid)}
         super(UnknownTenantException, self).__init__(404, msg, 'unknown_tenant', details, 'tenants')
 
 
@@ -87,7 +87,7 @@ class UnknownEmailException(APIException):
 
     def __init__(self, email_uuid):
         msg = 'No such email: "{}"'.format(email_uuid)
-        details = dict(uuid=str(email_uuid))
+        details = {'uuid': str(email_uuid)}
         super(UnknownEmailException, self).__init__(404, msg, 'unknown_email', details, 'emails')
 
 
@@ -95,7 +95,7 @@ class UnknownUserException(APIException):
 
     def __init__(self, identifier, details=None):
         msg = 'No such user: "{}"'.format(identifier)
-        details = details or dict(uuid=str(identifier))
+        details = details or {'uuid': str(identifier)}
         super(UnknownUserException, self).__init__(404, msg, 'unknown_user', details, 'users')
 
 

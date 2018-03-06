@@ -70,18 +70,20 @@ class TenantSchema(TestCase):
 
         result = self.schema.dump(tenant).data
 
-        assert_that(result, equal_to(dict(
-            uuid=uuid,
-            name=None,
-            contact=None,
-            phone=None,
-            address=dict(
-                line_1=None,
-                line_2=None,
-                city=None,
-                state=None,
-                country=None,
-                zip_code=None))))
+        assert_that(result, equal_to({
+            'uuid': uuid,
+            'name': None,
+            'contact': None,
+            'phone': None,
+            'address': {
+                'line_1': None,
+                'line_2': None,
+                'city': None,
+                'state': None,
+                'country': None,
+                'zip_code': None,
+            },
+        }))
 
     def test_with_an_address(self):
         uuid = 'e04f397c-0d52-4a83-aa8e-7ee374e9eed3'
@@ -93,50 +95,56 @@ class TenantSchema(TestCase):
         assert_that(result, has_entries(
             uuid=uuid,
             name=None,
-            address=dict(
-                line_1='here',
-                line_2=None,
-                city=None,
-                state=None,
-                country='Canada',
-                zip_code=None)))
+            address={
+                'line_1': 'here',
+                'line_2': None,
+                'city': None,
+                'state': None,
+                'country': 'Canada',
+                'zip_code': None,
+            },
+        ))
 
     def test_that_the_uuid_is_stripped_on_load(self):
-        body = dict(
-            uuid='5ac6c192-c5c3-4448-8b51-a0d701704ce9',
-            name='foobar',
-        )
+        body = {
+            'uuid': '5ac6c192-c5c3-4448-8b51-a0d701704ce9',
+            'name': 'foobar',
+        }
 
         result = self.schema.load(body).data
 
-        assert_that(result, equal_to(dict(
-            name='foobar',
-            contact_uuid=None,
-            phone=None,
-            address=dict(
-                line_1=None,
-                line_2=None,
-                city=None,
-                state=None,
-                country=None,
-                zip_code=None))))
+        assert_that(result, equal_to({
+            'name': 'foobar',
+            'contact_uuid': None,
+            'phone': None,
+            'address': {
+                'line_1': None,
+                'line_2': None,
+                'city': None,
+                'state': None,
+                'country': None,
+                'zip_code': None,
+            },
+        }))
 
     def test_that_a_null_contact_is_accepted(self):
-        body = dict(contact=None)
+        body = {'contact': None}
 
         result = self.schema.load(body).data
 
-        assert_that(result, equal_to(dict(
-            name=None,
-            contact_uuid=None,
-            phone=None,
-            address=dict(
-                line_1=None,
-                line_2=None,
-                city=None,
-                state=None,
-                country=None,
-                zip_code=None))))
+        assert_that(result, equal_to({
+            'name': None,
+            'contact_uuid': None,
+            'phone': None,
+            'address': {
+                'line_1': None,
+                'line_2': None,
+                'city': None,
+                'state': None,
+                'country': None,
+                'zip_code': None,
+            },
+        }))
 
     def test_contact_uuid_fields_when_serializing(self):
         contact = 'e04f397c-0d52-4a83-aa8e-7ee374e9eed3'

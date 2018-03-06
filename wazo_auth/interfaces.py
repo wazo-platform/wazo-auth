@@ -42,12 +42,12 @@ class BaseAuthenticationBackend(object):
         these data are used in the body of the GET and POST of the /token and
         also used for ACL rendering
         """
-        metadata = dict(
-            auth_id=None,
-            username=login,
-            xivo_uuid=self.get_xivo_uuid(args),
-            xivo_user_uuid=None,
-        )
+        metadata = {
+            'auth_id': None,
+            'username': login,
+            'xivo_uuid': self.get_xivo_uuid(args),
+            'xivo_user_uuid': None,
+        }
 
         # Old plugin had a get_ids method that returned the auth_id and the xivo_user_uuid
         if hasattr(self, 'get_ids'):

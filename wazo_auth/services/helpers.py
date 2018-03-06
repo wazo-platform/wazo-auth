@@ -16,13 +16,13 @@ class BaseService(object):
 
 class TemplateLoader(BaseLoader):
 
-    _templates = dict(
-        email_confirmation='email_confirmation_template',
-        email_confirmation_get_body='email_confirmation_get_reponse_body_template',
-        email_confirmation_subject='email_confirmation_subject_template',
-        reset_password='password_reset_email_template',
-        reset_password_subject='password_reset_email_subject_template',
-    )
+    _templates = {
+        'email_confirmation': 'email_confirmation_template',
+        'email_confirmation_get_body': 'email_confirmation_get_reponse_body_template',
+        'email_confirmation_subject': 'email_confirmation_subject_template',
+        'reset_password': 'password_reset_email_template',
+        'reset_password_subject': 'password_reset_email_subject_template',
+    }
 
     def __init__(self, config):
         self._config = config

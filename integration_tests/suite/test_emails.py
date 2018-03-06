@@ -16,9 +16,9 @@ from .helpers.base import (
     UNKNOWN_UUID,
 )
 
-ONE = dict(address='one@example.com', main=True, confirmed=True)
-TWO = dict(address='two@example.com', main=False, confirmed=False)
-THREE = dict(address='three@example.com', main=False, confirmed=True)
+ONE = {'address': 'one@example.com', 'main': True, 'confirmed': True}
+TWO = {'address': 'two@example.com', 'main': False, 'confirmed': False}
+THREE = {'address': 'three@example.com', 'main': False, 'confirmed': True}
 
 
 class TestEmails(MockBackendTestCase):
