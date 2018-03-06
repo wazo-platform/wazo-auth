@@ -2,6 +2,7 @@
 # Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+import xivo_dao
 
 from xivo_dao import admin_dao
 from xivo_dao.helpers.exception import NotFoundError
@@ -12,6 +13,10 @@ from wazo_auth.exceptions import AuthenticationFailedException
 
 
 class XiVOAdmin(BaseAuthenticationBackend, ACLRenderingBackend):
+
+    def load(self, dependencies):
+        super(XiVOAdmin, self).load(dependencies)
+        xivo_dao.init_db_from_config(dependencies['config'])
 
     def get_acls(self, login, args):
         acl_templates = args.get('acl_templates', [])

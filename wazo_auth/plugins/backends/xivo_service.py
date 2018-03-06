@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
+import xivo_dao
 
 from xivo_dao import accesswebservice_dao
 from xivo_dao.helpers.db_utils import session_scope
@@ -14,6 +15,10 @@ logger = logging.getLogger(__name__)
 
 
 class XiVOService(BaseAuthenticationBackend):
+
+    def load(self, dependencies):
+        super(XiVOService, self).load(dependencies)
+        xivo_dao.init_db_from_config(dependencies['config'])
 
     def get_acls(self, login, args):
         with session_scope():

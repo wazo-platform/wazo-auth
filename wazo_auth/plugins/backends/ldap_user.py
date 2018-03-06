@@ -4,6 +4,7 @@
 
 import logging
 import ldap
+import xivo_dao
 
 from ldap.filter import escape_filter_chars
 from ldap.dn import escape_dn_chars
@@ -20,6 +21,7 @@ class LDAPUser(UserAuthenticationBackend):
     def load(self, dependencies):
         super(LDAPUser, self).load(dependencies)
         config = dependencies['config']
+        xivo_dao.init_db_from_config(config)
         self.config = config['ldap']
         self.uri = self.config['uri']
         self.bind_dn = self.config.get('bind_dn', '')

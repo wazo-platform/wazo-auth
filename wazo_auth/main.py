@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import sys
 import logging
-import xivo_dao
 
 from xivo import xivo_logging
 from xivo.config_helper import set_xivo_uuid, UUIDNotFound
@@ -35,8 +34,6 @@ def main():
     except UUIDNotFound:
         if config['service_discovery']['enabled']:
             raise
-
-    xivo_dao.init_db_from_config(config)
 
     controller = Controller(config)
     with pidfile_context(config['pid_filename'], config['foreground']):
