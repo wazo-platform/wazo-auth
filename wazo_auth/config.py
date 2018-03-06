@@ -63,7 +63,6 @@ _DEFAULT_CONFIG = {
     'enabled_backend_plugins': {
         'xivo_admin': True,
         'xivo_service': True,
-        'xivo_user': True,
         'wazo_user': True,
     },
     'enabled_external_auth_plugins': {
@@ -71,7 +70,6 @@ _DEFAULT_CONFIG = {
     'backend_policies': {
         'ldap_user': 'wazo_default_user_policy',
         'xivo_admin': 'wazo_default_admin_policy',
-        'xivo_user': 'wazo_default_user_policy',
         'wazo_user': 'wazo_default_user_policy',
     },
     'rest_api': {

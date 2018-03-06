@@ -37,7 +37,6 @@ setup(
             'wazo_user = wazo_auth.plugins.backends:WazoUser',
             'xivo_admin = wazo_auth.plugins.backends:XiVOAdmin',
             'xivo_service = wazo_auth.plugins.backends:XiVOService',
-            'xivo_user = wazo_auth.plugins.backends:XiVOUser',
             'ldap_user = wazo_auth.plugins.backends:LDAPUser',
             'mock = wazo_auth.plugins.backends:BackendMock',
             'mock_with_uuid = wazo_auth.plugins.backends:BackendMockWithUUID',
