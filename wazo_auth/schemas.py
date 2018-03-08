@@ -49,14 +49,6 @@ class TenantSchema(BaseSchema):
         data['address'] = data['address'] or TenantAddress().dump(data['address']).data
         return data
 
-    @post_dump
-    def uuid_to_str(self, data):
-        uuid = data.get('uuid')
-        if uuid:
-            data['uuid'] = str(uuid)
-
-        return data
-
 
 def new_list_schema(default_sort_column):
 
