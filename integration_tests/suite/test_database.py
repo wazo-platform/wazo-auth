@@ -24,6 +24,7 @@ from hamcrest import (
 )
 from mock import ANY
 from sqlalchemy import and_, func
+from uuid import UUID
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.mock import ANY_UUID
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
@@ -962,6 +963,20 @@ class TestTenantDAO(_BaseDAOTestCase):
             ).first()
 
             assert_that(tenant, has_properties('name', name))
+
+    @fixtures.tenant(uuid=UUID('b7a17bb9-6925-4073-a346-1bc8f8e4f805'), name='foobar')
+    def test_tenant_creation_with_a_uuid(self, tenant_uuid):
+        name = 'foobar'
+
+        assert_that(tenant_uuid, equal_to('b7a17bb9-6925-4073-a346-1bc8f8e4f805'))
+        with self._tenant_dao.new_session() as s:
+            tenant = s.query(
+                models.Tenant,
+            ).filter(
+                models.Tenant.uuid == tenant_uuid
+            ).first()
+
+            assert_that(tenant, has_properties('name', name, 'uuid', tenant_uuid))
 
     @fixtures.tenant()
     def test_delete(self, tenant_uuid):

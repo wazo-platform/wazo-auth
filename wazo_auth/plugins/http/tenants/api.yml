@@ -24,7 +24,7 @@ paths:
       produces:
       - application/json
       summary: Creates a new tenant
-      description: '**Required ACL:** `auth.tenants.create'
+      description: '**Required ACL:** `auth.tenants.create`'
       operationId: createTenant
       tags:
       - tenants
@@ -104,7 +104,7 @@ paths:
       produces:
       - application/json
       summary: Modify a tenant
-      description: '**Required ACL:** `auth.tenants.{tenant_uuid}.edit'
+      description: '**Required ACL:** `auth.tenants.{tenant_uuid}.edit`'
       operationId: updateTenant
       tags:
       - tenants
@@ -117,7 +117,7 @@ paths:
           description: The tenant parameters
           required: true
           schema:
-            $ref: '#/definitions/TenantCreate'
+            $ref: '#/definitions/TenantEdit'
       responses:
         '200':
           description: The new tenant
@@ -168,6 +168,23 @@ definitions:
       name:
         type: string
   TenantCreate:
+    type: object
+    properties:
+      uuid:
+        type: string
+        description: "The tenant's UUID"
+      name:
+        type: string
+        description: "The tenant's name"
+      contact:
+        type: string
+        description: "The contact user's UUID"
+      phone:
+        type: string
+        description: "The tenant's contact phone number"
+      address:
+        $ref: '#/definitions/TenantAddress'
+  TenantEdit:
     type: object
     properties:
       name:

@@ -63,6 +63,7 @@ class TestTenantPost(HTTPAppTestCase):
         assert_that(result.status_code, equal_to(200))
         assert_that(json.loads(result.data), equal_to(self.tenant_service.new.return_value))
         self.tenant_service.new.assert_called_once_with(
+            uuid=None,
             name='foobar',
             phone=None,
             contact_uuid=None,
