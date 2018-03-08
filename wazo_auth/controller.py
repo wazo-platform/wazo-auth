@@ -66,6 +66,7 @@ class Controller(object):
             self._config['enabled_backend_plugins'],
             {'user_service': self._user_service,
              'group_service': group_service,
+             'tenant_service': self._tenant_service,
              'config': config},
         )
         self._config['loaded_plugins'] = self._loaded_plugins_names(self._backends)

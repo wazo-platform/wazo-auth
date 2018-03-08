@@ -5,7 +5,7 @@
 import unittest
 
 from mock import Mock, patch, sentinel as s
-from hamcrest import assert_that, calling, equal_to, has_entries, raises
+from hamcrest import assert_that, calling, contains, equal_to, has_entries, raises
 
 from wazo_auth.exceptions import ManagerException
 from wazo_auth.plugins.backends.xivo_admin import NotFoundError, XiVOAdmin
@@ -15,12 +15,14 @@ class TestGetMetadata(unittest.TestCase):
 
     def setUp(self):
         self.backend = XiVOAdmin()
+        self.tenant_service = self.backend._tenant_service = Mock()
 
     @patch('wazo_auth.plugins.backends.xivo_admin.admin_dao.get_admin_uuid',
            Mock(return_value='5900b8d4-5c38-49f9-b5fc-e0b7057b4c50'))
     @patch('wazo_auth.plugins.backends.xivo_admin.admin_dao')
     def test_that_returned_contains_the_entity(self, admin_dao_mock):
         tenant = admin_dao_mock.get_admin_entity.return_value = 'the-entity'
+        self.tenant_service.list_.return_value = [{'uuid': s.uuid, 'name': tenant, 'ignored': 'field'}]
 
         result = self.backend.get_metadata(s.login)
 
@@ -29,6 +31,7 @@ class TestGetMetadata(unittest.TestCase):
             entity=tenant,
             auth_id='5900b8d4-5c38-49f9-b5fc-e0b7057b4c50',
             xivo_user_uuid=None,
+            tenants=contains({'uuid': s.uuid, 'name': tenant})
         ))
 
     @patch('wazo_auth.plugins.backends.xivo_admin.admin_dao.get_admin_uuid',

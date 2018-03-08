@@ -16,6 +16,7 @@ class XiVOAdmin(BaseAuthenticationBackend, ACLRenderingBackend):
 
     def load(self, dependencies):
         super(XiVOAdmin, self).load(dependencies)
+        self._tenant_service = dependencies['tenant_service']
         xivo_dao.init_db_from_config(dependencies['config'])
 
     def get_acls(self, login, args):
@@ -30,10 +31,20 @@ class XiVOAdmin(BaseAuthenticationBackend, ACLRenderingBackend):
             except NotFoundError:
                 raise AuthenticationFailedException()
 
-            metadata['entity'] = admin_dao.get_admin_entity(login)
+            entity = admin_dao.get_admin_entity(login)
+            metadata['entity'] = entity
+            metadata['tenants'] = self._build_tenants(entity)
 
         return metadata
 
     def verify_password(self, login, password, args):
         with session_scope():
             return admin_dao.check_username_password(login, password)
+
+    def _build_tenants(self, entity):
+        if entity:
+            matching = self._tenant_service.list_(name=entity)
+        else:
+            matching = self._tenant_service.list_()
+
+        return [{'uuid': tenant['uuid'], 'name': tenant['name']} for tenant in matching]
