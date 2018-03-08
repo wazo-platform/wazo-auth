@@ -88,4 +88,7 @@ class TenantService(BaseService):
 
         self._dao.tenant.update(tenant_uuid, address_id=address_id, **kwargs)
 
-        return self.get(tenant_uuid)
+        result = self.get(tenant_uuid)
+        event = events.TenantUpdatedEvent(tenant_uuid, result.get('name'))
+        self._bus_publisher.publish(event)
+        return result
