@@ -28,11 +28,17 @@ PHONE_1 = '555-555-5555'
 class TestTenants(MockBackendTestCase):
 
     @fixtures.http_tenant(name='foobar', address=ADDRESS_1, phone=PHONE_1)
+    @fixtures.http_tenant(uuid='6668ca15-6d9e-4000-b2ec-731bc7316767', name='foobaz')
     @fixtures.http_tenant()
-    def test_post(self, other, foobar):
+    def test_post(self, other, foobaz, foobar):
         assert_that(other, has_entries(
             uuid=uuid_(),
             name=None,
+            address=has_entries(**ADDRESS_NULL)))
+
+        assert_that(foobaz, has_entries(
+            uuid='6668ca15-6d9e-4000-b2ec-731bc7316767',
+            name='foobaz',
             address=has_entries(**ADDRESS_NULL)))
 
         assert_that(foobar, has_entries(

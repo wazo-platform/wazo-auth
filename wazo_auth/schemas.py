@@ -38,7 +38,7 @@ class TenantAddress(BaseSchema):
 
 class TenantSchema(BaseSchema):
 
-    uuid = xfields.UUID(dump_only=True)
+    uuid = xfields.UUID(missing=None)
     name = xfields.String(validate=validate.Length(min=1, max=128), default=None, missing=None)
     contact_uuid = xfields.UUID(load_from='contact', dump_to='contact', missing=None, default=None)
     phone = xfields.String(validate=validate.Length(min=1, max=32), default=None, missing=None)
@@ -47,6 +47,14 @@ class TenantSchema(BaseSchema):
     @post_dump
     def add_empty_address(self, data):
         data['address'] = data['address'] or TenantAddress().dump(data['address']).data
+        return data
+
+    @post_dump
+    def uuid_to_str(self, data):
+        uuid = data.get('uuid')
+        if uuid:
+            data['uuid'] = str(uuid)
+
         return data
 
 

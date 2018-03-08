@@ -124,6 +124,9 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             contact_uuid=kwargs['contact_uuid'],
             address_id=kwargs['address_id'],
         )
+        uuid_ = kwargs.get('uuid')
+        if uuid_:
+            tenant.uuid = str(uuid_)
 
         with self.new_session() as s:
             s.add(tenant)

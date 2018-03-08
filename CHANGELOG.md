@@ -1,6 +1,12 @@
 Changelog
 =========
 
+18.04
+-----
+
+* Add the `uuid` field on POST `0.1/tenants`
+
+
 18.03
 -----
 
