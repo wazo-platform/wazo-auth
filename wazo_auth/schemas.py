@@ -29,7 +29,7 @@ class PolicySchema(BaseSchema):
 class TenantAddress(BaseSchema):
 
     line_1 = xfields.String(validate=validate.Length(min=1, max=256), missing=None, default=None)
-    line_2 = xfields.String(validate=validate.Length(min=1, max=256), missing=None, default=None)
+    line_2 = xfields.String(validate=validate.Length(min=0, max=256), missing=None, default=None)
     city = xfields.String(validate=validate.Length(min=1, max=128), missing=None, default=None)
     state = xfields.String(validate=validate.Length(min=1, max=128), missing=None, default=None)
     country = xfields.String(validate=validate.Length(min=1, max=128), missing=None, default=None)
