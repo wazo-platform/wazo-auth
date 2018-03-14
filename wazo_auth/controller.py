@@ -60,7 +60,7 @@ class Controller(object):
         group_service = services.GroupService(dao)
         policy_service = services.PolicyService(dao)
         self._user_service = services.UserService(dao)
-        self._tenant_service = services.TenantService(dao)
+        self._tenant_service = services.TenantService(dao, self._bus_publisher)
         self._backends = plugin_helpers.load(
             'wazo_auth.backends',
             self._config['enabled_backend_plugins'],

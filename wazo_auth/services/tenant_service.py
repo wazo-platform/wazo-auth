@@ -2,11 +2,16 @@
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+from xivo_bus.resources.auth import events
 from wazo_auth import exceptions
 from wazo_auth.services.helpers import BaseService
 
 
 class TenantService(BaseService):
+
+    def __init__(self, dao, bus_publisher=None):
+        super(TenantService, self).__init__(dao)
+        self._bus_publisher = bus_publisher
 
     def add_policy(self, tenant_uuid, policy_uuid):
         return self._dao.tenant.add_policy(tenant_uuid, policy_uuid)
@@ -24,7 +29,10 @@ class TenantService(BaseService):
         return self._dao.tenant.count(**kwargs)
 
     def delete(self, uuid):
-        return self._dao.tenant.delete(uuid)
+        result = self._dao.tenant.delete(uuid)
+        event = events.TenantDeletedEvent(uuid)
+        self._bus_publisher.publish(event)
+        return result
 
     def get(self, uuid):
         tenants = self._dao.tenant.list_(uuid=uuid, limit=1)
@@ -44,7 +52,10 @@ class TenantService(BaseService):
     def new(self, **kwargs):
         address_id = self._dao.address.new(**kwargs['address'])
         uuid = self._dao.tenant.create(address_id=address_id, **kwargs)
-        return self.get(uuid)
+        result = self.get(uuid)
+        event = events.TenantCreatedEvent(uuid, kwargs.get('name'))
+        self._bus_publisher.publish(event)
+        return result
 
     def remove_policy(self, tenant_uuid, policy_uuid):
         nb_deleted = self._dao.tenant.remove_policy(tenant_uuid, policy_uuid)
@@ -77,4 +88,7 @@ class TenantService(BaseService):
 
         self._dao.tenant.update(tenant_uuid, address_id=address_id, **kwargs)
 
-        return self.get(tenant_uuid)
+        result = self.get(tenant_uuid)
+        event = events.TenantUpdatedEvent(tenant_uuid, result.get('name'))
+        self._bus_publisher.publish(event)
+        return result
