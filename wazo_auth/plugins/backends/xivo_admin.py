@@ -31,9 +31,10 @@ class XiVOAdmin(BaseAuthenticationBackend, ACLRenderingBackend):
             except NotFoundError:
                 raise AuthenticationFailedException()
 
-            entity = admin_dao.get_admin_entity(login)
+            # add the tenant_uuid when fetching admin entities
+            entity, tenant_uuid = admin_dao.get_admin_entity(login)
             metadata['entity'] = entity
-            metadata['tenants'] = self._build_tenants(entity)
+            metadata['tenants'] = self._build_tenants(entity, tenant_uuid)
 
         return metadata
 
@@ -41,10 +42,9 @@ class XiVOAdmin(BaseAuthenticationBackend, ACLRenderingBackend):
         with session_scope():
             return admin_dao.check_username_password(login, password)
 
-    def _build_tenants(self, entity):
+    def _build_tenants(self, entity, tenant_uuid):
         if entity:
-            matching = self._tenant_service.list_(name=entity)
-        else:
-            matching = self._tenant_service.list_()
+            return [{'uuid': tenant_uuid, 'name': entity}]
 
+        matching = self._tenant_service.list_()
         return [{'uuid': tenant['uuid'], 'name': tenant['name']} for tenant in matching]
