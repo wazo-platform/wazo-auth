@@ -40,6 +40,7 @@ setup(
             'ldap_user = wazo_auth.plugins.backends.ldap_user:LDAPUser',
             'mock = wazo_auth.plugins.backends.mock:BackendMock',
             'mock_with_uuid = wazo_auth.plugins.backends.mock:BackendMockWithUUID',
+            'mock_multi_tenant = wazo_auth.plugins.backends.mock:BackendMockMultiTenant',
             'broken_init = wazo_auth.plugins.backends.broken:BrokenInitBackend',
             'broken_verify_password = wazo_auth.plugins.backends.broken:BrokenVerifyPasswordBackend',
         ],
