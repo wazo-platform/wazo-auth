@@ -4,6 +4,8 @@
 
 from flask import request
 from wazo_auth import exceptions, http, schemas
+from xivo.tenant_helpers import Tenant
+
 from .schemas import ChangePasswordSchema, UserPostSchema, UserPutSchema
 
 
@@ -47,6 +49,10 @@ class UserPassword(BaseUserService):
 
 class Users(BaseUserService):
 
+    def __init__(self, user_service, tokens):
+        self.user_service = user_service
+        self.tokens = tokens
+
     @http.required_acl('auth.users.read')
     def get(self):
         ListSchema = schemas.new_list_schema('username')
@@ -69,7 +75,8 @@ class Users(BaseUserService):
     @http.required_acl('auth.users.create')
     def post(self):
         args, errors = UserPostSchema().load(request.get_json())
+        tenant = Tenant.autodetect(self.tokens)
         if errors:
             raise exceptions.UserParamException.from_errors(errors)
-        result = self.user_service.new_user(email_confirmed=True, **args)
+        result = self.user_service.new_user(email_confirmed=True, tenant_uuid=tenant.uuid, **args)
         return result, 200

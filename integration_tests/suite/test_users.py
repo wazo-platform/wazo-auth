@@ -79,6 +79,20 @@ class TestUsers(MockBackendTestCase):
                         'address', 'foobar@example.com',
                         'main', True,
                         'confirmed', True))))
+            tenants = self.client.users.get_tenants(user['uuid'])
+            assert_that(tenants['items'], contains(has_entries(name='tenant-for-tests')))
+
+        with self.multi_tenant_client() as client:
+            tenant2 = client.tenants.list(name='multi-tenant2-for-tests')['items'][0]
+            args = {
+                'username': 'user-from-multitenant',
+                'email_address': 'user-from-multitenant@example.com',
+                'tenant_uuid': tenant2['uuid'],
+            }
+
+            with self.auto_remove_user(client.users.new, **args) as user:
+                tenants = client.users.get_tenants(user['uuid'])
+                assert_that(tenants['items'], contains(has_entries(name=tenant2['name'])))
 
         args = {'username': 'foobaz', 'email_address': 'foobaz@example.com'}
 
@@ -343,3 +357,20 @@ class TestUsers(MockBackendTestCase):
             yield user
         finally:
             self.client.users.delete(user['uuid'])
+
+    @contextmanager
+    def multi_tenant_client(self):
+        client = self.new_auth_client(username='foo', password='bar')
+        token = client.token.new(backend='mock', expiration=3600)['token']
+        client.set_token(token)
+        tenant1 = client.tenants.new(name='multi-tenant1-for-tests')
+        tenant2 = client.tenants.new(name='multi-tenant2-for-tests')
+
+        token = client.token.new(backend='mock_multi_tenant', expiration=3600)['token']
+        client.set_token(token)
+
+        try:
+            yield client
+        finally:
+            client.tenants.delete(tenant1['uuid'])
+            client.tenants.delete(tenant2['uuid'])

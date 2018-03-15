@@ -66,12 +66,15 @@ class TestTenants(MockBackendTestCase):
     @fixtures.http_tenant(name='foobar')
     @fixtures.http_tenant(name='foobaz')
     @fixtures.http_tenant(name='foobarbaz')
+    # extra tenant: tenant-for-tests
     def test_list(self, foobarbaz, foobaz, foobar):
-        def then(result, total=3, filtered=3, item_matcher=contains()):
+        tenant_for_tests = self._tenant
+
+        def then(result, total=4, filtered=4, item_matcher=contains(tenant_for_tests)):
             assert_that(result, has_entries(items=item_matcher, total=total, filtered=filtered))
 
         result = self.client.tenants.list()
-        matcher = contains_inanyorder(foobaz, foobar, foobarbaz)
+        matcher = contains_inanyorder(foobaz, foobar, foobarbaz, tenant_for_tests)
         then(result, item_matcher=matcher)
 
         result = self.client.tenants.list(uuid=foobaz['uuid'])
@@ -87,7 +90,7 @@ class TestTenants(MockBackendTestCase):
         then(result, item_matcher=matcher)
 
         result = self.client.tenants.list(order='name', direction='desc')
-        matcher = contains(foobaz, foobarbaz, foobar)
+        matcher = contains(tenant_for_tests, foobaz, foobarbaz, foobar)
         then(result, item_matcher=matcher)
 
         assert_http_error(400, self.client.tenants.list, limit='foo')
