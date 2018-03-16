@@ -21,7 +21,7 @@ class TestGetMetadata(unittest.TestCase):
            Mock(return_value='5900b8d4-5c38-49f9-b5fc-e0b7057b4c50'))
     @patch('wazo_auth.plugins.backends.xivo_admin.admin_dao')
     def test_that_returned_contains_the_entity(self, admin_dao_mock):
-        tenant = admin_dao_mock.get_admin_entity.return_value = 'the-entity'
+        tenant, tenant_uuid = admin_dao_mock.get_admin_entity.return_value = 'the-entity', s.uuid
         self.tenant_service.list_.return_value = [{'uuid': s.uuid, 'name': tenant, 'ignored': 'field'}]
 
         result = self.backend.get_metadata(s.login)
