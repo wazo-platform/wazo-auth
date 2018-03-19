@@ -78,6 +78,9 @@ def _insert_acl_template(conn, acl_templates):
 def upgrade():
     conn = op.get_bind()
     policy_uuid = _get_policy_uuid(conn, POLICY_NAME)
+    if not policy_uuid:
+        return
+
     acl_template_ids = _insert_acl_template(conn, ACL_TEMPLATES)
     op.bulk_insert(
         policy_template,
@@ -89,11 +92,16 @@ def upgrade():
 def downgrade():
     conn = op.get_bind()
     acl_template_ids = _find_acl_templates(conn, ACL_TEMPLATES)
-    if acl_template_ids:
-        policy_uuid = _get_policy_uuid(conn, POLICY_NAME)
-        delete_query = policy_template.delete(
-        ).where(
-            sa.sql.and_(
-                policy_template.c.policy_uuid == policy_uuid,
-                policy_template.c.template_id.in_(acl_template_ids)))
-        op.execute(delete_query)
+    if not acl_template_ids:
+        return
+
+    policy_uuid = _get_policy_uuid(conn, POLICY_NAME)
+    if not policy_uuid:
+        return
+
+    delete_query = policy_template.delete().where(
+        sa.sql.and_(
+            policy_template.c.policy_uuid == policy_uuid,
+            policy_template.c.template_id.in_(acl_template_ids)),
+    )
+    op.execute(delete_query)
