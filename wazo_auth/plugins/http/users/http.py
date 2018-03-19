@@ -49,9 +49,10 @@ class UserPassword(BaseUserService):
 
 class Users(BaseUserService):
 
-    def __init__(self, user_service, tokens):
+    def __init__(self, user_service, tokens, users):
         self.user_service = user_service
         self.tokens = tokens
+        self.users = users
 
     @http.required_acl('auth.users.read')
     def get(self):
@@ -75,7 +76,7 @@ class Users(BaseUserService):
     @http.required_acl('auth.users.create')
     def post(self):
         args, errors = UserPostSchema().load(request.get_json())
-        tenant = Tenant.autodetect(self.tokens)
+        tenant = Tenant.autodetect(self.tokens, self.users)
         if errors:
             raise exceptions.UserParamException.from_errors(errors)
         result = self.user_service.new_user(email_confirmed=True, tenant_uuid=tenant.uuid, **args)
