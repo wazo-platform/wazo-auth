@@ -14,14 +14,14 @@ class Register(http.ErrorCatchingResource):
         self.email_service = email_service
         self.tenant_service = tenant_service
         self.user_service = user_service
-        self.tenant_body = TenantSchema().load({}).data
 
     def post(self):
         args, errors = UserRegisterPostSchema().load(request.get_json())
         if errors:
             raise exceptions.UserParamException.from_errors(errors)
 
-        tenant = self.tenant_service.new(**self.tenant_body)
+        tenant_body = TenantSchema().load({'name': args['username']}).data
+        tenant = self.tenant_service.new(**tenant_body)
         result = self.user_service.new_user(enabled=True, tenant_uuid=tenant['uuid'], **args)
 
         try:
