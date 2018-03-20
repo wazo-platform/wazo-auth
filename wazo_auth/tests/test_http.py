@@ -25,6 +25,8 @@ class HTTPAppTestCase(TestCase):
         group_service = Mock()
         self.email_service = Mock(services.EmailService)
         external_auth_service = Mock()
+        self.tokens = Mock()
+        self.users = Mock()
         dependencies = {
             'config': config,
             'backends': s.backends,
@@ -35,10 +37,16 @@ class HTTPAppTestCase(TestCase):
             'group_service': group_service,
             'email_service': self.email_service,
             'external_auth_service': external_auth_service,
+            'tokens': self.tokens,
+            'users': self.users,
         }
         self.app = new_app(dependencies).test_client()
 
 
+TENANT = '00000000-0000-0000-0000-000000000000'
+
+
+@Mock('wazo_auth.plugins.users.http.Tenant', return_value=Mock(autodetect=Mock(return_value=Mock(uuid=TENANT))))
 class TestUserResource(HTTPAppTestCase):
 
     def setUp(self):

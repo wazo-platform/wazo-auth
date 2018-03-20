@@ -240,18 +240,21 @@ class TestUserService(BaseServiceTestCase):
             calling(self.service.remove_policy).with_args(s.user_uuid, s.policy_uuid),
             not_(raises(Exception)))
 
-    def test_that_new(self):
+    def test_that_new_user_calls_the_dao(self):
         params = {
             'username': 'foobar',
             'password': 's3cre7',
             'email_address': 'foobar@example.com',
+            'tenant_uuid': s.tenant_uuid,
         }
         expected_db_params = {
             'username': 'foobar',
             'email_address': 'foobar@example.com',
             'salt': s.salt,
             'hash_': s.hash_,
+            'tenant_uuid': s.tenant_uuid,
         }
+        self.user_dao.create.return_value = {'uuid': s.user_uuid}
 
         result = self.service.new_user(**params)
 
