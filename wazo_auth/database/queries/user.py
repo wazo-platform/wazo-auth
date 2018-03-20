@@ -304,7 +304,8 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                         'main': main_email,
                         'confirmed': confirmed,
                     }
-                    users[user_uuid]['emails'].append(email)
+                    if email not in users[user_uuid]['emails']:
+                        users[user_uuid]['emails'].append(email)
 
         return users.values()
 
