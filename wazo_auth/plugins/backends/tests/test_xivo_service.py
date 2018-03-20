@@ -5,7 +5,7 @@
 import unittest
 
 from mock import Mock, patch
-from hamcrest import assert_that, calling, equal_to, has_entries, raises
+from hamcrest import assert_that, calling, contains_inanyorder, equal_to, has_entries, raises
 
 from wazo_auth.exceptions import AuthenticationFailedException
 from wazo_auth.plugins.backends.xivo_service import XiVOService
@@ -38,12 +38,20 @@ class TestGetAcls(unittest.TestCase):
 
 class TestGetMetadata(unittest.TestCase):
 
+    def setUp(self):
+        self.tenant_service = Mock()
+        self.tenants = self.tenant_service.list_.return_value = [
+            {'uuid': 'eed74bcf-64ec-43a6-a93b-b52ad7c47fbb', 'name': 'foo'},
+            {'uuid': '9a2dc1d9-369e-46d0-a2e3-c448371e7de9', 'name': 'bar'},
+        ]
+        self.backend = XiVOService()
+        self.backend._tenant_service = self.tenant_service
+
+
     @patch('wazo_auth.plugins.backends.xivo_service.accesswebservice_dao.get_user_uuid',
            Mock(return_value='534ede0d-9395-445a-8541-96b99e7b16a5'))
     def test_that_get_metadata_returns_the_id_and_None(self):
-        backend = XiVOService()
-
-        result = backend.get_metadata('foo', None)
+        result = self.backend.get_metadata('foo', None)
 
         assert_that(result, has_entries(
             auth_id='534ede0d-9395-445a-8541-96b99e7b16a5',
@@ -53,8 +61,14 @@ class TestGetMetadata(unittest.TestCase):
     @patch('wazo_auth.plugins.backends.xivo_service.accesswebservice_dao.get_user_uuid',
            Mock(side_effect=LookupError))
     def test_that_a_manager_error_is_raised_if_not_found(self):
-        backend = XiVOService()
-
         assert_that(
-            calling(backend.get_metadata).with_args('foo', None),
-            raises(AuthenticationFailedException))
+            calling(self.backend.get_metadata).with_args('foo', None),
+            raises(AuthenticationFailedException),
+        )
+
+    @patch('wazo_auth.plugins.backends.xivo_service.accesswebservice_dao.get_user_uuid',
+           Mock(return_value='534ede0d-9395-445a-8541-96b99e7b16a5'))
+    def test_that_metadata_contains_all_tenants(self):
+        result = self.backend.get_metadata('foo', None)
+
+        assert_that(result, has_entries(tenants=contains_inanyorder(*self.tenants)))
