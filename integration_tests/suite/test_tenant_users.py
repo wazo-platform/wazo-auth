@@ -6,6 +6,7 @@ from hamcrest import (
     assert_that,
     contains,
     contains_inanyorder,
+    equal_to,
     has_entries,
     has_items,
 )
@@ -191,3 +192,16 @@ class TestTenantUserAssociation(base.MockBackendTestCase):
         ]
         token_data = user_client.token.new('wazo_user', expiration=5)
         assert_that(token_data, has_entries('acls', has_items(*expected_acls)))
+
+    @fixtures.http_user_register(username='foo', password='bar')
+    @fixtures.http_tenant(name='two')
+    @fixtures.http_tenant(name='one')
+    def test_the_user_body_after_multiple_association(self, tenant_1, tenant_2, user):
+        self.client.tenants.add_user(tenant_1['uuid'], user['uuid'])
+
+        expected = self.client.users.get(user['uuid'])
+
+        self.client.tenants.add_user(tenant_2['uuid'], user['uuid'])
+
+        result = self.client.users.get(user['uuid'])
+        assert_that(result, equal_to(expected))
