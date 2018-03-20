@@ -21,9 +21,8 @@ class Register(http.ErrorCatchingResource):
         if errors:
             raise exceptions.UserParamException.from_errors(errors)
 
-        result = self.user_service.new_user(enabled=True, **args)
         tenant = self.tenant_service.new(**self.tenant_body)
-        self.tenant_service.add_user(tenant['uuid'], result['uuid'])
+        result = self.user_service.new_user(enabled=True, tenant_uuid=tenant['uuid'], **args)
 
         try:
             address = args['email_address']

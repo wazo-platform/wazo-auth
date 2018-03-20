@@ -37,8 +37,30 @@ class AuthClientFacade(object):
             except exceptions.MissingACLTokenException:
                 return False
 
+        def get(self, token_id, required_acl=None):
+            return current_app.config['token_manager'].get(token_id, required_acl).to_dict()
+
+    class UsersCommand(object):
+
+        def get(self, user_uuid):
+            return current_app.config['user_service'].get_user(user_uuid)
+
+        def get_tenants(self, user_uuid):
+            tenants = current_app.config['user_service'].list_tenants(user_uuid)
+            logger.critical('tenants: %s', tenants)
+            return {
+                'items': [
+                    {
+                        'uuid': tenant['uuid'],
+                        'name': tenant['name'],
+                    }
+                    for tenant in tenants
+                ]
+            }
+
     def __init__(self):
         self.token = self.TokenCommand()
+        self.users = self.UsersCommand()
 
 
 auth_verifier = AuthVerifier(extract_token_id=extract_token_id_from_query_or_header)
@@ -96,6 +118,7 @@ def new_app(dependencies):
         CORS(app, **cors_config)
 
     app.config['token_manager'] = dependencies['token_manager']
+    app.config['user_service'] = dependencies['user_service']
 
     app.after_request(http_helpers.log_request)
 

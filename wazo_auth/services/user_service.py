@@ -91,7 +91,9 @@ class UserService(BaseService):
         if password:
             kwargs['salt'], kwargs['hash_'] = self._encrypter.encrypt_password(password)
 
-        return self._dao.user.create(**kwargs)
+        user = self._dao.user.create(**kwargs)
+        self._dao.tenant.add_user(kwargs['tenant_uuid'], user['uuid'])
+        return user
 
     def remove_policy(self, user_uuid, policy_uuid):
         nb_deleted = self._dao.user.remove_policy(user_uuid, policy_uuid)

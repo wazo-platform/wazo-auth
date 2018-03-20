@@ -122,8 +122,18 @@ class MockBackendTestCase(BaseTestCase):
         super(MockBackendTestCase, self).setUp()
         self._auth_port = self.service_port(9497, 'auth')
         self.client = self.new_auth_client('foo', 'bar')
+
+        # create tenant
         token = self.client.token.new(backend='mock', expiration=3600)['token']
         self.client.set_token(token)
+        self._tenant = self.client.tenants.new(name='tenant-for-tests')
+
+        # create token with tenant
+        token = self.client.token.new(backend='mock', expiration=3600)['token']
+        self.client.set_token(token)
+
+    def tearDown(self):
+        self.client.tenants.delete(self._tenant['uuid'])
 
     def new_auth_client(self, username, password):
         host = self.get_host()
