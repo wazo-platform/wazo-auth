@@ -5,6 +5,7 @@
 from hamcrest import (
     assert_that,
     contains,
+    contains_inanyorder,
     has_entries,
     has_items,
 )
@@ -36,8 +37,10 @@ class TestWazoUserBackend(MockBackendTestCase):
 
     @fixtures.http_group()
     @fixtures.http_tenant()
+    # extra tenant: tenant-for-tests
     @fixtures.http_user(password='s3cr37')
     def test_token_metadata(self, user, tenant, group):
+        tenant_for_tests = self._tenant
         self.client.groups.add_user(group['uuid'], user['uuid'])
         self.client.tenants.add_user(tenant['uuid'], user['uuid'])
 
@@ -46,7 +49,8 @@ class TestWazoUserBackend(MockBackendTestCase):
         assert_that(token_data['metadata'], has_entries(
             xivo_uuid='the-predefined-xivo-uuid',
             uuid=user['uuid'],
-            tenants=contains(has_entries(uuid=tenant['uuid'])),
+            tenants=contains_inanyorder(has_entries(uuid=tenant['uuid']),
+                                        has_entries(uuid=tenant_for_tests['uuid'])),
             groups=contains(has_entries(uuid=group['uuid'])),
         ))
 

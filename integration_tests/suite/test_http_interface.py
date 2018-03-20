@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import time
@@ -55,7 +55,7 @@ class TestCoreMockBackend(MockBackendTestCase):
     def test_backends(self):
         url = 'https://{}:{}/0.1/backends'.format(self.get_host(), self.service_port(9497, 'auth'))
         response = requests.get(url, verify=False)
-        backends = ['mock', 'mock_with_uuid', 'broken_init', 'broken_verify_password', 'wazo_user']
+        backends = ['mock', 'mock_with_uuid', 'mock_multi_tenant', 'broken_init', 'broken_verify_password', 'wazo_user']
         assert_that(response.json()['data'], contains_inanyorder(*backends))
 
     def test_that_get_returns_the_auth_id(self):
