@@ -161,7 +161,7 @@ class UserExternalAuth(Base):
         schema.UniqueConstraint('user_uuid', 'external_auth_type_uuid'),
     )
 
-    user_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='CASCADE'),primary_key=True)
+    user_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='CASCADE'), primary_key=True)
     external_auth_type_uuid = Column(String(38), ForeignKey('auth_external_auth_type.uuid', ondelete='CASCADE'), primary_key=True)
     external_auth_data_uuid = Column(String(38), ForeignKey('auth_external_auth_data.uuid', ondelete='CASCADE'), primary_key=True)
 
