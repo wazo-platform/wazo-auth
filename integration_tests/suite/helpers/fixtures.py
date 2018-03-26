@@ -53,6 +53,48 @@ def external_auth(*auth_types):
     return decorator
 
 
+def http_admin_client(**decorator_args):
+    decorator_args.setdefault('tenant_name', _random_string(9))
+    decorator_args.setdefault('username', _random_string(5))
+
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            creator = self.client.users.new(username='creator', password='opensesame')
+            policy = self.client.policies.new('tmp', acl_templates=['auth.#'])
+            self.client.users.add_policy(creator['uuid'], policy['uuid'])
+
+            creator_client = self.new_auth_client(username='creator', password='opensesame')
+            creator_token = creator_client.token.new(backend='wazo_user')
+            creator_client.set_token(creator_token['token'])
+
+            tenant = creator_client.tenants.new(name=decorator_args['tenant_name'])
+            creator_client.tenants.add_user(tenant['uuid'], creator['uuid'])
+
+            username, password = decorator_args['username'], 'secret'
+            created_user = creator_client.users.new(
+                username=username,
+                password=password,
+                tenant_uuid=tenant['uuid'],
+            )
+
+            created_client = self.new_auth_client(username=username, password=password)
+            created_token = created_client.token.new(backend='wazo_user')
+            created_client.set_token(created_token['token'])
+
+            self.client.users.delete(creator['uuid'])
+            self.client.policies.delete(policy['uuid'])
+
+            result = decorated(self, created_client, *args, **kwargs)
+
+            self.client.users.delete(created_user['uuid'])
+            self.client.tenants.delete(tenant['uuid'])
+
+            return result
+        return wrapper
+    return decorator
+
+
 def http_tenant(**tenant_args):
     def decorator(decorated):
         @wraps(decorated)
