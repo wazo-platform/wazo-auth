@@ -73,16 +73,25 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             return s.query(UserPolicy).filter(filter_).delete()
 
     def count(self, **kwargs):
+        if 'tenant_uuids' in kwargs:
+            tenant_filter = TenantUser.tenant_uuid.in_(kwargs['tenant_uuids'])
+        else:
+            tenant_filter = text('true')
+
         filtered = kwargs.get('filtered')
         if filtered is not False:
             strict_filter = self.new_strict_filter(**kwargs)
             search_filter = self.new_search_filter(**kwargs)
-            filter_ = and_(strict_filter, search_filter)
+            filter_ = and_(tenant_filter, strict_filter, search_filter)
         else:
-            filter_ = text('true')
+            filter_ = tenant_filter
 
         with self.new_session() as s:
-            return s.query(User).outerjoin(
+            return s.query(
+                User.uuid,
+            ).outerjoin(
+                TenantUser,
+            ).outerjoin(
                 UserEmail, UserEmail.user_uuid == User.uuid,
             ).outerjoin(
                 Email, Email.uuid == UserEmail.email_uuid
@@ -250,7 +259,6 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def list_(self, **kwargs):
         users = OrderedDict()
-
         search_filter = self.new_search_filter(**kwargs)
         strict_filter = self.new_strict_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
