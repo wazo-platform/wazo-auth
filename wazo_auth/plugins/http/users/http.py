@@ -49,11 +49,8 @@ class UserPassword(BaseUserService):
 
 class Users(BaseUserService):
 
-    # TODO: remove tokens and users
-    def __init__(self, user_service, tokens, users):
+    def __init__(self, user_service):
         self.user_service = user_service
-        self.tokens = tokens
-        self.users = users
 
     @http.required_acl('auth.users.read')
     def get(self):
