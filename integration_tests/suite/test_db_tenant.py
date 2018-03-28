@@ -2,7 +2,7 @@
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from uuid import UUID
+from uuid import uuid4
 
 from hamcrest import (
     assert_that,
@@ -173,31 +173,31 @@ class TestTenantDAO(base.DAOTestCase):
         assert_that(result, contains(*expected))
 
     @fixtures.tenant(name='foobar')
-    def test_tenant_creation(self, tenant_uuid):
-        master_tenant_uuid = self.master_tenant_uuid()
-        self._assert_tenant_matches(tenant_uuid, 'foobar', master_tenant_uuid)
+    def test_tenant_creation(self, foobar_uuid):
+        # The parent_uuid defaults to the master tenant's UUID
+        master_tenant_uuid = self._master_tenant_uuid()
+        self._assert_tenant_matches(foobar_uuid, 'foobar', master_tenant_uuid)
 
-    def master_tenant_uuid(self):
-        with self._tenant_dao.new_session() as s:
-            return s.query(
-                models.Tenant.uuid,
-            ).filter(
-                models.Tenant.uuid == models.Tenant.parent_uuid
-            ).scalar()
+        # The parent_uuid can be specified
+        foobaz_uuid = self._create_tenant(name='foobaz', parent_uuid=foobar_uuid)
+        try:
+            self._assert_tenant_matches(foobaz_uuid, 'foobaz', foobar_uuid)
+        finally:
+            self._tenant_dao.delete(foobaz_uuid)
 
-    @fixtures.tenant(uuid=UUID('b7a17bb9-6925-4073-a346-1bc8f8e4f805'), name='foobar')
-    def test_tenant_creation_with_a_uuid(self, tenant_uuid):
-        name = 'foobar'
+        # The UUID can be specified
+        c_uuid = self._create_tenant(uuid=uuid4(), name='c')
+        try:
+            self._assert_tenant_matches(c_uuid, 'c')
+        finally:
+            self._tenant_dao.delete(c_uuid)
 
-        assert_that(tenant_uuid, equal_to('b7a17bb9-6925-4073-a346-1bc8f8e4f805'))
-        with self._tenant_dao.new_session() as s:
-            tenant = s.query(
-                models.Tenant,
-            ).filter(
-                models.Tenant.uuid == tenant_uuid
-            ).first()
-
-            assert_that(tenant, has_properties(name=name, uuid=tenant_uuid))
+        # Only one "master" tenant can exist
+        uuid = uuid4()
+        assert_that(
+            calling(self._create_tenant).with_args(uuid=uuid, parent_uuid=uuid),
+            raises(exceptions.MasterTenantConflictException),
+        )
 
     @fixtures.tenant()
     def test_delete(self, tenant_uuid):
@@ -208,7 +208,7 @@ class TestTenantDAO(base.DAOTestCase):
             raises(exceptions.UnknownTenantException),
         )
 
-    def _assert_tenant_matches(self, uuid, name, parent_uuid):
+    def _assert_tenant_matches(self, uuid, name, parent_uuid=ANY_UUID):
         assert_that(uuid, equal_to(ANY_UUID))
         with self._tenant_dao.new_session() as s:
             tenant = s.query(
@@ -222,3 +222,18 @@ class TestTenantDAO(base.DAOTestCase):
                 tenant,
                 has_properties(name=name, parent_uuid=parent_uuid),
             )
+
+    def _create_tenant(self, **kwargs):
+        kwargs.setdefault('name', None)
+        kwargs.setdefault('phone', None)
+        kwargs.setdefault('contact_uuid', None)
+        kwargs.setdefault('address_id', None)
+        return self._tenant_dao.create(**kwargs)
+
+    def _master_tenant_uuid(self):
+        with self._tenant_dao.new_session() as s:
+            return s.query(
+                models.Tenant.uuid,
+            ).filter(
+                models.Tenant.uuid == models.Tenant.parent_uuid
+            ).scalar()

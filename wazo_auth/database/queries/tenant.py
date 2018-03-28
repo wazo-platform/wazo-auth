@@ -119,6 +119,12 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def create(self, **kwargs):
         parent_uuid = kwargs.get('parent_uuid')
+        uuid_ = kwargs.get('uuid')
+
+        if uuid_ and parent_uuid and str(uuid_) == str(parent_uuid):
+            if self.find_top_tenant():
+                raise exceptions.MasterTenantConflictException()
+
         if not parent_uuid:
             kwargs['parent_uuid'] = self.find_top_tenant()
 
@@ -127,9 +133,8 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             phone=kwargs['phone'],
             contact_uuid=kwargs['contact_uuid'],
             address_id=kwargs['address_id'],
-            parent_uuid=kwargs['parent_uuid'],
+            parent_uuid=str(kwargs['parent_uuid']),
         )
-        uuid_ = kwargs.get('uuid')
         if uuid_:
             tenant.uuid = str(uuid_)
 
