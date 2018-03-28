@@ -174,22 +174,8 @@ class TestTenantDAO(base.DAOTestCase):
 
     @fixtures.tenant(name='foobar')
     def test_tenant_creation(self, tenant_uuid):
-        name = 'foobar'
-
-        assert_that(tenant_uuid, equal_to(ANY_UUID))
         master_tenant_uuid = self.master_tenant_uuid()
-        with self._tenant_dao.new_session() as s:
-            tenant = s.query(
-                models.Tenant.name,
-                models.Tenant.parent_uuid,
-            ).filter(
-                models.Tenant.uuid == tenant_uuid
-            ).first()
-
-            assert_that(
-                tenant,
-                has_properties(name=name, parent_uuid=master_tenant_uuid),
-            )
+        self._assert_tenant_matches(tenant_uuid, 'foobar', master_tenant_uuid)
 
     def master_tenant_uuid(self):
         with self._tenant_dao.new_session() as s:
@@ -221,3 +207,18 @@ class TestTenantDAO(base.DAOTestCase):
             calling(self._tenant_dao.delete).with_args(tenant_uuid),
             raises(exceptions.UnknownTenantException),
         )
+
+    def _assert_tenant_matches(self, uuid, name, parent_uuid):
+        assert_that(uuid, equal_to(ANY_UUID))
+        with self._tenant_dao.new_session() as s:
+            tenant = s.query(
+                models.Tenant.name,
+                models.Tenant.parent_uuid,
+            ).filter(
+                models.Tenant.uuid == uuid
+            ).first()
+
+            assert_that(
+                tenant,
+                has_properties(name=name, parent_uuid=parent_uuid),
+            )
