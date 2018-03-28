@@ -47,8 +47,12 @@ class StrictFilter(object):
         for key, column, type_ in self._column_configs:
             if key not in kwargs:
                 continue
+
             value = type_(kwargs[key]) if type_ else kwargs[key]
-            filter_ = and_(filter_, column == value)
+            if isinstance(value, list):
+                filter_ = and_(filter_, column.in_(value))
+            else:
+                filter_ = and_(filter_, column == value)
 
         return filter_
 
@@ -93,6 +97,7 @@ user_strict_filter = StrictFilter(
     ('lastname', User.lastname, None),
     ('email_address', Email.address, None),
     ('tenant_uuid', TenantUser.tenant_uuid, str),
+    ('tenant_uuids', TenantUser.tenant_uuid, list),
     ('group_uuid', UserGroup.group_uuid, str),
 )
 

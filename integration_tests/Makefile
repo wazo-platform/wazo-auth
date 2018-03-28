@@ -10,7 +10,7 @@ test-db:
 
 test-prerequisite:
 	docker pull n3llyb0y/wait
-	docker pull wazopbx/wazo-base-db
+	docker pull wazopbx/postgres-test
 	docker pull swaggerapi/swagger-validator
 	docker pull rabbitmq
 	docker pull munkyboy/fakesmtp

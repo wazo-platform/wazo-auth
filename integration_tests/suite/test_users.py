@@ -230,9 +230,9 @@ class TestUsers(MockBackendTestCase):
         user_client = self.new_auth_client('foo', 'secret')
         assert_no_error(user_client.token.new, 'wazo_user', expiration=5)
 
-    @fixtures.http_user_register(username='foo', email_address='foo@example.com')
+    @fixtures.http_user(username='foo', email_address='foo@example.com')
     @fixtures.http_user(username='bar')
-    @fixtures.http_user_register(username='baz', email_address='baz@example.com')
+    @fixtures.http_user(username='baz', email_address='baz@example.com')
     def test_list(self, *users):
         def check_list_result(result, filtered, item_matcher, *usernames):
             items = item_matcher(*[has_entries('username', username,

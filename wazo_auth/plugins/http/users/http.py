@@ -4,7 +4,7 @@
 
 from flask import request
 from wazo_auth import exceptions, http, schemas
-from xivo.tenant_helpers import Tenant
+from wazo_auth.flask_helpers import Tenant
 
 from .schemas import ChangePasswordSchema, UserPostSchema, UserPutSchema
 
@@ -49,21 +49,21 @@ class UserPassword(BaseUserService):
 
 class Users(BaseUserService):
 
-    def __init__(self, user_service, tokens, users):
+    def __init__(self, user_service):
         self.user_service = user_service
-        self.tokens = tokens
-        self.users = users
 
     @http.required_acl('auth.users.read')
     def get(self):
+        tenants = Tenant.autodetect(many=True)
         ListSchema = schemas.new_list_schema('username')
         list_params, errors = ListSchema().load(request.args)
         if errors:
             raise exceptions.InvalidListParamException(errors)
 
-        users = self.user_service.list_users(**list_params)
-        total = self.user_service.count_users(filtered=False, **list_params)
-        filtered = self.user_service.count_users(filtered=True, **list_params)
+        tenant_uuids = [tenant.uuid for tenant in tenants]
+        users = self.user_service.list_users(tenant_uuids=tenant_uuids, **list_params)
+        total = self.user_service.count_users(filtered=False, tenant_uuids=tenant_uuids, **list_params)
+        filtered = self.user_service.count_users(filtered=True, tenant_uuids=tenant_uuids, **list_params)
 
         response = {
             'filtered': filtered,
@@ -76,7 +76,7 @@ class Users(BaseUserService):
     @http.required_acl('auth.users.create')
     def post(self):
         args, errors = UserPostSchema().load(request.get_json())
-        tenant = Tenant.autodetect(self.tokens, self.users)
+        tenant = Tenant.autodetect()
         if errors:
             raise exceptions.UserParamException.from_errors(errors)
         result = self.user_service.new_user(email_confirmed=True, tenant_uuid=tenant.uuid, **args)
