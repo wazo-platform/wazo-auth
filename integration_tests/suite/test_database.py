@@ -4,7 +4,6 @@
 
 import os
 import time
-import unittest
 import uuid
 
 from contextlib import contextmanager, nested
@@ -24,56 +23,28 @@ from hamcrest import (
 )
 from mock import ANY
 from sqlalchemy import and_, func
-from uuid import UUID
-from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.mock import ANY_UUID
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from xivo_test_helpers.hamcrest.raises import raises
 
 from wazo_auth import exceptions
-from wazo_auth.database import models, queries
-from wazo_auth.database.queries import group, policy, tenant, token, user
+from wazo_auth.database import models
 from .helpers import fixtures, base
-
-DB_URI = os.getenv('DB_URI', 'postgresql://asterisk:proformatique@localhost:{port}')
 
 
 def new_uuid():
     return str(uuid.uuid4())
 
 
-class DBStarter(AssetLaunchingTestCase):
-
-    asset = 'database'
-    assets_root = os.path.join(os.path.dirname(__file__), '..', 'assets')
-    service = 'postgres'
-
-
 def setup():
-    DBStarter.setUpClass()
+    base.DBStarter.setUpClass()
 
 
 def teardown():
-    DBStarter.tearDownClass()
+    base.DBStarter.tearDownClass()
 
 
-class _BaseDAOTestCase(unittest.TestCase):
-
-    unknown_uuid = '00000000-0000-0000-0000-000000000000'
-
-    def setUp(self):
-        db_uri = DB_URI.format(port=DBStarter.service_port(5432, 'postgres'))
-        self._address_dao = queries.AddressDAO(db_uri)
-        self._email_dao = queries.EmailDAO(db_uri)
-        self._external_auth_dao = queries.ExternalAuthDAO(db_uri)
-        self._group_dao = group.GroupDAO(db_uri)
-        self._policy_dao = policy.PolicyDAO(db_uri)
-        self._user_dao = user.UserDAO(db_uri)
-        self._tenant_dao = tenant.TenantDAO(db_uri)
-        self._token_dao = token.TokenDAO(db_uri)
-
-
-class TestAddressDAO(_BaseDAOTestCase):
+class TestAddressDAO(base.DAOTestCase):
 
     def setUp(self):
         super(TestAddressDAO, self).setUp()
@@ -112,7 +83,7 @@ class TestAddressDAO(_BaseDAOTestCase):
         }
 
 
-class TestEmailDAO(_BaseDAOTestCase):
+class TestEmailDAO(base.DAOTestCase):
 
     @fixtures.email()
     def test_confirm(self, email_uuid):
@@ -131,7 +102,7 @@ class TestEmailDAO(_BaseDAOTestCase):
         return False
 
 
-class TestExternalAuthDAO(_BaseDAOTestCase):
+class TestExternalAuthDAO(base.DAOTestCase):
 
     auth_type = 'foobarcrm'
     data = {
@@ -360,7 +331,7 @@ class TestExternalAuthDAO(_BaseDAOTestCase):
         assert_that(self._external_auth_dao.get(user_uuid, self.auth_type), equal_to(new_data))
 
 
-class TestGroupDAO(_BaseDAOTestCase):
+class TestGroupDAO(base.DAOTestCase):
 
     @fixtures.policy()
     @fixtures.group()
@@ -528,7 +499,7 @@ class TestGroupDAO(_BaseDAOTestCase):
         assert_that(nb_deleted, equal_to(1))
 
 
-class TestPolicyDAO(_BaseDAOTestCase):
+class TestPolicyDAO(base.DAOTestCase):
 
     def setUp(self):
         super(TestPolicyDAO, self).setUp()
@@ -741,7 +712,7 @@ class TestPolicyDAO(_BaseDAOTestCase):
             self._policy_dao.delete(uuid_)
 
 
-class TestTokenDAO(_BaseDAOTestCase):
+class TestTokenDAO(base.DAOTestCase):
 
     def test_create(self):
         metadata = {
@@ -811,184 +782,7 @@ class TestTokenDAO(_BaseDAOTestCase):
         self._token_dao.delete(token_uuid)
 
 
-class TestTenantDAO(_BaseDAOTestCase):
-
-    @fixtures.tenant()
-    @fixtures.policy()
-    def test_add_policy(self, policy_uuid, tenant_uuid):
-        assert_that(self._policy_dao.list_(tenant_uuid=tenant_uuid), empty())
-
-        self._tenant_dao.add_policy(tenant_uuid, policy_uuid)
-        assert_that(
-            self._policy_dao.list_(tenant_uuid=tenant_uuid),
-            contains(has_entries('uuid', policy_uuid)),
-        )
-
-        self._tenant_dao.add_policy(tenant_uuid, policy_uuid)  # twice
-
-        assert_that(
-            calling(self._tenant_dao.add_policy).with_args(self.unknown_uuid, policy_uuid),
-            raises(exceptions.UnknownTenantException),
-            'unknown tenant',
-        )
-
-        assert_that(
-            calling(self._tenant_dao.add_policy).with_args(tenant_uuid, self.unknown_uuid),
-            raises(exceptions.UnknownPolicyException),
-            'unknown policy',
-        )
-
-    @fixtures.tenant()
-    @fixtures.user()
-    def test_add_user(self, user_uuid, tenant_uuid):
-        assert_that(self._user_dao.list_(tenant_uuid=tenant_uuid), empty())
-
-        self._tenant_dao.add_user(tenant_uuid, user_uuid)
-        assert_that(self._user_dao.list_(tenant_uuid=tenant_uuid), contains(has_entries('uuid', user_uuid)))
-
-        self._tenant_dao.add_user(tenant_uuid, user_uuid)  # twice
-
-        assert_that(
-            calling(self._tenant_dao.add_user).with_args(self.unknown_uuid, user_uuid),
-            raises(exceptions.UnknownTenantException),
-            'unknown tenant',
-        )
-
-        assert_that(
-            calling(self._tenant_dao.add_user).with_args(tenant_uuid, self.unknown_uuid),
-            raises(exceptions.UnknownUserException),
-            'unknown user',
-        )
-
-    @fixtures.tenant()
-    @fixtures.policy()
-    def test_remove_policy(self, policy_uuid, tenant_uuid):
-        result = self._tenant_dao.remove_policy(tenant_uuid, policy_uuid)
-        assert_that(result, equal_to(0))
-
-        self._tenant_dao.add_policy(tenant_uuid, policy_uuid)
-
-        result = self._tenant_dao.remove_policy(self.unknown_uuid, policy_uuid)
-        assert_that(result, equal_to(0))
-
-        result = self._tenant_dao.remove_policy(tenant_uuid, self.unknown_uuid)
-        assert_that(result, equal_to(0))
-
-        result = self._tenant_dao.remove_policy(tenant_uuid, policy_uuid)
-        assert_that(result, equal_to(1))
-
-    @fixtures.tenant()
-    @fixtures.user()
-    def test_remove_user(self, user_uuid, tenant_uuid):
-        result = self._tenant_dao.remove_user(tenant_uuid, user_uuid)
-        assert_that(result, equal_to(0))
-
-        self._tenant_dao.add_user(tenant_uuid, user_uuid)
-
-        result = self._tenant_dao.remove_user(self.unknown_uuid, user_uuid)
-        assert_that(result, equal_to(0))
-
-        result = self._tenant_dao.remove_user(tenant_uuid, self.unknown_uuid)
-        assert_that(result, equal_to(0))
-
-        result = self._tenant_dao.remove_user(tenant_uuid, user_uuid)
-        assert_that(result, equal_to(1))
-
-    @fixtures.tenant(name='c')
-    @fixtures.tenant(name='b')
-    @fixtures.tenant(name='a')
-    def test_count(self, a, b, c):
-        result = self._tenant_dao.count()
-        assert_that(result, equal_to(3))
-
-        result = self._tenant_dao.count(search='a', filtered=False)
-        assert_that(result, equal_to(3))
-
-        result = self._tenant_dao.count(search='a')
-        assert_that(result, equal_to(1))
-
-        result = self._tenant_dao.count(name='a', filtered=False)
-        assert_that(result, equal_to(3))
-
-        result = self._tenant_dao.count(name='a')
-        assert_that(result, equal_to(1))
-
-    @fixtures.tenant(name='foo c')
-    @fixtures.tenant(name='bar b')
-    @fixtures.tenant(name='baz a')
-    @fixtures.user()
-    @fixtures.user()
-    def test_list(self, user1_uuid, user2_uuid, a, b, c):
-        def build_list_matcher(*names):
-            return [has_entries(name=name, address=base.ADDRESS_NULL) for name in names]
-
-        result = self._tenant_dao.list_()
-        expected = build_list_matcher('foo c', 'bar b', 'baz a')
-        assert_that(result, contains_inanyorder(*expected))
-
-        for tenant_uuid in (a, b, c):
-            self._tenant_dao.add_user(tenant_uuid, user1_uuid)
-            self._tenant_dao.add_user(tenant_uuid, user2_uuid)
-
-        result = self._tenant_dao.list_()
-        expected = build_list_matcher('foo c', 'bar b', 'baz a')
-        assert_that(result, contains_inanyorder(*expected))
-
-        result = self._tenant_dao.list_(search='ba')
-        expected = build_list_matcher('bar b', 'baz a')
-        assert_that(result, contains_inanyorder(*expected))
-
-        result = self._tenant_dao.list_(order='name', direction='desc')
-        expected = build_list_matcher('foo c', 'baz a', 'bar b')
-        assert_that(result, contains(*expected))
-
-        result = self._tenant_dao.list_(limit=1, order='name', direction='asc')
-        expected = build_list_matcher('bar b')
-        assert_that(result, contains(*expected))
-
-        result = self._tenant_dao.list_(offset=1, order='name', direction='asc')
-        expected = build_list_matcher('baz a', 'foo c')
-        assert_that(result, contains(*expected))
-
-    @fixtures.tenant(name='foobar')
-    def test_tenant_creation(self, tenant_uuid):
-        name = 'foobar'
-
-        assert_that(tenant_uuid, equal_to(ANY_UUID))
-        with self._tenant_dao.new_session() as s:
-            tenant = s.query(
-                models.Tenant,
-            ).filter(
-                models.Tenant.uuid == tenant_uuid
-            ).first()
-
-            assert_that(tenant, has_properties('name', name))
-
-    @fixtures.tenant(uuid=UUID('b7a17bb9-6925-4073-a346-1bc8f8e4f805'), name='foobar')
-    def test_tenant_creation_with_a_uuid(self, tenant_uuid):
-        name = 'foobar'
-
-        assert_that(tenant_uuid, equal_to('b7a17bb9-6925-4073-a346-1bc8f8e4f805'))
-        with self._tenant_dao.new_session() as s:
-            tenant = s.query(
-                models.Tenant,
-            ).filter(
-                models.Tenant.uuid == tenant_uuid
-            ).first()
-
-            assert_that(tenant, has_properties('name', name, 'uuid', tenant_uuid))
-
-    @fixtures.tenant()
-    def test_delete(self, tenant_uuid):
-        self._tenant_dao.delete(tenant_uuid)
-
-        assert_that(
-            calling(self._tenant_dao.delete).with_args(tenant_uuid),
-            raises(exceptions.UnknownTenantException),
-        )
-
-
-class TestUserDAO(_BaseDAOTestCase):
+class TestUserDAO(base.DAOTestCase):
 
     salt = os.urandom(64)
 
