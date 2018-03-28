@@ -182,7 +182,7 @@ class TestTenantDAO(base.DAOTestCase):
                 models.Tenant.uuid == tenant_uuid
             ).first()
 
-            assert_that(tenant, has_properties('name', name))
+            assert_that(tenant, has_properties(name=name))
 
     @fixtures.tenant(uuid=UUID('b7a17bb9-6925-4073-a346-1bc8f8e4f805'), name='foobar')
     def test_tenant_creation_with_a_uuid(self, tenant_uuid):
@@ -196,7 +196,7 @@ class TestTenantDAO(base.DAOTestCase):
                 models.Tenant.uuid == tenant_uuid
             ).first()
 
-            assert_that(tenant, has_properties('name', name, 'uuid', tenant_uuid))
+            assert_that(tenant, has_properties(name=name, uuid=tenant_uuid))
 
     @fixtures.tenant()
     def test_delete(self, tenant_uuid):
