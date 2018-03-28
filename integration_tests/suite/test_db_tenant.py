@@ -117,20 +117,22 @@ class TestTenantDAO(base.DAOTestCase):
     @fixtures.tenant(name='c')
     @fixtures.tenant(name='b')
     @fixtures.tenant(name='a')
-    def test_count(self, a, b, c):
+    def test_count(self, *tenants):
+        total = len(tenants) + 1  # a, b, c and the master tenant
+
         result = self._tenant_dao.count()
-        assert_that(result, equal_to(3))
+        assert_that(result, equal_to(total))
 
-        result = self._tenant_dao.count(search='a', filtered=False)
-        assert_that(result, equal_to(3))
+        result = self._tenant_dao.count(search='b', filtered=False)
+        assert_that(result, equal_to(total))
 
-        result = self._tenant_dao.count(search='a')
+        result = self._tenant_dao.count(search='b')
         assert_that(result, equal_to(1))
 
-        result = self._tenant_dao.count(name='a', filtered=False)
-        assert_that(result, equal_to(3))
+        result = self._tenant_dao.count(name='b', filtered=False)
+        assert_that(result, equal_to(total))
 
-        result = self._tenant_dao.count(name='a')
+        result = self._tenant_dao.count(name='b')
         assert_that(result, equal_to(1))
 
     @fixtures.tenant(name='foo c')
@@ -143,7 +145,7 @@ class TestTenantDAO(base.DAOTestCase):
             return [has_entries(name=name, address=base.ADDRESS_NULL) for name in names]
 
         result = self._tenant_dao.list_()
-        expected = build_list_matcher('foo c', 'bar b', 'baz a')
+        expected = build_list_matcher('foo c', 'bar b', 'baz a', 'master')
         assert_that(result, contains_inanyorder(*expected))
 
         for tenant_uuid in (a, b, c):
@@ -151,7 +153,7 @@ class TestTenantDAO(base.DAOTestCase):
             self._tenant_dao.add_user(tenant_uuid, user2_uuid)
 
         result = self._tenant_dao.list_()
-        expected = build_list_matcher('foo c', 'bar b', 'baz a')
+        expected = build_list_matcher('foo c', 'bar b', 'baz a', 'master')
         assert_that(result, contains_inanyorder(*expected))
 
         result = self._tenant_dao.list_(search='ba')
@@ -159,7 +161,7 @@ class TestTenantDAO(base.DAOTestCase):
         assert_that(result, contains_inanyorder(*expected))
 
         result = self._tenant_dao.list_(order='name', direction='desc')
-        expected = build_list_matcher('foo c', 'baz a', 'bar b')
+        expected = build_list_matcher('master', 'foo c', 'baz a', 'bar b')
         assert_that(result, contains(*expected))
 
         result = self._tenant_dao.list_(limit=1, order='name', direction='asc')
@@ -167,7 +169,7 @@ class TestTenantDAO(base.DAOTestCase):
         assert_that(result, contains(*expected))
 
         result = self._tenant_dao.list_(offset=1, order='name', direction='asc')
-        expected = build_list_matcher('baz a', 'foo c')
+        expected = build_list_matcher('baz a', 'foo c', 'master')
         assert_that(result, contains(*expected))
 
     @fixtures.tenant(name='foobar')
@@ -175,14 +177,27 @@ class TestTenantDAO(base.DAOTestCase):
         name = 'foobar'
 
         assert_that(tenant_uuid, equal_to(ANY_UUID))
+        master_tenant_uuid = self.master_tenant_uuid()
         with self._tenant_dao.new_session() as s:
             tenant = s.query(
-                models.Tenant,
+                models.Tenant.name,
+                models.Tenant.parent_uuid,
             ).filter(
                 models.Tenant.uuid == tenant_uuid
             ).first()
 
-            assert_that(tenant, has_properties(name=name))
+            assert_that(
+                tenant,
+                has_properties(name=name, parent_uuid=master_tenant_uuid),
+            )
+
+    def master_tenant_uuid(self):
+        with self._tenant_dao.new_session() as s:
+            return s.query(
+                models.Tenant.uuid,
+            ).filter(
+                models.Tenant.uuid == models.Tenant.parent_uuid
+            ).scalar()
 
     @fixtures.tenant(uuid=UUID('b7a17bb9-6925-4073-a346-1bc8f8e4f805'), name='foobar')
     def test_tenant_creation_with_a_uuid(self, tenant_uuid):

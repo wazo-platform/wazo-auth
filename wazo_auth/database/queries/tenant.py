@@ -118,11 +118,16 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             ).filter(filter_).count()
 
     def create(self, **kwargs):
+        parent_uuid = kwargs.get('parent_uuid')
+        if not parent_uuid:
+            kwargs['parent_uuid'] = self.find_top_tenant()
+
         tenant = Tenant(
             name=kwargs['name'],
             phone=kwargs['phone'],
             contact_uuid=kwargs['contact_uuid'],
             address_id=kwargs['address_id'],
+            parent_uuid=kwargs['parent_uuid'],
         )
         uuid_ = kwargs.get('uuid')
         if uuid_:
@@ -144,6 +149,10 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                         raise exceptions.UnknownUserException(kwargs['contact_uuid'])
                 raise
             return tenant.uuid
+
+    def find_top_tenant(self):
+        with self.new_session() as s:
+            return s.query(Tenant).filter(Tenant.uuid == Tenant.parent_uuid).first().uuid
 
     def delete(self, uuid):
         with self.new_session() as s:
