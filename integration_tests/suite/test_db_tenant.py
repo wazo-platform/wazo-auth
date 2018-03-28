@@ -41,7 +41,7 @@ class TestTenantDAO(base.DAOTestCase):
         self._tenant_dao.add_policy(tenant_uuid, policy_uuid)
         assert_that(
             self._policy_dao.list_(tenant_uuid=tenant_uuid),
-            contains(has_entries('uuid', policy_uuid)),
+            contains(has_entries(uuid=policy_uuid)),
         )
 
         self._tenant_dao.add_policy(tenant_uuid, policy_uuid)  # twice
@@ -64,7 +64,7 @@ class TestTenantDAO(base.DAOTestCase):
         assert_that(self._user_dao.list_(tenant_uuid=tenant_uuid), empty())
 
         self._tenant_dao.add_user(tenant_uuid, user_uuid)
-        assert_that(self._user_dao.list_(tenant_uuid=tenant_uuid), contains(has_entries('uuid', user_uuid)))
+        assert_that(self._user_dao.list_(tenant_uuid=tenant_uuid), contains(has_entries(uuid=user_uuid)))
 
         self._tenant_dao.add_user(tenant_uuid, user_uuid)  # twice
 
