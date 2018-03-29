@@ -2,7 +2,7 @@
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from sqlalchemy import and_, exc, func, text
+from sqlalchemy import and_, distinct, exc, func, text
 from .base import BaseDAO, PaginatorMixin
 from . import filters
 from ..models import (
@@ -112,7 +112,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 Policy.uuid,
                 Policy.name,
                 Policy.description,
-                func.array_agg(ACLTemplate.template).label('acl_templates'),
+                func.array_agg(distinct(ACLTemplate.template)).label('acl_templates'),
             ).outerjoin(
                 ACLTemplatePolicy,
             ).outerjoin(

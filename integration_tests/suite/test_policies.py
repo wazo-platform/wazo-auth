@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from hamcrest import (
@@ -94,11 +94,38 @@ class TestPolicies(MockBackendTestCase):
 
     @fixtures.http_policy(name='foobar', description='a test policy',
                           acl_templates=['dird.me.#', 'ctid-ng.#'])
-    def test_get(self, policy):
+    @fixtures.http_user()
+    @fixtures.http_user()
+    @fixtures.http_group()
+    @fixtures.http_group()
+    def test_get(self, group1, group2, user1, user2, policy):
         response = self.client.policies.get(policy['uuid'])
-        assert_that(response, equal_to(policy))
+        assert_that(
+            response,
+            has_entries(
+                name='foobar',
+                description='a test policy',
+                acl_templates=contains_inanyorder(
+                    'dird.me.#',
+                    'ctid-ng.#',
+                ),
+            ),
+        )
 
         assert_http_error(404, self.client.policies.get, UNKNOWN_UUID)
+
+        self.client.users.add_policy(user1['uuid'], policy['uuid'])
+        self.client.users.add_policy(user2['uuid'], policy['uuid'])
+        self.client.groups.add_policy(group1['uuid'], policy['uuid'])
+        self.client.groups.add_policy(group2['uuid'], policy['uuid'])
+
+        assert_that(
+            self.client.policies.get(policy['uuid'])['acl_templates'],
+            contains_inanyorder(
+                'dird.me.#',
+                'ctid-ng.#',
+            ),
+        )
 
     @fixtures.http_policy()
     def test_delete(self, policy):
