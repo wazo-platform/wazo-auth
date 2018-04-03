@@ -34,7 +34,7 @@ class _BaseMockBackend(BaseAuthenticationBackend):
         return result
 
     def _tenants(self):
-        return []
+        return [{'uuid': self._tenant_service.find_top_tenant(), 'name': 'master'}]
 
     def verify_password(self, login, password, args):
         return (login, password) == (self.login, self.password)
@@ -44,9 +44,6 @@ class BackendMock(_BaseMockBackend):
 
     _base_metadata = {'auth_id': 'a-mocked-uuid'}
     _acls = ['foo', 'bar', 'auth.#']
-
-    def _tenants(self):
-        return self._tenant_service.list_(name='tenant-for-tests')
 
 
 class BackendMockWithUUID(_BaseMockBackend):
