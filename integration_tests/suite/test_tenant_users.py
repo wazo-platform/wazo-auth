@@ -55,11 +55,12 @@ class TestTenantUserAssociation(base.MockBackendTestCase):
     @fixtures.http_tenant(name='baz')
     @fixtures.http_tenant(name='bar')
     @fixtures.http_tenant(name='foo')
-    # extra tenant: tenant-for-tests
+    # extra tenant: "master" tenant
     @fixtures.http_user()
     def test_tenant_list(self, user, foo, bar, baz, ignored):
-        tenant_for_tests = self._tenant
-        self.client.tenants.remove_user(tenant_for_tests['uuid'], user['uuid'])
+        master_tenant = self.get_master_tenant()
+
+        self.client.tenants.remove_user(master_tenant['uuid'], user['uuid'])
         for tenant in (foo, bar, baz):
             self.client.tenants.add_user(tenant['uuid'], user['uuid'])
 
