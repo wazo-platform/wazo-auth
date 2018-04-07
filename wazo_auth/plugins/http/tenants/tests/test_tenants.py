@@ -4,7 +4,8 @@
 
 import json
 from hamcrest import assert_that, equal_to, has_entries
-from mock import ANY
+from mock import ANY, Mock, sentinel as s
+from wazo_auth.flask_helpers import Tenant
 from wazo_auth.config import _DEFAULT_CONFIG
 from wazo_auth.tests.test_http import HTTPAppTestCase
 
@@ -16,6 +17,12 @@ class TestTenantPost(HTTPAppTestCase):
     def setUp(self):
         config = dict(_DEFAULT_CONFIG)
         config['enabled_http_plugins']['tenants'] = True
+        self.token_manager = Mock()
+        self.user_service = Mock()
+        self.user_service.list_tenants.return_value = [
+            {'uuid': s.tenant_uuid, 'name': s.tenant_name}
+        ]
+        Tenant.setup(self.token_manager, self.user_service)
         super(TestTenantPost, self).setUp(config)
 
     def test_delete(self):
@@ -67,6 +74,7 @@ class TestTenantPost(HTTPAppTestCase):
             name='foobar',
             phone=None,
             contact_uuid=None,
+            parent_uuid=s.tenant_uuid,
             address=dict(
                 line_1=None,
                 line_2=None,

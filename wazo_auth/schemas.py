@@ -39,6 +39,7 @@ class TenantAddress(BaseSchema):
 class TenantSchema(BaseSchema):
 
     uuid = xfields.UUID(missing=None)
+    parent_uuid = xfields.UUID(dump_only=True)
     name = xfields.String(validate=validate.Length(min=1, max=128), default=None, missing=None)
     contact_uuid = xfields.UUID(load_from='contact', dump_to='contact', missing=None, default=None)
     phone = xfields.String(validate=validate.Length(min=1, max=32), default=None, missing=None)

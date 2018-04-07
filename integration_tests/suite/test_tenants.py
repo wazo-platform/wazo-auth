@@ -63,21 +63,42 @@ class TestTenants(MockBackendTestCase):
     @fixtures.http_tenant(uuid='6668ca15-6d9e-4000-b2ec-731bc7316767', name='foobaz')
     @fixtures.http_tenant()
     def test_post(self, other, foobaz, foobar):
+        master_tenant = self.get_master_tenant()
+
         assert_that(other, has_entries(
             uuid=uuid_(),
             name=None,
-            address=has_entries(**ADDRESS_NULL)))
+            parent_uuid=master_tenant['uuid'],
+            address=has_entries(**ADDRESS_NULL),
+        ))
 
         assert_that(foobaz, has_entries(
             uuid='6668ca15-6d9e-4000-b2ec-731bc7316767',
             name='foobaz',
-            address=has_entries(**ADDRESS_NULL)))
+            parent_uuid=master_tenant['uuid'],
+            address=has_entries(**ADDRESS_NULL),
+        ))
 
         assert_that(foobar, has_entries(
             uuid=uuid_(),
             name='foobar',
             phone=PHONE_1,
-            address=has_entries(**ADDRESS_1)))
+            parent_uuid=master_tenant['uuid'],
+            address=has_entries(**ADDRESS_1),
+        ))
+
+        # XXX: remove the association when the GET or HEAD on /token can validate a tenant
+        self.admin_client.tenants.add_user(foobar['uuid'], self.admin_user_uuid)
+
+        subtenant = self.admin_client.tenants.new(name='subtenant', parent_uuid=foobar['uuid'])
+        try:
+            assert_that(subtenant, has_entries(
+                uuid=uuid_(),
+                name='subtenant',
+                parent_uuid=foobar['uuid'],
+            ))
+        finally:
+            self.admin_client.tenants.delete(subtenant['uuid'])
 
         assert_http_error(404, self.client.tenants.new, contact=UNKNOWN_UUID)
 
