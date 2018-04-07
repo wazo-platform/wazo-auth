@@ -4,6 +4,10 @@
 
 from __future__ import unicode_literals
 
+import json
+import os
+import requests
+
 from hamcrest import (
     assert_that,
     contains,
@@ -12,6 +16,7 @@ from hamcrest import (
     has_entries,
 )
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
+from xivo_auth_client import Client
 from .helpers import fixtures
 from .helpers.base import ADDRESS_NULL, assert_http_error, MockBackendTestCase, UNKNOWN_UUID
 
@@ -26,6 +31,33 @@ PHONE_1 = '555-555-5555'
 
 
 class TestTenants(MockBackendTestCase):
+
+    username = 'admin'
+    password = 's3cre7'
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestTenants, cls).setUpClass()
+        headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+        HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
+        port = cls.service_port(9497, 'auth')
+        url = 'https://{}:{}/0.1/init'.format(HOST, port)
+
+        key = cls.docker_exec(['cat', '/var/lib/wazo-auth/init.key'])
+        body = {'key': key, 'username': cls.username, 'password': cls.password}
+        response = requests.post(url, data=json.dumps(body), headers=headers, verify=False)
+        response.raise_for_status()
+
+        cls.admin_client = Client(
+            HOST,
+            port=port,
+            username=cls.username,
+            password=cls.password,
+            verify_certificate=False,
+        )
+        token_data = cls.admin_client.token.new(backend='wazo_user', expiration=7200)
+        cls.admin_user_uuid = token_data['metadata']['uuid']
+        cls.admin_client.set_token(token_data['token'])
 
     @fixtures.http_tenant(name='foobar', address=ADDRESS_1, phone=PHONE_1)
     @fixtures.http_tenant(uuid='6668ca15-6d9e-4000-b2ec-731bc7316767', name='foobaz')
