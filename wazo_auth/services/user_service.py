@@ -92,7 +92,11 @@ class UserService(BaseService):
             kwargs['salt'], kwargs['hash_'] = self._encrypter.encrypt_password(password)
 
         user = self._dao.user.create(**kwargs)
-        self._dao.tenant.add_user(kwargs['tenant_uuid'], user['uuid'])
+
+        # TODO: remove this association and use the tenant tree implicitly
+        tenant_uuid = kwargs.get('tenant_uuid', self._dao.tenant.find_top_tenant())
+        self._dao.tenant.add_user(tenant_uuid, user['uuid'])
+
         return user
 
     def remove_policy(self, user_uuid, policy_uuid):
