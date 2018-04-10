@@ -149,6 +149,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             'password_hash': kwargs.get('hash_'),
             'password_salt': kwargs.get('salt'),
             'enabled': kwargs.get('enabled'),
+            'tenant_uuid': kwargs['tenant_uuid'],
         }
         uuid = kwargs.get('uuid')
         if uuid:
