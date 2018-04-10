@@ -287,6 +287,7 @@ def user(**user_args):
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
+            user_args.setdefault('tenant_uuid', self.top_tenant_uuid)
             user_uuid = self._user_dao.create(**user_args)['uuid']
             try:
                 result = decorated(self, user_uuid, *args, **kwargs)
