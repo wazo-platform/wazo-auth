@@ -141,6 +141,7 @@ class User(Base):
     password_hash = Column(Text)
     password_salt = Column(LargeBinary)
     enabled = Column(Boolean)
+    tenant_uuid = Column(String(38), ForeignKey('auth_tenant.uuid'), nullable=False)
 
 
 class UserEmail(Base):
