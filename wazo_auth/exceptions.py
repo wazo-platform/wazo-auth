@@ -218,6 +218,15 @@ class ConflictException(APIException):
         super(ConflictException, self).__init__(409, 'Conflict detected', 'conflict', details, resource)
 
 
+class MasterTenantConflictException(APIException):
+
+    def __init__(self):
+        msg = 'A master tenant already exist'
+        details = {'parent_uuid': {'constraint_id': 'unique', 'msg': msg}}
+        super(MasterTenantConflictException, self).__init__(
+            403, 'Conflict detected', 'conflict', details, 'tenants')
+
+
 class DuplicatePolicyException(ManagerException):
 
     code = 409

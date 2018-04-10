@@ -13,7 +13,6 @@ class Plugin(object):
         args = (
             dependencies['policy_service'],
             dependencies['user_service'],
-            dependencies['tenant_service'],
             config,
         )
 

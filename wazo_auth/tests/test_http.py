@@ -27,6 +27,7 @@ class HTTPAppTestCase(TestCase):
         external_auth_service = Mock()
         self.tokens = Mock()
         self.users = Mock()
+        self.template_formatter = Mock()
         dependencies = {
             'config': config,
             'backends': s.backends,
@@ -39,6 +40,7 @@ class HTTPAppTestCase(TestCase):
             'external_auth_service': external_auth_service,
             'tokens': self.tokens,
             'users': self.users,
+            'template_formatter': self.template_formatter,
         }
         self.app = new_app(dependencies).test_client()
 

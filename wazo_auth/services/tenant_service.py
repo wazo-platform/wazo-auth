@@ -34,6 +34,9 @@ class TenantService(BaseService):
         self._bus_publisher.publish(event)
         return result
 
+    def find_top_tenant(self):
+        return self._dao.tenant.find_top_tenant()
+
     def get(self, uuid):
         tenants = self._dao.tenant.list_(uuid=uuid, limit=1)
         for tenant in tenants:

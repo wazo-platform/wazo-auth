@@ -85,6 +85,7 @@ class Tenant(Base):
     phone = Column(Text)
     address_id = Column(Integer, ForeignKey('auth_address.id', ondelete='SET NULL'))
     contact_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='SET NULL'))
+    parent_uuid = Column(String(38), ForeignKey('auth_tenant.uuid'), nullable=False)
 
 
 class TenantPolicy(Base):

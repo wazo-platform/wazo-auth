@@ -5,12 +5,12 @@
 from xivo_test_helpers.mock import ANY_UUID
 from hamcrest import (
     assert_that,
+    contains,
     has_entries,
     empty,
 )
 from .helpers.base import (
     assert_http_error,
-    assert_no_error,
     MockBackendTestCase,
 )
 
@@ -38,7 +38,17 @@ class TestInit(MockBackendTestCase):
         result = self.client.init.run(username='foo', password='bar', key=self.key)
         assert_that(result, has_entries(uuid=ANY_UUID, emails=empty(), username='foo'))
 
-        assert_no_error(self._post_token, 'foo', 'bar', backend='wazo_user', expiration=10)
+        token_data = self._post_token('foo', 'bar', backend='wazo_user', expiration=10)
+        self.client.set_token(token_data['token'])
+
+        user_tenants = self.client.users.get_tenants(result['uuid'])
+        assert_that(
+            user_tenants,
+            has_entries(
+                items=contains(self.get_master_tenant()),
+                total=1,
+            )
+        )
 
 
 def copy_without(body, key):

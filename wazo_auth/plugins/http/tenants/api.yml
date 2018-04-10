@@ -37,6 +37,7 @@ paths:
           required: true
           schema:
             $ref: '#/definitions/TenantCreate'
+        - $ref: '#/parameters/tenantuuid'
       responses:
         '200':
           description: The new tenant
@@ -145,6 +146,8 @@ definitions:
       name:
         type: string
       uuid:
+        type: string
+      parent_uuid:
         type: string
   TenantList:
     type: object

@@ -5,13 +5,17 @@
 import os
 import time
 import requests
+import unittest
 
 from hamcrest import assert_that, calling, has_properties, equal_to
 from xivo_test_helpers.hamcrest.raises import raises
 from xivo_auth_client import Client
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.bus import BusClient
+from wazo_auth.database import queries
+from wazo_auth.database.queries import group, policy, tenant, token, user
 
+DB_URI = os.getenv('DB_URI', 'postgresql://asterisk:proformatique@localhost:{port}')
 HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
 UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
 ADDRESS_NULL = {
@@ -22,6 +26,29 @@ ADDRESS_NULL = {
     'country': None,
     'zip_code': None,
 }
+
+
+class DBStarter(AssetLaunchingTestCase):
+
+    asset = 'database'
+    assets_root = os.path.join(os.path.dirname(__file__), '../..', 'assets')
+    service = 'postgres'
+
+
+class DAOTestCase(unittest.TestCase):
+
+    unknown_uuid = '00000000-0000-0000-0000-000000000000'
+
+    def setUp(self):
+        db_uri = DB_URI.format(port=DBStarter.service_port(5432, 'postgres'))
+        self._address_dao = queries.AddressDAO(db_uri)
+        self._email_dao = queries.EmailDAO(db_uri)
+        self._external_auth_dao = queries.ExternalAuthDAO(db_uri)
+        self._group_dao = group.GroupDAO(db_uri)
+        self._policy_dao = policy.PolicyDAO(db_uri)
+        self._user_dao = user.UserDAO(db_uri)
+        self._tenant_dao = tenant.TenantDAO(db_uri)
+        self._token_dao = token.TokenDAO(db_uri)
 
 
 class BaseTestCase(AssetLaunchingTestCase):
@@ -126,14 +153,13 @@ class MockBackendTestCase(BaseTestCase):
         # create tenant
         token = self.client.token.new(backend='mock', expiration=3600)['token']
         self.client.set_token(token)
-        self._tenant = self.client.tenants.new(name='tenant-for-tests')
 
         # create token with tenant
         token = self.client.token.new(backend='mock', expiration=3600)['token']
         self.client.set_token(token)
 
-    def tearDown(self):
-        self.client.tenants.delete(self._tenant['uuid'])
+    def get_master_tenant(self):
+        return self.client.tenants.list(name='master')['items'][0]
 
     def new_auth_client(self, username, password):
         host = self.get_host()

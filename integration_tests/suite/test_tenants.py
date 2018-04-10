@@ -4,6 +4,10 @@
 
 from __future__ import unicode_literals
 
+import json
+import os
+import requests
+
 from hamcrest import (
     assert_that,
     contains,
@@ -12,6 +16,7 @@ from hamcrest import (
     has_entries,
 )
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
+from xivo_auth_client import Client
 from .helpers import fixtures
 from .helpers.base import ADDRESS_NULL, assert_http_error, MockBackendTestCase, UNKNOWN_UUID
 
@@ -27,25 +32,73 @@ PHONE_1 = '555-555-5555'
 
 class TestTenants(MockBackendTestCase):
 
+    username = 'admin'
+    password = 's3cre7'
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestTenants, cls).setUpClass()
+        headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+        HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
+        port = cls.service_port(9497, 'auth')
+        url = 'https://{}:{}/0.1/init'.format(HOST, port)
+
+        key = cls.docker_exec(['cat', '/var/lib/wazo-auth/init.key'])
+        body = {'key': key, 'username': cls.username, 'password': cls.password}
+        response = requests.post(url, data=json.dumps(body), headers=headers, verify=False)
+        response.raise_for_status()
+
+        cls.admin_client = Client(
+            HOST,
+            port=port,
+            username=cls.username,
+            password=cls.password,
+            verify_certificate=False,
+        )
+        token_data = cls.admin_client.token.new(backend='wazo_user', expiration=7200)
+        cls.admin_user_uuid = token_data['metadata']['uuid']
+        cls.admin_client.set_token(token_data['token'])
+
     @fixtures.http_tenant(name='foobar', address=ADDRESS_1, phone=PHONE_1)
     @fixtures.http_tenant(uuid='6668ca15-6d9e-4000-b2ec-731bc7316767', name='foobaz')
     @fixtures.http_tenant()
     def test_post(self, other, foobaz, foobar):
+        master_tenant = self.get_master_tenant()
+
         assert_that(other, has_entries(
             uuid=uuid_(),
             name=None,
-            address=has_entries(**ADDRESS_NULL)))
+            parent_uuid=master_tenant['uuid'],
+            address=has_entries(**ADDRESS_NULL),
+        ))
 
         assert_that(foobaz, has_entries(
             uuid='6668ca15-6d9e-4000-b2ec-731bc7316767',
             name='foobaz',
-            address=has_entries(**ADDRESS_NULL)))
+            parent_uuid=master_tenant['uuid'],
+            address=has_entries(**ADDRESS_NULL),
+        ))
 
         assert_that(foobar, has_entries(
             uuid=uuid_(),
             name='foobar',
             phone=PHONE_1,
-            address=has_entries(**ADDRESS_1)))
+            parent_uuid=master_tenant['uuid'],
+            address=has_entries(**ADDRESS_1),
+        ))
+
+        # XXX: remove the association when the GET or HEAD on /token can validate a tenant
+        self.admin_client.tenants.add_user(foobar['uuid'], self.admin_user_uuid)
+
+        subtenant = self.admin_client.tenants.new(name='subtenant', parent_uuid=foobar['uuid'])
+        try:
+            assert_that(subtenant, has_entries(
+                uuid=uuid_(),
+                name='subtenant',
+                parent_uuid=foobar['uuid'],
+            ))
+        finally:
+            self.admin_client.tenants.delete(subtenant['uuid'])
 
         assert_http_error(404, self.client.tenants.new, contact=UNKNOWN_UUID)
 
@@ -66,15 +119,15 @@ class TestTenants(MockBackendTestCase):
     @fixtures.http_tenant(name='foobar')
     @fixtures.http_tenant(name='foobaz')
     @fixtures.http_tenant(name='foobarbaz')
-    # extra tenant: tenant-for-tests
+    # extra tenant: "master" tenant
     def test_list(self, foobarbaz, foobaz, foobar):
-        tenant_for_tests = self._tenant
+        master_tenant = self.get_master_tenant()
 
-        def then(result, total=4, filtered=4, item_matcher=contains(tenant_for_tests)):
+        def then(result, total=4, filtered=4, item_matcher=contains(master_tenant)):
             assert_that(result, has_entries(items=item_matcher, total=total, filtered=filtered))
 
         result = self.client.tenants.list()
-        matcher = contains_inanyorder(foobaz, foobar, foobarbaz, tenant_for_tests)
+        matcher = contains_inanyorder(foobaz, foobar, foobarbaz, master_tenant)
         then(result, item_matcher=matcher)
 
         result = self.client.tenants.list(uuid=foobaz['uuid'])
@@ -90,7 +143,7 @@ class TestTenants(MockBackendTestCase):
         then(result, item_matcher=matcher)
 
         result = self.client.tenants.list(order='name', direction='desc')
-        matcher = contains(tenant_for_tests, foobaz, foobarbaz, foobar)
+        matcher = contains(master_tenant, foobaz, foobarbaz, foobar)
         then(result, item_matcher=matcher)
 
         assert_http_error(400, self.client.tenants.list, limit='foo')

@@ -80,7 +80,7 @@ class TestUsers(MockBackendTestCase):
                         'main', True,
                         'confirmed', True))))
             tenants = self.client.users.get_tenants(user['uuid'])
-            assert_that(tenants['items'], contains(has_entries(name='tenant-for-tests')))
+            assert_that(tenants['items'], contains(has_entries(name='master')))
 
         with self.multi_tenant_client() as client:
             tenant2 = client.tenants.list(name='multi-tenant2-for-tests')['items'][0]
