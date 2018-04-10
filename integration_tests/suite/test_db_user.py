@@ -229,9 +229,10 @@ class TestUserDAO(base.DAOTestCase):
                 raises(
                     exceptions.ConflictException,
                     has_properties(
-                        'status_code', 409,
-                        'resource', 'users',
-                        'details', has_entries('uuid', ANY))))
+                        status_code=409,
+                        resource='users',
+                        details=has_entries(uuid=ANY),
+                    )))
         finally:
             self._user_dao.delete(user_uuid)
 
@@ -270,9 +271,9 @@ class TestUserDAO(base.DAOTestCase):
             raises(
                 exceptions.ConflictException,
                 has_properties(
-                    'status_code', 409,
-                    'resource', 'users',
-                    'details', has_entries('username', ANY),
+                    status_code=409,
+                    resource='users',
+                    details=has_entries(username=ANY),
                 ),
             ),
         )
@@ -290,9 +291,9 @@ class TestUserDAO(base.DAOTestCase):
             raises(
                 exceptions.ConflictException,
                 has_properties(
-                    'status_code', 409,
-                    'resource', 'users',
-                    'details', has_entries('email_address', ANY),
+                    status_code=409,
+                    resource='users',
+                    details=has_entries(email_address=ANY),
                 ),
             ),
         )
@@ -351,35 +352,35 @@ class TestUserDAO(base.DAOTestCase):
             result,
             contains_inanyorder(
                 has_entries(
-                    'uuid', a,
-                    'username', 'a',
-                    'emails', contains_inanyorder(
+                    uuid=a,
+                    username='a',
+                    emails=contains_inanyorder(
                         has_entries(
-                            'address', 'a@example.com',
-                            'main', True,
-                            'confirmed', False,
+                            address='a@example.com',
+                            main=True,
+                            confirmed=False,
                         ),
                     ),
                 ),
                 has_entries(
-                    'uuid', b,
-                    'username', 'b',
-                    'emails', contains_inanyorder(
+                    uuid=b,
+                    username='b',
+                    emails=contains_inanyorder(
                         has_entries(
-                            'address', 'b@example.com',
-                            'main', True,
-                            'confirmed', False,
+                            address='b@example.com',
+                            main=True,
+                            confirmed=False,
                         ),
                     ),
                 ),
                 has_entries(
-                    'uuid', c,
-                    'username', 'c',
-                    'emails', contains_inanyorder(
+                    uuid=c,
+                    username='c',
+                    emails=contains_inanyorder(
                         has_entries(
-                            'address', 'c@example.com',
-                            'main', True,
-                            'confirmed', False,
+                            address='c@example.com',
+                            main=True,
+                            confirmed=False,
                         ),
                     ),
                 )
@@ -396,35 +397,35 @@ class TestUserDAO(base.DAOTestCase):
             result,
             contains_inanyorder(
                 has_entries(
-                    'uuid', foo,
-                    'username', 'foo',
-                    'emails', contains_inanyorder(
+                    uuid=foo,
+                    username='foo',
+                    emails=contains_inanyorder(
                         has_entries(
-                            'address', 'foo@example.com',
-                            'main', True,
-                            'confirmed', False,
+                            address='foo@example.com',
+                            main=True,
+                            confirmed=False,
                         ),
                     ),
                 ),
                 has_entries(
-                    'uuid', bar,
-                    'username', 'bar',
-                    'emails', contains_inanyorder(
+                    uuid=bar,
+                    username='bar',
+                    emails=contains_inanyorder(
                         has_entries(
-                            'address', 'bar@example.com',
-                            'main', True,
-                            'confirmed', False,
+                            address='bar@example.com',
+                            main=True,
+                            confirmed=False,
                         ),
                     ),
                 ),
                 has_entries(
-                    'uuid', baz,
-                    'username', 'baz',
-                    'emails', contains_inanyorder(
+                    uuid=baz,
+                    username='baz',
+                    emails=contains_inanyorder(
                         has_entries(
-                            'address', 'baz@example.com',
-                            'main', True,
-                            'confirmed', False,
+                            address='baz@example.com',
+                            main=True,
+                            confirmed=False,
                         ),
                     ),
                 )
@@ -436,13 +437,13 @@ class TestUserDAO(base.DAOTestCase):
             result,
             contains_inanyorder(
                 has_entries(
-                    'uuid', foo,
-                    'username', 'foo',
-                    'emails', contains_inanyorder(
+                    uuid=foo,
+                    username='foo',
+                    emails=contains_inanyorder(
                         has_entries(
-                            'address', 'foo@example.com',
-                            'main', True,
-                            'confirmed', False,
+                            address='foo@example.com',
+                            main=True,
+                            confirmed=False,
                         ),
                     ),
                 )
@@ -459,13 +460,13 @@ class TestUserDAO(base.DAOTestCase):
             result,
             contains_inanyorder(
                 has_entries(
-                    'uuid', foo,
-                    'username', 'foo',
-                    'emails', contains_inanyorder(
+                    uuid=foo,
+                    username='foo',
+                    emails=contains_inanyorder(
                         has_entries(
-                            'address', 'foo@example.com',
-                            'main', True,
-                            'confirmed', False,
+                            address='foo@example.com',
+                            main=True,
+                            confirmed=False,
                         ),
                     ),
                 ),
@@ -477,13 +478,13 @@ class TestUserDAO(base.DAOTestCase):
             result,
             contains_inanyorder(
                 has_entries(
-                    'uuid', foo,
-                    'username', 'foo',
-                    'emails', contains_inanyorder(
+                    uuid=foo,
+                    username='foo',
+                    emails=contains_inanyorder(
                         has_entries(
-                            'address', 'foo@example.com',
-                            'main', True,
-                            'confirmed', False,
+                            address='foo@example.com',
+                            main=True,
+                            confirmed=False,
                         ),
                     ),
                 )
@@ -502,13 +503,13 @@ class TestUserDAO(base.DAOTestCase):
             result,
             contains_inanyorder(
                 has_entries(
-                    'uuid', foo,
-                    'username', 'foo',
-                    'emails', contains_inanyorder(
+                    uuid=foo,
+                    username='foo',
+                    emails=contains_inanyorder(
                         has_entries(
-                            'address', 'foo@example.com',
-                            'main', True,
-                            'confirmed', False,
+                            address='foo@example.com',
+                            main=True,
+                            confirmed=False,
                         ),
                     ),
                 )
@@ -527,19 +528,19 @@ class TestUserDAO(base.DAOTestCase):
     def test_pagination(self, i, h, g, f, e, d, c, b, a):
         result = self._user_dao.list_(order='username', direction='desc', limit=1, offset=0)
         assert_that(result, contains_inanyorder(
-            has_entries('uuid', i),
+            has_entries(uuid=i),
         ))
 
         result = self._user_dao.list_(order='username', direction='asc', limit=2, offset=1)
         assert_that(result, contains_inanyorder(
-            has_entries('uuid', b),
-            has_entries('uuid', c),
+            has_entries(uuid=b),
+            has_entries(uuid=c),
         ))
 
         result = self._user_dao.list_(order='username', direction='asc', limit=2, offset=1)
         assert_that(result, contains_inanyorder(
-            has_entries('uuid', b),
-            has_entries('uuid', c),
+            has_entries(uuid=b),
+            has_entries(uuid=c),
         ))
 
     @fixtures.user()
