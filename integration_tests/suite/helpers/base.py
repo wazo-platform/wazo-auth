@@ -50,6 +50,8 @@ class DAOTestCase(unittest.TestCase):
         self._tenant_dao = tenant.TenantDAO(db_uri)
         self._token_dao = token.TokenDAO(db_uri)
 
+        self.top_tenant_uuid = self._tenant_dao.find_top_tenant()
+
 
 class BaseTestCase(AssetLaunchingTestCase):
 
