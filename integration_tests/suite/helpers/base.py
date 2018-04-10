@@ -160,6 +160,8 @@ class MockBackendTestCase(BaseTestCase):
         token = self.client.token.new(backend='mock', expiration=3600)['token']
         self.client.set_token(token)
 
+        self.top_tenant_uuid = self.get_master_tenant()['uuid']
+
     def get_master_tenant(self):
         return self.client.tenants.list(name='master')['items'][0]
 

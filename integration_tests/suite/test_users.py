@@ -188,12 +188,21 @@ class TestUsers(MockBackendTestCase):
                     'firstname', None,
                     'lastname', 'Denver',
                     'enabled', True,
+                    'tenant_uuid', uuid_(),
                     'emails', contains_inanyorder(
                         has_entries(
                             'uuid', uuid_(),
                             'address', 'foobar@example.com',
                             'main', True,
                             'confirmed', False))))
+
+            created_tenant = self.client.tenants.get(user['tenant_uuid'])
+            assert_that(
+                created_tenant,
+                has_entries(
+                    parent_uuid=self.top_tenant_uuid,
+                )
+            )
 
             last_email = self.get_emails()[-1]
             url = [l for l in last_email.split('\n') if l.startswith('https://')][0]
