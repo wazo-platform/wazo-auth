@@ -120,11 +120,15 @@ class TestExternalAuthAPI(base.MockBackendTestCase):
         time.sleep(1)  # wazo-auth needs some time to connect its websocket
         self.authorize_oauth2('foo', result['state'], token)
 
-        def token_is_stored():
-            data = self.client.external.get('foo', user['uuid'])
-            assert_that(data, has_entries(access_token=token))
+        def oauth2_is_done():
+            try:
+                return self.client.external.get('foo', user['uuid'])
+            except requests.HTTPError:
+                return False
 
-        until.assert_(token_is_stored, tries=10, interval=0.25)
+        data = until.true(oauth2_is_done, timeout=5, interval=0.25)
+
+        assert_that(data, has_entries(access_token=token))
 
         def bus_received_msg():
             assert_that(
