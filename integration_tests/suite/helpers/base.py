@@ -187,9 +187,23 @@ class WazoAuthTestCase(BaseTestCase):
         return cls.client.tenants.list(name='master')['items'][0]
 
     @contextmanager
-    def client_in_subtenant(self):
+    def tenant(self, client, *args, **kwargs):
+        tenant = client.tenants.new(*args, **kwargs)
+        try:
+            yield tenant
+        finally:
+            try:
+                client.tenants.delete(tenant['uuid'])
+            except Exception:
+                pass
+
+    @contextmanager
+    def client_in_subtenant(self, parent_uuid=None):
         username, password = 'theuser', 'secre7'
-        tenant = self.client.tenants.new(name='mytenant')
+        tenant_args = {'name': 'mytenant'}
+        if parent_uuid:
+            tenant_args['tenant_uuid'] = parent_uuid
+        tenant = self.client.tenants.new(**tenant_args)
         user = self.client.users.new(username=username, password=password, tenant_uuid=tenant['uuid'])
         client = self.new_auth_client(username, password)
         token = client.token.new(backend='wazo_user', expiration=3600)['token']

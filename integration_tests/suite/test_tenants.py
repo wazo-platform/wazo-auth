@@ -61,17 +61,12 @@ class TestTenants(WazoAuthTestCase):
             address=has_entries(**ADDRESS_1),
         ))
 
-        subtenant = self.client.tenants.new(name='subtenant', parent_uuid=foobar['uuid'])
-        try:
+        with self.tenant(self.client, name='subtenant', parent_uuid=foobar['uuid']) as subtenant:
             assert_that(subtenant, has_entries(
                 uuid=uuid_(),
                 name='subtenant',
                 parent_uuid=foobar['uuid'],
             ))
-        finally:
-            self.client.tenants.delete(subtenant['uuid'])
-
-        assert_http_error(404, self.client.tenants.new, contact=UNKNOWN_UUID)
 
     @fixtures.http_tenant()
     def test_delete(self, tenant):
