@@ -13,6 +13,7 @@ class BaseService(object):
 
     def __init__(self, dao):
         self._dao = dao
+        self.top_tenant_uuid = self._dao.tenant.find_top_tenant()
 
 
 class TemplateLoader(BaseLoader):

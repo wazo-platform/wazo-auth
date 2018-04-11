@@ -43,8 +43,6 @@ class TestTenantTree(TestCase):
         self.tree = TenantTree(self.tenants)
 
     def test_list_nodes(self):
-        print self.tree._tree.show()
-
         result = self.tree.list_nodes(self.f['uuid'])
         assert_that(result, contains_inanyorder(self.f['uuid']))
 

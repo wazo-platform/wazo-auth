@@ -27,9 +27,10 @@ class TestEmailConfirmation(WazoAuthTestCase):
     @fixtures.http_user_register(email_address='foobar@example.com')
     def test_email_confirmation_get(self, user):
         email_uuid = user['emails'][0]['uuid']
+
         port = self.service_port(9497, 'auth')
         url = 'https://{}:{}/0.1/emails/{}/confirm'.format(self.get_host(), port, email_uuid)
-        token = self.admin_client.token
+        token = self.client._token_id
         response = requests.get(url, params={'token': token}, verify=False)
         assert_that(response.status_code, equal_to(200))
 

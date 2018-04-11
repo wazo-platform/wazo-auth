@@ -40,6 +40,7 @@ paths:
           required: true
           schema:
             $ref: '#/definitions/UserCreate'
+        - $ref: '#/parameters/tenantuuid'
       responses:
         '200':
           description: The new user data without the password

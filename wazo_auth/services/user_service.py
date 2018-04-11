@@ -8,7 +8,7 @@ import logging
 import os
 
 from wazo_auth import exceptions
-from wazo_auth.services.helpers import BaseService
+from wazo_auth.services.helpers import BaseService, TenantTree
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ class UserService(BaseService):
         return self._dao.user.count_policies(user_uuid, **kwargs)
 
     def count_tenants(self, user_uuid, **kwargs):
-        return self._dao.user.count_tenants(user_uuid, **kwargs)
+        return len(self.list_tenants(user_uuid, **kwargs))
 
     def count_users(self, **kwargs):
         return self._dao.user.count(**kwargs)
@@ -80,7 +80,14 @@ class UserService(BaseService):
         return self._dao.policy.get(user_uuid=user_uuid, **kwargs)
 
     def list_tenants(self, user_uuid, **kwargs):
-        return self._dao.tenant.list_(user_uuid=user_uuid, **kwargs)
+        tenant_uuid = self.get_user(user_uuid)['tenant_uuid']
+
+        # TODO the tenant_tree instance could be stored globaly and rebuild when adding/deleting tenants
+        all_tenants = self._dao.tenant.list_()
+        tenant_tree = TenantTree(all_tenants)
+        tenant_uuids = tenant_tree.list_nodes(tenant_uuid)
+
+        return self._dao.tenant.list_(uuids=tenant_uuids, **kwargs)
 
     def list_users(self, **kwargs):
         return self._dao.user.list_(**kwargs)

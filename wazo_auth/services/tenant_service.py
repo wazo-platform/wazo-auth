@@ -4,7 +4,7 @@
 
 from xivo_bus.resources.auth import events
 from wazo_auth import exceptions
-from wazo_auth.services.helpers import BaseService
+from wazo_auth.services.helpers import BaseService, TenantTree
 
 
 class TenantService(BaseService):
@@ -48,6 +48,12 @@ class TenantService(BaseService):
 
     def list_users(self, tenant_uuid, **kwargs):
         return self._dao.user.list_(tenant_uuid=tenant_uuid, **kwargs)
+
+    def list_sub_tenants(self, tenant_uuid):
+        # TODO the tenant_tree instance could be stored globaly and rebuild when adding/deleting tenants
+        all_tenants = self._dao.tenant.list_()
+        tenant_tree = TenantTree(all_tenants)
+        return tenant_tree.list_nodes(tenant_uuid)
 
     def new(self, **kwargs):
         address_id = self._dao.address.new(**kwargs['address'])

@@ -2,11 +2,14 @@
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+import logging
 from flask import request
 from wazo_auth import exceptions, http, schemas
 from wazo_auth.flask_helpers import Tenant
 
 from .schemas import ChangePasswordSchema, UserPostSchema, UserPutSchema
+
+logger = logging.getLogger(__name__)
 
 
 class BaseUserService(http.AuthResource):
@@ -79,5 +82,6 @@ class Users(BaseUserService):
         tenant = Tenant.autodetect()
         if errors:
             raise exceptions.UserParamException.from_errors(errors)
+        logger.debug('creating user in tenant: %s', tenant.uuid)
         result = self.user_service.new_user(email_confirmed=True, tenant_uuid=tenant.uuid, **args)
         return result, 200
