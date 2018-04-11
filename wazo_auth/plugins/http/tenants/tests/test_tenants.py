@@ -75,28 +75,5 @@ class TestTenantPost(HTTPAppTestCase):
                 zip_code=None,
                 country=None))
 
-    def test_get(self):
-        self.tenant_service.count.side_effect = expected_total, expected_filtered = 5, 2
-        self.tenant_service.list_.return_value = expected_items = [{'name': 'one'}, {'name': 'two'}]
-
-        result = self.get()
-
-        assert_that(result.status_code, equal_to(200))
-        assert_that(
-            json.loads(result.data),
-            has_entries(
-                'total', expected_total,
-                'filtered', expected_filtered,
-                'items', expected_items,
-            ),
-        )
-
-    def delete(self, tenant_uuid):
-        url = '{}/{}'.format(self.url, tenant_uuid)
-        return self.app.delete(url, headers=self.headers)
-
-    def get(self, **data):
-        return self.app.get(self.url, query_string=data, headers=self.headers)
-
     def post(self, data):
         return self.app.post(self.url, data=json.dumps(data), headers=self.headers)
