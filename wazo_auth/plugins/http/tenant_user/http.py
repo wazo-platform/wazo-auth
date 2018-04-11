@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -14,21 +14,6 @@ class _BaseResource(http.AuthResource):
 
     def __init__(self, tenant_service):
         self.tenant_service = tenant_service
-
-
-class TenantUser(_BaseResource):
-
-    @http.required_acl('auth.tenants.{tenant_uuid}.users.{user_uuid}.delete')
-    def delete(self, tenant_uuid, user_uuid):
-        logger.debug('disassociating tenant %s user %s', tenant_uuid, user_uuid)
-        self.tenant_service.remove_user(tenant_uuid, user_uuid)
-        return '', 204
-
-    @http.required_acl('auth.tenants.{tenant_uuid}.users.{user_uuid}.create')
-    def put(self, tenant_uuid, user_uuid):
-        logger.debug('associating tenant %s user %s', tenant_uuid, user_uuid)
-        self.tenant_service.add_user(tenant_uuid, user_uuid)
-        return '', 204
 
 
 class TenantUsers(_BaseResource):

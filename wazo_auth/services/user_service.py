@@ -94,9 +94,6 @@ class UserService(BaseService):
         kwargs.setdefault('tenant_uuid', self._dao.tenant.find_top_tenant())
         user = self._dao.user.create(**kwargs)
 
-        # TODO: remove this association and use the tenant tree implicitly
-        self._dao.tenant.add_user(kwargs['tenant_uuid'], user['uuid'])
-
         return user
 
     def remove_policy(self, user_uuid, policy_uuid):

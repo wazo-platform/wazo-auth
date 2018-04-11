@@ -69,7 +69,6 @@ def http_admin_client(**decorator_args):
             creator_client.set_token(creator_token['token'])
 
             tenant = creator_client.tenants.new(name=decorator_args['tenant_name'])
-            creator_client.tenants.add_user(tenant['uuid'], creator['uuid'])
 
             username, password = decorator_args['username'], 'secret'
             created_user = creator_client.users.new(

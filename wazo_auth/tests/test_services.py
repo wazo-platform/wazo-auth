@@ -318,29 +318,3 @@ class TestTenantService(BaseServiceTestCase):
         assert_that(
             calling(self.service.remove_policy).with_args(s.tenant_uuid, s.policy_uuid),
             not_(raises(Exception)))
-
-    def test_remove_user(self):
-        def when(nb_deleted, tenant_exists=True, user_exists=True):
-            self.tenant_dao.remove_user.return_value = nb_deleted
-            self.tenant_dao.exists.return_value = tenant_exists
-            self.user_dao.exists.return_value = user_exists
-
-        when(nb_deleted=0, tenant_exists=False)
-        assert_that(
-            calling(self.service.remove_user).with_args(s.tenant_uuid, s.user_uuid),
-            raises(exceptions.UnknownTenantException))
-
-        when(nb_deleted=0, user_exists=False)
-        assert_that(
-            calling(self.service.remove_user).with_args(s.tenant_uuid, s.user_uuid),
-            raises(exceptions.UnknownUserException))
-
-        when(nb_deleted=0)
-        assert_that(
-            calling(self.service.remove_user).with_args(s.tenant_uuid, s.user_uuid),
-            not_(raises(Exception)))
-
-        when(nb_deleted=1)
-        assert_that(
-            calling(self.service.remove_user).with_args(s.tenant_uuid, s.user_uuid),
-            not_(raises(Exception)))

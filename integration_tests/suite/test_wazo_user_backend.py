@@ -42,7 +42,6 @@ class TestWazoUserBackend(MockBackendTestCase):
     def test_token_metadata(self, user, tenant, group):
         master_tenant = self.get_master_tenant()
         self.client.groups.add_user(group['uuid'], user['uuid'])
-        self.client.tenants.add_user(tenant['uuid'], user['uuid'])
 
         token_data = self._post_token(user['username'], 's3cr37', backend='wazo_user')
 

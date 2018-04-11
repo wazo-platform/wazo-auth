@@ -87,9 +87,6 @@ class TestTenants(MockBackendTestCase):
             address=has_entries(**ADDRESS_1),
         ))
 
-        # XXX: remove the association when the GET or HEAD on /token can validate a tenant
-        self.admin_client.tenants.add_user(foobar['uuid'], self.admin_user_uuid)
-
         subtenant = self.admin_client.tenants.new(name='subtenant', parent_uuid=foobar['uuid'])
         try:
             assert_that(subtenant, has_entries(

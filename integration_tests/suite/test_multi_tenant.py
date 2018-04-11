@@ -22,7 +22,6 @@ class TestMultiTenant(MockBackendTestCase):
         creator_token = creator_client.token.new(backend='wazo_user')
         creator_client.set_token(creator_token['token'])
         created_tenant = creator_client.tenants.new(name='created-tenant')
-        creator_client.tenants.add_user(created_tenant['uuid'], creator_user['uuid'])
 
         created_user = creator_client.users.new(username='created-user', password='opensesame', tenant_uuid=created_tenant['uuid'])
 
