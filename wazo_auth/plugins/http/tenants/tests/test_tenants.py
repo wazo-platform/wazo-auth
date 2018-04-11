@@ -18,13 +18,6 @@ class TestTenantPost(HTTPAppTestCase):
         config['enabled_http_plugins']['tenants'] = True
         super(TestTenantPost, self).setUp(config)
 
-    def test_delete(self):
-        uuid = 'c6b27903-e0af-43ac-80d9-6ea88e187537'
-        result = self.delete(uuid)
-
-        assert_that(result.status_code, equal_to(204))
-        self.tenant_service.delete.assert_called_once_with(uuid)
-
     @patch('wazo_auth.plugins.http.tenants.http.TenantDetector')
     def test_invalid_posts(self, TenantDetector):
         TenantDetector.autodetect.return_value = Mock(uuid=s.tenant_uuid)

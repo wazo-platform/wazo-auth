@@ -25,7 +25,11 @@ class TenantService(BaseService):
     def count(self, **kwargs):
         return self._dao.tenant.count(**kwargs)
 
-    def delete(self, uuid):
+    def delete(self, top_tenant_uuid, uuid):
+        visible_tenants = self.list_sub_tenants(top_tenant_uuid)
+        if uuid not in visible_tenants:
+            raise exceptions.UnknownTenantException(uuid)
+
         result = self._dao.tenant.delete(uuid)
         event = events.TenantDeletedEvent(uuid)
         self._bus_publisher.publish(event)

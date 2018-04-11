@@ -21,8 +21,11 @@ class Tenant(BaseResource):
 
     @http.required_acl('auth.tenants.{tenant_uuid}.delete')
     def delete(self, tenant_uuid):
-        logger.debug('deleting tenant %s', tenant_uuid)
-        self.tenant_service.delete(tenant_uuid)
+        tenant = TenantDetector.autodetect()
+        logger.debug('deleting tenant %s from %s', tenant_uuid, tenant.uuid)
+
+        self.tenant_service.delete(tenant.uuid, tenant_uuid)
+
         return '', 204
 
     @http.required_acl('auth.tenants.{tenant_uuid}.read')

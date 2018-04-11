@@ -13,7 +13,13 @@ from hamcrest import (
 )
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers import fixtures
-from .helpers.base import ADDRESS_NULL, assert_http_error, WazoAuthTestCase, UNKNOWN_UUID
+from .helpers.base import (
+    ADDRESS_NULL,
+    assert_http_error,
+    assert_no_error,
+    WazoAuthTestCase,
+    UNKNOWN_UUID,
+)
 
 ADDRESS_1 = {
     'line_1': 'Here',
@@ -69,8 +75,11 @@ class TestTenants(WazoAuthTestCase):
 
     @fixtures.http_tenant()
     def test_delete(self, tenant):
-        self.client.tenants.delete(tenant['uuid'])
+        with self.client_in_subtenant() as (client, user, sub_tenant):
+            assert_http_error(404, client.tenants.delete, tenant['uuid'])
+            assert_no_error(client.tenants.delete, sub_tenant['uuid'])
 
+        assert_no_error(self.client.tenants.delete, tenant['uuid'])
         assert_http_error(404, self.client.tenants.delete, tenant['uuid'])
 
     @fixtures.http_tenant(address=ADDRESS_1)

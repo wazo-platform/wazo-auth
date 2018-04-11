@@ -8,6 +8,7 @@ import time
 import requests
 import unittest
 
+from contextlib import contextmanager
 from hamcrest import assert_that, calling, has_properties, equal_to
 from xivo_test_helpers.hamcrest.raises import raises
 from xivo_auth_client import Client
@@ -184,6 +185,24 @@ class WazoAuthTestCase(BaseTestCase):
     @classmethod
     def get_master_tenant(cls):
         return cls.client.tenants.list(name='master')['items'][0]
+
+    @contextmanager
+    def client_in_subtenant(self):
+        username, password = 'theuser', 'secre7'
+        tenant = self.client.tenants.new(name='mytenant')
+        user = self.client.users.new(username=username, password=password, tenant_uuid=tenant['uuid'])
+        client = self.new_auth_client(username, password)
+        token = client.token.new(backend='wazo_user', expiration=3600)['token']
+        client.set_token(token)
+
+        try:
+            yield client, user, tenant
+        finally:
+            self.client.token.revoke(token)
+            try:
+                self.client.tenants.delete(tenant['uuid'])
+            except Exception:
+                pass
 
 
 def assert_no_error(fn, *args, **kwargs):
