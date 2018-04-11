@@ -47,14 +47,15 @@ class Tenants(BaseResource):
 
     @http.required_acl('auth.tenants.read')
     def get(self):
+        tenant = TenantDetector.autodetect()
         ListSchema = schemas.new_list_schema('name')
         list_params, errors = ListSchema().load(request.args)
         if errors:
             raise exceptions.InvalidListParamException(errors)
 
-        tenants = self.tenant_service.list_(**list_params)
-        total = self.tenant_service.count(filtered=False, **list_params)
-        filtered = self.tenant_service.count(filtered=True, **list_params)
+        tenants = self.tenant_service.list_(tenant.uuid, **list_params)
+        total = self.tenant_service.count(tenant.uuid, filtered=False, **list_params)
+        filtered = self.tenant_service.count(tenant.uuid, filtered=True, **list_params)
 
         response = {
             'filtered': filtered,

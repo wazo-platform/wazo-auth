@@ -122,6 +122,12 @@ class TestTenants(WazoAuthTestCase):
         assert_http_error(400, self.client.tenants.list, limit='foo')
         assert_http_error(400, self.client.tenants.list, offset=-1)
 
+        with self.client_in_subtenant() as (client, user, sub_tenant):
+            with self.tenant(client, name='subsub') as subsub:
+                result = client.tenants.list()
+                matcher = contains(sub_tenant, subsub)
+                then(result, total=2, filtered=2, item_matcher=matcher)
+
     @fixtures.http_tenant()
     @fixtures.http_user()
     def test_put(self, user, tenant):

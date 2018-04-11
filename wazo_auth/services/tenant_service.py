@@ -22,8 +22,9 @@ class TenantService(BaseService):
     def count_users(self, tenant_uuid, **kwargs):
         return self._dao.tenant.count_users(tenant_uuid, **kwargs)
 
-    def count(self, **kwargs):
-        return self._dao.tenant.count(**kwargs)
+    def count(self, top_tenant_uuid, **kwargs):
+        visible_tenants = self.list_sub_tenants(top_tenant_uuid)
+        return self._dao.tenant.count(tenant_uuids=visible_tenants, **kwargs)
 
     def delete(self, top_tenant_uuid, uuid):
         visible_tenants = self.list_sub_tenants(top_tenant_uuid)
@@ -51,8 +52,9 @@ class TenantService(BaseService):
             return tenant
         raise exceptions.UnknownTenantException(uuid)
 
-    def list_(self, **kwargs):
-        return self._dao.tenant.list_(**kwargs)
+    def list_(self, top_tenant_uuid, **kwargs):
+        visible_tenants = self.list_sub_tenants(top_tenant_uuid)
+        return self._dao.tenant.list_(tenant_uuids=visible_tenants, **kwargs)
 
     def list_policies(self, tenant_uuid, **kwargs):
         return self._dao.policy.list_(tenant_uuid=tenant_uuid, **kwargs)

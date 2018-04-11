@@ -49,14 +49,14 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                         raise exceptions.UnknownPolicyException(policy_uuid)
                 raise
 
-    def count(self, **kwargs):
+    def count(self, tenant_uuids, **kwargs):
+        filter_ = Tenant.uuid.in_(tenant_uuids)
+
         filtered = kwargs.get('filtered')
         if filtered is not False:
             strict_filter = self.new_strict_filter(**kwargs)
             search_filter = self.new_search_filter(**kwargs)
-            filter_ = and_(strict_filter, search_filter)
-        else:
-            filter_ = text('true')
+            filter_ = and_(filter_, strict_filter, search_filter)
 
         with self.new_session() as s:
             return s.query(Tenant).filter(filter_).count()
@@ -144,10 +144,15 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def list_(self, **kwargs):
         schema = schemas.TenantSchema()
+        filter_ = text('true')
+
+        tenant_uuids = kwargs.get('tenant_uuids')
+        if tenant_uuids is not None:
+            filter_ = Tenant.uuid.in_(tenant_uuids)
 
         search_filter = self.new_search_filter(**kwargs)
         strict_filter = self.new_strict_filter(**kwargs)
-        filter_ = and_(strict_filter, search_filter)
+        filter_ = and_(filter_, strict_filter, search_filter)
 
         with self.new_session() as s:
             query = s.query(
