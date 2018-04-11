@@ -153,7 +153,7 @@ class WazoAuthTestCase(BaseTestCase):
 
     username = 'admin'
     password = 's3cre7'
-    asset = 'mock_backend'
+    asset = 'base'
 
     @classmethod
     def setUpClass(cls):
