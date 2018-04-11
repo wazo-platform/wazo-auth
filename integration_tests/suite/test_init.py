@@ -2,6 +2,9 @@
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+import os
+
+from xivo_auth_client import Client
 from xivo_test_helpers.mock import ANY_UUID
 from hamcrest import (
     assert_that,
@@ -11,18 +14,27 @@ from hamcrest import (
 )
 from .helpers.base import (
     assert_http_error,
-    WazoAuthTestCase,
+    BaseTestCase,
 )
 
 INVALID_KEY = '0' * 20
 
 
-class TestInit(WazoAuthTestCase):
+class TestInit(BaseTestCase):
+
+    asset = 'base'
 
     def setUp(self):
         super(TestInit, self).setUp()
         self.docker_exec(['wazo-auth-bootstrap'])
         self.key = self.docker_exec(['cat', '/var/lib/wazo-auth/init.key'])
+        HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
+        port = self.service_port(9497, 'auth')
+        self.client = Client(
+            HOST,
+            port=port,
+            verify_certificate=False,
+        )
 
     def test_post(self):
         body = {
@@ -49,6 +61,9 @@ class TestInit(WazoAuthTestCase):
                 total=1,
             )
         )
+
+    def get_master_tenant(self):
+        return self.client.tenants.list(name='master')['items'][0]
 
 
 def copy_without(body, key):
