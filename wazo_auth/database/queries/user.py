@@ -183,6 +183,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 'lastname': user.lastname,
                 'emails': emails,
                 'enabled': user.enabled,
+                'tenant_uuid': user.tenant_uuid,
             }
 
     def delete(self, user_uuid):
@@ -253,6 +254,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 User.firstname,
                 User.lastname,
                 User.enabled,
+                User.tenant_uuid,
                 UserEmail.main,
                 Email.uuid,
                 Email.address,
@@ -272,6 +274,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     firstname,
                     lastname,
                     enabled,
+                    tenant_uuid,
                     main_email,
                     email_uuid,
                     address,
@@ -286,6 +289,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                         'emails': [],
                         'firstname': firstname,
                         'lastname': lastname,
+                        'tenant_uuid': tenant_uuid,
                     }
 
                 if address:

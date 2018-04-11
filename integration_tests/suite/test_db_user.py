@@ -354,6 +354,7 @@ class TestUserDAO(base.DAOTestCase):
                 has_entries(
                     uuid=a,
                     username='a',
+                    tenant_uuid=self.top_tenant_uuid,
                     emails=contains_inanyorder(
                         has_entries(
                             address='a@example.com',
@@ -365,6 +366,7 @@ class TestUserDAO(base.DAOTestCase):
                 has_entries(
                     uuid=b,
                     username='b',
+                    tenant_uuid=self.top_tenant_uuid,
                     emails=contains_inanyorder(
                         has_entries(
                             address='b@example.com',
@@ -376,6 +378,7 @@ class TestUserDAO(base.DAOTestCase):
                 has_entries(
                     uuid=c,
                     username='c',
+                    tenant_uuid=self.top_tenant_uuid,
                     emails=contains_inanyorder(
                         has_entries(
                             address='c@example.com',
@@ -399,6 +402,7 @@ class TestUserDAO(base.DAOTestCase):
                 has_entries(
                     uuid=foo,
                     username='foo',
+                    tenant_uuid=self.top_tenant_uuid,
                     emails=contains_inanyorder(
                         has_entries(
                             address='foo@example.com',
@@ -410,6 +414,7 @@ class TestUserDAO(base.DAOTestCase):
                 has_entries(
                     uuid=bar,
                     username='bar',
+                    tenant_uuid=self.top_tenant_uuid,
                     emails=contains_inanyorder(
                         has_entries(
                             address='bar@example.com',
@@ -421,6 +426,7 @@ class TestUserDAO(base.DAOTestCase):
                 has_entries(
                     uuid=baz,
                     username='baz',
+                    tenant_uuid=self.top_tenant_uuid,
                     emails=contains_inanyorder(
                         has_entries(
                             address='baz@example.com',
