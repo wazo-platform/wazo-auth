@@ -43,8 +43,6 @@ def _new_token_id():
 
 class TestCore(WazoAuthTestCase):
 
-    asset = 'mock_backend'
-
     def setUp(self):
         self.user = self.admin_client.users.new(username='foo', password='bar')
 

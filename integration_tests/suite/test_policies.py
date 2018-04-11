@@ -24,8 +24,6 @@ UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
 
 class TestPolicies(WazoAuthTestCase):
 
-    asset = 'mock_backend'
-
     wazo_default_admin_policy = has_entries('name', 'wazo_default_admin_policy')
     wazo_default_user_policy = has_entries('name', 'wazo_default_user_policy')
     wazo_default_master_user_policy = has_entries('name', 'wazo_default_master_user_policy')

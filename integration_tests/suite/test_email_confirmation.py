@@ -10,8 +10,6 @@ from .helpers.base import assert_http_error, assert_no_error, WazoAuthTestCase, 
 
 class TestEmailConfirmation(WazoAuthTestCase):
 
-    asset = 'mock_backend'
-
     @fixtures.http_user_register(email_address='foobar@example.com')
     def test_email_confirmation(self, user):
         email_uuid = user['emails'][0]['uuid']

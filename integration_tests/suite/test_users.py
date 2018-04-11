@@ -32,8 +32,6 @@ UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
 
 class TestUsers(WazoAuthTestCase):
 
-    asset = 'mock_backend'
-
     @fixtures.http_user_register()
     def test_delete(self, user):
         assert_http_error(404, self.client.users.delete, UNKNOWN_UUID)

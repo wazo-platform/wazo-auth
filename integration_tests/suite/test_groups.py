@@ -9,8 +9,6 @@ from .helpers import base, fixtures
 
 class TestGroups(base.WazoAuthTestCase):
 
-    asset = 'mock_backend'
-
     unknown_uuid = '00000000-0000-0000-0000-000000000000'
     invalid_bodies = [
         {},

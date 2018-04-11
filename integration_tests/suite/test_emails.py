@@ -23,8 +23,6 @@ THREE = {'address': 'three@example.com', 'main': False, 'confirmed': True}
 
 class TestEmails(WazoAuthTestCase):
 
-    asset = 'mock_backend'
-
     def setUp(self):
         super(TestEmails, self).setUp()
         self.client = self.admin_client

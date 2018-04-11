@@ -15,8 +15,6 @@ from .helpers.base import (
 
 class TestResetPassword(WazoAuthTestCase):
 
-    asset = 'mock_backend'
-
     def setUp(self):
         super(TestResetPassword, self).setUp()
         self.client = self.admin_client

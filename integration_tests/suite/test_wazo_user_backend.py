@@ -19,8 +19,6 @@ from xivo_test_helpers.hamcrest.uuid_ import uuid_
 
 class TestWazoUserBackend(WazoAuthTestCase):
 
-    asset = 'mock_backend'
-
     @fixtures.http_user_register(username='foobar', email_address='foobar@example.com', password='s3cr37')
     def test_token_creation(self, user):
         response = self._post_token(user['username'], 's3cr37', backend='wazo_user')

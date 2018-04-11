@@ -14,8 +14,6 @@ from .helpers import base, fixtures
 
 class TestGroupPolicyAssociation(base.WazoAuthTestCase):
 
-    asset = 'mock_backend'
-
     @fixtures.http_policy()
     @fixtures.http_policy()
     @fixtures.http_group()

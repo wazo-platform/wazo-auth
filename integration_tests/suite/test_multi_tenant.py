@@ -14,8 +14,6 @@ from .helpers import fixtures
 
 class TestMultiTenant(WazoAuthTestCase):
 
-    asset = 'mock_backend'
-
     def test_given_user_in_new_tenant_when_create_user_then_creation_allowed(self):
         creator_user = self.admin_client.users.new(username='creator', password='opensesame')
         auth_policy = self.admin_client.policies.new(name='auth-allowed', acl_templates=['auth.#'])

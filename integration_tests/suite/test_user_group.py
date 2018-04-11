@@ -14,8 +14,6 @@ from .helpers import base, fixtures
 
 class TestUserGroupAssociation(base.WazoAuthTestCase):
 
-    asset = 'mock_backend'
-
     @fixtures.http_user_register()
     @fixtures.http_user_register()
     @fixtures.http_group()

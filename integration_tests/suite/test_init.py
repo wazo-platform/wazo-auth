@@ -19,8 +19,6 @@ INVALID_KEY = '0' * 20
 
 class TestInit(WazoAuthTestCase):
 
-    asset = 'mock_backend'
-
     def setUp(self):
         super(TestInit, self).setUp()
         self.docker_exec(['wazo-auth-bootstrap'])

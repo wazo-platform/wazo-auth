@@ -27,8 +27,6 @@ PHONE_1 = '555-555-5555'
 
 class TestTenants(WazoAuthTestCase):
 
-    asset = 'mock_backend'
-
     @fixtures.http_tenant(name='foobar', address=ADDRESS_1, phone=PHONE_1)
     @fixtures.http_tenant(uuid='6668ca15-6d9e-4000-b2ec-731bc7316767', name='foobaz')
     @fixtures.http_tenant()
