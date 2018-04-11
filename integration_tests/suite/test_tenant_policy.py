@@ -11,7 +11,9 @@ from hamcrest import (
 from .helpers import base, fixtures
 
 
-class TestTenantPolicyAssociation(base.MockBackendTestCase):
+class TestTenantPolicyAssociation(base.WazoAuthTestCase):
+
+    asset = 'mock_backend'
 
     @fixtures.http_policy(name='bar')
     @fixtures.http_policy(name='foo')

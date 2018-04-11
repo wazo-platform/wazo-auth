@@ -10,11 +10,15 @@ from xivo_test_helpers import until
 from .helpers import base, fixtures
 
 
-class TestExternalAuthAPI(base.MockBackendTestCase):
+class TestExternalAuthAPI(base.WazoAuthTestCase):
 
     asset = 'external_auth'
     safe_data = {'scope': ['one', 'two', 'three']}
     original_data = dict(secret=str(uuid4()), **safe_data)
+
+    def setUp(self):
+        super(TestExternalAuthAPI, self).setUp()
+        self.client = self.admin_client
 
     @fixtures.http_user_register()
     def test_create(self, user):

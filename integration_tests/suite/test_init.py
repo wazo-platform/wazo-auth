@@ -11,13 +11,15 @@ from hamcrest import (
 )
 from .helpers.base import (
     assert_http_error,
-    MockBackendTestCase,
+    WazoAuthTestCase,
 )
 
 INVALID_KEY = '0' * 20
 
 
-class TestInit(MockBackendTestCase):
+class TestInit(WazoAuthTestCase):
+
+    asset = 'mock_backend'
 
     def setUp(self):
         super(TestInit, self).setUp()

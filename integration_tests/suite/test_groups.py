@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from hamcrest import assert_that, contains, contains_inanyorder, equal_to, has_entries
@@ -7,7 +7,9 @@ from mock import ANY
 from .helpers import base, fixtures
 
 
-class TestGroups(base.MockBackendTestCase):
+class TestGroups(base.WazoAuthTestCase):
+
+    asset = 'mock_backend'
 
     unknown_uuid = '00000000-0000-0000-0000-000000000000'
     invalid_bodies = [

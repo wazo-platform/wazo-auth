@@ -2,6 +2,7 @@
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+import json
 import os
 import time
 import requests
@@ -84,7 +85,7 @@ class BaseTestCase(AssetLaunchingTestCase):
     def _post_token(self, username, password, backend=None, expiration=None):
         port = self.service_port(9497, 'auth')
         client = Client(self.get_host(), port, username=username, password=password, verify_certificate=False)
-        backend = backend or 'mock'
+        backend = backend or 'wazo_user'
         args = {}
         if expiration:
             args['expiration'] = expiration
@@ -142,33 +143,48 @@ class BaseTestCase(AssetLaunchingTestCase):
         else:
             self.fail('wazo-auth did not stop')
 
-
-class MockBackendTestCase(BaseTestCase):
-
-    asset = 'mock_backend'
-
-    def setUp(self):
-        super(MockBackendTestCase, self).setUp()
-        self._auth_port = self.service_port(9497, 'auth')
-        self.client = self.new_auth_client('foo', 'bar')
-
-        # create tenant
-        token = self.client.token.new(backend='mock', expiration=3600)['token']
-        self.client.set_token(token)
-
-        # create token with tenant
-        token = self.client.token.new(backend='mock', expiration=3600)['token']
-        self.client.set_token(token)
-
-        self.top_tenant_uuid = self.get_master_tenant()['uuid']
-
-    def get_master_tenant(self):
-        return self.client.tenants.list(name='master')['items'][0]
-
     def new_auth_client(self, username, password):
         host = self.get_host()
-        port = self._auth_port
+        port = self.service_port(9497, 'auth')
         return Client(host, port=port, username=username, password=password, verify_certificate=False)
+
+
+class WazoAuthTestCase(BaseTestCase):
+
+    username = 'admin'
+    password = 's3cre7'
+
+    @classmethod
+    def setUpClass(cls):
+        super(BaseTestCase, cls).setUpClass()
+        headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+        HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
+        port = cls.service_port(9497, 'auth')
+        url = 'https://{}:{}/0.1/init'.format(HOST, port)
+
+        key = cls.docker_exec(['cat', '/var/lib/wazo-auth/init.key'])
+        body = {'key': key, 'username': cls.username, 'password': cls.password}
+        response = requests.post(url, data=json.dumps(body), headers=headers, verify=False)
+        response.raise_for_status()
+
+        cls.admin_client = Client(
+            HOST,
+            port=port,
+            username=cls.username,
+            password=cls.password,
+            verify_certificate=False,
+        )
+        token_data = cls.admin_client.token.new(backend='wazo_user', expiration=7200)
+        cls.admin_user_uuid = token_data['metadata']['uuid']
+        cls.admin_client.set_token(token_data['token'])
+
+        # TODO remove the client or the admin_client once mock backend is removed
+        cls.client = cls.admin_client
+        cls.top_tenant_uuid = cls.get_master_tenant()['uuid']
+
+    @classmethod
+    def get_master_tenant(cls):
+        return cls.admin_client.tenants.list(name='master')['items'][0]
 
 
 def assert_no_error(fn, *args, **kwargs):

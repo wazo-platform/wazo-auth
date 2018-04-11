@@ -12,12 +12,14 @@ from hamcrest import (
 from .helpers import fixtures
 from .helpers.base import (
     assert_http_error,
-    MockBackendTestCase,
+    WazoAuthTestCase,
 )
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 
 
-class TestWazoUserBackend(MockBackendTestCase):
+class TestWazoUserBackend(WazoAuthTestCase):
+
+    asset = 'mock_backend'
 
     @fixtures.http_user_register(username='foobar', email_address='foobar@example.com', password='s3cr37')
     def test_token_creation(self, user):
@@ -48,8 +50,7 @@ class TestWazoUserBackend(MockBackendTestCase):
         assert_that(token_data['metadata'], has_entries(
             xivo_uuid='the-predefined-xivo-uuid',
             uuid=user['uuid'],
-            tenants=contains_inanyorder(has_entries(uuid=tenant['uuid']),
-                                        has_entries(uuid=master_tenant['uuid'])),
+            tenant_uuid=master_tenant['uuid'],
             groups=contains(has_entries(uuid=group['uuid'])),
         ))
 

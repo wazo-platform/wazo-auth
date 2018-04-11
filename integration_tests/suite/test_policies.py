@@ -15,14 +15,16 @@ from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers.base import (
     assert_no_error,
     assert_http_error,
-    MockBackendTestCase,
+    WazoAuthTestCase,
 )
 from .helpers import fixtures
 
 UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
 
 
-class TestPolicies(MockBackendTestCase):
+class TestPolicies(WazoAuthTestCase):
+
+    asset = 'mock_backend'
 
     wazo_default_admin_policy = has_entries('name', 'wazo_default_admin_policy')
     wazo_default_user_policy = has_entries('name', 'wazo_default_user_policy')

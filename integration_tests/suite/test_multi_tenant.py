@@ -8,16 +8,18 @@ from hamcrest import (
     contains_inanyorder,
     has_entries,
 )
-from helpers.base import MockBackendTestCase, assert_http_error
+from helpers.base import WazoAuthTestCase, assert_http_error
 from .helpers import fixtures
 
 
-class TestMultiTenant(MockBackendTestCase):
+class TestMultiTenant(WazoAuthTestCase):
+
+    asset = 'mock_backend'
 
     def test_given_user_in_new_tenant_when_create_user_then_creation_allowed(self):
-        creator_user = self.client.users.new(username='creator', password='opensesame')
-        auth_policy = self.client.policies.new(name='auth-allowed', acl_templates=['auth.#'])
-        self.client.users.add_policy(creator_user['uuid'], auth_policy['uuid'])
+        creator_user = self.admin_client.users.new(username='creator', password='opensesame')
+        auth_policy = self.admin_client.policies.new(name='auth-allowed', acl_templates=['auth.#'])
+        self.admin_client.users.add_policy(creator_user['uuid'], auth_policy['uuid'])
         creator_client = self.new_auth_client(username='creator', password='opensesame')
         creator_token = creator_client.token.new(backend='wazo_user')
         creator_client.set_token(creator_token['token'])
@@ -43,12 +45,12 @@ class TestMultiTenant(MockBackendTestCase):
         )
 
         # Use the Wazo-Tenant header to filter
-        tenant_uuid = self.client.tenants.list(name='test-tenant')['items'][0]['uuid']
-        assert_http_error(401, self.client.users.list, tenant_uuid=tenant_uuid)
+        tenant_uuid = self.admin_client.tenants.list(name='test-tenant')['items'][0]['uuid']
+        assert_http_error(401, self.admin_client.users.list, tenant_uuid=tenant_uuid)
 
         # List without the tenant
         assert_that(
-            self.client.users.list(),
+            self.admin_client.users.list(),
             has_entries(
                 items=contains_inanyorder(
                     has_entries(username='foo'),
