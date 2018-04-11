@@ -38,7 +38,14 @@ class TenantService(BaseService):
     def find_top_tenant(self):
         return self._dao.tenant.find_top_tenant()
 
-    def get(self, uuid):
+    def get(self, top_tenant_uuid, uuid):
+        visible_tenants = self.list_sub_tenants(top_tenant_uuid)
+        if uuid not in visible_tenants:
+            raise exceptions.UnknownTenantException(uuid)
+
+        return self._get(uuid)
+
+    def _get(self, uuid):
         tenants = self._dao.tenant.list_(uuid=uuid, limit=1)
         for tenant in tenants:
             return tenant
@@ -62,7 +69,7 @@ class TenantService(BaseService):
     def new(self, **kwargs):
         address_id = self._dao.address.new(**kwargs['address'])
         uuid = self._dao.tenant.create(address_id=address_id, **kwargs)
-        result = self.get(uuid)
+        result = self._get(uuid)
         event = events.TenantCreatedEvent(uuid, kwargs.get('name'))
         self._bus_publisher.publish(event)
         return result
@@ -87,7 +94,7 @@ class TenantService(BaseService):
 
         self._dao.tenant.update(tenant_uuid, address_id=address_id, **kwargs)
 
-        result = self.get(tenant_uuid)
+        result = self._get(tenant_uuid)
         event = events.TenantUpdatedEvent(tenant_uuid, result.get('name'))
         self._bus_publisher.publish(event)
         return result

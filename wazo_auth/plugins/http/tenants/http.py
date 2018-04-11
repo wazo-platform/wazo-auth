@@ -30,7 +30,8 @@ class Tenant(BaseResource):
 
     @http.required_acl('auth.tenants.{tenant_uuid}.read')
     def get(self, tenant_uuid):
-        return self.tenant_service.get(tenant_uuid)
+        tenant = TenantDetector.autodetect()
+        return self.tenant_service.get(tenant.uuid, tenant_uuid)
 
     @http.required_acl('auth.tenants.{tenant_uuid}.edit')
     def put(self, tenant_uuid):

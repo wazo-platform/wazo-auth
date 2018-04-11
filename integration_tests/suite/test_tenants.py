@@ -79,8 +79,12 @@ class TestTenants(WazoAuthTestCase):
 
     @fixtures.http_tenant(address=ADDRESS_1)
     def test_get_one(self, tenant):
-        result = self.client.tenants.get(tenant['uuid'])
+        with self.client_in_subtenant() as (client, user, sub_tenant):
+            assert_http_error(404, client.tenants.get, tenant['uuid'])
+            result = client.tenants.get(sub_tenant['uuid'])
+            assert_that(result, equal_to(sub_tenant))
 
+        result = self.client.tenants.get(tenant['uuid'])
         assert_that(result, equal_to(tenant))
 
         assert_http_error(404, self.client.tenants.get, UNKNOWN_UUID)
