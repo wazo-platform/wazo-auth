@@ -18,6 +18,7 @@ class XiVOAdmin(BaseAuthenticationBackend, ACLRenderingBackend):
         super(XiVOAdmin, self).load(dependencies)
         self._tenant_service = dependencies['tenant_service']
         xivo_dao.init_db_from_config(dependencies['config'])
+        self._top_tenant_uuid = self._tenant_service.find_top_tenant()
 
     def get_acls(self, login, args):
         acl_templates = args.get('acl_templates', [])
@@ -33,7 +34,9 @@ class XiVOAdmin(BaseAuthenticationBackend, ACLRenderingBackend):
 
             # add the tenant_uuid when fetching admin entities
             entity, tenant_uuid = admin_dao.get_admin_entity(login)
+
             metadata['entity'] = entity
+            metadata['tenant_uuid'] = tenant_uuid or self._top_tenant_uuid
             metadata['tenants'] = self._build_tenants(entity, tenant_uuid)
 
         return metadata
