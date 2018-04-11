@@ -140,6 +140,10 @@ class TestTenants(WazoAuthTestCase):
         body_with_unknown_contact = dict(body)
         body_with_unknown_contact['contact'] = UNKNOWN_UUID
 
+        with self.client_in_subtenant() as (client, _, sub_tenant):
+            assert_http_error(404, client.tenants.edit, tenant['uuid'], **body)
+            assert_no_error(client.tenants.edit, sub_tenant['uuid'], **body)
+
         assert_http_error(400, self.client.tenants.edit, tenant['uuid'], name=False)
         assert_http_error(404, self.client.tenants.edit, UNKNOWN_UUID, **body)
         assert_http_error(404, self.client.tenants.edit, tenant['uuid'], **body_with_unknown_contact)

@@ -87,7 +87,11 @@ class TenantService(BaseService):
         if not self._dao.policy.exists(policy_uuid):
             raise exceptions.UnknownPolicyException(policy_uuid)
 
-    def update(self, tenant_uuid, **kwargs):
+    def update(self, top_tenant_uuid, tenant_uuid, **kwargs):
+        visible_tenants = self.list_sub_tenants(top_tenant_uuid)
+        if tenant_uuid not in visible_tenants:
+            raise exceptions.UnknownTenantException(tenant_uuid)
+
         address_id = self._dao.tenant.get_address_id(tenant_uuid)
         if not address_id:
             address_id = self._dao.address.new(**kwargs['address'])
