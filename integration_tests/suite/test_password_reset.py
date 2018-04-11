@@ -15,10 +15,6 @@ from .helpers.base import (
 
 class TestResetPassword(WazoAuthTestCase):
 
-    def setUp(self):
-        super(TestResetPassword, self).setUp()
-        self.client = self.admin_client
-
     @fixtures.http_user(username='foo', email_address='foo@example.com')
     @fixtures.http_user(username='bar', email_address='bar@example.com')
     def test_password_reset(self, bar, foo):

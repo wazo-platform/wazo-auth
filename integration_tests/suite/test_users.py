@@ -79,7 +79,7 @@ class TestUsers(WazoAuthTestCase):
         }
 
         # User created in our own tenant
-        with self.auto_remove_user(self.admin_client.users.new, **args) as user:
+        with self.auto_remove_user(self.client.users.new, **args) as user:
             assert_that(user, not_(has_key('password')))
             assert_that(user, has_entries(
                 'uuid', uuid_(),
@@ -100,7 +100,7 @@ class TestUsers(WazoAuthTestCase):
             assert_that(tenants['items'], has_items(has_entries(uuid=self.top_tenant_uuid)))
 
         # User created in subtenant
-        with self.auto_remove_user(self.admin_client.users.new, tenant_uuid=isolated['uuid'], **args) as user:
+        with self.auto_remove_user(self.client.users.new, tenant_uuid=isolated['uuid'], **args) as user:
             assert_that(user, has_entries(
                 'uuid', uuid_(),
                 'username', 'foobar',
@@ -410,21 +410,21 @@ class TestUsers(WazoAuthTestCase):
         try:
             yield user
         finally:
-            self.admin_client.users.delete(user['uuid'])
+            self.client.users.delete(user['uuid'])
 
     @contextmanager
     def multi_tenant_client(self, tenant):
         username, password = 'subtenantadmin', '40bfb526-f88a-41e1-a48a-072eb7034665'
-        admin = self.admin_client.users.new(
+        admin = self.client.users.new(
             username=username,
             password=password,
             tenant_uuid=tenant['uuid'],
         )
-        policy = self.admin_client.policies.new(
+        policy = self.client.policies.new(
             name='admin_policy',
             acl_templates=['auth.#'],
         )
-        self.admin_client.users.add_policy(admin['uuid'], policy['uuid'])
+        self.client.users.add_policy(admin['uuid'], policy['uuid'])
 
         client = self.new_auth_client(username=username, password=password)
         token = client.token.new(backend='wazo_user', expiration=3600)['token']
@@ -432,5 +432,5 @@ class TestUsers(WazoAuthTestCase):
 
         yield client
 
-        self.admin_client.users.delete(admin['uuid'])
-        self.admin_client.policies.delete(policy['uuid'])
+        self.client.users.delete(admin['uuid'])
+        self.client.policies.delete(policy['uuid'])

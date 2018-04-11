@@ -44,10 +44,10 @@ def _new_token_id():
 class TestCore(WazoAuthTestCase):
 
     def setUp(self):
-        self.user = self.admin_client.users.new(username='foo', password='bar')
+        self.user = self.client.users.new(username='foo', password='bar')
 
     def tearDown(self):
-        self.admin_client.users.delete(self.user['uuid'])
+        self.client.users.delete(self.user['uuid'])
 
     def test_that_the_xivo_uuid_is_included_in_POST_response(self):
         response = self._post_token('foo', 'bar')
@@ -186,7 +186,7 @@ class TestCore(WazoAuthTestCase):
 
     @fixtures.http_policy(name='fooer', acl_templates=['foo'])
     def test_that_authorized_acls_on_HEAD_return_204(self, policy):
-        self.admin_client.users.add_policy(self.user['uuid'], policy['uuid'])
+        self.client.users.add_policy(self.user['uuid'], policy['uuid'])
 
         token = self._post_token('foo', 'bar')['token']
 
@@ -194,7 +194,7 @@ class TestCore(WazoAuthTestCase):
 
     @fixtures.http_policy(name='fooer', acl_templates=['foo'])
     def test_that_authorized_acls_on_GET_return_200(self, policy):
-        self.admin_client.users.add_policy(self.user['uuid'], policy['uuid'])
+        self.client.users.add_policy(self.user['uuid'], policy['uuid'])
 
         token = self._post_token('foo', 'bar')['token']
 

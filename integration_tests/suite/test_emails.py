@@ -23,10 +23,6 @@ THREE = {'address': 'three@example.com', 'main': False, 'confirmed': True}
 
 class TestEmails(WazoAuthTestCase):
 
-    def setUp(self):
-        super(TestEmails, self).setUp()
-        self.client = self.admin_client
-
     @fixtures.http_user(username='foobar')
     def test_email_updates_as_admin(self, foobar):
         assert_http_error(404, self.client.admin.update_user_emails, UNKNOWN_UUID, [])

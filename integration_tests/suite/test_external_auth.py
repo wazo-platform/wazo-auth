@@ -16,10 +16,6 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
     safe_data = {'scope': ['one', 'two', 'three']}
     original_data = dict(secret=str(uuid4()), **safe_data)
 
-    def setUp(self):
-        super(TestExternalAuthAPI, self).setUp()
-        self.client = self.admin_client
-
     @fixtures.http_user_register()
     def test_create(self, user):
         routing_key = 'auth.users.{}.external.foo.created'.format(user['uuid'])

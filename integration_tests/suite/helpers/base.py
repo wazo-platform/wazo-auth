@@ -168,24 +168,22 @@ class WazoAuthTestCase(BaseTestCase):
         response = requests.post(url, data=json.dumps(body), headers=headers, verify=False)
         response.raise_for_status()
 
-        cls.admin_client = Client(
+        cls.client = Client(
             HOST,
             port=port,
             username=cls.username,
             password=cls.password,
             verify_certificate=False,
         )
-        token_data = cls.admin_client.token.new(backend='wazo_user', expiration=7200)
+        token_data = cls.client.token.new(backend='wazo_user', expiration=7200)
         cls.admin_user_uuid = token_data['metadata']['uuid']
-        cls.admin_client.set_token(token_data['token'])
+        cls.client.set_token(token_data['token'])
 
-        # TODO remove the client or the admin_client once mock backend is removed
-        cls.client = cls.admin_client
         cls.top_tenant_uuid = cls.get_master_tenant()['uuid']
 
     @classmethod
     def get_master_tenant(cls):
-        return cls.admin_client.tenants.list(name='master')['items'][0]
+        return cls.client.tenants.list(name='master')['items'][0]
 
 
 def assert_no_error(fn, *args, **kwargs):
