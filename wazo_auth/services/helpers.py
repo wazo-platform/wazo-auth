@@ -4,6 +4,7 @@
 
 import os
 from jinja2 import BaseLoader, Environment, TemplateNotFound
+from treelib import Tree
 
 from xivo.consul_helpers import address_from_config
 
@@ -72,3 +73,39 @@ class TemplateFormatter(object):
     def format_password_reset_subject(self, context):
         template = self.environment.get_template('reset_password_subject')
         return template.render(**context)
+
+
+class TenantTree(object):
+
+    def __init__(self, tenants):
+        self._tree = self._build_tree(tenants)
+
+    def list_nodes(self, nid):
+        subtree = self._tree.subtree(nid)
+        return [n.identifier for n in subtree.all_nodes()]
+
+    def _build_tree(self, tenants):
+        nb_tenants = len(tenants)
+        inserted_tenants = set()
+        tree = Tree()
+
+        for tenant in tenants:
+            if tenant['uuid'] == tenant['parent_uuid']:
+                tree.create_node(tenant['name'], tenant['uuid'])
+                inserted_tenants.add(tenant['uuid'])
+
+        while True:
+            if len(inserted_tenants) == nb_tenants:
+                break
+
+            for tenant in tenants:
+                if tenant['uuid'] in inserted_tenants:
+                    continue
+
+                if tenant['parent_uuid'] not in inserted_tenants:
+                    continue
+
+                tree.create_node(tenant['name'], tenant['uuid'], tenant['parent_uuid'])
+                inserted_tenants.add(tenant['uuid'])
+
+        return tree
