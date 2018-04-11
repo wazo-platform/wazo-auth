@@ -83,7 +83,7 @@ class Controller(object):
             'tenant_service': self._tenant_service,
             'template_formatter': template_formatter,
         }
-        Tenant.setup(self._token_manager, self._user_service)
+        Tenant.setup(self._token_manager, self._user_service, self._tenant_service)
         self._flask_app = http.new_app(dependencies)
         self._expired_token_remover = token.ExpiredTokenRemover(config, dao)
 
