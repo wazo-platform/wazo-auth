@@ -11,6 +11,7 @@ class _BaseMockBackend(BaseAuthenticationBackend):
 
     def load(self, dependencies):
         self._tenant_service = dependencies['tenant_service']
+        self._top_tenant_uuid = self._tenant_service.find_top_tenant()
 
     def get_acls(self, login, args):
         return self._acls
@@ -18,6 +19,7 @@ class _BaseMockBackend(BaseAuthenticationBackend):
     def get_metadata(self, login, args):
         metadata = super(_BaseMockBackend, self).get_metadata(login, args)
         metadata.update(self._base_metadata)
+        metadata['tenant_uuid'] = self._top_tenant_uuid
         metadata['tenants'] = self._format_tenants(self._tenants())
         return metadata
 
