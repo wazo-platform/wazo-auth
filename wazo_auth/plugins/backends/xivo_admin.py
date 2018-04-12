@@ -37,17 +37,9 @@ class XiVOAdmin(BaseAuthenticationBackend, ACLRenderingBackend):
 
             metadata['entity'] = entity
             metadata['tenant_uuid'] = tenant_uuid or self._top_tenant_uuid
-            metadata['tenants'] = self._build_tenants(entity, tenant_uuid)
 
         return metadata
 
     def verify_password(self, login, password, args):
         with session_scope():
             return admin_dao.check_username_password(login, password)
-
-    def _build_tenants(self, entity, tenant_uuid):
-        if entity:
-            return [{'uuid': tenant_uuid, 'name': entity}]
-
-        matching = self._tenant_service.list_()
-        return [{'uuid': tenant['uuid'], 'name': tenant['name']} for tenant in matching]
