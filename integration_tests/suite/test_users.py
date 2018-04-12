@@ -414,26 +414,3 @@ class TestUsers(WazoAuthTestCase):
             yield user
         finally:
             self.client.users.delete(user['uuid'])
-
-    @contextmanager
-    def multi_tenant_client(self, tenant):
-        username, password = 'subtenantadmin', '40bfb526-f88a-41e1-a48a-072eb7034665'
-        admin = self.client.users.new(
-            username=username,
-            password=password,
-            tenant_uuid=tenant['uuid'],
-        )
-        policy = self.client.policies.new(
-            name='admin_policy',
-            acl_templates=['auth.#'],
-        )
-        self.client.users.add_policy(admin['uuid'], policy['uuid'])
-
-        client = self.new_auth_client(username=username, password=password)
-        token = client.token.new(backend='wazo_user', expiration=3600)['token']
-        client.set_token(token)
-
-        yield client
-
-        self.client.users.delete(admin['uuid'])
-        self.client.policies.delete(policy['uuid'])
