@@ -305,6 +305,29 @@ class TestUsers(WazoAuthTestCase):
                     result = self.client.users.list(recurse=True, tenant_uuid=top['uuid'])
                     check_list_result(result, 3, 3, contains_inanyorder, 'foo', 'bar', 'baz')
 
+                    result = top_client.users.list(recurse=True, search='ba')
+                    check_list_result(result, 3, 2, contains_inanyorder, 'bar', 'baz')
+
+                    result = top_client.users.list(recurse=True, username='bar')
+                    check_list_result(result, 3, 1, contains_inanyorder, 'bar')
+
+                    result = top_client.users.list(recurse=True, order='username', direction='desc')
+                    check_list_result(result, 3, 3, contains, 'foo', 'baz', 'bar')
+
+                    result = top_client.users.list(recurse=True, order='username', direction='asc')
+                    check_list_result(result, 3, 3, contains, 'bar', 'baz', 'foo')
+
+                    result = top_client.users.list(recurse=True, order='username', direction='asc', limit=1)
+                    check_list_result(result, 3, 3, contains, 'bar')
+
+                    result = top_client.users.list(recurse=True, order='username', direction='asc', offset=1)
+                    check_list_result(result, 3, 3, contains, 'baz', 'foo')
+
+                    assert_http_error(400, top_client.users.list, limit='not a number')
+                    assert_http_error(400, top_client.users.list, offset=-1)
+                    assert_http_error(400, top_client.users.list, direction='up')
+                    assert_http_error(400, top_client.users.list, order='lol')
+
     @fixtures.http_user_register(username='foo', email_address='foo@example.com')
     def test_get(self, user):
         assert_http_error(404, self.client.users.get, UNKNOWN_UUID)
