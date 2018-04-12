@@ -28,7 +28,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     column_map = {'name': Tenant.name}
 
     def exists(self, tenant_uuid):
-        return self.count(uuid=tenant_uuid) > 0
+        return self.count([str(tenant_uuid)]) > 0
 
     def add_policy(self, tenant_uuid, policy_uuid):
         tenant_policy = TenantPolicy(tenant_uuid=str(tenant_uuid), policy_uuid=str(policy_uuid))
