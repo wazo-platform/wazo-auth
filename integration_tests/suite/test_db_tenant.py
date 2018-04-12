@@ -111,6 +111,10 @@ class TestTenantDAO(base.DAOTestCase):
         expected = build_list_matcher('foo c', 'bar b', 'baz a', 'master')
         assert_that(result, contains_inanyorder(*expected))
 
+        result = self._tenant_dao.list_(tenant_uuids=[a, b])
+        expected = build_list_matcher('bar b', 'baz a')
+        assert_that(result, contains_inanyorder(*expected))
+
         result = self._tenant_dao.list_()
         expected = build_list_matcher('foo c', 'bar b', 'baz a', 'master')
         assert_that(result, contains_inanyorder(*expected))
