@@ -4,8 +4,10 @@
 
 import json
 import os
-import time
+import random
 import requests
+import string
+import time
 import unittest
 
 from contextlib import contextmanager
@@ -199,13 +201,15 @@ class WazoAuthTestCase(BaseTestCase):
 
     @contextmanager
     def client_in_subtenant(self, parent_uuid=None):
-        username, password = 'theuser', 'secre7'
+        random_string = lambda n: ''.join(random.choice(string.letters) for _ in range(n))
+        username = random_string(8)
+        password = 'secre7'
         tenant_args = {'name': 'mytenant'}
         if parent_uuid:
-            tenant_args['tenant_uuid'] = parent_uuid
+            tenant_args['parent_uuid'] = parent_uuid
         tenant = self.client.tenants.new(**tenant_args)
         user = self.client.users.new(username=username, password=password, tenant_uuid=tenant['uuid'])
-        policy = self.client.policies.new(name='thepolicy', acl_templates=['auth.#'])
+        policy = self.client.policies.new(name=random_string(5), acl_templates=['auth.#'])
         self.client.users.add_policy(user['uuid'], policy['uuid'])
         client = self.new_auth_client(username, password)
         token = client.token.new(backend='wazo_user', expiration=3600)['token']

@@ -157,9 +157,8 @@ class TestUsers(WazoAuthTestCase):
             user_client = self.new_auth_client('foobar', 'foobaz')
             assert_http_error(401, user_client.token.new, 'wazo_user')
 
-    @fixtures.http_tenant(name='isolated')
-    def test_post_from_subtenant_user(self, isolated):
-        with self.multi_tenant_client(isolated) as client:
+    def test_post_from_subtenant_user(self):
+        with self.client_in_subtenant() as (client, alice, isolated):
             args = {
                 'username': 'user-from-multitenant',
                 'email_address': 'user-from-multitenant@example.com',
@@ -177,20 +176,9 @@ class TestUsers(WazoAuthTestCase):
             # User created in a tenant that is not authorized
             assert_http_error(401, client.users.new, tenant_uuid=self.top_tenant_uuid, **args)
 
-            # User created in a sub tenant
-            subtenant = client.tenants.new()
-            try:
-                with self.auto_remove_user(
-                        client.users.new,
-                        username='foo', tenant_uuid=subtenant['uuid']) as user:
-                    assert_that(
-                        user,
-                        has_entries(
-                            tenant_uuid=subtenant['uuid'],
-                        )
-                    )
-            finally:
-                client.tenants.delete(subtenant['uuid'])
+            with self.client_in_subtenant(parent_uuid=isolated['uuid']) as (_, __, subtenant):
+                user = client.users.new(username='foo', tenant_uuid=subtenant['uuid'])
+                assert_that(user, has_entries(tenant_uuid=subtenant['uuid']))
 
     @fixtures.http_user(username='foobar', firstname='foo', lastname='bar')
     def test_put(self, user):
