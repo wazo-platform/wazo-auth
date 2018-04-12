@@ -79,21 +79,23 @@ class TestTenantDAO(base.DAOTestCase):
     @fixtures.tenant(name='b')
     @fixtures.tenant(name='a')
     def test_count(self, *tenants):
+        master_tenant_uuid = self._master_tenant_uuid()
+        visible_tenants = tenants + (master_tenant_uuid,)
         total = len(tenants) + 1  # a, b, c and the master tenant
 
-        result = self._tenant_dao.count()
+        result = self._tenant_dao.count(visible_tenants)
         assert_that(result, equal_to(total))
 
-        result = self._tenant_dao.count(search='b', filtered=False)
+        result = self._tenant_dao.count(visible_tenants, search='b', filtered=False)
         assert_that(result, equal_to(total))
 
-        result = self._tenant_dao.count(search='b')
+        result = self._tenant_dao.count(visible_tenants, search='b')
         assert_that(result, equal_to(1))
 
-        result = self._tenant_dao.count(name='b', filtered=False)
+        result = self._tenant_dao.count(visible_tenants, name='b', filtered=False)
         assert_that(result, equal_to(total))
 
-        result = self._tenant_dao.count(name='b')
+        result = self._tenant_dao.count(visible_tenants, name='b')
         assert_that(result, equal_to(1))
 
     @fixtures.tenant(name='foo c')
