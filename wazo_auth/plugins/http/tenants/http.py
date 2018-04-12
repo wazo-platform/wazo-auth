@@ -21,26 +21,27 @@ class Tenant(BaseResource):
 
     @http.required_acl('auth.tenants.{tenant_uuid}.delete')
     def delete(self, tenant_uuid):
-        tenant = TenantDetector.autodetect()
-        logger.debug('deleting tenant %s from %s', tenant_uuid, tenant.uuid)
+        top_tenant = TenantDetector.autodetect()
 
-        self.tenant_service.delete(tenant.uuid, tenant_uuid)
+        logger.debug('deleting tenant %s from %s', tenant_uuid, top_tenant.uuid)
+
+        self.tenant_service.delete(top_tenant.uuid, tenant_uuid)
 
         return '', 204
 
     @http.required_acl('auth.tenants.{tenant_uuid}.read')
     def get(self, tenant_uuid):
-        tenant = TenantDetector.autodetect()
-        return self.tenant_service.get(tenant.uuid, tenant_uuid)
+        top_tenant = TenantDetector.autodetect()
+        return self.tenant_service.get(top_tenant.uuid, tenant_uuid)
 
     @http.required_acl('auth.tenants.{tenant_uuid}.edit')
     def put(self, tenant_uuid):
-        tenant = TenantDetector.autodetect()
+        top_tenant = TenantDetector.autodetect()
         args, errors = schemas.TenantSchema().load(request.get_json())
         if errors:
             raise exceptions.TenantParamException.from_errors(errors)
 
-        result = self.tenant_service.update(tenant.uuid, tenant_uuid, **args)
+        result = self.tenant_service.update(top_tenant.uuid, tenant_uuid, **args)
         return result, 200
 
 
@@ -48,15 +49,15 @@ class Tenants(BaseResource):
 
     @http.required_acl('auth.tenants.read')
     def get(self):
-        tenant = TenantDetector.autodetect()
+        top_tenant = TenantDetector.autodetect()
         ListSchema = schemas.new_list_schema('name')
         list_params, errors = ListSchema().load(request.args)
         if errors:
             raise exceptions.InvalidListParamException(errors)
 
-        tenants = self.tenant_service.list_(tenant.uuid, **list_params)
-        total = self.tenant_service.count(tenant.uuid, filtered=False, **list_params)
-        filtered = self.tenant_service.count(tenant.uuid, filtered=True, **list_params)
+        tenants = self.tenant_service.list_(top_tenant.uuid, **list_params)
+        total = self.tenant_service.count(top_tenant.uuid, filtered=False, **list_params)
+        filtered = self.tenant_service.count(top_tenant.uuid, filtered=True, **list_params)
 
         response = {
             'filtered': filtered,
@@ -68,11 +69,11 @@ class Tenants(BaseResource):
 
     @http.required_acl('auth.tenants.create')
     def post(self):
-        logger.debug('create tenant %s', request.get_json(force=True))
-        tenant = TenantDetector.autodetect()
+        top_tenant = TenantDetector.autodetect()
+        logger.debug('creating sub-tenant of (%s): %s', top_tenant, request.get_json(force=True))
         args, errors = schemas.TenantSchema().load(request.get_json())
         if errors:
             raise exceptions.TenantParamException.from_errors(errors)
 
-        result = self.tenant_service.new(parent_uuid=tenant.uuid, **args)
+        result = self.tenant_service.new(parent_uuid=top_tenant.uuid, **args)
         return result, 200
