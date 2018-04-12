@@ -200,9 +200,20 @@ class WazoAuthTestCase(BaseTestCase):
                 pass
 
     @contextmanager
-    def client_in_subtenant(self, parent_uuid=None):
+    def user(self, client, *args, **kwargs):
+        user = client.users.new(*args, **kwargs)
+        try:
+            yield user
+        finally:
+            try:
+                client.users.delete(user['uuid'])
+            except Exception:
+                pass
+
+    @contextmanager
+    def client_in_subtenant(self, username=None, parent_uuid=None):
         random_string = lambda n: ''.join(random.choice(string.letters) for _ in range(n))
-        username = random_string(8)
+        username = username or random_string(8)
         password = 'secre7'
         tenant_args = {'name': 'mytenant'}
         if parent_uuid:

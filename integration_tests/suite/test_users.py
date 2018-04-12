@@ -280,31 +280,30 @@ class TestUsers(WazoAuthTestCase):
         user_client = self.new_auth_client('foo', 'secret')
         assert_no_error(user_client.token.new, 'wazo_user', expiration=5)
 
-    @fixtures.http_user(username='foo', email_address='foo@example.com')
-    @fixtures.http_user(username='bar')
-    @fixtures.http_user(username='baz', email_address='baz@example.com')
-    # extra user: admin
-    def test_list(self, *users):
-        def check_list_result(result, filtered, item_matcher, *usernames):
+    def test_list(self):
+        def check_list_result(result, total, filtered, item_matcher, *usernames):
             items = item_matcher(*[has_entries('username', username,
                                                'enabled', True) for username in usernames])
-            expected = has_entries('total', 4, 'filtered', filtered, 'items', items)
+            expected = has_entries('total', total, 'filtered', filtered, 'items', items)
             assert_that(result, expected)
 
-        result = self.client.users.list(username='bar')
-        assert_that(result, has_entries(items=contains(has_entries(username='bar', emails=empty()))))
+        with self.client_in_subtenant(username='foo') as (top_client, _, top):
+            with self.client_in_subtenant(username='bar', parent_uuid=top['uuid']) as (sub_client, __, sub):
+                with self.user(sub_client, username='baz'):
+                    result = top_client.users.list()
+                    check_list_result(result, 1, 1, contains, 'foo')
 
-        result = self.client.users.list(search='ba')
-        check_list_result(result, 2, contains_inanyorder, 'bar', 'baz')
+                    result = top_client.users.list(recurse=True)
+                    check_list_result(result, 3, 3, contains_inanyorder, 'foo', 'bar', 'baz')
 
-        result = self.client.users.list(username='baz')
-        check_list_result(result, 1, contains_inanyorder, 'baz')
+                    result = sub_client.users.list()
+                    check_list_result(result, 2, 2, contains_inanyorder, 'bar', 'baz')
 
-        result = self.client.users.list(order='username', direction='desc')
-        check_list_result(result, 4, contains, 'foo', 'baz', 'bar', 'admin')
+                    result = self.client.users.list(tenant_uuid=top['uuid'])
+                    check_list_result(result, 1, 1, contains_inanyorder, 'foo')
 
-        result = self.client.users.list(limit=1, offset=1, order='username', direction='asc')
-        check_list_result(result, 4, contains, 'bar')
+                    result = self.client.users.list(recurse=True, tenant_uuid=top['uuid'])
+                    check_list_result(result, 3, 3, contains_inanyorder, 'foo', 'bar', 'baz')
 
     @fixtures.http_user_register(username='foo', email_address='foo@example.com')
     def test_get(self, user):

@@ -60,16 +60,15 @@ class Users(BaseUserService):
 
     @http.required_acl('auth.users.read')
     def get(self):
-        tenants = Tenant.autodetect(many=True)
+        top_tenant = Tenant.autodetect()
         ListSchema = schemas.new_list_schema('username')
         list_params, errors = ListSchema().load(request.args)
         if errors:
             raise exceptions.InvalidListParamException(errors)
 
-        tenant_uuids = [tenant.uuid for tenant in tenants]
-        users = self.user_service.list_users(tenant_uuids=tenant_uuids, **list_params)
-        total = self.user_service.count_users(filtered=False, tenant_uuids=tenant_uuids, **list_params)
-        filtered = self.user_service.count_users(filtered=True, tenant_uuids=tenant_uuids, **list_params)
+        users = self.user_service.list_users(top_tenant_uuid=top_tenant.uuid, **list_params)
+        total = self.user_service.count_users(top_tenant.uuid, filtered=False, **list_params)
+        filtered = self.user_service.count_users(top_tenant.uuid, filtered=True, **list_params)
 
         response = {
             'filtered': filtered,

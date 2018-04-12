@@ -60,6 +60,7 @@ def new_list_schema(default_sort_column):
         limit = fields.Integer(validate=validate.Range(min=0), missing=None)
         offset = fields.Integer(validate=validate.Range(min=0), missing=0)
         search = fields.String(missing=None)
+        recurse = fields.Boolean(missing=False)
 
         @post_load(pass_original=True)
         def add_arbitrary_fields(self, data, original_data):

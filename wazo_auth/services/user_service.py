@@ -52,7 +52,17 @@ class UserService(BaseService):
     def count_tenants(self, user_uuid, **kwargs):
         return len(self.list_tenants(user_uuid, **kwargs))
 
-    def count_users(self, **kwargs):
+    def count_users(self, top_tenant_uuid, **kwargs):
+        if top_tenant_uuid:
+            recurse = kwargs.get('recurse')
+            if recurse:
+                # TODO the tenant_tree instance could be stored globaly and rebuild when adding/deleting tenants
+                all_tenants = self._dao.tenant.list_()
+                tenant_tree = TenantTree(all_tenants)
+                kwargs['tenant_uuids'] = tenant_tree.list_nodes(top_tenant_uuid)
+            else:
+                kwargs['tenant_uuids'] = [top_tenant_uuid]
+
         return self._dao.user.count(**kwargs)
 
     def delete_user(self, top_tenant, user_uuid):
@@ -94,6 +104,17 @@ class UserService(BaseService):
         return self._dao.tenant.list_(uuids=tenant_uuids, **kwargs)
 
     def list_users(self, **kwargs):
+        top_tenant_uuid = kwargs.pop('top_tenant_uuid', None)
+        if top_tenant_uuid:
+            recurse = kwargs.get('recurse')
+            if recurse:
+                # TODO the tenant_tree instance could be stored globaly and rebuild when adding/deleting tenants
+                all_tenants = self._dao.tenant.list_()
+                tenant_tree = TenantTree(all_tenants)
+                kwargs['tenant_uuids'] = tenant_tree.list_nodes(top_tenant_uuid)
+            else:
+                kwargs['tenant_uuids'] = [top_tenant_uuid]
+
         return self._dao.user.list_(**kwargs)
 
     def new_user(self, **kwargs):
