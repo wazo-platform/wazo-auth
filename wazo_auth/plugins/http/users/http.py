@@ -26,7 +26,8 @@ class User(BaseUserService):
 
     @http.required_acl('auth.users.{user_uuid}.delete')
     def delete(self, user_uuid):
-        self.user_service.delete_user(user_uuid)
+        top_tenant = Tenant.autodetect()
+        self.user_service.delete_user(top_tenant.uuid, user_uuid)
         return '', 204
 
     @http.required_acl('auth.users.{user_uuid}.edit')

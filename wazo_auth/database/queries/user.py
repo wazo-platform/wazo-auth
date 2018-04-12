@@ -186,13 +186,22 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 'tenant_uuid': user.tenant_uuid,
             }
 
-    def delete(self, user_uuid):
+    def delete(self, user_uuid, tenant_uuids=None):
+        filter_ = User.uuid == user_uuid
+        if tenant_uuids:
+            filter_ = and_(filter_, User.tenant_uuid.in_(tenant_uuids))
+
         with self.new_session() as s:
+            matching_user_uuids = [row.uuid for row in s.query(User.uuid).filter(filter_).all()]
+            if not matching_user_uuids:
+                raise exceptions.UnknownUserException(user_uuid)
+
+            # TODO find a way to delete all linked voicemails without doing separate queries
             rows = s.query(UserEmail.email_uuid).filter(UserEmail.user_uuid == user_uuid).all()
             email_ids = [row.email_uuid for row in rows]
             if email_ids:
                 s.query(Email).filter(Email.uuid.in_(email_ids)).delete(synchronize_session=False)
-            nb_deleted = s.query(User).filter(User.uuid == user_uuid).delete()
+            nb_deleted = s.query(User).filter(filter_).delete(synchronize_session=False)
 
         if not nb_deleted:
             raise exceptions.UnknownUserException(user_uuid)

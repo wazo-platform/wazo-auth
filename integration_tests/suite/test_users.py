@@ -33,10 +33,15 @@ UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
 class TestUsers(WazoAuthTestCase):
 
     @fixtures.http_user_register()
-    def test_delete(self, user):
+    def test_delete(self, alice):
+        with self.client_in_subtenant() as (client, bob, sub_tenant):
+            assert_http_error(404, client.users.delete, alice['uuid'])
+            assert_http_error(401, client.users.delete, alice['uuid'], tenant_uuid=self.top_tenant_uuid)
+            assert_no_error(self.client.users.delete, bob['uuid'])
+
         assert_http_error(404, self.client.users.delete, UNKNOWN_UUID)
-        assert_no_error(self.client.users.delete, user['uuid'])
-        assert_http_error(404, self.client.users.delete, user['uuid'])
+        assert_no_error(self.client.users.delete, alice['uuid'])
+        assert_http_error(404, self.client.users.delete, alice['uuid'])
 
     @fixtures.http_user(username='foobar', password='foobar', email_address='foobar@example.com')
     @fixtures.http_user(username='foobaz', password='foobaz', email_address='foobaz@example.com')

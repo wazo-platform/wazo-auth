@@ -205,6 +205,8 @@ class WazoAuthTestCase(BaseTestCase):
             tenant_args['tenant_uuid'] = parent_uuid
         tenant = self.client.tenants.new(**tenant_args)
         user = self.client.users.new(username=username, password=password, tenant_uuid=tenant['uuid'])
+        policy = self.client.policies.new(name='thepolicy', acl_templates=['auth.#'])
+        self.client.users.add_policy(user['uuid'], policy['uuid'])
         client = self.new_auth_client(username, password)
         token = client.token.new(backend='wazo_user', expiration=3600)['token']
         client.set_token(token)
@@ -217,6 +219,7 @@ class WazoAuthTestCase(BaseTestCase):
                 self.client.tenants.delete(tenant['uuid'])
             except Exception:
                 pass
+            self.client.policies.delete(policy['uuid'])
 
 
 def assert_no_error(fn, *args, **kwargs):

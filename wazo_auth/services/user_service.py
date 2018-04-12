@@ -55,8 +55,11 @@ class UserService(BaseService):
     def count_users(self, **kwargs):
         return self._dao.user.count(**kwargs)
 
-    def delete_user(self, user_uuid):
-        self._dao.user.delete(user_uuid)
+    def delete_user(self, top_tenant, user_uuid):
+        all_tenants = self._dao.tenant.list_()
+        tenant_tree = TenantTree(all_tenants)
+        visible_tenants = tenant_tree.list_nodes(top_tenant)
+        self._dao.user.delete(user_uuid, tenant_uuids=visible_tenants)
 
     def get_acl_templates(self, username):
         users = self._dao.user.list_(username=username, limit=1)
