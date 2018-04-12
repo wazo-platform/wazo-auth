@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import os
+
 from jinja2 import BaseLoader, Environment, TemplateNotFound
 from treelib import Tree
 
@@ -13,7 +14,13 @@ class BaseService(object):
 
     def __init__(self, dao):
         self._dao = dao
-        self.top_tenant_uuid = self._dao.tenant.find_top_tenant()
+        self._top_tenant_uuid = None
+
+    @property
+    def top_tenant_uuid(self):
+        if not self._top_tenant_uuid:
+            self._top_tenant_uuid = self._dao.tenant.find_top_tenant()
+        return self._top_tenant_uuid
 
 
 class TemplateLoader(BaseLoader):
