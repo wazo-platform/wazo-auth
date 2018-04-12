@@ -68,7 +68,10 @@ class UserService(BaseService):
                 acl_templates.extend(policy['acl_templates'])
         return acl_templates
 
-    def get_user(self, user_uuid):
+    def get_user(self, user_uuid, top_tenant_uuid=None):
+        if top_tenant_uuid:
+            self._assert_user_in_subtenant(top_tenant_uuid, user_uuid)
+
         users = self._dao.user.list_(uuid=user_uuid)
         for user in users:
             return user

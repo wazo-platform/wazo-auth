@@ -308,6 +308,13 @@ class TestUsers(WazoAuthTestCase):
 
     @fixtures.http_user_register(username='foo', email_address='foo@example.com')
     def test_get(self, user):
+        assert_http_error(404, self.client.users.get, UNKNOWN_UUID)
+        with self.client_in_subtenant() as (client, alice, isolated):
+            assert_http_error(404, client.users.get, user['uuid'])
+            assert_http_error(401, client.users.get, user['uuid'], tenant_uuid=self.top_tenant_uuid)
+            assert_no_error(self.client.users.get, alice['uuid'])
+            assert_no_error(client.users.get, alice['uuid'])
+
         result = self.client.users.get(user['uuid'])
         assert_that(
             result,
