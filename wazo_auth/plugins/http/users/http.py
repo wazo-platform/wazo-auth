@@ -32,11 +32,12 @@ class User(BaseUserService):
 
     @http.required_acl('auth.users.{user_uuid}.edit')
     def put(self, user_uuid):
+        top_tenant = Tenant.autodetect()
         args, errors = UserPutSchema().load(request.get_json())
         if errors:
             raise exceptions.UserParamException.from_errors(errors)
 
-        result = self.user_service.update(user_uuid, **args)
+        result = self.user_service.update(top_tenant.uuid, user_uuid, **args)
         return result, 200
 
 

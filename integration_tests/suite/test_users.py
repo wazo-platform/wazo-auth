@@ -190,6 +190,10 @@ class TestUsers(WazoAuthTestCase):
         }
 
         assert_http_error(404, self.client.users.edit, UNKNOWN_UUID, **body)
+        with self.client_in_subtenant() as (client, bob, isolated):
+            assert_http_error(404, client.users.edit, user['uuid'], **body)
+            assert_http_error(401, client.users.edit, user['uuid'], tenant_uuid=self.top_tenant_uuid, **body)
+            assert_no_error(self.client.users.edit, bob['uuid'], **body)
 
         result = self.client.users.edit(user_uuid, **body)
         assert_that(result, has_entries(

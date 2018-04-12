@@ -10,7 +10,6 @@ from ..models import (
     Email,
     Group,
     Policy,
-    Tenant,
     User,
     UserEmail,
     UserGroup,
@@ -59,8 +58,11 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             s.query(User).filter(filter_).update(values)
 
-    def exists(self, user_uuid):
-        return self.count(uuid=user_uuid) > 0
+    def exists(self, user_uuid, tenant_uuids=None):
+        kwargs = {'uuid': user_uuid}
+        if tenant_uuids is not None:
+            kwargs['tenant_uuids'] = tenant_uuids
+        return self.count(**kwargs) > 0
 
     def remove_policy(self, user_uuid, policy_uuid):
         filter_ = and_(
@@ -77,6 +79,10 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         tenant_uuid = kwargs.get('tenant_uuid')
         if tenant_uuid:
             filter_ = User.tenant_uuid == tenant_uuid
+
+        tenant_uuids = kwargs.get('tenant_uuids')
+        if tenant_uuids:
+            filter_ = User.tenant_uuid.in_(tenant_uuids)
 
         filtered = kwargs.get('filtered')
         if filtered is not False:
@@ -186,16 +192,10 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 'tenant_uuid': user.tenant_uuid,
             }
 
-    def delete(self, user_uuid, tenant_uuids=None):
+    def delete(self, user_uuid):
         filter_ = User.uuid == user_uuid
-        if tenant_uuids:
-            filter_ = and_(filter_, User.tenant_uuid.in_(tenant_uuids))
 
         with self.new_session() as s:
-            matching_user_uuids = [row.uuid for row in s.query(User.uuid).filter(filter_).all()]
-            if not matching_user_uuids:
-                raise exceptions.UnknownUserException(user_uuid)
-
             # TODO find a way to delete all linked voicemails without doing separate queries
             rows = s.query(UserEmail.email_uuid).filter(UserEmail.user_uuid == user_uuid).all()
             email_ids = [row.email_uuid for row in rows]
