@@ -84,7 +84,7 @@ class TestUsers(WazoAuthTestCase):
         }
 
         # User created in our own tenant
-        with self.auto_remove_user(self.client.users.new, **args) as user:
+        with self.user(self.client, **args) as user:
             assert_that(user, not_(has_key('password')))
             assert_that(user, has_entries(
                 'uuid', uuid_(),
@@ -105,7 +105,7 @@ class TestUsers(WazoAuthTestCase):
             assert_that(tenants['items'], has_items(has_entries(uuid=self.top_tenant_uuid)))
 
         # User created in subtenant
-        with self.auto_remove_user(self.client.users.new, tenant_uuid=isolated['uuid'], **args) as user:
+        with self.user(self.client, tenant_uuid=isolated['uuid'], **args) as user:
             assert_that(user, has_entries(
                 'uuid', uuid_(),
                 'username', 'foobar',
@@ -136,23 +136,23 @@ class TestUsers(WazoAuthTestCase):
             'email_address': 'alice@example.com',
         }
 
-        with self.auto_remove_user(self.client.users.new, **args) as user:
+        with self.user(self.client, **args) as user:
             assert_http_error(409, self.client.users.new, **args)
 
         assert_http_error(400, self.client.users.new, username='a'*257)
-        with self.auto_remove_user(self.client.users.new, username='a'*256) as user:
+        with self.user(self.client, username='a'*256) as user:
             assert_that(user, has_entries(username='a'*256))
 
         # User creation with no email address
-        with self.auto_remove_user(self.client.users.new, username='bob') as user:
+        with self.user(self.client, username='bob') as user:
             assert_that(user, has_entries(username='bob', emails=empty()))
 
         args = {'username': 'bob', 'email_address': None}
-        with self.auto_remove_user(self.client.users.new, **args) as user:
+        with self.user(self.client, **args) as user:
             assert_that(user, has_entries(emails=empty()))
 
         user_args = {'username': 'foobar', 'password': 'foobaz', 'enabled': False}
-        with self.auto_remove_user(self.client.users.new, **user_args) as user:
+        with self.user(self.client, **user_args) as user:
             assert_that(user, has_entries('enabled', False))
             user_client = self.new_auth_client('foobar', 'foobaz')
             assert_http_error(401, user_client.token.new, 'wazo_user')
@@ -165,7 +165,7 @@ class TestUsers(WazoAuthTestCase):
             }
 
             # User created in the same tenant
-            with self.auto_remove_user(client.users.new, **args) as user:
+            with self.user(client, **args) as user:
                 assert_that(
                     user,
                     has_entries(
@@ -220,7 +220,7 @@ class TestUsers(WazoAuthTestCase):
             'password': 's3cr37',
         }
 
-        with self.auto_remove_user(self.client.users.register, **args) as user:
+        with self.user(self.client, register=True, **args) as user:
             assert_that(
                 user,
                 has_entries(
@@ -406,11 +406,3 @@ class TestUsers(WazoAuthTestCase):
         )
 
         assert_no_error(self.client.users.remove_policy, user['uuid'], policy_1['uuid'])
-
-    @contextmanager
-    def auto_remove_user(self, fn, *args, **kwargs):
-        user = fn(*args, **kwargs)
-        try:
-            yield user
-        finally:
-            self.client.users.delete(user['uuid'])

@@ -200,8 +200,12 @@ class WazoAuthTestCase(BaseTestCase):
                 pass
 
     @contextmanager
-    def user(self, client, *args, **kwargs):
-        user = client.users.new(*args, **kwargs)
+    def user(self, client, register=False, *args, **kwargs):
+        if register:
+            user = client.users.register(*args, **kwargs)
+        else:
+            user = client.users.new(*args, **kwargs)
+
         try:
             yield user
         finally:
