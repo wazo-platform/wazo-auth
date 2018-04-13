@@ -16,6 +16,10 @@ logger = logging.getLogger(__name__)
 
 class XiVOService(BaseAuthenticationBackend):
 
+    def __init__(self, *args, **kwargs):
+        self._top_tenant_uuid = None
+        super(XiVOService, self).__init__(*args, **kwargs)
+
     def load(self, dependencies):
         super(XiVOService, self).load(dependencies)
         self._tenant_service = dependencies['tenant_service']
