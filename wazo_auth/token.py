@@ -9,6 +9,7 @@ import time
 from threading import Timer
 
 from datetime import datetime
+from wazo_auth.services.helpers import TenantTree
 
 from .exceptions import (
     MissingACLTokenException,
@@ -129,6 +130,7 @@ class Manager(object):
 
     def new_token(self, backend, login, args):
         metadata = backend.get_metadata(login, args)
+        metadata['tenants'] = self._get_tenant_list(metadata['tenant_uuid'])
         logger.debug('metadata for %s: %s', login, metadata)
 
         auth_id = metadata['auth_id']
@@ -155,6 +157,12 @@ class Manager(object):
         token = Token(token_uuid, **token_payload)
 
         return token
+
+    def _get_tenant_list(self, tenant_uuid):
+        all_tenants = self._dao.tenant.list_()
+        tenant_tree = TenantTree(all_tenants)
+        tenant_uuids = tenant_tree.list_nodes(tenant_uuid)
+        return [{'uuid': uuid} for uuid in tenant_uuids]
 
     def remove_token(self, token):
         self._dao.token.delete(token)
