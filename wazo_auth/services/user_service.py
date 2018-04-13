@@ -66,7 +66,7 @@ class UserService(BaseService):
         return self._dao.user.count(**kwargs)
 
     def delete_user(self, top_tenant, user_uuid):
-        self._assert_user_in_subtenant(top_tenant, user_uuid)
+        self.assert_user_in_subtenant(top_tenant, user_uuid)
         self._dao.user.delete(user_uuid)
 
     def get_acl_templates(self, username):
@@ -80,7 +80,7 @@ class UserService(BaseService):
 
     def get_user(self, user_uuid, top_tenant_uuid=None):
         if top_tenant_uuid:
-            self._assert_user_in_subtenant(top_tenant_uuid, user_uuid)
+            self.assert_user_in_subtenant(top_tenant_uuid, user_uuid)
 
         users = self._dao.user.list_(uuid=user_uuid)
         for user in users:
@@ -140,7 +140,7 @@ class UserService(BaseService):
             raise exceptions.UnknownPolicyException(policy_uuid)
 
     def update(self, top_tenant_uuid, user_uuid, **kwargs):
-        self._assert_user_in_subtenant(top_tenant_uuid, user_uuid)
+        self.assert_user_in_subtenant(top_tenant_uuid, user_uuid)
         self._dao.user.update(user_uuid, **kwargs)
         return self.get_user(user_uuid)
 
@@ -161,7 +161,7 @@ class UserService(BaseService):
 
         return hash_ == self._encrypter.compute_password_hash(password, salt)
 
-    def _assert_user_in_subtenant(self, top_tenant_uuid, user_uuid):
+    def assert_user_in_subtenant(self, top_tenant_uuid, user_uuid):
         # TODO the tenant_tree instance could be stored globaly and rebuild when adding/deleting tenants
         all_tenants = self._dao.tenant.list_()
         tenant_tree = TenantTree(all_tenants)

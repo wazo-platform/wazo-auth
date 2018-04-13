@@ -7,12 +7,10 @@ from wazo_auth import schemas
 from .base import BaseDAO, PaginatorMixin
 from ..models import (
     Address,
-    Email,
     Policy,
     Tenant,
     TenantPolicy,
     User,
-    UserEmail,
 )
 from . import filters
 from ... import exceptions
@@ -77,7 +75,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def count_users(self, tenant_uuid, **kwargs):
         filtered = kwargs.get('filtered')
-        filter_ = User.tenant_uuid == tenant_uuid
+        filter_ = User.tenant_uuid == str(tenant_uuid)
         if filtered is not False:
             strict_filter = filters.user_strict_filter.new_filter(**kwargs)
             search_filter = filters.user_search_filter.new_filter(**kwargs)

@@ -255,9 +255,14 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         search_filter = self.new_search_filter(**kwargs)
         strict_filter = self.new_strict_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
+
         tenant_uuids = kwargs.get('tenant_uuids')
         if tenant_uuids is not None:
             filter_ = and_(filter_, User.tenant_uuid.in_(tenant_uuids))
+
+        tenant_uuid = kwargs.get('tenant_uuid')
+        if tenant_uuid:
+            filter_ = and_(filter_, User.tenant_uuid == str(tenant_uuid))
 
         with self.new_session() as s:
             query = s.query(

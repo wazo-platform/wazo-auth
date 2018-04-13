@@ -13,6 +13,11 @@ class TenantService(BaseService):
         super(TenantService, self).__init__(dao)
         self._bus_publisher = bus_publisher
 
+    def assert_tenant_under(self, top_tenant_uuid, tenant_uuid):
+        visible_tenants = self.list_sub_tenants(top_tenant_uuid)
+        if str(tenant_uuid) not in visible_tenants:
+            raise exceptions.UnknownTenantException(tenant_uuid)
+
     def add_policy(self, tenant_uuid, policy_uuid):
         return self._dao.tenant.add_policy(tenant_uuid, policy_uuid)
 
@@ -20,7 +25,11 @@ class TenantService(BaseService):
         return self._dao.tenant.count_policies(tenant_uuid, **kwargs)
 
     def count_users(self, tenant_uuid, **kwargs):
-        return self._dao.tenant.count_users(tenant_uuid, **kwargs)
+        result = self._dao.tenant.count_users(tenant_uuid, **kwargs)
+        if not result and not self._dao.tenant.exists(tenant_uuid):
+            raise exceptions.UnknownTenantException(tenant_uuid)
+
+        return result
 
     def count(self, top_tenant_uuid, **kwargs):
         visible_tenants = self.list_sub_tenants(top_tenant_uuid)
