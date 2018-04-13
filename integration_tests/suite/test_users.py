@@ -17,7 +17,6 @@ from hamcrest import (
     has_properties,
     not_,
 )
-from contextlib import contextmanager
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from xivo_test_helpers.hamcrest.raises import raises
 from .helpers import fixtures
