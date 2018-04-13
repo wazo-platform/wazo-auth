@@ -8,15 +8,16 @@ import logging
 import os
 
 from wazo_auth import exceptions
-from wazo_auth.services.helpers import BaseService, TenantTree
+from wazo_auth.services.helpers import BaseService
 
 logger = logging.getLogger(__name__)
 
 
 class UserService(BaseService):
 
-    def __init__(self, dao, encrypter=None):
+    def __init__(self, dao, tenant_tree, encrypter=None):
         super(UserService, self).__init__(dao)
+        self._tenant_tree = tenant_tree
         self._encrypter = encrypter or PasswordEncrypter()
 
     def add_policy(self, user_uuid, policy_uuid):
@@ -56,10 +57,7 @@ class UserService(BaseService):
         if top_tenant_uuid:
             recurse = kwargs.get('recurse')
             if recurse:
-                # TODO the tenant_tree instance could be stored globaly and rebuild when adding/deleting tenants
-                all_tenants = self._dao.tenant.list_()
-                tenant_tree = TenantTree(all_tenants)
-                kwargs['tenant_uuids'] = tenant_tree.list_nodes(top_tenant_uuid)
+                kwargs['tenant_uuids'] = self._tenant_tree.list_nodes(top_tenant_uuid)
             else:
                 kwargs['tenant_uuids'] = [top_tenant_uuid]
 
@@ -95,12 +93,7 @@ class UserService(BaseService):
 
     def list_tenants(self, user_uuid, **kwargs):
         tenant_uuid = self.get_user(user_uuid)['tenant_uuid']
-
-        # TODO the tenant_tree instance could be stored globaly and rebuild when adding/deleting tenants
-        all_tenants = self._dao.tenant.list_()
-        tenant_tree = TenantTree(all_tenants)
-        tenant_uuids = tenant_tree.list_nodes(tenant_uuid)
-
+        tenant_uuids = self._tenant_tree.list_nodes(tenant_uuid)
         return self._dao.tenant.list_(uuids=tenant_uuids, **kwargs)
 
     def list_users(self, **kwargs):
@@ -108,10 +101,7 @@ class UserService(BaseService):
         if top_tenant_uuid:
             recurse = kwargs.get('recurse')
             if recurse:
-                # TODO the tenant_tree instance could be stored globaly and rebuild when adding/deleting tenants
-                all_tenants = self._dao.tenant.list_()
-                tenant_tree = TenantTree(all_tenants)
-                kwargs['tenant_uuids'] = tenant_tree.list_nodes(top_tenant_uuid)
+                kwargs['tenant_uuids'] = self._tenant_tree.list_nodes(top_tenant_uuid)
             else:
                 kwargs['tenant_uuids'] = [top_tenant_uuid]
 
@@ -162,10 +152,7 @@ class UserService(BaseService):
         return hash_ == self._encrypter.compute_password_hash(password, salt)
 
     def assert_user_in_subtenant(self, top_tenant_uuid, user_uuid):
-        # TODO the tenant_tree instance could be stored globaly and rebuild when adding/deleting tenants
-        all_tenants = self._dao.tenant.list_()
-        tenant_tree = TenantTree(all_tenants)
-        tenant_uuids = tenant_tree.list_nodes(top_tenant_uuid)
+        tenant_uuids = self._tenant_tree.list_nodes(top_tenant_uuid)
         user_exists = self._dao.user.exists(user_uuid, tenant_uuids=tenant_uuids)
         if not user_exists:
             raise exceptions.UnknownUserException(user_uuid)

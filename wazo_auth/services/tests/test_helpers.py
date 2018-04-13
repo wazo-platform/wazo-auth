@@ -5,6 +5,7 @@
 from hamcrest import assert_that, contains_inanyorder
 from uuid import uuid4
 from unittest import TestCase
+from mock import Mock
 
 from wazo_auth.services.helpers import TenantTree
 
@@ -40,7 +41,10 @@ class TestTenantTree(TestCase):
 
         self.tenants = [self.top, self.a, self.b, self.c, self.d, self.e, self.f, self.g, self.h]
 
-        self.tree = TenantTree(self.tenants)
+        self.tenant_dao = Mock()
+        self.tenant_dao.list_.return_value = self.tenants
+
+        self.tree = TenantTree(self.tenant_dao)
 
     def test_list_nodes(self):
         result = self.tree.list_nodes(self.f['uuid'])

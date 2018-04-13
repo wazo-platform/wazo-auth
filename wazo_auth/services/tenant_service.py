@@ -4,13 +4,14 @@
 
 from xivo_bus.resources.auth import events
 from wazo_auth import exceptions
-from wazo_auth.services.helpers import BaseService, TenantTree
+from wazo_auth.services.helpers import BaseService
 
 
 class TenantService(BaseService):
 
-    def __init__(self, dao, bus_publisher=None):
+    def __init__(self, dao, tenant_tree, bus_publisher=None):
         super(TenantService, self).__init__(dao)
+        self._tenant_tree = tenant_tree
         self._bus_publisher = bus_publisher
 
     def assert_tenant_under(self, top_tenant_uuid, tenant_uuid):
@@ -41,6 +42,8 @@ class TenantService(BaseService):
             raise exceptions.UnknownTenantException(uuid)
 
         result = self._dao.tenant.delete(uuid)
+
+        self._tenant_tree.invalidate()
         event = events.TenantDeletedEvent(uuid)
         self._bus_publisher.publish(event)
         return result
@@ -72,17 +75,18 @@ class TenantService(BaseService):
         return self._dao.user.list_(tenant_uuid=tenant_uuid, **kwargs)
 
     def list_sub_tenants(self, tenant_uuid):
-        # TODO the tenant_tree instance could be stored globaly and rebuild when adding/deleting tenants
-        all_tenants = self._dao.tenant.list_()
-        tenant_tree = TenantTree(all_tenants)
-        return tenant_tree.list_nodes(tenant_uuid)
+        return self._tenant_tree.list_nodes(tenant_uuid)
 
     def new(self, **kwargs):
         address_id = self._dao.address.new(**kwargs['address'])
         uuid = self._dao.tenant.create(address_id=address_id, **kwargs)
         result = self._get(uuid)
+
+        self._tenant_tree.invalidate()
+
         event = events.TenantCreatedEvent(uuid, kwargs.get('name'))
         self._bus_publisher.publish(event)
+
         return result
 
     def remove_policy(self, tenant_uuid, policy_uuid):

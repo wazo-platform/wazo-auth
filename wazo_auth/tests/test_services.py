@@ -177,7 +177,8 @@ class TestUserService(BaseServiceTestCase):
 
     def setUp(self):
         super(TestUserService, self).setUp()
-        self.service = services.UserService(self.dao, encrypter=self.encrypter)
+        self.tenant_tree = Mock()
+        self.service = services.UserService(self.dao, self.tenant_tree, encrypter=self.encrypter)
 
     def test_change_password(self):
         self.user_dao.list_.return_value = []
@@ -291,7 +292,8 @@ class TestTenantService(BaseServiceTestCase):
 
     def setUp(self):
         super(TestTenantService, self).setUp()
-        self.service = services.TenantService(self.dao)
+        self.tenant_tree = Mock()
+        self.service = services.TenantService(self.dao, self.tenant_tree)
 
     def test_remove_policy(self):
         def when(nb_deleted, tenant_exists=True, policy_exists=True):

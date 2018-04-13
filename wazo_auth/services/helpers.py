@@ -2,12 +2,17 @@
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+import logging
 import os
+import threading
 
+from contextlib import contextmanager
 from jinja2 import BaseLoader, Environment, TemplateNotFound
 from treelib import Tree
 
 from xivo.consul_helpers import address_from_config
+
+logger = logging.getLogger(__name__)
 
 
 class BaseService(object):
@@ -85,14 +90,30 @@ class TemplateFormatter(object):
 
 class TenantTree(object):
 
-    def __init__(self, tenants):
-        self._tree = self._build_tree(tenants)
+    def __init__(self, tenant_dao):
+        self._tenant_dao = tenant_dao
+        self._tenant_tree = None
+        self._tree_lock = threading.Lock()
+
+    def invalidate(self):
+        with self._tree_lock:
+            self._tenant_tree = None
 
     def list_nodes(self, nid):
-        subtree = self._tree.subtree(nid)
-        return [n.identifier for n in subtree.all_nodes()]
+        with self._tree() as tree:
+            subtree = tree.subtree(nid)
+            return [n.identifier for n in subtree.all_nodes()]
+
+    @contextmanager
+    def _tree(self):
+        with self._tree_lock:
+            if not self._tenant_tree:
+                self._tenant_tree = self._build_tree(self._tenant_dao.list_())
+
+            yield self._tenant_tree
 
     def _build_tree(self, tenants):
+        logger.debug('rebuilding tenant tree')
         nb_tenants = len(tenants)
         inserted_tenants = set()
         tree = Tree()
