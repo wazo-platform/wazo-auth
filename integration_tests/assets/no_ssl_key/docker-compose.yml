@@ -16,7 +16,7 @@ services:
       XIVO_UUID: the-predefined-xivo-uuid
     volumes:
       - "../../..:/usr/src/wazo-auth"
-      - "./etc/wazo-auth/config.yml:/etc/wazo-auth/config.yml"
+      - "./no_ssl_key/etc/wazo-auth/config.yml:/etc/wazo-auth/config.yml"
       # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/usr/local/lib/python2.7/site-packages/xivo"
       # - "${LOCAL_GIT_REPOS}/xivo-bus/xivo_bus:/usr/local/lib/python2.7/site-packages/xivo_bus"
     command: "wazo-auth"

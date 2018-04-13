@@ -7,8 +7,3 @@ services:
     environment:
       TARGETS: "postgres:5432"
       TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
-
-  postgres:
-    image: wazopbx/wazo-auth-db
-    ports:
-      - "5432"

@@ -1,0 +1,16 @@
+version: '3'
+services:
+  sync:
+    image: waisbrot/wait
+    depends_on:
+      - auth
+      - postgres
+      - rabbitmq
+      - smtp
+      - oauth2sync
+    environment:
+      TARGETS: "smtp:25 oauth2sync:80 auth:9497 postgres:5432 rabbitmq:5672"
+      TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
+  auth:
+    volumes:
+      - "./external_auth/etc/wazo-auth/config.yml:/etc/wazo-auth/config.yml"
