@@ -5,7 +5,7 @@
 import unittest
 
 from mock import Mock, patch, sentinel as s
-from hamcrest import assert_that, calling, contains, equal_to, has_entries, raises
+from hamcrest import assert_that, calling, equal_to, has_entries, raises
 
 from wazo_auth.exceptions import ManagerException
 from wazo_auth.plugins.backends.xivo_admin import NotFoundError, XiVOAdmin
@@ -31,7 +31,6 @@ class TestGetMetadata(unittest.TestCase):
             entity=tenant,
             auth_id='5900b8d4-5c38-49f9-b5fc-e0b7057b4c50',
             xivo_user_uuid=None,
-            tenants=contains({'uuid': s.uuid, 'name': tenant})
         ))
 
     @patch('wazo_auth.plugins.backends.xivo_admin.admin_dao.get_admin_uuid',
