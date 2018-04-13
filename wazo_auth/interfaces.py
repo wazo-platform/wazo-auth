@@ -126,6 +126,7 @@ class UserAuthenticationBackend(BaseAuthenticationBackend, ACLRenderingBackend):
             return {
                 'id': user['id'],
                 'uuid': user['uuid'],
+                'tenant_uuid': user['tenant_uuid'],
                 'voicemails': voicemails,
                 'lines': lines,
                 'extensions': extensions,
