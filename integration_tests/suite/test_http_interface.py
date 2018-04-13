@@ -26,7 +26,7 @@ from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from wazo_auth import exceptions
 from wazo_auth.database.queries.token import TokenDAO
 from .helpers.base import (
-    BaseTestCase,
+    AuthLaunchingTestCase,
     WazoAuthTestCase,
 )
 from .helpers import fixtures
@@ -64,7 +64,7 @@ class TestCore(WazoAuthTestCase):
         assert_that(self._is_valid('abcdef'), is_(False))
 
     def test_backends(self):
-        url = 'https://{}:{}/0.1/backends'.format(self.get_host(), self.service_port(9497, 'auth'))
+        url = 'https://{}:{}/0.1/backends'.format(self.auth_host, self.auth_port)
         response = requests.get(url, verify=False)
         backends = ['broken_init', 'broken_verify_password', 'wazo_user']
         assert_that(response.json()['data'], contains_inanyorder(*backends))
@@ -123,7 +123,7 @@ class TestCore(WazoAuthTestCase):
         self._post_token_with_expected_exception('foo', 'not_bar', 'broken_verify_password', status_code=401)
 
     def test_that_no_type_returns_400(self):
-        url = 'https://{}:{}/0.1/token'.format(self.get_host(), self.service_port(9497, 'auth'))
+        url = 'https://{}:{}/0.1/token'.format(self.auth_host, self.auth_port)
         s = requests.Session()
         s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         s.auth = requests.auth.HTTPBasicAuth('foo', 'bar')
@@ -210,7 +210,7 @@ class TestCore(WazoAuthTestCase):
             return False
 
 
-class TestNoSSLCertificate(BaseTestCase):
+class TestNoSSLCertificate(AuthLaunchingTestCase):
 
     asset = 'no_ssl_certificate'
 
@@ -221,7 +221,7 @@ class TestNoSSLCertificate(BaseTestCase):
         assert_that(log, contains_string("No such file or directory: '/data/_common/ssl/no_server.crt'"))
 
 
-class TestNoSSLKey(BaseTestCase):
+class TestNoSSLKey(AuthLaunchingTestCase):
 
     asset = 'no_ssl_key'
 

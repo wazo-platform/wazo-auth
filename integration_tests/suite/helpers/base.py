@@ -57,19 +57,34 @@ class DAOTestCase(unittest.TestCase):
         self.top_tenant_uuid = self._tenant_dao.find_top_tenant()
 
 
-class BaseTestCase(AssetLaunchingTestCase):
+class AuthLaunchingTestCase(AssetLaunchingTestCase):
 
     assets_root = os.path.join(os.path.dirname(__file__), '../..', 'assets')
     service = 'auth'
+
+    @classmethod
+    def setUpClass(cls):
+        cls.auth_host = HOST
+        super(AuthLaunchingTestCase, cls).setUpClass()
+
+    def _assert_that_wazo_auth_is_stopping(self):
+        for _ in range(5):
+            if not self.service_status('auth')['State']['Running']:
+                break
+            time.sleep(0.2)
+        else:
+            self.fail('wazo-auth did not stop')
+
+
+class BaseTestCase(AuthLaunchingTestCase):
+
     bus_config = {'username': 'guest', 'password': 'guest', 'host': 'localhost'}
     email_dir = '/var/mail'
 
     @classmethod
     def setUpClass(cls):
         super(BaseTestCase, cls).setUpClass()
-
-    def get_host(self):
-        return HOST
+        cls.auth_port = cls.service_port(9497, service_name='auth')
 
     def new_message_accumulator(self, routing_key):
         port = self.service_port(5672, service_name='rabbitmq')
@@ -86,8 +101,7 @@ class BaseTestCase(AssetLaunchingTestCase):
         return self.docker_exec(['ls', self.email_dir], 'smtp').strip().split('\n')
 
     def _post_token(self, username, password, backend=None, expiration=None):
-        port = self.service_port(9497, 'auth')
-        client = Client(self.get_host(), port, username=username, password=password, verify_certificate=False)
+        client = self.new_auth_client(username, password)
         backend = backend or 'wazo_user'
         args = {}
         if expiration:
@@ -107,8 +121,7 @@ class BaseTestCase(AssetLaunchingTestCase):
             self.fail('Should have raised an exception')
 
     def _get_token(self, token, acls=None):
-        port = self.service_port(9497, 'auth')
-        client = Client(self.get_host(), port, verify_certificate=False)
+        client = self.new_auth_client()
         args = {}
         if acls:
             args['required_acl'] = acls
@@ -126,30 +139,28 @@ class BaseTestCase(AssetLaunchingTestCase):
             self.fail('Should have raised an exception')
 
     def _delete_token(self, token):
-        port = self.service_port(9497, 'auth')
-        client = Client(self.get_host(), port, verify_certificate=False)
+        client = self.new_auth_client()
         return client.token.revoke(token)
 
     def _is_valid(self, token, acls=None):
-        port = self.service_port(9497, 'auth')
-        client = Client(self.get_host(), port, verify_certificate=False)
+        client = self.new_auth_client()
         args = {}
         if acls:
             args['required_acl'] = acls
         return client.token.is_valid(token, **args)
 
-    def _assert_that_wazo_auth_is_stopping(self):
-        for _ in range(5):
-            if not self.service_status('auth')['State']['Running']:
-                break
-            time.sleep(0.2)
-        else:
-            self.fail('wazo-auth did not stop')
+    @classmethod
+    def new_auth_client(cls, username=None, password=None):
+        kwargs = {
+            'port': cls.auth_port,
+            'verify_certificate': False,
+        }
 
-    def new_auth_client(self, username, password):
-        host = self.get_host()
-        port = self.service_port(9497, 'auth')
-        return Client(host, port=port, username=username, password=password, verify_certificate=False)
+        if username and password:
+            kwargs['username'] = username
+            kwargs['password'] = password
+
+        return Client(cls.auth_host, **kwargs)
 
 
 class WazoAuthTestCase(BaseTestCase):
@@ -160,24 +171,16 @@ class WazoAuthTestCase(BaseTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(BaseTestCase, cls).setUpClass()
+        super(WazoAuthTestCase, cls).setUpClass()
         headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
-        HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
-        port = cls.service_port(9497, 'auth')
-        url = 'https://{}:{}/0.1/init'.format(HOST, port)
+        url = 'https://{}:{}/0.1/init'.format(cls.auth_host, cls.auth_port)
 
         key = cls.docker_exec(['cat', '/var/lib/wazo-auth/init.key'])
         body = {'key': key, 'username': cls.username, 'password': cls.password}
         response = requests.post(url, data=json.dumps(body), headers=headers, verify=False)
         response.raise_for_status()
 
-        cls.client = Client(
-            HOST,
-            port=port,
-            username=cls.username,
-            password=cls.password,
-            verify_certificate=False,
-        )
+        cls.client = cls.new_auth_client(cls.username, cls.password)
         token_data = cls.client.token.new(backend='wazo_user', expiration=7200)
         cls.admin_user_uuid = token_data['metadata']['uuid']
         cls.client.set_token(token_data['token'])

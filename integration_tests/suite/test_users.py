@@ -67,8 +67,7 @@ class TestUsers(WazoAuthTestCase):
             'password': 's3cr37',
         }
 
-        port = self.service_port(9497, 'auth')
-        url = 'https://{}:{}/0.1/users'.format(self.get_host(), port)
+        url = 'https://{}:{}/0.1/users'.format(self.auth_host, self.auth_port)
         result = requests.post(url, headers={'Content-Type': 'application/json'},
                                data=json.dumps(args), verify=False)
         assert_that(result.status_code, equal_to(401))

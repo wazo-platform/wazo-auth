@@ -28,11 +28,9 @@ class TestInit(BaseTestCase):
         super(TestInit, self).setUp()
         self.docker_exec(['wazo-auth-bootstrap'])
         self.key = self.docker_exec(['cat', '/var/lib/wazo-auth/init.key'])
-        HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
-        port = self.service_port(9497, 'auth')
         self.client = Client(
-            HOST,
-            port=port,
+            self.auth_host,
+            port=self.auth_port,
             verify_certificate=False,
         )
 
