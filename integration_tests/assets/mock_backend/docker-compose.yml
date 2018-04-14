@@ -8,7 +8,7 @@ services:
       - rabbitmq
       - smtp
     environment:
-      TARGETS: "auth:9497 postgres:5432 rabbitmq:5672 slapd:25"
+      TARGETS: "auth:9497 postgres:5432 rabbitmq:5672 smtp:25"
       TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
   auth:
     image: wazopbx/wazo-auth-tests
