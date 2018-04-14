@@ -8,7 +8,7 @@ import threading
 
 from contextlib import contextmanager
 from jinja2 import BaseLoader, Environment, TemplateNotFound
-from treelib import Tree
+from anytree import Node, PreOrderIter
 
 from xivo.consul_helpers import address_from_config
 
@@ -101,8 +101,13 @@ class TenantTree(object):
 
     def list_nodes(self, nid):
         with self._tree() as tree:
-            subtree = tree.subtree(nid)
-            return [n.identifier for n in subtree.all_nodes()]
+            subtree = self._find_subtree(tree, nid)
+            return [n.name for n in PreOrderIter(subtree)]
+
+    def _find_subtree(self, tree, uuid):
+        for node in PreOrderIter(tree):
+            if node.name == uuid:
+                return node
 
     @contextmanager
     def _tree(self):
@@ -116,11 +121,10 @@ class TenantTree(object):
         logger.debug('rebuilding tenant tree')
         nb_tenants = len(tenants)
         inserted_tenants = set()
-        tree = Tree()
 
         for tenant in tenants:
             if tenant['uuid'] == tenant['parent_uuid']:
-                tree.create_node(tenant['name'], tenant['uuid'])
+                top = Node(tenant['uuid'])
                 inserted_tenants.add(tenant['uuid'])
 
         while True:
@@ -134,7 +138,11 @@ class TenantTree(object):
                 if tenant['parent_uuid'] not in inserted_tenants:
                     continue
 
-                tree.create_node(tenant['name'], tenant['uuid'], tenant['parent_uuid'])
+                parent = self._find_subtree(top, tenant['parent_uuid'])
+                if not parent:
+                    raise Exception('Could not find parent in tree')
+
+                Node(tenant['uuid'], parent=parent)
                 inserted_tenants.add(tenant['uuid'])
 
-        return tree
+        return top
