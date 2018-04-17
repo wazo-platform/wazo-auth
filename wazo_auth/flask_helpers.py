@@ -34,8 +34,7 @@ class Tenant(object):
             logger.debug('specified tenant not in available tenants')
             raise tenant_helpers.UnauthorizedTenant(specified_tenant)
 
-        if many:
-            return cls._many(tenants, specified_tenant)
+        return cls._many(tenants, specified_tenant)
 
     @classmethod
     def _one(cls, specified_tenant):
