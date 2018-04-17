@@ -53,18 +53,18 @@ class UserService(BaseService):
     def count_tenants(self, user_uuid, **kwargs):
         return len(self.list_tenants(user_uuid, **kwargs))
 
-    def count_users(self, top_tenant_uuid, **kwargs):
-        if top_tenant_uuid:
+    def count_users(self, scoping_tenant_uuid, **kwargs):
+        if scoping_tenant_uuid:
             recurse = kwargs.get('recurse')
             if recurse:
-                kwargs['tenant_uuids'] = self._tenant_tree.list_nodes(top_tenant_uuid)
+                kwargs['tenant_uuids'] = self._tenant_tree.list_nodes(scoping_tenant_uuid)
             else:
-                kwargs['tenant_uuids'] = [top_tenant_uuid]
+                kwargs['tenant_uuids'] = [scoping_tenant_uuid]
 
         return self._dao.user.count(**kwargs)
 
-    def delete_user(self, top_tenant, user_uuid):
-        self.assert_user_in_subtenant(top_tenant, user_uuid)
+    def delete_user(self, scoping_tenant_uuid, user_uuid):
+        self.assert_user_in_subtenant(scoping_tenant_uuid, user_uuid)
         self._dao.user.delete(user_uuid)
 
     def get_acl_templates(self, username):
@@ -76,9 +76,9 @@ class UserService(BaseService):
                 acl_templates.extend(policy['acl_templates'])
         return acl_templates
 
-    def get_user(self, user_uuid, top_tenant_uuid=None):
-        if top_tenant_uuid:
-            self.assert_user_in_subtenant(top_tenant_uuid, user_uuid)
+    def get_user(self, user_uuid, scoping_tenant_uuid=None):
+        if scoping_tenant_uuid:
+            self.assert_user_in_subtenant(scoping_tenant_uuid, user_uuid)
 
         users = self._dao.user.list_(uuid=user_uuid)
         for user in users:
@@ -97,13 +97,13 @@ class UserService(BaseService):
         return self._dao.tenant.list_(uuids=tenant_uuids, **kwargs)
 
     def list_users(self, **kwargs):
-        top_tenant_uuid = kwargs.pop('top_tenant_uuid', None)
-        if top_tenant_uuid:
+        scoping_tenant_uuid = kwargs.pop('scoping_tenant_uuid', None)
+        if scoping_tenant_uuid:
             recurse = kwargs.get('recurse')
             if recurse:
-                kwargs['tenant_uuids'] = self._tenant_tree.list_nodes(top_tenant_uuid)
+                kwargs['tenant_uuids'] = self._tenant_tree.list_nodes(scoping_tenant_uuid)
             else:
-                kwargs['tenant_uuids'] = [top_tenant_uuid]
+                kwargs['tenant_uuids'] = [scoping_tenant_uuid]
 
         return self._dao.user.list_(**kwargs)
 
@@ -129,8 +129,8 @@ class UserService(BaseService):
         if not self._dao.policy.exists(policy_uuid):
             raise exceptions.UnknownPolicyException(policy_uuid)
 
-    def update(self, top_tenant_uuid, user_uuid, **kwargs):
-        self.assert_user_in_subtenant(top_tenant_uuid, user_uuid)
+    def update(self, scoping_tenant_uuid, user_uuid, **kwargs):
+        self.assert_user_in_subtenant(scoping_tenant_uuid, user_uuid)
         self._dao.user.update(user_uuid, **kwargs)
         return self.get_user(user_uuid)
 
@@ -151,8 +151,8 @@ class UserService(BaseService):
 
         return hash_ == self._encrypter.compute_password_hash(password, salt)
 
-    def assert_user_in_subtenant(self, top_tenant_uuid, user_uuid):
-        tenant_uuids = self._tenant_tree.list_nodes(top_tenant_uuid)
+    def assert_user_in_subtenant(self, scoping_tenant_uuid, user_uuid):
+        tenant_uuids = self._tenant_tree.list_nodes(scoping_tenant_uuid)
         user_exists = self._dao.user.exists(user_uuid, tenant_uuids=tenant_uuids)
         if not user_exists:
             raise exceptions.UnknownUserException(user_uuid)

@@ -17,13 +17,13 @@ class TenantUsers(_BaseResource):
 
     @http.required_acl('auth.tenants.{tenant_uuid}.users.read')
     def get(self, tenant_uuid):
-        top_tenant = Tenant.autodetect()
+        scoping_tenant = Tenant.autodetect()
         ListSchema = schemas.new_list_schema('username')
         list_params, errors = ListSchema().load(request.args)
         if errors:
             raise exceptions.InvalidListParamException(errors)
 
-        self.tenant_service.assert_tenant_under(top_tenant.uuid, tenant_uuid)
+        self.tenant_service.assert_tenant_under(scoping_tenant.uuid, tenant_uuid)
 
         return {
             'items': self.tenant_service.list_users(tenant_uuid, **list_params),
@@ -39,13 +39,13 @@ class UserTenants(http.AuthResource):
 
     @http.required_acl('auth.users.{user_uuid}.tenants.read')
     def get(self, user_uuid):
-        top_tenant = Tenant.autodetect()
+        scoping_tenant = Tenant.autodetect()
         ListSchema = schemas.new_list_schema('name')
         list_params, errors = ListSchema().load(request.args)
         if errors:
             raise exceptions.InvalidListParamException(errors)
 
-        self.user_service.assert_user_in_subtenant(top_tenant.uuid, user_uuid)
+        self.user_service.assert_user_in_subtenant(scoping_tenant.uuid, user_uuid)
 
         return {
             'items': self.user_service.list_tenants(user_uuid, **list_params),

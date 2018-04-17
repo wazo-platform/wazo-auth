@@ -14,8 +14,8 @@ class TenantService(BaseService):
         self._tenant_tree = tenant_tree
         self._bus_publisher = bus_publisher
 
-    def assert_tenant_under(self, top_tenant_uuid, tenant_uuid):
-        visible_tenants = self.list_sub_tenants(top_tenant_uuid)
+    def assert_tenant_under(self, scoping_tenant_uuid, tenant_uuid):
+        visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
         if str(tenant_uuid) not in visible_tenants:
             raise exceptions.UnknownTenantException(tenant_uuid)
 
@@ -32,12 +32,12 @@ class TenantService(BaseService):
 
         return result
 
-    def count(self, top_tenant_uuid, **kwargs):
-        visible_tenants = self.list_sub_tenants(top_tenant_uuid)
+    def count(self, scoping_tenant_uuid, **kwargs):
+        visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
         return self._dao.tenant.count(tenant_uuids=visible_tenants, **kwargs)
 
-    def delete(self, top_tenant_uuid, uuid):
-        visible_tenants = self.list_sub_tenants(top_tenant_uuid)
+    def delete(self, scoping_tenant_uuid, uuid):
+        visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
         if uuid not in visible_tenants:
             raise exceptions.UnknownTenantException(uuid)
 
@@ -51,8 +51,8 @@ class TenantService(BaseService):
     def find_top_tenant(self):
         return self._dao.tenant.find_top_tenant()
 
-    def get(self, top_tenant_uuid, uuid):
-        visible_tenants = self.list_sub_tenants(top_tenant_uuid)
+    def get(self, scoping_tenant_uuid, uuid):
+        visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
         if uuid not in visible_tenants:
             raise exceptions.UnknownTenantException(uuid)
 
@@ -64,8 +64,8 @@ class TenantService(BaseService):
             return tenant
         raise exceptions.UnknownTenantException(uuid)
 
-    def list_(self, top_tenant_uuid, **kwargs):
-        visible_tenants = self.list_sub_tenants(top_tenant_uuid)
+    def list_(self, scoping_tenant_uuid, **kwargs):
+        visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
         return self._dao.tenant.list_(tenant_uuids=visible_tenants, **kwargs)
 
     def list_policies(self, tenant_uuid, **kwargs):
@@ -100,8 +100,8 @@ class TenantService(BaseService):
         if not self._dao.policy.exists(policy_uuid):
             raise exceptions.UnknownPolicyException(policy_uuid)
 
-    def update(self, top_tenant_uuid, tenant_uuid, **kwargs):
-        visible_tenants = self.list_sub_tenants(top_tenant_uuid)
+    def update(self, scoping_tenant_uuid, tenant_uuid, **kwargs):
+        visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
         if tenant_uuid not in visible_tenants:
             raise exceptions.UnknownTenantException(tenant_uuid)
 

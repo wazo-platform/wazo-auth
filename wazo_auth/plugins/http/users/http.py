@@ -22,23 +22,23 @@ class User(BaseUserService):
 
     @http.required_acl('auth.users.{user_uuid}.read')
     def get(self, user_uuid):
-        top_tenant = Tenant.autodetect()
-        return self.user_service.get_user(user_uuid, top_tenant.uuid)
+        scoping_tenant = Tenant.autodetect()
+        return self.user_service.get_user(user_uuid, scoping_tenant.uuid)
 
     @http.required_acl('auth.users.{user_uuid}.delete')
     def delete(self, user_uuid):
-        top_tenant = Tenant.autodetect()
-        self.user_service.delete_user(top_tenant.uuid, user_uuid)
+        scoping_tenant = Tenant.autodetect()
+        self.user_service.delete_user(scoping_tenant.uuid, user_uuid)
         return '', 204
 
     @http.required_acl('auth.users.{user_uuid}.edit')
     def put(self, user_uuid):
-        top_tenant = Tenant.autodetect()
+        scoping_tenant = Tenant.autodetect()
         args, errors = UserPutSchema().load(request.get_json())
         if errors:
             raise exceptions.UserParamException.from_errors(errors)
 
-        result = self.user_service.update(top_tenant.uuid, user_uuid, **args)
+        result = self.user_service.update(scoping_tenant.uuid, user_uuid, **args)
         return result, 200
 
 
@@ -60,15 +60,15 @@ class Users(BaseUserService):
 
     @http.required_acl('auth.users.read')
     def get(self):
-        top_tenant = Tenant.autodetect()
+        scoping_tenant = Tenant.autodetect()
         ListSchema = schemas.new_list_schema('username')
         list_params, errors = ListSchema().load(request.args)
         if errors:
             raise exceptions.InvalidListParamException(errors)
 
-        users = self.user_service.list_users(top_tenant_uuid=top_tenant.uuid, **list_params)
-        total = self.user_service.count_users(top_tenant.uuid, filtered=False, **list_params)
-        filtered = self.user_service.count_users(top_tenant.uuid, filtered=True, **list_params)
+        users = self.user_service.list_users(scoping_tenant_uuid=scoping_tenant.uuid, **list_params)
+        total = self.user_service.count_users(scoping_tenant.uuid, filtered=False, **list_params)
+        filtered = self.user_service.count_users(scoping_tenant.uuid, filtered=True, **list_params)
 
         response = {
             'filtered': filtered,
