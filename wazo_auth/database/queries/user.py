@@ -196,7 +196,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         filter_ = User.uuid == user_uuid
 
         with self.new_session() as s:
-            # TODO find a way to delete all linked voicemails without doing separate queries
+            # TODO find a way to delete all linked emails without doing separate queries
             rows = s.query(UserEmail.email_uuid).filter(UserEmail.user_uuid == user_uuid).all()
             email_ids = [row.email_uuid for row in rows]
             if email_ids:
