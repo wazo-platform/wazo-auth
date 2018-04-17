@@ -78,7 +78,7 @@ class AuthLaunchingTestCase(AssetLaunchingTestCase):
 
 class BaseTestCase(AuthLaunchingTestCase):
 
-    bus_config = {'username': 'guest', 'password': 'guest', 'host': 'localhost'}
+    bus_config = {'user': 'guest', 'password': 'guest', 'host': 'localhost'}
     email_dir = '/var/mail'
 
     @classmethod
@@ -88,8 +88,8 @@ class BaseTestCase(AuthLaunchingTestCase):
 
     def new_message_accumulator(self, routing_key):
         port = self.service_port(5672, service_name='rabbitmq')
-        bus_url = 'amqp://{username}:{password}@{host}:{port}//'.format(port=port, **self.bus_config)
-        return BusClient(bus_url).accumulator(routing_key)
+        bus_client = BusClient.from_connection_fields(port=port, **self.bus_config)
+        return bus_client.accumulator(routing_key)
 
     def get_emails(self):
         return [self._email_body(f) for f in self._get_email_filenames()]
