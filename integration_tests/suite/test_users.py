@@ -11,6 +11,7 @@ from hamcrest import (
     contains_inanyorder,
     empty,
     equal_to,
+    is_not,
     has_entries,
     has_items,
     has_key,
@@ -239,6 +240,7 @@ class TestUsers(WazoAuthTestCase):
             assert_that(
                 created_tenant,
                 has_entries(
+                    uuid=is_not(self.top_tenant_uuid),
                     parent_uuid=self.top_tenant_uuid,
                 )
             )
