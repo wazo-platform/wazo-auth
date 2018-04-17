@@ -12,7 +12,7 @@ from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers import fixtures
 from .helpers.base import (
     assert_http_error,
-    MockBackendTestCase,
+    WazoAuthTestCase,
     UNKNOWN_UUID,
 )
 
@@ -21,7 +21,7 @@ TWO = {'address': 'two@example.com', 'main': False, 'confirmed': False}
 THREE = {'address': 'three@example.com', 'main': False, 'confirmed': True}
 
 
-class TestEmails(MockBackendTestCase):
+class TestEmails(WazoAuthTestCase):
 
     @fixtures.http_user(username='foobar')
     def test_email_updates_as_admin(self, foobar):

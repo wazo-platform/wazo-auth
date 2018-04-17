@@ -96,14 +96,6 @@ class TenantPolicy(Base):
     policy_uuid = Column(String(38), ForeignKey('auth_policy.uuid', ondelete='CASCADE'), primary_key=True)
 
 
-class TenantUser(Base):
-
-    __tablename__ = 'auth_tenant_user'
-
-    tenant_uuid = Column(String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), primary_key=True)
-    user_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='CASCADE'), primary_key=True)
-
-
 class Token(Base):
 
     __tablename__ = 'auth_token'
@@ -141,6 +133,7 @@ class User(Base):
     password_hash = Column(Text)
     password_salt = Column(LargeBinary)
     enabled = Column(Boolean)
+    tenant_uuid = Column(String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False)
 
 
 class UserEmail(Base):

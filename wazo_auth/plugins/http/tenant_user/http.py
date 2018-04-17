@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
-
-import logging
 
 from flask import request
 from wazo_auth import exceptions, http, schemas
-
-logger = logging.getLogger(__name__)
+from wazo_auth.flask_helpers import Tenant
 
 
 class _BaseResource(http.AuthResource):
@@ -16,29 +13,17 @@ class _BaseResource(http.AuthResource):
         self.tenant_service = tenant_service
 
 
-class TenantUser(_BaseResource):
-
-    @http.required_acl('auth.tenants.{tenant_uuid}.users.{user_uuid}.delete')
-    def delete(self, tenant_uuid, user_uuid):
-        logger.debug('disassociating tenant %s user %s', tenant_uuid, user_uuid)
-        self.tenant_service.remove_user(tenant_uuid, user_uuid)
-        return '', 204
-
-    @http.required_acl('auth.tenants.{tenant_uuid}.users.{user_uuid}.create')
-    def put(self, tenant_uuid, user_uuid):
-        logger.debug('associating tenant %s user %s', tenant_uuid, user_uuid)
-        self.tenant_service.add_user(tenant_uuid, user_uuid)
-        return '', 204
-
-
 class TenantUsers(_BaseResource):
 
     @http.required_acl('auth.tenants.{tenant_uuid}.users.read')
     def get(self, tenant_uuid):
+        scoping_tenant = Tenant.autodetect()
         ListSchema = schemas.new_list_schema('username')
         list_params, errors = ListSchema().load(request.args)
         if errors:
             raise exceptions.InvalidListParamException(errors)
+
+        self.tenant_service.assert_tenant_under(scoping_tenant.uuid, tenant_uuid)
 
         return {
             'items': self.tenant_service.list_users(tenant_uuid, **list_params),
@@ -54,10 +39,13 @@ class UserTenants(http.AuthResource):
 
     @http.required_acl('auth.users.{user_uuid}.tenants.read')
     def get(self, user_uuid):
+        scoping_tenant = Tenant.autodetect()
         ListSchema = schemas.new_list_schema('name')
         list_params, errors = ListSchema().load(request.args)
         if errors:
             raise exceptions.InvalidListParamException(errors)
+
+        self.user_service.assert_user_in_subtenant(scoping_tenant.uuid, user_uuid)
 
         return {
             'items': self.user_service.list_tenants(user_uuid, **list_params),

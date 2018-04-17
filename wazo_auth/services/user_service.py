@@ -15,8 +15,9 @@ logger = logging.getLogger(__name__)
 
 class UserService(BaseService):
 
-    def __init__(self, dao, encrypter=None):
+    def __init__(self, dao, tenant_tree, encrypter=None):
         super(UserService, self).__init__(dao)
+        self._tenant_tree = tenant_tree
         self._encrypter = encrypter or PasswordEncrypter()
 
     def add_policy(self, user_uuid, policy_uuid):
@@ -50,12 +51,20 @@ class UserService(BaseService):
         return self._dao.user.count_policies(user_uuid, **kwargs)
 
     def count_tenants(self, user_uuid, **kwargs):
-        return self._dao.user.count_tenants(user_uuid, **kwargs)
+        return len(self.list_tenants(user_uuid, **kwargs))
 
-    def count_users(self, **kwargs):
+    def count_users(self, scoping_tenant_uuid, **kwargs):
+        if scoping_tenant_uuid:
+            recurse = kwargs.get('recurse')
+            if recurse:
+                kwargs['tenant_uuids'] = self._tenant_tree.list_nodes(scoping_tenant_uuid)
+            else:
+                kwargs['tenant_uuids'] = [scoping_tenant_uuid]
+
         return self._dao.user.count(**kwargs)
 
-    def delete_user(self, user_uuid):
+    def delete_user(self, scoping_tenant_uuid, user_uuid):
+        self.assert_user_in_subtenant(scoping_tenant_uuid, user_uuid)
         self._dao.user.delete(user_uuid)
 
     def get_acl_templates(self, username):
@@ -67,7 +76,10 @@ class UserService(BaseService):
                 acl_templates.extend(policy['acl_templates'])
         return acl_templates
 
-    def get_user(self, user_uuid):
+    def get_user(self, user_uuid, scoping_tenant_uuid=None):
+        if scoping_tenant_uuid:
+            self.assert_user_in_subtenant(scoping_tenant_uuid, user_uuid)
+
         users = self._dao.user.list_(uuid=user_uuid)
         for user in users:
             return user
@@ -80,9 +92,19 @@ class UserService(BaseService):
         return self._dao.policy.get(user_uuid=user_uuid, **kwargs)
 
     def list_tenants(self, user_uuid, **kwargs):
-        return self._dao.tenant.list_(user_uuid=user_uuid, **kwargs)
+        tenant_uuid = self.get_user(user_uuid)['tenant_uuid']
+        tenant_uuids = self._tenant_tree.list_nodes(tenant_uuid)
+        return self._dao.tenant.list_(uuids=tenant_uuids, **kwargs)
 
     def list_users(self, **kwargs):
+        scoping_tenant_uuid = kwargs.pop('scoping_tenant_uuid', None)
+        if scoping_tenant_uuid:
+            recurse = kwargs.get('recurse')
+            if recurse:
+                kwargs['tenant_uuids'] = self._tenant_tree.list_nodes(scoping_tenant_uuid)
+            else:
+                kwargs['tenant_uuids'] = [scoping_tenant_uuid]
+
         return self._dao.user.list_(**kwargs)
 
     def new_user(self, **kwargs):
@@ -91,11 +113,8 @@ class UserService(BaseService):
         if password:
             kwargs['salt'], kwargs['hash_'] = self._encrypter.encrypt_password(password)
 
+        kwargs.setdefault('tenant_uuid', self._dao.tenant.find_top_tenant())
         user = self._dao.user.create(**kwargs)
-
-        # TODO: remove this association and use the tenant tree implicitly
-        tenant_uuid = kwargs.get('tenant_uuid', self._dao.tenant.find_top_tenant())
-        self._dao.tenant.add_user(tenant_uuid, user['uuid'])
 
         return user
 
@@ -110,7 +129,8 @@ class UserService(BaseService):
         if not self._dao.policy.exists(policy_uuid):
             raise exceptions.UnknownPolicyException(policy_uuid)
 
-    def update(self, user_uuid, **kwargs):
+    def update(self, scoping_tenant_uuid, user_uuid, **kwargs):
+        self.assert_user_in_subtenant(scoping_tenant_uuid, user_uuid)
         self._dao.user.update(user_uuid, **kwargs)
         return self.get_user(user_uuid)
 
@@ -130,6 +150,12 @@ class UserService(BaseService):
             return False
 
         return hash_ == self._encrypter.compute_password_hash(password, salt)
+
+    def assert_user_in_subtenant(self, scoping_tenant_uuid, user_uuid):
+        tenant_uuids = self._tenant_tree.list_nodes(scoping_tenant_uuid)
+        user_exists = self._dao.user.exists(user_uuid, tenant_uuids=tenant_uuids)
+        if not user_exists:
+            raise exceptions.UnknownUserException(user_uuid)
 
 
 class PasswordEncrypter(object):

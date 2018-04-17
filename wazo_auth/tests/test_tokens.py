@@ -19,7 +19,8 @@ class TestManager(unittest.TestCase):
         self.config = {'default_token_lifetime': sentinel.default_expiration_delay}
         self.token_dao = Mock(TokenDAO)
         dao = queries.DAO(token=self.token_dao)
-        self.manager = token.Manager(self.config, dao)
+        self.tenant_tree = Mock()
+        self.manager = token.Manager(self.config, dao, self.tenant_tree)
 
     def test_remove_token(self):
         token_id = 'my-token'

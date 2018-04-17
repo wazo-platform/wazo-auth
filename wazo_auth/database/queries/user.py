@@ -10,8 +10,6 @@ from ..models import (
     Email,
     Group,
     Policy,
-    Tenant,
-    TenantUser,
     User,
     UserEmail,
     UserGroup,
@@ -60,8 +58,11 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             s.query(User).filter(filter_).update(values)
 
-    def exists(self, user_uuid):
-        return self.count(uuid=user_uuid) > 0
+    def exists(self, user_uuid, tenant_uuids=None):
+        kwargs = {'uuid': user_uuid}
+        if tenant_uuids is not None:
+            kwargs['tenant_uuids'] = tenant_uuids
+        return self.count(**kwargs) > 0
 
     def remove_policy(self, user_uuid, policy_uuid):
         filter_ = and_(
@@ -73,24 +74,25 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             return s.query(UserPolicy).filter(filter_).delete()
 
     def count(self, **kwargs):
-        if 'tenant_uuids' in kwargs:
-            tenant_filter = TenantUser.tenant_uuid.in_(kwargs['tenant_uuids'])
-        else:
-            tenant_filter = text('true')
+        filter_ = text('true')
+
+        tenant_uuid = kwargs.get('tenant_uuid')
+        if tenant_uuid:
+            filter_ = User.tenant_uuid == tenant_uuid
+
+        tenant_uuids = kwargs.get('tenant_uuids')
+        if tenant_uuids:
+            filter_ = User.tenant_uuid.in_(tenant_uuids)
 
         filtered = kwargs.get('filtered')
         if filtered is not False:
             strict_filter = self.new_strict_filter(**kwargs)
             search_filter = self.new_search_filter(**kwargs)
-            filter_ = and_(tenant_filter, strict_filter, search_filter)
-        else:
-            filter_ = tenant_filter
+            filter_ = and_(filter_, strict_filter, search_filter)
 
         with self.new_session() as s:
             return s.query(
                 User.uuid,
-            ).outerjoin(
-                TenantUser,
             ).outerjoin(
                 UserEmail, UserEmail.user_uuid == User.uuid,
             ).outerjoin(
@@ -127,20 +129,6 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 UserPolicy, UserPolicy.policy_uuid == Policy.uuid,
             ).filter(filter_).count()
 
-    def count_tenants(self, user_uuid, **kwargs):
-        filtered = kwargs.get('filtered')
-        if filtered is not False:
-            strict_filter = filters.tenant_strict_filter.new_filter(**kwargs)
-            search_filter = filters.tenant_search_filter.new_filter(**kwargs)
-            filter_ = and_(strict_filter, search_filter)
-        else:
-            filter_ = text('true')
-
-        filter_ = and_(filter_, TenantUser.user_uuid == str(user_uuid))
-
-        with self.new_session() as s:
-            return s.query(Tenant).join(TenantUser).filter(filter_).count()
-
     def create(self, username, **kwargs):
         user_args = {
             'username': username,
@@ -149,6 +137,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             'password_hash': kwargs.get('hash_'),
             'password_salt': kwargs.get('salt'),
             'enabled': kwargs.get('enabled'),
+            'tenant_uuid': kwargs['tenant_uuid'],
         }
         uuid = kwargs.get('uuid')
         if uuid:
@@ -200,15 +189,19 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 'lastname': user.lastname,
                 'emails': emails,
                 'enabled': user.enabled,
+                'tenant_uuid': user.tenant_uuid,
             }
 
     def delete(self, user_uuid):
+        filter_ = User.uuid == user_uuid
+
         with self.new_session() as s:
+            # TODO find a way to delete all linked emails without doing separate queries
             rows = s.query(UserEmail.email_uuid).filter(UserEmail.user_uuid == user_uuid).all()
             email_ids = [row.email_uuid for row in rows]
             if email_ids:
                 s.query(Email).filter(Email.uuid.in_(email_ids)).delete(synchronize_session=False)
-            nb_deleted = s.query(User).filter(User.uuid == user_uuid).delete()
+            nb_deleted = s.query(User).filter(filter_).delete(synchronize_session=False)
 
         if not nb_deleted:
             raise exceptions.UnknownUserException(user_uuid)
@@ -263,6 +256,14 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         strict_filter = self.new_strict_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
 
+        tenant_uuids = kwargs.get('tenant_uuids')
+        if tenant_uuids is not None:
+            filter_ = and_(filter_, User.tenant_uuid.in_(tenant_uuids))
+
+        tenant_uuid = kwargs.get('tenant_uuid')
+        if tenant_uuid:
+            filter_ = and_(filter_, User.tenant_uuid == str(tenant_uuid))
+
         with self.new_session() as s:
             query = s.query(
                 User.uuid,
@@ -270,6 +271,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 User.firstname,
                 User.lastname,
                 User.enabled,
+                User.tenant_uuid,
                 UserEmail.main,
                 Email.uuid,
                 Email.address,
@@ -278,7 +280,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 UserEmail, User.uuid == UserEmail.user_uuid,
             ).outerjoin(
                 Email, Email.uuid == UserEmail.email_uuid,
-            ).outerjoin(TenantUser).outerjoin(UserGroup).filter(filter_)
+            ).outerjoin(UserGroup).filter(filter_)
             query = self._paginator.update_query(query, **kwargs)
             rows = query.all()
 
@@ -289,6 +291,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     firstname,
                     lastname,
                     enabled,
+                    tenant_uuid,
                     main_email,
                     email_uuid,
                     address,
@@ -303,6 +306,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                         'emails': [],
                         'firstname': firstname,
                         'lastname': lastname,
+                        'tenant_uuid': tenant_uuid,
                     }
 
                 if address:

@@ -5,10 +5,10 @@
 import requests
 from hamcrest import assert_that, contains, equal_to, has_entries, has_properties, starts_with
 from .helpers import fixtures
-from .helpers.base import assert_http_error, assert_no_error, MockBackendTestCase, UNKNOWN_UUID
+from .helpers.base import assert_http_error, assert_no_error, WazoAuthTestCase, UNKNOWN_UUID
 
 
-class TestEmailConfirmation(MockBackendTestCase):
+class TestEmailConfirmation(WazoAuthTestCase):
 
     @fixtures.http_user_register(email_address='foobar@example.com')
     def test_email_confirmation(self, user):
@@ -27,8 +27,9 @@ class TestEmailConfirmation(MockBackendTestCase):
     @fixtures.http_user_register(email_address='foobar@example.com')
     def test_email_confirmation_get(self, user):
         email_uuid = user['emails'][0]['uuid']
-        url = 'https://{}:{}/0.1/emails/{}/confirm'.format(self.get_host(), self._auth_port, email_uuid)
-        token = self.client.token.new(backend='mock', expiration=3600)['token']
+
+        url = 'https://{}:{}/0.1/emails/{}/confirm'.format(self.auth_host, self.auth_port, email_uuid)
+        token = self.client._token_id
         response = requests.get(url, params={'token': token}, verify=False)
         assert_that(response.status_code, equal_to(200))
 

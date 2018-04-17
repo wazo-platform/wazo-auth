@@ -10,7 +10,7 @@ from xivo_test_helpers import until
 from .helpers import base, fixtures
 
 
-class TestExternalAuthAPI(base.MockBackendTestCase):
+class TestExternalAuthAPI(base.WazoAuthTestCase):
 
     asset = 'external_auth'
     safe_data = {'scope': ['one', 'two', 'three']}

@@ -2,11 +2,14 @@
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+import logging
 from flask import request
 from wazo_auth import exceptions, http, schemas
 from wazo_auth.flask_helpers import Tenant
 
 from .schemas import ChangePasswordSchema, UserPostSchema, UserPutSchema
+
+logger = logging.getLogger(__name__)
 
 
 class BaseUserService(http.AuthResource):
@@ -19,20 +22,23 @@ class User(BaseUserService):
 
     @http.required_acl('auth.users.{user_uuid}.read')
     def get(self, user_uuid):
-        return self.user_service.get_user(user_uuid)
+        scoping_tenant = Tenant.autodetect()
+        return self.user_service.get_user(user_uuid, scoping_tenant.uuid)
 
     @http.required_acl('auth.users.{user_uuid}.delete')
     def delete(self, user_uuid):
-        self.user_service.delete_user(user_uuid)
+        scoping_tenant = Tenant.autodetect()
+        self.user_service.delete_user(scoping_tenant.uuid, user_uuid)
         return '', 204
 
     @http.required_acl('auth.users.{user_uuid}.edit')
     def put(self, user_uuid):
+        scoping_tenant = Tenant.autodetect()
         args, errors = UserPutSchema().load(request.get_json())
         if errors:
             raise exceptions.UserParamException.from_errors(errors)
 
-        result = self.user_service.update(user_uuid, **args)
+        result = self.user_service.update(scoping_tenant.uuid, user_uuid, **args)
         return result, 200
 
 
@@ -54,16 +60,15 @@ class Users(BaseUserService):
 
     @http.required_acl('auth.users.read')
     def get(self):
-        tenants = Tenant.autodetect(many=True)
+        scoping_tenant = Tenant.autodetect()
         ListSchema = schemas.new_list_schema('username')
         list_params, errors = ListSchema().load(request.args)
         if errors:
             raise exceptions.InvalidListParamException(errors)
 
-        tenant_uuids = [tenant.uuid for tenant in tenants]
-        users = self.user_service.list_users(tenant_uuids=tenant_uuids, **list_params)
-        total = self.user_service.count_users(filtered=False, tenant_uuids=tenant_uuids, **list_params)
-        filtered = self.user_service.count_users(filtered=True, tenant_uuids=tenant_uuids, **list_params)
+        users = self.user_service.list_users(scoping_tenant_uuid=scoping_tenant.uuid, **list_params)
+        total = self.user_service.count_users(scoping_tenant.uuid, filtered=False, **list_params)
+        filtered = self.user_service.count_users(scoping_tenant.uuid, filtered=True, **list_params)
 
         response = {
             'filtered': filtered,
@@ -79,5 +84,6 @@ class Users(BaseUserService):
         tenant = Tenant.autodetect()
         if errors:
             raise exceptions.UserParamException.from_errors(errors)
+        logger.debug('creating user in tenant: %s', tenant.uuid)
         result = self.user_service.new_user(email_confirmed=True, tenant_uuid=tenant.uuid, **args)
         return result, 200

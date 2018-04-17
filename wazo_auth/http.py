@@ -47,7 +47,6 @@ class AuthClientFacade(object):
 
         def get_tenants(self, user_uuid):
             tenants = current_app.config['user_service'].list_tenants(user_uuid)
-            logger.critical('tenants: %s', tenants)
             return {
                 'items': [
                     {

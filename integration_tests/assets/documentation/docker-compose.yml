@@ -12,7 +12,7 @@ services:
       TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
   auth:
     image: wazopbx/wazo-auth-tests
-    expose:
+    ports:
       - "9497"
     environment:
       XIVO_UUID: "ad094f0b-8597-4129-a9c9-134993543120"

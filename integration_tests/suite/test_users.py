@@ -11,30 +11,37 @@ from hamcrest import (
     contains_inanyorder,
     empty,
     equal_to,
+    is_not,
     has_entries,
     has_items,
+    has_key,
     has_properties,
+    not_,
 )
-from contextlib import contextmanager
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from xivo_test_helpers.hamcrest.raises import raises
 from .helpers import fixtures
 from .helpers.base import (
     assert_http_error,
     assert_no_error,
-    MockBackendTestCase,
+    WazoAuthTestCase,
 )
 
 UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
 
 
-class TestUsers(MockBackendTestCase):
+class TestUsers(WazoAuthTestCase):
 
     @fixtures.http_user_register()
-    def test_delete(self, user):
+    def test_delete(self, alice):
+        with self.client_in_subtenant() as (client, bob, sub_tenant):
+            assert_http_error(404, client.users.delete, alice['uuid'])
+            assert_http_error(401, client.users.delete, alice['uuid'], tenant_uuid=self.top_tenant_uuid)
+            assert_no_error(self.client.users.delete, bob['uuid'])
+
         assert_http_error(404, self.client.users.delete, UNKNOWN_UUID)
-        assert_no_error(self.client.users.delete, user['uuid'])
-        assert_http_error(404, self.client.users.delete, user['uuid'])
+        assert_no_error(self.client.users.delete, alice['uuid'])
+        assert_http_error(404, self.client.users.delete, alice['uuid'])
 
     @fixtures.http_user(username='foobar', password='foobar', email_address='foobar@example.com')
     @fixtures.http_user(username='foobaz', password='foobaz', email_address='foobaz@example.com')
@@ -53,7 +60,7 @@ class TestUsers(MockBackendTestCase):
         user_client = self.new_auth_client('foobaz', 'foobaz')
         assert_http_error(401, user_client.token.new, 'wazo_user')
 
-    def test_post(self):
+    def test_post_no_token(self):
         args = {
             'username': 'foobar',
             'firstname': 'Alice',
@@ -61,50 +68,66 @@ class TestUsers(MockBackendTestCase):
             'password': 's3cr37',
         }
 
-        url = 'https://{}:{}/0.1/users'.format(self.get_host(), self._auth_port)
+        url = 'https://{}:{}/0.1/users'.format(self.auth_host, self.auth_port)
         result = requests.post(url, headers={'Content-Type': 'application/json'},
                                data=json.dumps(args), verify=False)
         assert_that(result.status_code, equal_to(401))
 
-        with self.auto_remove_user(self.client.users.new, **args) as user:
+    @fixtures.http_tenant(name='isolated')
+    def test_post_with_top_tenant_admin(self, isolated):
+        args = {
+            'username': 'foobar',
+            'firstname': 'Alice',
+            'email_address': 'foobar@example.com',
+            'password': 's3cr37',
+        }
+
+        # User created in our own tenant
+        with self.user(self.client, **args) as user:
+            assert_that(user, not_(has_key('password')))
             assert_that(user, has_entries(
                 'uuid', uuid_(),
                 'username', 'foobar',
                 'firstname', 'Alice',
                 'lastname', None,
                 'enabled', True,
+                'tenant_uuid', self.top_tenant_uuid,
                 'emails', contains_inanyorder(
                     has_entries(
                         'uuid', uuid_(),
                         'address', 'foobar@example.com',
                         'main', True,
                         'confirmed', True))))
+
+            # TODO move this assertion to the user tenant tests
             tenants = self.client.users.get_tenants(user['uuid'])
-            assert_that(tenants['items'], contains(has_entries(name='master')))
+            assert_that(tenants['items'], has_items(has_entries(uuid=self.top_tenant_uuid)))
 
-        with self.multi_tenant_client() as client:
-            tenant2 = client.tenants.list(name='multi-tenant2-for-tests')['items'][0]
-            args = {
-                'username': 'user-from-multitenant',
-                'email_address': 'user-from-multitenant@example.com',
-                'tenant_uuid': tenant2['uuid'],
-            }
-
-            with self.auto_remove_user(client.users.new, **args) as user:
-                tenants = client.users.get_tenants(user['uuid'])
-                assert_that(tenants['items'], contains(has_entries(name=tenant2['name'])))
-
-        args = {'username': 'foobaz', 'email_address': 'foobaz@example.com'}
-
-        with self.auto_remove_user(self.client.users.new, **args) as user:
+        # User created in subtenant
+        with self.user(self.client, tenant_uuid=isolated['uuid'], **args) as user:
             assert_that(user, has_entries(
                 'uuid', uuid_(),
-                'username', 'foobaz',
+                'username', 'foobar',
+                'firstname', 'Alice',
+                'lastname', None,
+                'enabled', True,
+                'tenant_uuid', isolated['uuid'],
                 'emails', contains_inanyorder(
                     has_entries(
-                        'address', 'foobaz@example.com',
+                        'uuid', uuid_(),
+                        'address', 'foobar@example.com',
                         'main', True,
                         'confirmed', True))))
+
+            # TODO move this assertion to the user tenant tests
+            tenants = self.client.users.get_tenants(user['uuid'])
+            assert_that(
+                tenants,
+                has_entries(
+                    items=contains(has_entries(uuid=isolated['uuid'])),
+                    total=1,
+                ),
+            )
 
         args = {
             'uuid': 'fcf9724a-15aa-4dc5-af3c-a9acdb6a2ab9',
@@ -112,36 +135,49 @@ class TestUsers(MockBackendTestCase):
             'email_address': 'alice@example.com',
         }
 
-        with self.auto_remove_user(self.client.users.new, **args) as user:
-            assert_that(user, has_entries(uuid=args['uuid'], username=args['username']))
+        with self.user(self.client, **args) as user:
             assert_http_error(409, self.client.users.new, **args)
 
         assert_http_error(400, self.client.users.new, username='a'*257)
-        with self.auto_remove_user(self.client.users.new, username='a'*256) as user:
+        with self.user(self.client, username='a'*256) as user:
             assert_that(user, has_entries(username='a'*256))
 
-        with self.auto_remove_user(self.client.users.new, username='bob') as user:
+        # User creation with no email address
+        with self.user(self.client, username='bob') as user:
             assert_that(user, has_entries(username='bob', emails=empty()))
 
-        args = {
-            'username': 'bob',
-            'firstname': None,
-            'lastname': None,
-            'password': None,
-        }
-        with self.auto_remove_user(self.client.users.new, **args) as user:
-            del(args['password'])
-            assert_that(user, has_entries(**args))
-
         args = {'username': 'bob', 'email_address': None}
-        with self.auto_remove_user(self.client.users.new, **args) as user:
+        with self.user(self.client, **args) as user:
             assert_that(user, has_entries(emails=empty()))
 
         user_args = {'username': 'foobar', 'password': 'foobaz', 'enabled': False}
-        with self.auto_remove_user(self.client.users.new, **user_args) as user:
+        with self.user(self.client, **user_args) as user:
             assert_that(user, has_entries('enabled', False))
             user_client = self.new_auth_client('foobar', 'foobaz')
             assert_http_error(401, user_client.token.new, 'wazo_user')
+
+    def test_post_from_subtenant_user(self):
+        with self.client_in_subtenant() as (client, alice, isolated):
+            args = {
+                'username': 'user-from-multitenant',
+                'email_address': 'user-from-multitenant@example.com',
+            }
+
+            # User created in the same tenant
+            with self.user(client, **args) as user:
+                assert_that(
+                    user,
+                    has_entries(
+                        tenant_uuid=isolated['uuid'],
+                    )
+                )
+
+            # User created in a tenant that is not authorized
+            assert_http_error(401, client.users.new, tenant_uuid=self.top_tenant_uuid, **args)
+
+            with self.client_in_subtenant(parent_uuid=isolated['uuid']) as (_, __, subtenant):
+                user = client.users.new(username='foo', tenant_uuid=subtenant['uuid'])
+                assert_that(user, has_entries(tenant_uuid=subtenant['uuid']))
 
     @fixtures.http_user(username='foobar', firstname='foo', lastname='bar')
     def test_put(self, user):
@@ -153,6 +189,10 @@ class TestUsers(MockBackendTestCase):
         }
 
         assert_http_error(404, self.client.users.edit, UNKNOWN_UUID, **body)
+        with self.client_in_subtenant() as (client, bob, isolated):
+            assert_http_error(404, client.users.edit, user['uuid'], **body)
+            assert_http_error(401, client.users.edit, user['uuid'], tenant_uuid=self.top_tenant_uuid, **body)
+            assert_no_error(self.client.users.edit, bob['uuid'], **body)
 
         result = self.client.users.edit(user_uuid, **body)
         assert_that(result, has_entries(
@@ -179,7 +219,7 @@ class TestUsers(MockBackendTestCase):
             'password': 's3cr37',
         }
 
-        with self.auto_remove_user(self.client.users.register, **args) as user:
+        with self.user(self.client, register=True, **args) as user:
             assert_that(
                 user,
                 has_entries(
@@ -188,12 +228,22 @@ class TestUsers(MockBackendTestCase):
                     'firstname', None,
                     'lastname', 'Denver',
                     'enabled', True,
+                    'tenant_uuid', uuid_(),
                     'emails', contains_inanyorder(
                         has_entries(
                             'uuid', uuid_(),
                             'address', 'foobar@example.com',
                             'main', True,
                             'confirmed', False))))
+
+            created_tenant = self.client.tenants.get(user['tenant_uuid'])
+            assert_that(
+                created_tenant,
+                has_entries(
+                    uuid=is_not(self.top_tenant_uuid),
+                    parent_uuid=self.top_tenant_uuid,
+                )
+            )
 
             last_email = self.get_emails()[-1]
             url = [l for l in last_email.split('\n') if l.startswith('https://')][0]
@@ -230,33 +280,63 @@ class TestUsers(MockBackendTestCase):
         user_client = self.new_auth_client('foo', 'secret')
         assert_no_error(user_client.token.new, 'wazo_user', expiration=5)
 
-    @fixtures.http_user(username='foo', email_address='foo@example.com')
-    @fixtures.http_user(username='bar')
-    @fixtures.http_user(username='baz', email_address='baz@example.com')
-    def test_list(self, *users):
-        def check_list_result(result, filtered, item_matcher, *usernames):
+    def test_list(self):
+        def check_list_result(result, total, filtered, item_matcher, *usernames):
             items = item_matcher(*[has_entries('username', username,
                                                'enabled', True) for username in usernames])
-            expected = has_entries('total', 3, 'filtered', filtered, 'items', items)
+            expected = has_entries('total', total, 'filtered', filtered, 'items', items)
             assert_that(result, expected)
 
-        result = self.client.users.list(username='bar')
-        assert_that(result, has_entries(items=contains(has_entries(username='bar', emails=empty()))))
+        with self.client_in_subtenant(username='foo') as (top_client, _, top):
+            with self.client_in_subtenant(username='bar', parent_uuid=top['uuid']) as (sub_client, __, sub):
+                with self.user(sub_client, username='baz'):
+                    result = top_client.users.list()
+                    check_list_result(result, 1, 1, contains, 'foo')
 
-        result = self.client.users.list(search='ba')
-        check_list_result(result, 2, contains_inanyorder, 'bar', 'baz')
+                    result = top_client.users.list(recurse=True)
+                    check_list_result(result, 3, 3, contains_inanyorder, 'foo', 'bar', 'baz')
 
-        result = self.client.users.list(username='baz')
-        check_list_result(result, 1, contains_inanyorder, 'baz')
+                    result = sub_client.users.list()
+                    check_list_result(result, 2, 2, contains_inanyorder, 'bar', 'baz')
 
-        result = self.client.users.list(order='username', direction='desc')
-        check_list_result(result, 3, contains, 'foo', 'baz', 'bar')
+                    result = self.client.users.list(tenant_uuid=top['uuid'])
+                    check_list_result(result, 1, 1, contains_inanyorder, 'foo')
 
-        result = self.client.users.list(limit=1, offset=1, order='username', direction='asc')
-        check_list_result(result, 3, contains, 'baz')
+                    result = self.client.users.list(recurse=True, tenant_uuid=top['uuid'])
+                    check_list_result(result, 3, 3, contains_inanyorder, 'foo', 'bar', 'baz')
+
+                    result = top_client.users.list(recurse=True, search='ba')
+                    check_list_result(result, 3, 2, contains_inanyorder, 'bar', 'baz')
+
+                    result = top_client.users.list(recurse=True, username='bar')
+                    check_list_result(result, 3, 1, contains_inanyorder, 'bar')
+
+                    result = top_client.users.list(recurse=True, order='username', direction='desc')
+                    check_list_result(result, 3, 3, contains, 'foo', 'baz', 'bar')
+
+                    result = top_client.users.list(recurse=True, order='username', direction='asc')
+                    check_list_result(result, 3, 3, contains, 'bar', 'baz', 'foo')
+
+                    result = top_client.users.list(recurse=True, order='username', direction='asc', limit=1)
+                    check_list_result(result, 3, 3, contains, 'bar')
+
+                    result = top_client.users.list(recurse=True, order='username', direction='asc', offset=1)
+                    check_list_result(result, 3, 3, contains, 'baz', 'foo')
+
+                    assert_http_error(400, top_client.users.list, limit='not a number')
+                    assert_http_error(400, top_client.users.list, offset=-1)
+                    assert_http_error(400, top_client.users.list, direction='up')
+                    assert_http_error(400, top_client.users.list, order='lol')
 
     @fixtures.http_user_register(username='foo', email_address='foo@example.com')
     def test_get(self, user):
+        assert_http_error(404, self.client.users.get, UNKNOWN_UUID)
+        with self.client_in_subtenant() as (client, alice, isolated):
+            assert_http_error(404, client.users.get, user['uuid'])
+            assert_http_error(401, client.users.get, user['uuid'], tenant_uuid=self.top_tenant_uuid)
+            assert_no_error(self.client.users.get, alice['uuid'])
+            assert_no_error(client.users.get, alice['uuid'])
+
         result = self.client.users.get(user['uuid'])
         assert_that(
             result,
@@ -349,28 +429,3 @@ class TestUsers(MockBackendTestCase):
         )
 
         assert_no_error(self.client.users.remove_policy, user['uuid'], policy_1['uuid'])
-
-    @contextmanager
-    def auto_remove_user(self, fn, *args, **kwargs):
-        user = fn(*args, **kwargs)
-        try:
-            yield user
-        finally:
-            self.client.users.delete(user['uuid'])
-
-    @contextmanager
-    def multi_tenant_client(self):
-        client = self.new_auth_client(username='foo', password='bar')
-        token = client.token.new(backend='mock', expiration=3600)['token']
-        client.set_token(token)
-        tenant1 = client.tenants.new(name='multi-tenant1-for-tests')
-        tenant2 = client.tenants.new(name='multi-tenant2-for-tests')
-
-        token = client.token.new(backend='mock_multi_tenant', expiration=3600)['token']
-        client.set_token(token)
-
-        try:
-            yield client
-        finally:
-            client.tenants.delete(tenant1['uuid'])
-            client.tenants.delete(tenant2['uuid'])

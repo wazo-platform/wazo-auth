@@ -59,28 +59,6 @@ class TestTenantDAO(base.DAOTestCase):
         )
 
     @fixtures.tenant()
-    @fixtures.user()
-    def test_add_user(self, user_uuid, tenant_uuid):
-        assert_that(self._user_dao.list_(tenant_uuid=tenant_uuid), empty())
-
-        self._tenant_dao.add_user(tenant_uuid, user_uuid)
-        assert_that(self._user_dao.list_(tenant_uuid=tenant_uuid), contains(has_entries(uuid=user_uuid)))
-
-        self._tenant_dao.add_user(tenant_uuid, user_uuid)  # twice
-
-        assert_that(
-            calling(self._tenant_dao.add_user).with_args(self.unknown_uuid, user_uuid),
-            raises(exceptions.UnknownTenantException),
-            'unknown tenant',
-        )
-
-        assert_that(
-            calling(self._tenant_dao.add_user).with_args(tenant_uuid, self.unknown_uuid),
-            raises(exceptions.UnknownUserException),
-            'unknown user',
-        )
-
-    @fixtures.tenant()
     @fixtures.policy()
     def test_remove_policy(self, policy_uuid, tenant_uuid):
         result = self._tenant_dao.remove_policy(tenant_uuid, policy_uuid)
@@ -97,42 +75,27 @@ class TestTenantDAO(base.DAOTestCase):
         result = self._tenant_dao.remove_policy(tenant_uuid, policy_uuid)
         assert_that(result, equal_to(1))
 
-    @fixtures.tenant()
-    @fixtures.user()
-    def test_remove_user(self, user_uuid, tenant_uuid):
-        result = self._tenant_dao.remove_user(tenant_uuid, user_uuid)
-        assert_that(result, equal_to(0))
-
-        self._tenant_dao.add_user(tenant_uuid, user_uuid)
-
-        result = self._tenant_dao.remove_user(self.unknown_uuid, user_uuid)
-        assert_that(result, equal_to(0))
-
-        result = self._tenant_dao.remove_user(tenant_uuid, self.unknown_uuid)
-        assert_that(result, equal_to(0))
-
-        result = self._tenant_dao.remove_user(tenant_uuid, user_uuid)
-        assert_that(result, equal_to(1))
-
     @fixtures.tenant(name='c')
     @fixtures.tenant(name='b')
     @fixtures.tenant(name='a')
     def test_count(self, *tenants):
+        master_tenant_uuid = self._master_tenant_uuid()
+        visible_tenants = tenants + (master_tenant_uuid,)
         total = len(tenants) + 1  # a, b, c and the master tenant
 
-        result = self._tenant_dao.count()
+        result = self._tenant_dao.count(visible_tenants)
         assert_that(result, equal_to(total))
 
-        result = self._tenant_dao.count(search='b', filtered=False)
+        result = self._tenant_dao.count(visible_tenants, search='b', filtered=False)
         assert_that(result, equal_to(total))
 
-        result = self._tenant_dao.count(search='b')
+        result = self._tenant_dao.count(visible_tenants, search='b')
         assert_that(result, equal_to(1))
 
-        result = self._tenant_dao.count(name='b', filtered=False)
+        result = self._tenant_dao.count(visible_tenants, name='b', filtered=False)
         assert_that(result, equal_to(total))
 
-        result = self._tenant_dao.count(name='b')
+        result = self._tenant_dao.count(visible_tenants, name='b')
         assert_that(result, equal_to(1))
 
     @fixtures.tenant(name='foo c')
@@ -148,9 +111,9 @@ class TestTenantDAO(base.DAOTestCase):
         expected = build_list_matcher('foo c', 'bar b', 'baz a', 'master')
         assert_that(result, contains_inanyorder(*expected))
 
-        for tenant_uuid in (a, b, c):
-            self._tenant_dao.add_user(tenant_uuid, user1_uuid)
-            self._tenant_dao.add_user(tenant_uuid, user2_uuid)
+        result = self._tenant_dao.list_(tenant_uuids=[a, b])
+        expected = build_list_matcher('bar b', 'baz a')
+        assert_that(result, contains_inanyorder(*expected))
 
         result = self._tenant_dao.list_()
         expected = build_list_matcher('foo c', 'bar b', 'baz a', 'master')

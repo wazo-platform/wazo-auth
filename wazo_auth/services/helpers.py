@@ -2,16 +2,30 @@
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+import logging
 import os
+import threading
+
+from contextlib import contextmanager
 from jinja2 import BaseLoader, Environment, TemplateNotFound
+from anytree import Node, PreOrderIter
 
 from xivo.consul_helpers import address_from_config
+
+logger = logging.getLogger(__name__)
 
 
 class BaseService(object):
 
     def __init__(self, dao):
         self._dao = dao
+        self._top_tenant_uuid = None
+
+    @property
+    def top_tenant_uuid(self):
+        if not self._top_tenant_uuid:
+            self._top_tenant_uuid = self._dao.tenant.find_top_tenant()
+        return self._top_tenant_uuid
 
 
 class TemplateLoader(BaseLoader):
@@ -72,3 +86,63 @@ class TemplateFormatter(object):
     def format_password_reset_subject(self, context):
         template = self.environment.get_template('reset_password_subject')
         return template.render(**context)
+
+
+class TenantTree(object):
+
+    def __init__(self, tenant_dao):
+        self._tenant_dao = tenant_dao
+        self._tenant_tree = None
+        self._tree_lock = threading.Lock()
+
+    def invalidate(self):
+        with self._tree_lock:
+            self._tenant_tree = None
+
+    def list_nodes(self, nid):
+        with self._tree() as tree:
+            subtree = self._find_subtree(tree, nid)
+            return [n.name for n in PreOrderIter(subtree)]
+
+    def _find_subtree(self, tree, uuid):
+        for node in PreOrderIter(tree):
+            if node.name == uuid:
+                return node
+
+    @contextmanager
+    def _tree(self):
+        with self._tree_lock:
+            if not self._tenant_tree:
+                self._tenant_tree = self._build_tree(self._tenant_dao.list_())
+
+            yield self._tenant_tree
+
+    def _build_tree(self, tenants):
+        logger.debug('rebuilding tenant tree')
+        nb_tenants = len(tenants)
+        inserted_tenants = set()
+
+        for tenant in tenants:
+            if tenant['uuid'] == tenant['parent_uuid']:
+                top = Node(tenant['uuid'])
+                inserted_tenants.add(tenant['uuid'])
+
+        while True:
+            if len(inserted_tenants) == nb_tenants:
+                break
+
+            for tenant in tenants:
+                if tenant['uuid'] in inserted_tenants:
+                    continue
+
+                if tenant['parent_uuid'] not in inserted_tenants:
+                    continue
+
+                parent = self._find_subtree(top, tenant['parent_uuid'])
+                if not parent:
+                    raise Exception('Could not find parent in tree')
+
+                Node(tenant['uuid'], parent=parent)
+                inserted_tenants.add(tenant['uuid'])
+
+        return top

@@ -32,14 +32,14 @@ class WazoUser(UserAuthenticationBackend):
     def get_metadata(self, login, args):
         metadata = super(WazoUser, self).get_metadata(login, args)
         user_uuid = self._get_user_uuid(login)
-        tenants = self._get_tenants(user_uuid)
         groups = self._get_groups(user_uuid)
+        user = self._user_service.get_user(user_uuid)
 
         user_data = {
             'auth_id': user_uuid,
             'xivo_user_uuid': user_uuid,
             'uuid': user_uuid,
-            'tenants': tenants,
+            'tenant_uuid': user['tenant_uuid'],
             'groups': groups,
         }
         metadata.update(user_data)

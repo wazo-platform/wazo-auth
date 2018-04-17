@@ -7,13 +7,10 @@ from wazo_auth import schemas
 from .base import BaseDAO, PaginatorMixin
 from ..models import (
     Address,
-    Email,
     Policy,
     Tenant,
     TenantPolicy,
-    TenantUser,
     User,
-    UserEmail,
 )
 from . import filters
 from ... import exceptions
@@ -29,7 +26,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     column_map = {'name': Tenant.name}
 
     def exists(self, tenant_uuid):
-        return self.count(uuid=tenant_uuid) > 0
+        return self.count([str(tenant_uuid)]) > 0
 
     def add_policy(self, tenant_uuid, policy_uuid):
         tenant_policy = TenantPolicy(tenant_uuid=str(tenant_uuid), policy_uuid=str(policy_uuid))
@@ -50,33 +47,14 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                         raise exceptions.UnknownPolicyException(policy_uuid)
                 raise
 
-    def add_user(self, tenant_uuid, user_uuid):
-        tenant_user = TenantUser(tenant_uuid=str(tenant_uuid), user_uuid=str(user_uuid))
-        with self.new_session() as s:
-            s.add(tenant_user)
-            try:
-                s.commit()
-            except exc.IntegrityError as e:
-                if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                    # This association already exists.
-                    s.rollback()
-                    return
-                if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
-                    constraint = e.orig.diag.constraint_name
-                    if constraint == 'auth_tenant_user_tenant_uuid_fkey':
-                        raise exceptions.UnknownTenantException(tenant_uuid)
-                    elif constraint == 'auth_tenant_user_user_uuid_fkey':
-                        raise exceptions.UnknownUserException(user_uuid)
-                raise
+    def count(self, tenant_uuids, **kwargs):
+        filter_ = Tenant.uuid.in_(tenant_uuids)
 
-    def count(self, **kwargs):
         filtered = kwargs.get('filtered')
         if filtered is not False:
             strict_filter = self.new_strict_filter(**kwargs)
             search_filter = self.new_search_filter(**kwargs)
-            filter_ = and_(strict_filter, search_filter)
-        else:
-            filter_ = text('true')
+            filter_ = and_(filter_, strict_filter, search_filter)
 
         with self.new_session() as s:
             return s.query(Tenant).filter(filter_).count()
@@ -97,25 +75,14 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def count_users(self, tenant_uuid, **kwargs):
         filtered = kwargs.get('filtered')
+        filter_ = User.tenant_uuid == str(tenant_uuid)
         if filtered is not False:
             strict_filter = filters.user_strict_filter.new_filter(**kwargs)
             search_filter = filters.user_search_filter.new_filter(**kwargs)
-            filter_ = and_(strict_filter, search_filter)
-        else:
-            filter_ = text('true')
-
-        filter_ = and_(filter_, TenantUser.tenant_uuid == str(tenant_uuid))
+            filter_ = and_(filter_, strict_filter, search_filter)
 
         with self.new_session() as s:
-            return s.query(
-                TenantUser
-            ).join(
-                User
-            ).join(
-                UserEmail
-            ).join(
-                Email
-            ).filter(filter_).count()
+            return s.query(User).filter(filter_).count()
 
     def create(self, **kwargs):
         parent_uuid = kwargs.get('parent_uuid')
@@ -175,10 +142,15 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def list_(self, **kwargs):
         schema = schemas.TenantSchema()
+        filter_ = text('true')
+
+        tenant_uuids = kwargs.get('tenant_uuids')
+        if tenant_uuids is not None:
+            filter_ = Tenant.uuid.in_(tenant_uuids)
 
         search_filter = self.new_search_filter(**kwargs)
         strict_filter = self.new_strict_filter(**kwargs)
-        filter_ = and_(strict_filter, search_filter)
+        filter_ = and_(filter_, strict_filter, search_filter)
 
         with self.new_session() as s:
             query = s.query(
@@ -186,8 +158,6 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 Address,
             ).outerjoin(
                 Address
-            ).outerjoin(
-                TenantUser
             ).outerjoin(
                 TenantPolicy
             ).filter(filter_).group_by(Tenant, Address)
@@ -207,15 +177,6 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         with self.new_session() as s:
             return s.query(TenantPolicy).filter(filter_).delete()
-
-    def remove_user(self, tenant_uuid, user_uuid):
-        filter_ = and_(
-            TenantUser.user_uuid == str(user_uuid),
-            TenantUser.tenant_uuid == str(tenant_uuid),
-        )
-
-        with self.new_session() as s:
-            return s.query(TenantUser).filter(filter_).delete()
 
     def update(self, tenant_uuid, **kwargs):
         filter_ = Tenant.uuid == str(tenant_uuid)

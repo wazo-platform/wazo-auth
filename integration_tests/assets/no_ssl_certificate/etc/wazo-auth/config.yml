@@ -12,7 +12,4 @@ rest_api:
     enabled: False
     allow_headers: [Content-Type, authorization]
 
-enabled_backend_plugins:
-  mock: true
-
 db_uri: postgresql://asterisk:proformatique@postgres:5432

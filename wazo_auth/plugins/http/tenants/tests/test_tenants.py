@@ -4,8 +4,7 @@
 
 import json
 from hamcrest import assert_that, equal_to, has_entries
-from mock import ANY, Mock, sentinel as s
-from wazo_auth.flask_helpers import Tenant
+from mock import ANY, Mock, patch, sentinel as s
 from wazo_auth.config import _DEFAULT_CONFIG
 from wazo_auth.tests.test_http import HTTPAppTestCase
 
@@ -17,22 +16,12 @@ class TestTenantPost(HTTPAppTestCase):
     def setUp(self):
         config = dict(_DEFAULT_CONFIG)
         config['enabled_http_plugins']['tenants'] = True
-        self.token_manager = Mock()
-        self.user_service = Mock()
-        self.user_service.list_tenants.return_value = [
-            {'uuid': s.tenant_uuid, 'name': s.tenant_name}
-        ]
-        Tenant.setup(self.token_manager, self.user_service)
         super(TestTenantPost, self).setUp(config)
 
-    def test_delete(self):
-        uuid = 'c6b27903-e0af-43ac-80d9-6ea88e187537'
-        result = self.delete(uuid)
+    @patch('wazo_auth.plugins.http.tenants.http.TenantDetector')
+    def test_invalid_posts(self, TenantDetector):
+        TenantDetector.autodetect.return_value = Mock(uuid=s.tenant_uuid)
 
-        assert_that(result.status_code, equal_to(204))
-        self.tenant_service.delete.assert_called_once_with(uuid)
-
-    def test_invalid_posts(self):
         invalid_datas = [
             {'name': 42},
             {'name': 100 * 'foobar'},
@@ -58,7 +47,10 @@ class TestTenantPost(HTTPAppTestCase):
                 invalid_data
             )
 
-    def test_that_validated_args_are_passed_to_the_service(self):
+    @patch('wazo_auth.plugins.http.tenants.http.TenantDetector')
+    def test_that_validated_args_are_passed_to_the_service(self, TenantDetector):
+        TenantDetector.autodetect.return_value = Mock(uuid=s.tenant_uuid)
+
         body = {'name': 'foobar', 'ignored': True}
         self.tenant_service.new.return_value = {
             'name': 'foobar',
@@ -82,29 +74,6 @@ class TestTenantPost(HTTPAppTestCase):
                 state=None,
                 zip_code=None,
                 country=None))
-
-    def test_get(self):
-        self.tenant_service.count.side_effect = expected_total, expected_filtered = 5, 2
-        self.tenant_service.list_.return_value = expected_items = [{'name': 'one'}, {'name': 'two'}]
-
-        result = self.get()
-
-        assert_that(result.status_code, equal_to(200))
-        assert_that(
-            json.loads(result.data),
-            has_entries(
-                'total', expected_total,
-                'filtered', expected_filtered,
-                'items', expected_items,
-            ),
-        )
-
-    def delete(self, tenant_uuid):
-        url = '{}/{}'.format(self.url, tenant_uuid)
-        return self.app.delete(url, headers=self.headers)
-
-    def get(self, **data):
-        return self.app.get(self.url, query_string=data, headers=self.headers)
 
     def post(self, data):
         return self.app.post(self.url, data=json.dumps(data), headers=self.headers)

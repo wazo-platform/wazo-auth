@@ -10,21 +10,26 @@ import logging
 from datetime import datetime, timedelta
 
 import requests
-from hamcrest import assert_that
-from hamcrest import contains_inanyorder
-from hamcrest import contains_string
-from hamcrest import equal_to
-from hamcrest import has_key
-from hamcrest import has_length
-from hamcrest import is_
+from mock import ANY
+from hamcrest import (
+    assert_that,
+    contains_inanyorder,
+    contains_string,
+    equal_to,
+    has_entries,
+    has_key,
+    is_,
+)
 
 from xivo_test_helpers import until
+from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from wazo_auth import exceptions
 from wazo_auth.database.queries.token import TokenDAO
 from .helpers.base import (
-    BaseTestCase,
-    MockBackendTestCase,
+    AuthLaunchingTestCase,
+    WazoAuthTestCase,
 )
+from .helpers import fixtures
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)
@@ -36,7 +41,13 @@ def _new_token_id():
     return uuid.uuid4()
 
 
-class TestCoreMockBackend(MockBackendTestCase):
+class TestCore(WazoAuthTestCase):
+
+    def setUp(self):
+        self.user = self.client.users.new(username='foo', password='bar')
+
+    def tearDown(self):
+        self.client.users.delete(self.user['uuid'])
 
     def test_that_the_xivo_uuid_is_included_in_POST_response(self):
         response = self._post_token('foo', 'bar')
@@ -53,9 +64,9 @@ class TestCoreMockBackend(MockBackendTestCase):
         assert_that(self._is_valid('abcdef'), is_(False))
 
     def test_backends(self):
-        url = 'https://{}:{}/0.1/backends'.format(self.get_host(), self.service_port(9497, 'auth'))
+        url = 'https://{}:{}/0.1/backends'.format(self.auth_host, self.auth_port)
         response = requests.get(url, verify=False)
-        backends = ['mock', 'mock_with_uuid', 'mock_multi_tenant', 'broken_init', 'broken_verify_password', 'wazo_user']
+        backends = ['broken_init', 'broken_verify_password', 'wazo_user']
         assert_that(response.json()['data'], contains_inanyorder(*backends))
 
     def test_that_get_returns_the_auth_id(self):
@@ -63,15 +74,17 @@ class TestCoreMockBackend(MockBackendTestCase):
 
         response = self._get_token(token)
 
-        assert_that(response['auth_id'], equal_to('a-mocked-uuid'))
+        assert_that(response['auth_id'], self.user['uuid'])
 
     def test_that_get_returns_the_xivo_uuid_in_the_response(self):
         token = self._post_token('foo', 'bar')['token']
 
         response = self._get_token(token)
 
-        xivo_uuid = response['xivo_uuid']
-        assert_that(xivo_uuid, equal_to('the-predefined-xivo-uuid'))
+        assert_that(
+            response,
+            has_entries(xivo_uuid='the-predefined-xivo-uuid'),
+        )
 
     def test_that_get_returns_the_xivo_user_uuid(self):
         token = self._post_token('foo', 'bar')['token']
@@ -92,17 +105,16 @@ class TestCoreMockBackend(MockBackendTestCase):
         self._post_token_with_expected_exception('foo', 'not_bar', status_code=401)
 
     def test_that_the_right_credentials_return_a_token_with_datas(self):
-        response = self._post_token('foo', 'bar', backend='mock_with_uuid')
-        content = response
-        token = content['token']
-        auth_id = content['auth_id']
-        xivo_user_uuid = content['xivo_user_uuid']
-        acls = content['acls']
+        response = self._post_token('foo', 'bar')
 
-        assert_that(token, has_length(36))
-        assert_that(auth_id, equal_to('a-mocked-auth-id'))
-        assert_that(xivo_user_uuid, equal_to('a-mocked-xivo-user-uuid'))
-        assert_that(acls, contains_inanyorder('foo', 'bar'))
+        assert_that(
+            response,
+            has_entries(
+                token=uuid_(),
+                metadata=has_entries(uuid=self.user['uuid']),
+                acls=ANY,
+            ),
+        )
 
     def test_that_an_unknown_type_returns_a_401(self):
         self._post_token_with_expected_exception('foo', 'not_bar', 'unexistant_backend', status_code=401)
@@ -111,7 +123,7 @@ class TestCoreMockBackend(MockBackendTestCase):
         self._post_token_with_expected_exception('foo', 'not_bar', 'broken_verify_password', status_code=401)
 
     def test_that_no_type_returns_400(self):
-        url = 'https://{}:{}/0.1/token'.format(self.get_host(), self.service_port(9497, 'auth'))
+        url = 'https://{}:{}/0.1/token'.format(self.auth_host, self.auth_port)
         s = requests.Session()
         s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         s.auth = requests.auth.HTTPBasicAuth('foo', 'bar')
@@ -172,12 +184,20 @@ class TestCoreMockBackend(MockBackendTestCase):
         token = self._post_token('foo', 'bar')['token']
         self._get_token_with_expected_exception(token, acls='confd', status_code=403)
 
-    def test_that_authorized_acls_on_HEAD_return_204(self):
+    @fixtures.http_policy(name='fooer', acl_templates=['foo'])
+    def test_that_authorized_acls_on_HEAD_return_204(self, policy):
+        self.client.users.add_policy(self.user['uuid'], policy['uuid'])
+
         token = self._post_token('foo', 'bar')['token']
+
         assert_that(self._is_valid(token, acls='foo'))
 
-    def test_that_authorized_acls_on_GET_return_200(self):
+    @fixtures.http_policy(name='fooer', acl_templates=['foo'])
+    def test_that_authorized_acls_on_GET_return_200(self, policy):
+        self.client.users.add_policy(self.user['uuid'], policy['uuid'])
+
         token = self._post_token('foo', 'bar')['token']
+
         self._get_token(token, acls='foo')  # no exception
 
     def _is_token_in_the_db(self, token):
@@ -190,7 +210,7 @@ class TestCoreMockBackend(MockBackendTestCase):
             return False
 
 
-class TestNoSSLCertificate(BaseTestCase):
+class TestNoSSLCertificate(AuthLaunchingTestCase):
 
     asset = 'no_ssl_certificate'
 
@@ -201,7 +221,7 @@ class TestNoSSLCertificate(BaseTestCase):
         assert_that(log, contains_string("No such file or directory: '/data/_common/ssl/no_server.crt'"))
 
 
-class TestNoSSLKey(BaseTestCase):
+class TestNoSSLKey(AuthLaunchingTestCase):
 
     asset = 'no_ssl_key'
 

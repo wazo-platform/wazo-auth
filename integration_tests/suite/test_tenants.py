@@ -4,10 +4,6 @@
 
 from __future__ import unicode_literals
 
-import json
-import os
-import requests
-
 from hamcrest import (
     assert_that,
     contains,
@@ -16,9 +12,14 @@ from hamcrest import (
     has_entries,
 )
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
-from xivo_auth_client import Client
 from .helpers import fixtures
-from .helpers.base import ADDRESS_NULL, assert_http_error, MockBackendTestCase, UNKNOWN_UUID
+from .helpers.base import (
+    ADDRESS_NULL,
+    assert_http_error,
+    assert_no_error,
+    WazoAuthTestCase,
+    UNKNOWN_UUID,
+)
 
 ADDRESS_1 = {
     'line_1': 'Here',
@@ -30,34 +31,7 @@ ADDRESS_1 = {
 PHONE_1 = '555-555-5555'
 
 
-class TestTenants(MockBackendTestCase):
-
-    username = 'admin'
-    password = 's3cre7'
-
-    @classmethod
-    def setUpClass(cls):
-        super(TestTenants, cls).setUpClass()
-        headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
-        HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
-        port = cls.service_port(9497, 'auth')
-        url = 'https://{}:{}/0.1/init'.format(HOST, port)
-
-        key = cls.docker_exec(['cat', '/var/lib/wazo-auth/init.key'])
-        body = {'key': key, 'username': cls.username, 'password': cls.password}
-        response = requests.post(url, data=json.dumps(body), headers=headers, verify=False)
-        response.raise_for_status()
-
-        cls.admin_client = Client(
-            HOST,
-            port=port,
-            username=cls.username,
-            password=cls.password,
-            verify_certificate=False,
-        )
-        token_data = cls.admin_client.token.new(backend='wazo_user', expiration=7200)
-        cls.admin_user_uuid = token_data['metadata']['uuid']
-        cls.admin_client.set_token(token_data['token'])
+class TestTenants(WazoAuthTestCase):
 
     @fixtures.http_tenant(name='foobar', address=ADDRESS_1, phone=PHONE_1)
     @fixtures.http_tenant(uuid='6668ca15-6d9e-4000-b2ec-731bc7316767', name='foobaz')
@@ -87,31 +61,30 @@ class TestTenants(MockBackendTestCase):
             address=has_entries(**ADDRESS_1),
         ))
 
-        # XXX: remove the association when the GET or HEAD on /token can validate a tenant
-        self.admin_client.tenants.add_user(foobar['uuid'], self.admin_user_uuid)
-
-        subtenant = self.admin_client.tenants.new(name='subtenant', parent_uuid=foobar['uuid'])
-        try:
+        with self.tenant(self.client, name='subtenant', parent_uuid=foobar['uuid']) as subtenant:
             assert_that(subtenant, has_entries(
                 uuid=uuid_(),
                 name='subtenant',
                 parent_uuid=foobar['uuid'],
             ))
-        finally:
-            self.admin_client.tenants.delete(subtenant['uuid'])
-
-        assert_http_error(404, self.client.tenants.new, contact=UNKNOWN_UUID)
 
     @fixtures.http_tenant()
     def test_delete(self, tenant):
-        self.client.tenants.delete(tenant['uuid'])
+        with self.client_in_subtenant() as (client, user, sub_tenant):
+            assert_http_error(404, client.tenants.delete, tenant['uuid'])
+            assert_no_error(client.tenants.delete, sub_tenant['uuid'])
 
+        assert_no_error(self.client.tenants.delete, tenant['uuid'])
         assert_http_error(404, self.client.tenants.delete, tenant['uuid'])
 
     @fixtures.http_tenant(address=ADDRESS_1)
     def test_get_one(self, tenant):
-        result = self.client.tenants.get(tenant['uuid'])
+        with self.client_in_subtenant() as (client, user, sub_tenant):
+            assert_http_error(404, client.tenants.get, tenant['uuid'])
+            result = client.tenants.get(sub_tenant['uuid'])
+            assert_that(result, equal_to(sub_tenant))
 
+        result = self.client.tenants.get(tenant['uuid'])
         assert_that(result, equal_to(tenant))
 
         assert_http_error(404, self.client.tenants.get, UNKNOWN_UUID)
@@ -149,6 +122,12 @@ class TestTenants(MockBackendTestCase):
         assert_http_error(400, self.client.tenants.list, limit='foo')
         assert_http_error(400, self.client.tenants.list, offset=-1)
 
+        with self.client_in_subtenant() as (client, user, sub_tenant):
+            with self.tenant(client, name='subsub') as subsub:
+                result = client.tenants.list()
+                matcher = contains(sub_tenant, subsub)
+                then(result, total=2, filtered=2, item_matcher=matcher)
+
     @fixtures.http_tenant()
     @fixtures.http_user()
     def test_put(self, user, tenant):
@@ -160,6 +139,10 @@ class TestTenants(MockBackendTestCase):
         }
         body_with_unknown_contact = dict(body)
         body_with_unknown_contact['contact'] = UNKNOWN_UUID
+
+        with self.client_in_subtenant() as (client, _, sub_tenant):
+            assert_http_error(404, client.tenants.edit, tenant['uuid'], **body)
+            assert_no_error(client.tenants.edit, sub_tenant['uuid'], **body)
 
         assert_http_error(400, self.client.tenants.edit, tenant['uuid'], name=False)
         assert_http_error(404, self.client.tenants.edit, UNKNOWN_UUID, **body)

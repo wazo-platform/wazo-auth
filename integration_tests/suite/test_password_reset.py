@@ -9,11 +9,11 @@ from .helpers import fixtures
 from .helpers.base import (
     assert_http_error,
     assert_no_error,
-    MockBackendTestCase,
+    WazoAuthTestCase,
 )
 
 
-class TestResetPassword(MockBackendTestCase):
+class TestResetPassword(WazoAuthTestCase):
 
     @fixtures.http_user(username='foo', email_address='foo@example.com')
     @fixtures.http_user(username='bar', email_address='bar@example.com')

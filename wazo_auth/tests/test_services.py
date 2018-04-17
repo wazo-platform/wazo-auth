@@ -17,6 +17,8 @@ from ..database.queries import address, email, external_auth, group, policy, ten
 class BaseServiceTestCase(TestCase):
 
     def setUp(self):
+        self.top_tenant_uuid = 'c699f101-2c71-4069-85da-e1ca7f680393'
+
         self.address_dao = Mock(address.AddressDAO)
         self.email_dao = Mock(email.EmailDAO)
         self.external_auth_dao = Mock(external_auth.ExternalAuthDAO)
@@ -27,6 +29,8 @@ class BaseServiceTestCase(TestCase):
         self.user_dao = Mock(user.UserDAO)
         self.encrypter = Mock(services.PasswordEncrypter)
         self.encrypter.encrypt_password.return_value = s.salt, s.hash_
+
+        self.tenant_dao.find_top_tenant.return_value = self.top_tenant_uuid
 
         self.dao = queries.DAO(
             address=self.address_dao,
@@ -173,7 +177,8 @@ class TestUserService(BaseServiceTestCase):
 
     def setUp(self):
         super(TestUserService, self).setUp()
-        self.service = services.UserService(self.dao, encrypter=self.encrypter)
+        self.tenant_tree = Mock()
+        self.service = services.UserService(self.dao, self.tenant_tree, encrypter=self.encrypter)
 
     def test_change_password(self):
         self.user_dao.list_.return_value = []
@@ -261,12 +266,34 @@ class TestUserService(BaseServiceTestCase):
         self.user_dao.create.assert_called_once_with(**expected_db_params)
         assert_that(result, equal_to(self.user_dao.create.return_value))
 
+        self.user_dao.create.reset_mock()
+
+        params = {
+            'username': 'foobar',
+            'password': 's3cre7',
+            'email_address': 'foobar@example.com',
+        }
+        expected_db_params = {
+            'username': 'foobar',
+            'email_address': 'foobar@example.com',
+            'salt': s.salt,
+            'hash_': s.hash_,
+            'tenant_uuid': self.top_tenant_uuid,
+        }
+        self.user_dao.create.return_value = {'uuid': s.user_uuid}
+
+        result = self.service.new_user(**params)
+
+        self.user_dao.create.assert_called_once_with(**expected_db_params)
+        assert_that(result, equal_to(self.user_dao.create.return_value))
+
 
 class TestTenantService(BaseServiceTestCase):
 
     def setUp(self):
         super(TestTenantService, self).setUp()
-        self.service = services.TenantService(self.dao)
+        self.tenant_tree = Mock()
+        self.service = services.TenantService(self.dao, self.tenant_tree)
 
     def test_remove_policy(self):
         def when(nb_deleted, tenant_exists=True, policy_exists=True):
@@ -292,30 +319,4 @@ class TestTenantService(BaseServiceTestCase):
         when(nb_deleted=1)
         assert_that(
             calling(self.service.remove_policy).with_args(s.tenant_uuid, s.policy_uuid),
-            not_(raises(Exception)))
-
-    def test_remove_user(self):
-        def when(nb_deleted, tenant_exists=True, user_exists=True):
-            self.tenant_dao.remove_user.return_value = nb_deleted
-            self.tenant_dao.exists.return_value = tenant_exists
-            self.user_dao.exists.return_value = user_exists
-
-        when(nb_deleted=0, tenant_exists=False)
-        assert_that(
-            calling(self.service.remove_user).with_args(s.tenant_uuid, s.user_uuid),
-            raises(exceptions.UnknownTenantException))
-
-        when(nb_deleted=0, user_exists=False)
-        assert_that(
-            calling(self.service.remove_user).with_args(s.tenant_uuid, s.user_uuid),
-            raises(exceptions.UnknownUserException))
-
-        when(nb_deleted=0)
-        assert_that(
-            calling(self.service.remove_user).with_args(s.tenant_uuid, s.user_uuid),
-            not_(raises(Exception)))
-
-        when(nb_deleted=1)
-        assert_that(
-            calling(self.service.remove_user).with_args(s.tenant_uuid, s.user_uuid),
             not_(raises(Exception)))

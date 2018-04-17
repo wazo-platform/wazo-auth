@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from hamcrest import (
@@ -12,7 +12,7 @@ from hamcrest import (
 from .helpers import base, fixtures
 
 
-class TestUserGroupAssociation(base.MockBackendTestCase):
+class TestUserGroupAssociation(base.WazoAuthTestCase):
 
     @fixtures.http_user_register()
     @fixtures.http_user_register()

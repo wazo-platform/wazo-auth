@@ -20,8 +20,6 @@ enabled_external_auth_plugins:
   foo: true
   bar: true
 enabled_backend_plugins:
-  mock: true
-  mock_with_uuid: true
   broken_init: true
   broken_verify_password: true
   wazo_user: true

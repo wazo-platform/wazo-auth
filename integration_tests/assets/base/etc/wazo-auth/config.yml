@@ -16,9 +16,6 @@ enabled_http_plugins:
   user_registration: true
   init: true
 enabled_backend_plugins:
-  mock: true
-  mock_with_uuid: true
-  mock_multi_tenant: true
   broken_init: true
   broken_verify_password: true
   wazo_user: true

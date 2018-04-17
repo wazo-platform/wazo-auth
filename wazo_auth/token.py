@@ -122,13 +122,15 @@ class ExpiredTokenRemover(object):
 
 class Manager(object):
 
-    def __init__(self, config, dao):
+    def __init__(self, config, dao, tenant_tree):
         self._backend_policies = config.get('backend_policies', {})
         self._default_expiration = config['default_token_lifetime']
         self._dao = dao
+        self._tenant_tree = tenant_tree
 
     def new_token(self, backend, login, args):
         metadata = backend.get_metadata(login, args)
+        metadata['tenants'] = self._get_tenant_list(metadata.get('tenant_uuid'))
         logger.debug('metadata for %s: %s', login, metadata)
 
         auth_id = metadata['auth_id']
@@ -155,6 +157,13 @@ class Manager(object):
         token = Token(token_uuid, **token_payload)
 
         return token
+
+    def _get_tenant_list(self, tenant_uuid):
+        if not tenant_uuid:
+            return []
+
+        tenant_uuids = self._tenant_tree.list_nodes(tenant_uuid)
+        return [{'uuid': uuid} for uuid in tenant_uuids]
 
     def remove_token(self, token):
         self._dao.token.delete(token)
