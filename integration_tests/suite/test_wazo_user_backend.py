@@ -39,7 +39,7 @@ class TestWazoUserBackend(WazoAuthTestCase):
     # extra tenant: "master" tenant
     @fixtures.http_user(password='s3cr37')
     def test_token_metadata(self, user, tenant, group):
-        master_tenant = self.get_master_tenant()
+        top_tenant = self.get_top_tenant()
         self.client.groups.add_user(group['uuid'], user['uuid'])
 
         token_data = self._post_token(user['username'], 's3cr37', backend='wazo_user')
@@ -47,7 +47,7 @@ class TestWazoUserBackend(WazoAuthTestCase):
         assert_that(token_data['metadata'], has_entries(
             xivo_uuid='the-predefined-xivo-uuid',
             uuid=user['uuid'],
-            tenant_uuid=master_tenant['uuid'],
+            tenant_uuid=top_tenant['uuid'],
             groups=contains(has_entries(uuid=group['uuid'])),
         ))
 

@@ -55,12 +55,12 @@ class TestInit(BaseTestCase):
         assert_that(
             user_tenants,
             has_entries(
-                items=contains(self.get_master_tenant()),
+                items=contains(self.get_top_tenant()),
                 total=1,
             )
         )
 
-    def get_master_tenant(self):
+    def get_top_tenant(self):
         return self.client.tenants.list(name='master')['items'][0]
 
 

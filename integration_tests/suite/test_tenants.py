@@ -37,19 +37,17 @@ class TestTenants(WazoAuthTestCase):
     @fixtures.http_tenant(uuid='6668ca15-6d9e-4000-b2ec-731bc7316767', name='foobaz')
     @fixtures.http_tenant()
     def test_post(self, other, foobaz, foobar):
-        master_tenant = self.get_master_tenant()
-
         assert_that(other, has_entries(
             uuid=uuid_(),
             name=None,
-            parent_uuid=master_tenant['uuid'],
+            parent_uuid=self.top_tenant_uuid,
             address=has_entries(**ADDRESS_NULL),
         ))
 
         assert_that(foobaz, has_entries(
             uuid='6668ca15-6d9e-4000-b2ec-731bc7316767',
             name='foobaz',
-            parent_uuid=master_tenant['uuid'],
+            parent_uuid=self.top_tenant_uuid,
             address=has_entries(**ADDRESS_NULL),
         ))
 
@@ -57,7 +55,7 @@ class TestTenants(WazoAuthTestCase):
             uuid=uuid_(),
             name='foobar',
             phone=PHONE_1,
-            parent_uuid=master_tenant['uuid'],
+            parent_uuid=self.top_tenant_uuid,
             address=has_entries(**ADDRESS_1),
         ))
 
@@ -94,13 +92,13 @@ class TestTenants(WazoAuthTestCase):
     @fixtures.http_tenant(name='foobarbaz')
     # extra tenant: "master" tenant
     def test_list(self, foobarbaz, foobaz, foobar):
-        master_tenant = self.get_master_tenant()
+        top_tenant = self.get_top_tenant()
 
-        def then(result, total=4, filtered=4, item_matcher=contains(master_tenant)):
+        def then(result, total=4, filtered=4, item_matcher=contains(top_tenant)):
             assert_that(result, has_entries(items=item_matcher, total=total, filtered=filtered))
 
         result = self.client.tenants.list()
-        matcher = contains_inanyorder(foobaz, foobar, foobarbaz, master_tenant)
+        matcher = contains_inanyorder(foobaz, foobar, foobarbaz, top_tenant)
         then(result, item_matcher=matcher)
 
         result = self.client.tenants.list(uuid=foobaz['uuid'])
@@ -116,7 +114,7 @@ class TestTenants(WazoAuthTestCase):
         then(result, item_matcher=matcher)
 
         result = self.client.tenants.list(order='name', direction='desc')
-        matcher = contains(master_tenant, foobaz, foobarbaz, foobar)
+        matcher = contains(top_tenant, foobaz, foobarbaz, foobar)
         then(result, item_matcher=matcher)
 
         assert_http_error(400, self.client.tenants.list, limit='foo')

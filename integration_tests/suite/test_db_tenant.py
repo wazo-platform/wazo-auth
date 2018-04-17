@@ -79,8 +79,8 @@ class TestTenantDAO(base.DAOTestCase):
     @fixtures.tenant(name='b')
     @fixtures.tenant(name='a')
     def test_count(self, *tenants):
-        master_tenant_uuid = self._master_tenant_uuid()
-        visible_tenants = tenants + (master_tenant_uuid,)
+        top_tenant_uuid = self._top_tenant_uuid()
+        visible_tenants = tenants + (top_tenant_uuid,)
         total = len(tenants) + 1  # a, b, c and the master tenant
 
         result = self._tenant_dao.count(visible_tenants)
@@ -138,8 +138,8 @@ class TestTenantDAO(base.DAOTestCase):
     @fixtures.tenant(name='foobar')
     def test_tenant_creation(self, foobar_uuid):
         # The parent_uuid defaults to the master tenant's UUID
-        master_tenant_uuid = self._master_tenant_uuid()
-        self._assert_tenant_matches(foobar_uuid, 'foobar', master_tenant_uuid)
+        top_tenant_uuid = self._top_tenant_uuid()
+        self._assert_tenant_matches(foobar_uuid, 'foobar', top_tenant_uuid)
 
         # The parent_uuid can be specified
         foobaz_uuid = self._create_tenant(name='foobaz', parent_uuid=foobar_uuid)
@@ -193,7 +193,7 @@ class TestTenantDAO(base.DAOTestCase):
         kwargs.setdefault('address_id', None)
         return self._tenant_dao.create(**kwargs)
 
-    def _master_tenant_uuid(self):
+    def _top_tenant_uuid(self):
         with self._tenant_dao.new_session() as s:
             return s.query(
                 models.Tenant.uuid,
