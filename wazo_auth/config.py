@@ -81,7 +81,8 @@ _DEFAULT_CONFIG = {
             'private_key': '/usr/share/xivo-certs/server.key',
         },
         'cors': {
-            'enabled': False,
+            'enabled': True,
+            'allow_headers': ['Content-Type', 'Authorization', 'X-Auth-Token', 'Wazo-Tenant']
         },
     },
     'consul': {
