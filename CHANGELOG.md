@@ -5,6 +5,15 @@ Changelog
 -----
 
 * Add the `uuid` field on POST `0.1/tenants`
+* A user now has a tenant_uuid. It is either:
+
+  * the creator's tenant_uuid
+  * the specified Wazo-Tenant header's value
+
+* A tenant now has a parent_uuid which is the tenant_uuid of the tenant above this tenant in the hierarchy.
+* The GET /tenants only return tenants that are below the tenant_uuid of the user doing the request or specified by Wazo-Tenant
+* The GET /users only return user from the same tenant as the requester or Wazo-Tenant
+* The recurse parameter has been added on /users to include users from all sub-tenants
 
 
 18.03
