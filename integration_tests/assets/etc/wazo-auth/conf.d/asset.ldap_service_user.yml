@@ -1,0 +1,12 @@
+enabled_backend_plugins:
+  ldap_user: true
+
+ldap:
+  uri: ldap://slapd
+  bind_dn: 'cn=wazo_auth,ou=people,dc=wazo-auth,dc=wazo,dc=community'
+  bind_password: 'S3cr$t'
+  user_base_dn: 'dc=wazo-auth,dc=wazo,dc=community'
+  user_login_attribute: 'uid'
+
+backend_policies:
+  ldap_user: none

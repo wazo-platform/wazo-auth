@@ -1,0 +1,8 @@
+enabled_backend_plugins:
+  ldap_user: true
+ldap:
+  uri: ldap://slapd
+  user_base_dn: 'ou=quebec,ou=people,dc=wazo-auth,dc=wazo,dc=community'
+  user_login_attribute: 'cn'
+backend_policies:
+  ldap_user: none

@@ -1,2 +1,0 @@
-amqp:
-  uri: 'amqp://guest:guest@rabbitmq:5672/'

@@ -1,0 +1,55 @@
+version: '3'
+services:
+
+  auth:
+    image: wazopbx/wazo-auth-tests
+    ports:
+      - "9497"
+    environment:
+      TZ: UTC+1
+      XIVO_UUID: the-predefined-xivo-uuid
+    volumes:
+      - "../..:/usr/src/wazo-auth"
+      - "./etc/wazo-auth/conf.d/debug.yml:/etc/wazo-auth/conf.d/debug.yml"
+      - "./etc/wazo-auth/conf.d/foreground.yml:/etc/wazo-auth/conf.d/foreground.yml"
+      - "./etc/wazo-auth/conf.d/postgres.yml:/etc/wazo-auth/conf.d/postgres.yml"
+      - "./etc/wazo-auth/conf.d/rabbitmq.yml:/etc/wazo-auth/conf.d/rabbitmq.yml"
+      - "./etc/wazo-auth/conf.d/service_discovery.yml:/etc/wazo-auth/conf.d/service_discovery.yml"
+      - "./etc/wazo-auth/conf.d/smtp.yml:/etc/wazo-auth/conf.d/smtp.yml"
+      # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/usr/local/lib/python2.7/site-packages/xivo"
+      # - "${LOCAL_GIT_REPOS}/xivo-bus/xivo_bus:/usr/local/lib/python2.7/site-packages/xivo_bus"
+    command: "wazo-auth"
+
+  oauth2sync:
+    image: oauth2-synchronization-service
+    ports:
+      - "80"
+
+  postgres:
+    image: wazopbx/wazo-auth-db
+    ports:
+      - "5432"
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - "5672"
+
+  slapd:
+    image: nickstenning/slapd
+    environment:
+      LDAP_DOMAIN: wazo-auth.wazo.community
+      LDAP_ORGANISATION: acme
+      LDAP_ROOTPASS: wazopassword
+    ports:
+      - "389"
+
+  smtp:
+    image: munkyboy/fakesmtp
+    ports:
+      - "25"
+
+  swagger-validator:
+    image: swaggerapi/swagger-validator
+    ports:
+      - "8080"

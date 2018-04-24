@@ -38,6 +38,14 @@ class DBStarter(AssetLaunchingTestCase):
     assets_root = os.path.join(os.path.dirname(__file__), '../..', 'assets')
     service = 'postgres'
 
+    @classmethod
+    def _docker_compose_options(cls):
+        return [
+            '--file', os.path.join(cls.assets_root, 'docker-compose.yml'),
+            '--file', os.path.join(cls.assets_root, 'docker-compose.{}.override.yml'.format(cls.asset)),
+            '--project-name', cls.service,
+        ]
+
 
 class DAOTestCase(unittest.TestCase):
 
@@ -66,6 +74,14 @@ class AuthLaunchingTestCase(AssetLaunchingTestCase):
     def setUpClass(cls):
         cls.auth_host = HOST
         super(AuthLaunchingTestCase, cls).setUpClass()
+
+    @classmethod
+    def _docker_compose_options(cls):
+        return [
+            '--file', os.path.join(cls.assets_root, 'docker-compose.yml'),
+            '--file', os.path.join(cls.assets_root, 'docker-compose.{}.override.yml'.format(cls.asset)),
+            '--project-name', cls.service,
+        ]
 
     def _assert_that_wazo_auth_is_stopping(self):
         for _ in range(5):
