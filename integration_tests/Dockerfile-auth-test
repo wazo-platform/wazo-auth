@@ -1,6 +1,5 @@
 FROM wazopbx/wazo-auth
 
-ADD integration_tests/assets/_common/etc/wazo-auth/conf.d /etc/wazo-auth/conf.d
 ADD integration_tests/assets/external_auth/service_plugin /usr/src/service_plugin
 ADD . /usr/src/wazo-auth
 RUN true \

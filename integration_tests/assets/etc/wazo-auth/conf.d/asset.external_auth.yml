@@ -1,15 +1,4 @@
-debug: True
-foreground: True
-log_filename: /tmp/wazo-auth.log
 token_cleanup_interval: 2.0
-
-rest_api:
-  https:
-    listen: 0.0.0.0
-    port: 9497
-  cors:
-    enabled: False
-    allow_headers: [Content-Type, authorization, x-auth-token]
 
 oauth2_synchronization_ws_url_template: 'ws://oauth2sync:80/ws/{state}'
 oauth2_synchronization_redirect_url_template: 'http://oauth2sync:80/{auth_type}/authorize/{state}'
@@ -27,7 +16,3 @@ enabled_backend_plugins:
   xivo_admin: false
 backend_policies:
   wazo_user: wazo_default_admin_policy # For testing only, not a legitimate configuration
-
-db_uri: postgresql://asterisk:proformatique@postgres:5432
-smtp:
-  hostname: smtp

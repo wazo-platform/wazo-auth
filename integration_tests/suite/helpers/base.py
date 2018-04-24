@@ -75,6 +75,14 @@ class AuthLaunchingTestCase(AssetLaunchingTestCase):
         cls.auth_host = HOST
         super(AuthLaunchingTestCase, cls).setUpClass()
 
+    @classmethod
+    def _docker_compose_options(cls):
+        return [
+            '--file', os.path.join(cls.assets_root, 'docker-compose.yml'),
+            '--file', os.path.join(cls.assets_root, 'docker-compose.{}.override.yml'.format(cls.asset)),
+            '--project-name', cls.service,
+        ]
+
     def _assert_that_wazo_auth_is_stopping(self):
         for _ in range(5):
             if not self.service_status('auth')['State']['Running']:
@@ -93,14 +101,6 @@ class BaseTestCase(AuthLaunchingTestCase):
     def setUpClass(cls):
         super(BaseTestCase, cls).setUpClass()
         cls.auth_port = cls.service_port(9497, service_name='auth')
-
-    @classmethod
-    def _docker_compose_options(cls):
-        return [
-            '--file', os.path.join(cls.assets_root, 'docker-compose.yml'),
-            '--file', os.path.join(cls.assets_root, 'docker-compose.{}.override.yml'.format(cls.asset)),
-            '--project-name', cls.service,
-        ]
 
     def new_message_accumulator(self, routing_key):
         port = self.service_port(5672, service_name='rabbitmq')

@@ -13,4 +13,4 @@ services:
       TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
   auth:
     volumes:
-      - "./external_auth/etc/wazo-auth/config.yml:/etc/wazo-auth/config.yml"
+      - "./etc/wazo-auth/conf.d/asset.external_auth.yml:/etc/wazo-auth/conf.d/asset.external_auth.yml"

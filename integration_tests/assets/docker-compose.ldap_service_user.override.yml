@@ -12,8 +12,8 @@ services:
 
   postgres:
     volumes:
-        - "./ldap_service_user/etc/xivo-postgres/populate.sql:/pg-init-db/populate.sql"
+      - "./postgres_data/populate.ldap.hardcoded.sql:/pg-init-db/populate.sql"
 
   auth:
     volumes:
-      - "./ldap_service_user/etc/wazo-auth/config.yml:/etc/wazo-auth/config.yml"
+      - "./etc/wazo-auth/conf.d/asset.ldap_service_user.yml:/etc/wazo-auth/conf.d/asset.ldap_service_user.yml"

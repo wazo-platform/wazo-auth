@@ -10,6 +10,3 @@ services:
     environment:
       TARGETS: "auth:9497 swagger-validator:8080 postgres:5432 rabbitmq:5672"
       TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
-  auth:
-    volumes:
-      - "./documentation/etc/wazo-auth/config.yml:/etc/wazo-auth/config.yml"

@@ -1,0 +1,3 @@
+rest_api:
+  https:
+    private_key: /missing_server.key

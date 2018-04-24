@@ -218,7 +218,7 @@ class TestNoSSLCertificate(AuthLaunchingTestCase):
         self._assert_that_wazo_auth_is_stopping()
 
         log = self.service_logs('auth')
-        assert_that(log, contains_string("No such file or directory: '/data/_common/ssl/no_server.crt'"))
+        assert_that(log, contains_string("No such file or directory: '/missing_server.crt'"))
 
 
 class TestNoSSLKey(AuthLaunchingTestCase):
@@ -229,4 +229,4 @@ class TestNoSSLKey(AuthLaunchingTestCase):
         self._assert_that_wazo_auth_is_stopping()
 
         log = self.service_logs('auth')
-        assert_that(log, contains_string("No such file or directory: '/data/_common/ssl/no_server.key'"))
+        assert_that(log, contains_string("No such file or directory: '/missing_server.key'"))
