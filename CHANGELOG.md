@@ -1,6 +1,12 @@
 Changelog
 =========
 
+18.05
+-----
+
+* GET and HEAD on /token now accept the "tenant" query string argument and will return 403 if the tenant is not in the user's authorized tenants.
+
+
 18.04
 -----
 
