@@ -52,17 +52,25 @@ class Token(BaseResource):
 
     def get(self, token):
         scope = request.args.get('scope')
-        token = self._token_manager.get(token, scope)
-        return {'data': token.to_dict()}
+        tenant = request.args.get('tenant')
+
+        token = self._token_manager.get(token, scope).to_dict()
+        self._assert_token_has_tenant_permission(token, tenant)
+
+        return {'data': token}
 
     def head(self, token):
         scope = request.args.get('scope')
         tenant = request.args.get('tenant')
 
         token = self._token_manager.get(token, scope).to_dict()
+        self._assert_token_has_tenant_permission(token, tenant)
 
+        return '', 204
+
+    def _assert_token_has_tenant_permission(self, token, tenant):
         if not tenant:
-            return '', 204
+            return
 
         # TODO: when the xivo_admin, xivo_service and ldap_user gets remove all tokens will have a UUID
         user_uuid = token['metadata'].get('uuid')
@@ -72,9 +80,7 @@ class Token(BaseResource):
             if tenant not in visible_tenants:
                 raise exceptions.MissingTenantTokenException(tenant)
             else:
-                return '', 204
+                return
 
         if not self._user_service.user_has_sub_tenant(user_uuid, tenant):
             raise exceptions.MissingTenantTokenException(tenant)
-
-        return '', 204
