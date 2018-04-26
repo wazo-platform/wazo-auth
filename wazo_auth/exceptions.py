@@ -280,3 +280,15 @@ class MissingACLTokenException(ManagerException):
 
     def __str__(self):
         return 'Unauthorized for {}'.format(unidecode(self._required_acl))
+
+
+class MissingTenantTokenException(ManagerException):
+
+    code = 403
+
+    def __init__(self, tenant_uuid):
+        super(MissingTenantTokenException, self).__init__()
+        self._tenant_uuid = tenant_uuid
+
+    def __str__(self):
+        return 'Unauthorized for tenant {}'.format(self._tenant_uuid)
