@@ -180,6 +180,19 @@ class TestCore(WazoAuthTestCase):
         token = self._post_token('foo', 'bar')['token']
         assert_that(self._is_valid(token, acls='confd'), is_(False))
 
+    def test_that_unauthorized_tenants_on_HEAD_return_403(self):
+        token = self._post_token('foo', 'bar')['token']
+
+        assert_that(
+            self._is_valid(token, tenant='55ee61f3-c4a5-427c-9f40-9d5c33466240'),
+            is_(False),
+        )
+
+        assert_that(
+            self._is_valid(token, tenant=self.top_tenant_uuid),
+            is_(True),
+        )
+
     def test_that_unauthorized_acls_on_GET_return_403(self):
         token = self._post_token('foo', 'bar')['token']
         self._get_token_with_expected_exception(token, acls='confd', status_code=403)

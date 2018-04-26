@@ -158,12 +158,12 @@ class BaseTestCase(AuthLaunchingTestCase):
         client = self.new_auth_client()
         return client.token.revoke(token)
 
-    def _is_valid(self, token, acls=None):
+    def _is_valid(self, token, acls=None, tenant=None):
         client = self.new_auth_client()
         args = {}
         if acls:
             args['required_acl'] = acls
-        return client.token.is_valid(token, **args)
+        return client.token.is_valid(token, tenant=tenant, **args)
 
     @classmethod
     def new_auth_client(cls, username=None, password=None):
