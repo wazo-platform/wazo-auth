@@ -137,6 +137,11 @@ class UserService(BaseService):
     def update_emails(self, user_uuid, emails):
         return self._dao.user.update_emails(user_uuid, emails)
 
+    def user_has_sub_tenant(self, user_uuid, tenant_uuid):
+        user = self.get_user(user_uuid)
+        visible_tenants = self._tenant_tree.list_nodes(user['tenant_uuid'])
+        return tenant_uuid in visible_tenants
+
     def verify_password(self, username, password, reset=False):
         if reset:
             return True

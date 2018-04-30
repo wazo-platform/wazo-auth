@@ -13,12 +13,15 @@ import requests
 from mock import ANY
 from hamcrest import (
     assert_that,
+    calling,
     contains_inanyorder,
     contains_string,
     equal_to,
     has_entries,
     has_key,
     is_,
+    not_,
+    raises,
 )
 
 from xivo_test_helpers import until
@@ -180,9 +183,33 @@ class TestCore(WazoAuthTestCase):
         token = self._post_token('foo', 'bar')['token']
         assert_that(self._is_valid(token, acls='confd'), is_(False))
 
+    def test_that_unauthorized_tenants_on_HEAD_return_403(self):
+        token = self._post_token('foo', 'bar')['token']
+
+        assert_that(
+            self._is_valid(token, tenant='55ee61f3-c4a5-427c-9f40-9d5c33466240'),
+            is_(False),
+        )
+
+        assert_that(
+            self._is_valid(token, tenant=self.top_tenant_uuid),
+            is_(True),
+        )
+
     def test_that_unauthorized_acls_on_GET_return_403(self):
         token = self._post_token('foo', 'bar')['token']
         self._get_token_with_expected_exception(token, acls='confd', status_code=403)
+
+    def test_that_unauthorized_tenants_on_GET_return_403(self):
+        token = self._post_token('foo', 'bar')['token']
+
+        self._get_token_with_expected_exception(
+            token, tenant='55ee61f3-c4a5-427c-9f40-9d5c33466240', status_code=403)
+
+        assert_that(
+            calling(self.client.token.get).with_args(token),
+            not_(raises(Exception)),
+        )
 
     @fixtures.http_policy(name='fooer', acl_templates=['foo'])
     def test_that_authorized_acls_on_HEAD_return_204(self, policy):

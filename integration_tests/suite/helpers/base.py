@@ -136,16 +136,19 @@ class BaseTestCase(AuthLaunchingTestCase):
         else:
             self.fail('Should have raised an exception')
 
-    def _get_token(self, token, acls=None):
+    def _get_token(self, token, acls=None, tenant=None):
         client = self.new_auth_client()
         args = {}
         if acls:
             args['required_acl'] = acls
+        if tenant:
+            args['tenant'] = tenant
+
         return client.token.get(token, **args)
 
-    def _get_token_with_expected_exception(self, token, acls=None, status_code=None, msg=None):
+    def _get_token_with_expected_exception(self, token, acls=None, tenant=None, status_code=None, msg=None):
         try:
-            self._get_token(token, acls)
+            self._get_token(token, acls, tenant)
         except requests.HTTPError as e:
             if status_code:
                 assert_that(e.response.status_code, equal_to(status_code))
@@ -158,12 +161,12 @@ class BaseTestCase(AuthLaunchingTestCase):
         client = self.new_auth_client()
         return client.token.revoke(token)
 
-    def _is_valid(self, token, acls=None):
+    def _is_valid(self, token, acls=None, tenant=None):
         client = self.new_auth_client()
         args = {}
         if acls:
             args['required_acl'] = acls
-        return client.token.is_valid(token, **args)
+        return client.token.is_valid(token, tenant=tenant, **args)
 
     @classmethod
     def new_auth_client(cls, username=None, password=None):

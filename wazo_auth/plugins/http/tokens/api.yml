@@ -43,22 +43,16 @@ paths:
             $ref: '#/definitions/Error'
   /token/{token}:
     get:
+      summary: Retrieves token data
+      description: Checks if a token is valid in a given context and return the token data.  If a scope is given, the token must have the necessary permissions for the ACL. If a tenant is given, the token must have that tenant in its sub-tenant subtree.
       tags:
       - token
       security:
       - {}
       parameters:
-      - name: token
-        in: path
-        type: string
-        description: The token to query
-        required: true
-      - name: scope
-        in: query
-        type: string
-        description: The required ACL
-        required: false
-      summary: Retrieves token data
+        - $ref: '#/parameters/token'
+        - $ref: '#/parameters/scope'
+        - $ref: '#/parameters/tenant'
       responses:
         '200':
           description: "The token's data"
@@ -77,22 +71,16 @@ paths:
           schema:
             $ref: '#/definitions/Error'
     head:
+      summary: Checks if a token is valid
+      description: Checks if a token is valid in a given context.  If a scope is given, the token must have the necessary permissions for the ACL. If a tenant is given, the token must have that tenant in its sub-tenant subtree.
       tags:
       - token
       security:
       - {}
       parameters:
-      - name: token
-        in: path
-        type: string
-        description: The token to query
-        required: true
-      - name: scope
-        in: query
-        type: string
-        description: The required ACL
-        required: false
-      summary: Checks if a token is valid
+        - $ref: '#/parameters/token'
+        - $ref: '#/parameters/scope'
+        - $ref: '#/parameters/tenant'
       responses:
         '204':
           description: No data
@@ -109,17 +97,13 @@ paths:
           schema:
             $ref: '#/definitions/Error'
     delete:
+      summary: Revoke a token
       tags:
       - token
       security:
       - {}
       parameters:
-      - name: token
-        in: path
-        type: string
-        description: The token to query
-        required: true
-      summary: Revoke a token
+        - $ref: '#/parameters/token'
       responses:
         '200':
           description: Success message
@@ -161,3 +145,22 @@ definitions:
             items:
               type: string
             description: The list of allowed ACLs for this token
+parameters:
+  scope:
+    name: scope
+    in: query
+    type: string
+    description: The required ACL
+    required: false
+  tenant:
+    name: tenant
+    in: query
+    type: string
+    description: A tenant UUID to check against
+    required: false
+  token:
+    name: token
+    in: path
+    type: string
+    description: The token to query
+    required: true
