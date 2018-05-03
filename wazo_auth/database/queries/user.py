@@ -193,18 +193,13 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             }
 
     def delete(self, user_uuid):
-        filter_ = User.uuid == user_uuid
-
         with self.new_session() as s:
-            # TODO find a way to delete all linked emails without doing separate queries
-            rows = s.query(UserEmail.email_uuid).filter(UserEmail.user_uuid == user_uuid).all()
-            email_ids = [row.email_uuid for row in rows]
-            if email_ids:
-                s.query(Email).filter(Email.uuid.in_(email_ids)).delete(synchronize_session=False)
-            nb_deleted = s.query(User).filter(filter_).delete(synchronize_session=False)
+            user = s.query(User).filter(User.uuid == str(user_uuid)).first()
 
-        if not nb_deleted:
-            raise exceptions.UnknownUserException(user_uuid)
+            if not user:
+                raise exceptions.UnknownUserException(user_uuid)
+
+            s.delete(user)
 
     def get_credentials(self, username):
         filter_ = and_(
@@ -224,29 +219,20 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             raise exceptions.UnknownUsernameException(username)
 
     def get_emails(self, user_uuid):
-        filter_ = UserEmail.user_uuid == str(user_uuid)
         result = []
 
         with self.new_session() as s:
-            query = s.query(
-                Email.uuid,
-                Email.address,
-                Email.confirmed,
-                UserEmail.main,
-            ).outerjoin(UserEmail).filter(filter_)
+            user = s.query(User).filter(User.uuid == str(user_uuid)).first()
+            if not user:
+                raise exceptions.UnknownUserException(user_uuid)
 
-            for row in query.all():
-                result.append(
-                    {
-                        'uuid': row.uuid,
-                        'address': row.address,
-                        'main': row.main,
-                        'confirmed': row.confirmed,
-                    }
-                )
-
-        if not result and not self.exists(user_uuid):
-            raise exceptions.UnknownUserException(user_uuid)
+            for item in user.emails:
+                result.append({
+                    'uuid': item.email.uuid,
+                    'address': item.email.address,
+                    'main': item.main,
+                    'confirmed': item.email.confirmed,
+                })
 
         return result
 
