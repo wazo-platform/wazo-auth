@@ -11,7 +11,6 @@ from ..models import (
     GroupPolicy,
     Policy,
     Tenant,
-    TenantPolicy,
     UserPolicy,
 )
 from ... import exceptions
@@ -67,10 +66,8 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         else:
             filter_ = text('true')
 
-        filter_ = and_(filter_, TenantPolicy.policy_uuid == str(policy_uuid))
-
         with self.new_session() as s:
-            return s.query(Tenant).join(TenantPolicy).filter(filter_).count()
+            return s.query(Tenant).filter(filter_).count()
 
     def count(self, search, **ignored):
         filter_ = self.new_search_filter(search=search)
@@ -156,8 +153,6 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             query = s.query(
                 Policy.uuid,
                 Policy.name,
-            ).outerjoin(
-                TenantPolicy
             ).filter(filter_).group_by(Policy)
             query = self._paginator.update_query(query, **kwargs)
 

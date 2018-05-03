@@ -286,37 +286,3 @@ class TestUserService(BaseServiceTestCase):
 
         self.user_dao.create.assert_called_once_with(**expected_db_params)
         assert_that(result, equal_to(self.user_dao.create.return_value))
-
-
-class TestTenantService(BaseServiceTestCase):
-
-    def setUp(self):
-        super(TestTenantService, self).setUp()
-        self.tenant_tree = Mock()
-        self.service = services.TenantService(self.dao, self.tenant_tree)
-
-    def test_remove_policy(self):
-        def when(nb_deleted, tenant_exists=True, policy_exists=True):
-            self.tenant_dao.remove_policy.return_value = nb_deleted
-            self.tenant_dao.exists.return_value = tenant_exists
-            self.policy_dao.exists.return_value = policy_exists
-
-        when(nb_deleted=0, tenant_exists=False)
-        assert_that(
-            calling(self.service.remove_policy).with_args(s.tenant_uuid, s.policy_uuid),
-            raises(exceptions.UnknownTenantException))
-
-        when(nb_deleted=0, policy_exists=False)
-        assert_that(
-            calling(self.service.remove_policy).with_args(s.tenant_uuid, s.policy_uuid),
-            raises(exceptions.UnknownPolicyException))
-
-        when(nb_deleted=0)
-        assert_that(
-            calling(self.service.remove_policy).with_args(s.tenant_uuid, s.policy_uuid),
-            not_(raises(Exception)))
-
-        when(nb_deleted=1)
-        assert_that(
-            calling(self.service.remove_policy).with_args(s.tenant_uuid, s.policy_uuid),
-            not_(raises(Exception)))

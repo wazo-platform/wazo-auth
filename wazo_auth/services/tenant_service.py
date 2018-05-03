@@ -19,9 +19,6 @@ class TenantService(BaseService):
         if str(tenant_uuid) not in visible_tenants:
             raise exceptions.UnknownTenantException(tenant_uuid)
 
-    def add_policy(self, tenant_uuid, policy_uuid):
-        return self._dao.tenant.add_policy(tenant_uuid, policy_uuid)
-
     def count_policies(self, tenant_uuid, **kwargs):
         return self._dao.tenant.count_policies(tenant_uuid, **kwargs)
 
@@ -88,17 +85,6 @@ class TenantService(BaseService):
         self._bus_publisher.publish(event)
 
         return result
-
-    def remove_policy(self, tenant_uuid, policy_uuid):
-        nb_deleted = self._dao.tenant.remove_policy(tenant_uuid, policy_uuid)
-        if nb_deleted:
-            return
-
-        if not self._dao.tenant.exists(tenant_uuid):
-            raise exceptions.UnknownTenantException(tenant_uuid)
-
-        if not self._dao.policy.exists(policy_uuid):
-            raise exceptions.UnknownPolicyException(policy_uuid)
 
     def update(self, scoping_tenant_uuid, tenant_uuid, **kwargs):
         visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)

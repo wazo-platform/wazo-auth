@@ -13,11 +13,6 @@ class Plugin(object):
         policy_service = dependencies['policy_service']
 
         api.add_resource(
-            http.TenantPolicy,
-            '/tenants/<uuid:tenant_uuid>/policies/<uuid:policy_uuid>',
-            resource_class_args=(tenant_service,)
-        )
-        api.add_resource(
             http.TenantPolicies,
             '/tenants/<uuid:tenant_uuid>/policies',
             resource_class_args=(tenant_service,),

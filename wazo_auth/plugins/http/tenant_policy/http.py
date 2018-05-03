@@ -11,24 +11,6 @@ from wazo_auth import exceptions, http, schemas
 logger = logging.getLogger(__name__)
 
 
-class TenantPolicy(http.AuthResource):
-
-    def __init__(self, tenant_service):
-        self.tenant_service = tenant_service
-
-    @http.required_acl('auth.tenants.{tenant_uuid}.policies.{policy_uuid}.delete')
-    def delete(self, tenant_uuid, policy_uuid):
-        logger.debug('dissociating tenant %s policy %s', tenant_uuid, policy_uuid)
-        self.tenant_service.remove_policy(tenant_uuid, policy_uuid)
-        return '', 204
-
-    @http.required_acl('auth.tenants.{tenant_uuid}.policies.{policy_uuid}.create')
-    def put(self, tenant_uuid, policy_uuid):
-        logger.debug('associating tenant %s policy %s', tenant_uuid, policy_uuid)
-        self.tenant_service.add_policy(tenant_uuid, policy_uuid)
-        return '', 204
-
-
 class TenantPolicies(http.AuthResource):
 
     def __init__(self, tenant_service):

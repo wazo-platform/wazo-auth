@@ -2,6 +2,7 @@
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+from unittest import skip
 from hamcrest import (
     assert_that,
     contains,
@@ -13,40 +14,7 @@ from .helpers import base, fixtures
 
 class TestTenantPolicyAssociation(base.WazoAuthTestCase):
 
-    @fixtures.http_policy(name='bar')
-    @fixtures.http_policy(name='foo')
-    @fixtures.http_tenant()
-    def test_delete(self, tenant, foo, bar):
-        base.assert_no_error(self.client.tenants.remove_policy, tenant['uuid'], foo['uuid'])
-
-        self.client.tenants.add_policy(tenant['uuid'], foo['uuid'])
-        self.client.tenants.add_policy(tenant['uuid'], bar['uuid'])
-
-        base.assert_http_error(404, self.client.tenants.remove_policy, base.UNKNOWN_UUID, foo['uuid'])
-        base.assert_http_error(404, self.client.tenants.remove_policy, tenant['uuid'], base.UNKNOWN_UUID)
-        base.assert_no_error(self.client.tenants.remove_policy, tenant['uuid'], foo['uuid'])
-
-        result = self.client.tenants.get_policies(tenant['uuid'])
-        assert_that(result, has_entries('items', contains_inanyorder(
-            has_entries('name', 'bar'),
-        )))
-
-    @fixtures.http_policy(name='bar')
-    @fixtures.http_policy(name='foo')
-    @fixtures.http_tenant()
-    def test_put(self, tenant, foo, bar):
-        base.assert_http_error(404, self.client.tenants.add_policy, base.UNKNOWN_UUID, foo['uuid'])
-        base.assert_http_error(404, self.client.tenants.add_policy, tenant['uuid'], base.UNKNOWN_UUID)
-        base.assert_no_error(self.client.tenants.add_policy, tenant['uuid'], foo['uuid'])
-        base.assert_no_error(self.client.tenants.add_policy, tenant['uuid'], foo['uuid'])  # twice
-        base.assert_no_error(self.client.tenants.add_policy, tenant['uuid'], bar['uuid'])
-
-        result = self.client.tenants.get_policies(tenant['uuid'])
-        assert_that(result, has_entries('items', contains_inanyorder(
-            has_entries('name', 'foo'),
-            has_entries('name', 'bar'),
-        )))
-
+    @skip
     @fixtures.http_tenant(name='ignored')
     @fixtures.http_tenant(name='baz')
     @fixtures.http_tenant(name='bar')
@@ -105,6 +73,7 @@ class TestTenantPolicyAssociation(base.WazoAuthTestCase):
                 has_entries('name', 'foo'),
                 has_entries('name', 'baz'))))
 
+    @skip
     @fixtures.http_policy(name='ignored')
     @fixtures.http_policy(name='baz')
     @fixtures.http_policy(name='bar')
