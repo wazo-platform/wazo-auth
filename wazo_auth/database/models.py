@@ -134,6 +134,7 @@ class User(Base):
     password_salt = Column(LargeBinary)
     enabled = Column(Boolean)
     tenant_uuid = Column(String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False)
+    emails = relationship('UserEmail', cascade='all, delete-orphan')
 
 
 class UserEmail(Base):
@@ -146,6 +147,7 @@ class UserEmail(Base):
     user_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='CASCADE'), primary_key=True)
     email_uuid = Column(String(38), ForeignKey('auth_email.uuid', ondelete='CASCADE'), primary_key=True)
     main = Column(Boolean, nullable=False, default=False)
+    email = relationship('Email', cascade='all, delete-orphan', single_parent=True)
 
 
 class UserExternalAuth(Base):

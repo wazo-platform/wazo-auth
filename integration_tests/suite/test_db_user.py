@@ -58,11 +58,7 @@ class TestUserDAO(base.DAOTestCase):
         result = self._user_dao.update_emails(user_uuid, emails)
         assert_that(result, empty())
         assert_that(self._user_dao.get_emails(user_uuid), equal_to(result))
-        with self._user_dao.new_session() as s:
-            for email in s.query(models.Email.uuid).filter(
-                    models.Email.address == 'foobar@example.com',
-            ).all():
-                self.fail('email was not deleted')
+        assert_that(self._email_exists('foobar@example.com'), equal_to(False))
 
         emails = [
             self._email('foobar@example.com', main=True, confirmed=False),
@@ -549,7 +545,7 @@ class TestUserDAO(base.DAOTestCase):
             has_entries(uuid=c),
         ))
 
-    @fixtures.user()
+    @fixtures.user(email_address='foo@example.com')
     def test_delete(self, user_uuid):
         self._user_dao.delete(user_uuid)
 
@@ -557,6 +553,8 @@ class TestUserDAO(base.DAOTestCase):
             calling(self._user_dao.delete).with_args(user_uuid),
             raises(exceptions.UnknownUserException),
         )
+
+        assert_that(self._email_exists('foobar@example.com'), equal_to(False))
 
     @fixtures.user(username='foobar')
     @fixtures.user(username='foobaz', enabled=False)
@@ -574,3 +572,8 @@ class TestUserDAO(base.DAOTestCase):
         hash_, salt = self._user_dao.get_credentials('foobar')
         assert_that(hash_, not_(none()))
         assert_that(salt, not_(none()))
+
+    def _email_exists(self, address):
+        filter_ = models.Email.address == address
+        with self._user_dao.new_session() as s:
+            return s.query(func.count(models.Email.uuid)).filter(filter_).scalar() > 0

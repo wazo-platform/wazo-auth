@@ -193,18 +193,13 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             }
 
     def delete(self, user_uuid):
-        filter_ = User.uuid == user_uuid
-
         with self.new_session() as s:
-            # TODO find a way to delete all linked emails without doing separate queries
-            rows = s.query(UserEmail.email_uuid).filter(UserEmail.user_uuid == user_uuid).all()
-            email_ids = [row.email_uuid for row in rows]
-            if email_ids:
-                s.query(Email).filter(Email.uuid.in_(email_ids)).delete(synchronize_session=False)
-            nb_deleted = s.query(User).filter(filter_).delete(synchronize_session=False)
+            user = s.query(User).filter(User.uuid == str(user_uuid)).first()
 
-        if not nb_deleted:
-            raise exceptions.UnknownUserException(user_uuid)
+            if not user:
+                raise exceptions.UnknownUserException(user_uuid)
+
+            s.delete(user)
 
     def get_credentials(self, username):
         filter_ = and_(
@@ -224,34 +219,24 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             raise exceptions.UnknownUsernameException(username)
 
     def get_emails(self, user_uuid):
-        filter_ = UserEmail.user_uuid == str(user_uuid)
         result = []
 
         with self.new_session() as s:
-            query = s.query(
-                Email.uuid,
-                Email.address,
-                Email.confirmed,
-                UserEmail.main,
-            ).outerjoin(UserEmail).filter(filter_)
+            user = s.query(User).filter(User.uuid == str(user_uuid)).first()
+            if not user:
+                raise exceptions.UnknownUserException(user_uuid)
 
-            for row in query.all():
-                result.append(
-                    {
-                        'uuid': row.uuid,
-                        'address': row.address,
-                        'main': row.main,
-                        'confirmed': row.confirmed,
-                    }
-                )
-
-        if not result and not self.exists(user_uuid):
-            raise exceptions.UnknownUserException(user_uuid)
+            for item in user.emails:
+                result.append({
+                    'uuid': item.email.uuid,
+                    'address': item.email.address,
+                    'main': item.main,
+                    'confirmed': item.email.confirmed,
+                })
 
         return result
 
     def list_(self, **kwargs):
-        users = OrderedDict()
         search_filter = self.new_search_filter(**kwargs)
         strict_filter = self.new_strict_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
@@ -264,62 +249,40 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if tenant_uuid:
             filter_ = and_(filter_, User.tenant_uuid == str(tenant_uuid))
 
+        users = []
         with self.new_session() as s:
             query = s.query(
-                User.uuid,
-                User.username,
-                User.firstname,
-                User.lastname,
-                User.enabled,
-                User.tenant_uuid,
-                UserEmail.main,
-                Email.uuid,
-                Email.address,
-                Email.confirmed,
+                User,
             ).outerjoin(
-                UserEmail, User.uuid == UserEmail.user_uuid,
+                UserEmail,
             ).outerjoin(
-                Email, Email.uuid == UserEmail.email_uuid,
-            ).outerjoin(UserGroup).filter(filter_)
+                Email,
+            ).outerjoin(
+                UserGroup,
+            ).filter(filter_)
             query = self._paginator.update_query(query, **kwargs)
-            rows = query.all()
 
-            for row in rows:
-                (
-                    user_uuid,
-                    username,
-                    firstname,
-                    lastname,
-                    enabled,
-                    tenant_uuid,
-                    main_email,
-                    email_uuid,
-                    address,
-                    confirmed,
-                ) = row
+            for user in query.all():
+                emails = []
+                for item in user.emails:
+                    emails.append({
+                        'uuid': item.email.uuid,
+                        'address': item.email.address,
+                        'main': item.main,
+                        'confirmed': item.email.confirmed,
+                    })
 
-                if user_uuid not in users:
-                    users[user_uuid] = {
-                        'username': username,
-                        'uuid': user_uuid,
-                        'enabled': enabled,
-                        'emails': [],
-                        'firstname': firstname,
-                        'lastname': lastname,
-                        'tenant_uuid': tenant_uuid,
-                    }
+                users.append({
+                    'username': user.username,
+                    'uuid': user.uuid,
+                    'enabled': user.enabled,
+                    'emails': emails,
+                    'firstname': user.firstname,
+                    'lastname': user.lastname,
+                    'tenant_uuid': user.tenant_uuid,
+                })
 
-                if address:
-                    email = {
-                        'uuid': email_uuid,
-                        'address': address,
-                        'main': main_email,
-                        'confirmed': confirmed,
-                    }
-                    if email not in users[user_uuid]['emails']:
-                        users[user_uuid]['emails'].append(email)
-
-        return users.values()
+        return users
 
     def update(self, user_uuid, **kwargs):
         filter_ = User.uuid == str(user_uuid)
