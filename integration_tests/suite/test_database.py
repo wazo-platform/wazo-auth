@@ -525,15 +525,17 @@ class TestPolicyDAO(base.DAOTestCase):
             policy = self.get_policy(uuid_)
             assert_that(policy['acl_templates'], empty())
 
-    def test_create(self):
+    @fixtures.tenant()
+    def test_create(self, tenant_uuid):
         acl_templates = ['dird.#', 'confd.line.42.*']
-        with self._new_policy(u'testé', u'descriptioñ', acl_templates) as uuid_:
+        with self._new_policy(u'testé', u'descriptioñ', acl_templates, tenant_uuid) as uuid_:
             policy = self.get_policy(uuid_)
 
             assert_that(policy['uuid'], equal_to(uuid_))
             assert_that(policy['name'], equal_to(u'testé'))
             assert_that(policy['description'], equal_to(u'descriptioñ'))
             assert_that(policy['acl_templates'], contains_inanyorder(*acl_templates))
+            assert_that(policy['tenant_uuid'], equal_to(tenant_uuid))
 
     @fixtures.tenant()
     @fixtures.policy(name='foobar')
@@ -677,7 +679,7 @@ class TestPolicyDAO(base.DAOTestCase):
         )
 
     def test_delete(self):
-        uuid_ = self._policy_dao.create('foobar', '', [])
+        uuid_ = self._policy_dao.create('foobar', '', [], self.top_tenant_uuid)
         self._policy_dao.delete(uuid_)
         assert_that(
             calling(self._policy_dao.delete).with_args(uuid_),

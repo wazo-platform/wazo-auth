@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from flask import request
 from wazo_auth import exceptions, http, schemas
+from wazo_auth.flask_helpers import Tenant
+from .schemas import PolicySchema
 
 
 class _BasePolicyRessource(http.AuthResource):
@@ -16,14 +18,16 @@ class Policies(_BasePolicyRessource):
 
     @http.required_acl('auth.policies.create')
     def post(self):
-        body, errors = schemas.PolicySchema().load(request.get_json(force=True))
+        schema = PolicySchema()
+        body, errors = schema.load(request.get_json(force=True))
         if errors:
             for field in errors:
                 raise exceptions.InvalidInputException(field)
 
-        policy_uuid = self.policy_service.create(**body)
+        body['tenant_uuid'] = Tenant.autodetect().uuid
+        body['uuid'] = self.policy_service.create(**body)
 
-        return dict(uuid=policy_uuid, **body), 200
+        return body, 200
 
     @http.required_acl('auth.policies.read')
     def get(self):
@@ -51,7 +55,7 @@ class Policy(_BasePolicyRessource):
 
     @http.required_acl('auth.policies.{policy_uuid}.edit')
     def put(self, policy_uuid):
-        body, errors = schemas.PolicySchema().load(request.get_json(force=True))
+        body, errors = PolicySchema().load(request.get_json(force=True))
         if errors:
             for field in errors:
                 raise exceptions.InvalidInputException(field)
