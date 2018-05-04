@@ -19,13 +19,6 @@ class GroupRequestSchema(BaseSchema):
     name = xfields.String(validate=validate.Length(min=1, max=128), required=True)
 
 
-class PolicySchema(BaseSchema):
-
-    name = fields.String(validate=validate.Length(min=1, max=80), required=True)
-    description = fields.String(allow_none=True, missing=None)
-    acl_templates = fields.List(fields.String(), missing=[])
-
-
 class TenantAddress(BaseSchema):
 
     line_1 = xfields.String(validate=validate.Length(min=1, max=256), missing=None, default=None)
