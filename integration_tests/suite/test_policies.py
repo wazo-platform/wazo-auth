@@ -32,17 +32,25 @@ class TestPolicies(WazoAuthTestCase):
     @fixtures.http_policy(name='foobar', description='a test policy',
                           acl_templates=['dird.me.#', 'ctid-ng.#'])
     def test_post(self, foobar, foobaz):
-        assert_that(foobar, has_entries({
-            'uuid': uuid_(),
-            'name': equal_to('foobar'),
-            'description': equal_to('a test policy'),
-            'acl_templates': contains_inanyorder('dird.me.#', 'ctid-ng.#')}))
+        assert_that(
+            foobar,
+            has_entries(
+                uuid=uuid_(),
+                name='foobar',
+                description='a test policy',
+                acl_templates=contains_inanyorder('dird.me.#', 'ctid-ng.#'),
+            )
+        )
 
-        assert_that(foobaz, has_entries({
-            'uuid': uuid_(),
-            'name': equal_to('foobaz'),
-            'description': none(),
-            'acl_templates': empty()}))
+        assert_that(
+            foobaz,
+            has_entries(
+                uuid=uuid_(),
+                name='foobaz',
+                description=none(),
+                acl_templates=empty(),
+            )
+        )
 
         assert_http_error(400, self.client.policies.new, '')
 
