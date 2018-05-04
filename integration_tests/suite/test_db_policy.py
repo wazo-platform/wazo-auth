@@ -40,25 +40,31 @@ class TestPolicyDAO(base.DAOTestCase):
         self._default_user_policy_uuid = default_user_policy['uuid']
         self._default_admin_policy_uuid = default_admin_policy['uuid']
 
-    def test_template_association(self):
+    @fixtures.policy(name=u'testé', description=u'déscription')
+    def test_template_association(self, uuid):
+        self._policy_dao.associate_policy_template(uuid, '#')
+        assert_that(
+            self.get_policy(uuid),
+            has_entries(acl_templates=contains_inanyorder('#')),
+        )
+
+        assert_that(
+            calling(self._policy_dao.associate_policy_template).with_args(uuid, '#'),
+            raises(exceptions.DuplicateTemplateException),
+        )
+
+        self._policy_dao.dissociate_policy_template(uuid, '#')
+        assert_that(
+            self.get_policy(uuid),
+            has_entries(acl_templates=empty()),
+        )
+
         assert_that(
             calling(self._policy_dao.associate_policy_template).with_args('unknown', '#'),
-            raises(exceptions.UnknownPolicyException))
+            raises(exceptions.UnknownPolicyException),
+        )
 
         assert_that(self._policy_dao.dissociate_policy_template('unknown', '#'), equal_to(0))
-
-        with self._new_policy(u'testé', u'descriptioñ', []) as uuid_:
-            self._policy_dao.associate_policy_template(uuid_, '#')
-            policy = self.get_policy(uuid_)
-            assert_that(policy['acl_templates'], contains_inanyorder('#'))
-
-            assert_that(
-                calling(self._policy_dao.associate_policy_template).with_args(uuid_, '#'),
-                raises(exceptions.DuplicateTemplateException))
-
-            self._policy_dao.dissociate_policy_template(uuid_, '#')
-            policy = self.get_policy(uuid_)
-            assert_that(policy['acl_templates'], empty())
 
     @fixtures.tenant()
     def test_create(self, tenant_uuid):
@@ -66,11 +72,16 @@ class TestPolicyDAO(base.DAOTestCase):
         with self._new_policy(u'testé', u'descriptioñ', acl_templates, tenant_uuid) as uuid_:
             policy = self.get_policy(uuid_)
 
-            assert_that(policy['uuid'], equal_to(uuid_))
-            assert_that(policy['name'], equal_to(u'testé'))
-            assert_that(policy['description'], equal_to(u'descriptioñ'))
-            assert_that(policy['acl_templates'], contains_inanyorder(*acl_templates))
-            assert_that(policy['tenant_uuid'], equal_to(tenant_uuid))
+            assert_that(
+                policy,
+                has_entries(
+                    uuid=uuid_,
+                    name=u'testé',
+                    description=u'descriptioñ',
+                    acl_templates=contains_inanyorder(*acl_templates),
+                    tenant_uuid=tenant_uuid,
+                )
+            )
 
     @fixtures.tenant()
     @fixtures.policy(name='foobar')
@@ -96,14 +107,17 @@ class TestPolicyDAO(base.DAOTestCase):
     @fixtures.policy(name='foobar')
     def test_get(self, uuid_):
         policy = self.get_policy(uuid_)
-        assert_that(policy, has_entries(
-            'uuid', uuid_,
-            'name', 'foobar',
-            'description', '',
-            'acl_templates', empty()))
+        assert_that(
+            policy,
+            has_entries(
+                uuid=uuid_,
+                name='foobar',
+                description='',
+                acl_templates=empty(),
+            )
+        )
 
-        unknown_uuid = '00000000-0000-0000-0000-000000000000'
-        result = self._policy_dao.get(uuid=unknown_uuid)
+        result = self._policy_dao.get(uuid=base.UNKNOWN_UUID)
         assert_that(result, empty())
 
     def test_get_sort_and_pagination(self):
@@ -213,17 +227,23 @@ class TestPolicyDAO(base.DAOTestCase):
             ),
         )
 
-    def test_delete(self):
-        uuid_ = self._policy_dao.create('foobar', '', [], self.top_tenant_uuid)
-        self._policy_dao.delete(uuid_)
+    @fixtures.policy()
+    def test_delete(self, uuid):
         assert_that(
-            calling(self._policy_dao.delete).with_args(uuid_),
-            raises(exceptions.UnknownPolicyException))
+            calling(self._policy_dao.delete).with_args(uuid),
+            not_(raises(Exception)),
+        )
+
+        assert_that(
+            calling(self._policy_dao.delete).with_args(base.UNKNOWN_UUID),
+            raises(exceptions.UnknownPolicyException),
+        )
 
     def test_update(self):
         assert_that(
-            calling(self._policy_dao.update).with_args('unknown', 'foo', '', []),
-            raises(exceptions.UnknownPolicyException))
+            calling(self._policy_dao.update).with_args(base.UNKNOWN_UUID, 'foo', '', []),
+            raises(exceptions.UnknownPolicyException),
+        )
 
         with self._new_policy('foobar',
                               'This is the description',
@@ -233,12 +253,15 @@ class TestPolicyDAO(base.DAOTestCase):
                 ['confd.line.{{ line_id }}', 'dird.#', 'ctid-ng.#'])
             policy = self.get_policy(uuid_)
 
-            assert_that(policy['uuid'], equal_to(uuid_))
-            assert_that(policy['name'], equal_to('foobaz'))
-            assert_that(policy['description'], equal_to('A new description'))
-            assert_that(
-                policy['acl_templates'],
-                contains_inanyorder('confd.line.{{ line_id }}', 'dird.#', 'ctid-ng.#'))
+        assert_that(
+            policy,
+            has_entries(
+                uuid=uuid_,
+                name='foobaz',
+                description='A new description',
+                acl_templates=contains_inanyorder('confd.line.{{ line_id }}', 'dird.#', 'ctid-ng.#'),
+            )
+        )
 
     def get_policy(self, policy_uuid):
         for policy in self._policy_dao.get(uuid=policy_uuid, order='name', direction='asc'):
@@ -261,5 +284,3 @@ class TestPolicyDAO(base.DAOTestCase):
     def create_and_delete_policy(self, *args, **kwargs):
         with self._new_policy(*args, **kwargs):
             pass
-
-
