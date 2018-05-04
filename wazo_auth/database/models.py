@@ -106,7 +106,7 @@ class Policy(Base):
 
     __tablename__ = 'auth_policy'
     __table_args__ = (
-        UniqueConstraint('name'),
+        UniqueConstraint('name', 'tenant_uuid'),
     )
 
     uuid = Column(String(38), server_default=text('uuid_generate_v4()'), primary_key=True)

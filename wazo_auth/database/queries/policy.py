@@ -74,8 +74,8 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             return s.query(Policy).filter(filter_).count()
 
-    def create(self, name, description, acl_templates):
-        policy = Policy(name=name, description=description)
+    def create(self, name, description, acl_templates, tenant_uuid):
+        policy = Policy(name=name, description=description, tenant_uuid=tenant_uuid)
         with self.new_session() as s:
             s.add(policy)
             try:
@@ -109,6 +109,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 Policy.uuid,
                 Policy.name,
                 Policy.description,
+                Policy.tenant_uuid,
                 func.array_agg(distinct(ACLTemplate.template)).label('acl_templates'),
             ).outerjoin(
                 ACLTemplatePolicy,
@@ -139,6 +140,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     'name': policy.name,
                     'description': policy.description,
                     'acl_templates': acl_templates,
+                    'tenant_uuid': policy.tenant_uuid,
                 }
                 policies.append(body)
 

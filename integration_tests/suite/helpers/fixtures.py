@@ -228,6 +228,7 @@ def policy(**policy_args):
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
+            policy_args.setdefault('tenant_uuid', self.top_tenant_uuid)
             policy_uuid = self._policy_dao.create(**policy_args)
             try:
                 result = decorated(self, policy_uuid, *args, **kwargs)

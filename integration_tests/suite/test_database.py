@@ -535,12 +535,26 @@ class TestPolicyDAO(base.DAOTestCase):
             assert_that(policy['description'], equal_to(u'descriptioñ'))
             assert_that(policy['acl_templates'], contains_inanyorder(*acl_templates))
 
-    def test_that_two_policies_cannot_have_the_same_name(self):
-        duplicated_name = 'foobar'
-        with self._new_policy(duplicated_name, u'descriptioñ'):
-            assert_that(
-                calling(self._policy_dao.create).with_args(duplicated_name, '', []),
-                raises(exceptions.DuplicatePolicyException))
+    @fixtures.tenant()
+    @fixtures.policy(name='foobar')
+    def test_that_two_policies_cannot_have_the_same_name_and_tenant(self, policy_uuid, tenant_uuid):
+        # Same name different tenants no exception
+        assert_that(
+            calling(self.create_and_delete_policy).with_args('foobar', '', tenant_uuid=tenant_uuid),
+            not_(raises(exceptions.DuplicatePolicyException)),
+        )
+
+        # Same tenant different names no exception
+        assert_that(
+            calling(self.create_and_delete_policy).with_args('foobaz', ''),
+            not_(raises(exceptions.DuplicatePolicyException)),
+        )
+
+        # Same name same tenant
+        assert_that(
+            calling(self.create_and_delete_policy).with_args('foobar', ''),
+            raises(exceptions.DuplicatePolicyException),
+        )
 
     @fixtures.policy(name='foobar')
     def test_get(self, uuid_):
@@ -698,13 +712,18 @@ class TestPolicyDAO(base.DAOTestCase):
         return [policy['uuid'] for policy in policies]
 
     @contextmanager
-    def _new_policy(self, name, description, acl_templates=None):
+    def _new_policy(self, name, description, acl_templates=None, tenant_uuid=None):
+        tenant_uuid = tenant_uuid or self.top_tenant_uuid
         acl_templates = acl_templates or []
-        uuid_ = self._policy_dao.create(name, description, acl_templates)
+        uuid_ = self._policy_dao.create(name, description, acl_templates, tenant_uuid)
         try:
             yield uuid_
         finally:
             self._policy_dao.delete(uuid_)
+
+    def create_and_delete_policy(self, *args, **kwargs):
+        with self._new_policy(*args, **kwargs):
+            pass
 
 
 class TestTokenDAO(base.DAOTestCase):
