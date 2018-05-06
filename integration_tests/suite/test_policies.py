@@ -29,19 +29,8 @@ class TestPolicies(WazoAuthTestCase):
     wazo_default_master_user_policy = has_entries('name', 'wazo_default_master_user_policy')
 
     @fixtures.http_policy(name='foobaz')
-    @fixtures.http_policy(name='foobar', description='a test policy',
-                          acl_templates=['dird.me.#', 'ctid-ng.#'])
-    def test_post(self, foobar, foobaz):
-        assert_that(
-            foobar,
-            has_entries(
-                uuid=uuid_(),
-                name='foobar',
-                description='a test policy',
-                acl_templates=contains_inanyorder('dird.me.#', 'ctid-ng.#'),
-            )
-        )
-
+    @fixtures.http_tenant()
+    def test_post(self, tenant, foobaz):
         assert_that(
             foobaz,
             has_entries(
@@ -49,9 +38,31 @@ class TestPolicies(WazoAuthTestCase):
                 name='foobaz',
                 description=none(),
                 acl_templates=empty(),
+                tenant_uuid=self.top_tenant_uuid,
             )
         )
 
+        policy_args = {
+            'name': 'foobar',
+            'description': 'a test policy',
+            'acl_templates': ['dird.me.#', 'ctid-ng.#'],
+            'tenant_uuid': tenant['uuid'],
+        }
+        # Specify the tenant_uuid
+        with self.policy(self.client, **policy_args) as policy:
+            assert_that(
+                policy,
+                has_entries(
+                    uuid=uuid_(),
+                    **policy_args
+                )
+            )
+
+        # Specify the a tenant uuid in another sub-tenant tree
+        with self.client_in_subtenant() as (client, _, __):
+            assert_http_error(401, client.policies.new, **policy_args)
+
+        # Invalid body
         assert_http_error(400, self.client.policies.new, '')
 
     @fixtures.http_policy(name='one')

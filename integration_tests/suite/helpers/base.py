@@ -211,6 +211,17 @@ class WazoAuthTestCase(BaseTestCase):
         return cls.client.tenants.list(name='master')['items'][0]
 
     @contextmanager
+    def policy(self, client, *args, **kwargs):
+        policy = client.policies.new(*args, **kwargs)
+        try:
+            yield policy
+        finally:
+            try:
+                client.policies.delete(policy['uuid'])
+            except Exception:
+                pass
+
+    @contextmanager
     def tenant(self, client, *args, **kwargs):
         tenant = client.tenants.new(*args, **kwargs)
         try:
