@@ -60,7 +60,7 @@ class Controller(object):
         external_auth_service = services.ExternalAuthService(
             dao, config, self._bus_publisher, config['enabled_external_auth_plugins'])
         group_service = services.GroupService(dao)
-        policy_service = services.PolicyService(dao)
+        policy_service = services.PolicyService(dao, self._tenant_tree)
         self._user_service = services.UserService(dao, self._tenant_tree)
         self._tenant_service = services.TenantService(dao, self._tenant_tree, self._bus_publisher)
         self._backends = plugin_helpers.load(

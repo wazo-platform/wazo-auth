@@ -69,8 +69,12 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             return s.query(Tenant).filter(filter_).count()
 
-    def count(self, search, **ignored):
+    def count(self, search, tenant_uuids=None, **ignored):
         filter_ = self.new_search_filter(search=search)
+
+        if tenant_uuids is not None:
+            filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
+
         with self.new_session() as s:
             return s.query(Policy).filter(filter_).count()
 
@@ -100,10 +104,14 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             return self._policy_exists(s, uuid)
 
-    def get(self, **kwargs):
+    def get(self, tenant_uuids=None, **kwargs):
         strict_filter = self.new_strict_filter(**kwargs)
         search_filter = self.new_search_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
+
+        if tenant_uuids is not None:
+            filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
+
         with self.new_session() as s:
             query = s.query(
                 Policy.uuid,
@@ -152,13 +160,12 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         filter_ = and_(strict_filter, search_filter)
 
         with self.new_session() as s:
-            query = s.query(
-                Policy.uuid,
-                Policy.name,
-            ).filter(filter_).group_by(Policy)
+            query = s.query(Policy).filter(filter_).group_by(Policy)
             query = self._paginator.update_query(query, **kwargs)
 
-            return [{'uuid': uuid, 'name': name} for uuid, name in query.all()]
+            return [{'uuid': policy.uuid,
+                     'name': policy.name,
+                     'tenant_uuid': policy.tenant_uuid} for policy in query.all()]
 
     def update(self, policy_uuid, name, description, acl_templates):
         with self.new_session() as s:

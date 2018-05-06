@@ -2,6 +2,7 @@
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+from functools import partial
 from hamcrest import (
     assert_that,
     contains,
@@ -9,17 +10,21 @@ from hamcrest import (
     empty,
     equal_to,
     has_entries,
+    has_items,
     none,
+    not_,
 )
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers.base import (
     assert_no_error,
     assert_http_error,
+    assert_sorted,
     WazoAuthTestCase,
 )
 from .helpers import fixtures
 
 UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
+SUB_TENANT_UUID = '76502c2b-cce5-409c-ab8f-d1fe41141a2d'
 
 
 class TestPolicies(WazoAuthTestCase):
@@ -65,51 +70,51 @@ class TestPolicies(WazoAuthTestCase):
         # Invalid body
         assert_http_error(400, self.client.policies.new, '')
 
-    @fixtures.http_policy(name='one')
-    @fixtures.http_policy(name='two')
-    @fixtures.http_policy(name='three')
-    def test_list(self, three, two, one):
-        response = self.client.policies.list(search='foobar')
-        assert_that(response, has_entries({
-            'total': equal_to(0),
-            'items': empty()}))
+    @fixtures.http_tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='one', tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='two', tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='three', tenant_uuid=SUB_TENANT_UUID)
+    def test_list_sorting(self, three, two, one, _):
+        action = partial(self.client.policies.list, tenant_uuid=SUB_TENANT_UUID)
+        expected = [one, three, two]
+        assert_sorted(action, order='name', expected=expected)
 
-        response = self.client.policies.list()
-        assert_that(response, has_entries({
-            'total': equal_to(6),
-            'items': contains_inanyorder(
-                one,
-                two,
-                three,
-                self.wazo_default_user_policy,
-                self.wazo_default_master_user_policy,
-                self.wazo_default_admin_policy)}))
+    @fixtures.http_tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='one', tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='two', tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='three', tenant_uuid=SUB_TENANT_UUID)
+    def test_list_tenant_filtering(self, three, two, one, _):
+        # Different tenant
+        response = self.client.policies.list(tenant_uuid=self.top_tenant_uuid)
+        assert_that(response, has_entries(items=not_(has_items(one, two, three))))
 
-        response = self.client.policies.list(search='one')
-        assert_that(response, has_entries({
-            'total': equal_to(1),
-            'items': contains_inanyorder(one)}))
+        # Different tenant with recurse
+        response = self.client.policies.list(recurse=True, tenant_uuid=self.top_tenant_uuid)
+        assert_that(response, has_entries(items=has_items(one, two, three)))
 
-        response = self.client.policies.list(order='name', direction='asc')
-        assert_that(response, has_entries({
-            'total': equal_to(6),
-            'items': contains(
-                one,
-                three,
-                two,
-                self.wazo_default_admin_policy,
-                self.wazo_default_master_user_policy,
-                self.wazo_default_user_policy)}))
+        # Same tenant
+        response = self.client.policies.list(tenant_uuid=SUB_TENANT_UUID)
+        assert_that(response, has_entries(total=3, items=contains_inanyorder(one, two, three)))
 
-        response = self.client.policies.list(order='name', direction='asc', limit=1)
-        assert_that(response, has_entries({
-            'total': equal_to(6),
-            'items': contains(one)}))
 
-        response = self.client.policies.list(order='name', direction='asc', limit=1, offset=1)
-        assert_that(response, has_entries({
-            'total': equal_to(6),
-            'items': contains(three)}))
+    @fixtures.http_tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='one', tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='two', tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='three', tenant_uuid=SUB_TENANT_UUID)
+    def test_list_searching(self, three, two, one, _):
+        response = self.client.policies.list(tenant_uuid=SUB_TENANT_UUID, search='one')
+        assert_that(response, has_entries(total=1, items=contains(one)))
+
+    @fixtures.http_tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='one', tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='two', tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='three', tenant_uuid=SUB_TENANT_UUID)
+    def test_list_paginating(self, three, two, one, _):
+        response = self.client.policies.list(tenant_uuid=SUB_TENANT_UUID, order='name', limit=1)
+        assert_that(response, has_entries(total=3, items=contains(one)))
+
+        response = self.client.policies.list(tenant_uuid=SUB_TENANT_UUID, order='name', offset=1)
+        assert_that(response, has_entries(total=3, items=contains_inanyorder(two, three)))
 
     @fixtures.http_policy(name='foobar', description='a test policy',
                           acl_templates=['dird.me.#', 'ctid-ng.#'])

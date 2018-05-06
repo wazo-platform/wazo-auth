@@ -11,7 +11,15 @@ import time
 import unittest
 
 from contextlib import contextmanager
-from hamcrest import assert_that, calling, has_properties, equal_to
+from hamcrest import (
+    assert_that,
+    calling,
+    contains,
+    greater_than,
+    has_length,
+    has_properties,
+    equal_to,
+)
 from xivo_test_helpers.hamcrest.raises import raises
 from xivo_auth_client import Client
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
@@ -30,6 +38,15 @@ ADDRESS_NULL = {
     'country': None,
     'zip_code': None,
 }
+
+
+def assert_sorted(action, order, expected):
+    asc_items = action(order=order, direction='asc')['items']
+    desc_items = action(order=order, direction='desc')['items']
+
+    assert_that(asc_items, has_length(greater_than(1)), 'sorting requires atleast 2 items')
+    assert_that(asc_items, contains(*expected))
+    assert_that(desc_items, contains(*reversed(expected)))
 
 
 class DBStarter(AssetLaunchingTestCase):

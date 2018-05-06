@@ -31,10 +31,13 @@ class Policies(_BasePolicyRessource):
 
     @http.required_acl('auth.policies.read')
     def get(self):
+        scoping_tenant = Tenant.autodetect()
         ListSchema = schemas.new_list_schema('name')
         list_params, errors = ListSchema().load(request.args)
         if errors:
             raise exceptions.InvalidListParamException(errors)
+
+        list_params['scoping_tenant_uuid'] = scoping_tenant.uuid
 
         policies = self.policy_service.list(**list_params)
         total = self.policy_service.count(**list_params)
