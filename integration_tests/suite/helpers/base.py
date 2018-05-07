@@ -219,6 +219,7 @@ class WazoAuthTestCase(BaseTestCase):
         cls.client = cls.new_auth_client(cls.username, cls.password)
         token_data = cls.client.token.new(backend='wazo_user', expiration=7200)
         cls.admin_user_uuid = token_data['metadata']['uuid']
+        cls.admin_token = token_data['token']
         cls.client.set_token(token_data['token'])
 
         cls.top_tenant_uuid = cls.get_top_tenant()['uuid']

@@ -150,27 +150,41 @@ class TestPolicyService(BaseServiceTestCase):
 
     def setUp(self):
         super(TestPolicyService, self).setUp()
-        self.service = services.PolicyService(self.dao)
+        self.tenant_tree = Mock()
+        self.service = services.PolicyService(self.dao, self.tenant_tree)
 
     def test_delete_acl_template(self):
         def when(nb_deleted, policy_exists=True):
             self.policy_dao.dissociate_policy_template.return_value = nb_deleted
             self.policy_dao.exists.return_value = policy_exists
 
-        when(nb_deleted=0, policy_exists=False)
-        assert_that(
-            calling(self.service.delete_acl_template).with_args(s.policy_uuid, s.acl_template),
-            raises(exceptions.UnknownPolicyException))
+        with patch.object(self.service, '_assert_in_tenant_subtree', return_value=None):
+            when(nb_deleted=0, policy_exists=False)
+            assert_that(
+                calling(self.service.delete_acl_template).with_args(
+                    s.policy_uuid,
+                    s.acl_template,
+                    s.scoping_tenant,
+                ),
+                raises(exceptions.UnknownPolicyException))
 
-        when(nb_deleted=0)
-        assert_that(
-            calling(self.service.delete_acl_template).with_args(s.policy_uuid, s.acl_template),
-            not_(raises(Exception)))
+            when(nb_deleted=0)
+            assert_that(
+                calling(self.service.delete_acl_template).with_args(
+                    s.policy_uuid,
+                    s.acl_template,
+                    s.scoping_tenant,
+                ),
+                not_(raises(Exception)))
 
-        when(nb_deleted=1)
-        assert_that(
-            calling(self.service.delete_acl_template).with_args(s.policy_uuid, s.acl_template),
-            not_(raises(Exception)))
+            when(nb_deleted=1)
+            assert_that(
+                calling(self.service.delete_acl_template).with_args(
+                    s.policy_uuid,
+                    s.acl_template,
+                    s.scoping_tenant,
+                ),
+                not_(raises(Exception)))
 
 
 class TestUserService(BaseServiceTestCase):

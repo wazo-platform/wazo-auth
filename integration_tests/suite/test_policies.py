@@ -2,6 +2,8 @@
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+import json
+import requests
 from functools import partial
 from hamcrest import (
     assert_that,
@@ -14,6 +16,7 @@ from hamcrest import (
     none,
     not_,
 )
+from mock import ANY
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers.base import (
     assert_no_error,
@@ -69,6 +72,77 @@ class TestPolicies(WazoAuthTestCase):
 
         # Invalid body
         assert_http_error(400, self.client.policies.new, '')
+
+    def test_post_errors(self):
+        bodies = [
+            {'foo': 'bar'},
+            42,
+            True,
+            False,
+            None,
+            'string',
+            [{'list': 'dict'}],
+            [42],
+            ['#', False],
+            [None],
+        ]
+
+        url = 'https://localhost:{}/0.1/policies'.format(self.service_port(9497, 'auth'))
+        headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Auth-Token': self.admin_token,
+        }
+
+        for body in bodies:
+            response = requests.post(url, headers=headers, data=json.dumps(body), verify=False)
+            assert_that(response.status_code, equal_to(400))
+            assert_that(
+                response.json(),
+                has_entries(
+                    timestamp=contains(ANY),
+                    reason=contains(ANY),
+                    status_code=400,
+                )
+            )
+
+        names = [
+            None,
+            True,
+            False,
+            '',
+            42,
+        ]
+        for name in names:
+            body = {'name': name}
+            response = requests.post(url, headers=headers, data=json.dumps(body), verify=False)
+            assert_that(response.status_code, equal_to(400))
+            assert_that(
+                response.json(),
+                has_entries(
+                    timestamp=contains(ANY),
+                    reason=contains('Invalid value supplied for field: name'),
+                    status_code=400,
+                )
+            )
+
+        descriptions = [
+            True,
+            False,
+            42,
+        ]
+        for description in descriptions:
+            body = {'name': 'name', 'description': description}
+            response = requests.post(url, headers=headers, data=json.dumps(body), verify=False)
+            assert_that(response.status_code, equal_to(400))
+            assert_that(
+                response.json(),
+                has_entries(
+                    timestamp=contains(ANY),
+                    reason=contains('Invalid value supplied for field: description'),
+                    status_code=400,
+                )
+            )
 
     @fixtures.http_tenant(uuid=SUB_TENANT_UUID)
     @fixtures.http_policy(name='one', tenant_uuid=SUB_TENANT_UUID)
