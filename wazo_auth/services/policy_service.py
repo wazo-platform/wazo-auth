@@ -12,7 +12,7 @@ class PolicyService(BaseService):
         super(PolicyService, self).__init__(dao)
         self._tenant_tree = tenant_tree
 
-    def add_acl_template(self, policy_uuid, acl_template, scoping_tenant_uuid=None):
+    def add_acl_template(self, policy_uuid, acl_template, scoping_tenant_uuid):
         self._assert_in_tenant_subtree(policy_uuid, scoping_tenant_uuid)
 
         return self._dao.policy.associate_policy_template(policy_uuid, acl_template)
@@ -33,14 +33,14 @@ class PolicyService(BaseService):
     def count_tenants(self, policy_uuid, **kwargs):
         return self._dao.policy.count_tenants(policy_uuid, **kwargs)
 
-    def delete(self, policy_uuid, scoping_tenant_uuid=None):
+    def delete(self, policy_uuid, scoping_tenant_uuid):
         args = {}
         if scoping_tenant_uuid:
             args['tenant_uuids'] = self._tenant_tree.list_nodes(scoping_tenant_uuid)
 
         return self._dao.policy.delete(policy_uuid, **args)
 
-    def delete_acl_template(self, policy_uuid, acl_template, scoping_tenant_uuid=None):
+    def delete_acl_template(self, policy_uuid, acl_template, scoping_tenant_uuid):
         self._assert_in_tenant_subtree(policy_uuid, scoping_tenant_uuid)
 
         nb_deleted = self._dao.policy.dissociate_policy_template(policy_uuid, acl_template)
@@ -50,14 +50,16 @@ class PolicyService(BaseService):
         if not self._dao.policy.exists(policy_uuid):
             raise exceptions.UnknownPolicyException(policy_uuid)
 
-    def get(self, policy_uuid, scoping_tenant_uuid=None):
-        args = {'uuid': policy_uuid}
-        if scoping_tenant_uuid:
-            args['tenant_uuids'] = self._tenant_tree.list_nodes(scoping_tenant_uuid)
+    def get(self, policy_uuid, scoping_tenant_uuid):
+        args = {
+            'uuid': policy_uuid,
+            'tenant_uuids': self._tenant_tree.list_nodes(scoping_tenant_uuid),
+        }
 
         matching_policies = self._dao.policy.get(**args)
         for policy in matching_policies:
             return policy
+
         raise exceptions.UnknownPolicyException(policy_uuid)
 
     def list(self, scoping_tenant_uuid=None, **kwargs):

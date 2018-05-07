@@ -230,12 +230,12 @@ class TestPolicyDAO(base.DAOTestCase):
     @fixtures.policy()
     def test_delete(self, uuid):
         assert_that(
-            calling(self._policy_dao.delete).with_args(uuid),
+            calling(self._policy_dao.delete).with_args(uuid, [self.top_tenant_uuid]),
             not_(raises(Exception)),
         )
 
         assert_that(
-            calling(self._policy_dao.delete).with_args(base.UNKNOWN_UUID),
+            calling(self._policy_dao.delete).with_args(base.UNKNOWN_UUID, [self.top_tenant_uuid]),
             raises(exceptions.UnknownPolicyException),
         )
 
@@ -279,7 +279,7 @@ class TestPolicyDAO(base.DAOTestCase):
         try:
             yield uuid_
         finally:
-            self._policy_dao.delete(uuid_)
+            self._policy_dao.delete(uuid_, [tenant_uuid])
 
     def create_and_delete_policy(self, *args, **kwargs):
         with self._new_policy(*args, **kwargs):

@@ -49,13 +49,13 @@ class Policy(_BasePolicyRessource):
     @http.required_acl('auth.policies.{policy_uuid}.read')
     def get(self, policy_uuid):
         scoping_tenant = Tenant.autodetect()
-        policy = self.policy_service.get(policy_uuid, scoping_tenant_uuid=scoping_tenant.uuid)
+        policy = self.policy_service.get(policy_uuid, scoping_tenant.uuid)
         return policy, 200
 
     @http.required_acl('auth.policies.{policy_uuid}.delete')
     def delete(self, policy_uuid):
         scoping_tenant = Tenant.autodetect()
-        self.policy_service.delete(policy_uuid, scoping_tenant_uuid=scoping_tenant.uuid)
+        self.policy_service.delete(policy_uuid, scoping_tenant.uuid)
         return '', 204
 
     @http.required_acl('auth.policies.{policy_uuid}.edit')
@@ -76,13 +76,11 @@ class PolicyTemplate(_BasePolicyRessource):
     @http.required_acl('auth.policies.{policy_uuid}.edit')
     def delete(self, policy_uuid, template):
         scoping_tenant = Tenant.autodetect()
-        self.policy_service.delete_acl_template(
-            policy_uuid, template, scoping_tenant_uuid=scoping_tenant.uuid)
+        self.policy_service.delete_acl_template(policy_uuid, template, scoping_tenant.uuid)
         return '', 204
 
     @http.required_acl('auth.policies.{policy_uuid}.edit')
     def put(self, policy_uuid, template):
         scoping_tenant = Tenant.autodetect()
-        self.policy_service.add_acl_template(
-            policy_uuid, template, scoping_tenant_uuid=scoping_tenant.uuid)
+        self.policy_service.add_acl_template(policy_uuid, template, scoping_tenant.uuid)
         return '', 204

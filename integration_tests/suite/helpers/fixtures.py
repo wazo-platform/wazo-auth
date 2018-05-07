@@ -234,7 +234,7 @@ def policy(**policy_args):
                 result = decorated(self, policy_uuid, *args, **kwargs)
             finally:
                 try:
-                    self._policy_dao.delete(policy_uuid)
+                    self._policy_dao.delete(policy_uuid, [policy_args['tenant_uuid']])
                 except exceptions.UnknownPolicyException:
                     pass
             return result
