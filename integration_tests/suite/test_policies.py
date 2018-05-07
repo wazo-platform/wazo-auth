@@ -198,9 +198,13 @@ class TestPolicies(WazoAuthTestCase):
 
         expected_acl_templates = ['dird.me.#', 'ctid-ng.#'] + ['new.acl.template.#']
         response = self.client.policies.get(policy['uuid'])
-        assert_that(response, has_entries({
-            'uuid': equal_to(policy['uuid']),
-            'acl_templates': contains_inanyorder(*expected_acl_templates)}))
+        assert_that(
+            response,
+            has_entries(
+                uuid=policy['uuid'],
+                acl_templates=contains_inanyorder(*expected_acl_templates),
+            )
+        )
 
     @fixtures.http_policy(acl_templates=['dird.me.#', 'ctid-ng.#'])
     def test_remove_acl_template(self, policy):
@@ -209,5 +213,9 @@ class TestPolicies(WazoAuthTestCase):
         self.client.policies.remove_acl_template(policy['uuid'], 'ctid-ng.#')
 
         response = self.client.policies.get(policy['uuid'])
-        assert_that(response, has_entries({
-            'acl_templates': contains_inanyorder('dird.me.#')}))
+        assert_that(
+            response,
+            has_entries(
+                acl_templates=contains_inanyorder('dird.me.#'),
+            )
+        )
