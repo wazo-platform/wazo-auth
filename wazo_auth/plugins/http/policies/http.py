@@ -60,11 +60,13 @@ class Policy(_BasePolicyRessource):
 
     @http.required_acl('auth.policies.{policy_uuid}.edit')
     def put(self, policy_uuid):
+        scoping_tenant = Tenant.autodetect()
         body, errors = PolicySchema().load(request.get_json(force=True))
         if errors:
             for field in errors:
                 raise exceptions.InvalidInputException(field)
 
+        body['scoping_tenant_uuid'] = scoping_tenant.uuid
         policy = self.policy_service.update(policy_uuid, **body)
         return policy, 200
 

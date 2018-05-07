@@ -169,11 +169,14 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                      'name': policy.name,
                      'tenant_uuid': policy.tenant_uuid} for policy in query.all()]
 
-    def update(self, policy_uuid, name, description, acl_templates):
+    def update(self, policy_uuid, name, description, acl_templates, tenant_uuids=None):
         with self.new_session() as s:
             filter_ = Policy.uuid == policy_uuid
+            if tenant_uuids is not None:
+                filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
+
             body = {'name': name, 'description': description}
-            affected_rows = s.query(Policy).filter(filter_).update(body)
+            affected_rows = s.query(Policy).filter(filter_).update(body, synchronize_session='fetch')
             if not affected_rows:
                 raise exceptions.UnknownPolicyException(policy_uuid)
 

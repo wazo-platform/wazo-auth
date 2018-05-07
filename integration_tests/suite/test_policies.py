@@ -174,6 +174,15 @@ class TestPolicies(WazoAuthTestCase):
     def test_put(self, policy):
         assert_http_error(404, self.client.policies.edit, UNKNOWN_UUID, 'foobaz')
 
+        with self.client_in_subtenant() as (client, _, __):
+            assert_http_error(404, client.policies.edit, policy['uuid'], 'foobaz')
+
+            policy_in_subtenant = client.policies.new(name='in sub-tenant')
+            assert_that(
+                self.client.policies.edit(policy_in_subtenant['uuid'], 'foobaz'),
+                has_entries(uuid=policy_in_subtenant['uuid'], name='foobaz')
+            )
+
         response = self.client.policies.edit(policy['uuid'], 'foobaz')
         assert_that(response, has_entries({
             'uuid': equal_to(policy['uuid']),

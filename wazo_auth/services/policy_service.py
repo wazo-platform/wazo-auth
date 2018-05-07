@@ -69,6 +69,10 @@ class PolicyService(BaseService):
     def list_tenants(self, policy_uuid, **kwargs):
         return self._dao.tenant.list_(policy_uuid=policy_uuid, **kwargs)
 
-    def update(self, policy_uuid, **body):
-        self._dao.policy.update(policy_uuid, **body)
+    def update(self, policy_uuid, scoping_tenant_uuid=None, **body):
+        args = dict(body)
+        if scoping_tenant_uuid:
+            args['tenant_uuids'] = self._tenant_tree.list_nodes(scoping_tenant_uuid)
+
+        self._dao.policy.update(policy_uuid, **args)
         return dict(uuid=policy_uuid, **body)
