@@ -96,7 +96,6 @@ class TestPolicies(WazoAuthTestCase):
         response = self.client.policies.list(tenant_uuid=SUB_TENANT_UUID)
         assert_that(response, has_entries(total=3, items=contains_inanyorder(one, two, three)))
 
-
     @fixtures.http_tenant(uuid=SUB_TENANT_UUID)
     @fixtures.http_policy(name='one', tenant_uuid=SUB_TENANT_UUID)
     @fixtures.http_policy(name='two', tenant_uuid=SUB_TENANT_UUID)
@@ -150,6 +149,9 @@ class TestPolicies(WazoAuthTestCase):
                 'ctid-ng.#',
             ),
         )
+
+        with self.client_in_subtenant() as (client, _, __):
+            assert_http_error(404, client.policies.get, policy['uuid'])
 
     @fixtures.http_policy()
     def test_delete(self, policy):

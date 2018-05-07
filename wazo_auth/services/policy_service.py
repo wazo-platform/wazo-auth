@@ -42,8 +42,12 @@ class PolicyService(BaseService):
         if not self._dao.policy.exists(policy_uuid):
             raise exceptions.UnknownPolicyException(policy_uuid)
 
-    def get(self, policy_uuid):
-        matching_policies = self._dao.policy.get(uuid=policy_uuid)
+    def get(self, policy_uuid, scoping_tenant_uuid=None):
+        args = {'uuid': policy_uuid}
+        if scoping_tenant_uuid:
+            args['tenant_uuids'] = [scoping_tenant_uuid]
+
+        matching_policies = self._dao.policy.get(**args)
         for policy in matching_policies:
             return policy
         raise exceptions.UnknownPolicyException(policy_uuid)
