@@ -193,6 +193,15 @@ class TestPolicies(WazoAuthTestCase):
     @fixtures.http_policy(acl_templates=['dird.me.#', 'ctid-ng.#'])
     def test_add_acl_template(self, policy):
         assert_http_error(404, self.client.policies.add_acl_template, UNKNOWN_UUID, '#')
+        with self.client_in_subtenant() as (client, _, __):
+            assert_http_error(404, client.policies.add_acl_template, policy['uuid'], '#')
+
+            policy_in_subtenant = client.policies.new(name='in sub-tenant')
+            self.client.policies.add_acl_template(policy_in_subtenant['uuid'], '#')
+            assert_that(
+                client.policies.get(policy_in_subtenant['uuid']),
+                has_entries(uuid=policy_in_subtenant['uuid'], acl_templates=contains('#')),
+            )
 
         self.client.policies.add_acl_template(policy['uuid'], 'new.acl.template.#')
 
@@ -209,6 +218,16 @@ class TestPolicies(WazoAuthTestCase):
     @fixtures.http_policy(acl_templates=['dird.me.#', 'ctid-ng.#'])
     def test_remove_acl_template(self, policy):
         assert_http_error(404, self.client.policies.remove_acl_template, UNKNOWN_UUID, '#')
+
+        with self.client_in_subtenant() as (client, _, __):
+            assert_http_error(404, client.policies.remove_acl_template, policy['uuid'], '#')
+
+            policy_in_subtenant = client.policies.new(name='in sub-tenant', acl_templates=['#'])
+            self.client.policies.remove_acl_template(policy_in_subtenant['uuid'], '#')
+            assert_that(
+                client.policies.get(policy_in_subtenant['uuid']),
+                has_entries(uuid=policy_in_subtenant['uuid'], acl_templates=empty()),
+            )
 
         self.client.policies.remove_acl_template(policy['uuid'], 'ctid-ng.#')
 

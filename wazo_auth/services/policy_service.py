@@ -12,7 +12,9 @@ class PolicyService(BaseService):
         super(PolicyService, self).__init__(dao)
         self._tenant_tree = tenant_tree
 
-    def add_acl_template(self, policy_uuid, acl_template):
+    def add_acl_template(self, policy_uuid, acl_template, scoping_tenant_uuid=None):
+        self._assert_in_tenant_subtree(policy_uuid, scoping_tenant_uuid)
+
         return self._dao.policy.associate_policy_template(policy_uuid, acl_template)
 
     def create(self, **kwargs):
@@ -38,7 +40,9 @@ class PolicyService(BaseService):
 
         return self._dao.policy.delete(policy_uuid, **args)
 
-    def delete_acl_template(self, policy_uuid, acl_template):
+    def delete_acl_template(self, policy_uuid, acl_template, scoping_tenant_uuid=None):
+        self._assert_in_tenant_subtree(policy_uuid, scoping_tenant_uuid)
+
         nb_deleted = self._dao.policy.dissociate_policy_template(policy_uuid, acl_template)
         if nb_deleted:
             return
@@ -76,3 +80,12 @@ class PolicyService(BaseService):
 
         self._dao.policy.update(policy_uuid, **args)
         return dict(uuid=policy_uuid, **body)
+
+    def _assert_in_tenant_subtree(self, policy_uuid, scoping_tenant_uuid):
+        if not scoping_tenant_uuid:
+            return
+
+        visible_tenant_uuids = self._tenant_tree.list_nodes(scoping_tenant_uuid)
+        matching_policies = self._dao.policy.get(uuid=policy_uuid, tenant_uuids=visible_tenant_uuids)
+        if not matching_policies:
+            raise exceptions.UnknownPolicyException(policy_uuid)
