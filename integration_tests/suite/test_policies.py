@@ -153,6 +153,12 @@ class TestPolicies(WazoAuthTestCase):
         with self.client_in_subtenant() as (client, _, __):
             assert_http_error(404, client.policies.get, policy['uuid'])
 
+            policy_in_subtenant = client.policies.new(name='in sub-tenant')
+            assert_that(
+                self.client.policies.get(policy_in_subtenant['uuid']),
+                has_entries(uuid=uuid_(), name='in sub-tenant')
+            )
+
     @fixtures.http_policy()
     def test_delete(self, policy):
         with self.client_in_subtenant() as (client, _, __):

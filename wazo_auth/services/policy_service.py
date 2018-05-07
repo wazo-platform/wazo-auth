@@ -49,7 +49,7 @@ class PolicyService(BaseService):
     def get(self, policy_uuid, scoping_tenant_uuid=None):
         args = {'uuid': policy_uuid}
         if scoping_tenant_uuid:
-            args['tenant_uuids'] = [scoping_tenant_uuid]
+            args['tenant_uuids'] = self._tenant_tree.list_nodes(scoping_tenant_uuid)
 
         matching_policies = self._dao.policy.get(**args)
         for policy in matching_policies:
