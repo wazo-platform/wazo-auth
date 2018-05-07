@@ -31,8 +31,12 @@ class PolicyService(BaseService):
     def count_tenants(self, policy_uuid, **kwargs):
         return self._dao.policy.count_tenants(policy_uuid, **kwargs)
 
-    def delete(self, policy_uuid):
-        return self._dao.policy.delete(policy_uuid)
+    def delete(self, policy_uuid, scoping_tenant_uuid=None):
+        args = {}
+        if scoping_tenant_uuid:
+            args['tenant_uuids'] = self._tenant_tree.list_nodes(scoping_tenant_uuid)
+
+        return self._dao.policy.delete(policy_uuid, **args)
 
     def delete_acl_template(self, policy_uuid, acl_template):
         nb_deleted = self._dao.policy.dissociate_policy_template(policy_uuid, acl_template)

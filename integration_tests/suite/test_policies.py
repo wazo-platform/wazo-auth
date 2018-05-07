@@ -155,6 +155,10 @@ class TestPolicies(WazoAuthTestCase):
 
     @fixtures.http_policy()
     def test_delete(self, policy):
+        with self.client_in_subtenant() as (client, _, __):
+            assert_http_error(404, client.policies.delete, policy['uuid'])
+            policy_in_subtenant = client.policies.new(name='in sub-tenant')
+            assert_no_error(self.client.policies.delete, policy_in_subtenant['uuid'])
         assert_http_error(404, self.client.policies.delete, UNKNOWN_UUID)
         assert_no_error(self.client.policies.delete, policy['uuid'])
         assert_http_error(404, self.client.policies.delete, policy['uuid'])

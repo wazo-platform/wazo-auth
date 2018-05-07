@@ -54,7 +54,8 @@ class Policy(_BasePolicyRessource):
 
     @http.required_acl('auth.policies.{policy_uuid}.delete')
     def delete(self, policy_uuid):
-        self.policy_service.delete(policy_uuid)
+        scoping_tenant = Tenant.autodetect()
+        self.policy_service.delete(policy_uuid, scoping_tenant_uuid=scoping_tenant.uuid)
         return '', 204
 
     @http.required_acl('auth.policies.{policy_uuid}.edit')

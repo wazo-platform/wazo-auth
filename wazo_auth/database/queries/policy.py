@@ -91,11 +91,13 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             self._associate_acl_templates(s, policy.uuid, acl_templates)
             return policy.uuid
 
-    def delete(self, policy_uuid):
+    def delete(self, policy_uuid, tenant_uuids):
         filter_ = Policy.uuid == policy_uuid
+        if tenant_uuids is not None:
+            filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
 
         with self.new_session() as s:
-            nb_deleted = s.query(Policy).filter(filter_).delete()
+            nb_deleted = s.query(Policy).filter(filter_).delete(synchronize_session=False)
 
         if not nb_deleted:
             raise exceptions.UnknownPolicyException(policy_uuid)
