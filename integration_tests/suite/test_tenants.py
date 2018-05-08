@@ -4,6 +4,7 @@
 
 from __future__ import unicode_literals
 
+from functools import partial
 from hamcrest import (
     assert_that,
     contains,
@@ -17,8 +18,10 @@ from .helpers.base import (
     ADDRESS_NULL,
     assert_http_error,
     assert_no_error,
+    assert_sorted,
     WazoAuthTestCase,
     UNKNOWN_UUID,
+    SUB_TENANT_UUID,
 )
 
 ADDRESS_1 = {
@@ -153,3 +156,49 @@ class TestTenants(WazoAuthTestCase):
             name=name,
             contact=user['uuid'],
             address=has_entries(**ADDRESS_1)))
+
+
+class TestTenantPolicyAssociation(WazoAuthTestCase):
+
+    @fixtures.http_tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='foo', tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='bar', tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='baz', tenant_uuid=SUB_TENANT_UUID)
+    def test_policy_list(self, baz, bar, foo, _):
+        assert_http_error(404, self.client.tenants.get_policies, UNKNOWN_UUID)
+        with self.client_in_subtenant(parent_uuid=SUB_TENANT_UUID) as (client, _, sub_tenant):
+            assert_http_error(404, client.tenants.get_policies, SUB_TENANT_UUID)
+
+        result = self.client.tenants.get_policies(SUB_TENANT_UUID)
+        self.then(result, 3, 3, contains_inanyorder, 'foo', 'bar', 'baz')
+
+        result = self.client.tenants.get_policies(SUB_TENANT_UUID, search='ba')
+        self.then(result, 3, 2, contains_inanyorder, 'bar', 'baz')
+
+    @fixtures.http_tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='foo', tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='bar', tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='baz', tenant_uuid=SUB_TENANT_UUID)
+    def test_policy_list_sorting(self, baz, bar, foo, _):
+        action = partial(self.client.tenants.get_policies, SUB_TENANT_UUID)
+
+        expected = [has_entries(name='bar'), has_entries(name='baz'), has_entries(name='foo')]
+        assert_sorted(action, order='name', expected=expected)
+
+    @fixtures.http_tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='foo', tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='bar', tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='baz', tenant_uuid=SUB_TENANT_UUID)
+    def test_list_paginating(self, baz, bar, foo, _):
+        action = partial(self.client.tenants.get_policies, SUB_TENANT_UUID, order='name', direction='asc')
+
+        result = action(offset=1)
+        self.then(result, 3, 3, contains, 'baz', 'foo')
+
+        result = action(limit=2)
+        self.then(result, 3, 3, contains, 'bar', 'baz')
+
+    @staticmethod
+    def then(result, total, filtered, matcher, *names):
+        item_matcher = matcher(*[has_entries(name=name) for name in names])
+        assert_that(result, has_entries(total=total, filtered=filtered, items=item_matcher))

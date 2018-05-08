@@ -19,7 +19,8 @@ class TenantService(BaseService):
         if str(tenant_uuid) not in visible_tenants:
             raise exceptions.UnknownTenantException(tenant_uuid)
 
-    def count_policies(self, tenant_uuid, **kwargs):
+    def count_policies(self, tenant_uuid, scoping_tenant_uuid, **kwargs):
+        self.assert_tenant_under(scoping_tenant_uuid, tenant_uuid)
         return self._dao.tenant.count_policies(tenant_uuid, **kwargs)
 
     def count_users(self, tenant_uuid, **kwargs):
@@ -65,7 +66,8 @@ class TenantService(BaseService):
         visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
         return self._dao.tenant.list_(tenant_uuids=visible_tenants, **kwargs)
 
-    def list_policies(self, tenant_uuid, **kwargs):
+    def list_policies(self, tenant_uuid, scoping_tenant_uuid, **kwargs):
+        self.assert_tenant_under(scoping_tenant_uuid, tenant_uuid)
         return self._dao.policy.list_(tenant_uuid=tenant_uuid, **kwargs)
 
     def list_users(self, tenant_uuid, **kwargs):

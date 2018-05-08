@@ -39,14 +39,13 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             return s.query(Tenant).filter(filter_).count()
 
-    def count_policies(self, tenant_uuid, **kwargs):
-        filtered = kwargs.get('filtered')
+    def count_policies(self, tenant_uuid, filtered=False, **kwargs):
+        filter_ = Policy.tenant_uuid == str(tenant_uuid)
+
         if filtered is not False:
             strict_filter = filters.policy_strict_filter.new_filter(**kwargs)
             search_filter = filters.policy_search_filter.new_filter(**kwargs)
-            filter_ = and_(strict_filter, search_filter)
-        else:
-            filter_ = text('true')
+            filter_ = and_(filter_, strict_filter, search_filter)
 
         with self.new_session() as s:
             return s.query(Policy.uuid).filter(filter_).count()

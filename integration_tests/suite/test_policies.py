@@ -22,12 +22,12 @@ from .helpers.base import (
     assert_no_error,
     assert_http_error,
     assert_sorted,
+    SUB_TENANT_UUID,
     WazoAuthTestCase,
 )
 from .helpers import fixtures
 
 UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
-SUB_TENANT_UUID = '76502c2b-cce5-409c-ab8f-d1fe41141a2d'
 
 
 class TestPolicies(WazoAuthTestCase):
