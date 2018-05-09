@@ -5,6 +5,18 @@ Changelog
 -----
 
 * GET and HEAD on /token now accept the "tenant" query string argument and will return 403 if the tenant is not in the user's authorized tenants.
+* The following route are now tenant filtered using the token owner's tenant of the Wazo-Tenant header
+
+  * POST, GET /policies
+  * GET, PUT, DELETE /policies/:uuid
+  * PUT, DELETE /policies/:uuid/acl_templates/:acl_template
+  * GET /tenants/:uuid/policies
+
+* A policy now has a `tenant_uuid` which is the owning tenant of the policy
+* The GET /policies/:uuid/tenants route has been removed
+* The following route have been removed
+
+  * PUT, DELETE /tenants/:uuid/policies/:uuid
 
 
 18.04

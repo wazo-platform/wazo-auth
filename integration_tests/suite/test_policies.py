@@ -2,6 +2,9 @@
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+import json
+import requests
+from functools import partial
 from hamcrest import (
     assert_that,
     contains,
@@ -9,12 +12,17 @@ from hamcrest import (
     empty,
     equal_to,
     has_entries,
+    has_items,
     none,
+    not_,
 )
+from mock import ANY
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers.base import (
     assert_no_error,
     assert_http_error,
+    assert_sorted,
+    SUB_TENANT_UUID,
     WazoAuthTestCase,
 )
 from .helpers import fixtures
@@ -29,68 +37,157 @@ class TestPolicies(WazoAuthTestCase):
     wazo_default_master_user_policy = has_entries('name', 'wazo_default_master_user_policy')
 
     @fixtures.http_policy(name='foobaz')
-    @fixtures.http_policy(name='foobar', description='a test policy',
-                          acl_templates=['dird.me.#', 'ctid-ng.#'])
-    def test_post(self, foobar, foobaz):
-        assert_that(foobar, has_entries({
-            'uuid': uuid_(),
-            'name': equal_to('foobar'),
-            'description': equal_to('a test policy'),
-            'acl_templates': contains_inanyorder('dird.me.#', 'ctid-ng.#')}))
+    @fixtures.http_tenant()
+    def test_post(self, tenant, foobaz):
+        assert_that(
+            foobaz,
+            has_entries(
+                uuid=uuid_(),
+                name='foobaz',
+                description=none(),
+                acl_templates=empty(),
+                tenant_uuid=self.top_tenant_uuid,
+            )
+        )
 
-        assert_that(foobaz, has_entries({
-            'uuid': uuid_(),
-            'name': equal_to('foobaz'),
-            'description': none(),
-            'acl_templates': empty()}))
+        policy_args = {
+            'name': 'foobar',
+            'description': 'a test policy',
+            'acl_templates': ['dird.me.#', 'ctid-ng.#'],
+            'tenant_uuid': tenant['uuid'],
+        }
+        # Specify the tenant_uuid
+        with self.policy(self.client, **policy_args) as policy:
+            assert_that(
+                policy,
+                has_entries(
+                    uuid=uuid_(),
+                    **policy_args
+                )
+            )
 
+        # Specify the a tenant uuid in another sub-tenant tree
+        with self.client_in_subtenant() as (client, _, __):
+            assert_http_error(401, client.policies.new, **policy_args)
+
+        # Invalid body
         assert_http_error(400, self.client.policies.new, '')
 
-    @fixtures.http_policy(name='one')
-    @fixtures.http_policy(name='two')
-    @fixtures.http_policy(name='three')
-    def test_list(self, three, two, one):
-        response = self.client.policies.list(search='foobar')
-        assert_that(response, has_entries({
-            'total': equal_to(0),
-            'items': empty()}))
+    def test_post_errors(self):
+        bodies = [
+            {'foo': 'bar'},
+            42,
+            True,
+            False,
+            None,
+            'string',
+            [{'list': 'dict'}],
+            [42],
+            ['#', False],
+            [None],
+        ]
 
-        response = self.client.policies.list()
-        assert_that(response, has_entries({
-            'total': equal_to(6),
-            'items': contains_inanyorder(
-                one,
-                two,
-                three,
-                self.wazo_default_user_policy,
-                self.wazo_default_master_user_policy,
-                self.wazo_default_admin_policy)}))
+        url = 'https://localhost:{}/0.1/policies'.format(self.service_port(9497, 'auth'))
+        headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Auth-Token': self.admin_token,
+        }
 
-        response = self.client.policies.list(search='one')
-        assert_that(response, has_entries({
-            'total': equal_to(1),
-            'items': contains_inanyorder(one)}))
+        for body in bodies:
+            response = requests.post(url, headers=headers, data=json.dumps(body), verify=False)
+            assert_that(response.status_code, equal_to(400))
+            assert_that(
+                response.json(),
+                has_entries(
+                    timestamp=contains(ANY),
+                    reason=contains(ANY),
+                    status_code=400,
+                )
+            )
 
-        response = self.client.policies.list(order='name', direction='asc')
-        assert_that(response, has_entries({
-            'total': equal_to(6),
-            'items': contains(
-                one,
-                three,
-                two,
-                self.wazo_default_admin_policy,
-                self.wazo_default_master_user_policy,
-                self.wazo_default_user_policy)}))
+        names = [
+            None,
+            True,
+            False,
+            '',
+            42,
+        ]
+        for name in names:
+            body = {'name': name}
+            response = requests.post(url, headers=headers, data=json.dumps(body), verify=False)
+            assert_that(response.status_code, equal_to(400))
+            assert_that(
+                response.json(),
+                has_entries(
+                    timestamp=contains(ANY),
+                    reason=contains('Invalid value supplied for field: name'),
+                    status_code=400,
+                )
+            )
 
-        response = self.client.policies.list(order='name', direction='asc', limit=1)
-        assert_that(response, has_entries({
-            'total': equal_to(6),
-            'items': contains(one)}))
+        descriptions = [
+            True,
+            False,
+            42,
+        ]
+        for description in descriptions:
+            body = {'name': 'name', 'description': description}
+            response = requests.post(url, headers=headers, data=json.dumps(body), verify=False)
+            assert_that(response.status_code, equal_to(400))
+            assert_that(
+                response.json(),
+                has_entries(
+                    timestamp=contains(ANY),
+                    reason=contains('Invalid value supplied for field: description'),
+                    status_code=400,
+                )
+            )
 
-        response = self.client.policies.list(order='name', direction='asc', limit=1, offset=1)
-        assert_that(response, has_entries({
-            'total': equal_to(6),
-            'items': contains(three)}))
+    @fixtures.http_tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='one', tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='two', tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='three', tenant_uuid=SUB_TENANT_UUID)
+    def test_list_sorting(self, three, two, one, _):
+        action = partial(self.client.policies.list, tenant_uuid=SUB_TENANT_UUID)
+        expected = [one, three, two]
+        assert_sorted(action, order='name', expected=expected)
+
+    @fixtures.http_tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='one', tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='two', tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='three', tenant_uuid=SUB_TENANT_UUID)
+    def test_list_tenant_filtering(self, three, two, one, _):
+        # Different tenant
+        response = self.client.policies.list(tenant_uuid=self.top_tenant_uuid)
+        assert_that(response, has_entries(items=not_(has_items(one, two, three))))
+
+        # Different tenant with recurse
+        response = self.client.policies.list(recurse=True, tenant_uuid=self.top_tenant_uuid)
+        assert_that(response, has_entries(items=has_items(one, two, three)))
+
+        # Same tenant
+        response = self.client.policies.list(tenant_uuid=SUB_TENANT_UUID)
+        assert_that(response, has_entries(total=3, items=contains_inanyorder(one, two, three)))
+
+    @fixtures.http_tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='one', tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='two', tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='three', tenant_uuid=SUB_TENANT_UUID)
+    def test_list_searching(self, three, two, one, _):
+        response = self.client.policies.list(tenant_uuid=SUB_TENANT_UUID, search='one')
+        assert_that(response, has_entries(total=1, items=contains(one)))
+
+    @fixtures.http_tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='one', tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='two', tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http_policy(name='three', tenant_uuid=SUB_TENANT_UUID)
+    def test_list_paginating(self, three, two, one, _):
+        response = self.client.policies.list(tenant_uuid=SUB_TENANT_UUID, order='name', limit=1)
+        assert_that(response, has_entries(total=3, items=contains(one)))
+
+        response = self.client.policies.list(tenant_uuid=SUB_TENANT_UUID, order='name', offset=1)
+        assert_that(response, has_entries(total=3, items=contains_inanyorder(two, three)))
 
     @fixtures.http_policy(name='foobar', description='a test policy',
                           acl_templates=['dird.me.#', 'ctid-ng.#'])
@@ -127,8 +224,21 @@ class TestPolicies(WazoAuthTestCase):
             ),
         )
 
+        with self.client_in_subtenant() as (client, _, __):
+            assert_http_error(404, client.policies.get, policy['uuid'])
+
+            policy_in_subtenant = client.policies.new(name='in sub-tenant')
+            assert_that(
+                self.client.policies.get(policy_in_subtenant['uuid']),
+                has_entries(uuid=uuid_(), name='in sub-tenant')
+            )
+
     @fixtures.http_policy()
     def test_delete(self, policy):
+        with self.client_in_subtenant() as (client, _, __):
+            assert_http_error(404, client.policies.delete, policy['uuid'])
+            policy_in_subtenant = client.policies.new(name='in sub-tenant')
+            assert_no_error(self.client.policies.delete, policy_in_subtenant['uuid'])
         assert_http_error(404, self.client.policies.delete, UNKNOWN_UUID)
         assert_no_error(self.client.policies.delete, policy['uuid'])
         assert_http_error(404, self.client.policies.delete, policy['uuid'])
@@ -137,6 +247,15 @@ class TestPolicies(WazoAuthTestCase):
                           acl_templates=['dird.me.#', 'ctid-ng.#'])
     def test_put(self, policy):
         assert_http_error(404, self.client.policies.edit, UNKNOWN_UUID, 'foobaz')
+
+        with self.client_in_subtenant() as (client, _, __):
+            assert_http_error(404, client.policies.edit, policy['uuid'], 'foobaz')
+
+            policy_in_subtenant = client.policies.new(name='in sub-tenant')
+            assert_that(
+                self.client.policies.edit(policy_in_subtenant['uuid'], 'foobaz'),
+                has_entries(uuid=policy_in_subtenant['uuid'], name='foobaz')
+            )
 
         response = self.client.policies.edit(policy['uuid'], 'foobaz')
         assert_that(response, has_entries({
@@ -148,21 +267,48 @@ class TestPolicies(WazoAuthTestCase):
     @fixtures.http_policy(acl_templates=['dird.me.#', 'ctid-ng.#'])
     def test_add_acl_template(self, policy):
         assert_http_error(404, self.client.policies.add_acl_template, UNKNOWN_UUID, '#')
+        with self.client_in_subtenant() as (client, _, __):
+            assert_http_error(404, client.policies.add_acl_template, policy['uuid'], '#')
+
+            policy_in_subtenant = client.policies.new(name='in sub-tenant')
+            self.client.policies.add_acl_template(policy_in_subtenant['uuid'], '#')
+            assert_that(
+                client.policies.get(policy_in_subtenant['uuid']),
+                has_entries(uuid=policy_in_subtenant['uuid'], acl_templates=contains('#')),
+            )
 
         self.client.policies.add_acl_template(policy['uuid'], 'new.acl.template.#')
 
         expected_acl_templates = ['dird.me.#', 'ctid-ng.#'] + ['new.acl.template.#']
         response = self.client.policies.get(policy['uuid'])
-        assert_that(response, has_entries({
-            'uuid': equal_to(policy['uuid']),
-            'acl_templates': contains_inanyorder(*expected_acl_templates)}))
+        assert_that(
+            response,
+            has_entries(
+                uuid=policy['uuid'],
+                acl_templates=contains_inanyorder(*expected_acl_templates),
+            )
+        )
 
     @fixtures.http_policy(acl_templates=['dird.me.#', 'ctid-ng.#'])
     def test_remove_acl_template(self, policy):
         assert_http_error(404, self.client.policies.remove_acl_template, UNKNOWN_UUID, '#')
 
+        with self.client_in_subtenant() as (client, _, __):
+            assert_http_error(404, client.policies.remove_acl_template, policy['uuid'], '#')
+
+            policy_in_subtenant = client.policies.new(name='in sub-tenant', acl_templates=['#'])
+            self.client.policies.remove_acl_template(policy_in_subtenant['uuid'], '#')
+            assert_that(
+                client.policies.get(policy_in_subtenant['uuid']),
+                has_entries(uuid=policy_in_subtenant['uuid'], acl_templates=empty()),
+            )
+
         self.client.policies.remove_acl_template(policy['uuid'], 'ctid-ng.#')
 
         response = self.client.policies.get(policy['uuid'])
-        assert_that(response, has_entries({
-            'acl_templates': contains_inanyorder('dird.me.#')}))
+        assert_that(
+            response,
+            has_entries(
+                acl_templates=contains_inanyorder('dird.me.#'),
+            )
+        )

@@ -16,6 +16,8 @@ paths:
       - $ref: '#/parameters/limit'
       - $ref: '#/parameters/offset'
       - $ref: '#/parameters/search'
+      - $ref: '#/parameters/tenantuuid'
+      - $ref: '#/parameters/recurse'
       responses:
         '200':
           description: A list of policies
@@ -48,6 +50,7 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/Policy'
+      - $ref: '#/parameters/tenantuuid'
       responses:
         '200':
           description: The created policy's data
@@ -70,6 +73,7 @@ paths:
       description: '**Required ACL**: `auth.policies.{policy_uuid}.read'
       parameters:
       - $ref: '#/parameters/policy_uuid'
+      - $ref: '#/parameters/tenantuuid'
       summary: Retrieves the details of a policy
       responses:
         '200':
@@ -97,6 +101,7 @@ paths:
       description: '**Required ACL**: `auth.policies.{policy_uuid}.delete`'
       parameters:
       - $ref: '#/parameters/policy_uuid'
+      - $ref: '#/parameters/tenantuuid'
       summary: Delete a policy
       responses:
         '204':
@@ -127,6 +132,7 @@ paths:
         - policies
       parameters:
       - $ref: '#/parameters/policy_uuid'
+      - $ref: '#/parameters/tenantuuid'
       - name: body
         in: body
         description: The policy edition parameters
@@ -158,6 +164,7 @@ paths:
       parameters:
       - $ref: '#/parameters/policy_uuid'
       - $ref: '#/parameters/acl_template'
+      - $ref: '#/parameters/tenantuuid'
       responses:
         '204':
           description: The policy has been modified
@@ -176,6 +183,7 @@ paths:
       parameters:
       - $ref: '#/parameters/policy_uuid'
       - $ref: '#/parameters/acl_template'
+      - $ref: '#/parameters/tenantuuid'
       responses:
         '204':
           description: The policy has been modified

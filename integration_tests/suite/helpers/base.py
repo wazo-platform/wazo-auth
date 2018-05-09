@@ -11,7 +11,15 @@ import time
 import unittest
 
 from contextlib import contextmanager
-from hamcrest import assert_that, calling, has_properties, equal_to
+from hamcrest import (
+    assert_that,
+    calling,
+    contains,
+    greater_than,
+    has_length,
+    has_properties,
+    equal_to,
+)
 from xivo_test_helpers.hamcrest.raises import raises
 from xivo_auth_client import Client
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
@@ -21,6 +29,7 @@ from wazo_auth.database.queries import group, policy, tenant, token, user
 
 DB_URI = os.getenv('DB_URI', 'postgresql://asterisk:proformatique@localhost:{port}')
 HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
+SUB_TENANT_UUID = '76502c2b-cce5-409c-ab8f-d1fe41141a2d'
 UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
 ADDRESS_NULL = {
     'line_1': None,
@@ -30,6 +39,15 @@ ADDRESS_NULL = {
     'country': None,
     'zip_code': None,
 }
+
+
+def assert_sorted(action, order, expected):
+    asc_items = action(order=order, direction='asc')['items']
+    desc_items = action(order=order, direction='desc')['items']
+
+    assert_that(asc_items, has_length(greater_than(1)), 'sorting requires atleast 2 items')
+    assert_that(asc_items, contains(*expected))
+    assert_that(desc_items, contains(*reversed(expected)))
 
 
 class DBStarter(AssetLaunchingTestCase):
@@ -202,6 +220,7 @@ class WazoAuthTestCase(BaseTestCase):
         cls.client = cls.new_auth_client(cls.username, cls.password)
         token_data = cls.client.token.new(backend='wazo_user', expiration=7200)
         cls.admin_user_uuid = token_data['metadata']['uuid']
+        cls.admin_token = token_data['token']
         cls.client.set_token(token_data['token'])
 
         cls.top_tenant_uuid = cls.get_top_tenant()['uuid']
@@ -209,6 +228,17 @@ class WazoAuthTestCase(BaseTestCase):
     @classmethod
     def get_top_tenant(cls):
         return cls.client.tenants.list(name='master')['items'][0]
+
+    @contextmanager
+    def policy(self, client, *args, **kwargs):
+        policy = client.policies.new(*args, **kwargs)
+        try:
+            yield policy
+        finally:
+            try:
+                client.policies.delete(policy['uuid'])
+            except Exception:
+                pass
 
     @contextmanager
     def tenant(self, client, *args, **kwargs):

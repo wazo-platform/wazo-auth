@@ -88,14 +88,6 @@ class Tenant(Base):
     parent_uuid = Column(String(38), ForeignKey('auth_tenant.uuid'), nullable=False)
 
 
-class TenantPolicy(Base):
-
-    __tablename__ = 'auth_tenant_policy'
-
-    tenant_uuid = Column(String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), primary_key=True)
-    policy_uuid = Column(String(38), ForeignKey('auth_policy.uuid', ondelete='CASCADE'), primary_key=True)
-
-
 class Token(Base):
 
     __tablename__ = 'auth_token'
@@ -114,12 +106,14 @@ class Policy(Base):
 
     __tablename__ = 'auth_policy'
     __table_args__ = (
-        UniqueConstraint('name'),
+        UniqueConstraint('name', 'tenant_uuid'),
     )
 
     uuid = Column(String(38), server_default=text('uuid_generate_v4()'), primary_key=True)
     name = Column(String(80), nullable=False)
     description = Column(Text)
+    tenant_uuid = Column(String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False)
+    tenant = relationship('Tenant', cascade='all, delete-orphan', single_parent=True)
 
 
 class User(Base):

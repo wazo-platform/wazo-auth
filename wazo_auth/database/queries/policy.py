@@ -11,7 +11,6 @@ from ..models import (
     GroupPolicy,
     Policy,
     Tenant,
-    TenantPolicy,
     UserPolicy,
 )
 from ... import exceptions
@@ -67,18 +66,20 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         else:
             filter_ = text('true')
 
-        filter_ = and_(filter_, TenantPolicy.policy_uuid == str(policy_uuid))
-
         with self.new_session() as s:
-            return s.query(Tenant).join(TenantPolicy).filter(filter_).count()
+            return s.query(Tenant).filter(filter_).count()
 
-    def count(self, search, **ignored):
+    def count(self, search, tenant_uuids=None, **ignored):
         filter_ = self.new_search_filter(search=search)
+
+        if tenant_uuids is not None:
+            filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
+
         with self.new_session() as s:
             return s.query(Policy).filter(filter_).count()
 
-    def create(self, name, description, acl_templates):
-        policy = Policy(name=name, description=description)
+    def create(self, name, description, acl_templates, tenant_uuid):
+        policy = Policy(name=name, description=description, tenant_uuid=tenant_uuid)
         with self.new_session() as s:
             s.add(policy)
             try:
@@ -90,11 +91,13 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             self._associate_acl_templates(s, policy.uuid, acl_templates)
             return policy.uuid
 
-    def delete(self, policy_uuid):
+    def delete(self, policy_uuid, tenant_uuids):
         filter_ = Policy.uuid == policy_uuid
+        if tenant_uuids is not None:
+            filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
 
         with self.new_session() as s:
-            nb_deleted = s.query(Policy).filter(filter_).delete()
+            nb_deleted = s.query(Policy).filter(filter_).delete(synchronize_session=False)
 
         if not nb_deleted:
             raise exceptions.UnknownPolicyException(policy_uuid)
@@ -103,15 +106,20 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             return self._policy_exists(s, uuid)
 
-    def get(self, **kwargs):
+    def get(self, tenant_uuids=None, **kwargs):
         strict_filter = self.new_strict_filter(**kwargs)
         search_filter = self.new_search_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
+
+        if tenant_uuids is not None:
+            filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
+
         with self.new_session() as s:
             query = s.query(
                 Policy.uuid,
                 Policy.name,
                 Policy.description,
+                Policy.tenant_uuid,
                 func.array_agg(distinct(ACLTemplate.template)).label('acl_templates'),
             ).outerjoin(
                 ACLTemplatePolicy,
@@ -142,6 +150,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     'name': policy.name,
                     'description': policy.description,
                     'acl_templates': acl_templates,
+                    'tenant_uuid': policy.tenant_uuid,
                 }
                 policies.append(body)
 
@@ -153,21 +162,21 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         filter_ = and_(strict_filter, search_filter)
 
         with self.new_session() as s:
-            query = s.query(
-                Policy.uuid,
-                Policy.name,
-            ).outerjoin(
-                TenantPolicy
-            ).filter(filter_).group_by(Policy)
+            query = s.query(Policy).filter(filter_).group_by(Policy)
             query = self._paginator.update_query(query, **kwargs)
 
-            return [{'uuid': uuid, 'name': name} for uuid, name in query.all()]
+            return [{'uuid': policy.uuid,
+                     'name': policy.name,
+                     'tenant_uuid': policy.tenant_uuid} for policy in query.all()]
 
-    def update(self, policy_uuid, name, description, acl_templates):
+    def update(self, policy_uuid, name, description, acl_templates, tenant_uuids=None):
         with self.new_session() as s:
             filter_ = Policy.uuid == policy_uuid
+            if tenant_uuids is not None:
+                filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
+
             body = {'name': name, 'description': description}
-            affected_rows = s.query(Policy).filter(filter_).update(body)
+            affected_rows = s.query(Policy).filter(filter_).update(body, synchronize_session='fetch')
             if not affected_rows:
                 raise exceptions.UnknownPolicyException(policy_uuid)
 
