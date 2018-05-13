@@ -99,8 +99,8 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             return s.query(UserGroup).join(User).join(UserEmail).join(Email).filter(filter_).count()
 
-    def create(self, name, **ignored):
-        group = Group(name=name)
+    def create(self, name, tenant_uuid, **ignored):
+        group = Group(name=name, tenant_uuid=tenant_uuid)
         with self.new_session() as s:
             s.add(group)
             try:

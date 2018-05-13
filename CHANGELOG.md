@@ -1,6 +1,14 @@
 Changelog
 =========
 
+18.06
+-----
+
+* Groups now have a tenant_uuid
+
+  * POST on /groups will create the group in the token's user tenant_uuid or in the specified Wazo-Tenant
+
+
 18.05
 -----
 

@@ -38,6 +38,7 @@ paths:
       tags:
         - groups
       parameters:
+      - $ref: '#/parameters/tenantuuid'
       - name: body
         in: body
         description: The group creation parameters
@@ -182,6 +183,9 @@ definitions:
         type: string
       name:
         type: string
+      tenant_uuid:
+        type: string
     required:
     - uuid
     - name
+    - tenant_uuid

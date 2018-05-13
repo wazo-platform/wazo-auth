@@ -32,11 +32,18 @@ class TestGroups(base.WazoAuthTestCase):
         result = self.client.groups.get(foobar['uuid'])
         assert_that(result, equal_to(foobar))
 
+    @fixtures.http_tenant(uuid=base.SUB_TENANT_UUID)
     @fixtures.http_group(name='foobar')
-    def test_post(self, result):
-        name = 'foobar'
-
-        assert_that(result, has_entries('uuid', ANY, 'name', name))
+    @fixtures.http_group(name='foobaz', tenant_uuid=base.SUB_TENANT_UUID)
+    def test_post(self, foobaz, foobar, _):
+        assert_that(
+            foobar,
+            has_entries(
+                uuid=ANY,
+                name='foobar',
+                tenant_uuid=self.top_tenant_uuid,
+            ))
+        assert_that(foobaz, has_entries(tenant_uuid=base.SUB_TENANT_UUID))
 
         for body in self.invalid_bodies:
             base.assert_http_error(400, self.client.groups.new, **body)

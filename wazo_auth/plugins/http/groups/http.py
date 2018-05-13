@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from flask import request
 from wazo_auth import exceptions, http, schemas
+from wazo_auth.flask_helpers import Tenant
 
 
 class _BaseGroupResource(http.AuthResource):
@@ -59,5 +60,7 @@ class Groups(_BaseGroupResource):
         args, errors = schemas.GroupRequestSchema().load(request.get_json())
         if errors:
             raise exceptions.GroupParamException.from_errors(errors)
+
+        args['tenant_uuid'] = Tenant.autodetect().uuid
         result = self.group_service.create(**args)
         return result, 200
