@@ -40,7 +40,8 @@ class TestGroupDAO(base.DAOTestCase):
         assert_that(self._policy_dao.get(group_uuid=group_uuid), empty())
 
         self._group_dao.add_policy(group_uuid, policy_uuid)
-        assert_that(self._policy_dao.get(group_uuid=group_uuid), contains(has_entries('uuid', policy_uuid)))
+        result = self._policy_dao.get(group_uuid=group_uuid)
+        assert_that(result, contains(has_entries(uuid=policy_uuid)))
 
         self._group_dao.add_policy(group_uuid, policy_uuid)  # twice
 
@@ -62,7 +63,8 @@ class TestGroupDAO(base.DAOTestCase):
         assert_that(self._user_dao.list_(group_uuid=group_uuid), empty())
 
         self._group_dao.add_user(group_uuid, user_uuid)
-        assert_that(self._user_dao.list_(group_uuid=group_uuid), contains(has_entries('uuid', user_uuid)))
+        result = self._user_dao.list_(group_uuid=group_uuid)
+        assert_that(result, contains(has_entries(uuid=user_uuid)))
 
         self._group_dao.add_user(group_uuid, user_uuid)  # twice
 
@@ -202,5 +204,3 @@ class TestGroupDAO(base.DAOTestCase):
 
         nb_deleted = self._group_dao.remove_user(group_uuid, user_uuid)
         assert_that(nb_deleted, equal_to(1))
-
-
