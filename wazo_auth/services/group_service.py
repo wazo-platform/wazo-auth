@@ -47,7 +47,10 @@ class GroupService(BaseService):
                     acl_templates.extend(policy['acl_templates'])
         return acl_templates
 
-    def list_(self, **kwargs):
+    def list_(self, scoping_tenant_uuid=None, recurse=False, **kwargs):
+        if scoping_tenant_uuid:
+            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(scoping_tenant_uuid, recurse)
+
         return self._dao.group.list_(**kwargs)
 
     def list_policies(self, group_uuid, **kwargs):

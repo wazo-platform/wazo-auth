@@ -56,10 +56,10 @@ class Controller(object):
         dao = queries.DAO.from_config(self._config)
         self._tenant_tree = services.helpers.TenantTree(dao.tenant)
         self._token_manager = token.Manager(config, dao, self._tenant_tree)
-        email_service = services.EmailService(dao, config, template_formatter)
+        email_service = services.EmailService(dao, self._tenant_tree, config, template_formatter)
         external_auth_service = services.ExternalAuthService(
-            dao, config, self._bus_publisher, config['enabled_external_auth_plugins'])
-        group_service = services.GroupService(dao)
+            dao, self._tenant_tree, config, self._bus_publisher, config['enabled_external_auth_plugins'])
+        group_service = services.GroupService(dao, self._tenant_tree)
         policy_service = services.PolicyService(dao, self._tenant_tree)
         self._user_service = services.UserService(dao, self._tenant_tree)
         self._tenant_service = services.TenantService(dao, self._tenant_tree, self._bus_publisher)

@@ -38,10 +38,13 @@ class Groups(_BaseGroupResource):
 
     @http.required_acl('auth.groups.read')
     def get(self):
+        scoping_tenant = Tenant.autodetect()
         ListSchema = schemas.new_list_schema('name')
         list_params, errors = ListSchema().load(request.args)
         if errors:
             raise exceptions.InvalidListParamException(errors)
+
+        list_params['scoping_tenant_uuid'] = scoping_tenant.uuid
 
         groups = self.group_service.list_(**list_params)
         total = self.group_service.count(filtered=False, **list_params)

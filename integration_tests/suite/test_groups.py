@@ -2,7 +2,17 @@
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from hamcrest import assert_that, contains, contains_inanyorder, equal_to, has_entries
+from functools import partial
+
+from hamcrest import (
+    assert_that,
+    contains,
+    contains_inanyorder,
+    equal_to,
+    has_entries,
+    has_items,
+    not_,
+)
 from mock import ANY
 from .helpers import base, fixtures
 
@@ -65,31 +75,62 @@ class TestGroups(base.WazoAuthTestCase):
         result = self.client.groups.get(group['uuid'])
         assert_that(result, has_entries('uuid', group['uuid'], 'name', 'foobaz'))
 
-    @fixtures.http_group(name='baz')
-    @fixtures.http_group(name='bar')
-    @fixtures.http_group(name='foo')
-    @fixtures.http_group(name='foobaz')
-    @fixtures.http_group(name='foobar')
-    def test_list(self, foobar, foobaz, foo, bar, baz):
-        total = 5
+    @fixtures.http_tenant(uuid=base.SUB_TENANT_UUID)
+    @fixtures.http_group(name='one', tenant_uuid=base.SUB_TENANT_UUID)
+    @fixtures.http_group(name='two', tenant_uuid=base.SUB_TENANT_UUID)
+    @fixtures.http_group(name='three', tenant_uuid=base.SUB_TENANT_UUID)
+    def test_list_tenant_filtering(self, three, two, one, _):
+        action = self.client.groups.list
 
-        result = self.client.groups.list()
-        assert_list_matches(result, total, 5, 'baz', 'bar', 'foo', 'foobaz', 'foobar')
+        # Different tenant
+        response = action(tenant_uuid=self.top_tenant_uuid)
+        assert_that(response, has_entries(items=not_(has_items(one, two, three))))
 
-        result = self.client.groups.list(search='foo')
-        assert_list_matches(result, total, 3, 'foo', 'foobar', 'foobaz')
+        # Different tenant with recurse
+        response = action(recurse=True, tenant_uuid=self.top_tenant_uuid)
+        assert_that(response, has_entries(items=has_items(one, two, three)))
 
-        result = self.client.groups.list(name='foobar')
-        assert_list_matches(result, total, 1, 'foobar')
+        # Same tenant
+        response = action(tenant_uuid=base.SUB_TENANT_UUID)
+        assert_that(response, has_entries(total=3, items=has_items(one, two, three)))
 
-        result = self.client.groups.list(order='name', direction='desc')
-        assert_list_matches(result, total, 5, 'foobaz', 'foobar', 'foo', 'baz', 'bar', ordered=True)
+    @fixtures.http_tenant(uuid=base.SUB_TENANT_UUID)
+    @fixtures.http_group(name='one', tenant_uuid=base.SUB_TENANT_UUID)
+    @fixtures.http_group(name='two', tenant_uuid=base.SUB_TENANT_UUID)
+    @fixtures.http_group(name='three', tenant_uuid=base.SUB_TENANT_UUID)
+    def test_list_paginating(self, three, two, one, _):
+        action = partial(self.client.groups.list, tenant_uuid=base.SUB_TENANT_UUID, order='name')
 
-        result = self.client.groups.list(order='name', limit=2)
-        assert_list_matches(result, total, 5, 'bar', 'baz', ordered=True)
+        response = action(limit=1)
+        assert_that(response, has_entries(total=3, filtered=3, items=contains(one)))
 
-        result = self.client.groups.list(order='name', offset=2)
-        assert_list_matches(result, total, 5, 'foo', 'foobar', 'foobaz', ordered=True)
+        response = action(offset=1)
+        assert_that(response, has_entries(total=3, filtered=3, items=contains(three, two)))
+
+    @fixtures.http_tenant(uuid=base.SUB_TENANT_UUID)
+    @fixtures.http_group(name='one', tenant_uuid=base.SUB_TENANT_UUID)
+    @fixtures.http_group(name='two', tenant_uuid=base.SUB_TENANT_UUID)
+    @fixtures.http_group(name='three', tenant_uuid=base.SUB_TENANT_UUID)
+    def test_list_searching(self, three, two, one, _):
+        action = partial(self.client.groups.list, tenant_uuid=base.SUB_TENANT_UUID)
+
+        response = action(search='one')
+        assert_that(response, has_entries(total=3, filtered=1, items=contains(one)))
+
+        response = action(search='o')
+        assert_that(response, has_entries(total=3, filtered=2, items=contains_inanyorder(one, two)))
+
+        response = action(name='three')
+        assert_that(response, has_entries(total=3, filtered=1, items=contains(three)))
+
+    @fixtures.http_tenant(uuid=base.SUB_TENANT_UUID)
+    @fixtures.http_group(name='one', tenant_uuid=base.SUB_TENANT_UUID)
+    @fixtures.http_group(name='two', tenant_uuid=base.SUB_TENANT_UUID)
+    @fixtures.http_group(name='three', tenant_uuid=base.SUB_TENANT_UUID)
+    def test_list_sorting(self, three, two, one, _):
+        action = partial(self.client.groups.list, tenant_uuid=base.SUB_TENANT_UUID)
+        expected = [one, three, two]
+        base.assert_sorted(action, order='name', expected=expected)
 
 
 def assert_list_matches(result, total, filtered, *names, **kwargs):

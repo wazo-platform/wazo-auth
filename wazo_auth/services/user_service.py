@@ -16,8 +16,7 @@ logger = logging.getLogger(__name__)
 class UserService(BaseService):
 
     def __init__(self, dao, tenant_tree, encrypter=None):
-        super(UserService, self).__init__(dao)
-        self._tenant_tree = tenant_tree
+        super(UserService, self).__init__(dao, tenant_tree)
         self._encrypter = encrypter or PasswordEncrypter()
 
     def add_policy(self, user_uuid, policy_uuid):

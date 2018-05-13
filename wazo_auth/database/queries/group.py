@@ -124,19 +124,25 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def exists(self, uuid):
         return self.count(uuid=uuid) > 0
 
-    def list_(self, **kwargs):
+    def list_(self, tenant_uuids=None, **kwargs):
         search_filter = self.new_search_filter(**kwargs)
         strict_filter = self.new_strict_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
+        if tenant_uuids is not None:
+            if not tenant_uuids:
+                return []
+
+            filter_ = and_(filter_, Group.tenant_uuid.in_(tenant_uuids))
 
         with self.new_session() as s:
-            query = s.query(
-                Group.uuid,
-                Group.name,
-            ).outerjoin(UserGroup).filter(filter_).group_by(Group)
+            query = s.query(Group).outerjoin(UserGroup).filter(filter_).group_by(Group)
             query = self._paginator.update_query(query, **kwargs)
 
-            return [{'uuid': uuid, 'name': name} for uuid, name in query.all()]
+            return [{
+                'uuid': group.uuid,
+                'name': group.name,
+                'tenant_uuid': group.tenant_uuid,
+            } for group in query.all()]
 
     def update(self, group_uuid, **body):
         with self.new_session() as s:

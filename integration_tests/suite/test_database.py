@@ -27,6 +27,9 @@ from wazo_auth.database import models
 from .helpers import fixtures, base
 
 
+TENANT_UUID = 'a26c4ed8-767f-463e-a10a-42c4f220d375'
+
+
 def new_uuid():
     return str(uuid.uuid4())
 
@@ -391,18 +394,22 @@ class TestGroupDAO(base.DAOTestCase):
         result = self._group_dao.count(search='ba', filtered=True)
         assert_that(result, equal_to(2))
 
-    @fixtures.group(name='foobar')
-    def test_create(self, group_uuid):
+    @fixtures.tenant(uuid=TENANT_UUID)
+    @fixtures.group(name='foobar', tenant_uuid=TENANT_UUID)
+    def test_create(self, group_uuid, tenant_uuid):
         name = 'foobar'
 
         assert_that(group_uuid, equal_to(ANY_UUID))
         with self._group_dao.new_session() as s:
             filter_ = models.Group.uuid == group_uuid
             group = s.query(models.Group).filter(filter_).first()
-            assert_that(group, has_properties('name', name))
+            assert_that(group, has_properties(
+                name=name,
+                tenant_uuid=tenant_uuid,
+            ))
 
         assert_that(
-            calling(self._group_dao.create).with_args(name),
+            calling(self._group_dao.create).with_args(name, tenant_uuid),
             raises(exceptions.ConflictException).matching(
                 has_properties(
                     'status_code', 409,

@@ -17,9 +17,16 @@ logger = logging.getLogger(__name__)
 
 class BaseService(object):
 
-    def __init__(self, dao):
+    def __init__(self, dao, tenant_tree):
         self._dao = dao
         self._top_tenant_uuid = None
+        self._tenant_tree = tenant_tree
+
+    def _get_scoped_tenant_uuids(self, scoping_tenant_uuid, recurse):
+        if recurse:
+            return self._tenant_tree.list_nodes(scoping_tenant_uuid)
+
+        return [scoping_tenant_uuid]
 
     @property
     def top_tenant_uuid(self):

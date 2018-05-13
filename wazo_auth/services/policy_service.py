@@ -8,10 +8,6 @@ from wazo_auth.services.helpers import BaseService
 
 class PolicyService(BaseService):
 
-    def __init__(self, dao, tenant_tree):
-        super(PolicyService, self).__init__(dao)
-        self._tenant_tree = tenant_tree
-
     def add_acl_template(self, policy_uuid, acl_template, scoping_tenant_uuid):
         self._assert_in_tenant_subtree(policy_uuid, scoping_tenant_uuid)
 
@@ -62,13 +58,9 @@ class PolicyService(BaseService):
 
         raise exceptions.UnknownPolicyException(policy_uuid)
 
-    def list(self, scoping_tenant_uuid=None, **kwargs):
+    def list(self, scoping_tenant_uuid=None, recurse=False, **kwargs):
         if scoping_tenant_uuid:
-            recurse = kwargs.get('recurse')
-            if recurse:
-                kwargs['tenant_uuids'] = self._tenant_tree.list_nodes(scoping_tenant_uuid)
-            else:
-                kwargs['tenant_uuids'] = [scoping_tenant_uuid]
+            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(scoping_tenant_uuid, recurse)
 
         return self._dao.policy.get(**kwargs)
 
