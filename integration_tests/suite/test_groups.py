@@ -8,6 +8,7 @@ from hamcrest import (
     assert_that,
     contains,
     contains_inanyorder,
+    empty,
     equal_to,
     has_entries,
     has_items,
@@ -34,7 +35,7 @@ class TestGroups(base.WazoAuthTestCase):
         base.assert_http_error(404, self.client.groups.delete, foobar['uuid'])
 
         result = self.client.groups.list()
-        assert_list_matches(result, 0, 0)
+        assert_that(result, has_entries(total=0, filtered=0, items=empty()))
 
     @fixtures.http_group(name='foobar')
     def test_get(self, foobar):
@@ -131,9 +132,3 @@ class TestGroups(base.WazoAuthTestCase):
         action = partial(self.client.groups.list, tenant_uuid=base.SUB_TENANT_UUID)
         expected = [one, three, two]
         base.assert_sorted(action, order='name', expected=expected)
-
-
-def assert_list_matches(result, total, filtered, *names, **kwargs):
-    list_matcher_fn = contains if kwargs.get('ordered', False) else contains_inanyorder
-    list_matcher = list_matcher_fn(*[has_entries('name', name) for name in names])
-    assert_that(result, has_entries('total', total, 'filtered', filtered, 'items', list_matcher))
