@@ -89,5 +89,6 @@ class GroupService(BaseService):
         if not self._dao.user.exists(user_uuid):
             raise exceptions.UnknownUserException(user_uuid)
 
-    def update(self, group_uuid, **kwargs):
-        return self._dao.group.update(group_uuid, **kwargs)
+    def update(self, group_uuid, scoping_tenant_uuid, **kwargs):
+        group = self.get(group_uuid, scoping_tenant_uuid)
+        return self._dao.group.update(group['uuid'], **kwargs)

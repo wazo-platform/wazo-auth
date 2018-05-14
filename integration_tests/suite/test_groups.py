@@ -69,6 +69,10 @@ class TestGroups(base.WazoAuthTestCase):
     @fixtures.http_group(name='duplicate')
     def test_put(self, duplicate, group):
         base.assert_http_error(404, self.client.groups.edit, base.UNKNOWN_UUID, name='foobaz')
+
+        with self.client_in_subtenant() as (client, _, __):
+            base.assert_http_error(404, client.groups.edit, group['uuid'], name='foobaz')
+
         base.assert_http_error(409, self.client.groups.edit, duplicate['uuid'], name='foobar')
 
         for body in self.invalid_bodies:

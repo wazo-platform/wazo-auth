@@ -28,10 +28,12 @@ class Group(_BaseGroupResource):
 
     @http.required_acl('auth.groups.{group_uuid}.edit')
     def put(self, group_uuid):
+        scoping_tenant = Tenant.autodetect()
         args, errors = schemas.GroupRequestSchema().load(request.get_json())
         if errors:
             raise exceptions.GroupParamException.from_errors(errors)
 
+        args['scoping_tenant_uuid'] = scoping_tenant.uuid
         group = self.group_service.update(group_uuid, **args)
         return group, 200
 
