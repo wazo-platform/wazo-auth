@@ -230,54 +230,6 @@ class WazoAuthTestCase(BaseTestCase):
         return cls.client.tenants.list(name='master')['items'][0]
 
     @contextmanager
-    def group(self, client, *args, **kwargs):
-        group = client.groups.new(*args, **kwargs)
-        try:
-            yield group
-        finally:
-            try:
-                client.groups.delete(group['uuid'])
-            except Exception:
-                pass
-
-    @contextmanager
-    def policy(self, client, *args, **kwargs):
-        policy = client.policies.new(*args, **kwargs)
-        try:
-            yield policy
-        finally:
-            try:
-                client.policies.delete(policy['uuid'])
-            except Exception:
-                pass
-
-    @contextmanager
-    def tenant(self, client, *args, **kwargs):
-        tenant = client.tenants.new(*args, **kwargs)
-        try:
-            yield tenant
-        finally:
-            try:
-                client.tenants.delete(tenant['uuid'])
-            except Exception:
-                pass
-
-    @contextmanager
-    def user(self, client, register=False, *args, **kwargs):
-        if register:
-            user = client.users.register(*args, **kwargs)
-        else:
-            user = client.users.new(*args, **kwargs)
-
-        try:
-            yield user
-        finally:
-            try:
-                client.users.delete(user['uuid'])
-            except Exception:
-                pass
-
-    @contextmanager
     def client_in_subtenant(self, username=None, parent_uuid=None):
         random_string = lambda n: ''.join(random.choice(string.letters) for _ in range(n))
         username = username or random_string(8)
@@ -303,6 +255,45 @@ class WazoAuthTestCase(BaseTestCase):
                 pass
             self.client.policies.delete(policy['uuid'])
 
+    @staticmethod
+    @contextmanager
+    def group(client, *args, **kwargs):
+        create = client.groups.new
+        delete = client.groups.delete
+
+        with _resource(create, delete, *args, **kwargs) as group:
+            yield group
+
+    @staticmethod
+    @contextmanager
+    def policy(client, *args, **kwargs):
+        create = client.policies.new
+        delete = client.policies.delete
+
+        with _resource(create, delete, *args, **kwargs) as policy:
+            yield policy
+
+    @staticmethod
+    @contextmanager
+    def tenant(client, *args, **kwargs):
+        create = client.tenants.new
+        delete = client.tenants.delete
+
+        with _resource(create, delete, *args, **kwargs) as tenant:
+            yield tenant
+
+    @staticmethod
+    @contextmanager
+    def user(client, register=False, *args, **kwargs):
+        if register:
+            create = client.users.regiser
+        else:
+            create = client.users.new
+        delete = client.users.delete
+
+        with _resource(create, delete, *args, **kwargs) as user:
+            yield user
+
 
 def assert_no_error(fn, *args, **kwargs):
     return fn(*args, **kwargs)
@@ -313,3 +304,15 @@ def assert_http_error(status_code, fn, *args, **kwargs):
         calling(fn).with_args(*args, **kwargs),
         raises(requests.HTTPError).matching(
             has_properties('response', has_properties('status_code', status_code))))
+
+
+@contextmanager
+def _resource(create, delete, *args, **kwargs):
+    resource = create(*args, **kwargs)
+    try:
+        yield resource
+    finally:
+        try:
+            delete(resource['uuid'])
+        except Exception:
+            pass
