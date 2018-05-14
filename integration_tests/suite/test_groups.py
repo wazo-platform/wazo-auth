@@ -20,7 +20,6 @@ from .helpers import base, fixtures
 
 class TestGroups(base.WazoAuthTestCase):
 
-    unknown_uuid = '00000000-0000-0000-0000-000000000000'
     invalid_bodies = [
         {},
         {'name': None},
@@ -30,7 +29,7 @@ class TestGroups(base.WazoAuthTestCase):
 
     @fixtures.http_group(name='foobar')
     def test_delete(self, foobar):
-        base.assert_http_error(404, self.client.groups.delete, self.unknown_uuid)
+        base.assert_http_error(404, self.client.groups.delete, base.UNKNOWN_UUID)
         base.assert_no_error(self.client.groups.delete, foobar['uuid'])
         base.assert_http_error(404, self.client.groups.delete, foobar['uuid'])
 
@@ -41,7 +40,7 @@ class TestGroups(base.WazoAuthTestCase):
     def test_get(self, foobar):
         action = self.client.groups.get
 
-        base.assert_http_error(404, action, self.unknown_uuid)
+        base.assert_http_error(404, action, base.UNKNOWN_UUID)
 
         with self.client_in_subtenant() as (client, _, __):
             base.assert_http_error(404, client.groups.get, foobar['uuid'])
@@ -70,7 +69,7 @@ class TestGroups(base.WazoAuthTestCase):
     @fixtures.http_group(name='foobar')
     @fixtures.http_group(name='duplicate')
     def test_put(self, duplicate, group):
-        base.assert_http_error(404, self.client.groups.edit, self.unknown_uuid, name='foobaz')
+        base.assert_http_error(404, self.client.groups.edit, base.UNKNOWN_UUID, name='foobaz')
         base.assert_http_error(409, self.client.groups.edit, duplicate['uuid'], name='foobar')
 
         for body in self.invalid_bodies:
