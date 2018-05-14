@@ -30,10 +30,17 @@ class GroupService(BaseService):
     def delete(self, group_uuid):
         return self._dao.group.delete(group_uuid)
 
-    def get(self, group_uuid):
-        matching_groups = self._dao.group.list_(uuid=group_uuid, limit=1)
+    def get(self, group_uuid, scoping_tenant_uuid):
+        args = {
+            'uuid': group_uuid,
+            'limit': 1,
+            'tenant_uuids': self._tenant_tree.list_nodes(scoping_tenant_uuid)
+        }
+
+        matching_groups = self._dao.group.list_(**args)
         for group in matching_groups:
             return group
+
         raise exceptions.UnknownGroupException(group_uuid)
 
     def get_acl_templates(self, username):

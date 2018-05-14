@@ -39,8 +39,14 @@ class TestGroups(base.WazoAuthTestCase):
 
     @fixtures.http_group(name='foobar')
     def test_get(self, foobar):
-        base.assert_http_error(404, self.client.groups.get, self.unknown_uuid)
-        result = self.client.groups.get(foobar['uuid'])
+        action = self.client.groups.get
+
+        base.assert_http_error(404, action, self.unknown_uuid)
+
+        with self.client_in_subtenant() as (client, _, __):
+            base.assert_http_error(404, client.groups.get, foobar['uuid'])
+
+        result = action(foobar['uuid'])
         assert_that(result, equal_to(foobar))
 
     @fixtures.http_tenant(uuid=base.SUB_TENANT_UUID)
