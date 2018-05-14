@@ -52,13 +52,9 @@ class UserService(BaseService):
     def count_tenants(self, user_uuid, **kwargs):
         return len(self.list_tenants(user_uuid, **kwargs))
 
-    def count_users(self, scoping_tenant_uuid, **kwargs):
+    def count_users(self, scoping_tenant_uuid=None, recurse=False, **kwargs):
         if scoping_tenant_uuid:
-            recurse = kwargs.get('recurse')
-            if recurse:
-                kwargs['tenant_uuids'] = self._tenant_tree.list_nodes(scoping_tenant_uuid)
-            else:
-                kwargs['tenant_uuids'] = [scoping_tenant_uuid]
+            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(scoping_tenant_uuid, recurse)
 
         return self._dao.user.count(**kwargs)
 
@@ -95,14 +91,9 @@ class UserService(BaseService):
         tenant_uuids = self._tenant_tree.list_nodes(tenant_uuid)
         return self._dao.tenant.list_(uuids=tenant_uuids, **kwargs)
 
-    def list_users(self, **kwargs):
-        scoping_tenant_uuid = kwargs.pop('scoping_tenant_uuid', None)
+    def list_users(self, scoping_tenant_uuid=None, recurse=False, **kwargs):
         if scoping_tenant_uuid:
-            recurse = kwargs.get('recurse')
-            if recurse:
-                kwargs['tenant_uuids'] = self._tenant_tree.list_nodes(scoping_tenant_uuid)
-            else:
-                kwargs['tenant_uuids'] = [scoping_tenant_uuid]
+            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(scoping_tenant_uuid, recurse)
 
         return self._dao.user.list_(**kwargs)
 
