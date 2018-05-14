@@ -17,7 +17,8 @@ class Group(_BaseGroupResource):
 
     @http.required_acl('auth.groups.{group_uuid}.delete')
     def delete(self, group_uuid):
-        self.group_service.delete(group_uuid)
+        scoping_tenant = Tenant.autodetect()
+        self.group_service.delete(group_uuid, scoping_tenant.uuid)
         return '', 204
 
     @http.required_acl('auth.groups.{group_uuid}.read')

@@ -8,7 +8,6 @@ from hamcrest import (
     assert_that,
     contains,
     contains_inanyorder,
-    empty,
     equal_to,
     has_entries,
     has_items,
@@ -30,11 +29,11 @@ class TestGroups(base.WazoAuthTestCase):
     @fixtures.http_group(name='foobar')
     def test_delete(self, foobar):
         base.assert_http_error(404, self.client.groups.delete, base.UNKNOWN_UUID)
-        base.assert_no_error(self.client.groups.delete, foobar['uuid'])
-        base.assert_http_error(404, self.client.groups.delete, foobar['uuid'])
 
-        result = self.client.groups.list()
-        assert_that(result, has_entries(total=0, filtered=0, items=empty()))
+        with self.client_in_subtenant() as (client, _, __):
+            base.assert_http_error(404, client.groups.delete, foobar['uuid'])
+
+        base.assert_no_error(self.client.groups.delete, foobar['uuid'])
 
     @fixtures.http_group(name='foobar')
     def test_get(self, foobar):

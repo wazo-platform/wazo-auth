@@ -114,9 +114,16 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 raise
             return group.uuid
 
-    def delete(self, uuid):
+    def delete(self, uuid, tenant_uuids=None):
+        filter_ = Group.uuid == str(uuid)
+        if tenant_uuids is not None:
+            if not tenant_uuids:
+                raise exceptions.UnknownGroupException(uuid)
+
+            filter_ = and_(filter_, Group.tenant_uuid.in_(tenant_uuids))
+
         with self.new_session() as s:
-            nb_deleted = s.query(Group).filter(Group.uuid == str(uuid)).delete()
+            nb_deleted = s.query(Group).filter(filter_).delete(synchronize_session=False)
 
         if not nb_deleted:
             raise exceptions.UnknownGroupException(uuid)

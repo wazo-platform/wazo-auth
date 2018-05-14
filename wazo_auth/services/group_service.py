@@ -27,8 +27,9 @@ class GroupService(BaseService):
         uuid = self._dao.group.create(**kwargs)
         return dict(uuid=uuid, **kwargs)
 
-    def delete(self, group_uuid):
-        return self._dao.group.delete(group_uuid)
+    def delete(self, group_uuid, scoping_tenant_uuid):
+        tenant_uuids = self._tenant_tree.list_nodes(scoping_tenant_uuid)
+        return self._dao.group.delete(group_uuid, tenant_uuids=tenant_uuids)
 
     def get(self, group_uuid, scoping_tenant_uuid):
         args = {
