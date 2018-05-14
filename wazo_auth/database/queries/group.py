@@ -59,14 +59,19 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                         raise exceptions.UnknownUserException(user_uuid)
                 raise
 
-    def count(self, **kwargs):
+    def count(self, tenant_uuids=None, **kwargs):
+        filter_ = text('true')
+
+        if tenant_uuids is not None:
+            if not tenant_uuids:
+                return 0
+            filter_ = and_(filter_, Group.tenant_uuid.in_(tenant_uuids))
+
         filtered = kwargs.get('filtered')
         if filtered is not False:
             strict_filter = self.new_strict_filter(**kwargs)
             search_filter = self.new_search_filter(**kwargs)
-            filter_ = and_(strict_filter, search_filter)
-        else:
-            filter_ = text('true')
+            filter_ = and_(filter_, strict_filter, search_filter)
 
         with self.new_session() as s:
             return s.query(Group).filter(filter_).count()
@@ -128,8 +133,8 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if not nb_deleted:
             raise exceptions.UnknownGroupException(uuid)
 
-    def exists(self, uuid):
-        return self.count(uuid=uuid) > 0
+    def exists(self, uuid, tenant_uuids=None):
+        return self.count(uuid=uuid, tenant_uuids=tenant_uuids) > 0
 
     def list_(self, tenant_uuids=None, **kwargs):
         search_filter = self.new_search_filter(**kwargs)

@@ -92,3 +92,9 @@ class GroupService(BaseService):
     def update(self, group_uuid, scoping_tenant_uuid, **kwargs):
         group = self.get(group_uuid, scoping_tenant_uuid)
         return self._dao.group.update(group['uuid'], **kwargs)
+
+    def assert_group_in_subtenant(self, scoping_tenant_uuid, uuid):
+        tenant_uuids = self._tenant_tree.list_nodes(scoping_tenant_uuid)
+        exists = self._dao.group.exists(uuid, tenant_uuids=tenant_uuids)
+        if not exists:
+            raise exceptions.UnknownGroupException(uuid)
