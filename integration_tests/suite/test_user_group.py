@@ -13,6 +13,52 @@ from hamcrest import (
 from .helpers import base, fixtures
 
 
+def then(result, total, filtered, matcher, *items):
+    items = matcher(*[item for item in items])
+    assert_that(result, has_entries(total=total, filtered=filtered, items=items))
+
+
+class TestGroupUserList(base.WazoAuthTestCase):
+
+    def setUp(self):
+        super(TestGroupUserList, self).setUp()
+        self.foo = self.client.users.new(username='foo')
+        self.bar = self.client.users.new(username='bar')
+        self.baz = self.client.users.new(username='baz')
+        self.ignored = self.client.users.new(username='ignored')
+        self.group = self.client.groups.new(name='mygroup')
+        for user in (self.foo, self.bar, self.baz):
+            self.client.groups.add_user(self.group['uuid'], user['uuid'])
+        self.action = partial(self.client.groups.get_users, self.group['uuid'])
+
+    def tearDown(self):
+        for user in (self.foo, self.bar, self.baz, self.ignored):
+            self.client.users.delete(user['uuid'])
+        self.client.groups.delete(self.group['uuid'])
+        super(TestGroupUserList, self).tearDown()
+
+    def test_user_list(self):
+        result = self.action()
+        then(result, 3, 3, contains_inanyorder, self.foo, self.bar, self.baz)
+
+        result = self.action(search='ba')
+        then(result, 3, 2, contains_inanyorder, self.bar, self.baz)
+
+        result = self.action(username='foo')
+        then(result, 3, 1, contains_inanyorder, self.foo)
+
+    def test_sorting(self):
+        expected = [self.bar, self.baz, self.foo]
+        base.assert_sorted(self.action, order='username', expected=expected)
+
+    def test_paginating(self):
+        result = self.action(order='username', offset=1)
+        then(result, 3, 3, contains_inanyorder, self.baz, self.foo)
+
+        result = self.action(order='username', limit=2)
+        then(result, 3, 3, contains, self.bar, self.baz)
+
+
 class TestUserGroupList(base.WazoAuthTestCase):
 
     def setUp(self):
@@ -30,16 +76,17 @@ class TestUserGroupList(base.WazoAuthTestCase):
         self.client.users.delete(self.user['uuid'])
         for group in (self.ignored, self.baz, self.bar, self.foo):
             self.client.groups.delete(group['uuid'])
+        super(TestUserGroupList, self).tearDown()
 
     def test_group_list(self):
         result = self.action()
-        self.then(result, 3, 3, contains_inanyorder, 'foo', 'bar', 'baz')
+        then(result, 3, 3, contains_inanyorder, self.foo, self.bar, self.baz)
 
         result = self.action(search='ba')
-        self.then(result, 3, 2, contains_inanyorder, 'bar', 'baz')
+        then(result, 3, 2, contains_inanyorder, self.bar, self.baz)
 
         result = self.action(name='foo')
-        self.then(result, 3, 1, contains_inanyorder, 'foo')
+        then(result, 3, 1, contains_inanyorder, self.foo)
 
         # user not in a visible tenant
         with self.client_in_subtenant() as (client, _, __):
@@ -51,15 +98,10 @@ class TestUserGroupList(base.WazoAuthTestCase):
 
     def test_group_list_pagination(self):
         result = self.action(order='name', offset=1)
-        self.then(result, 3, 3, contains, 'baz', 'foo')
+        then(result, 3, 3, contains, self.baz, self.foo)
 
         result = self.action(order='name', limit=2)
-        self.then(result, 3, 3, contains, 'bar', 'baz')
-
-    @staticmethod
-    def then(result, total, filtered, matcher, *names):
-        items = matcher(*[has_entries(name=name) for name in names])
-        assert_that(result, has_entries(total=total, filtered=filtered, items=items))
+        then(result, 3, 3, contains, self.bar, self.baz)
 
 
 class TestUserGroupAssociation(base.WazoAuthTestCase):
@@ -119,64 +161,6 @@ class TestUserGroupAssociation(base.WazoAuthTestCase):
                 base.assert_http_error(404, action, visible_group['uuid'], user1['uuid'])
 
                 base.assert_no_error(action, visible_group['uuid'], user3['uuid'])
-
-    @fixtures.http_user_register(username='ignored')
-    @fixtures.http_user_register(username='baz')
-    @fixtures.http_user_register(username='bar')
-    @fixtures.http_user_register(username='foo')
-    @fixtures.http_group()
-    def test_user_list(self, group, foo, bar, baz, ignored):
-        for user in (foo, bar, baz):
-            self.client.groups.add_user(group['uuid'], user['uuid'])
-
-        result = self.client.groups.get_users(group['uuid'])
-        assert_that(result, has_entries(
-            'total', 3,
-            'filtered', 3,
-            'items', contains_inanyorder(
-                has_entries('username', 'foo'),
-                has_entries('username', 'bar'),
-                has_entries('username', 'baz'))))
-
-        result = self.client.groups.get_users(group['uuid'], search='ba')
-        assert_that(result, has_entries(
-            'total', 3,
-            'filtered', 2,
-            'items', contains_inanyorder(
-                has_entries('username', 'bar'),
-                has_entries('username', 'baz'))))
-
-        result = self.client.groups.get_users(group['uuid'], username='foo')
-        assert_that(result, has_entries(
-            'total', 3,
-            'filtered', 1,
-            'items', contains_inanyorder(
-                has_entries('username', 'foo'))))
-
-        result = self.client.groups.get_users(group['uuid'], order='username', direction='desc')
-        assert_that(result, has_entries(
-            'total', 3,
-            'filtered', 3,
-            'items', contains(
-                has_entries('username', 'foo'),
-                has_entries('username', 'baz'),
-                has_entries('username', 'bar'))))
-
-        result = self.client.groups.get_users(group['uuid'], order='username', direction='desc', offset=1)
-        assert_that(result, has_entries(
-            'total', 3,
-            'filtered', 3,
-            'items', contains(
-                has_entries('username', 'baz'),
-                has_entries('username', 'bar'))))
-
-        result = self.client.groups.get_users(group['uuid'], order='username', direction='desc', limit=2)
-        assert_that(result, has_entries(
-            'total', 3,
-            'filtered', 3,
-            'items', contains(
-                has_entries('username', 'foo'),
-                has_entries('username', 'baz'))))
 
     @fixtures.http_user_register(username='foo', password='bar')
     @fixtures.http_group(name='two')
