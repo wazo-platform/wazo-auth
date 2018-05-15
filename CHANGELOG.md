@@ -7,6 +7,12 @@ Changelog
 * Groups now have a tenant_uuid
 
   * POST on /groups will create the group in the token's user tenant_uuid or in the specified Wazo-Tenant
+  * add tenant filtering on the following endpoints
+
+    * GET, PUT, DELETE `/groups/:uuid/users`
+    * GET /users/:uuid/groups
+    * GET, PUT, DELETE `/groups/:uuid`
+    * GET /groups
 
 
 18.05
