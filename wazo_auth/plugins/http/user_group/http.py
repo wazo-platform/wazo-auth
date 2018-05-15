@@ -65,6 +65,10 @@ class UserGroups(http.AuthResource):
 
     @http.required_acl('auth.users.{user_uuid}.groups.read')
     def get(self, user_uuid):
+        scoping_tenant = Tenant.autodetect()
+
+        self.user_service.assert_user_in_subtenant(scoping_tenant.uuid, user_uuid)
+
         ListSchema = schemas.new_list_schema('name')
         list_params, errors = ListSchema().load(request.args)
         if errors:

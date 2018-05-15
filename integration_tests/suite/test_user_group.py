@@ -41,6 +41,10 @@ class TestUserGroupList(base.WazoAuthTestCase):
         result = self.action(name='foo')
         self.then(result, 3, 1, contains_inanyorder, 'foo')
 
+        # user not in a visible tenant
+        with self.client_in_subtenant() as (client, _, __):
+            base.assert_http_error(404, client.users.get_groups, self.user['uuid'])
+
     def test_group_list_sorting(self):
         expected = [self.bar, self.baz, self.foo]
         base.assert_sorted(self.action, order='name', expected=expected)
