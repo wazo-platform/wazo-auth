@@ -90,19 +90,24 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             return s.query(GroupPolicy).join(Policy).filter(filter_).count()
 
-    def count_users(self, group_uuid, **kwargs):
-        filtered = kwargs.get('filtered')
-        if filtered is not False:
+    def count_users(self, group_uuid, filtered=False, **kwargs):
+        filter_ = UserGroup.group_uuid == str(group_uuid)
+
+        if filtered:
             strict_filter = filters.user_strict_filter.new_filter(**kwargs)
             search_filter = filters.user_search_filter.new_filter(**kwargs)
-            filter_ = and_(strict_filter, search_filter)
-        else:
-            filter_ = text('true')
-
-        filter_ = and_(filter_, UserGroup.group_uuid == str(group_uuid))
+            filter_ = and_(filter_, strict_filter, search_filter)
 
         with self.new_session() as s:
-            return s.query(UserGroup).join(User).join(UserEmail).join(Email).filter(filter_).count()
+            return s.query(
+                UserGroup,
+            ).join(
+                User,
+            ).outerjoin(
+                UserEmail,
+            ).outerjoin(
+                Email,
+            ).filter(filter_).count()
 
     def create(self, name, tenant_uuid, **ignored):
         group = Group(name=name, tenant_uuid=tenant_uuid)
