@@ -16,6 +16,7 @@ from hamcrest import (
     calling,
     contains,
     greater_than,
+    has_entries,
     has_length,
     has_properties,
     equal_to,
@@ -48,6 +49,11 @@ def assert_sorted(action, order, expected):
     assert_that(asc_items, has_length(greater_than(1)), 'sorting requires atleast 2 items')
     assert_that(asc_items, contains(*expected))
     assert_that(desc_items, contains(*reversed(expected)))
+
+
+def assert_list_matches(result, total, filtered, matcher, *items):
+    items = matcher(*[item for item in items])
+    assert_that(result, has_entries(total=total, filtered=filtered, items=items))
 
 
 class DBStarter(AssetLaunchingTestCase):

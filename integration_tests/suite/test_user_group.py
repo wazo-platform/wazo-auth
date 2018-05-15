@@ -11,11 +11,9 @@ from hamcrest import (
     has_items,
 )
 from .helpers import base, fixtures
-
-
-def then(result, total, filtered, matcher, *items):
-    items = matcher(*[item for item in items])
-    assert_that(result, has_entries(total=total, filtered=filtered, items=items))
+from base import (
+    assert_list_matches,
+)
 
 
 class TestGroupUserList(base.WazoAuthTestCase):
@@ -39,13 +37,13 @@ class TestGroupUserList(base.WazoAuthTestCase):
 
     def test_list(self):
         result = self.action()
-        then(result, 3, 3, contains_inanyorder, self.foo, self.bar, self.baz)
+        assert_list_matches(result, 3, 3, contains_inanyorder, self.foo, self.bar, self.baz)
 
         result = self.action(search='ba')
-        then(result, 3, 2, contains_inanyorder, self.bar, self.baz)
+        assert_list_matches(result, 3, 2, contains_inanyorder, self.bar, self.baz)
 
         result = self.action(username='foo')
-        then(result, 3, 1, contains_inanyorder, self.foo)
+        assert_list_matches(result, 3, 1, contains_inanyorder, self.foo)
 
     def test_sorting(self):
         expected = [self.bar, self.baz, self.foo]
@@ -53,10 +51,10 @@ class TestGroupUserList(base.WazoAuthTestCase):
 
     def test_paginating(self):
         result = self.action(order='username', offset=1)
-        then(result, 3, 3, contains_inanyorder, self.baz, self.foo)
+        assert_list_matches(result, 3, 3, contains_inanyorder, self.baz, self.foo)
 
         result = self.action(order='username', limit=2)
-        then(result, 3, 3, contains, self.bar, self.baz)
+        assert_list_matches(result, 3, 3, contains, self.bar, self.baz)
 
 
 class TestUserGroupList(base.WazoAuthTestCase):
@@ -80,13 +78,13 @@ class TestUserGroupList(base.WazoAuthTestCase):
 
     def test_list(self):
         result = self.action()
-        then(result, 3, 3, contains_inanyorder, self.foo, self.bar, self.baz)
+        assert_list_matches(result, 3, 3, contains_inanyorder, self.foo, self.bar, self.baz)
 
         result = self.action(search='ba')
-        then(result, 3, 2, contains_inanyorder, self.bar, self.baz)
+        assert_list_matches(result, 3, 2, contains_inanyorder, self.bar, self.baz)
 
         result = self.action(name='foo')
-        then(result, 3, 1, contains_inanyorder, self.foo)
+        assert_list_matches(result, 3, 1, contains_inanyorder, self.foo)
 
         # user not in a visible tenant
         with self.client_in_subtenant() as (client, _, __):
@@ -98,10 +96,10 @@ class TestUserGroupList(base.WazoAuthTestCase):
 
     def test_pagination(self):
         result = self.action(order='name', offset=1)
-        then(result, 3, 3, contains, self.baz, self.foo)
+        assert_list_matches(result, 3, 3, contains, self.baz, self.foo)
 
         result = self.action(order='name', limit=2)
-        then(result, 3, 3, contains, self.bar, self.baz)
+        assert_list_matches(result, 3, 3, contains, self.bar, self.baz)
 
 
 class TestUserGroupAssociation(base.WazoAuthTestCase):
