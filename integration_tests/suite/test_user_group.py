@@ -11,8 +11,11 @@ from hamcrest import (
     has_items,
 )
 from .helpers import base, fixtures
-from base import (
+from .helpers.base import (
+    assert_http_error,
     assert_list_matches,
+    assert_no_error,
+    assert_sorted,
 )
 
 
@@ -47,7 +50,7 @@ class TestGroupUserList(base.WazoAuthTestCase):
 
     def test_sorting(self):
         expected = [self.bar, self.baz, self.foo]
-        base.assert_sorted(self.action, order='username', expected=expected)
+        assert_sorted(self.action, order='username', expected=expected)
 
     def test_paginating(self):
         result = self.action(order='username', offset=1)
@@ -88,11 +91,11 @@ class TestUserGroupList(base.WazoAuthTestCase):
 
         # user not in a visible tenant
         with self.client_in_subtenant() as (client, _, __):
-            base.assert_http_error(404, client.users.get_groups, self.user['uuid'])
+            assert_http_error(404, client.users.get_groups, self.user['uuid'])
 
     def test_sorting(self):
         expected = [self.bar, self.baz, self.foo]
-        base.assert_sorted(self.action, order='name', expected=expected)
+        assert_sorted(self.action, order='name', expected=expected)
 
     def test_pagination(self):
         result = self.action(order='name', offset=1)
@@ -113,10 +116,10 @@ class TestUserGroupAssociation(base.WazoAuthTestCase):
         self.client.groups.add_user(group['uuid'], user1['uuid'])
         self.client.groups.add_user(group['uuid'], user2['uuid'])
 
-        base.assert_http_error(404, action, base.UNKNOWN_UUID, user1['uuid'])
-        base.assert_http_error(404, action, group['uuid'], base.UNKNOWN_UUID)
-        base.assert_no_error(action, group['uuid'], user2['uuid'])
-        base.assert_no_error(action, group['uuid'], user2['uuid'])  # Twice
+        assert_http_error(404, action, base.UNKNOWN_UUID, user1['uuid'])
+        assert_http_error(404, action, group['uuid'], base.UNKNOWN_UUID)
+        assert_no_error(action, group['uuid'], user2['uuid'])
+        assert_no_error(action, group['uuid'], user2['uuid'])  # Twice
 
         result = self.client.groups.get_users(group['uuid'])
         assert_that(result, has_entries('items', contains_inanyorder(user1)))
@@ -127,12 +130,12 @@ class TestUserGroupAssociation(base.WazoAuthTestCase):
             self.client.groups.add_user(group['uuid'], user3['uuid'])
 
             # group not visible to this sub tenant
-            base.assert_http_error(404, action, group['uuid'], user3['uuid'])
+            assert_http_error(404, action, group['uuid'], user3['uuid'])
 
             # user not visible to this sub tenant can be deleted
             with self.group(client, name='foo') as visible_group:
                 self.client.groups.add_user(visible_group['uuid'], user1['uuid'])
-                base.assert_no_error(action, visible_group['uuid'], user1['uuid'])
+                assert_no_error(action, visible_group['uuid'], user1['uuid'])
 
     @fixtures.http_user_register()
     @fixtures.http_user_register()
@@ -140,10 +143,10 @@ class TestUserGroupAssociation(base.WazoAuthTestCase):
     def test_put(self, group, user1, user2):
         action = self.client.groups.add_user
 
-        base.assert_http_error(404, action, base.UNKNOWN_UUID, user1['uuid'])
-        base.assert_http_error(404, action, group['uuid'], base.UNKNOWN_UUID)
-        base.assert_no_error(action, group['uuid'], user1['uuid'])
-        base.assert_no_error(action, group['uuid'], user1['uuid'])  # Twice
+        assert_http_error(404, action, base.UNKNOWN_UUID, user1['uuid'])
+        assert_http_error(404, action, group['uuid'], base.UNKNOWN_UUID)
+        assert_no_error(action, group['uuid'], user1['uuid'])
+        assert_no_error(action, group['uuid'], user1['uuid'])  # Twice
 
         result = self.client.groups.get_users(group['uuid'])
         assert_that(result, has_entries('items', contains_inanyorder(user1)))
@@ -152,13 +155,13 @@ class TestUserGroupAssociation(base.WazoAuthTestCase):
             action = client.groups.add_user
 
             # group not visible to this sub tenant
-            base.assert_http_error(404, action, group['uuid'], user3['uuid'])
+            assert_http_error(404, action, group['uuid'], user3['uuid'])
 
             # user not visible to this sub tenant
             with self.group(client, name='foo') as visible_group:
-                base.assert_http_error(404, action, visible_group['uuid'], user1['uuid'])
+                assert_http_error(404, action, visible_group['uuid'], user1['uuid'])
 
-                base.assert_no_error(action, visible_group['uuid'], user3['uuid'])
+                assert_no_error(action, visible_group['uuid'], user3['uuid'])
 
     @fixtures.http_user_register(username='foo', password='bar')
     @fixtures.http_group(name='two')
