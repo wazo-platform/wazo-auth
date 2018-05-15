@@ -18,16 +18,31 @@ class TestUserGroupAssociation(base.WazoAuthTestCase):
     @fixtures.http_user_register()
     @fixtures.http_group()
     def test_delete(self, group, user1, user2):
+        action = self.client.groups.remove_user
+
         self.client.groups.add_user(group['uuid'], user1['uuid'])
         self.client.groups.add_user(group['uuid'], user2['uuid'])
 
-        base.assert_http_error(404, self.client.groups.remove_user, base.UNKNOWN_UUID, user1['uuid'])
-        base.assert_http_error(404, self.client.groups.remove_user, group['uuid'], base.UNKNOWN_UUID)
-        base.assert_no_error(self.client.groups.remove_user, group['uuid'], user2['uuid'])
-        base.assert_no_error(self.client.groups.remove_user, group['uuid'], user2['uuid'])  # Twice
+        base.assert_http_error(404, action, base.UNKNOWN_UUID, user1['uuid'])
+        base.assert_http_error(404, action, group['uuid'], base.UNKNOWN_UUID)
+        base.assert_no_error(action, group['uuid'], user2['uuid'])
+        base.assert_no_error(action, group['uuid'], user2['uuid'])  # Twice
 
         result = self.client.groups.get_users(group['uuid'])
         assert_that(result, has_entries('items', contains_inanyorder(user1)))
+
+        with self.client_in_subtenant() as (client, user3, _):
+            action = client.groups.remove_user
+
+            self.client.groups.add_user(group['uuid'], user3['uuid'])
+
+            # group not visible to this sub tenant
+            base.assert_http_error(404, action, group['uuid'], user3['uuid'])
+
+            # user not visible to this sub tenant can be deleted
+            with self.group(client, name='foo') as visible_group:
+                self.client.groups.add_user(visible_group['uuid'], user1['uuid'])
+                base.assert_no_error(action, visible_group['uuid'], user1['uuid'])
 
     @fixtures.http_user_register()
     @fixtures.http_user_register()
@@ -54,7 +69,6 @@ class TestUserGroupAssociation(base.WazoAuthTestCase):
                 base.assert_http_error(404, action, visible_group['uuid'], user1['uuid'])
 
                 base.assert_no_error(action, visible_group['uuid'], user3['uuid'])
-
 
     @fixtures.http_group(name='ignored')
     @fixtures.http_group(name='baz')

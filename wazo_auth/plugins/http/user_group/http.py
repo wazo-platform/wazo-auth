@@ -22,6 +22,10 @@ class GroupUser(_BaseResource):
 
     @http.required_acl('auth.groups.{group_uuid}.users.{user_uuid}.delete')
     def delete(self, group_uuid, user_uuid):
+        scoping_tenant = Tenant.autodetect()
+
+        self.group_service.assert_group_in_subtenant(scoping_tenant.uuid, group_uuid)
+
         logger.debug('disassociating group %s user %s', group_uuid, user_uuid)
         self.group_service.remove_user(group_uuid, user_uuid)
         return '', 204
