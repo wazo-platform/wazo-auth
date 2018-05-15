@@ -37,7 +37,7 @@ class TestGroupUserList(base.WazoAuthTestCase):
         self.client.groups.delete(self.group['uuid'])
         super(TestGroupUserList, self).tearDown()
 
-    def test_user_list(self):
+    def test_list(self):
         result = self.action()
         then(result, 3, 3, contains_inanyorder, self.foo, self.bar, self.baz)
 
@@ -78,7 +78,7 @@ class TestUserGroupList(base.WazoAuthTestCase):
             self.client.groups.delete(group['uuid'])
         super(TestUserGroupList, self).tearDown()
 
-    def test_group_list(self):
+    def test_list(self):
         result = self.action()
         then(result, 3, 3, contains_inanyorder, self.foo, self.bar, self.baz)
 
@@ -92,11 +92,11 @@ class TestUserGroupList(base.WazoAuthTestCase):
         with self.client_in_subtenant() as (client, _, __):
             base.assert_http_error(404, client.users.get_groups, self.user['uuid'])
 
-    def test_group_list_sorting(self):
+    def test_sorting(self):
         expected = [self.bar, self.baz, self.foo]
         base.assert_sorted(self.action, order='name', expected=expected)
 
-    def test_group_list_pagination(self):
+    def test_pagination(self):
         result = self.action(order='name', offset=1)
         then(result, 3, 3, contains, self.baz, self.foo)
 
