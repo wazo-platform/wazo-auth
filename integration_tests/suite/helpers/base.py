@@ -292,7 +292,7 @@ class WazoAuthTestCase(BaseTestCase):
     @contextmanager
     def user(client, register=False, *args, **kwargs):
         if register:
-            create = client.users.regiser
+            create = client.users.register
         else:
             create = client.users.new
         delete = client.users.delete
