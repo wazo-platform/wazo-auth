@@ -2,11 +2,11 @@
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+from functools import partial
 from hamcrest import (
     assert_that,
     contains,
     contains_inanyorder,
-    empty,
     has_entries,
     has_items,
 )
@@ -74,39 +74,51 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         for policy in (foo, bar, baz):
             self.client.groups.add_policy(group['uuid'], policy['uuid'])
 
-        def assert_list_result(result, filtered, match_fn, *names):
-            assert_that(result, has_entries(
-                'total', 3,
-                'filtered', filtered,
-                'items', match_fn(
-                    *[has_entries('name', name) for name in names])))
-
         with self.client_in_subtenant() as (client, _, __):
             base.assert_http_error(404, client.groups.get_policies, group['uuid'])
 
-        assert_list_result(
-            self.client.groups.get_policies(group['uuid']),
-            3, contains_inanyorder, 'foo', 'bar', 'baz')
+        action = partial(self.client.groups.get_policies, group['uuid'])
 
-        assert_list_result(
-            self.client.groups.get_policies(group['uuid'], search='ba'),
-            2, contains_inanyorder, 'bar', 'baz')
+        result = action()
+        expected = contains_inanyorder(foo, bar, baz)
+        assert_that(result, has_entries(total=3, filtered=3, items=expected))
 
-        assert_list_result(
-            self.client.groups.get_policies(group['uuid'], name='foo'),
-            1, contains, 'foo')
+        result = action(search='ba')
+        expected = contains_inanyorder(bar, baz)
+        assert_that(result, has_entries(total=3, filtered=2, items=expected))
 
-        assert_list_result(
-            self.client.groups.get_policies(group['uuid'], order='name', direction='desc'),
-            3, contains, 'foo', 'baz', 'bar')
+        result = action(name='foo')
+        expected = contains(foo)
+        assert_that(result, has_entries(total=3, filtered=1, items=expected))
 
-        assert_list_result(
-            self.client.groups.get_policies(group['uuid'], order='name', direction='desc', offset=1),
-            3, contains, 'baz', 'bar')
+    @fixtures.http_policy(name='bar')
+    @fixtures.http_policy(name='foo')
+    @fixtures.http_group()
+    def test_list_policies_sorting(self, group, foo, bar):
+        for policy in (foo, bar):
+            self.client.groups.add_policy(group['uuid'], policy['uuid'])
 
-        assert_list_result(
-            self.client.groups.get_policies(group['uuid'], order='name', direction='desc', limit=2),
-            3, contains, 'foo', 'baz')
+        action = partial(self.client.groups.get_policies, group['uuid'])
+        expected = [bar, foo]
+        base.assert_sorted(action, order='name', expected=expected)
+
+    @fixtures.http_policy(name='baz')
+    @fixtures.http_policy(name='bar')
+    @fixtures.http_policy(name='foo')
+    @fixtures.http_group()
+    def test_list_policies_paginating(self, group, foo, bar, baz):
+        for policy in (foo, bar, baz):
+            self.client.groups.add_policy(group['uuid'], policy['uuid'])
+
+        action = partial(self.client.groups.get_policies, group['uuid'])
+
+        result = action(limit=1)
+        expected = contains_inanyorder(bar)
+        assert_that(result, has_entries(total=3, filtered=3, items=expected))
+
+        result = action(offset=1)
+        expected = contains_inanyorder(baz, foo)
+        assert_that(result, has_entries(total=3, filtered=3, items=expected))
 
     @fixtures.http_user_register(username='foo', password='bar')
     @fixtures.http_group(name='one')

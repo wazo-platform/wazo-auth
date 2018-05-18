@@ -51,11 +51,6 @@ def assert_sorted(action, order, expected):
     assert_that(desc_items, contains(*reversed(expected)))
 
 
-def assert_list_matches(result, total, filtered, matcher, *items):
-    items = matcher(*[item for item in items])
-    assert_that(result, has_entries(total=total, filtered=filtered, items=items))
-
-
 class DBStarter(AssetLaunchingTestCase):
 
     asset = 'database'
