@@ -33,13 +33,24 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
     @fixtures.http_policy()
     @fixtures.http_group()
     def test_put(self, group, policy1, policy2):
+        with self.client_in_subtenant() as (client, _, __):
+            visible_group = client.groups.new(name='group2')
+            visible_policy = client.policies.new(name='policy3')
+
+            base.assert_no_error(client.groups.add_policy, visible_group['uuid'], visible_policy['uuid'])
+            base.assert_http_error(404, client.groups.add_policy, group['uuid'], visible_policy['uuid'])
+            base.assert_http_error(404, client.groups.add_policy, visible_group['uuid'], policy1['uuid'])
+
+            result = client.groups.get_policies(visible_group['uuid'])
+            assert_that(result, has_entries(items=contains(visible_policy)))
+
         base.assert_http_error(404, self.client.groups.add_policy, base.UNKNOWN_UUID, policy1['uuid'])
         base.assert_http_error(404, self.client.groups.add_policy, group['uuid'], base.UNKNOWN_UUID)
         base.assert_no_error(self.client.groups.add_policy, group['uuid'], policy1['uuid'])
         base.assert_no_error(self.client.groups.add_policy, group['uuid'], policy1['uuid'])  # Twice
 
         result = self.client.groups.get_policies(group['uuid'])
-        assert_that(result, has_entries('items', contains(policy1)))
+        assert_that(result, has_entries(items=contains(policy1)))
 
     @fixtures.http_policy(name='ignored')
     @fixtures.http_policy(name='baz')

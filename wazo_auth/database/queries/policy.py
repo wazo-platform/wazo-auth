@@ -102,9 +102,9 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if not nb_deleted:
             raise exceptions.UnknownPolicyException(policy_uuid)
 
-    def exists(self, uuid):
+    def exists(self, uuid, tenant_uuids=None):
         with self.new_session() as s:
-            return self._policy_exists(s, uuid)
+            return self._policy_exists(s, uuid, tenant_uuids)
 
     def get(self, tenant_uuids=None, **kwargs):
         strict_filter = self.new_strict_filter(**kwargs)
@@ -218,6 +218,13 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         s.commit()
         return tpl.id_
 
-    def _policy_exists(self, s, policy_uuid):
-        policy_count = s.query(Policy).filter(Policy.uuid == str(policy_uuid)).count()
-        return policy_count > 0
+    def _policy_exists(self, s, policy_uuid, tenant_uuids=None):
+        filter_ = Policy.uuid == str(policy_uuid)
+
+        if tenant_uuids is not None:
+            if not tenant_uuids:
+                return False
+
+            filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
+
+        return s.query(Policy).filter(filter_).count() > 0

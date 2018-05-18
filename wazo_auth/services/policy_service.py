@@ -13,6 +13,12 @@ class PolicyService(BaseService):
 
         return self._dao.policy.associate_policy_template(policy_uuid, acl_template)
 
+    def assert_policy_in_subtenant(self, scoping_tenant_uuid, uuid):
+        tenant_uuids = self._tenant_tree.list_nodes(scoping_tenant_uuid)
+        exists = self._dao.policy.exists(uuid, tenant_uuids=tenant_uuids)
+        if not exists:
+            raise exceptions.UnknownPolicyException(uuid)
+
     def create(self, **kwargs):
         return self._dao.policy.create(**kwargs)
 
