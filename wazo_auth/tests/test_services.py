@@ -52,7 +52,8 @@ class TestExternalAuthService(BaseServiceTestCase):
 
     def setUp(self):
         super(TestExternalAuthService, self).setUp()
-        self.service = services.ExternalAuthService(self.dao, _DEFAULT_CONFIG)
+        self._tenant_tree = Mock()
+        self.service = services.ExternalAuthService(self.dao, self._tenant_tree, _DEFAULT_CONFIG)
 
     def test_list_external_auth(self):
         # No safe model registered for any auth type
@@ -91,7 +92,8 @@ class TestGroupService(BaseServiceTestCase):
 
     def setUp(self):
         super(TestGroupService, self).setUp()
-        self.service = services.GroupService(self.dao)
+        self._tenant_tree = Mock()
+        self.service = services.GroupService(self.dao, self._tenant_tree)
 
     def test_remove_policy(self):
         def when(nb_deleted, group_exists=True, policy_exists=True):
