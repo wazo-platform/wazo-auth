@@ -103,6 +103,12 @@ class TestGroups(base.WazoAuthTestCase):
         response = action(tenant_uuid=base.SUB_TENANT_UUID)
         assert_that(response, has_entries(total=3, items=has_items(one, two, three)))
 
+        with self.client_in_subtenant() as (client, _, sub_tenant):
+            four = client.groups.new(name='four')
+
+            response = action(tenant_uuid=sub_tenant['uuid'])
+            assert_that(response, has_entries(total=1, filtered=1, items=contains(four)))
+
     @fixtures.http_tenant(uuid=base.SUB_TENANT_UUID)
     @fixtures.http_group(name='one', tenant_uuid=base.SUB_TENANT_UUID)
     @fixtures.http_group(name='two', tenant_uuid=base.SUB_TENANT_UUID)
