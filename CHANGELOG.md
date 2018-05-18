@@ -9,9 +9,9 @@ Changelog
   * POST on /groups will create the group in the token's user tenant_uuid or in the specified Wazo-Tenant
   * add tenant filtering on the following endpoints
 
-    * GET, PUT, DELETE `/groups/:uuid/users`
-    * GET /users/:uuid/groups
-    * GET, PUT, DELETE `/groups/:uuid`
+    * GET, PUT, DELETE `/groups/<group_uuid>/users`
+    * GET /users/<user_uuid>/groups
+    * GET, PUT, DELETE `/groups/<group_uuid>`
     * GET /groups
 
 
@@ -22,15 +22,15 @@ Changelog
 * The following route are now tenant filtered using the token owner's tenant of the Wazo-Tenant header
 
   * POST, GET /policies
-  * GET, PUT, DELETE /policies/:uuid
-  * PUT, DELETE /policies/:uuid/acl_templates/:acl_template
-  * GET /tenants/:uuid/policies
+  * GET, PUT, DELETE /policies/<policy_uuid>
+  * PUT, DELETE /policies/<policy_uuid>/acl_templates/:acl_template
+  * GET /tenants/<tenant_uuid>/policies
 
 * A policy now has a `tenant_uuid` which is the owning tenant of the policy
-* The GET /policies/:uuid/tenants route has been removed
+* The GET /policies/<policy_uuid>/tenants route has been removed
 * The following route have been removed
 
-  * PUT, DELETE /tenants/:uuid/policies/:uuid
+  * PUT, DELETE /tenants/<tenant_uuid>/policies/<policy_uuid>
 
 
 18.04
