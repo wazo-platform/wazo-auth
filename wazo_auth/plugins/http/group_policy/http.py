@@ -22,6 +22,10 @@ class GroupPolicy(_BaseResource):
 
     @http.required_acl('auth.groups.{group_uuid}.policies.{policy_uuid}.create')
     def delete(self, group_uuid, policy_uuid):
+        scoping_tenant = Tenant.autodetect()
+
+        self.group_service.assert_group_in_subtenant(scoping_tenant.uuid, group_uuid)
+
         logger.debug('disassociating group %s policy %s', group_uuid, policy_uuid)
         self.group_service.remove_policy(group_uuid, policy_uuid)
         return '', 204

@@ -21,6 +21,18 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         self.client.groups.add_policy(group['uuid'], policy1['uuid'])
         self.client.groups.add_policy(group['uuid'], policy2['uuid'])
 
+        with self.client_in_subtenant() as (client, _, __):
+            visible_policy = client.policies.new(name='policy3')
+            visible_group = client.groups.new(name='group2')
+
+            # group not in client's sub-tenant tree
+            self.client.groups.add_policy(group['uuid'], visible_policy['uuid'])
+            base.assert_http_error(404, client.groups.remove_policy, group['uuid'], visible_policy['uuid'])
+
+            # Any policies of a visible group can be removed.
+            self.client.groups.add_policy(visible_group['uuid'], policy1['uuid'])
+            base.assert_no_error(client.groups.remove_policy, visible_group['uuid'], policy1['uuid'])
+
         base.assert_http_error(404, self.client.groups.remove_policy, base.UNKNOWN_UUID, policy1['uuid'])
         base.assert_http_error(404, self.client.groups.remove_policy, group['uuid'], base.UNKNOWN_UUID)
         base.assert_no_error(self.client.groups.remove_policy, group['uuid'], policy2['uuid'])
