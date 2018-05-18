@@ -46,6 +46,10 @@ class GroupPolicies(_BaseResource):
 
     @http.required_acl('auth.groups.{group_uuid}.policies.read')
     def get(self, group_uuid):
+        scoping_tenant = Tenant.autodetect()
+
+        self.group_service.assert_group_in_subtenant(scoping_tenant.uuid, group_uuid)
+
         ListSchema = schemas.new_list_schema('name')
         list_params, errors = ListSchema().load(request.args)
         if errors:

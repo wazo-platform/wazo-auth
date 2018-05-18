@@ -6,6 +6,7 @@ from hamcrest import (
     assert_that,
     contains,
     contains_inanyorder,
+    empty,
     has_entries,
     has_items,
 )
@@ -79,6 +80,9 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
                 'filtered', filtered,
                 'items', match_fn(
                     *[has_entries('name', name) for name in names])))
+
+        with self.client_in_subtenant() as (client, _, __):
+            base.assert_http_error(404, client.groups.get_policies, group['uuid'])
 
         assert_list_result(
             self.client.groups.get_policies(group['uuid']),
