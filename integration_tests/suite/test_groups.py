@@ -73,6 +73,9 @@ class TestGroups(base.WazoAuthTestCase):
         with self.client_in_subtenant() as (client, _, __):
             base.assert_http_error(404, client.groups.edit, group['uuid'], name='foobaz')
 
+            # 404 should be returned before validating the body
+            base.assert_http_error(404, client.groups.edit, group['uuid'], name=42)
+
         base.assert_http_error(409, self.client.groups.edit, duplicate['uuid'], name='foobar')
 
         for body in self.invalid_bodies:
