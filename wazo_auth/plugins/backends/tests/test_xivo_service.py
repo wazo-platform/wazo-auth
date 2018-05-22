@@ -39,8 +39,10 @@ class TestGetAcls(unittest.TestCase):
 class TestGetMetadata(unittest.TestCase):
 
     def setUp(self):
+        self.tenant_service = Mock()
+        self.tenant_service.find_top_tenant.return_value = s.top_tenant_uuid
         self.backend = XiVOService()
-        self.backend._top_tenant_uuid = s.top_tenant_uuid
+        self.backend._tenant_service = self.tenant_service
 
     @patch('wazo_auth.plugins.backends.xivo_service.accesswebservice_dao.get_user_uuid',
            Mock(return_value='534ede0d-9395-445a-8541-96b99e7b16a5'))
