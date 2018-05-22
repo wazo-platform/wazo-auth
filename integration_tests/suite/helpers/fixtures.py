@@ -206,6 +206,7 @@ def group(**group_args):
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
+            group_args.setdefault('tenant_uuid', self.top_tenant_uuid)
             group_uuid = self._group_dao.create(**group_args)
             try:
                 result = decorated(self, group_uuid, *args, **kwargs)

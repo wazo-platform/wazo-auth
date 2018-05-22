@@ -59,14 +59,19 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                         raise exceptions.UnknownUserException(user_uuid)
                 raise
 
-    def count(self, **kwargs):
+    def count(self, tenant_uuids=None, **kwargs):
+        filter_ = text('true')
+
+        if tenant_uuids is not None:
+            if not tenant_uuids:
+                return 0
+            filter_ = and_(filter_, Group.tenant_uuid.in_(tenant_uuids))
+
         filtered = kwargs.get('filtered')
         if filtered is not False:
             strict_filter = self.new_strict_filter(**kwargs)
             search_filter = self.new_search_filter(**kwargs)
-            filter_ = and_(strict_filter, search_filter)
-        else:
-            filter_ = text('true')
+            filter_ = and_(filter_, strict_filter, search_filter)
 
         with self.new_session() as s:
             return s.query(Group).filter(filter_).count()
@@ -85,22 +90,27 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             return s.query(GroupPolicy).join(Policy).filter(filter_).count()
 
-    def count_users(self, group_uuid, **kwargs):
-        filtered = kwargs.get('filtered')
-        if filtered is not False:
+    def count_users(self, group_uuid, filtered=False, **kwargs):
+        filter_ = UserGroup.group_uuid == str(group_uuid)
+
+        if filtered:
             strict_filter = filters.user_strict_filter.new_filter(**kwargs)
             search_filter = filters.user_search_filter.new_filter(**kwargs)
-            filter_ = and_(strict_filter, search_filter)
-        else:
-            filter_ = text('true')
-
-        filter_ = and_(filter_, UserGroup.group_uuid == str(group_uuid))
+            filter_ = and_(filter_, strict_filter, search_filter)
 
         with self.new_session() as s:
-            return s.query(UserGroup).join(User).join(UserEmail).join(Email).filter(filter_).count()
+            return s.query(
+                UserGroup,
+            ).join(
+                User,
+            ).outerjoin(
+                UserEmail,
+            ).outerjoin(
+                Email,
+            ).filter(filter_).count()
 
-    def create(self, name, **ignored):
-        group = Group(name=name)
+    def create(self, name, tenant_uuid, **ignored):
+        group = Group(name=name, tenant_uuid=tenant_uuid)
         with self.new_session() as s:
             s.add(group)
             try:
@@ -114,29 +124,42 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 raise
             return group.uuid
 
-    def delete(self, uuid):
+    def delete(self, uuid, tenant_uuids=None):
+        filter_ = Group.uuid == str(uuid)
+        if tenant_uuids is not None:
+            if not tenant_uuids:
+                raise exceptions.UnknownGroupException(uuid)
+
+            filter_ = and_(filter_, Group.tenant_uuid.in_(tenant_uuids))
+
         with self.new_session() as s:
-            nb_deleted = s.query(Group).filter(Group.uuid == str(uuid)).delete()
+            nb_deleted = s.query(Group).filter(filter_).delete(synchronize_session=False)
 
         if not nb_deleted:
             raise exceptions.UnknownGroupException(uuid)
 
-    def exists(self, uuid):
-        return self.count(uuid=uuid) > 0
+    def exists(self, uuid, tenant_uuids=None):
+        return self.count(uuid=uuid, tenant_uuids=tenant_uuids) > 0
 
-    def list_(self, **kwargs):
+    def list_(self, tenant_uuids=None, **kwargs):
         search_filter = self.new_search_filter(**kwargs)
         strict_filter = self.new_strict_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
+        if tenant_uuids is not None:
+            if not tenant_uuids:
+                return []
+
+            filter_ = and_(filter_, Group.tenant_uuid.in_(tenant_uuids))
 
         with self.new_session() as s:
-            query = s.query(
-                Group.uuid,
-                Group.name,
-            ).outerjoin(UserGroup).filter(filter_).group_by(Group)
+            query = s.query(Group).outerjoin(UserGroup).filter(filter_).group_by(Group)
             query = self._paginator.update_query(query, **kwargs)
 
-            return [{'uuid': uuid, 'name': name} for uuid, name in query.all()]
+            return [{
+                'uuid': group.uuid,
+                'name': group.name,
+                'tenant_uuid': group.tenant_uuid,
+            } for group in query.all()]
 
     def update(self, group_uuid, **body):
         with self.new_session() as s:

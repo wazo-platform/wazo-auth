@@ -14,7 +14,9 @@ class GroupService(BaseService):
     def add_user(self, group_uuid, user_uuid):
         return self._dao.group.add_user(group_uuid, user_uuid)
 
-    def count(self, **kwargs):
+    def count(self, scoping_tenant_uuid, recurse=False, **kwargs):
+        if scoping_tenant_uuid:
+            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(scoping_tenant_uuid, recurse)
         return self._dao.group.count(**kwargs)
 
     def count_policies(self, group_uuid, **kwargs):
@@ -27,13 +29,21 @@ class GroupService(BaseService):
         uuid = self._dao.group.create(**kwargs)
         return dict(uuid=uuid, **kwargs)
 
-    def delete(self, group_uuid):
-        return self._dao.group.delete(group_uuid)
+    def delete(self, group_uuid, scoping_tenant_uuid):
+        tenant_uuids = self._tenant_tree.list_nodes(scoping_tenant_uuid)
+        return self._dao.group.delete(group_uuid, tenant_uuids=tenant_uuids)
 
-    def get(self, group_uuid):
-        matching_groups = self._dao.group.list_(uuid=group_uuid, limit=1)
+    def get(self, group_uuid, scoping_tenant_uuid):
+        args = {
+            'uuid': group_uuid,
+            'limit': 1,
+            'tenant_uuids': self._tenant_tree.list_nodes(scoping_tenant_uuid)
+        }
+
+        matching_groups = self._dao.group.list_(**args)
         for group in matching_groups:
             return group
+
         raise exceptions.UnknownGroupException(group_uuid)
 
     def get_acl_templates(self, username):
@@ -47,7 +57,10 @@ class GroupService(BaseService):
                     acl_templates.extend(policy['acl_templates'])
         return acl_templates
 
-    def list_(self, **kwargs):
+    def list_(self, scoping_tenant_uuid=None, recurse=False, **kwargs):
+        if scoping_tenant_uuid:
+            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(scoping_tenant_uuid, recurse)
+
         return self._dao.group.list_(**kwargs)
 
     def list_policies(self, group_uuid, **kwargs):
@@ -78,5 +91,12 @@ class GroupService(BaseService):
         if not self._dao.user.exists(user_uuid):
             raise exceptions.UnknownUserException(user_uuid)
 
-    def update(self, group_uuid, **kwargs):
-        return self._dao.group.update(group_uuid, **kwargs)
+    def update(self, group_uuid, scoping_tenant_uuid, **kwargs):
+        group = self.get(group_uuid, scoping_tenant_uuid)
+        return self._dao.group.update(group['uuid'], **kwargs)
+
+    def assert_group_in_subtenant(self, scoping_tenant_uuid, uuid):
+        tenant_uuids = self._tenant_tree.list_nodes(scoping_tenant_uuid)
+        exists = self._dao.group.exists(uuid, tenant_uuids=tenant_uuids)
+        if not exists:
+            raise exceptions.UnknownGroupException(uuid)

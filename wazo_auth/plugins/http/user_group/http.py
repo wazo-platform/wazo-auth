@@ -1,31 +1,42 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
 
 from flask import request
 from wazo_auth import exceptions, http, schemas
+from wazo_auth.flask_helpers import Tenant
 
 logger = logging.getLogger(__name__)
 
 
 class _BaseResource(http.AuthResource):
 
-    def __init__(self, group_service):
+    def __init__(self, group_service, user_service):
         self.group_service = group_service
+        self.user_service = user_service
 
 
 class GroupUser(_BaseResource):
 
     @http.required_acl('auth.groups.{group_uuid}.users.{user_uuid}.delete')
     def delete(self, group_uuid, user_uuid):
+        scoping_tenant = Tenant.autodetect()
+
+        self.group_service.assert_group_in_subtenant(scoping_tenant.uuid, group_uuid)
+
         logger.debug('disassociating group %s user %s', group_uuid, user_uuid)
         self.group_service.remove_user(group_uuid, user_uuid)
         return '', 204
 
     @http.required_acl('auth.groups.{group_uuid}.users.{user_uuid}.create')
     def put(self, group_uuid, user_uuid):
+        scoping_tenant = Tenant.autodetect()
+
+        self.user_service.assert_user_in_subtenant(scoping_tenant.uuid, user_uuid)
+        self.group_service.assert_group_in_subtenant(scoping_tenant.uuid, group_uuid)
+
         logger.debug('associating group %s user %s', group_uuid, user_uuid)
         self.group_service.add_user(group_uuid, user_uuid)
         return '', 204
@@ -54,6 +65,10 @@ class UserGroups(http.AuthResource):
 
     @http.required_acl('auth.users.{user_uuid}.groups.read')
     def get(self, user_uuid):
+        scoping_tenant = Tenant.autodetect()
+
+        self.user_service.assert_user_in_subtenant(scoping_tenant.uuid, user_uuid)
+
         ListSchema = schemas.new_list_schema('name')
         list_params, errors = ListSchema().load(request.args)
         if errors:
