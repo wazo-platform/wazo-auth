@@ -93,7 +93,7 @@ class TestGroups(base.WazoAuthTestCase):
 
         # Different tenant
         response = action(tenant_uuid=self.top_tenant_uuid)
-        assert_that(response, has_entries(items=not_(has_items(one, two, three))))
+        assert_that(response, has_entries(total=0, filtered=0, items=not_(has_items(one, two, three))))
 
         # Different tenant with recurse
         response = action(recurse=True, tenant_uuid=self.top_tenant_uuid)

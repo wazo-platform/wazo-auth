@@ -15,8 +15,9 @@ class GroupService(BaseService):
         return self._dao.group.add_user(group_uuid, user_uuid)
 
     def count(self, scoping_tenant_uuid, recurse=False, **kwargs):
-        tenant_uuids = self._tenant_tree.list_nodes(scoping_tenant_uuid)
-        return self._dao.group.count(tenant_uuids=tenant_uuids, **kwargs)
+        if scoping_tenant_uuid:
+            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(scoping_tenant_uuid, recurse)
+        return self._dao.group.count(**kwargs)
 
     def count_policies(self, group_uuid, **kwargs):
         return self._dao.group.count_policies(group_uuid, **kwargs)
