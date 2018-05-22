@@ -17,14 +17,12 @@ logger = logging.getLogger(__name__)
 class XiVOService(BaseAuthenticationBackend):
 
     def __init__(self, *args, **kwargs):
-        self._top_tenant_uuid = None
         super(XiVOService, self).__init__(*args, **kwargs)
 
     def load(self, dependencies):
         super(XiVOService, self).load(dependencies)
         self._tenant_service = dependencies['tenant_service']
         xivo_dao.init_db_from_config(dependencies['config'])
-        self._top_tenant_uuid = self._tenant_service.find_top_tenant()
 
     def get_acls(self, login, args):
         with session_scope():
@@ -37,7 +35,7 @@ class XiVOService(BaseAuthenticationBackend):
                 metadata['auth_id'] = accesswebservice_dao.get_user_uuid(login)
             except LookupError:
                 raise AuthenticationFailedException()
-        metadata['tenant_uuid'] = self._top_tenant_uuid
+        metadata['tenant_uuid'] = self._tenant_service.find_top_tenant()
         return metadata
 
     def verify_password(self, login, password, args):
