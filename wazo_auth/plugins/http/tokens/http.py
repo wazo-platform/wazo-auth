@@ -2,9 +2,13 @@
 # Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+import logging
+
 from flask import request
 from wazo_auth import exceptions, http
 from . import schemas
+
+logger = logging.getLogger(__name__)
 
 
 class BaseResource(http.ErrorCatchingResource):
@@ -33,9 +37,11 @@ class Tokens(BaseResource):
         try:
             backend = self._backends[backend_name].obj
         except KeyError:
+            logger.debug('Backend not found: "%s"', backend_name)
             return http._error(401, 'Authentication Failed')
 
         if not backend.verify_password(login, password, args):
+            logger.debug('Invalid password for user "%s" in backend "%s"', login, backend_name)
             return http._error(401, 'Authentication Failed')
 
         token = self._token_manager.new_token(backend, login, args)
