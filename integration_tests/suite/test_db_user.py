@@ -314,11 +314,11 @@ class TestUserDAO(base.DAOTestCase):
         result = self._user_dao.count(uuid=c)
         assert_that(result, equal_to(1))
 
-    @fixtures.user(username='foo')
-    @fixtures.user(email_address='foobar@example.com')
-    @fixtures.user(username='bar', email_address='bar@example.com')
+    @fixtures.user(username='foo123')
+    @fixtures.user(email_address='foobar123@example.com')
+    @fixtures.user(username='bar456', email_address='bar456@example.com')
     def test_user_count_search_term(self, a, b, c):
-        result = self._user_dao.count(search='foo')
+        result = self._user_dao.count(search='123')
         assert_that(result, equal_to(2))
 
     @fixtures.user(username='foo')
