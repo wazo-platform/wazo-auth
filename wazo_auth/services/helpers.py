@@ -4,9 +4,7 @@
 
 import logging
 import os
-import threading
 
-from contextlib import contextmanager
 from jinja2 import BaseLoader, Environment, TemplateNotFound
 from anytree import Node, PreOrderIter
 
@@ -100,29 +98,16 @@ class TenantTree(object):
     def __init__(self, tenant_dao):
         self._tenant_dao = tenant_dao
         self._tenant_tree = None
-        self._tree_lock = threading.Lock()
-
-    def invalidate(self):
-        with self._tree_lock:
-            self._tenant_tree = None
 
     def list_nodes(self, nid):
-        with self._tree() as tree:
-            subtree = self._find_subtree(tree, nid)
-            return [n.name for n in PreOrderIter(subtree)]
+        tree = self._build_tree(self._tenant_dao.list_())
+        subtree = self._find_subtree(tree, nid)
+        return [n.name for n in PreOrderIter(subtree)]
 
     def _find_subtree(self, tree, uuid):
         for node in PreOrderIter(tree):
             if node.name == uuid:
                 return node
-
-    @contextmanager
-    def _tree(self):
-        with self._tree_lock:
-            if not self._tenant_tree:
-                self._tenant_tree = self._build_tree(self._tenant_dao.list_())
-
-            yield self._tenant_tree
 
     def _build_tree(self, tenants):
         logger.debug('rebuilding tenant tree')

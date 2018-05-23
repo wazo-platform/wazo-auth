@@ -40,7 +40,6 @@ class TenantService(BaseService):
 
         result = self._dao.tenant.delete(uuid)
 
-        self._tenant_tree.invalidate()
         event = events.TenantDeletedEvent(uuid)
         self._bus_publisher.publish(event)
         return result
@@ -79,8 +78,6 @@ class TenantService(BaseService):
         address_id = self._dao.address.new(**kwargs['address'])
         uuid = self._dao.tenant.create(address_id=address_id, **kwargs)
         result = self._get(uuid)
-
-        self._tenant_tree.invalidate()
 
         event = events.TenantCreatedEvent(uuid, kwargs.get('name'))
         self._bus_publisher.publish(event)
