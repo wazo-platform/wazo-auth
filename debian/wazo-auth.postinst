@@ -8,8 +8,6 @@ HOME="/var/lib/${USER}"
 GROUP=$USER
 LOG_FILENAME="/var/log/${DAEMONNAME}.log"
 ALEMBIC_INI_PATH="/usr/share/${DAEMONNAME}"
-OLD_PID_DIR='/var/run/xivo-auth'
-OLD_NGINX_CONFIG="/etc/nginx/locations/https-available/xivo-auth /etc/nginx/locations/https-enabled/xivo-auth"
 
 pg_is_running () {
     pg_lsclusters --no-header | grep -q online
@@ -28,59 +26,15 @@ case "$1" in
         fi
         adduser --quiet $USER www-data
 
-        if [[ -z "${previous_version}" ]]; then
-            # The pid file was moved from /var/run/xivo-auth/xivo-auth.pid in version 17.14
-            rm -rf "${OLD_PID_DIR}"
-
-            # remove the /var/log/${DAEMONNAME}.log file created before 15.12
-            if [ -e '/var/log/${DAEMONNAME}.log' ]; then
-                rm -f '/var/log/${DAEMONNAME}.log'
-            fi
-
-            # The log file have been renamed in version 17.14
-            (
-                shopt -s nullglob
-                for f in /var/log/xivo-auth*; do
-                    mv "${f}" "$(echo ${f} | sed 's/xivo-auth/wazo-auth/g')"
-                done
-            )
-
-            # The USER was renamed from xivo-auth in version 17.14
-            if getent passwd xivo-auth > /dev/null ; then
-                echo "Deleting system user xivo-auth" 1>&2
-                deluser --system xivo-auth
-            fi
-        fi
-
         if [ ! -e "$LOG_FILENAME" ]; then
             touch "$LOG_FILENAME"
         fi
         chown $USER:$GROUP "$LOG_FILENAME"
 
         if [[ -z "${previous_version}" ]]; then
-            # The config dir was moved from /etc/xivo-auth in version 17.14
-            if [ -e /etc/xivo-auth/conf.d ]; then
-                (
-                    shopt -s nullglob
-                    for f in /etc/xivo-auth/conf.d/*; do
-                        mv "${f}" /etc/wazo-auth/conf.d/
-                    done
-                )
-            fi
-            rm -rf /etc/xivo-auth
-
-            # In version 15.20 a config file has been removed
-            rm -rf /etc/default/xivo-auth
-
             # Add nginx configuration on new installations
             ln -sf  /etc/nginx/locations/https-available/$DAEMONNAME \
                     /etc/nginx/locations/https-enabled/$DAEMONNAME
-        fi
-
-        if dpkg --compare-versions "$2" lt '17.16~'; then
-            for f in ${OLD_NGINX_CONFIG}; do
-                rm -f ${f}
-            done
         fi
 
         # The HOME directory was not created before Wazo 18.01
