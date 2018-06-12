@@ -13,6 +13,7 @@ paths:
       - $ref: '#/parameters/limit'
       - $ref: '#/parameters/offset'
       - $ref: '#/parameters/search'
+      - $ref: '#/parameters/tenantuuid'
       responses:
         '200':
           description: 'The list of tenant'
