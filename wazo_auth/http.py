@@ -120,5 +120,6 @@ def new_app(dependencies):
     app.config['user_service'] = dependencies['user_service']
 
     app.after_request(http_helpers.log_request)
+    app.before_request(http_helpers.log_before_request)
 
     return app
