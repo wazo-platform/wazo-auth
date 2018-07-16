@@ -32,7 +32,7 @@ Depends: ${python:Depends},
          wazo-uuid,
          xivo-bus (>> 17.16),
          xivo-confd-client (>> 15.16),
-         xivo-dbms (>= 18.04~20180311.003118.68c4e4d.deb9),
+         xivo-dbms (>= 18.08~20180716.112653.be0ca5d.deb9),
          xivo-lib-python,
          xivo-libdao (>= 17.02~20170124.144633.cb56771)
 Conflicts: xivo-auth
