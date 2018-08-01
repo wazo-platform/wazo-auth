@@ -1,0 +1,55 @@
+Template: wazo-auth/db-skip
+Type: boolean
+Default: false
+Description: Skip DB configuration
+ Should we skip the database configuration for now?
+ .
+
+Template: wazo-auth/db-host
+Type: string
+Default: localhost
+Description: PostgreSQL host
+ Where is PostgreSQL hosted?
+ .
+
+Template: wazo-auth/db-port
+Type: string
+Default: 5432
+Description: PostgreSQL port
+ Which port does PostgreSQL use?
+ .
+
+Template: wazo-auth/db-admin-username
+Type: string
+Default: postgres
+Description: DB admin username
+ What is the username to access the PostgreSQL database as admin?
+ .
+
+Template: wazo-auth/db-admin-password
+Type: password
+Default:
+Description: DB admin password
+ What is the password to access the PostgreSQL database as admin?
+ .
+
+Template: wazo-auth/db-app-name
+Type: string
+Default: asterisk
+Description: Application DB name
+ What is the name of the PostgreSQL database to be created?
+ .
+
+Template: wazo-auth/db-app-username
+Type: string
+Default: asterisk
+Description: DB app username
+ What is the username to be created for the app?
+ .
+
+Template: wazo-auth/db-app-password
+Type: password
+Default: proformatique
+Description: DB app password
+ What is the password to be created for the app?
+ .
