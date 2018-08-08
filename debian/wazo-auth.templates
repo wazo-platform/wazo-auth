@@ -1,3 +1,10 @@
+Template: wazo-auth/bootstrap-skip
+Type: boolean
+Default: false
+Description: Skip wazo-auth bootstrap
+ Should we skip wazo-auth initialization for now?
+ .
+
 Template: wazo-auth/db-skip
 Type: boolean
 Default: false
