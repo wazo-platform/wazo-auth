@@ -21,7 +21,7 @@ class LDAPUser(UserAuthenticationBackend):
     def load(self, dependencies):
         super(LDAPUser, self).load(dependencies)
         config = dependencies['config']
-        xivo_dao.init_db_from_config(config)
+        xivo_dao.init_db(config['confd_db_uri'])
         self.config = config['ldap']
         self.uri = self.config['uri']
         self.bind_dn = self.config.get('bind_dn', '')
