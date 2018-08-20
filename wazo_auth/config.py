@@ -116,6 +116,8 @@ _DEFAULT_CONFIG = {
         'hostname': 'localhost',
         'port': 25,
     },
+    'db_uri': 'postgresql://asterisk:proformatique@localhost/asterisk',
+    'confd_db_uri': 'postgresql://asterisk:proformatique@localhost/asterisk',
 }
 
 

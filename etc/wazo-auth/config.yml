@@ -85,6 +85,7 @@ confd:
 
 # Database connection informations.
 db_uri: postgresql://asterisk:proformatique@localhost/asterisk
+confd_db_uri: postgresql://asterisk:proformatique@localhost/asterisk
 
 # Service discovery configuration. all time intervals are in seconds
 service_discovery:

@@ -17,7 +17,7 @@ class XiVOAdmin(BaseAuthenticationBackend, ACLRenderingBackend):
     def load(self, dependencies):
         super(XiVOAdmin, self).load(dependencies)
         self._tenant_service = dependencies['tenant_service']
-        xivo_dao.init_db_from_config(dependencies['config'])
+        xivo_dao.init_db(dependencies['config']['confd_db_uri'])
 
     def get_acls(self, login, args):
         acl_templates = args.get('acl_templates', [])
