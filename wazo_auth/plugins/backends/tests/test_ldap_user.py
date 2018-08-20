@@ -17,6 +17,7 @@ class TestGetACLS(unittest.TestCase):
     def setUp(self):
         config = {
             'confd': {},
+            'confd_db_uri': 'postgresql:///',
             'ldap': {
                 'uri': 'ldap://host:389',
                 'user_base_dn': 'dc=example,dc=com',
@@ -39,6 +40,7 @@ class TestGetMetadata(unittest.TestCase):
     def setUp(self):
         config = {
             'confd': {},
+            'confd_db_uri': 'postgresql:///',
             'ldap': {
                 'uri': 'ldap://host:389',
                 'user_base_dn': 'dc=example,dc=com',
@@ -65,6 +67,7 @@ class TestVerifyPassword(unittest.TestCase):
     def setUp(self):
         self.config = {
             'confd': {},
+            'confd_db_uri': 'postgresql:///',
             'ldap': {
                 'uri': 'ldap://host:389',
                 'user_base_dn': 'dc=example,dc=com',
@@ -127,6 +130,7 @@ class TestVerifyPassword(unittest.TestCase):
 
     def test_that_verify_password_escape_filter_chars(self, find_by, xivo_ldap):
         extended_config = {
+            'confd_db_uri': 'postgresql:///',
             'ldap': {
                 'bind_anonymous': True
             }
@@ -175,6 +179,7 @@ class TestVerifyPassword(unittest.TestCase):
     def test_that_verify_password_calls_with_bind_anonymous(self, find_by, xivo_ldap):
         extended_config = {
             'confd': {},
+            'confd_db_uri': 'postgresql:///',
             'ldap': {
                 'bind_anonymous': True
             }
@@ -198,6 +203,7 @@ class TestVerifyPassword(unittest.TestCase):
     def test_that_verify_password_calls_return_false_when_no_binding_with_anonymous(self, find_by, xivo_ldap):
         extended_config = {
             'confd': {},
+            'confd_db_uri': 'postgresql:///',
             'ldap': {
                 'bind_anonymous': True
             }
@@ -217,6 +223,7 @@ class TestVerifyPassword(unittest.TestCase):
     def test_that_verify_password_calls_with_bind_dn(self, find_by, xivo_ldap):
         extended_config = {
             'confd': {},
+            'confd_db_uri': 'postgresql:///',
             'ldap': {
                 'bind_dn': 'uid=foo,dc=example,dc=com',
                 'bind_password': 'S3cr$t'
@@ -241,6 +248,7 @@ class TestVerifyPassword(unittest.TestCase):
     def test_that_verify_password_calls_with_missing_bind_password_try_bind(self, find_by, xivo_ldap):
         extended_config = {
             'confd': {},
+            'confd_db_uri': 'postgresql:///',
             'ldap': {
                 'bind_dn': 'uid=foo,dc=example,dc=com',
             }
