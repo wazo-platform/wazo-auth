@@ -1,1 +1,2 @@
 db_uri: postgresql://asterisk:proformatique@postgres:5432
+confd_db_uri: postgresql://asterisk:proformatique@postgres:5432
