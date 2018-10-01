@@ -6,6 +6,8 @@ import abc
 import os
 import logging
 
+from requests.exceptions import HTTPError
+
 from xivo_confd_client import Client
 from wazo_auth.helpers import LazyTemplateRenderer
 
@@ -105,34 +107,40 @@ class UserAuthenticationBackend(BaseAuthenticationBackend, ACLRenderingBackend):
 
         token = local_token_manager.get_token()
         confd_client = Client(token=token, **self._confd_config)
-        response = confd_client.users.list(**kwargs)
-        for user in response['items']:
-            voicemail = user.get('voicemail')
-            voicemails = [voicemail['id']] if voicemail else []
-            lines, sip, sccp, custom, extensions = [], [], [], [], []
-            for line in user['lines']:
-                lines.append(line['id'])
-                endpoint_custom = line.get('endpoint_custom')
-                endpoint_sip = line.get('endpoint_sip')
-                endpoint_sccp = line.get('endpoint_sccp')
-                if endpoint_custom:
-                    custom.append(endpoint_custom['id'])
-                elif endpoint_sip:
-                    sip.append(endpoint_sip['id'])
-                elif endpoint_sccp:
-                    sccp.append(endpoint_sccp['id'])
-                for extension in line['extensions']:
-                    extensions.append(extension['id'])
-            return {
-                'id': user['id'],
-                'uuid': user['uuid'],
-                'tenant_uuid': user['tenant_uuid'],
-                'voicemails': voicemails,
-                'lines': lines,
-                'extensions': extensions,
-                'endpoint_sip': sip,
-                'endpoint_sccp': sccp,
-                'endpoint_custom': custom,
-                'agent': user['agent'],
-            }
-        return {}
+        user_uuid = kwargs.get('uuid')
+        if not user_uuid:
+            return {}
+
+        try:
+            user = confd_client.users.get(user_uuid)
+        except HTTPError:
+            return {}
+
+        voicemail = user.get('voicemail')
+        voicemails = [voicemail['id']] if voicemail else []
+        lines, sip, sccp, custom, extensions = [], [], [], [], []
+        for line in user['lines']:
+            lines.append(line['id'])
+            endpoint_custom = line.get('endpoint_custom')
+            endpoint_sip = line.get('endpoint_sip')
+            endpoint_sccp = line.get('endpoint_sccp')
+            if endpoint_custom:
+                custom.append(endpoint_custom['id'])
+            elif endpoint_sip:
+                sip.append(endpoint_sip['id'])
+            elif endpoint_sccp:
+                sccp.append(endpoint_sccp['id'])
+            for extension in line['extensions']:
+                extensions.append(extension['id'])
+        return {
+            'id': user['id'],
+            'uuid': user['uuid'],
+            'tenant_uuid': user['tenant_uuid'],
+            'voicemails': voicemails,
+            'lines': lines,
+            'extensions': extensions,
+            'endpoint_sip': sip,
+            'endpoint_sccp': sccp,
+            'endpoint_custom': custom,
+            'agent': user['agent'],
+        }
