@@ -30,7 +30,7 @@ class ExternalAuthAlreadyExists(APIException):
 class InvalidListParamException(APIException):
 
     def __init__(self, message, details=None):
-        super(InvalidListParamException, self).__init__(400, message, 'invalid_list_param', details, 'users')
+        super(InvalidListParamException, self).__init__(400, message, 'invalid-list-param', details, 'users')
 
     @classmethod
     def from_errors(cls, errors):
@@ -46,7 +46,7 @@ class UnknownAddressException(APIException):
     def __init__(self, address_id):
         msg = 'No such address: "{}"'.format(address_id)
         details = {'id': address_id}
-        super(UnknownAddressException, self).__init__(404, msg, 'unknown_address', details, 'addresses')
+        super(UnknownAddressException, self).__init__(404, msg, 'unknown-address', details, 'addresses')
 
 
 class UnknownExternalAuthException(APIException):
@@ -55,7 +55,7 @@ class UnknownExternalAuthException(APIException):
         msg = 'No such external auth: "{}"'.format(auth_type)
         details = {'type': str(auth_type)}
         super(UnknownExternalAuthException, self).__init__(
-            404, msg, 'unknown_external_auth', details, auth_type)
+            404, msg, 'unknown-external-auth', details, auth_type)
 
 
 class UnknownExternalAuthTypeException(APIException):
@@ -64,7 +64,7 @@ class UnknownExternalAuthTypeException(APIException):
         msg = 'No such auth type: "{}"'.format(auth_type)
         details = {'type': str(auth_type)}
         super(UnknownExternalAuthTypeException, self).__init__(
-            404, msg, 'unknown_external_auth_type', details, 'external')
+            404, msg, 'unknown-external-auth-type', details, 'external')
 
 
 class UnknownGroupException(APIException):
@@ -72,7 +72,7 @@ class UnknownGroupException(APIException):
     def __init__(self, group_uuid):
         msg = 'No such group: "{}"'.format(group_uuid)
         details = {'uuid': str(group_uuid)}
-        super(UnknownGroupException, self).__init__(404, msg, 'unknown_group', details, 'groups')
+        super(UnknownGroupException, self).__init__(404, msg, 'unknown-group', details, 'groups')
 
 
 class UnknownTenantException(APIException):
@@ -80,7 +80,7 @@ class UnknownTenantException(APIException):
     def __init__(self, tenant_uuid):
         msg = 'No such tenant: "{}"'.format(tenant_uuid)
         details = {'uuid': str(tenant_uuid)}
-        super(UnknownTenantException, self).__init__(404, msg, 'unknown_tenant', details, 'tenants')
+        super(UnknownTenantException, self).__init__(404, msg, 'unknown-tenant', details, 'tenants')
 
 
 class UnknownEmailException(APIException):
@@ -88,7 +88,7 @@ class UnknownEmailException(APIException):
     def __init__(self, email_uuid):
         msg = 'No such email: "{}"'.format(email_uuid)
         details = {'uuid': str(email_uuid)}
-        super(UnknownEmailException, self).__init__(404, msg, 'unknown_email', details, 'emails')
+        super(UnknownEmailException, self).__init__(404, msg, 'unknown-email', details, 'emails')
 
 
 class UnknownUserException(APIException):
@@ -96,7 +96,7 @@ class UnknownUserException(APIException):
     def __init__(self, identifier, details=None):
         msg = 'No such user: "{}"'.format(identifier)
         details = details or {'uuid': str(identifier)}
-        super(UnknownUserException, self).__init__(404, msg, 'unknown_user', details, 'users')
+        super(UnknownUserException, self).__init__(404, msg, 'unknown-user', details, 'users')
 
 
 class UnknownUsernameException(Exception):
@@ -109,7 +109,7 @@ class UnknownUsernameException(Exception):
 class _BaseParamException(APIException):
 
     def __init__(self, message, details=None):
-        super(_BaseParamException, self).__init__(400, message, 'invalid_data', details, self.resource)
+        super(_BaseParamException, self).__init__(400, message, 'invalid-data', details, self.resource)
 
     @classmethod
     def from_errors(cls, errors):

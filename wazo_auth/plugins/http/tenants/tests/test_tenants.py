@@ -33,7 +33,7 @@ class TestTenantPost(HTTPAppTestCase):
             assert_that(
                 json.loads(result.data),
                 has_entries(
-                    'error_id', 'invalid_data',
+                    'error_id', 'invalid-data',
                     'message', ANY,
                     'resource', 'tenants',
                     'details', has_entries(
