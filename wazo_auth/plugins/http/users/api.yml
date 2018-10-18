@@ -269,7 +269,15 @@ definitions:
         type: string
       username:
         type: string
-      main_email_address:
+      firstname:
         type: string
+      lastname:
+        type: string
+      tenant_uuid:
+        type: string
+      emails:
+        type: array
+        items:
+          $ref: '#/definitions/UserEmail'
       enabled:
         type: boolean
