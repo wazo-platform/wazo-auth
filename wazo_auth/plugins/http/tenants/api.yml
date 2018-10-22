@@ -35,7 +35,7 @@ paths:
         - name: body
           in: body
           description: The tenant creation parameters
-          required: true
+          required: false
           schema:
             $ref: '#/definitions/TenantCreate'
         - $ref: '#/parameters/tenantuuid'
