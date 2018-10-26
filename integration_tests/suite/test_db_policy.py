@@ -40,7 +40,7 @@ class TestPolicyDAO(base.DAOTestCase):
         self._default_user_policy_uuid = default_user_policy['uuid']
         self._default_admin_policy_uuid = default_admin_policy['uuid']
 
-    @fixtures.policy(name=u'testé', description=u'déscription')
+    @fixtures.policy(name='testé', description='déscription')
     def test_template_association(self, uuid):
         self._policy_dao.associate_policy_template(uuid, '#')
         assert_that(
@@ -69,15 +69,15 @@ class TestPolicyDAO(base.DAOTestCase):
     @fixtures.tenant()
     def test_create(self, tenant_uuid):
         acl_templates = ['dird.#', 'confd.line.42.*']
-        with self._new_policy(u'testé', u'descriptioñ', acl_templates, tenant_uuid) as uuid_:
+        with self._new_policy('testé', 'descriptioñ', acl_templates, tenant_uuid) as uuid_:
             policy = self.get_policy(uuid_)
 
             assert_that(
                 policy,
                 has_entries(
                     uuid=uuid_,
-                    name=u'testé',
-                    description=u'descriptioñ',
+                    name='testé',
+                    description='descriptioñ',
                     acl_templates=contains_inanyorder(*acl_templates),
                     tenant_uuid=tenant_uuid,
                 )

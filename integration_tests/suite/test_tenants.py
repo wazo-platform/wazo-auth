@@ -2,8 +2,6 @@
 # Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from __future__ import unicode_literals
-
 from functools import partial
 from hamcrest import (
     assert_that,

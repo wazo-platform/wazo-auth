@@ -16,7 +16,7 @@ A_SALT = os.urandom(64)
 
 
 def _random_string(length):
-    return ''.join(random.choice(string.ascii_lowercase) for _ in xrange(length))
+    return ''.join(random.choice(string.ascii_lowercase) for _ in range(length))
 
 
 def email(**email_args):

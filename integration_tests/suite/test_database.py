@@ -197,7 +197,7 @@ class TestExternalAuthDAO(base.DAOTestCase):
                 result = {r.name: r.enabled for r in query.all()}
             expected = has_entries({t: True for t in enabled_types})
             assert_that(result, expected)
-            nb_enabled = len([t for t, enabled in result.iteritems() if enabled])
+            nb_enabled = len([t for t, enabled in result.items() if enabled])
             assert_that(nb_enabled, equal_to(len(enabled_types)))
 
         auth_types = ['foo', 'bar', 'baz', 'inga']

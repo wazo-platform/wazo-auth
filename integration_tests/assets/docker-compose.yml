@@ -16,8 +16,8 @@ services:
       - "./etc/wazo-auth/conf.d/rabbitmq.yml:/etc/wazo-auth/conf.d/rabbitmq.yml"
       - "./etc/wazo-auth/conf.d/service_discovery.yml:/etc/wazo-auth/conf.d/service_discovery.yml"
       - "./etc/wazo-auth/conf.d/smtp.yml:/etc/wazo-auth/conf.d/smtp.yml"
-      # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/usr/local/lib/python2.7/site-packages/xivo"
-      # - "${LOCAL_GIT_REPOS}/xivo-bus/xivo_bus:/usr/local/lib/python2.7/site-packages/xivo_bus"
+      # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/usr/local/lib/python3.5/site-packages/xivo"
+      # - "${LOCAL_GIT_REPOS}/xivo-bus/xivo_bus:/usr/local/lib/python3.5/site-packages/xivo_bus"
     command: "wazo-auth"
 
   oauth2sync:

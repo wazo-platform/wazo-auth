@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import requests
@@ -21,6 +21,6 @@ class TestDocumentation(BaseTestCase):
 
     def validate_api(self, url):
         port = self.service_port(8080, 'swagger-validator')
-        validator_url = u'http://localhost:{port}/debug'.format(port=port)
+        validator_url = 'http://localhost:{port}/debug'.format(port=port)
         response = requests.get(validator_url, params={'url': url})
         assert_that(response.json(), empty(), pprint.pformat(response.json()))

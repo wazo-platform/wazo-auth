@@ -220,7 +220,7 @@ class TestUserDAO(base.DAOTestCase):
                     email_address='foo@bar.baz',
                     tenant_uuid=self.top_tenant_uuid,
                     hash_='',
-                    salt='',
+                    salt=b'',
                 ),
                 raises(
                     exceptions.ConflictException,

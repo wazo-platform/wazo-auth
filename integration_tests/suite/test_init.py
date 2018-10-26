@@ -2,8 +2,6 @@
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-import os
-
 from xivo_auth_client import Client
 from xivo_test_helpers.mock import ANY_UUID
 from hamcrest import (
@@ -27,7 +25,7 @@ class TestInit(BaseTestCase):
     def setUp(self):
         super(TestInit, self).setUp()
         self.docker_exec(['wazo-auth-bootstrap'])
-        self.key = self.docker_exec(['cat', '/var/lib/wazo-auth/init.key'])
+        self.key = self.docker_exec(['cat', '/var/lib/wazo-auth/init.key']).decode('utf-8')
         self.client = Client(
             self.auth_host,
             port=self.auth_port,
