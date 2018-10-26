@@ -297,7 +297,7 @@ class TestXivoLDAP(unittest.TestCase):
 
         _XivoLDAP(self.config['uri'])
 
-        ldap_initialize.assert_called_once_with(self.config['uri'], 0)
+        ldap_initialize.assert_called_once_with(self.config['uri'])
         ldapobj.set_option.assert_any_call(ldap.OPT_REFERRALS, 0)
         ldapobj.set_option.assert_any_call(ldap.OPT_NETWORK_TIMEOUT, 2)
         ldapobj.set_option.assert_any_call(ldap.OPT_TIMEOUT, 2)
