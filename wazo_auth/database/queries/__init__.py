@@ -26,9 +26,9 @@ class DAO(object):
     }
 
     def __init__(self, **kwargs):
-        for name, dao in kwargs.iteritems():
+        for name, dao in kwargs.items():
             setattr(self, name, dao)
 
     @classmethod
     def from_config(cls, config):
-        return cls(**{name: DAO(config['db_uri']) for name, DAO in cls._daos.iteritems()})
+        return cls(**{name: DAO(config['db_uri']) for name, DAO in cls._daos.items()})

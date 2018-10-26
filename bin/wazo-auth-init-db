@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright 2016 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import argparse
@@ -38,14 +38,14 @@ def main():
     if args.user:
         change_user(args.user)
 
-    for _ in xrange(40):
+    for _ in range(40):
         try:
             conn = psycopg2.connect(args.pg_db_uri)
             break
         except psycopg2.OperationalError:
             time.sleep(0.25)
     else:
-        print >> sys.stderr, 'Failed to connect to postgres'
+        print('Failed to connect to postgres', file=sys.stderr)
         sys.exit(1)
 
     conn.autocommit = True

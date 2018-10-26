@@ -102,7 +102,7 @@ class LDAPUser(UserAuthenticationBackend):
         email = email[0] if isinstance(email, list) else email
         if not email:
             logger.debug('LDAP : No email found for the user DN: %s', user_dn)
-        return email
+        return email.decode('utf-8')
 
     def _perform_search_dn(self, xivo_ldap, username):
         username_esc = escape_filter_chars(username)

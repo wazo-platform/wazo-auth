@@ -34,7 +34,7 @@ class InvalidListParamException(APIException):
 
     @classmethod
     def from_errors(cls, errors):
-        for field, infos in errors.iteritems():
+        for field, infos in errors.items():
             if not isinstance(infos, list):
                 infos = [infos]
             for info in infos:
@@ -113,7 +113,7 @@ class _BaseParamException(APIException):
 
     @classmethod
     def from_errors(cls, errors):
-        for field, infos in errors.iteritems():
+        for field, infos in errors.items():
             if not isinstance(infos, list):
                 infos = [infos]
             for info in infos:

@@ -49,7 +49,7 @@ class AddressDAO(BaseDAO):
         return address_id
 
     def _address_is_empty(self, **kwargs):
-        for value in kwargs.itervalues():
+        for value in kwargs.values():
             if value is not None:
                 return False
         return True

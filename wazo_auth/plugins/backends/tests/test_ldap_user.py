@@ -307,7 +307,7 @@ class TestXivoLDAP(unittest.TestCase):
         xivo_ldap = _XivoLDAP(self.config)
 
         result = xivo_ldap.perform_bind('username', 'password')
-        self.assertEquals(result, True)
+        self.assertEqual(result, True)
 
     @patch('ldap.initialize')
     def test_that_perform_bind_return_false_when_no_wrong_credential(self, ldap_initialize):
@@ -316,7 +316,7 @@ class TestXivoLDAP(unittest.TestCase):
         xivo_ldap = _XivoLDAP(self.config)
         ldapobj.simple_bind_s.side_effect = ldap.INVALID_CREDENTIALS()
         result = xivo_ldap.perform_bind('username', 'password')
-        self.assertEquals(result, False)
+        self.assertEqual(result, False)
 
     @patch('ldap.initialize')
     def test_that_perform_search(self, ldap_initialize):
@@ -325,7 +325,7 @@ class TestXivoLDAP(unittest.TestCase):
         ldapobj.search_ext_s.return_value = ['result1']
 
         result = xivo_ldap.perform_search('base', 'scope')
-        self.assertEquals(result, 'result1')
+        self.assertEqual(result, 'result1')
 
     @patch('ldap.initialize')
     def test_that_perform_search_return_none_when_multiple_result(self, ldap_initialize):
@@ -334,8 +334,8 @@ class TestXivoLDAP(unittest.TestCase):
         ldapobj.search_ext_s.side_effect = ldap.SIZELIMIT_EXCEEDED()
 
         result_dn, result_attr = xivo_ldap.perform_search('base', 'scope')
-        self.assertEquals(result_dn, None)
-        self.assertEquals(result_attr, None)
+        self.assertEqual(result_dn, None)
+        self.assertEqual(result_attr, None)
 
     @patch('ldap.initialize')
     def test_that_perform_search_return_none_when_no_result(self, ldap_initialize):
@@ -344,5 +344,5 @@ class TestXivoLDAP(unittest.TestCase):
         ldapobj.search_ext_s.return_value = []
 
         result_dn, result_attr = xivo_ldap.perform_search('base', 'scope')
-        self.assertEquals(result_dn, None)
-        self.assertEquals(result_attr, None)
+        self.assertEqual(result_dn, None)
+        self.assertEqual(result_attr, None)

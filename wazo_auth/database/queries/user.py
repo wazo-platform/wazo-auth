@@ -2,7 +2,6 @@
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from collections import OrderedDict
 from sqlalchemy import and_, exc, text
 from .base import BaseDAO, PaginatorMixin
 from . import filters
@@ -298,7 +297,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             self._delete_all_emails(s, user_uuid)
 
-            for email in updated_emails.itervalues():
+            for email in updated_emails.values():
                 self._add_user_email(s, user_uuid, email)
 
         return emails
@@ -337,7 +336,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     @staticmethod
     def _merge_existing_emails(new, old):
-        for address, email in new.iteritems():
+        for address, email in new.items():
             if address not in old:
                 continue
 

@@ -31,8 +31,8 @@ class UserService(BaseService):
         self._dao.user.change_password(user_uuid, salt, hash_)
 
     def delete_password(self, **kwargs):
-        search_params = {k: v for k, v in kwargs.iteritems() if v}
-        identifier = search_params.values()[0]
+        search_params = {k: v for k, v in kwargs.items() if v}
+        identifier = list(search_params.values())[0]
 
         logger.debug('removing password for user %s', identifier)
         users = self._dao.user.list_(limit=1, **search_params)
@@ -167,4 +167,4 @@ class PasswordEncrypter(object):
     def compute_password_hash(self, password, salt):
         password_bytes = password.encode('utf-8')
         dk = hashlib.pbkdf2_hmac(self._hash_algo, password_bytes, salt, self._iterations)
-        return binascii.hexlify(dk)
+        return binascii.hexlify(dk).decode('utf-8')

@@ -15,9 +15,7 @@ DEFAULT_XIVO_UUID = os.getenv('XIVO_UUID')
 logger = logging.getLogger(__name__)
 
 
-class BaseAuthenticationBackend(object):
-
-    __metaclass__ = abc.ABCMeta
+class BaseAuthenticationBackend(metaclass=abc.ABCMeta):
 
     def __init__(self):
         """Initialize this backend instance from the given configuration"""
@@ -86,9 +84,8 @@ class ACLRenderingBackend(object):
         return renderer.render()
 
 
-class UserAuthenticationBackend(BaseAuthenticationBackend, ACLRenderingBackend):
-
-    __metaclass__ = abc.ABCMeta
+class UserAuthenticationBackend(BaseAuthenticationBackend, ACLRenderingBackend,
+                                metaclass=abc.ABCMeta):
 
     def load(self, dependencies):
         super(UserAuthenticationBackend, self).load(dependencies)

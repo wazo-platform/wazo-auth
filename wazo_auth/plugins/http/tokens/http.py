@@ -31,7 +31,7 @@ class Tokens(BaseResource):
 
         args, error = schemas.TokenRequestSchema().load(request.get_json(force=True))
         if error:
-            return http._error(400, unicode(error))
+            return http._error(400, str(error))
 
         backend_name = args['backend']
         try:

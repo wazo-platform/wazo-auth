@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
-
-from __future__ import print_function
 
 import argparse
 import json
@@ -38,7 +36,7 @@ auth:
   backend: wazo_user
 '''
 
-VALID_CHARS = string.digits + string.lowercase + string.uppercase
+VALID_CHARS = string.digits + string.ascii_lowercase + string.ascii_uppercase
 USER = 'wazo-auth'
 USERNAME = 'wazo-auth-cli'
 URL = 'https://localhost:{}/0.1/init'
@@ -86,7 +84,7 @@ def complete():
     wazo_auth_config = read_config_file_hierarchy({'config_file': DEFAULT_WAZO_AUTH_CONFIG_FILE})
     port = wazo_auth_config['rest_api']['https']['port']
     url = URL.format(port)
-    for _ in xrange(40):
+    for _ in range(40):
         try:
             response = requests.post(url, data=json.dumps(body), headers=HEADERS, verify=False)
             break

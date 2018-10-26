@@ -14,7 +14,7 @@ class PasswordResetException(_BaseParamException):
 
     @classmethod
     def from_errors(cls, errors):
-        if errors.keys() == ['_schema']:
+        if list(errors.keys()) == ['_schema']:
             return cls(errors['_schema'])
         else:
             return super(PasswordResetException, cls).from_errors(errors)

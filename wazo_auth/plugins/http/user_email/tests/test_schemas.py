@@ -58,7 +58,7 @@ class TestUserEmailPutSchema(TestCase):
     def test_address_field(self):
         params = {'emails': [ONE, SIX]}
         body, error = self.user_schema.load(params)
-        field = error['emails'][1].keys()[0]
+        field = list(error['emails'][1].keys())[0]
         assert_that(field, equal_to('address'))
 
         params = {'emails': [ONE, TWO, TWO]}
@@ -106,7 +106,7 @@ class TestAdminUserEmailPutSchema(TestCase):
     def test_address_field(self):
         params = {'emails': [ONE, SIX]}
         body, error = self.admin_schema.load(params)
-        field = error['emails'][1].keys()[0]
+        field = list(error['emails'][1].keys())[0]
         assert_that(field, equal_to('address'))
 
         params = {'emails': [ONE, TWO, TWO]}
