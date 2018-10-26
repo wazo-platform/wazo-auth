@@ -2,10 +2,7 @@
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from contextlib import (
-    contextmanager,
-    nested,
-)
+from contextlib import contextmanager
 from hamcrest import (
     assert_that,
     calling,
@@ -121,11 +118,9 @@ class TestPolicyDAO(base.DAOTestCase):
         assert_that(result, empty())
 
     def test_get_sort_and_pagination(self):
-        with nested(
-            self._new_policy('a', 'z'),
-            self._new_policy('b', 'y'),
-            self._new_policy('c', 'x'),
-        ) as (a, b, c):
+        with self._new_policy('a', 'z') as a, \
+                self._new_policy('b', 'y') as b, \
+                self._new_policy('c', 'x') as c:
             result = self.list_policy(order='name', direction='asc')
             assert_that(
                 result,

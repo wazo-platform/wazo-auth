@@ -5,7 +5,7 @@
 import time
 import uuid
 
-from contextlib import contextmanager, nested
+from contextlib import contextmanager
 from hamcrest import (
     assert_that,
     calling,
@@ -332,8 +332,8 @@ class TestTokenDAO(base.DAOTestCase):
             'msg': 'a string field',
         }
 
-        with nested(self._new_token(metadata=metadata),
-                    self._new_token(acls=['first', 'second'])) as (e1, e2):
+        with self._new_token(metadata=metadata) as e1, \
+                self._new_token(acls=['first', 'second']) as e2:
             assert_that(e1['metadata'], has_entries(**metadata))
             t1 = self._token_dao.get(e1['uuid'])
             t2 = self._token_dao.get(e2['uuid'])
@@ -343,9 +343,7 @@ class TestTokenDAO(base.DAOTestCase):
     def test_get(self):
         self.assertRaises(exceptions.UnknownTokenException, self._token_dao.get,
                           'unknown')
-        with nested(self._new_token(),
-                    self._new_token(),
-                    self._new_token()) as (_, expected_token, __):
+        with self._new_token(), self._new_token() as expected_token, self._new_token():
             token = self._token_dao.get(expected_token['uuid'])
         assert_that(token, equal_to(expected_token))
 
@@ -357,11 +355,9 @@ class TestTokenDAO(base.DAOTestCase):
             self._token_dao.delete(token['uuid'])  # No error on delete unknown
 
     def test_delete_expired_tokens(self):
-        with nested(
-                self._new_token(),
-                self._new_token(expiration=0),
-                self._new_token(expiration=0),
-        ) as (a, b, c):
+        with self._new_token() as a, \
+                self._new_token(expiration=0) as b, \
+                self._new_token(expiration=0) as c:
             expired = [b, c]
             valid = [a]
 
