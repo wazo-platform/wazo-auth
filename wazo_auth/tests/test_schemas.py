@@ -42,7 +42,7 @@ class TestListSchema(TestCase):
         assert_that(errors, has_entries('direction', ANY))
 
 
-class _Address(object):
+class _Address:
 
     _fields = ['line_1', 'line_2', 'city', 'state', 'country', 'zip_code']
 
@@ -51,7 +51,7 @@ class _Address(object):
             setattr(self, field, kwargs.get(field, None))
 
 
-class _Tenant(object):
+class _Tenant:
 
     def __init__(self, contact=None, uuid=None, name=None, address=None):
         self.uuid = uuid

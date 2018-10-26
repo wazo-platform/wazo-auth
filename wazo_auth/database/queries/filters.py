@@ -16,7 +16,7 @@ from ..models import (
 )
 
 
-class SearchFilter(object):
+class SearchFilter:
 
     def __init__(self, *columns):
         self._columns = columns
@@ -34,7 +34,7 @@ class SearchFilter(object):
         return or_(column.ilike(pattern) for column in self._columns)
 
 
-class StrictFilter(object):
+class StrictFilter:
 
     def __init__(self, *column_configs):
         self._column_configs = column_configs
@@ -55,7 +55,7 @@ class StrictFilter(object):
         return filter_
 
 
-class FilterMixin(object):
+class FilterMixin:
 
     search_filter = SearchFilter()
     strict_filter = StrictFilter()

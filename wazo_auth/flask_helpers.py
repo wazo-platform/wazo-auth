@@ -10,7 +10,7 @@ from xivo import tenant_helpers
 logger = logging.getLogger(__name__)
 
 
-class Tenant(object):
+class Tenant:
 
     token_manager = None
     user_service = None

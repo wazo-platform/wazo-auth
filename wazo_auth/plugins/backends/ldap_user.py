@@ -115,7 +115,7 @@ class LDAPUser(UserAuthenticationBackend):
         return dn
 
 
-class _XivoLDAP(object):
+class _XivoLDAP:
 
     def __init__(self, uri):
         self.uri = uri

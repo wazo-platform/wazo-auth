@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_XIVO_UUID = os.getenv('XIVO_UUID')
 
 
-class Token(object):
+class Token:
 
     def __init__(self, id_, auth_id, xivo_user_uuid, xivo_uuid, issued_t, expire_t, acls, metadata):
         self.token = id_
@@ -97,7 +97,7 @@ class Token(object):
         return acl_regex
 
 
-class ExpiredTokenRemover(object):
+class ExpiredTokenRemover:
 
     def __init__(self, config, dao):
         self._dao = dao
@@ -120,7 +120,7 @@ class ExpiredTokenRemover(object):
         t.start()
 
 
-class Manager(object):
+class Manager:
 
     def __init__(self, config, dao, tenant_tree):
         self._backend_policies = config.get('backend_policies', {})

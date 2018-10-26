@@ -24,9 +24,9 @@ def _error(code, msg):
             'status_code': code}, code
 
 
-class AuthClientFacade(object):
+class AuthClientFacade:
 
-    class TokenCommand(object):
+    class TokenCommand:
 
         def is_valid(self, token_id, required_acl):
             try:
@@ -40,7 +40,7 @@ class AuthClientFacade(object):
         def get(self, token_id, required_acl=None):
             return current_app.config['token_manager'].get(token_id, required_acl).to_dict()
 
-    class UsersCommand(object):
+    class UsersCommand:
 
         def get(self, user_uuid):
             return current_app.config['user_service'].get_user(user_uuid)

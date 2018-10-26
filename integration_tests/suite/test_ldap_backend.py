@@ -17,7 +17,7 @@ from .helpers.base import BaseTestCase
 Contact = namedtuple('Contact', ['cn', 'uid', 'password', 'mail', 'login_attribute'])
 
 
-class LDAPHelper(object):
+class LDAPHelper:
 
     BASE_DN = 'dc=wazo-auth,dc=wazo,dc=community'
     ADMIN_DN = 'cn=admin,{}'.format(BASE_DN)

@@ -12,7 +12,7 @@ from .token import TokenDAO
 from .user import UserDAO
 
 
-class DAO(object):
+class DAO:
 
     _daos = {
         'address': AddressDAO,

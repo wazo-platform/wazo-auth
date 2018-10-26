@@ -8,7 +8,7 @@ from jinja2 import StrictUndefined, Template
 from jinja2.exceptions import UndefinedError
 
 
-class LazyTemplateRenderer(object):
+class LazyTemplateRenderer:
 
     def __init__(self, acl_templates, get_data_fn, *args, **kwargs):
         self._acl_templates = acl_templates
@@ -45,7 +45,7 @@ class LazyTemplateRenderer(object):
                     yield acl
 
 
-class LocalTokenManager(object):
+class LocalTokenManager:
 
     def __init__(self, backend, token_manager):
         self._new_token = partial(token_manager.new_token, backend.obj, 'wazo-auth')

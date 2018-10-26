@@ -77,7 +77,7 @@ class BaseAuthenticationBackend(metaclass=abc.ABCMeta):
         return True
 
 
-class ACLRenderingBackend(object):
+class ACLRenderingBackend:
 
     def render_acl(self, acl_templates, get_data_fn, *args, **kwargs):
         renderer = LazyTemplateRenderer(acl_templates, get_data_fn, *args, **kwargs)

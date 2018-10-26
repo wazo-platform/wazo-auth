@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from contextlib import contextmanager
@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 from ... import exceptions
 
 
-class QueryPaginator(object):
+class QueryPaginator:
 
     _valid_directions = ['asc', 'desc']
 
@@ -55,7 +55,7 @@ class QueryPaginator(object):
         return value
 
 
-class PaginatorMixin(object):
+class PaginatorMixin:
 
     column_map = {}
 
@@ -64,7 +64,7 @@ class PaginatorMixin(object):
         self._paginator = QueryPaginator(self.column_map)
 
 
-class BaseDAO(object):
+class BaseDAO:
 
     _UNIQUE_CONSTRAINT_CODE = '23505'
     _FKEY_CONSTRAINT_CODE = '23503'

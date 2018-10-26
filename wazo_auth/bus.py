@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -30,7 +30,7 @@ def publisher_thread(publisher):
         thread.join()
 
 
-class BusPublisher(object):
+class BusPublisher:
 
     def __init__(self, global_config):
         self.config = global_config['amqp']

@@ -6,7 +6,7 @@ from wazo_auth.http import AuthClientFacade
 from . import http
 
 
-class Plugin(object):
+class Plugin:
 
     def load(self, dependencies):
         api = dependencies['api']

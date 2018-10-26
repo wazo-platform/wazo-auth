@@ -15,7 +15,7 @@ from wazo_auth.services.helpers import BaseService
 logger = logging.getLogger(__name__)
 
 
-class _OAuth2Synchronizer(object):
+class _OAuth2Synchronizer:
 
     def __init__(self, config, bus_publisher):
         self._url_tpl = config['oauth2_synchronization_ws_url_template']

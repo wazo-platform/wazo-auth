@@ -153,7 +153,7 @@ class UserService(BaseService):
             raise exceptions.UnknownUserException(user_uuid)
 
 
-class PasswordEncrypter(object):
+class PasswordEncrypter:
 
     _salt_len = 64
     _hash_algo = 'sha512'
