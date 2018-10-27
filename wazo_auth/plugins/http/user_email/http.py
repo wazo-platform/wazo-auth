@@ -35,7 +35,7 @@ class AdminUserEmailUpdate(_EmailUpdate):
 
     @http.required_acl('auth.admin.users.{user_uuid}.emails.edit')
     def put(self, user_uuid):
-        return super(AdminUserEmailUpdate, self).put(user_uuid)
+        return super().put(user_uuid)
 
 
 class UserEmailUpdate(_EmailUpdate):
@@ -44,7 +44,7 @@ class UserEmailUpdate(_EmailUpdate):
 
     @http.required_acl('auth.users.{user_uuid}.emails.edit')
     def put(self, user_uuid):
-        return super(UserEmailUpdate, self).put(user_uuid)
+        return super().put(user_uuid)
 
 
 class UserEmailConfirm(http.AuthResource):

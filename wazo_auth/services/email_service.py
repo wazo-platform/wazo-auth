@@ -16,7 +16,7 @@ EmailDestination = namedtuple('EmailDestination', ['name', 'address'])
 class EmailService(BaseService):
 
     def __init__(self, dao, tenant_uuid, config, template_formatter):
-        super(EmailService, self).__init__(dao, tenant_uuid)
+        super().__init__(dao, tenant_uuid)
         self._formatter = template_formatter
         self._smtp_host = config['smtp']['hostname']
         self._smtp_port = config['smtp']['port']

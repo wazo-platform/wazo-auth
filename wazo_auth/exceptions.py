@@ -23,13 +23,13 @@ class ExternalAuthAlreadyExists(APIException):
     def __init__(self, auth_type):
         msg = 'This external authentification method has already been set: "{}"'.format(auth_type)
         details = {'type': auth_type}
-        super(ExternalAuthAlreadyExists, self).__init__(409, msg, 'conflict', details, auth_type)
+        super().__init__(409, msg, 'conflict', details, auth_type)
 
 
 class InvalidListParamException(APIException):
 
     def __init__(self, message, details=None):
-        super(InvalidListParamException, self).__init__(400, message, 'invalid-list-param', details, 'users')
+        super().__init__(400, message, 'invalid-list-param', details, 'users')
 
     @classmethod
     def from_errors(cls, errors):
@@ -45,7 +45,7 @@ class UnknownAddressException(APIException):
     def __init__(self, address_id):
         msg = 'No such address: "{}"'.format(address_id)
         details = {'id': address_id}
-        super(UnknownAddressException, self).__init__(404, msg, 'unknown-address', details, 'addresses')
+        super().__init__(404, msg, 'unknown-address', details, 'addresses')
 
 
 class UnknownExternalAuthException(APIException):
@@ -53,7 +53,7 @@ class UnknownExternalAuthException(APIException):
     def __init__(self, auth_type):
         msg = 'No such external auth: "{}"'.format(auth_type)
         details = {'type': str(auth_type)}
-        super(UnknownExternalAuthException, self).__init__(
+        super().__init__(
             404, msg, 'unknown-external-auth', details, auth_type)
 
 
@@ -62,7 +62,7 @@ class UnknownExternalAuthTypeException(APIException):
     def __init__(self, auth_type):
         msg = 'No such auth type: "{}"'.format(auth_type)
         details = {'type': str(auth_type)}
-        super(UnknownExternalAuthTypeException, self).__init__(
+        super().__init__(
             404, msg, 'unknown-external-auth-type', details, 'external')
 
 
@@ -71,7 +71,7 @@ class UnknownGroupException(APIException):
     def __init__(self, group_uuid):
         msg = 'No such group: "{}"'.format(group_uuid)
         details = {'uuid': str(group_uuid)}
-        super(UnknownGroupException, self).__init__(404, msg, 'unknown-group', details, 'groups')
+        super().__init__(404, msg, 'unknown-group', details, 'groups')
 
 
 class UnknownTenantException(APIException):
@@ -79,7 +79,7 @@ class UnknownTenantException(APIException):
     def __init__(self, tenant_uuid):
         msg = 'No such tenant: "{}"'.format(tenant_uuid)
         details = {'uuid': str(tenant_uuid)}
-        super(UnknownTenantException, self).__init__(404, msg, 'unknown-tenant', details, 'tenants')
+        super().__init__(404, msg, 'unknown-tenant', details, 'tenants')
 
 
 class UnknownEmailException(APIException):
@@ -87,7 +87,7 @@ class UnknownEmailException(APIException):
     def __init__(self, email_uuid):
         msg = 'No such email: "{}"'.format(email_uuid)
         details = {'uuid': str(email_uuid)}
-        super(UnknownEmailException, self).__init__(404, msg, 'unknown-email', details, 'emails')
+        super().__init__(404, msg, 'unknown-email', details, 'emails')
 
 
 class UnknownUserException(APIException):
@@ -95,20 +95,20 @@ class UnknownUserException(APIException):
     def __init__(self, identifier, details=None):
         msg = 'No such user: "{}"'.format(identifier)
         details = details or {'uuid': str(identifier)}
-        super(UnknownUserException, self).__init__(404, msg, 'unknown-user', details, 'users')
+        super().__init__(404, msg, 'unknown-user', details, 'users')
 
 
 class UnknownUsernameException(Exception):
 
     def __init__(self, username):
         msg = 'No such user: "{}"'.format(username)
-        super(UnknownUsernameException, self).__init__(msg)
+        super().__init__(msg)
 
 
 class _BaseParamException(APIException):
 
     def __init__(self, message, details=None):
-        super(_BaseParamException, self).__init__(400, message, 'invalid-data', details, self.resource)
+        super().__init__(400, message, 'invalid-data', details, self.resource)
 
     @classmethod
     def from_errors(cls, errors):
@@ -154,7 +154,7 @@ class InvalidInputException(ManagerException):
     code = 400
 
     def __init__(self, field):
-        super(InvalidInputException, self).__init__()
+        super().__init__()
         self._field = field
 
     def __str__(self):
@@ -166,7 +166,7 @@ class InvalidLimitException(ManagerException):
     code = 400
 
     def __init__(self, limit):
-        super(InvalidLimitException, self).__init__()
+        super().__init__()
         self._limit = limit
 
     def __str__(self):
@@ -178,7 +178,7 @@ class InvalidOffsetException(ManagerException):
     code = 400
 
     def __init__(self, offset):
-        super(InvalidOffsetException, self).__init__()
+        super().__init__()
         self._offset = offset
 
     def __str__(self):
@@ -190,7 +190,7 @@ class InvalidSortColumnException(ManagerException):
     code = 400
 
     def __init__(self, field):
-        super(InvalidSortColumnException, self).__init__()
+        super().__init__()
         self._field = field
 
     def __str__(self):
@@ -202,7 +202,7 @@ class InvalidSortDirectionException(ManagerException):
     code = 400
 
     def __init__(self, direction):
-        super(InvalidSortDirectionException, self).__init__()
+        super().__init__()
         self._direction = direction
 
     def __str__(self):
@@ -214,7 +214,7 @@ class ConflictException(APIException):
     def __init__(self, resource, column, username):
         msg = 'The {} "{}" is already used'.format(column, username)
         details = {column: {'constraint_id': 'unique', 'message': msg}}
-        super(ConflictException, self).__init__(409, 'Conflict detected', 'conflict', details, resource)
+        super().__init__(409, 'Conflict detected', 'conflict', details, resource)
 
 
 class MasterTenantConflictException(APIException):
@@ -222,7 +222,7 @@ class MasterTenantConflictException(APIException):
     def __init__(self):
         msg = 'A master tenant already exist'
         details = {'parent_uuid': {'constraint_id': 'unique', 'msg': msg}}
-        super(MasterTenantConflictException, self).__init__(
+        super().__init__(
             403, 'Conflict detected', 'conflict', details, 'tenants')
 
 
@@ -231,7 +231,7 @@ class DuplicatePolicyException(ManagerException):
     code = 409
 
     def __init__(self, name):
-        super(DuplicatePolicyException, self).__init__()
+        super().__init__()
         self._name = name
 
     def __str__(self):
@@ -243,7 +243,7 @@ class DuplicateTemplateException(ManagerException):
     code = 409
 
     def __init__(self, template):
-        super(DuplicateTemplateException, self).__init__()
+        super().__init__()
         self._template = template
 
     def __str__(self):
@@ -274,7 +274,7 @@ class MissingACLTokenException(ManagerException):
     code = 403
 
     def __init__(self, required_acl):
-        super(MissingACLTokenException, self).__init__()
+        super().__init__()
         self._required_acl = required_acl
 
     def __str__(self):
@@ -286,7 +286,7 @@ class MissingTenantTokenException(ManagerException):
     code = 403
 
     def __init__(self, tenant_uuid):
-        super(MissingTenantTokenException, self).__init__()
+        super().__init__()
         self._tenant_uuid = tenant_uuid
 
     def __str__(self):

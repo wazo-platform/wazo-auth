@@ -16,10 +16,10 @@ logger = logging.getLogger(__name__)
 class XiVOService(BaseAuthenticationBackend):
 
     def __init__(self, *args, **kwargs):
-        super(XiVOService, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def load(self, dependencies):
-        super(XiVOService, self).load(dependencies)
+        super().load(dependencies)
         self._tenant_service = dependencies['tenant_service']
         xivo_dao.init_db(dependencies['config']['confd_db_uri'])
 
@@ -28,7 +28,7 @@ class XiVOService(BaseAuthenticationBackend):
             return accesswebservice_dao.get_user_acl(login)
 
     def get_metadata(self, login, args):
-        metadata = super(XiVOService, self).get_metadata(login, args)
+        metadata = super().get_metadata(login, args)
         with session_scope():
             try:
                 metadata['auth_id'] = accesswebservice_dao.get_user_uuid(login)

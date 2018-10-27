@@ -9,7 +9,7 @@ from wazo_auth.services.helpers import BaseService
 class TenantService(BaseService):
 
     def __init__(self, dao, tenant_tree, bus_publisher=None):
-        super(TenantService, self).__init__(dao, tenant_tree)
+        super().__init__(dao, tenant_tree)
         self._bus_publisher = bus_publisher
 
     def assert_tenant_under(self, scoping_tenant_uuid, tenant_uuid):

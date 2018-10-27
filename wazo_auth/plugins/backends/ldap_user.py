@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class LDAPUser(UserAuthenticationBackend):
 
     def load(self, dependencies):
-        super(LDAPUser, self).load(dependencies)
+        super().load(dependencies)
         config = dependencies['config']
         xivo_dao.init_db(config['confd_db_uri'])
         self.config = config['ldap']
@@ -36,7 +36,7 @@ class LDAPUser(UserAuthenticationBackend):
         return self.render_acl(acl_templates, self.get_user_data, uuid=xivo_user_uuid)
 
     def get_metadata(self, username, args):
-        metadata = super(LDAPUser, self).get_metadata(username, args)
+        metadata = super().get_metadata(username, args)
         user_data = {
             'auth_id': args['xivo_user_uuid'],
             'xivo_user_uuid': args['xivo_user_uuid'],

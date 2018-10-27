@@ -76,14 +76,14 @@ class _BaseLDAPTestCase(BaseTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(_BaseLDAPTestCase, cls).setUpClass()
+        super().setUpClass()
         port = cls.service_port(389, 'slapd')
         ldap_uri = 'ldap://localhost:{port}'.format(port=port)
 
         try:
             add_contacts(cls.CONTACTS, ldap_uri)
         except Exception:
-            super(_BaseLDAPTestCase, cls).tearDownClass()
+            super().tearDownClass()
             raise
 
 

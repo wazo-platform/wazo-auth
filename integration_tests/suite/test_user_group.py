@@ -20,7 +20,7 @@ from .helpers.base import (
 class TestGroupUserList(base.WazoAuthTestCase):
 
     def setUp(self):
-        super(TestGroupUserList, self).setUp()
+        super().setUp()
         self.foo = self.client.users.new(username='foo')
         self.bar = self.client.users.new(username='bar')
         self.baz = self.client.users.new(username='baz')
@@ -34,7 +34,7 @@ class TestGroupUserList(base.WazoAuthTestCase):
         for user in (self.foo, self.bar, self.baz, self.ignored):
             self.client.users.delete(user['uuid'])
         self.client.groups.delete(self.group['uuid'])
-        super(TestGroupUserList, self).tearDown()
+        super().tearDown()
 
     def test_list(self):
         result = self.action()
@@ -66,7 +66,7 @@ class TestGroupUserList(base.WazoAuthTestCase):
 class TestUserGroupList(base.WazoAuthTestCase):
 
     def setUp(self):
-        super(TestUserGroupList, self).setUp()
+        super().setUp()
         self.foo = self.client.groups.new(name='foo')
         self.bar = self.client.groups.new(name='bar')
         self.baz = self.client.groups.new(name='baz')
@@ -80,7 +80,7 @@ class TestUserGroupList(base.WazoAuthTestCase):
         self.client.users.delete(self.user['uuid'])
         for group in (self.ignored, self.baz, self.bar, self.foo):
             self.client.groups.delete(group['uuid'])
-        super(TestUserGroupList, self).tearDown()
+        super().tearDown()
 
     def test_list(self):
         result = self.action()

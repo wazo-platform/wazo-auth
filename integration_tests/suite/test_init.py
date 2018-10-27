@@ -22,7 +22,7 @@ class TestInit(BaseTestCase):
     asset = 'base'
 
     def setUp(self):
-        super(TestInit, self).setUp()
+        super().setUp()
         self.docker_exec(['wazo-auth-bootstrap'])
         self.key = self.docker_exec(['cat', '/var/lib/wazo-auth/init.key']).decode('utf-8')
         self.client = Client(

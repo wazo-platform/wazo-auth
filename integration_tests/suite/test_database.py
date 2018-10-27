@@ -38,7 +38,7 @@ def teardown():
 class TestAddressDAO(base.DAOTestCase):
 
     def setUp(self):
-        super(TestAddressDAO, self).setUp()
+        super().setUp()
         self._null_address = self._address()
 
     def test_new_address(self):

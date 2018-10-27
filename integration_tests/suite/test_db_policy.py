@@ -28,7 +28,7 @@ def teardown():
 class TestPolicyDAO(base.DAOTestCase):
 
     def setUp(self):
-        super(TestPolicyDAO, self).setUp()
+        super().setUp()
         default_master_user_policy = self._policy_dao.get(name='wazo_default_master_user_policy')[0]
         default_user_policy = self._policy_dao.get(name='wazo_default_user_policy')[0]
         default_admin_policy = self._policy_dao.get(name='wazo_default_admin_policy')[0]

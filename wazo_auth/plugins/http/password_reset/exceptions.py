@@ -9,11 +9,11 @@ class PasswordResetException(_BaseParamException):
     resource = 'reset'
 
     def __init__(self, message, details=None):
-        super(PasswordResetException, self).__init__(message)
+        super().__init__(message)
 
     @classmethod
     def from_errors(cls, errors):
         if list(errors.keys()) == ['_schema']:
             return cls(errors['_schema'])
         else:
-            return super(PasswordResetException, cls).from_errors(errors)
+            return super().from_errors(errors)

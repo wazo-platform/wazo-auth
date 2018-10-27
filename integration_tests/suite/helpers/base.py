@@ -89,7 +89,7 @@ class AuthLaunchingTestCase(AssetLaunchingTestCase):
     @classmethod
     def setUpClass(cls):
         cls.auth_host = HOST
-        super(AuthLaunchingTestCase, cls).setUpClass()
+        super().setUpClass()
 
     @classmethod
     def _docker_compose_options(cls):
@@ -115,7 +115,7 @@ class BaseTestCase(AuthLaunchingTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(BaseTestCase, cls).setUpClass()
+        super().setUpClass()
         cls.auth_port = cls.service_port(9497, service_name='auth')
 
     def new_message_accumulator(self, routing_key):
@@ -208,7 +208,7 @@ class WazoAuthTestCase(BaseTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(WazoAuthTestCase, cls).setUpClass()
+        super().setUpClass()
         headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         url = 'https://{}:{}/0.1/init'.format(cls.auth_host, cls.auth_port)
 

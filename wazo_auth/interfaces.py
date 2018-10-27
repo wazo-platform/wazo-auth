@@ -87,13 +87,13 @@ class UserAuthenticationBackend(BaseAuthenticationBackend, ACLRenderingBackend,
                                 metaclass=abc.ABCMeta):
 
     def load(self, dependencies):
-        super(UserAuthenticationBackend, self).load(dependencies)
+        super().load(dependencies)
         self._config = dependencies['config']
         self._confd_config = self._config['confd']
 
     @abc.abstractmethod
     def verify_password(self, login, passwd, args):
-        super(UserAuthenticationBackend, self).verify_password(login, passwd, args)
+        super().verify_password(login, passwd, args)
 
     def get_user_data(self, **kwargs):
         local_token_manager = self._config.get('local_token_manager')

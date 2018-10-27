@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class WazoUser(UserAuthenticationBackend):
 
     def load(self, dependencies):
-        super(WazoUser, self).load(dependencies)
+        super().load(dependencies)
         self._user_service = dependencies['user_service']
         self._group_service = dependencies['group_service']
 
@@ -29,7 +29,7 @@ class WazoUser(UserAuthenticationBackend):
         return self._user_service.verify_password(username, password)
 
     def get_metadata(self, login, args):
-        metadata = super(WazoUser, self).get_metadata(login, args)
+        metadata = super().get_metadata(login, args)
         user_uuid = self._get_user_uuid(login)
         groups = self._get_groups(user_uuid)
         user = self._user_service.get_user(user_uuid)
@@ -48,7 +48,7 @@ class WazoUser(UserAuthenticationBackend):
     def get_user_data(self, *args, **kwargs):
         metadata = kwargs['metadata']
 
-        result = super(WazoUser, self).get_user_data(uuid=metadata['uuid'])
+        result = super().get_user_data(uuid=metadata['uuid'])
         result.update(metadata)
 
         return result

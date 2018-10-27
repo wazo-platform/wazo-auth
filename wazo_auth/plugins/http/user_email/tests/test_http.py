@@ -17,7 +17,7 @@ EMAIL_ADDRESS = 'foobar@example.com'
 class TestUserEmailConfirmResource(HTTPAppTestCase):
 
     def setUp(self):
-        super(TestUserEmailConfirmResource, self).setUp(config._DEFAULT_CONFIG)
+        super().setUp(config._DEFAULT_CONFIG)
         self.url = '/0.1/users/{}/emails/{}/confirm'
 
     def test_unknown_user(self):

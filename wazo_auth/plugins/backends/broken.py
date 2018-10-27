@@ -13,7 +13,7 @@ class BrokenVerifyPasswordBackend(BaseAuthenticationBackend):
 class BrokenInitBackend(BaseAuthenticationBackend):
 
     def load(self, dependencies):
-        super(BrokenInitBackend, self).load(dependencies)
+        super().load(dependencies)
         return dict()['foo']['bar']
 
     def verify_password(self, login, password, args):
