@@ -72,3 +72,11 @@ class TestEmails(WazoAuthTestCase):
 
         result = self.client.users.update_emails(foobar['uuid'], [])
         assert_that(result, empty())
+
+    @fixtures.http_user(username='bar', email_address='bar@example.com')
+    @fixtures.http_user(username='foo', email_address='foo@example.com')
+    def test_duplicate_email(self, foo, bar):
+        duplicated_emails = [
+            {'address': 'bar@example.com', 'main': True, 'confirmed': True},
+        ]
+        assert_http_error(409, self.client.users.update_emails, foo['uuid'], duplicated_emails)

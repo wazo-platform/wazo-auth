@@ -309,7 +309,17 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if uuid:
             email.uuid = uuid
         s.add(email)
-        s.flush()
+
+        try:
+            s.flush()
+        except exc.IntegrityError as e:
+            if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
+                value = locals().get(column)
+                if column:
+                    raise exceptions.ConflictException('users', column, value)
+            raise
+
         s.add(UserEmail(
             email_uuid=email.uuid,
             user_uuid=user_uuid,
