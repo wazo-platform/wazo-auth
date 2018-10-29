@@ -1,7 +1,6 @@
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-import json
 from uuid import UUID
 from hamcrest import assert_that, equal_to, has_entries
 from wazo_auth import config, exceptions
@@ -27,7 +26,7 @@ class TestUserEmailConfirmResource(HTTPAppTestCase):
         result = self.app.get(url)
 
         assert_that(result.status_code, equal_to(404))
-        assert_that(json.loads(result.data), has_entries(
+        assert_that(result.json, has_entries(
             resource='users',
             details=has_entries(uuid=str(UNKNOWN_UUID))))
 
@@ -47,7 +46,7 @@ class TestUserEmailConfirmResource(HTTPAppTestCase):
         result = self.app.get(url)
 
         assert_that(result.status_code, equal_to(404))
-        assert_that(json.loads(result.data), has_entries(
+        assert_that(result.json, has_entries(
             resource='emails',
             details=has_entries(uuid=str(UNKNOWN_UUID))))
 
@@ -67,7 +66,7 @@ class TestUserEmailConfirmResource(HTTPAppTestCase):
         result = self.app.get(url)
 
         assert_that(result.status_code, equal_to(409))
-        assert_that(json.loads(result.data), has_entries(
+        assert_that(result.json, has_entries(
             resource='emails',
             details=has_entries(uuid=str(EMAIL_UUID))))
 

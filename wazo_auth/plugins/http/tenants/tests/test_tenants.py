@@ -30,7 +30,7 @@ class TestTenantPost(HTTPAppTestCase):
             result = self.post(invalid_data)
             assert_that(result.status_code, equal_to(400), invalid_data)
             assert_that(
-                json.loads(result.data),
+                result.json,
                 has_entries(
                     'error_id', 'invalid-data',
                     'message', ANY,
@@ -59,7 +59,7 @@ class TestTenantPost(HTTPAppTestCase):
         result = self.post(body)
 
         assert_that(result.status_code, equal_to(200))
-        assert_that(json.loads(result.data), equal_to(self.tenant_service.new.return_value))
+        assert_that(result.json, equal_to(self.tenant_service.new.return_value))
         self.tenant_service.new.assert_called_once_with(
             uuid=None,
             name='foobar',
