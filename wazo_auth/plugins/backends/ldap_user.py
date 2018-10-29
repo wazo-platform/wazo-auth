@@ -122,7 +122,7 @@ class _XivoLDAP(object):
         self.ldapobj = self._create_ldap_obj(self.uri)
 
     def _create_ldap_obj(self, uri):
-        ldapobj = ldap.initialize(uri, 0)
+        ldapobj = ldap.initialize(uri)
         ldapobj.set_option(ldap.OPT_REFERRALS, 0)
         ldapobj.set_option(ldap.OPT_NETWORK_TIMEOUT, 2)
         ldapobj.set_option(ldap.OPT_TIMEOUT, 2)
