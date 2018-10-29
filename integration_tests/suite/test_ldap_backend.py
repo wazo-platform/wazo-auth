@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright 2016-2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import ldap
@@ -17,7 +16,7 @@ from .helpers.base import BaseTestCase
 Contact = namedtuple('Contact', ['cn', 'uid', 'password', 'mail', 'login_attribute'])
 
 
-class LDAPHelper(object):
+class LDAPHelper:
 
     BASE_DN = 'dc=wazo-auth,dc=wazo,dc=community'
     ADMIN_DN = 'cn=admin,{}'.format(BASE_DN)
@@ -34,31 +33,31 @@ class LDAPHelper(object):
     def add_contact(self, contact, ou):
         dn = 'cn={},{}'.format(contact.cn, self.OU_DN[ou])
         modlist = addModlist({
-            'objectClass': ['inetOrgPerson'],
-            'cn': [contact.cn],
-            'sn': [contact.cn],
-            'uid': [contact.uid],
-            'userPassword': [contact.password],
-            'mail': [contact.mail]
+            'objectClass': [b'inetOrgPerson'],
+            'cn': [contact.cn.encode('utf-8')],
+            'sn': [contact.cn.encode('utf-8')],
+            'uid': [contact.uid.encode('utf-8')],
+            'userPassword': [contact.password.encode('utf-8')],
+            'mail': [contact.mail.encode('utf-8')]
         })
 
         self._ldap_obj.add_s(dn, modlist)
 
     def add_ou(self):
         modlist = addModlist({
-            'objectClass': ['organizationalUnit'],
-            'ou': ['people'],
+            'objectClass': [b'organizationalUnit'],
+            'ou': [b'people'],
         })
         self._ldap_obj.add_s(self.PEOPLE_DN, modlist)
         modlist = addModlist({
-            'objectClass': ['organizationalUnit'],
-            'ou': ['quebec'],
+            'objectClass': [b'organizationalUnit'],
+            'ou': [b'quebec'],
         })
         self._ldap_obj.add_s(self.QUEBEC_DN, modlist)
 
 
 def add_contacts(contacts, ldap_uri):
-    for _ in xrange(10):
+    for _ in range(10):
         try:
             helper = LDAPHelper(ldap_uri)
             break
@@ -77,14 +76,14 @@ class _BaseLDAPTestCase(BaseTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(_BaseLDAPTestCase, cls).setUpClass()
+        super().setUpClass()
         port = cls.service_port(389, 'slapd')
         ldap_uri = 'ldap://localhost:{port}'.format(port=port)
 
         try:
             add_contacts(cls.CONTACTS, ldap_uri)
         except Exception:
-            super(_BaseLDAPTestCase, cls).tearDownClass()
+            super().tearDownClass()
             raise
 
 

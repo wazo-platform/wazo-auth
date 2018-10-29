@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -10,7 +9,7 @@ from xivo import tenant_helpers
 logger = logging.getLogger(__name__)
 
 
-class Tenant(object):
+class Tenant:
 
     token_manager = None
     user_service = None

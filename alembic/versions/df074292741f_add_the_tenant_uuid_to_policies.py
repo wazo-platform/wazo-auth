@@ -82,7 +82,7 @@ def upgrade():
     op.alter_column(TABLE, COL, nullable=False, server_default=None)
 
     # If a policy was associated to a tenant set the tenant_uuid to one of the associated tenants
-    for policy_uuid, tenant_uuid in get_tenant_policy_associations().iteritems():
+    for policy_uuid, tenant_uuid in get_tenant_policy_associations().items():
         filter_ = policy_table.c.uuid == policy_uuid
         query = policy_table.update().values(tenant_uuid=tenant_uuid).where(filter_)
         op.execute(query)
@@ -107,7 +107,7 @@ def downgrade():
         ),
     )
 
-    for policy_uuid, tenant_uuid, in get_policies_tenant().iteritems():
+    for policy_uuid, tenant_uuid, in get_policies_tenant().items():
         query = tenant_policy_table.insert().values(policy_uuid=policy_uuid, tenant_uuid=tenant_uuid)
         op.get_bind().execute(query)
 

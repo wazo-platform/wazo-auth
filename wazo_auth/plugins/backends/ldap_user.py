@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -19,7 +18,7 @@ logger = logging.getLogger(__name__)
 class LDAPUser(UserAuthenticationBackend):
 
     def load(self, dependencies):
-        super(LDAPUser, self).load(dependencies)
+        super().load(dependencies)
         config = dependencies['config']
         xivo_dao.init_db(config['confd_db_uri'])
         self.config = config['ldap']
@@ -37,7 +36,7 @@ class LDAPUser(UserAuthenticationBackend):
         return self.render_acl(acl_templates, self.get_user_data, uuid=xivo_user_uuid)
 
     def get_metadata(self, username, args):
-        metadata = super(LDAPUser, self).get_metadata(username, args)
+        metadata = super().get_metadata(username, args)
         user_data = {
             'auth_id': args['xivo_user_uuid'],
             'xivo_user_uuid': args['xivo_user_uuid'],
@@ -102,7 +101,7 @@ class LDAPUser(UserAuthenticationBackend):
         email = email[0] if isinstance(email, list) else email
         if not email:
             logger.debug('LDAP : No email found for the user DN: %s', user_dn)
-        return email
+        return email.decode('utf-8')
 
     def _perform_search_dn(self, xivo_ldap, username):
         username_esc = escape_filter_chars(username)
@@ -115,7 +114,7 @@ class LDAPUser(UserAuthenticationBackend):
         return dn
 
 
-class _XivoLDAP(object):
+class _XivoLDAP:
 
     def __init__(self, uri):
         self.uri = uri

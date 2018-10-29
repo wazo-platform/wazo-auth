@@ -2,9 +2,9 @@ Source: wazo-auth
 Section: python
 Priority: extra
 Maintainer: Wazo Maintainers <dev.wazo@gmail.com>
-Build-Depends: debhelper (>= 9), dh-python, dh-systemd (>= 1.5), python-all (>= 2.7), python-setuptools
+Build-Depends: debhelper (>= 9), dh-python, dh-systemd (>= 1.5), python3-all, python3-setuptools
 Standards-Version: 3.9.6
-X-Python-Version: >= 2.7
+X-Python-Version: >= 3.5
 
 Package: wazo-auth
 Architecture: all
@@ -13,28 +13,28 @@ Depends: ${python:Depends},
          adduser,
          alembic (>= 0.8.8),
          mail-transport-agent,
-         python-alembic (>= 0.8.8),
-         python-anytree,
-         python-cheroot,
-         python-consul,
-         python-flask,
-         python-flask-cors (>= 3.0.2),
-         python-flask-restful,
-         python-jinja2,
-         python-kombu,
-         python-ldap,
-         python-marshmallow,
-         python-netifaces,
-         python-psycopg2,
-         python-stevedore,
-         python-unidecode,
-         python-websocket,
+         python3-alembic (>= 0.8.8),
+         python3-anytree,
+         python3-cheroot,
+         python3-consul,
+         python3-flask,
+         python3-flask-cors (>= 3.0.2),
+         python3-flask-restful,
+         python3-jinja2,
+         python3-kombu,
+         python3-ldap,
+         python3-marshmallow,
+         python3-netifaces,
+         python3-psycopg2,
+         python3-stevedore,
+         python3-unidecode,
+         python3-websocket,
          wazo-uuid,
-         xivo-bus (>> 17.16),
-         xivo-confd-client (>> 15.16),
+         xivo-bus-python3 (>> 17.16),
+         xivo-confd-client-python3 (>> 15.16),
          xivo-dbms (>= 18.09~20180813.122139.5a1dcf0.deb9),
-         xivo-lib-python,
-         xivo-libdao (>= 17.02~20170124.144633.cb56771)
+         xivo-lib-python-python3,
+         xivo-libdao-python3 (>= 17.02~20170124.144633.cb56771)
 Conflicts: xivo-auth
 Replaces: xivo-auth
 Provides: xivo-auth

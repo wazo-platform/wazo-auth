@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -51,7 +50,7 @@ class TestExternalAuthService(BaseServiceTestCase):
         scope = fields.List(fields.String)
 
     def setUp(self):
-        super(TestExternalAuthService, self).setUp()
+        super().setUp()
         self._tenant_tree = Mock()
         self.service = services.ExternalAuthService(self.dao, self._tenant_tree, _DEFAULT_CONFIG)
 
@@ -91,7 +90,7 @@ class TestExternalAuthService(BaseServiceTestCase):
 class TestGroupService(BaseServiceTestCase):
 
     def setUp(self):
-        super(TestGroupService, self).setUp()
+        super().setUp()
         self._tenant_tree = Mock()
         self.service = services.GroupService(self.dao, self._tenant_tree)
 
@@ -151,7 +150,7 @@ class TestGroupService(BaseServiceTestCase):
 class TestPolicyService(BaseServiceTestCase):
 
     def setUp(self):
-        super(TestPolicyService, self).setUp()
+        super().setUp()
         self.tenant_tree = Mock()
         self.service = services.PolicyService(self.dao, self.tenant_tree)
 
@@ -192,7 +191,7 @@ class TestPolicyService(BaseServiceTestCase):
 class TestUserService(BaseServiceTestCase):
 
     def setUp(self):
-        super(TestUserService, self).setUp()
+        super().setUp()
         self.tenant_tree = Mock()
         self.service = services.UserService(self.dao, self.tenant_tree, encrypter=self.encrypter)
 

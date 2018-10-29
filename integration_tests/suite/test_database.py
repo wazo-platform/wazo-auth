@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import time
 import uuid
 
-from contextlib import contextmanager, nested
+from contextlib import contextmanager
 from hamcrest import (
     assert_that,
     calling,
@@ -39,7 +38,7 @@ def teardown():
 class TestAddressDAO(base.DAOTestCase):
 
     def setUp(self):
-        super(TestAddressDAO, self).setUp()
+        super().setUp()
         self._null_address = self._address()
 
     def test_new_address(self):
@@ -197,7 +196,7 @@ class TestExternalAuthDAO(base.DAOTestCase):
                 result = {r.name: r.enabled for r in query.all()}
             expected = has_entries({t: True for t in enabled_types})
             assert_that(result, expected)
-            nb_enabled = len([t for t, enabled in result.iteritems() if enabled])
+            nb_enabled = len([t for t, enabled in result.items() if enabled])
             assert_that(nb_enabled, equal_to(len(enabled_types)))
 
         auth_types = ['foo', 'bar', 'baz', 'inga']
@@ -332,8 +331,8 @@ class TestTokenDAO(base.DAOTestCase):
             'msg': 'a string field',
         }
 
-        with nested(self._new_token(metadata=metadata),
-                    self._new_token(acls=['first', 'second'])) as (e1, e2):
+        with self._new_token(metadata=metadata) as e1, \
+                self._new_token(acls=['first', 'second']) as e2:
             assert_that(e1['metadata'], has_entries(**metadata))
             t1 = self._token_dao.get(e1['uuid'])
             t2 = self._token_dao.get(e2['uuid'])
@@ -343,9 +342,7 @@ class TestTokenDAO(base.DAOTestCase):
     def test_get(self):
         self.assertRaises(exceptions.UnknownTokenException, self._token_dao.get,
                           'unknown')
-        with nested(self._new_token(),
-                    self._new_token(),
-                    self._new_token()) as (_, expected_token, __):
+        with self._new_token(), self._new_token() as expected_token, self._new_token():
             token = self._token_dao.get(expected_token['uuid'])
         assert_that(token, equal_to(expected_token))
 
@@ -357,11 +354,9 @@ class TestTokenDAO(base.DAOTestCase):
             self._token_dao.delete(token['uuid'])  # No error on delete unknown
 
     def test_delete_expired_tokens(self):
-        with nested(
-                self._new_token(),
-                self._new_token(expiration=0),
-                self._new_token(expiration=0),
-        ) as (a, b, c):
+        with self._new_token() as a, \
+                self._new_token(expiration=0) as b, \
+                self._new_token(expiration=0) as c:
             expired = [b, c]
             valid = [a]
 

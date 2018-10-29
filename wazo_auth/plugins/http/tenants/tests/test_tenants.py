@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -16,7 +15,7 @@ class TestTenantPost(HTTPAppTestCase):
     def setUp(self):
         config = dict(_DEFAULT_CONFIG)
         config['enabled_http_plugins']['tenants'] = True
-        super(TestTenantPost, self).setUp(config)
+        super().setUp(config)
 
     @patch('wazo_auth.plugins.http.tenants.http.TenantDetector')
     def test_invalid_posts(self, TenantDetector):

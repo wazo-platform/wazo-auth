@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -31,7 +30,7 @@ class Tokens(BaseResource):
 
         args, error = schemas.TokenRequestSchema().load(request.get_json(force=True))
         if error:
-            return http._error(400, unicode(error))
+            return http._error(400, str(error))
 
         backend_name = args['backend']
         try:

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -57,7 +56,7 @@ def new_list_schema(default_sort_column):
 
         @post_load(pass_original=True)
         def add_arbitrary_fields(self, data, original_data):
-            for key, value in original_data.iteritems():
+            for key, value in original_data.items():
                 data.setdefault(key, value)
             return data
 

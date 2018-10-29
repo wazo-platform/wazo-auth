@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -13,7 +12,7 @@ from xivo.consul_helpers import address_from_config
 logger = logging.getLogger(__name__)
 
 
-class BaseService(object):
+class BaseService:
 
     def __init__(self, dao, tenant_tree):
         self._dao = dao
@@ -56,13 +55,13 @@ class TemplateLoader(BaseLoader):
             raise TemplateNotFound(template)
 
         mtime = os.path.getmtime(template_path)
-        with file(template_path) as f:
-            source = f.read().decode('utf-8')
+        with open(template_path) as f:
+            source = f.read()
 
         return source, template_path, lambda: mtime == os.path.getmtime(template_path)
 
 
-class TemplateFormatter(object):
+class TemplateFormatter:
 
     def __init__(self, config):
         self.environment = Environment(
@@ -93,7 +92,7 @@ class TemplateFormatter(object):
         return template.render(**context)
 
 
-class TenantTree(object):
+class TenantTree:
 
     def __init__(self, tenant_dao):
         self._tenant_dao = tenant_dao

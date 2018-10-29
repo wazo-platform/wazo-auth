@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-import json
 import os
 import random
 import requests
@@ -16,7 +14,6 @@ from hamcrest import (
     calling,
     contains,
     greater_than,
-    has_entries,
     has_length,
     has_properties,
     equal_to,
@@ -92,7 +89,7 @@ class AuthLaunchingTestCase(AssetLaunchingTestCase):
     @classmethod
     def setUpClass(cls):
         cls.auth_host = HOST
-        super(AuthLaunchingTestCase, cls).setUpClass()
+        super().setUpClass()
 
     @classmethod
     def _docker_compose_options(cls):
@@ -118,7 +115,7 @@ class BaseTestCase(AuthLaunchingTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(BaseTestCase, cls).setUpClass()
+        super().setUpClass()
         cls.auth_port = cls.service_port(9497, service_name='auth')
 
     def new_message_accumulator(self, routing_key):
@@ -130,10 +127,12 @@ class BaseTestCase(AuthLaunchingTestCase):
         return [self._email_body(f) for f in self._get_email_filenames()]
 
     def _email_body(self, filename):
-        return self.docker_exec(['cat', '{}/{}'.format(self.email_dir, filename)], 'smtp')
+        return self.docker_exec(
+            ['cat', '{}/{}'.format(self.email_dir, filename)], 'smtp'
+        ).decode('utf-8')
 
     def _get_email_filenames(self):
-        return self.docker_exec(['ls', self.email_dir], 'smtp').strip().split('\n')
+        return self.docker_exec(['ls', self.email_dir], 'smtp').decode('utf-8').strip().split('\n')
 
     def _post_token(self, username, password, backend=None, expiration=None):
         client = self.new_auth_client(username, password)
@@ -209,13 +208,13 @@ class WazoAuthTestCase(BaseTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(WazoAuthTestCase, cls).setUpClass()
+        super().setUpClass()
         headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         url = 'https://{}:{}/0.1/init'.format(cls.auth_host, cls.auth_port)
 
-        key = cls.docker_exec(['cat', '/var/lib/wazo-auth/init.key'])
+        key = cls.docker_exec(['cat', '/var/lib/wazo-auth/init.key']).decode('utf-8')
         body = {'key': key, 'username': cls.username, 'password': cls.password}
-        response = requests.post(url, data=json.dumps(body), headers=headers, verify=False)
+        response = requests.post(url, json=body, headers=headers, verify=False)
         response.raise_for_status()
 
         cls.client = cls.new_auth_client(cls.username, cls.password)
@@ -232,7 +231,7 @@ class WazoAuthTestCase(BaseTestCase):
 
     @contextmanager
     def client_in_subtenant(self, username=None, parent_uuid=None):
-        random_string = lambda n: ''.join(random.choice(string.letters) for _ in range(n))
+        random_string = lambda n: ''.join(random.choice(string.ascii_letters) for _ in range(n))
         username = username or random_string(8)
         password = 'secre7'
         tenant_args = {'name': 'mytenant'}

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -18,7 +17,7 @@ EMAIL_ADDRESS = 'foobar@example.com'
 class TestUserEmailConfirmResource(HTTPAppTestCase):
 
     def setUp(self):
-        super(TestUserEmailConfirmResource, self).setUp(config._DEFAULT_CONFIG)
+        super().setUp(config._DEFAULT_CONFIG)
         self.url = '/0.1/users/{}/emails/{}/confirm'
 
     def test_unknown_user(self):

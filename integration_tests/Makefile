@@ -20,7 +20,7 @@ test-image:
 	docker build --no-cache -t wazopbx/wazo-auth-tests -f Dockerfile-auth-test ..
 
 egg-info:
-	cd .. && python setup.py egg_info
+	cd .. && python3 setup.py egg_info
 
 test:
 	nosetests -x

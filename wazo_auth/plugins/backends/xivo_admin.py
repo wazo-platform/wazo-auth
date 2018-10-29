@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -15,7 +14,7 @@ from wazo_auth.exceptions import AuthenticationFailedException
 class XiVOAdmin(BaseAuthenticationBackend, ACLRenderingBackend):
 
     def load(self, dependencies):
-        super(XiVOAdmin, self).load(dependencies)
+        super().load(dependencies)
         self._tenant_service = dependencies['tenant_service']
         xivo_dao.init_db(dependencies['config']['confd_db_uri'])
 
@@ -24,7 +23,7 @@ class XiVOAdmin(BaseAuthenticationBackend, ACLRenderingBackend):
         return self.render_acl(acl_templates, lambda: args['metadata'])
 
     def get_metadata(self, login, args=None):
-        metadata = super(XiVOAdmin, self).get_metadata(login, args)
+        metadata = super().get_metadata(login, args)
         with session_scope():
             try:
                 metadata['auth_id'] = admin_dao.get_admin_uuid(login)

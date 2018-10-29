@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -52,7 +51,7 @@ TENANT = '00000000-0000-0000-0000-000000000000'
 class TestUserResource(HTTPAppTestCase):
 
     def setUp(self):
-        super(TestUserResource, self).setUp(_DEFAULT_CONFIG)
+        super().setUp(_DEFAULT_CONFIG)
         self.url = '/0.1/users'
 
     def test_that_creating_a_user_calls_the_service(self):

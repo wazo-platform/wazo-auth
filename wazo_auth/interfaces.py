@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -15,9 +14,7 @@ DEFAULT_XIVO_UUID = os.getenv('XIVO_UUID')
 logger = logging.getLogger(__name__)
 
 
-class BaseAuthenticationBackend(object):
-
-    __metaclass__ = abc.ABCMeta
+class BaseAuthenticationBackend(metaclass=abc.ABCMeta):
 
     def __init__(self):
         """Initialize this backend instance from the given configuration"""
@@ -79,25 +76,24 @@ class BaseAuthenticationBackend(object):
         return True
 
 
-class ACLRenderingBackend(object):
+class ACLRenderingBackend:
 
     def render_acl(self, acl_templates, get_data_fn, *args, **kwargs):
         renderer = LazyTemplateRenderer(acl_templates, get_data_fn, *args, **kwargs)
         return renderer.render()
 
 
-class UserAuthenticationBackend(BaseAuthenticationBackend, ACLRenderingBackend):
-
-    __metaclass__ = abc.ABCMeta
+class UserAuthenticationBackend(BaseAuthenticationBackend, ACLRenderingBackend,
+                                metaclass=abc.ABCMeta):
 
     def load(self, dependencies):
-        super(UserAuthenticationBackend, self).load(dependencies)
+        super().load(dependencies)
         self._config = dependencies['config']
         self._confd_config = self._config['confd']
 
     @abc.abstractmethod
     def verify_password(self, login, passwd, args):
-        super(UserAuthenticationBackend, self).verify_password(login, passwd, args)
+        super().verify_password(login, passwd, args)
 
     def get_user_data(self, **kwargs):
         local_token_manager = self._config.get('local_token_manager')

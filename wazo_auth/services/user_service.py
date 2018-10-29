@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -16,7 +15,7 @@ logger = logging.getLogger(__name__)
 class UserService(BaseService):
 
     def __init__(self, dao, tenant_tree, encrypter=None):
-        super(UserService, self).__init__(dao, tenant_tree)
+        super().__init__(dao, tenant_tree)
         self._encrypter = encrypter or PasswordEncrypter()
 
     def add_policy(self, user_uuid, policy_uuid):
@@ -31,8 +30,8 @@ class UserService(BaseService):
         self._dao.user.change_password(user_uuid, salt, hash_)
 
     def delete_password(self, **kwargs):
-        search_params = {k: v for k, v in kwargs.iteritems() if v}
-        identifier = search_params.values()[0]
+        search_params = {k: v for k, v in kwargs.items() if v}
+        identifier = list(search_params.values())[0]
 
         logger.debug('removing password for user %s', identifier)
         users = self._dao.user.list_(limit=1, **search_params)
@@ -153,7 +152,7 @@ class UserService(BaseService):
             raise exceptions.UnknownUserException(user_uuid)
 
 
-class PasswordEncrypter(object):
+class PasswordEncrypter:
 
     _salt_len = 64
     _hash_algo = 'sha512'
@@ -167,4 +166,4 @@ class PasswordEncrypter(object):
     def compute_password_hash(self, password, salt):
         password_bytes = password.encode('utf-8')
         dk = hashlib.pbkdf2_hmac(self._hash_algo, password_bytes, salt, self._iterations)
-        return binascii.hexlify(dk)
+        return binascii.hexlify(dk).decode('utf-8')

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
@@ -16,7 +15,7 @@ A_SALT = os.urandom(64)
 
 
 def _random_string(length):
-    return ''.join(random.choice(string.ascii_lowercase) for _ in xrange(length))
+    return ''.join(random.choice(string.ascii_lowercase) for _ in range(length))
 
 
 def email(**email_args):

@@ -1,11 +1,7 @@
-# -*- coding: utf-8 -*-
 # Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
-from contextlib import (
-    contextmanager,
-    nested,
-)
+from contextlib import contextmanager
 from hamcrest import (
     assert_that,
     calling,
@@ -32,7 +28,7 @@ def teardown():
 class TestPolicyDAO(base.DAOTestCase):
 
     def setUp(self):
-        super(TestPolicyDAO, self).setUp()
+        super().setUp()
         default_master_user_policy = self._policy_dao.get(name='wazo_default_master_user_policy')[0]
         default_user_policy = self._policy_dao.get(name='wazo_default_user_policy')[0]
         default_admin_policy = self._policy_dao.get(name='wazo_default_admin_policy')[0]
@@ -40,7 +36,7 @@ class TestPolicyDAO(base.DAOTestCase):
         self._default_user_policy_uuid = default_user_policy['uuid']
         self._default_admin_policy_uuid = default_admin_policy['uuid']
 
-    @fixtures.policy(name=u'testé', description=u'déscription')
+    @fixtures.policy(name='testé', description='déscription')
     def test_template_association(self, uuid):
         self._policy_dao.associate_policy_template(uuid, '#')
         assert_that(
@@ -69,15 +65,15 @@ class TestPolicyDAO(base.DAOTestCase):
     @fixtures.tenant()
     def test_create(self, tenant_uuid):
         acl_templates = ['dird.#', 'confd.line.42.*']
-        with self._new_policy(u'testé', u'descriptioñ', acl_templates, tenant_uuid) as uuid_:
+        with self._new_policy('testé', 'descriptioñ', acl_templates, tenant_uuid) as uuid_:
             policy = self.get_policy(uuid_)
 
             assert_that(
                 policy,
                 has_entries(
                     uuid=uuid_,
-                    name=u'testé',
-                    description=u'descriptioñ',
+                    name='testé',
+                    description='descriptioñ',
                     acl_templates=contains_inanyorder(*acl_templates),
                     tenant_uuid=tenant_uuid,
                 )
@@ -121,11 +117,9 @@ class TestPolicyDAO(base.DAOTestCase):
         assert_that(result, empty())
 
     def test_get_sort_and_pagination(self):
-        with nested(
-            self._new_policy('a', 'z'),
-            self._new_policy('b', 'y'),
-            self._new_policy('c', 'x'),
-        ) as (a, b, c):
+        with self._new_policy('a', 'z') as a, \
+                self._new_policy('b', 'y') as b, \
+                self._new_policy('c', 'x') as c:
             result = self.list_policy(order='name', direction='asc')
             assert_that(
                 result,
