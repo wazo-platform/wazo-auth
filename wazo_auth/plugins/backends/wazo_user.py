@@ -14,6 +14,7 @@ class WazoUser(UserAuthenticationBackend):
         super().load(dependencies)
         self._user_service = dependencies['user_service']
         self._group_service = dependencies['group_service']
+        self._metadata_plugins = dependencies['metadata_plugins']
 
     def get_acls(self, username, args):
         backend_acl_templates = args.get('acl_templates', [])
@@ -29,61 +30,14 @@ class WazoUser(UserAuthenticationBackend):
         return self._user_service.verify_password(username, password)
 
     def get_metadata(self, login, args):
-        metadata = super().get_metadata(login, args)
-        user_uuid = self._get_user_uuid(login)
-        groups = self._get_groups(user_uuid)
-        user = self._user_service.get_user(user_uuid)
-
-        user_data = {
-            'auth_id': user_uuid,
-            'xivo_user_uuid': user_uuid,
-            'uuid': user_uuid,
-            'tenant_uuid': user['tenant_uuid'],
-            'groups': groups,
-        }
-        metadata.update(user_data)
-
+        metadata = {}
+        for metadata_plugin in self._metadata_plugins:
+            metadata.update(metadata_plugin.obj.get_token_metadata(login, args))
         return metadata
 
     def get_user_data(self, *args, **kwargs):
         metadata = kwargs['metadata']
-
-        result = super().get_user_data(uuid=metadata['uuid'])
-        result.update(metadata)
-
+        result = {}
+        for metadata_plugin in self._metadata_plugins:
+            result.update(metadata_plugin.obj.get_acl_metadata(uuid=metadata['uuid']))
         return result
-
-    def _get_tenants(self, user_uuid):
-        result = []
-        tenants = self._user_service.list_tenants(user_uuid)
-
-        for tenant in tenants:
-            result.append(
-                {
-                    'uuid': tenant['uuid'],
-                    'name': tenant['name'],
-                }
-            )
-
-        return result
-
-    def _get_groups(self, user_uuid):
-        result = []
-        groups = self._user_service.list_groups(user_uuid)
-
-        for group in groups:
-            group_members = self._group_service.list_users(group['uuid'])
-            member_uuids = [{'uuid': u['uuid']} for u in group_members]
-            result.append(
-                {
-                    'uuid': group['uuid'],
-                    'name': group['name'],
-                    'users': member_uuids,
-                }
-            )
-
-        return result
-
-    def _get_user_uuid(self, username):
-        matching_users = self._user_service.list_users(username=username)
-        return matching_users[0]['uuid']
