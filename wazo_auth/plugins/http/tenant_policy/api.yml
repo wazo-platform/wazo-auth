@@ -6,10 +6,11 @@ paths:
       produces:
         - application/json
       tags:
-        - tenants
+        - deprecated
       security:
       - wazo_auth_token: []
       description: '**Required ACL**: `auth.tenants.{tenant_uuid}.policies.read`'
+      deprecated: true
       parameters:
       - $ref: '#/parameters/order'
       - $ref: '#/parameters/direction'

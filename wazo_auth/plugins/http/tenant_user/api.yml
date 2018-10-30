@@ -2,10 +2,11 @@ paths:
   /tenants/{tenant_uuid}/users:
     get:
       tags:
-        - tenants
+        - deprecated
       security:
       - wazo_auth_token: []
       description: '**Required ACL**: `auth.tenants.{tenant_uuid}.users.read`'
+      deprecated: true
       parameters:
       - $ref: '#/parameters/order'
       - $ref: '#/parameters/direction'
@@ -34,10 +35,11 @@ paths:
   /users/{user_uuid}/tenants:
     get:
       tags:
-        - users
+        - deprecated
       security:
       - wazo_auth_token: []
       description: '**Required ACL**: `auth.users.{user_uuid}.tenants.read`'
+      deprecated: true
       parameters:
       - $ref: '#/parameters/order'
       - $ref: '#/parameters/direction'

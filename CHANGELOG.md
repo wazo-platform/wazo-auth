@@ -1,6 +1,16 @@
 Changelog
 =========
 
+18.13
+-----
+
+* The following URLs have been deprecated. Use `Wazo-Tenant` header instead:
+
+  * GET `0.1/tenants/<tenant_uuid>/policies`
+  * GET `0.1/tenants/<tenant_uuid>/users`
+  * GET `0.1/users/<user_uuid>/tenants`
+
+
 18.06
 -----
 
