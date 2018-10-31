@@ -23,7 +23,7 @@ paths:
         '200':
           description: "The tenant's data"
           schema:
-            $ref: '#/definitions/PolicyList'
+            $ref: '#/definitions/GetPoliciesResult'
         '401':
           description: Unauthorized
           schema:
