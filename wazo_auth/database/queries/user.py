@@ -134,6 +134,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             'lastname': kwargs.get('lastname'),
             'password_hash': kwargs.get('hash_'),
             'password_salt': kwargs.get('salt'),
+            'purpose': kwargs['purpose'],
             'enabled': kwargs.get('enabled'),
             'tenant_uuid': kwargs['tenant_uuid'],
         }
@@ -185,6 +186,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 'username': username,
                 'firstname': user.firstname,
                 'lastname': user.lastname,
+                'purpose': user.purpose,
                 'emails': emails,
                 'enabled': user.enabled,
                 'tenant_uuid': user.tenant_uuid,
@@ -277,6 +279,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     'emails': emails,
                     'firstname': user.firstname,
                     'lastname': user.lastname,
+                    'purpose': user.purpose,
                     'tenant_uuid': user.tenant_uuid,
                 })
 

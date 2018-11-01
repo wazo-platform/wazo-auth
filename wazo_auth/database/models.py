@@ -2,8 +2,17 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 from sqlalchemy import (
-    Boolean, Column, ForeignKey, Integer, LargeBinary,
-    schema, String, Text, text, UniqueConstraint,
+    Boolean,
+    CheckConstraint,
+    Column,
+    ForeignKey,
+    Integer,
+    LargeBinary,
+    String,
+    Text,
+    UniqueConstraint,
+    schema,
+    text,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -126,6 +135,11 @@ class User(Base):
     lastname = Column(Text)
     password_hash = Column(Text)
     password_salt = Column(LargeBinary)
+    purpose = Column(
+        String(256),
+        CheckConstraint("purpose in ('user', 'internal', 'external_api')"),
+        nullable=False,
+    )
     enabled = Column(Boolean)
     tenant_uuid = Column(String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False)
     emails = relationship('UserEmail', cascade='all, delete-orphan')

@@ -204,6 +204,7 @@ class TestUserDAO(base.DAOTestCase):
             tenant_uuid=self.top_tenant_uuid,
             hash_=hash_,
             salt=self.salt,
+            purpose='user',
         )['uuid']
 
         try:
@@ -220,6 +221,7 @@ class TestUserDAO(base.DAOTestCase):
                     tenant_uuid=self.top_tenant_uuid,
                     hash_='',
                     salt=b'',
+                    purpose='user',
                 ),
                 raises(
                     exceptions.ConflictException,
@@ -242,6 +244,7 @@ class TestUserDAO(base.DAOTestCase):
             tenant_uuid=self.top_tenant_uuid,
             hash_=hash_,
             salt=self.salt,
+            purpose='user',
             email_confirmed=True,
         )['uuid']
 
@@ -261,6 +264,7 @@ class TestUserDAO(base.DAOTestCase):
                 email_address='foo@bar',
                 hash_='hash_two',
                 salt=self.salt,
+                purpose='user',
                 tenant_uuid=self.top_tenant_uuid,
             ),
             raises(
@@ -282,6 +286,7 @@ class TestUserDAO(base.DAOTestCase):
                 tenant_uuid=self.top_tenant_uuid,
                 hash_='hash_two',
                 salt=self.salt,
+                purpose='user',
             ),
             raises(
                 exceptions.ConflictException,
