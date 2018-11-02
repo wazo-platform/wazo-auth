@@ -69,13 +69,19 @@ class Controller:
              'group_service': group_service,
              'config': config},
         )
+
+        self._purpose_metadata_mapping = self._process_purpose_mapping(
+            self._config['purpose_metadata_mapping'],
+            self._metadata_plugins,
+        )
+
         self._backends = plugin_helpers.load(
             'wazo_auth.backends',
             self._config['enabled_backend_plugins'],
             {'user_service': self._user_service,
              'group_service': group_service,
              'tenant_service': self._tenant_service,
-             'metadata_plugins': self._metadata_plugins,
+             'purpose_metadata_mapping': self._purpose_metadata_mapping,
              'config': config},
         )
         self._config['loaded_plugins'] = self._loaded_plugins_names(self._backends)
@@ -132,3 +138,28 @@ class Controller:
 
     def _loaded_plugins_names(self, backends):
         return [backend.name for backend in backends]
+
+    def _process_purpose_mapping(self, purpose_config, metadata_plugins):
+        purpose_mapping = {}
+        for purpose, plugins in purpose_config.items():
+            for plugin in plugins:
+                try:
+                    purpose_mapping[purpose][plugin] = metadata_plugins[plugin]
+                except KeyError:
+                    logger.warning("Unable to load metadata plugin: %s", plugin)
+
+        default_purpose_mapping = self._default_purpose_mapping(metadata_plugins)
+        purpose_mapping.update(default_purpose_mapping)
+        return purpose_mapping
+
+    def _default_purpose_mapping(self, metadata_plugins):
+        default_purpose = {
+            'user': {},
+            'internal': {},
+            'external_api': {},
+        }
+        try:
+            default_purpose['user']['default_wazo_user'] = metadata_plugins['default_wazo_user']
+        except KeyError:
+            logger.warning("Unable to load metadata plugin: default_wazo_user")
+        return default_purpose
