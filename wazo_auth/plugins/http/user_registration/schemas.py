@@ -13,3 +13,4 @@ class UserRegisterPostSchema(BaseSchema):
     firstname = fields.String(missing=None)
     lastname = fields.String(missing=None)
     email_address = fields.Email(required=True)
+    purpose = fields.Constant('user')

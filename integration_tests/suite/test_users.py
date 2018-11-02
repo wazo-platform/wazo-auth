@@ -178,12 +178,13 @@ class TestUsers(WazoAuthTestCase):
                 user = client.users.new(username='foo', tenant_uuid=subtenant['uuid'])
                 assert_that(user, has_entries(tenant_uuid=subtenant['uuid']))
 
-    @fixtures.http_user(username='foobar', firstname='foo', lastname='bar')
+    @fixtures.http_user(username='foobar', firstname='foo', lastname='bar', purpose='user')
     def test_put(self, user):
         user_uuid = user['uuid']
         body = {
             'username': 'foobaz',
             'firstname': 'baz',
+            'purpose': 'external_api',
             'enabled': False,
         }
 
@@ -199,6 +200,7 @@ class TestUsers(WazoAuthTestCase):
             username='foobaz',
             firstname='baz',
             lastname=None,
+            purpose='external_api',
             enabled=False,
         ))
 
