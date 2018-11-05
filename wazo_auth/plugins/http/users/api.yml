@@ -210,6 +210,13 @@ definitions:
       email_address:
         type: string
         description: The main email address of the new username
+      purpose:
+        type: string
+        default: user
+        enum:
+        - user
+        - internal
+        - external_api
     required:
       - username
   UserEdit:
@@ -226,6 +233,13 @@ definitions:
         description: "The user's lastname"
       enabled:
         type: boolean
+      purpose:
+        type: string
+        default: user
+        enum:
+        - user
+        - internal
+        - external_api
     required:
       - username
   UserEmail:
@@ -262,6 +276,12 @@ definitions:
           $ref: '#/definitions/UserEmail'
       uuid:
         type: string
+      purpose:
+        type: string
+        enum:
+        - user
+        - internal
+        - external_api
   UserResult:
     type: object
     properties:
@@ -273,6 +293,12 @@ definitions:
         type: string
       lastname:
         type: string
+      purpose:
+        type: string
+        enum:
+        - user
+        - internal
+        - external_api
       tenant_uuid:
         type: string
       emails:
