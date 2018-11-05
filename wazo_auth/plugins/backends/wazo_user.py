@@ -16,15 +16,15 @@ class WazoUser(UserAuthenticationBackend):
         self._group_service = dependencies['group_service']
         self._purposes = dependencies['purposes']
 
-    def get_acls(self, username, args):
+    def get_acls(self, login, args):
         backend_acl_templates = args.get('acl_templates', [])
         metadata = args.get('metadata', {})
-        group_acl_templates = self._group_service.get_acl_templates(username)
-        user_acl_templates = self._user_service.get_acl_templates(username)
+        group_acl_templates = self._group_service.get_acl_templates(login)
+        user_acl_templates = self._user_service.get_acl_templates(login)
 
         acl_templates = backend_acl_templates + group_acl_templates + user_acl_templates
 
-        return self.render_acl(acl_templates, self.get_user_data, username=username, metadata=metadata)
+        return self.render_acl(acl_templates, self.get_user_data, username=login, metadata=metadata)
 
     def verify_password(self, username, password, args):
         return self._user_service.verify_password(username, password)
