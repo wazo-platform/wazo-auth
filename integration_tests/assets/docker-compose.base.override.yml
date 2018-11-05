@@ -1,7 +1,6 @@
 version: '3'
 services:
   sync:
-    image: waisbrot/wait
     depends_on:
       - auth
       - postgres
@@ -9,7 +8,7 @@ services:
       - smtp
     environment:
       TARGETS: "auth:9497 postgres:5432 rabbitmq:5672 smtp:25"
-      TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
+
   auth:
     volumes:
       - "./templates/raw_password_reset_email.base.jinja:/var/lib/wazo-auth/templates/raw_password_reset_email.jinja"
