@@ -21,11 +21,11 @@ from wazo_auth.database import models
 from .helpers import fixtures, base
 
 
-def setup():
+def setup_module():
     base.DBStarter.setUpClass()
 
 
-def teardown():
+def teardown_module():
     base.DBStarter.tearDownClass()
 
 

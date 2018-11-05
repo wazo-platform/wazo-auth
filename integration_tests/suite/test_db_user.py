@@ -27,11 +27,11 @@ from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers import fixtures, base
 
 
-def setup():
+def setup_module():
     base.DBStarter.setUpClass()
 
 
-def teardown():
+def teardown_module():
     base.DBStarter.tearDownClass()
 
 

@@ -23,11 +23,11 @@ from .helpers import fixtures, base
 TENANT_UUID = 'a26c4ed8-767f-463e-a10a-42c4f220d375'
 
 
-def setup():
+def setup_module():
     base.DBStarter.setUpClass()
 
 
-def teardown():
+def teardown_module():
     base.DBStarter.tearDownClass()
 
 

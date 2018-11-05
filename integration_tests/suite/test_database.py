@@ -27,11 +27,11 @@ def new_uuid():
     return str(uuid.uuid4())
 
 
-def setup():
+def setup_module():
     base.DBStarter.setUpClass()
 
 
-def teardown():
+def teardown_module():
     base.DBStarter.tearDownClass()
 
 
