@@ -23,7 +23,6 @@ class UserPostSchema(_BaseUserSchema):
     uuid = fields.UUID()
     password = fields.String(validate=validate.Length(min=1), allow_none=True)
     email_address = fields.Email(allow_none=True)
-    metadata_plugins = fields.Dict(validate=validate.validate_string_dict)
 
 
 class UserPutSchema(_BaseUserSchema):
