@@ -136,7 +136,7 @@ class User(Base):
     password_hash = Column(Text)
     password_salt = Column(LargeBinary)
     purpose = Column(
-        String(256),
+        Text,
         CheckConstraint("purpose in ('user', 'internal', 'external_api')"),
         nullable=False,
     )

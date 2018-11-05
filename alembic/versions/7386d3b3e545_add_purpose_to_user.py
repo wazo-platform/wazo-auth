@@ -21,7 +21,7 @@ def upgrade():
         TABLE,
         sa.Column(
             COL,
-            sa.String(256),
+            sa.Text,
             sa.CheckConstraint("purpose in ('user', 'internal', 'external_api')"),
             server_default='user',
             nullable=False,
