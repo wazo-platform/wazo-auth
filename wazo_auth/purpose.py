@@ -7,11 +7,10 @@ logger = logging.getLogger()
 
 class Purpose:
 
-    def __init__(self, name, metadata_plugins=[]):
+    def __init__(self, name, metadata_plugins=None):
         self._name = name
-        self._metadata_plugins = set()
-        for plugin in metadata_plugins:
-            self._metadata_plugins.add(plugin)
+        metadata_plugins = metadata_plugins or []
+        self._metadata_plugins = [plugin for plugin in metadata_plugins]
 
     @property
     def name(self):
@@ -19,10 +18,11 @@ class Purpose:
 
     @property
     def metadata_plugins(self):
-        return self._metadata_plugins
+        return list(self._metadata_plugins)
 
     def add_metadata_plugin(self, metadata_plugin):
-        self._metadata_plugins.add(metadata_plugin)
+        if metadata_plugin not in self._metadata_plugins:
+            self._metadata_plugins.append(metadata_plugin)
 
     def __eq__(self, other):
         return self._name == other._name and self._metadata_plugins == other._metadata_plugins
