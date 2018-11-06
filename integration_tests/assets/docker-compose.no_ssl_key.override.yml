@@ -3,9 +3,6 @@ services:
   sync:
     depends_on:
       - auth
-      - postgres
-    environment:
-      TARGETS: "auth:9497 postgres:5432"
 
   auth:
     volumes:
