@@ -10,7 +10,7 @@ class Purpose:
     def __init__(self, name, metadata_plugins=None):
         self.name = name
         metadata_plugins = metadata_plugins or []
-        self._metadata_plugins = [plugin for plugin in metadata_plugins]
+        self._metadata_plugins = list(metadata_plugins)
 
     @property
     def metadata_plugins(self):
