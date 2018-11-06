@@ -9,7 +9,7 @@ test-db:
 	docker build -f ../contribs/docker/Dockerfile-db -t wazopbx/wazo-auth-db ..
 
 test-prerequisite:
-	docker pull waisbrot/wait
+	docker pull wazopbx/wait
 	docker pull wazopbx/postgres-test
 	docker pull swaggerapi/swagger-validator
 	docker pull rabbitmq
