@@ -140,3 +140,36 @@ class UserAuthenticationBackend(BaseAuthenticationBackend, ACLRenderingBackend,
             'endpoint_custom': custom,
             'agent': user['agent'],
         }
+
+
+class BaseMetadata(metaclass=abc.ABCMeta):
+
+    def __init__(self):
+        """Initialize this plugin instance from the given configuration"""
+        pass
+
+    def load(self, dependencies):
+        pass
+
+    def get_token_metadata(self, login, args):
+        """return user related data
+
+        These data are used in the body of the GET and POST of the /token and
+        also used for ACL rendering
+        """
+        return {}
+
+    def get_acl_metadata(self, *args, **kwargs):
+        """return acl related data
+
+        These data are used for ACL rendering
+        """
+        return {}
+
+    def get_xivo_uuid(self, _args):
+        """returns the xivo-uuid for this given backend
+
+        Will return the XIVO_UUID environment variable if the backend does not implement
+        this method.
+        """
+        return DEFAULT_XIVO_UUID

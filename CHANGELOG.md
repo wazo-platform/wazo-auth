@@ -4,6 +4,7 @@ Changelog
 18.13
 -----
 
+* A user now has a `purpose` property
 * The following URLs have been deprecated. Use `Wazo-Tenant` header instead:
 
   * GET `0.1/tenants/<tenant_uuid>/policies`

@@ -64,6 +64,14 @@ _DEFAULT_CONFIG = {
         'xivo_service': True,
         'wazo_user': True,
     },
+    'enabled_metadata_plugins': {
+        'default_wazo_user': True,
+    },
+    'purpose_metadata_mapping': {
+        'user': [],
+        'internal': [],
+        'external_api': [],
+    },
     'enabled_external_auth_plugins': {
     },
     'backend_policies': {

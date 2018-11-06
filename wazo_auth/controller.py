@@ -17,6 +17,7 @@ from . import bus, http, services, token
 from .database import queries
 from .flask_helpers import Tenant
 from .helpers import LocalTokenManager
+from .purpose import Purposes
 from .service_discovery import self_check
 
 logger = logging.getLogger(__name__)
@@ -62,12 +63,26 @@ class Controller:
         policy_service = services.PolicyService(dao, self._tenant_tree)
         self._user_service = services.UserService(dao, self._tenant_tree)
         self._tenant_service = services.TenantService(dao, self._tenant_tree, self._bus_publisher)
+        self._metadata_plugins = plugin_helpers.load(
+            'wazo_auth.metadata',
+            self._config['enabled_metadata_plugins'],
+            {'user_service': self._user_service,
+             'group_service': group_service,
+             'config': config},
+        )
+
+        self._purposes = Purposes(
+            self._config['purpose_metadata_mapping'],
+            self._metadata_plugins,
+        )
+
         self._backends = plugin_helpers.load(
             'wazo_auth.backends',
             self._config['enabled_backend_plugins'],
             {'user_service': self._user_service,
              'group_service': group_service,
              'tenant_service': self._tenant_service,
+             'purposes': self._purposes,
              'config': config},
         )
         self._config['loaded_plugins'] = self._loaded_plugins_names(self._backends)

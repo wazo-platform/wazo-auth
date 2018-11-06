@@ -59,5 +59,8 @@ setup(
             'user_policy = wazo_auth.plugins.http.user_policy.plugin:Plugin',
         ],
         'wazo_auth.external_auth': [],
+        'wazo_auth.metadata': [
+            'default_wazo_user = wazo_auth.plugins.metadata.default:DefaultWazoUser',
+        ],
     }
 )

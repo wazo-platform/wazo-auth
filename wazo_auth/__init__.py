@@ -4,6 +4,7 @@
 from wazo_auth.interfaces import (
     ACLRenderingBackend,
     BaseAuthenticationBackend,
+    BaseMetadata,
     DEFAULT_XIVO_UUID,
     UserAuthenticationBackend,
 )
@@ -11,6 +12,7 @@ from wazo_auth.interfaces import (
 __all__ = [
     'ACLRenderingBackend',
     'BaseAuthenticationBackend',
+    'BaseMetadata',
     'DEFAULT_XIVO_UUID',
     'UserAuthenticationBackend',
 ]
