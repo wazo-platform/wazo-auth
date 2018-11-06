@@ -157,7 +157,13 @@ class BaseMetadata(metaclass=abc.ABCMeta):
         These data are used in the body of the GET and POST of the /token and
         also used for ACL rendering
         """
-        return {}
+        metadata = {
+            'auth_id': None,
+            'username': login,
+            'xivo_uuid': self.get_xivo_uuid(args),
+            'xivo_user_uuid': None,
+        }
+        return metadata
 
     def get_acl_metadata(self, *args, **kwargs):
         """return acl related data
