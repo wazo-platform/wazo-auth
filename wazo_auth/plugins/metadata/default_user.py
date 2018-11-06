@@ -10,7 +10,7 @@ from xivo_confd_client import Client as ConfdClient
 logger = logging.getLogger(__name__)
 
 
-class DefaultWazoUser(BaseMetadata):
+class DefaultUser(BaseMetadata):
 
     def load(self, dependencies):
         super().load(dependencies)

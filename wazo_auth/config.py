@@ -65,7 +65,7 @@ _DEFAULT_CONFIG = {
         'wazo_user': True,
     },
     'enabled_metadata_plugins': {
-        'default_wazo_user': True,
+        'default_user': True,
     },
     'purpose_metadata_mapping': {
         'user': [],

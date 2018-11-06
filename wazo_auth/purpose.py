@@ -50,10 +50,10 @@ class Purposes:
 
     def _set_default_purposes(self, metadata_plugins):
         try:
-            plugin = metadata_plugins['default_wazo_user']
+            plugin = metadata_plugins['default_user']
         except KeyError:
             logger.warning("Purposes must have the following metadata plugins enabled: %s",
-                           'default_wazo_user')
+                           'default_user')
             return
         self._purposes['user'].add_metadata_plugin(plugin.obj)
 
