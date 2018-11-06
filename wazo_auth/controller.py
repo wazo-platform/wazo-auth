@@ -68,6 +68,7 @@ class Controller:
             self._config['enabled_metadata_plugins'],
             {'user_service': self._user_service,
              'group_service': group_service,
+             'tenant_service': self._tenant_service,
              'config': config},
         )
 

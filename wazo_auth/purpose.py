@@ -34,7 +34,8 @@ class Purposes:
     def __init__(self, purposes_config, metadata_plugins):
         self._metadata_plugins = metadata_plugins
         self._purposes = {purpose: Purpose(purpose) for purpose in self.valid_purposes}
-        self._set_default_purposes(metadata_plugins)
+        self._set_default_user_purpose(metadata_plugins)
+        self._set_default_internal_purpose(metadata_plugins)
 
         for purpose_name, plugin_names in purposes_config.items():
             purpose = self._purposes.get(purpose_name)
@@ -48,7 +49,7 @@ class Purposes:
                     continue
                 purpose.add_metadata_plugin(plugin.obj)
 
-    def _set_default_purposes(self, metadata_plugins):
+    def _set_default_user_purpose(self, metadata_plugins):
         try:
             plugin = metadata_plugins['default_user']
         except KeyError:
@@ -56,6 +57,15 @@ class Purposes:
                            'default_user')
             return
         self._purposes['user'].add_metadata_plugin(plugin.obj)
+
+    def _set_default_internal_purpose(self, metadata_plugins):
+        try:
+            plugin = metadata_plugins['default_internal']
+        except KeyError:
+            logger.warning("Purposes must have the following metadata plugins enabled: %s",
+                           'default_internal')
+            return
+        self._purposes['internal'].add_metadata_plugin(plugin.obj)
 
     def _get_metadata_plugins(self, name):
         try:
