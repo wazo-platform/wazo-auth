@@ -12,6 +12,6 @@ class InitPostSchema(BaseSchema):
     password = fields.String(validate=validate.Length(min=1), required=True)
     key = fields.String(validate=validate.Length(min=20, max=20), required=True)
     purpose = fields.String(
-        missing='user',
+        missing='internal',
         validate=validate.OneOf(['user', 'internal', 'external_api'])
     )

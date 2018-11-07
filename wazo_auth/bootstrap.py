@@ -38,6 +38,7 @@ auth:
 VALID_CHARS = string.digits + string.ascii_lowercase + string.ascii_uppercase
 USER = 'wazo-auth'
 USERNAME = 'wazo-auth-cli'
+PURPOSE = 'internal'
 URL = 'https://localhost:{}/0.1/init'
 HEADERS = {'Accept': 'application/json', 'Content-Type': 'application/json'}
 
@@ -78,6 +79,7 @@ def complete():
         'key': key,
         'username': USERNAME,
         'password': password,
+        'purpose': PURPOSE,
     }
 
     wazo_auth_config = read_config_file_hierarchy({'config_file': DEFAULT_WAZO_AUTH_CONFIG_FILE})

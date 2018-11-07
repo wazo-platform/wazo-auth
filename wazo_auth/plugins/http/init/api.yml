@@ -36,7 +36,7 @@ definitions:
         description: The password of the newly created username
       purpose:
         type: string
-        default: user
+        default: internal
         enum:
         - user
         - internal
