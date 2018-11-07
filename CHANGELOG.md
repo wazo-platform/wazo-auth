@@ -4,6 +4,7 @@ Changelog
 18.13
 -----
 
+* `POST /init` can now take the purpose attribute
 * A user now has a `purpose` property
 * The following URLs have been deprecated. Use `Wazo-Tenant` header instead:
 

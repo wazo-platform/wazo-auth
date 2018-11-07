@@ -34,6 +34,13 @@ definitions:
       password:
         type: string
         description: The password of the newly created username
+      purpose:
+        type: string
+        default: user
+        enum:
+        - user
+        - internal
+        - external_api
     required:
       - key
       - username
