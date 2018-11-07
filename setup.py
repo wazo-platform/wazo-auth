@@ -62,6 +62,7 @@ setup(
         'wazo_auth.metadata': [
             'default_user = wazo_auth.plugins.metadata.default_user:DefaultUser',
             'default_internal = wazo_auth.plugins.metadata.default_internal:DefaultInternal',
+            'default_external_api = wazo_auth.plugins.metadata.default_external_api:DefaultExternalAPI',
         ],
     }
 )

@@ -90,11 +90,19 @@ class TestPurposes(unittest.TestCase):
     def test_get_default(self):
         purposes_config = {}
         plugin = Mock()
-        metadata_plugins = {'default_user': Mock(obj=plugin)}
+        metadata_plugins = {
+            'default_user': Mock(obj=plugin),
+            'default_internal': Mock(obj=plugin),
+            'default_external_api': Mock(obj=plugin),
+        }
         purposes = Purposes(purposes_config, metadata_plugins)
-        expected_purpose = Purpose('user', [plugin])
+        expected_purpose_user = Purpose('user', [plugin])
+        expected_purpose_internal = Purpose('internal', [plugin])
+        expected_purpose_external_api = Purpose('external_api', [plugin])
 
-        assert_that(purposes.get('user'), equal_to(expected_purpose))
+        assert_that(purposes.get('user'), equal_to(expected_purpose_user))
+        assert_that(purposes.get('internal'), equal_to(expected_purpose_internal))
+        assert_that(purposes.get('external_api'), equal_to(expected_purpose_external_api))
 
     def test_get_default_when_no_loaded(self):
         purposes_config = {}

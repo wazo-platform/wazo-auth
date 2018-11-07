@@ -67,6 +67,7 @@ _DEFAULT_CONFIG = {
     'enabled_metadata_plugins': {
         'default_user': True,
         'default_internal': True,
+        'default_external_api': True,
     },
     'purpose_metadata_mapping': {
         'user': [],
