@@ -6,7 +6,7 @@ services:
       - postgres
       - slapd
     environment:
-      TARGETS: "slapd:389 postgres:5432 rabbitmq:9497"
+      TARGETS: "slapd:389 postgres:5432 auth:9497"
 
   postgres:
     volumes:
