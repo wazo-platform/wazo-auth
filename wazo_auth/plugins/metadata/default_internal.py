@@ -12,13 +12,11 @@ class DefaultInternal(BaseMetadata):
 
     def load(self, dependencies):
         super().load(dependencies)
-        self._user_service = dependencies['user_service']
         self._tenant_service = dependencies['tenant_service']
 
     def get_token_metadata(self, login, args):
         metadata = super().get_token_metadata(login, args)
-        metadata['uuid'] = self._user_service.list_users(username=login)[0]['uuid']
-        metadata['auth_id'] = metadata['uuid']
+        metadata['uuid'] = metadata['auth_id']
         metadata['tenant_uuid'] = self._tenant_service.find_top_tenant()
         return metadata
 
