@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -10,7 +10,7 @@ from xivo_confd_client import Client as ConfdClient
 logger = logging.getLogger(__name__)
 
 
-class DefaultWazoUser(BaseMetadata):
+class DefaultUser(BaseMetadata):
 
     def load(self, dependencies):
         super().load(dependencies)

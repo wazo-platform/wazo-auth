@@ -149,7 +149,7 @@ class BaseMetadata(metaclass=abc.ABCMeta):
         pass
 
     def load(self, dependencies):
-        pass
+        self._user_service = dependencies['user_service']
 
     def get_token_metadata(self, login, args):
         """return user related data
@@ -157,7 +157,14 @@ class BaseMetadata(metaclass=abc.ABCMeta):
         These data are used in the body of the GET and POST of the /token and
         also used for ACL rendering
         """
-        return {}
+        auth_uuid = self._user_service.list_users(username=login)[0]['uuid']
+        metadata = {
+            'auth_id': auth_uuid,
+            'username': login,
+            'xivo_uuid': self.get_xivo_uuid(args),
+            'xivo_user_uuid': None,
+        }
+        return metadata
 
     def get_acl_metadata(self, *args, **kwargs):
         """return acl related data
