@@ -91,6 +91,7 @@ user_strict_filter = StrictFilter(
     ('username', User.username, None),
     ('firstname', User.firstname, None),
     ('lastname', User.lastname, None),
+    ('purpose', User.purpose, None),
     ('email_address', Email.address, None),
     ('group_uuid', UserGroup.group_uuid, str),
 )
