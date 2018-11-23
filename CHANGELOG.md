@@ -1,6 +1,12 @@
 Changelog
 =========
 
+18.14
+-----
+
+* The backend option in `POST /tokens` is now optional. The default value is `wazo_user`
+
+
 18.13
 -----
 
