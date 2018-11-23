@@ -45,7 +45,7 @@ class TestInit(BaseTestCase):
         result = self.client.init.run(username='foo', password='bar', key=self.key)
         assert_that(result, has_entries(uuid=ANY_UUID, emails=empty(), username='foo'))
 
-        token_data = self._post_token('foo', 'bar', backend='wazo_user', expiration=10)
+        token_data = self._post_token('foo', 'bar', expiration=10)
         self.client.set_token(token_data['token'])
 
         user_tenants = self.client.users.get_tenants(result['uuid'])

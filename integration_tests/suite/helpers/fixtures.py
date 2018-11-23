@@ -64,7 +64,7 @@ def http_admin_client(**decorator_args):
             self.client.users.add_policy(creator['uuid'], policy['uuid'])
 
             creator_client = self.new_auth_client(username='creator', password='opensesame')
-            creator_token = creator_client.token.new(backend='wazo_user')
+            creator_token = creator_client.token.new()
             creator_client.set_token(creator_token['token'])
 
             tenant = creator_client.tenants.new(name=decorator_args['tenant_name'])
@@ -77,7 +77,7 @@ def http_admin_client(**decorator_args):
             )
 
             created_client = self.new_auth_client(username=username, password=password)
-            created_token = created_client.token.new(backend='wazo_user')
+            created_token = created_client.token.new()
             created_client.set_token(created_token['token'])
 
             self.client.users.delete(creator['uuid'])
