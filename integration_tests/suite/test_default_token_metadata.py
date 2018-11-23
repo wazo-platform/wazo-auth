@@ -18,7 +18,7 @@ class TestDefaultTokenMetadata(WazoAuthTestCase):
         top_tenant = self.get_top_tenant()
         self.client.groups.add_user(group['uuid'], user['uuid'])
 
-        token_data = self._post_token(user['username'], 's3cr37', backend='wazo_user')
+        token_data = self._post_token(user['username'], 's3cr37')
 
         assert_that(token_data['metadata'], has_entries(
             uuid=user['uuid'],
@@ -35,7 +35,7 @@ class TestDefaultTokenMetadata(WazoAuthTestCase):
     def test_internal_purpose_metadata(self, user):
         top_tenant = self.get_top_tenant()
 
-        token_data = self._post_token(user['username'], 's3cr37', backend='wazo_user')
+        token_data = self._post_token(user['username'], 's3cr37')
 
         assert_that(token_data['metadata'], has_entries(
             uuid=user['uuid'],
@@ -49,7 +49,7 @@ class TestDefaultTokenMetadata(WazoAuthTestCase):
 
     @fixtures.http_user(password='s3cr37', purpose='external_api')
     def test_external_api_purpose_metadata(self, user):
-        token_data = self._post_token(user['username'], 's3cr37', backend='wazo_user')
+        token_data = self._post_token(user['username'], 's3cr37')
 
         assert_that(token_data['metadata'], has_entries(
             uuid=user['uuid'],

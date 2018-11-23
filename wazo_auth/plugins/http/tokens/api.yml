@@ -18,16 +18,15 @@ paths:
       - name: body
         in: body
         description: The token creation parameters
-        required: true
+        required: false
         schema:
           type: object
           properties:
             backend:
               type: string
+              default: wazo_user
             expiration:
               type: integer
-          required:
-          - backend
       responses:
         '200':
           description: "The created token's data"

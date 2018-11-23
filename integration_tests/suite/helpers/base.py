@@ -120,11 +120,12 @@ class BaseTestCase(AuthLaunchingTestCase):
 
     def _post_token(self, username, password, backend=None, expiration=None):
         client = self.new_auth_client(username, password)
-        backend = backend or 'wazo_user'
         args = {}
+        if backend:
+            args['backend'] = backend
         if expiration:
             args['expiration'] = expiration
-        return client.token.new(backend, **args)
+        return client.token.new(**args)
 
     def _post_token_with_expected_exception(self, username, password, backend=None, expiration=None,
                                             status_code=None, msg=None):
