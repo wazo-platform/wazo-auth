@@ -12,7 +12,6 @@ enabled_backend_plugins:
   broken_init: true
   broken_verify_password: true
   wazo_user: true
-  xivo_service: false
   xivo_admin: false
 backend_policies:
   wazo_user: wazo_default_admin_policy # For testing only, not a legitimate configuration

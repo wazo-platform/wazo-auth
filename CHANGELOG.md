@@ -5,6 +5,7 @@ Changelog
 -----
 
 * The backend option in `POST /tokens` is now optional. The default value is `wazo_user`
+* The backend `xivo_service` has been removed
 
 
 18.13
