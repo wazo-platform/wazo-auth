@@ -56,8 +56,12 @@ class TestLocalTokenManager(unittest.TestCase):
     def setUp(self):
         self._token_manager = Mock()
         self._backend = Mock()
+        self._user_service = Mock()
+        self._user_service.list_users.return_value = [Mock()]
 
-        self.local_token_manager = LocalTokenManager(self._backend, self._token_manager)
+        self.local_token_manager = LocalTokenManager(
+            self._backend, self._token_manager, self._user_service
+        )
 
     def test_get_token_first_token(self):
         token = self.local_token_manager.get_token()
@@ -72,6 +76,12 @@ class TestLocalTokenManager(unittest.TestCase):
         token_2 = self.local_token_manager.get_token()
 
         assert_that(token_1, equal_to(token_2))
+
+    def test_that_a_new_token_does_nothing_when_no_user(self):
+        self._user_service.list_users.return_value = []
+        token = self.local_token_manager.get_token()
+
+        assert_that(token, equal_to(None))
 
     def test_that_revoke_token_does_nothing_when_no_token(self):
         self.local_token_manager.revoke_token()
