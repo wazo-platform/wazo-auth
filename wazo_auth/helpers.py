@@ -1,10 +1,14 @@
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
+import logging
 import time
+
 from functools import partial
 from jinja2 import StrictUndefined, Template
 from jinja2.exceptions import UndefinedError
+
+logger = logging.getLogger(__name__)
 
 
 class LazyTemplateRenderer:
@@ -46,9 +50,11 @@ class LazyTemplateRenderer:
 
 class LocalTokenManager:
 
-    def __init__(self, backend, token_manager):
-        self._new_token = partial(token_manager.new_token, backend.obj, 'wazo-auth')
+    def __init__(self, backend, token_manager, user_service):
+        self._username = 'wazo-auth'
+        self._new_token = partial(token_manager.new_token, backend.obj, self._username)
         self._remove_token = token_manager.remove_token
+        self._user_service = user_service
         self._token = None
         self._renew_time = time.time() - 5
         self._delay = 3600
@@ -56,10 +62,19 @@ class LocalTokenManager:
 
     def get_token(self):
         if self._need_new_token():
+            if not self._user_exists(self._username):
+                logger.info('%s user not found no local token will be created', self._username)
+                return
+
             self._renew_time = time.time() + self._delay - self._threshold
             self._token = self._new_token({'expiration': 3600, 'backend': 'wazo_user'})
 
         return self._token.token
+
+    def _user_exists(self, username):
+        if self._user_service.list_users(username=username):
+            return True
+        return False
 
     def revoke_token(self):
         if self._token:

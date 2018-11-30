@@ -136,7 +136,7 @@ class Controller:
             logger.info('wazo_user disabled no internal token will be created for wazo-auth')
             return
 
-        return LocalTokenManager(backend, self._token_manager)
+        return LocalTokenManager(backend, self._token_manager, self._user_service)
 
     def _loaded_plugins_names(self, backends):
         return [backend.name for backend in backends]

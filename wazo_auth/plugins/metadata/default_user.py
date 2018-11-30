@@ -42,6 +42,10 @@ class DefaultUser(BaseMetadata):
             return {}
 
         token = local_token_manager.get_token()
+        if not token:
+            logger.info('cannot create local token')
+            return {}
+
         confd_client = ConfdClient(token=token, **self._confd_config)
         user_uuid = kwargs.get('uuid')
         if not user_uuid:
