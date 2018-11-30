@@ -77,7 +77,7 @@ class Token(BaseResource):
         if not tenant:
             return
 
-        # TODO: when the xivo_admin and ldap_user gets remove all tokens will have a UUID
+        # TODO: when the ldap_user gets remove all tokens will have a UUID
         user_uuid = token['metadata'].get('uuid')
         if not user_uuid:
             # Fallback on the token data since this is not a user token
