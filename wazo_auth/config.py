@@ -61,7 +61,6 @@ _DEFAULT_CONFIG = {
     },
     'enabled_backend_plugins': {
         'xivo_admin': True,
-        'xivo_service': True,
         'wazo_user': True,
     },
     'enabled_metadata_plugins': {

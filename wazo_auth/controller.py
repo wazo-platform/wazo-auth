@@ -131,9 +131,9 @@ class Controller:
 
     def _get_local_token_manager(self):
         try:
-            backend = self._backends['xivo_service']
+            backend = self._backends['wazo_user']
         except KeyError:
-            logger.info('xivo_service disabled no service token will be created for wazo-auth')
+            logger.info('wazo_user disabled no internal token will be created for wazo-auth')
             return
 
         return LocalTokenManager(backend, self._token_manager)

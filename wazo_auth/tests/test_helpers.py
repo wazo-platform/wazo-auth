@@ -1,4 +1,4 @@
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import unittest
@@ -63,7 +63,7 @@ class TestLocalTokenManager(unittest.TestCase):
         token = self.local_token_manager.get_token()
 
         self._token_manager.new_token.assert_called_once_with(
-            self._backend.obj, 'wazo-auth', {'expiration': 3600, 'backend': 'xivo_service'})
+            self._backend.obj, 'wazo-auth', {'expiration': 3600, 'backend': 'wazo_user'})
 
         assert_that(token, equal_to(self._token_manager.new_token.return_value.token))
 

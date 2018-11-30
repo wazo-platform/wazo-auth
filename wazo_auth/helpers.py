@@ -57,7 +57,7 @@ class LocalTokenManager:
     def get_token(self):
         if self._need_new_token():
             self._renew_time = time.time() + self._delay - self._threshold
-            self._token = self._new_token({'expiration': 3600, 'backend': 'xivo_service'})
+            self._token = self._new_token({'expiration': 3600, 'backend': 'wazo_user'})
 
         return self._token.token
 
