@@ -19,7 +19,7 @@ sqlalchemy==1.0.15
 stevedore==1.17.1
 unidecode==0.04.19
 alembic==0.8.8
-marshmallow==2.15.3
+marshmallow==2.16.3
 jinja2==2.10
 netifaces==0.10.4
 websocket-client==0.37.0
