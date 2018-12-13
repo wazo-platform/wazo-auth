@@ -1,6 +1,12 @@
 Changelog
 =========
 
+19.01
+-----
+
+* The backend `xivo_admin` has been removed
+
+
 18.14
 -----
 
