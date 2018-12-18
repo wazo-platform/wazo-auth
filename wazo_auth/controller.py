@@ -56,6 +56,7 @@ class Controller:
         dao = queries.DAO.from_config(self._config)
         self._tenant_tree = services.helpers.TenantTree(dao.tenant)
         self._token_manager = token.Manager(config, dao, self._tenant_tree)
+        self._backends = BackendsProxy()
         email_service = services.EmailService(dao, self._tenant_tree, config, template_formatter)
         external_auth_service = services.ExternalAuthService(
             dao, self._tenant_tree, config, self._bus_publisher, config['enabled_external_auth_plugins'])
@@ -69,6 +70,8 @@ class Controller:
             {'user_service': self._user_service,
              'group_service': group_service,
              'tenant_service': self._tenant_service,
+             'token_manager': self._token_manager,
+             'backends': self._backends,
              'config': config},
         )
 
@@ -77,7 +80,7 @@ class Controller:
             self._metadata_plugins,
         )
 
-        self._backends = plugin_helpers.load(
+        backends = plugin_helpers.load(
             'wazo_auth.backends',
             self._config['enabled_backend_plugins'],
             {'user_service': self._user_service,
@@ -86,6 +89,7 @@ class Controller:
              'purposes': self._purposes,
              'config': config},
         )
+        self._backends.set_backends(backends)
         self._config['loaded_plugins'] = self._loaded_plugins_names(self._backends)
         dependencies = {
             'backends': self._backends,
@@ -140,3 +144,18 @@ class Controller:
 
     def _loaded_plugins_names(self, backends):
         return [backend.name for backend in backends]
+
+
+class BackendsProxy:
+
+    def __init__(self):
+        self._backends = {}
+
+    def set_backends(self, backends):
+        self._backends = backends
+
+    def __getitem__(self, key):
+        return self._backends[key]
+
+    def __iter__(self):
+        return iter(self._backends)
