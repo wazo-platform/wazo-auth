@@ -32,7 +32,6 @@ setup(
         ],
         'wazo_auth.backends': [
             'wazo_user = wazo_auth.plugins.backends.wazo_user:WazoUser',
-            'xivo_admin = wazo_auth.plugins.backends.xivo_admin:XiVOAdmin',
             'ldap_user = wazo_auth.plugins.backends.ldap_user:LDAPUser',
             'broken_init = wazo_auth.plugins.backends.broken:BrokenInitBackend',
             'broken_verify_password = wazo_auth.plugins.backends.broken:BrokenVerifyPasswordBackend',
