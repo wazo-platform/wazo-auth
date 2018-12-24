@@ -26,8 +26,14 @@ _DEFAULT_CONFIG = {
     'password_reset_expiration': 172800,
     'password_reset_from_name': 'wazo-auth',
     'password_reset_from_address': 'noreply@wazo.community',
-    'password_reset_email_template': '/var/lib/wazo-auth/templates/password_reset_email.jinja',
-    'password_reset_email_subject_template': '/var/lib/wazo-auth/templates/password_reset_email_subject.jinja',
+    'password_reset_email_templates': {
+        'en': '/var/lib/wazo-auth/templates/en/password_reset_email.jinja',
+        'fr': '/var/lib/wazo-auth/templates/fr/password_reset_email.jinja',
+    },
+    'password_reset_email_subject_templates': {
+        'en': '/var/lib/wazo-auth/templates/en/password_reset_email_subject.jinja',
+        'fr': '/var/lib/wazo-auth/templates/fr/password_reset_email_subject.jinja',
+    },
 
     'email_confirmation_expiration': 172800,
     'email_confirmation_template': '/var/lib/wazo-auth/templates/email_confirmation.jinja',
