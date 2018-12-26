@@ -10,6 +10,8 @@ from .tenant import TenantDAO
 from .token import TokenDAO
 from .user import UserDAO
 
+from xivo import sqlalchemy_helper
+
 
 class DAO:
 
@@ -25,6 +27,7 @@ class DAO:
     }
 
     def __init__(self, **kwargs):
+        sqlalchemy_helper.handle_db_restart()
         for name, dao in kwargs.items():
             setattr(self, name, dao)
 
