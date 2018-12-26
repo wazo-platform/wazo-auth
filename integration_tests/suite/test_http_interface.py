@@ -238,6 +238,14 @@ class TestCore(WazoAuthTestCase):
 
         self._get_token(token, acls='foo')  # no exception
 
+    def test_query_after_database_restart(self):
+        token = self._post_token('foo', 'bar')['token']
+
+        self.restart_postgres()
+
+        token = self._post_token('foo', 'bar')['token']
+        assert_that(self._is_valid(token))
+
     def _is_token_in_the_db(self, token):
         db_uri = os.getenv('DB_URI', 'postgresql://asterisk:proformatique@localhost:{port}')
         dao = TokenDAO(db_uri.format(port=self.service_port(5432, 'postgres')))

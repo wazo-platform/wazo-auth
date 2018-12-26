@@ -3,7 +3,10 @@
 
 from contextlib import contextmanager
 from sqlalchemy import create_engine
+from sqlalchemy import event
+from sqlalchemy import exc
 from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.pool import Pool
 from ... import exceptions
 
 
@@ -84,3 +87,19 @@ class BaseDAO:
             raise
         finally:
             self._Session.remove()
+
+
+# http://stackoverflow.com/questions/34828113/flask-sqlalchemy-losing-connection-after-restarting-of-db-server
+@event.listens_for(Pool, "checkout")
+def ping_connection(dbapi_connection, connection_record, connection_proxy):
+    del connection_record
+    del connection_proxy
+
+    cursor = dbapi_connection.cursor()
+    try:
+        cursor.execute("SELECT 1")
+    except:
+        # raise DisconnectionError - pool will try
+        # connecting again up to three times before raising.
+        raise exc.DisconnectionError()
+    cursor.close()

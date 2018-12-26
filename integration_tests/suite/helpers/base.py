@@ -18,12 +18,15 @@ from hamcrest import (
     has_properties,
     equal_to,
 )
+from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
 from xivo_auth_client import Client
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.bus import BusClient
 from wazo_auth.database import queries
 from wazo_auth.database.queries import group, policy, tenant, token, user
+
+from .database import Database
 
 DB_URI = os.getenv('DB_URI', 'postgresql://asterisk:proformatique@localhost:{port}')
 HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
@@ -183,6 +186,16 @@ class BaseTestCase(AuthLaunchingTestCase):
             kwargs['password'] = password
 
         return Client(cls.auth_host, **kwargs)
+
+    @classmethod
+    def new_db_client(cls):
+        db_uri = DB_URI.format(port=cls.service_port(5432, 'postgres'))
+        return Database(db_uri, db='asterisk')
+
+    def restart_postgres(self):
+        self.restart_service('postgres')
+        database = self.new_db_client()
+        until.true(database.is_up, timeout=5, message='Postgres did not come back up')
 
 
 class WazoAuthTestCase(BaseTestCase):
