@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 from functools import partial
@@ -135,7 +135,7 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
     @fixtures.http_user_register(username='foo', password='bar')
     @fixtures.http_group(name='one')
     @fixtures.http_policy(name='main', acl_templates=[
-        '{% for group in groups %}\n{% for user in group.users %}\nuser.{{ user.uuid }}.*\n{% endfor %}\n{% endfor %}'
+        '{% for group in groups %}{% for user in group.users %}user.{{ user.uuid }}.*:{% endfor %}{% endfor %}'
     ])
     def test_generated_acl_with_group_data(self, policy, group, *users):
         for user in users:
