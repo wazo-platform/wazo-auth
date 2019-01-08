@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -16,6 +16,7 @@ class DefaultUser(BaseMetadata):
         super().load(dependencies)
         self._user_service = dependencies['user_service']
         self._group_service = dependencies['group_service']
+        self._tenant_service = dependencies['tenant_service']
         self._config = dependencies['config']
         self._confd_config = self._config['confd']
 
@@ -23,6 +24,13 @@ class DefaultUser(BaseMetadata):
         user_uuid = self._get_user_uuid(login)
         groups = self._get_groups(user_uuid)
         user = self._user_service.get_user(user_uuid)
+        tenant_uuid = user['tenant_uuid']
+        tenant = self._tenant_service.get(scoping_tenant_uuid=tenant_uuid, uuid=tenant_uuid)
+        sub_tenant_uuids = self._tenant_service.list_sub_tenants(tenant_uuid)
+        sub_tenants = [
+            self._tenant_service.get(scoping_tenant_uuid=tenant_uuid, uuid=sub_tenant_uuid)
+            for sub_tenant_uuid in sub_tenant_uuids
+        ]
 
         metadata = {
             'auth_id': user_uuid,
@@ -31,6 +39,21 @@ class DefaultUser(BaseMetadata):
             'xivo_uuid': self.get_xivo_uuid(args),
             'uuid': user_uuid,
             'tenant_uuid': user['tenant_uuid'],
+            'visible_tenants': (
+                [
+                    {
+                        'uuid': tenant['uuid'],
+                        'name': tenant['name'],
+                    }
+                ] +
+                [
+                    {
+                        'uuid': sub_tenant['uuid'],
+                        'name': sub_tenant['name'],
+                    }
+                    for sub_tenant in sub_tenants
+                ]
+            ),
             'groups': groups,
         }
         return metadata
