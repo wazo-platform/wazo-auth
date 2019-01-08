@@ -1,4 +1,4 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import abc
@@ -47,12 +47,6 @@ class BaseAuthenticationBackend(metaclass=abc.ABCMeta):
             'xivo_uuid': self.get_xivo_uuid(args),
             'xivo_user_uuid': None,
         }
-
-        # Old plugin had a get_ids method that returned the auth_id and the xivo_user_uuid
-        if hasattr(self, 'get_ids'):
-            auth_id, xivo_user_uuid = self.get_ids(login, args)
-            metadata['auth_id'] = auth_id
-            metadata['xivo_user_uuid'] = xivo_user_uuid
 
         return metadata
 

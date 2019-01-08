@@ -1,6 +1,12 @@
 Changelog
 =========
 
+19.02
+-----
+
+* Old method `get_ids` for backend has been removed
+
+
 19.01
 -----
 
