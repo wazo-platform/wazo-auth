@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -32,12 +32,13 @@ class LazyTemplateRenderer:
         template = Template(acl_template, undefined=StrictUndefined)
         try:
             rendered_template = template.render(self._data)
-            for acl in rendered_template.split('\n'):
+            for acl in rendered_template.split(':'):
                 if acl:
                     yield acl
-        except UndefinedError:
+        except UndefinedError as e:
             # _data is only fetched if needed
             if self._initialized:
+                logger.debug('Missing data when rendering ACL template: %s', e)
                 return
             self._initialized = True
             remote_data = self._get_data_fn(*self._args, **self._kwargs)
