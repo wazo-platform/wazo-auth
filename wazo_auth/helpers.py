@@ -32,7 +32,7 @@ class LazyTemplateRenderer:
         template = Template(acl_template, undefined=StrictUndefined)
         try:
             rendered_template = template.render(self._data)
-            for acl in rendered_template.split('\n'):
+            for acl in rendered_template.split(':'):
                 if acl:
                     yield acl
         except UndefinedError as e:

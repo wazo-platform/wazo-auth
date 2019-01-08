@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import unittest
@@ -37,7 +37,7 @@ class TestLazyTemplateRenderer(unittest.TestCase):
 
         templates = [
             'dird.me.#',
-            '{% for line in lines %}\nconfd.lines.{{ line }}.#\n{% endfor %}',
+            '{% for line in lines %}confd.lines.{{ line }}.#:{% endfor %}',
         ]
         renderer = LazyTemplateRenderer(templates, get)
 
