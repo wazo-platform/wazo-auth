@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -6,7 +6,6 @@ import logging
 from flask import request
 from xivo.auth_verifier import extract_token_id_from_query_or_header, Unauthorized
 from wazo_auth import http
-from wazo_auth.exceptions import UnknownUserException
 from .schemas import PasswordResetPostParameters, PasswordResetQueryParameters
 from .exceptions import PasswordResetException
 
@@ -26,12 +25,13 @@ class PasswordReset(http.ErrorCatchingResource):
             raise PasswordResetException.from_errors(errors)
 
         logger.debug('resetting password for %s', args['username'] or args['email_address'])
-        try:
-            user = self.user_service.delete_password(**args)
-        except UnknownUserException:
+        search_params = {k: v for k, v in args.items() if v}
+        users = self.user_service.list_users(**search_params)
+        if not users:
             # We do not want to leak the information if a user exists or not
             logger.debug('Failed to reset password %s', args)
         else:
+            user = users[0]
             logger.debug('user: %s', user)
             email_address = args['email_address'] or self._extract_email(user)
             if email_address:

@@ -5,6 +5,7 @@ Changelog
 -----
 
 * Old method `get_ids` for backend has been removed
+* GET on `/users/password/reset` does not delete the current password anymore
 
 
 19.01

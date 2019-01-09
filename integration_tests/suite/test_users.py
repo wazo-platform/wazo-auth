@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import json
@@ -44,7 +44,7 @@ class TestUsers(WazoAuthTestCase):
 
     @fixtures.http_user(username='foobar', password='foobar', email_address='foobar@example.com')
     @fixtures.http_user(username='foobaz', password='foobaz', email_address='foobaz@example.com')
-    def test_password_reset(self, foobaz, foobar):
+    def test_password_reset_does_not_disable_old_password(self, foobaz, foobar):
         assert_no_error(self.client.users.reset_password, username='unknown')
         assert_no_error(self.client.users.reset_password, email='unknown@example.com')
         assert_http_error(400, self.client.users.reset_password, username='foobar', email='foobar@example.com')
@@ -52,12 +52,12 @@ class TestUsers(WazoAuthTestCase):
         self.client.users.reset_password(username='foobar')
 
         user_client = self.new_auth_client('foobar', 'foobar')
-        assert_http_error(401, user_client.token.new, 'wazo_user')
+        assert_no_error(user_client.token.new, 'wazo_user')
 
         self.client.users.reset_password(email='foobaz@example.com')
 
         user_client = self.new_auth_client('foobaz', 'foobaz')
-        assert_http_error(401, user_client.token.new, 'wazo_user')
+        assert_no_error(user_client.token.new, 'wazo_user')
 
     def test_post_no_token(self):
         args = {
