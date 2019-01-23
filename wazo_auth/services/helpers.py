@@ -1,8 +1,9 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
 import os
+import threading
 
 from jinja2 import BaseLoader, Environment, TemplateNotFound
 from anytree import Node, PreOrderIter
@@ -137,3 +138,22 @@ class TenantTree:
                 inserted_tenants.add(tenant['uuid'])
 
         return top
+
+
+class CachedTenantTree(TenantTree):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._tree_lock = threading.Lock()
+        self._top = None
+
+    def _build_tree(self, tenants):
+        with self._tree_lock:
+            if self._top is None:
+                self._top = super()._build_tree(tenants)
+
+            return self._top
+
+    def invalidate(self):
+        with self._tree_lock:
+            self._top = None

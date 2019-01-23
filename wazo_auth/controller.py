@@ -1,4 +1,4 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
@@ -54,7 +54,7 @@ class Controller:
         template_formatter = services.helpers.TemplateFormatter(config)
         self._bus_publisher = bus.BusPublisher(config)
         dao = queries.DAO.from_config(self._config)
-        self._tenant_tree = services.helpers.TenantTree(dao.tenant)
+        self._tenant_tree = services.helpers.CachedTenantTree(dao.tenant)
         self._token_manager = token.Manager(config, dao, self._tenant_tree)
         self._backends = BackendsProxy()
         email_service = services.EmailService(dao, self._tenant_tree, config, template_formatter)
