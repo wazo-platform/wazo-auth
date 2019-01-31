@@ -3,15 +3,15 @@
 
 from .base import BaseDAO
 from ..models import (
-    Session as SessionModel,
-    Token as TokenModel,
+    Session,
+    Token,
 )
 
 
 class SessionDAO(BaseDAO):
 
     def create(self, **args):
-        session = SessionModel(**args)
+        session = Session(**args)
         with self.new_session() as s:
             s.add(session)
             s.commit()
@@ -19,6 +19,6 @@ class SessionDAO(BaseDAO):
 
     def delete_expired(self):
         with self.new_session() as s:
-            subquery = s.query(SessionModel.uuid).outerjoin(TokenModel).filter(TokenModel.uuid == None)
-            query = s.query(SessionModel).filter(SessionModel.uuid.in_(subquery.subquery()))
+            subquery = s.query(Session.uuid).outerjoin(Token).filter(Token.uuid == None)
+            query = s.query(Session).filter(Session.uuid.in_(subquery.subquery()))
             query.delete(synchronize_session=False)
