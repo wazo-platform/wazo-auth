@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -24,7 +24,7 @@ from xivo_auth_client import Client
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.bus import BusClient
 from wazo_auth.database import queries
-from wazo_auth.database.queries import group, policy, tenant, token, user
+from wazo_auth.database.queries import group, policy, tenant, token, user, session
 
 from .database import Database
 
@@ -72,6 +72,7 @@ class DAOTestCase(unittest.TestCase):
         self._user_dao = user.UserDAO(db_uri)
         self._tenant_dao = tenant.TenantDAO(db_uri)
         self._token_dao = token.TokenDAO(db_uri)
+        self._session_dao = session.SessionDAO(db_uri)
 
         self.top_tenant_uuid = self._tenant_dao.find_top_tenant()
 

@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from .address import AddressDAO
@@ -6,6 +6,7 @@ from .email import EmailDAO
 from .external_auth import ExternalAuthDAO
 from .group import GroupDAO
 from .policy import PolicyDAO
+from .session import SessionDAO
 from .tenant import TenantDAO
 from .token import TokenDAO
 from .user import UserDAO
@@ -21,6 +22,7 @@ class DAO:
         'external_auth': ExternalAuthDAO,
         'group': GroupDAO,
         'policy': PolicyDAO,
+        'session': SessionDAO,
         'tenant': TenantDAO,
         'token': TokenDAO,
         'user': UserDAO,
