@@ -2,14 +2,23 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from .base import BaseDAO
-from ..models import Session as SessionModel
+from ..models import (
+    Session as SessionModel,
+    Token as TokenModel,
+)
 
 
 class SessionDAO(BaseDAO):
 
-    def create(self, body=None):
-        session = SessionModel()
+    def create(self, **args):
+        session = SessionModel(**args)
         with self.new_session() as s:
             s.add(session)
             s.commit()
             return session.uuid
+
+    def delete_expired(self):
+        with self.new_session() as s:
+            subquery = s.query(SessionModel.uuid).outerjoin(TokenModel).filter(TokenModel.uuid == None)
+            query = s.query(SessionModel).filter(SessionModel.uuid.in_(subquery.subquery()))
+            query.delete(synchronize_session=False)

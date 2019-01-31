@@ -1,14 +1,18 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
 import random
 import string
+import time
+import uuid
+
 import requests
 
 from functools import wraps
 
 from wazo_auth import exceptions
+from wazo_auth.database import models
 
 
 A_SALT = os.urandom(64)
@@ -47,6 +51,55 @@ def external_auth(*auth_types):
                 result = decorated(self, auth_types, *args, **kwargs)
             finally:
                 self._external_auth_dao.enable_all([])
+            return result
+        return wrapper
+    return decorator
+
+
+def token(**token_args):
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            now = int(time.time())
+            token = {
+                'auth_id': 'test',
+                'xivo_user_uuid': str(uuid.uuid4()),
+                'xivo_uuid': str(uuid.uuid4()),
+                'issued_t': now,
+                'expire_t': now + token_args.get('expiration', 120),
+                'acls': token_args.get('acls', []),
+                'metadata': token_args.get('metadata', {}),
+            }
+            session_uuid = token_args.get('session_uuid')
+            if not session_uuid:
+                session_uuid = self._session_dao.create()
+            token['session_uuid'] = session_uuid
+
+            token_uuid = self._token_dao.create(token)
+            token['uuid'] = token_uuid
+            try:
+                result = decorated(self, token, *args, **kwargs)
+            finally:
+                self._token_dao.delete(token_uuid)
+                with self._session_dao.new_session() as s:
+                    s.query(models.Session).filter(models.Session == session_uuid).delete()
+            return result
+        return wrapper
+    return decorator
+
+
+def session(**session_args):
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            session_args.setdefault('uuid', str(uuid.uuid4()))
+            session_uuid = self._session_dao.create(**session_args)
+            session_args['uuid'] = session_uuid
+            try:
+                result = decorated(self, session_args, *args, **kwargs)
+            finally:
+                with self._session_dao.new_session() as s:
+                    s.query(models.Session).filter(models.Session == session_uuid).delete()
             return result
         return wrapper
     return decorator
