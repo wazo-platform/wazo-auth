@@ -256,6 +256,26 @@ class TestUsers(WazoAuthTestCase):
             tenants = self.client.users.get_tenants(user['uuid'])
             assert_that(tenants, has_entries('items', contains(has_entries('uuid', uuid_()))))
 
+    def test_register_error_then_no_user_created(self):
+        args = {
+            'username': 'foobar',
+            'lastname': 'Denver',
+            'email_address': 'foobar@example.com',
+            'password': 's3cr37',
+        }
+
+        self.stop_service('smtp')
+        assert_that(
+            calling(self.client.users.register).with_args(**args),
+            raises(requests.HTTPError)
+        )
+        self.start_service('smtp')
+
+        user = self.client.users.register(**args)
+        assert_that(user, has_entries(username='foobar'))
+
+        self.client.users.delete(user['uuid'])
+
     @fixtures.http_user_register(username='foo', password='foobar', email_address='foo@example.com')
     @fixtures.http_policy(acl_templates=['auth.users.{{ uuid }}.password.edit'])
     def test_put_password(self, policy, user):
