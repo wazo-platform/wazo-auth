@@ -1,4 +1,4 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -22,7 +22,7 @@ DEFAULT_XIVO_UUID = os.getenv('XIVO_UUID')
 
 class Token:
 
-    def __init__(self, id_, auth_id, xivo_user_uuid, xivo_uuid, issued_t, expire_t, acls, metadata):
+    def __init__(self, id_, auth_id, xivo_user_uuid, xivo_uuid, issued_t, expire_t, acls, metadata, session_uuid):
         self.token = id_
         self.auth_id = auth_id
         self.xivo_user_uuid = xivo_user_uuid
@@ -31,6 +31,7 @@ class Token:
         self.expire_t = expire_t
         self.acls = acls
         self.metadata = metadata
+        self.session_uuid = session_uuid
 
     def __eq__(self, other):
         return (
@@ -41,7 +42,8 @@ class Token:
             self.issued_t == other.issued_t and
             self.expire_t == other.expire_t and
             self.acls == other.acls and
-            self.metadata == other.metadata
+            self.metadata == other.metadata and
+            self.session_uuid == other.session_uuid
         )
 
     def __ne__(self, other):
@@ -69,7 +71,8 @@ class Token:
                 'utc_issued_at': self._format_utc_time(self.issued_t),
                 'utc_expires_at': self._format_utc_time(self.expire_t),
                 'acls': self.acls,
-                'metadata': self.metadata}
+                'metadata': self.metadata,
+                'session_uuid': self.session_uuid}
 
     def is_expired(self):
         return self.expire_t and time.time() > self.expire_t
@@ -142,6 +145,7 @@ class Manager:
         acls = backend.get_acls(login, args)
         expiration = args.get('expiration', self._default_expiration)
         t = time.time()
+        session_uuid = self._dao.session.create()
         token_payload = {
             'auth_id': auth_id,
             'xivo_user_uuid': xivo_user_uuid,
@@ -150,6 +154,7 @@ class Manager:
             'issued_t': t,
             'acls': acls or [],
             'metadata': metadata,
+            'session_uuid': session_uuid,
         }
 
         token_uuid = self._dao.token.create(token_payload)

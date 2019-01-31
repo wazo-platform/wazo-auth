@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
@@ -28,7 +28,11 @@ class TestWazoUserBackend(WazoAuthTestCase):
                 'xivo_user_uuid', user['uuid'],
                 'acls', has_items(
                     'confd.#',
-                    'plugind.#')))
+                    'plugind.#',
+                ),
+                'session_uuid', uuid_(),
+            )
+        )
 
         assert_http_error(401, self._post_token, user['username'], 'not-our-password', backend='wazo_user')
         assert_http_error(401, self._post_token, 'not-foobar', 's3cr37', backend='wazo_user')

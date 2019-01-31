@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -20,6 +20,7 @@ class TokenDAO(BaseDAO):
             issued_t=int(body['issued_t']),
             expire_t=int(body['expire_t']),
             metadata_=serialized_metadata,
+            session_uuid=body['session_uuid'],
         )
         token.acls = [ACL(token_uuid=token.uuid, value=acl) for acl in body.get('acls') or []]
         with self.new_session() as s:
@@ -39,7 +40,8 @@ class TokenDAO(BaseDAO):
                     'issued_t': token.issued_t,
                     'expire_t': token.expire_t,
                     'acls': [acl.value for acl in token.acls],
-                    'metadata': json.loads(token.metadata_) if token.metadata_ else {}
+                    'metadata': json.loads(token.metadata_) if token.metadata_ else {},
+                    'session_uuid': token.session_uuid,
                 }
 
             raise exceptions.UnknownTokenException()
