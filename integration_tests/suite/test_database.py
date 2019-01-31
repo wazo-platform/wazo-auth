@@ -371,6 +371,7 @@ class TestTokenDAO(base.DAOTestCase):
 
     @contextmanager
     def _new_token(self, acls=None, metadata=None, expiration=120):
+        session_uuid = self._session_dao.create()
         now = int(time.time())
         body = {
             'auth_id': 'test',
@@ -380,7 +381,7 @@ class TestTokenDAO(base.DAOTestCase):
             'expire_t': now + expiration,
             'acls': acls or [],
             'metadata': metadata or {},
-            'session_uuid': new_uuid(),
+            'session_uuid': session_uuid,
         }
         token_uuid = self._token_dao.create(body)
         token_data = dict(body)
