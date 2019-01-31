@@ -1,6 +1,6 @@
 #!/bin/sh
 # Copyright 2017 The Wazo Authors  (see the AUTHORS file)
-# SPDX-License-Identifier: GPL-3.0+
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 NORMAL_TEMPLATE_FILE="alembic/alembic_template.py.mako"
 ACL_TEMPLATE_FILE="alembic/alembic_acl_template.py.mako"

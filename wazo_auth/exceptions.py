@@ -1,5 +1,5 @@
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
-# SPDX-License-Identifier: GPL-3.0+
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 from unidecode import unidecode
 from xivo.rest_api_helpers import APIException

@@ -1,5 +1,5 @@
 # Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
-# SPDX-License-Identifier: GPL-3.0+
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo_auth_client import Client
 from xivo_test_helpers.mock import ANY_UUID
