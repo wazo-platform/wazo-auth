@@ -1,7 +1,9 @@
 # Copyright 2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from .base import BaseDAO
+from sqlalchemy import text
+
+from .base import BaseDAO, PaginatorMixin
 from ..models import (
     Session,
     Tenant,
@@ -9,7 +11,9 @@ from ..models import (
 )
 
 
-class SessionDAO(BaseDAO):
+class SessionDAO(PaginatorMixin, BaseDAO):
+
+    column_map = {'mobile': Session.mobile}
 
     def create(self, **kwargs):
         if not kwargs.get('tenant_uuid'):
@@ -22,6 +26,24 @@ class SessionDAO(BaseDAO):
             s.add(session)
             s.commit()
             return session.uuid
+
+    def list_(self, tenant_uuids=None, **kwargs):
+        filter_ = text('true')
+        if tenant_uuids is not None:
+            if not tenant_uuids:
+                return []
+
+            filter_ = Session.tenant_uuid.in_(tenant_uuids)
+
+        with self.new_session() as s:
+            query = s.query(Session).filter(filter_)
+            query = self._paginator.update_query(query, **kwargs)
+
+            return [{
+                'uuid': session.uuid,
+                'mobile': session.mobile,
+                'tenant_uuid': session.tenant_uuid,
+            } for session in query.all()]
 
     def delete_expired(self):
         with self.new_session() as s:
