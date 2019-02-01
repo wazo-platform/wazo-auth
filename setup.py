@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from setuptools import find_packages
@@ -46,6 +46,7 @@ setup(
             'init = wazo_auth.plugins.http.init.plugin:Plugin',
             'password_reset = wazo_auth.plugins.http.password_reset.plugin:Plugin',
             'policies = wazo_auth.plugins.http.policies.plugin:Plugin',
+            'sessions = wazo_auth.plugins.http.sessions.plugin:Plugin',
             'tenants = wazo_auth.plugins.http.tenants.plugin:Plugin',
             'tenant_user = wazo_auth.plugins.http.tenant_user.plugin:Plugin',
             'tenant_policy = wazo_auth.plugins.http.tenant_policy.plugin:Plugin',

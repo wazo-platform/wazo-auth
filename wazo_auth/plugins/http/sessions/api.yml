@@ -1,0 +1,61 @@
+paths:
+  /sessions:
+    get:
+      security:
+        - wazo_auth_token: []
+      produces:
+        - application/json
+      summary: List sessions
+      description: '**Required ACL:** `auth.sessions.read`'
+      operationId: listSessions
+      tags:
+        - sessions
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      - $ref: '#/parameters/recurse'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
+      responses:
+        '200':
+          description: A list of session
+          schema:
+            $ref: '#/definitions/GetSessionsResult'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+parameters:
+  session_uuid:
+    name: session_uuid
+    in: path
+    type: string
+    description: The UUID of the session
+    required: true
+definitions:
+  GetSessionsResult:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: The number of sessions.
+      filtered:
+        type: integer
+        description: The number of sessions matching the searched term.
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/SessionResult'
+        description: A paginated list of sessions
+    required:
+    - filtered
+    - total
+    - items
+  SessionResult:
+    type: object
+    properties:
+      uuid:
+        type: string
+      tenant_uuid:
+        type: string
+      mobile:
+        type: boolean

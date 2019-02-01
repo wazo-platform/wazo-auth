@@ -162,6 +162,26 @@ def http_tenant(**tenant_args):
     return decorator
 
 
+def http_token(**token_args):
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            username = token_args.pop('username')
+            password = token_args.pop('password')
+            client = self.new_auth_client(username, password)
+            token = client.token.new(**token_args)
+            try:
+                result = decorated(self, token, *args, **kwargs)
+            finally:
+                try:
+                    self.client.token.revoke(token['token'])
+                except requests.HTTPError:
+                    pass
+            return result
+        return wrapper
+    return decorator
+
+
 def http_user(**user_args):
     user_args.setdefault('username', _random_string(20))
     user_args.setdefault('password', _random_string(20))

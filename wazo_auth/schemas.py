@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import Schema, fields, pre_load, post_dump, post_load
@@ -43,7 +43,7 @@ class TenantSchema(BaseSchema):
         return data
 
 
-def new_list_schema(default_sort_column):
+def new_list_schema(default_sort_column=None):
 
     class ListSchema(BaseSchema):
 
