@@ -1,6 +1,14 @@
 Changelog
 =========
 
+19.03
+-----
+
+* New resource has been added to list sessions
+
+  * GET `0.1/sessions`
+
+
 19.02
 -----
 
