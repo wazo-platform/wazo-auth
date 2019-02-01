@@ -145,7 +145,8 @@ class Manager:
         acls = backend.get_acls(login, args)
         expiration = args.get('expiration', self._default_expiration)
         t = time.time()
-        session_uuid = self._dao.session.create()
+
+        session_uuid = self._dao.session.create(tenant_uuid=metadata.get('tenant_uuid'))
         token_payload = {
             'auth_id': auth_id,
             'xivo_user_uuid': xivo_user_uuid,

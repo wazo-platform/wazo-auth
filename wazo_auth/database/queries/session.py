@@ -4,14 +4,20 @@
 from .base import BaseDAO
 from ..models import (
     Session,
+    Tenant,
     Token,
 )
 
 
 class SessionDAO(BaseDAO):
 
-    def create(self, **args):
-        session = Session(**args)
+    def create(self, **kwargs):
+        if not kwargs.get('tenant_uuid'):
+            with self.new_session() as s:
+                filter_ = Tenant.uuid == Tenant.parent_uuid
+                kwargs['tenant_uuid'] = s.query(Tenant).filter(filter_).first().uuid
+
+        session = Session(**kwargs)
         with self.new_session() as s:
             s.add(session)
             s.commit()
