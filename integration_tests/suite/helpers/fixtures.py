@@ -23,8 +23,7 @@ def _random_string(length):
 
 
 def email(**email_args):
-    if 'address' not in email_args:
-        email_args['address'] = '{}@{}'.format(_random_string(5), _random_string(5))
+    email_args.setdefault('address', '{}@{}'.format(_random_string(5), _random_string(5)))
 
     def decorator(decorated):
         @wraps(decorated)
@@ -164,10 +163,8 @@ def http_tenant(**tenant_args):
 
 
 def http_user(**user_args):
-    if 'username' not in user_args:
-        user_args['username'] = _random_string(20)
-    if 'password' not in user_args:
-        user_args['password'] = _random_string(20)
+    user_args.setdefault('username', _random_string(20))
+    user_args.setdefault('password', _random_string(20))
 
     def decorator(decorated):
         @wraps(decorated)
@@ -186,12 +183,9 @@ def http_user(**user_args):
 
 
 def http_user_register(**user_args):
-    if 'username' not in user_args:
-        user_args['username'] = _random_string(20)
-    if 'password' not in user_args:
-        user_args['password'] = _random_string(20)
-    if 'email_address' not in user_args:
-        user_args['email_address'] = '{}@example.com'.format(user_args['username'])
+    user_args.setdefault('username', _random_string(20))
+    user_args.setdefault('password', _random_string(20))
+    user_args.setdefault('email_address', '{}@example.com'.format(user_args['username']))
 
     def decorator(decorated):
         @wraps(decorated)
@@ -210,8 +204,7 @@ def http_user_register(**user_args):
 
 
 def http_policy(**policy_args):
-    if 'name' not in policy_args:
-        policy_args['name'] = _random_string(20)
+    policy_args.setdefault('name', _random_string(20))
     policy_args['acl_templates'] = policy_args.get('acl_templates') or []
 
     def decorator(decorated):
@@ -231,8 +224,7 @@ def http_policy(**policy_args):
 
 
 def http_group(**group_args):
-    if 'name' not in group_args:
-        group_args['name'] = _random_string(20)
+    group_args.setdefault('name', _random_string(20))
 
     def decorator(decorated):
         @wraps(decorated)
@@ -251,8 +243,7 @@ def http_group(**group_args):
 
 
 def group(**group_args):
-    if 'name' not in group_args:
-        group_args['name'] = _random_string(20)
+    group_args.setdefault('name', _random_string(20))
 
     def decorator(decorated):
         @wraps(decorated)
@@ -272,8 +263,7 @@ def group(**group_args):
 
 
 def policy(**policy_args):
-    if 'name' not in policy_args:
-        policy_args['name'] = _random_string(20)
+    policy_args.setdefault('name', _random_string(20))
     policy_args['acl_templates'] = policy_args.get('acl_templates') or []
     policy_args['description'] = policy_args.get('description', '')
 
@@ -295,14 +285,10 @@ def policy(**policy_args):
 
 
 def tenant(**tenant_args):
-    if 'name' not in tenant_args:
-        tenant_args['name'] = None
-    if 'phone' not in tenant_args:
-        tenant_args['phone'] = None
-    if 'contact_uuid' not in tenant_args:
-        tenant_args['contact_uuid'] = None
-    if 'address_id' not in tenant_args:
-        tenant_args['address_id'] = None
+    tenant_args.setdefault('name', None)
+    tenant_args.setdefault('phone', None)
+    tenant_args.setdefault('contact_uuid', None)
+    tenant_args.setdefault('address_id', None)
 
     def decorator(decorated):
         @wraps(decorated)
@@ -321,22 +307,14 @@ def tenant(**tenant_args):
 
 
 def user(**user_args):
-    if 'username' not in user_args:
-        user_args['username'] = _random_string(20)
-    if 'email_address' not in user_args:
-        user_args['email_address'] = '{}@example.com'.format(_random_string(50))
-    if 'hash_' not in user_args:
-        user_args['hash_'] = _random_string(64)
-    if 'salt' not in user_args:
-        user_args['salt'] = A_SALT
-    if 'firstname' not in user_args:
-        user_args['firstname'] = _random_string(20)
-    if 'lastname' not in user_args:
-        user_args['lastname'] = _random_string(20)
-    if 'purpose' not in user_args:
-        user_args['purpose'] = 'user'
-    if 'enabled' not in user_args:
-        user_args['enabled'] = True
+    user_args.setdefault('username', _random_string(20))
+    user_args.setdefault('email_address', '{}@example.com'.format(_random_string(50)))
+    user_args.setdefault('hash_', _random_string(64))
+    user_args.setdefault('salt', A_SALT)
+    user_args.setdefault('firstname', _random_string(20))
+    user_args.setdefault('lastname', _random_string(20))
+    user_args.setdefault('purpose', 'user')
+    user_args.setdefault('enabled', True)
 
     def decorator(decorated):
         @wraps(decorated)
