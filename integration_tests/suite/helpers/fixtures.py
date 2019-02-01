@@ -81,7 +81,7 @@ def token(**token_args):
             finally:
                 self._token_dao.delete(token_uuid)
                 with self._session_dao.new_session() as s:
-                    s.query(models.Session).filter(models.Session == session_uuid).delete()
+                    s.query(models.Session).filter(models.Session.uuid == session_uuid).delete()
             return result
         return wrapper
     return decorator
@@ -98,7 +98,7 @@ def session(**session_args):
                 result = decorated(self, session_args, *args, **kwargs)
             finally:
                 with self._session_dao.new_session() as s:
-                    s.query(models.Session).filter(models.Session == session_uuid).delete()
+                    s.query(models.Session).filter(models.Session.uuid == session_uuid).delete()
             return result
         return wrapper
     return decorator
