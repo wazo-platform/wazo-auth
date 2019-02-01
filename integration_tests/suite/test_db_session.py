@@ -8,6 +8,7 @@ from hamcrest import (
     assert_that,
     contains,
     contains_inanyorder,
+    equal_to,
     empty,
     has_entries,
     has_items,
@@ -70,6 +71,19 @@ class TestSessionDAO(base.DAOTestCase):
         assert_that(result, contains(
             has_entries(uuid=session_1['uuid']),
         ))
+
+    @fixtures.tenant(uuid=TENANT_UUID_1)
+    @fixtures.session(tenant_uuid=TENANT_UUID_1)
+    @fixtures.session()
+    def test_count(self, *_):
+        result = self._session_dao.count()
+        assert_that(result, equal_to(2))
+
+        result = self._session_dao.count(tenant_uuids=[TENANT_UUID_1])
+        assert_that(result, equal_to(1))
+
+        result = self._session_dao.count(tenant_uuids=[])
+        assert_that(result, equal_to(0))
 
     @fixtures.session()
     @fixtures.session(uuid=SESSION_UUID_1)

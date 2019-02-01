@@ -1,7 +1,7 @@
 # Copyright 2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from sqlalchemy import text
+from sqlalchemy import text, and_
 
 from .base import BaseDAO, PaginatorMixin
 from ..models import (
@@ -44,6 +44,17 @@ class SessionDAO(PaginatorMixin, BaseDAO):
                 'mobile': session.mobile,
                 'tenant_uuid': session.tenant_uuid,
             } for session in query.all()]
+
+    def count(self, tenant_uuids=None, **kwargs):
+        filter_ = text('true')
+
+        if tenant_uuids is not None:
+            if not tenant_uuids:
+                return 0
+            filter_ = and_(filter_, Session.tenant_uuid.in_(tenant_uuids))
+
+        with self.new_session() as s:
+            return s.query(Session).filter(filter_).count()
 
     def delete_expired(self):
         with self.new_session() as s:
