@@ -38,9 +38,9 @@ class TestSessionDAO(base.DAOTestCase):
         session_uuid = self._session_dao.create()
         assert_that(session_uuid, is_not(none()))
 
-    @fixtures.tenant(uuid=TENANT_UUID_1)
-    @fixtures.session(mobile=False)
-    @fixtures.session(tenant_uuid=TENANT_UUID_1, mobile=True)
+    @fixtures.db.tenant(uuid=TENANT_UUID_1)
+    @fixtures.db.session(mobile=False)
+    @fixtures.db.session(tenant_uuid=TENANT_UUID_1, mobile=True)
     def test_list(self, session_1, session_2, _):
         result = self._session_dao.list_()
         assert_that(result, contains_inanyorder(
@@ -72,9 +72,9 @@ class TestSessionDAO(base.DAOTestCase):
             has_entries(uuid=session_1['uuid']),
         ))
 
-    @fixtures.tenant(uuid=TENANT_UUID_1)
-    @fixtures.session(tenant_uuid=TENANT_UUID_1)
-    @fixtures.session()
+    @fixtures.db.tenant(uuid=TENANT_UUID_1)
+    @fixtures.db.session(tenant_uuid=TENANT_UUID_1)
+    @fixtures.db.session()
     def test_count(self, *_):
         result = self._session_dao.count()
         assert_that(result, equal_to(2))
@@ -85,9 +85,9 @@ class TestSessionDAO(base.DAOTestCase):
         result = self._session_dao.count(tenant_uuids=[])
         assert_that(result, equal_to(0))
 
-    @fixtures.session()
-    @fixtures.session(uuid=SESSION_UUID_1)
-    @fixtures.token(session_uuid=SESSION_UUID_1)
+    @fixtures.db.session()
+    @fixtures.db.session(uuid=SESSION_UUID_1)
+    @fixtures.db.token(session_uuid=SESSION_UUID_1)
     def test_delete_expired(self, _, session_1, session_2):
         with self._session_dao.new_session() as s:
             sessions = s.query(models.Session).all()

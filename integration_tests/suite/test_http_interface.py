@@ -230,7 +230,7 @@ class TestCore(WazoAuthTestCase):
                 not_(raises(Exception)),
             )
 
-    @fixtures.http_policy(name='fooer', acl_templates=['foo'])
+    @fixtures.http.policy(name='fooer', acl_templates=['foo'])
     def test_that_authorized_acls_on_HEAD_return_204(self, policy):
         self.client.users.add_policy(self.user['uuid'], policy['uuid'])
 
@@ -238,7 +238,7 @@ class TestCore(WazoAuthTestCase):
 
         assert_that(self._is_valid(token, acls='foo'))
 
-    @fixtures.http_policy(name='fooer', acl_templates=['foo'])
+    @fixtures.http.policy(name='fooer', acl_templates=['foo'])
     def test_that_authorized_acls_on_GET_return_200(self, policy):
         self.client.users.add_policy(self.user['uuid'], policy['uuid'])
 

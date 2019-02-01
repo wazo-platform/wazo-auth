@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
@@ -33,8 +33,8 @@ def teardown_module():
 
 class TestGroupDAO(base.DAOTestCase):
 
-    @fixtures.policy()
-    @fixtures.group()
+    @fixtures.db.policy()
+    @fixtures.db.group()
     def test_add_policy(self, group_uuid, policy_uuid):
         assert_that(self._policy_dao.get(group_uuid=group_uuid), empty())
 
@@ -56,8 +56,8 @@ class TestGroupDAO(base.DAOTestCase):
             'unknown policy',
         )
 
-    @fixtures.user()
-    @fixtures.group()
+    @fixtures.db.user()
+    @fixtures.db.group()
     def test_add_user(self, group_uuid, user_uuid):
         assert_that(self._user_dao.list_(group_uuid=group_uuid), empty())
 
@@ -79,9 +79,9 @@ class TestGroupDAO(base.DAOTestCase):
             'unknown user',
         )
 
-    @fixtures.group(name='foo')
-    @fixtures.group(name='bar')
-    @fixtures.group(name='baz')
+    @fixtures.db.group(name='foo')
+    @fixtures.db.group(name='bar')
+    @fixtures.db.group(name='baz')
     def test_count(self, *ignored):
         result = self._group_dao.count()
         assert_that(result, equal_to(3))
@@ -98,8 +98,8 @@ class TestGroupDAO(base.DAOTestCase):
         result = self._group_dao.count(search='ba', filtered=True)
         assert_that(result, equal_to(2))
 
-    @fixtures.tenant(uuid=TENANT_UUID)
-    @fixtures.group(name='foobar', tenant_uuid=TENANT_UUID)
+    @fixtures.db.tenant(uuid=TENANT_UUID)
+    @fixtures.db.group(name='foobar', tenant_uuid=TENANT_UUID)
     def test_create(self, group_uuid, tenant_uuid):
         name = 'foobar'
 
@@ -120,7 +120,7 @@ class TestGroupDAO(base.DAOTestCase):
                     'resource', 'groups',
                     'details', has_key('name'))))
 
-    @fixtures.group()
+    @fixtures.db.group()
     def test_delete(self, group_uuid):
         self._group_dao.delete(group_uuid)
 
@@ -129,11 +129,11 @@ class TestGroupDAO(base.DAOTestCase):
             raises(exceptions.UnknownGroupException),
         )
 
-    @fixtures.group(name='foo')
-    @fixtures.group(name='bar')
-    @fixtures.group(name='baz')
-    @fixtures.user()
-    @fixtures.user()
+    @fixtures.db.group(name='foo')
+    @fixtures.db.group(name='bar')
+    @fixtures.db.group(name='baz')
+    @fixtures.db.user()
+    @fixtures.db.user()
     def test_list(self, user1_uuid, user2_uuid, *group_uuids):
         def build_list_matcher(*names):
             return [has_entries('name', name) for name in names]
@@ -170,8 +170,8 @@ class TestGroupDAO(base.DAOTestCase):
         expected = build_list_matcher('baz', 'foo')
         assert_that(result, contains(*expected))
 
-    @fixtures.group()
-    @fixtures.policy()
+    @fixtures.db.group()
+    @fixtures.db.policy()
     def test_remove_policy(self, policy_uuid, group_uuid):
         nb_deleted = self._group_dao.remove_policy(group_uuid, policy_uuid)
         assert_that(nb_deleted, equal_to(0))
@@ -187,8 +187,8 @@ class TestGroupDAO(base.DAOTestCase):
         nb_deleted = self._group_dao.remove_policy(group_uuid, policy_uuid)
         assert_that(nb_deleted, equal_to(1))
 
-    @fixtures.group()
-    @fixtures.user()
+    @fixtures.db.group()
+    @fixtures.db.user()
     def test_remove_user(self, user_uuid, group_uuid):
         nb_deleted = self._group_dao.remove_user(group_uuid, user_uuid)
         assert_that(nb_deleted, equal_to(0))

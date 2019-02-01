@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from contextlib import contextmanager
@@ -36,7 +36,7 @@ class TestPolicyDAO(base.DAOTestCase):
         self._default_user_policy_uuid = default_user_policy['uuid']
         self._default_admin_policy_uuid = default_admin_policy['uuid']
 
-    @fixtures.policy(name='testé', description='déscription')
+    @fixtures.db.policy(name='testé', description='déscription')
     def test_template_association(self, uuid):
         self._policy_dao.associate_policy_template(uuid, '#')
         assert_that(
@@ -62,7 +62,7 @@ class TestPolicyDAO(base.DAOTestCase):
 
         assert_that(self._policy_dao.dissociate_policy_template('unknown', '#'), equal_to(0))
 
-    @fixtures.tenant()
+    @fixtures.db.tenant()
     def test_create(self, tenant_uuid):
         acl_templates = ['dird.#', 'confd.line.42.*']
         with self._new_policy('testé', 'descriptioñ', acl_templates, tenant_uuid) as uuid_:
@@ -79,8 +79,8 @@ class TestPolicyDAO(base.DAOTestCase):
                 )
             )
 
-    @fixtures.tenant()
-    @fixtures.policy(name='foobar')
+    @fixtures.db.tenant()
+    @fixtures.db.policy(name='foobar')
     def test_that_two_policies_cannot_have_the_same_name_and_tenant(self, policy_uuid, tenant_uuid):
         # Same name different tenants no exception
         assert_that(
@@ -100,7 +100,7 @@ class TestPolicyDAO(base.DAOTestCase):
             raises(exceptions.DuplicatePolicyException),
         )
 
-    @fixtures.policy(name='foobar')
+    @fixtures.db.policy(name='foobar')
     def test_get(self, uuid_):
         policy = self.get_policy(uuid_)
         assert_that(
@@ -199,10 +199,10 @@ class TestPolicyDAO(base.DAOTestCase):
                     raises(exceptions.InvalidLimitException),
                     limit)
 
-    @fixtures.policy(name='c', description='The third foobar')
-    @fixtures.policy(name='b', description='The second foobar')
-    @fixtures.policy(name='a')
-    @fixtures.user()
+    @fixtures.db.policy(name='c', description='The third foobar')
+    @fixtures.db.policy(name='b', description='The second foobar')
+    @fixtures.db.policy(name='a')
+    @fixtures.db.user()
     def test_user_list_policies(self, user_uuid, policy_a, policy_b, policy_c):
         result = self._policy_dao.get(user_uuid=user_uuid)
         assert_that(result, empty(), 'empty')
@@ -221,7 +221,7 @@ class TestPolicyDAO(base.DAOTestCase):
             ),
         )
 
-    @fixtures.policy()
+    @fixtures.db.policy()
     def test_delete(self, uuid):
         assert_that(
             calling(self._policy_dao.delete).with_args(uuid, [self.top_tenant_uuid]),

@@ -17,7 +17,7 @@ from xivo_test_helpers.hamcrest.uuid_ import uuid_
 
 class TestWazoUserBackend(WazoAuthTestCase):
 
-    @fixtures.http_user_register(username='foobar', email_address='foobar@example.com', password='s3cr37')
+    @fixtures.http.user_register(username='foobar', email_address='foobar@example.com', password='s3cr37')
     def test_token_creation(self, user):
         response = self._post_token(user['username'], 's3cr37', backend='wazo_user')
         assert_that(
@@ -37,10 +37,10 @@ class TestWazoUserBackend(WazoAuthTestCase):
         assert_http_error(401, self._post_token, user['username'], 'not-our-password', backend='wazo_user')
         assert_http_error(401, self._post_token, 'not-foobar', 's3cr37', backend='wazo_user')
 
-    @fixtures.http_group()
-    @fixtures.http_tenant()
+    @fixtures.http.group()
+    @fixtures.http.tenant()
     # extra tenant: "master" tenant
-    @fixtures.http_user(password='s3cr37')
+    @fixtures.http.user(password='s3cr37')
     def test_token_metadata(self, user, tenant, group):
         top_tenant = self.get_top_tenant()
         self.client.groups.add_user(group['uuid'], user['uuid'])

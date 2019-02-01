@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -15,7 +15,7 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
     safe_data = {'scope': ['one', 'two', 'three']}
     original_data = dict(secret=str(uuid4()), **safe_data)
 
-    @fixtures.http_user_register()
+    @fixtures.http.user_register()
     def test_create(self, user):
         routing_key = 'auth.users.{}.external.foo.created'.format(user['uuid'])
         msg_accumulator = self.new_message_accumulator(routing_key)
@@ -36,7 +36,7 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
         base.assert_http_error(404, self.client.external.create, 'notfoo', user['uuid'], self.original_data)
         base.assert_http_error(404, self.client.external.create, 'foo', base.UNKNOWN_UUID, self.original_data)
 
-    @fixtures.http_user_register()
+    @fixtures.http.user_register()
     def test_delete(self, user):
         routing_key = 'auth.users.{}.external.foo.deleted'.format(user['uuid'])
         msg_accumulator = self.new_message_accumulator(routing_key)
@@ -56,8 +56,8 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
 
         base.assert_http_error(404, self.client.external.get, 'foo', user['uuid'])
 
-    @fixtures.http_user_register()
-    @fixtures.http_user_register()
+    @fixtures.http.user_register()
+    @fixtures.http.user_register()
     def test_get(self, user1, user2):
         self.client.external.create('foo', user1['uuid'], self.original_data)
 
@@ -68,9 +68,9 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
             self.client.external.get('foo', user1['uuid']),
             has_entries(**self.original_data))
 
-    @fixtures.http_user_register()
-    @fixtures.http_user_register()
-    @fixtures.http_user_register()
+    @fixtures.http.user_register()
+    @fixtures.http.user_register()
+    @fixtures.http.user_register()
     def test_list(self, user1, user2, user3):
         self.client.external.create('foo', user1['uuid'], self.original_data)
         self.client.external.create('bar', user1['uuid'], self.original_data)
@@ -96,7 +96,7 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
         ]
         assert_that(result, has_entries(items=contains(*expected), total=2, filtered=1))
 
-    @fixtures.http_user_register()
+    @fixtures.http.user_register()
     def test_update(self, user):
         new_data = {'foo': 'bar'}
 
@@ -110,7 +110,7 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
 
         assert_that(self.client.external.get('foo', user['uuid']), equal_to(new_data))
 
-    @fixtures.http_user()
+    @fixtures.http.user()
     def test_external_oauth2(self, user):
         routing_key = 'auth.users.{}.external.foo.authorized'.format(user['uuid'])
         msg_accumulator = self.new_message_accumulator(routing_key)

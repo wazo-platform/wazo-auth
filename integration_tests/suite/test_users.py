@@ -31,7 +31,7 @@ UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
 
 class TestUsers(WazoAuthTestCase):
 
-    @fixtures.http_user_register()
+    @fixtures.http.user_register()
     def test_delete(self, alice):
         with self.client_in_subtenant() as (client, bob, sub_tenant):
             assert_http_error(404, client.users.delete, alice['uuid'])
@@ -42,8 +42,8 @@ class TestUsers(WazoAuthTestCase):
         assert_no_error(self.client.users.delete, alice['uuid'])
         assert_http_error(404, self.client.users.delete, alice['uuid'])
 
-    @fixtures.http_user(username='foobar', password='foobar', email_address='foobar@example.com')
-    @fixtures.http_user(username='foobaz', password='foobaz', email_address='foobaz@example.com')
+    @fixtures.http.user(username='foobar', password='foobar', email_address='foobar@example.com')
+    @fixtures.http.user(username='foobaz', password='foobaz', email_address='foobaz@example.com')
     def test_password_reset_does_not_disable_old_password(self, foobaz, foobar):
         assert_no_error(self.client.users.reset_password, username='unknown')
         assert_no_error(self.client.users.reset_password, email='unknown@example.com')
@@ -72,7 +72,7 @@ class TestUsers(WazoAuthTestCase):
                                data=json.dumps(args), verify=False)
         assert_that(result.status_code, equal_to(401))
 
-    @fixtures.http_tenant(name='isolated')
+    @fixtures.http.tenant(name='isolated')
     def test_post_with_top_tenant_admin(self, isolated):
         args = {
             'username': 'foobar',
@@ -178,7 +178,7 @@ class TestUsers(WazoAuthTestCase):
                 user = client.users.new(username='foo', tenant_uuid=subtenant['uuid'])
                 assert_that(user, has_entries(tenant_uuid=subtenant['uuid']))
 
-    @fixtures.http_user(username='foobar', firstname='foo', lastname='bar', purpose='user')
+    @fixtures.http.user(username='foobar', firstname='foo', lastname='bar', purpose='user')
     def test_put(self, user):
         user_uuid = user['uuid']
         body = {
@@ -276,8 +276,8 @@ class TestUsers(WazoAuthTestCase):
 
         self.client.users.delete(user['uuid'])
 
-    @fixtures.http_user_register(username='foo', password='foobar', email_address='foo@example.com')
-    @fixtures.http_policy(acl_templates=['auth.users.{{ uuid }}.password.edit'])
+    @fixtures.http.user_register(username='foo', password='foobar', email_address='foo@example.com')
+    @fixtures.http.policy(acl_templates=['auth.users.{{ uuid }}.password.edit'])
     def test_put_password(self, policy, user):
         self.client.users.add_policy(user['uuid'], policy['uuid'])
         new_password = 'foobaz'
@@ -349,7 +349,7 @@ class TestUsers(WazoAuthTestCase):
                     assert_http_error(400, top_client.users.list, direction='up')
                     assert_http_error(400, top_client.users.list, order='lol')
 
-    @fixtures.http_user_register(username='foo', email_address='foo@example.com')
+    @fixtures.http.user_register(username='foo', email_address='foo@example.com')
     def test_get(self, user):
         assert_http_error(404, self.client.users.get, UNKNOWN_UUID)
         with self.client_in_subtenant() as (client, alice, isolated):
@@ -371,9 +371,9 @@ class TestUsers(WazoAuthTestCase):
                         'confirmed', False,
                         'main', True))))
 
-    @fixtures.http_user_register(username='foo', password='bar')
-    @fixtures.http_policy(name='two', acl_templates=['acl.one.{{ username }}', 'acl.two'])
-    @fixtures.http_policy(name='one', acl_templates=['this.is.a.test.acl'])
+    @fixtures.http.user_register(username='foo', password='bar')
+    @fixtures.http.policy(name='two', acl_templates=['acl.one.{{ username }}', 'acl.two'])
+    @fixtures.http.policy(name='one', acl_templates=['this.is.a.test.acl'])
     def test_user_policy(self, policy_1, policy_2, user):
         assert_no_error(self.client.users.remove_policy, user['uuid'], policy_1['uuid'])
 

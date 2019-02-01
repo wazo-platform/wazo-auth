@@ -76,7 +76,7 @@ class TestAddressDAO(base.DAOTestCase):
 
 class TestEmailDAO(base.DAOTestCase):
 
-    @fixtures.email()
+    @fixtures.db.email()
     def test_confirm(self, email_uuid):
         assert_that(self.is_email_confirmed(email_uuid), equal_to(False))
         assert_that(
@@ -102,9 +102,9 @@ class TestExternalAuthDAO(base.DAOTestCase):
         'dict_value': {'a': 'dict', 'of': 'values'},
     }
 
-    @fixtures.external_auth('one', 'two')
-    @fixtures.user()
-    @fixtures.user()
+    @fixtures.db.external_auth('one', 'two')
+    @fixtures.db.user()
+    @fixtures.db.user()
     def test_count(self, user_1_uuid, user_2_uuid, external_auth_types):
         self._external_auth_dao.create(user_2_uuid, self.auth_type, self.data)
 
@@ -134,7 +134,7 @@ class TestExternalAuthDAO(base.DAOTestCase):
         result = self._external_auth_dao.count(user_1_uuid, type='two', filtered=True)
         assert_that(result, equal_to(1))
 
-    @fixtures.user()
+    @fixtures.db.user()
     def test_create(self, user_uuid):
         assert_that(
             calling(self._external_auth_dao.create).with_args(self.unknown_uuid, self.auth_type, self.data),
@@ -158,8 +158,8 @@ class TestExternalAuthDAO(base.DAOTestCase):
                     resource=self.auth_type,
                     details=has_entries('type', self.auth_type))))
 
-    @fixtures.user()
-    @fixtures.user()
+    @fixtures.db.user()
+    @fixtures.db.user()
     def test_delete(self, user_1_uuid, user_2_uuid):
         assert_that(
             calling(self._external_auth_dao.delete).with_args(self.unknown_uuid, self.auth_type),
@@ -188,7 +188,7 @@ class TestExternalAuthDAO(base.DAOTestCase):
             raises(exceptions.UnknownExternalAuthException).matching(
                 has_properties(status_code=404, resource=self.auth_type)))
 
-    @fixtures.user()
+    @fixtures.db.user()
     def test_enable_all(self, user_uuid):
         def assert_enabled(enabled_types):
             with self._external_auth_dao.new_session() as s:
@@ -215,8 +215,8 @@ class TestExternalAuthDAO(base.DAOTestCase):
         self._external_auth_dao.enable_all(auth_types)
         assert_enabled(auth_types)
 
-    @fixtures.user()
-    @fixtures.user()
+    @fixtures.db.user()
+    @fixtures.db.user()
     def test_get(self, user_1_uuid, user_2_uuid):
         assert_that(
             calling(self._external_auth_dao.get).with_args(self.unknown_uuid, self.auth_type),
@@ -243,9 +243,9 @@ class TestExternalAuthDAO(base.DAOTestCase):
             raises(exceptions.UnknownExternalAuthException).matching(
                 has_properties(status_code=404, resource=self.auth_type)))
 
-    @fixtures.external_auth('one', 'two', 'unused')
-    @fixtures.user()
-    @fixtures.user()
+    @fixtures.db.external_auth('one', 'two', 'unused')
+    @fixtures.db.user()
+    @fixtures.db.user()
     def test_list(self, user_1_uuid, user_2_uuid, auth_types):
         self._external_auth_dao.create(user_2_uuid, self.auth_type, self.data)
 
@@ -296,7 +296,7 @@ class TestExternalAuthDAO(base.DAOTestCase):
         ]
         assert_that(result, contains(*expected))
 
-    @fixtures.user()
+    @fixtures.db.user()
     def test_update(self, user_uuid):
         new_data = {'foo': 'bar'}
 

@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
@@ -16,8 +16,8 @@ class TestDefaultTokenMetadata(WazoAuthTestCase):
         super().setUp()
         self.tenant_uuid = self.get_top_tenant()['uuid']
 
-    @fixtures.http_group()
-    @fixtures.http_user(password='s3cr37', purpose='user')
+    @fixtures.http.group()
+    @fixtures.http.user(password='s3cr37', purpose='user')
     def test_token_metadata(self, user, group):
         self.client.groups.add_user(group['uuid'], user['uuid'])
 
@@ -34,7 +34,7 @@ class TestDefaultTokenMetadata(WazoAuthTestCase):
             xivo_user_uuid=user['uuid'],
         ))
 
-    @fixtures.http_user(password='s3cr37', purpose='internal')
+    @fixtures.http.user(password='s3cr37', purpose='internal')
     def test_internal_purpose_metadata(self, user):
         token_data = self._post_token(user['username'], 's3cr37')
 
@@ -48,7 +48,7 @@ class TestDefaultTokenMetadata(WazoAuthTestCase):
             xivo_user_uuid=None,
         ))
 
-    @fixtures.http_user(password='s3cr37', purpose='external_api')
+    @fixtures.http.user(password='s3cr37', purpose='external_api')
     def test_external_api_purpose_metadata(self, user):
         token_data = self._post_token(user['username'], 's3cr37')
 

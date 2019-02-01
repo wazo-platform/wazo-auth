@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
@@ -22,7 +22,7 @@ THREE = {'address': 'three@example.com', 'main': False, 'confirmed': True}
 
 class TestEmails(WazoAuthTestCase):
 
-    @fixtures.http_user(username='foobar')
+    @fixtures.http.user(username='foobar')
     def test_email_updates_as_admin(self, foobar):
         assert_http_error(404, self.client.admin.update_user_emails, UNKNOWN_UUID, [])
         assert_http_error(
@@ -50,7 +50,7 @@ class TestEmails(WazoAuthTestCase):
             )
         )
 
-    @fixtures.http_user(username='foobar', email_address='one@example.com')
+    @fixtures.http.user(username='foobar', email_address='one@example.com')
     def test_email_updates_as_user(self, foobar):
         assert_http_error(404, self.client.users.update_emails, UNKNOWN_UUID, [])
         assert_http_error(
@@ -73,8 +73,8 @@ class TestEmails(WazoAuthTestCase):
         result = self.client.users.update_emails(foobar['uuid'], [])
         assert_that(result, empty())
 
-    @fixtures.http_user(username='bar', email_address='bar@example.com')
-    @fixtures.http_user(username='foo', email_address='foo@example.com')
+    @fixtures.http.user(username='bar', email_address='bar@example.com')
+    @fixtures.http.user(username='foo', email_address='foo@example.com')
     def test_duplicate_email(self, foo, bar):
         duplicated_emails = [
             {'address': 'bar@example.com', 'main': True, 'confirmed': True},

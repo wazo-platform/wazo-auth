@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from uuid import uuid4
@@ -31,9 +31,9 @@ def teardown_module():
 
 class TestTenantDAO(base.DAOTestCase):
 
-    @fixtures.tenant(name='c')
-    @fixtures.tenant(name='b')
-    @fixtures.tenant(name='a')
+    @fixtures.db.tenant(name='c')
+    @fixtures.db.tenant(name='b')
+    @fixtures.db.tenant(name='a')
     def test_count(self, *tenants):
         top_tenant_uuid = self._top_tenant_uuid()
         visible_tenants = tenants + (top_tenant_uuid,)
@@ -54,11 +54,11 @@ class TestTenantDAO(base.DAOTestCase):
         result = self._tenant_dao.count(visible_tenants, name='b')
         assert_that(result, equal_to(1))
 
-    @fixtures.tenant(name='foo c')
-    @fixtures.tenant(name='bar b')
-    @fixtures.tenant(name='baz a')
-    @fixtures.user()
-    @fixtures.user()
+    @fixtures.db.tenant(name='foo c')
+    @fixtures.db.tenant(name='bar b')
+    @fixtures.db.tenant(name='baz a')
+    @fixtures.db.user()
+    @fixtures.db.user()
     def test_list(self, user1_uuid, user2_uuid, a, b, c):
         def build_list_matcher(*names):
             return [has_entries(name=name, address=base.ADDRESS_NULL) for name in names]
@@ -91,7 +91,7 @@ class TestTenantDAO(base.DAOTestCase):
         expected = build_list_matcher('baz a', 'foo c', 'master')
         assert_that(result, contains(*expected))
 
-    @fixtures.tenant(name='foobar')
+    @fixtures.db.tenant(name='foobar')
     def test_tenant_creation(self, foobar_uuid):
         # The parent_uuid defaults to the master tenant's UUID
         top_tenant_uuid = self._top_tenant_uuid()
@@ -118,7 +118,7 @@ class TestTenantDAO(base.DAOTestCase):
             raises(exceptions.MasterTenantConflictException),
         )
 
-    @fixtures.tenant()
+    @fixtures.db.tenant()
     def test_delete(self, tenant_uuid):
         self._tenant_dao.delete(tenant_uuid)
 

@@ -20,12 +20,12 @@ TENANT_UUID_2 = str(uuid.uuid4())
 
 class TestSessions(base.WazoAuthTestCase):
 
-    @fixtures.http_tenant(uuid=TENANT_UUID_1)
-    @fixtures.http_tenant(uuid=TENANT_UUID_2)
-    @fixtures.http_user(username='one', password='pass', tenant_uuid=TENANT_UUID_1)
-    @fixtures.http_user(username='two', password='pass', tenant_uuid=TENANT_UUID_2)
-    @fixtures.http_token(username='one', password='pass')
-    @fixtures.http_token(username='two', password='pass')
+    @fixtures.http.tenant(uuid=TENANT_UUID_1)
+    @fixtures.http.tenant(uuid=TENANT_UUID_2)
+    @fixtures.http.user(username='one', password='pass', tenant_uuid=TENANT_UUID_1)
+    @fixtures.http.user(username='two', password='pass', tenant_uuid=TENANT_UUID_2)
+    @fixtures.http.token(username='one', password='pass')
+    @fixtures.http.token(username='two', password='pass')
     def test_list_tenant_filtering(self, token_2, token_1, *_):
         # Different tenant
         response = self.client.sessions.list(tenant_uuid=self.top_tenant_uuid)
@@ -72,10 +72,10 @@ class TestSessions(base.WazoAuthTestCase):
             )
         )
 
-    @fixtures.http_user(username='one', password='pass')
-    @fixtures.http_user(username='two', password='pass')
-    @fixtures.http_token(username='one', password='pass')
-    @fixtures.http_token(username='two', password='pass')
+    @fixtures.http.user(username='one', password='pass')
+    @fixtures.http.user(username='two', password='pass')
+    @fixtures.http.token(username='one', password='pass')
+    @fixtures.http.token(username='two', password='pass')
     def test_list_paginating(self, token_2, token_1, *_):
         response = self.client.sessions.list(limit=1)
         assert_that(

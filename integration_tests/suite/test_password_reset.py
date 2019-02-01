@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import yaml
@@ -14,8 +14,8 @@ from .helpers.base import (
 
 class TestResetPassword(WazoAuthTestCase):
 
-    @fixtures.http_user(username='foo', email_address='foo@example.com')
-    @fixtures.http_user(username='bar', email_address='bar@example.com')
+    @fixtures.http.user(username='foo', email_address='foo@example.com')
+    @fixtures.http.user(username='bar', email_address='bar@example.com')
     def test_password_reset(self, bar, foo):
         self.client.users.reset_password(username='foo')
         self.client.users.reset_password(email='bar@example.com')
@@ -43,7 +43,7 @@ class TestResetPassword(WazoAuthTestCase):
 
         return self.client.users.set_password(user_uuid, password, token)
 
-    @fixtures.http_user()
+    @fixtures.http.user()
     def test_set_password(self, user):
         new_password = '5ecr37'
 
