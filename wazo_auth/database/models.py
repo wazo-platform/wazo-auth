@@ -121,6 +121,11 @@ class Session(Base):
     __tablename__ = 'auth_session'
 
     uuid = Column(String(36), server_default=text('uuid_generate_v4()'), primary_key=True)
+    tenant_uuid = Column(
+        String(38),
+        ForeignKey('auth_tenant.uuid', ondelete='CASCADE'),
+        nullable=False,
+    )
     mobile = Column(Boolean, nullable=False, default=False)
 
 
