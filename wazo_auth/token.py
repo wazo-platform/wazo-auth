@@ -117,9 +117,9 @@ class ExpiredTokenRemover:
             logger.warning('failed to remove expired tokens', exc_info=self._debug)
 
     def _reschedule(self, interval):
-        t = Timer(interval, self.run)
-        t.daemon = True
-        t.start()
+        thread = Timer(interval, self.run)
+        thread.daemon = True
+        thread.start()
 
 
 class Manager:
@@ -144,7 +144,7 @@ class Manager:
 
         acls = backend.get_acls(login, args)
         expiration = args.get('expiration', self._default_expiration)
-        t = time.time()
+        current_time = time.time()
 
         session_payload = {}
         if metadata.get('tenant_uuid'):
@@ -157,8 +157,8 @@ class Manager:
             'auth_id': auth_id,
             'xivo_user_uuid': xivo_user_uuid,
             'xivo_uuid': xivo_uuid,
-            'expire_t': t + expiration,
-            'issued_t': t,
+            'expire_t': current_time + expiration,
+            'issued_t': current_time,
             'acls': acls or [],
             'metadata': metadata,
             'session_uuid': session_uuid,
