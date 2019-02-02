@@ -20,6 +20,22 @@ TENANT_UUID_2 = str(uuid.uuid4())
 
 class TestSessions(base.WazoAuthTestCase):
 
+    @fixtures.http.user(username='one', password='pass')
+    @fixtures.http.user(username='two', password='pass')
+    @fixtures.http.token(username='one', password='pass')
+    @fixtures.http.token(username='two', password='pass', session_type='Mobile')
+    def test_list(self, token_2, token_1, *_):
+        response = self.client.sessions.list()
+        assert_that(
+            response,
+            has_entries(
+                items=has_items(
+                    has_entries(uuid=token_2['session_uuid'], mobile=True),
+                    has_entries(uuid=token_1['session_uuid'], mobile=False),
+                )
+            )
+        )
+
     @fixtures.http.tenant(uuid=TENANT_UUID_1)
     @fixtures.http.tenant(uuid=TENANT_UUID_2)
     @fixtures.http.user(username='one', password='pass', tenant_uuid=TENANT_UUID_1)

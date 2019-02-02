@@ -146,7 +146,13 @@ class Manager:
         expiration = args.get('expiration', self._default_expiration)
         t = time.time()
 
-        session_uuid = self._dao.session.create(tenant_uuid=metadata.get('tenant_uuid'))
+        session_payload = {}
+        if metadata.get('tenant_uuid'):
+            session_payload['tenant_uuid'] = metadata['tenant_uuid']
+        if args.get('mobile'):
+            session_payload['mobile'] = args['mobile']
+        session_uuid = self._dao.session.create(**session_payload)
+
         token_payload = {
             'auth_id': auth_id,
             'xivo_user_uuid': xivo_user_uuid,
