@@ -55,7 +55,7 @@ class Controller:
         self._bus_publisher = bus.BusPublisher(config)
         dao = queries.DAO.from_config(self._config)
         self._tenant_tree = services.helpers.CachedTenantTree(dao.tenant)
-        self._token_manager = token.Manager(config, dao, self._tenant_tree)
+        self._token_manager = token.Manager(config, dao, self._tenant_tree, self._bus_publisher)
         self._backends = BackendsProxy()
         email_service = services.EmailService(dao, self._tenant_tree, config, template_formatter)
         external_auth_service = services.ExternalAuthService(

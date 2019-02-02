@@ -12,6 +12,8 @@ from hamcrest import (
     has_length,
     not_,
 )
+
+from xivo_test_helpers import until
 from .helpers import base, fixtures
 
 TENANT_UUID_1 = str(uuid.uuid4())
@@ -112,3 +114,18 @@ class TestSessions(base.WazoAuthTestCase):
                 items=has_length(response['total'] - 1)
             )
         )
+
+    @fixtures.http.user(username='foo', password='bar')
+    def test_bus_events(self, _):
+        routing_key = 'auth.sessions.*.created'
+        msg_accumulator = self.new_message_accumulator(routing_key)
+
+        session_uuid = self._post_token('foo', 'bar', session_type='Mobile')['session_uuid']
+
+        def bus_received_msg():
+            assert_that(
+                msg_accumulator.accumulate(),
+                contains(has_entries(data={'uuid': session_uuid, 'mobile': True}))
+            )
+
+        until.assert_(bus_received_msg, tries=10, interval=0.25)

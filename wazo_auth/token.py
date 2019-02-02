@@ -9,6 +9,8 @@ from threading import Timer
 
 from datetime import datetime
 
+from xivo_bus.resources.auth.events import SessionCreatedEvent
+
 from .exceptions import (
     MissingACLTokenException,
     UnknownTokenException,
@@ -124,11 +126,12 @@ class ExpiredTokenRemover:
 
 class Manager:
 
-    def __init__(self, config, dao, tenant_tree):
+    def __init__(self, config, dao, tenant_tree, bus_publisher):
         self._backend_policies = config.get('backend_policies', {})
         self._default_expiration = config['default_token_lifetime']
         self._dao = dao
         self._tenant_tree = tenant_tree
+        self._bus_publisher = bus_publisher
 
     def new_token(self, backend, login, args):
         metadata = backend.get_metadata(login, args)
@@ -152,6 +155,9 @@ class Manager:
         if args.get('mobile'):
             session_payload['mobile'] = args['mobile']
         session_uuid = self._dao.session.create(**session_payload)
+
+        event = SessionCreatedEvent(session_uuid, **session_payload)
+        self._bus_publisher.publish(event)
 
         token_payload = {
             'auth_id': auth_id,
