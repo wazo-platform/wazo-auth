@@ -108,7 +108,7 @@ class Controller:
         Tenant.setup(self._token_manager, self._user_service, self._tenant_service)
         self._flask_app = http.new_app(dependencies)
         self._expired_token_remover = token.ExpiredTokenRemover(config, dao)
-        self._expired_session_remover = session.ExpiredSessionRemover(config, dao)
+        self._expired_session_remover = session.ExpiredSessionRemover(config, dao, self._bus_publisher)
 
     def run(self):
         signal.signal(signal.SIGTERM, _signal_handler)

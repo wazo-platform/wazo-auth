@@ -5,13 +5,16 @@ import logging
 
 from threading import Timer
 
+from xivo_bus.resources.auth.events import SessionDeletedEvent
+
 logger = logging.getLogger(__name__)
 
 
 class ExpiredSessionRemover:
 
-    def __init__(self, config, dao):
+    def __init__(self, config, dao, bus_publisher):
         self._dao = dao
+        self._bus_publisher = bus_publisher
         self._cleanup_interval = config['session_cleanup_interval']
         self._debug = config['debug']
 
@@ -21,9 +24,14 @@ class ExpiredSessionRemover:
 
     def _cleanup(self):
         try:
-            self._dao.session.delete_expired()
+            sessions = self._dao.session.delete_expired()
         except Exception:
             logger.warning('failed to remove expired sessions', exc_info=self._debug)
+            return
+
+        for session in sessions:
+            event = SessionDeletedEvent(session['uuid'])
+            self._bus_publisher.publish(event)
 
     def _reschedule(self, interval):
         t = Timer(interval, self.run)
