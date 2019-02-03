@@ -99,7 +99,9 @@ class TestSessionDAO(base.DAOTestCase):
                 )
             )
 
-            self._session_dao.delete_expired()
+            result = self._session_dao.delete_expired()
+
+            assert_that(result, has_items(has_entries(uuid=session_2['uuid']))),
 
             sessions = s.query(models.Session).all()
             assert_that(

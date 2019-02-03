@@ -58,6 +58,7 @@ class SessionDAO(PaginatorMixin, BaseDAO):
 
     def delete_expired(self):
         with self.new_session() as s:
-            subquery = s.query(Session.uuid).outerjoin(Token).filter(Token.uuid == None)
-            query = s.query(Session).filter(Session.uuid.in_(subquery.subquery()))
+            sessions = s.query(Session.uuid).outerjoin(Token).filter(Token.uuid == None).all()
+            query = s.query(Session).filter(Session.uuid.in_(sessions))
             query.delete(synchronize_session=False)
+            return [{'uuid': session.uuid} for session in sessions]
