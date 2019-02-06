@@ -116,7 +116,7 @@ class TestSessions(base.WazoAuthTestCase):
         )
 
     @fixtures.http.user(username='foo', password='bar')
-    def test_create_event(self, _):
+    def test_create_event(self, user):
         routing_key = 'auth.sessions.*.created'
         msg_accumulator = self.new_message_accumulator(routing_key)
 
@@ -125,7 +125,9 @@ class TestSessions(base.WazoAuthTestCase):
         def bus_received_msg():
             assert_that(
                 msg_accumulator.accumulate(),
-                contains(has_entries(data={'uuid': session_uuid, 'mobile': True}))
+                contains(has_entries(
+                    data={'uuid': session_uuid, 'user_uuid': user['uuid'], 'mobile': True}
+                ))
             )
 
         until.assert_(bus_received_msg, tries=10, interval=0.25)

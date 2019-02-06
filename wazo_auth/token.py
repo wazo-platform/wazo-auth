@@ -156,7 +156,7 @@ class Manager:
             session_payload['mobile'] = args['mobile']
         session_uuid = self._dao.session.create(**session_payload)
 
-        event = SessionCreatedEvent(session_uuid, **session_payload)
+        event = SessionCreatedEvent(session_uuid, user_uuid=auth_id, **session_payload)
         self._bus_publisher.publish(event)
 
         token_payload = {
