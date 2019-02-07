@@ -124,10 +124,11 @@ class ExpiredTokenRemover:
             return
 
         for session in sessions:
-            event_args = {'uuid': session['uuid'], 'user_uuid': None}
+            event_args = {'uuid': session['uuid'], 'user_uuid': None, 'tenant_uuid': None}
             for token in tokens:
                 if token['session_uuid'] == session['uuid']:
                     event_args['user_uuid'] = token['auth_id']
+                    event_args['tenant_uuid'] = token['metadata'].get('tenant_uuid')
                     break
             else:
                 logger.warning('session deleted without token associated: %s' % session['uuid'])

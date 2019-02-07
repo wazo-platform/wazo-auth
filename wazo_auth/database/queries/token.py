@@ -72,6 +72,7 @@ class TokenDAO(BaseDAO):
                 'uuid': token.uuid,
                 'auth_id': token.auth_id,
                 'session_uuid': token.session_uuid,
+                'metadata': json.loads(token.metadata_) if token.metadata_ else {},
             })
 
         token_uuids = [token.uuid for token in tokens]

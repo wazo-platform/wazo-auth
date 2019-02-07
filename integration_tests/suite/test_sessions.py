@@ -126,14 +126,19 @@ class TestSessions(base.WazoAuthTestCase):
             assert_that(
                 msg_accumulator.accumulate(),
                 contains(has_entries(
-                    data={'uuid': session_uuid, 'user_uuid': user['uuid'], 'mobile': True}
+                    data={
+                        'uuid': session_uuid,
+                        'user_uuid': user['uuid'],
+                        'tenant_uuid': user['tenant_uuid'],
+                        'mobile': True,
+                    }
                 ))
             )
 
         until.assert_(bus_received_msg, tries=10, interval=0.25)
 
     @fixtures.http.user(username='foo', password='bar')
-    def test_delete_event(self, _):
+    def test_delete_event(self, user):
         routing_key = 'auth.sessions.*.deleted'
         msg_accumulator = self.new_message_accumulator(routing_key)
 
@@ -146,6 +151,7 @@ class TestSessions(base.WazoAuthTestCase):
                     data={
                         'uuid': session_uuid,
                         'user_uuid': user['uuid'],
+                        'tenant_uuid': user['tenant_uuid'],
                     }
                 ))
             )
