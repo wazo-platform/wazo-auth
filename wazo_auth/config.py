@@ -19,7 +19,6 @@ _DEFAULT_CONFIG = {
     'pid_filename': '/var/run/wazo-auth/wazo-auth.pid',
     'default_token_lifetime': TWO_HOURS,
     'token_cleanup_interval': 60.0,
-    'session_cleanup_interval': 60.0,
     'init_key_filename': None,
     'init_policy_name': 'wazo_default_master_user_policy',
 

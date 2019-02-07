@@ -9,7 +9,10 @@ from threading import Timer
 
 from datetime import datetime
 
-from xivo_bus.resources.auth.events import SessionCreatedEvent
+from xivo_bus.resources.auth.events import (
+    SessionCreatedEvent,
+    SessionDeletedEvent,
+)
 
 from .exceptions import (
     MissingACLTokenException,
@@ -103,8 +106,9 @@ class Token:
 
 class ExpiredTokenRemover:
 
-    def __init__(self, config, dao):
+    def __init__(self, config, dao, bus_publisher):
         self._dao = dao
+        self._bus_publisher = bus_publisher
         self._cleanup_interval = config['token_cleanup_interval']
         self._debug = config['debug']
 
@@ -114,9 +118,22 @@ class ExpiredTokenRemover:
 
     def _cleanup(self):
         try:
-            self._dao.token.delete_expired_tokens()
+            tokens, sessions = self._dao.token.delete_expired_tokens_and_sessions()
         except Exception:
-            logger.warning('failed to remove expired tokens', exc_info=self._debug)
+            logger.warning('failed to remove expired tokens and sessions', exc_info=self._debug)
+            return
+
+        for session in sessions:
+            event_args = {'uuid': session['uuid'], 'user_uuid': None}
+            for token in tokens:
+                if token['session_uuid'] == session['uuid']:
+                    event_args['user_uuid'] = token['auth_id']
+                    break
+            else:
+                logger.warning('session deleted without token associated: %s' % session['uuid'])
+
+            event = SessionDeletedEvent(**event_args)
+            self._bus_publisher.publish(event)
 
     def _reschedule(self, interval):
         thread = Timer(interval, self.run)

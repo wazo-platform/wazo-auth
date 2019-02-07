@@ -7,11 +7,13 @@ import uuid
 from contextlib import contextmanager
 from hamcrest import (
     assert_that,
+    all_of,
     calling,
     contains,
     contains_inanyorder,
     equal_to,
     has_entries,
+    has_items,
     has_properties,
     instance_of,
     not_,
@@ -21,6 +23,8 @@ from xivo_test_helpers.hamcrest.raises import raises
 from wazo_auth import exceptions
 from wazo_auth.database import models
 from .helpers import fixtures, base
+
+SESSION_UUID_1 = str(uuid.uuid4())
 
 
 def new_uuid():
@@ -353,21 +357,53 @@ class TestTokenDAO(base.DAOTestCase):
                               token['uuid'])
             self._token_dao.delete(token['uuid'])  # No error on delete unknown
 
-    def test_delete_expired_tokens(self):
-        with self._new_token() as a, \
-                self._new_token(expiration=0) as b, \
-                self._new_token(expiration=0) as c:
-            expired = [b, c]
-            valid = [a]
+    @fixtures.db.session()
+    @fixtures.db.session()
+    @fixtures.db.session(uuid=SESSION_UUID_1)
+    @fixtures.db.token(expiration=0)
+    @fixtures.db.token(expiration=0)
+    @fixtures.db.token(session_uuid=SESSION_UUID_1)
+    def test_delete_expired_tokens_and_sessions(self, token_1, token_2, token_3, session_1, session_2, session_3):
+        with self._session_dao.new_session() as s:
+            expired_tokens, expired_sessions = self._token_dao.delete_expired_tokens_and_sessions()
 
-            self._token_dao.delete_expired_tokens()
+            assert_that(
+                expired_tokens,
+                all_of(
+                    not_(has_items(has_entries(uuid=token_1['uuid']))),
+                    has_items(has_entries(uuid=token_2['uuid'])),
+                    has_items(has_entries(uuid=token_3['uuid'])),
+                )
+            )
 
-            for token in valid:
-                assert_that(calling(self._token_dao.get).with_args(token['uuid']),
-                            not_(raises(exceptions.UnknownTokenException)))
-            for token in expired:
-                assert_that(calling(self._token_dao.get).with_args(token['uuid']),
-                            raises(exceptions.UnknownTokenException))
+            assert_that(
+                expired_sessions,
+                all_of(
+                    not_(has_items(has_entries(uuid=session_1['uuid']))),
+                    has_items(has_entries(uuid=session_2['uuid'])),
+                    has_items(has_entries(uuid=session_3['uuid'])),
+                )
+            )
+
+            sessions = s.query(models.Session).all()
+            assert_that(
+                sessions,
+                all_of(
+                    has_items(has_properties(uuid=session_1['uuid'])),
+                    not_(has_items(has_properties(uuid=session_2['uuid']))),
+                    not_(has_items(has_properties(uuid=session_3['uuid']))),
+                )
+            )
+
+            tokens = s.query(models.Token).all()
+            assert_that(
+                tokens,
+                all_of(
+                    has_items(has_properties(uuid=token_1['uuid'])),
+                    not_(has_items(has_properties(uuid=token_2['uuid']))),
+                    not_(has_items(has_properties(uuid=token_3['uuid']))),
+                )
+            )
 
     @contextmanager
     def _new_token(self, acls=None, metadata=None, expiration=120):

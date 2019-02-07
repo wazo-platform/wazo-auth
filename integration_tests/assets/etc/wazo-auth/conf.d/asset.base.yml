@@ -1,5 +1,4 @@
 token_cleanup_interval: 2.0
-session_cleanup_interval: 2.0
 
 enabled_http_plugins:
   users: true

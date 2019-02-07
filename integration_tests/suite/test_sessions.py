@@ -142,7 +142,12 @@ class TestSessions(base.WazoAuthTestCase):
         def bus_received_msg():
             assert_that(
                 msg_accumulator.accumulate(),
-                contains(has_entries(data={'uuid': session_uuid}))
+                contains(has_entries(
+                    data={
+                        'uuid': session_uuid,
+                        'user_uuid': user['uuid'],
+                    }
+                ))
             )
 
         until.assert_(bus_received_msg, tries=10, interval=0.25)

@@ -13,7 +13,7 @@ from xivo.http_helpers import ReverseProxied
 from xivo.consul_helpers import ServiceCatalogRegistration
 from werkzeug.contrib.fixers import ProxyFix
 
-from . import bus, http, services, token, session
+from . import bus, http, services, token
 from .database import queries
 from .flask_helpers import Tenant
 from .helpers import LocalTokenManager
@@ -107,8 +107,7 @@ class Controller:
         }
         Tenant.setup(self._token_manager, self._user_service, self._tenant_service)
         self._flask_app = http.new_app(dependencies)
-        self._expired_token_remover = token.ExpiredTokenRemover(config, dao)
-        self._expired_session_remover = session.ExpiredSessionRemover(config, dao, self._bus_publisher)
+        self._expired_token_remover = token.ExpiredTokenRemover(config, dao, self._bus_publisher)
 
     def run(self):
         signal.signal(signal.SIGTERM, _signal_handler)
@@ -128,7 +127,6 @@ class Controller:
                                             partial(self_check,
                                                     self._listen_port)):
                 self._expired_token_remover.run()
-                self._expired_session_remover.run()
                 local_token_manager = self._get_local_token_manager()
                 self._config['local_token_manager'] = local_token_manager
                 try:
