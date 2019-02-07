@@ -17,6 +17,7 @@ from .helpers import base, fixtures
 
 TENANT_UUID_1 = str(uuid.uuid4())
 SESSION_UUID_1 = str(uuid.uuid4())
+SESSION_UUID_2 = str(uuid.uuid4())
 
 
 def setup_module():
@@ -34,13 +35,22 @@ class TestSessionDAO(base.DAOTestCase):
         assert_that(session_uuid, is_not(none()))
 
     @fixtures.db.tenant(uuid=TENANT_UUID_1)
-    @fixtures.db.session(mobile=False)
-    @fixtures.db.session(tenant_uuid=TENANT_UUID_1, mobile=True)
-    def test_list(self, session_1, session_2, _):
+    @fixtures.db.session(uuid=SESSION_UUID_2, mobile=False)
+    @fixtures.db.session(uuid=SESSION_UUID_1, tenant_uuid=TENANT_UUID_1, mobile=True)
+    @fixtures.db.token(session_uuid=SESSION_UUID_2)
+    @fixtures.db.token(session_uuid=SESSION_UUID_1)
+    def test_list(self, token_1, token_2, session_1, session_2, tenant_uuid):
         result = self._session_dao.list_()
         assert_that(result, contains_inanyorder(
-            has_entries(uuid=session_1['uuid']),
-            has_entries(uuid=session_2['uuid']),
+            has_entries(
+                uuid=session_1['uuid'],
+                user_uuid=token_1['auth_id'],
+                tenant_uuid=tenant_uuid,
+            ),
+            has_entries(
+                uuid=session_2['uuid'],
+                user_uuid=token_2['auth_id'],
+            ),
         ))
 
         result = self._session_dao.list_(tenant_uuids=[TENANT_UUID_1])
@@ -68,8 +78,10 @@ class TestSessionDAO(base.DAOTestCase):
         ))
 
     @fixtures.db.tenant(uuid=TENANT_UUID_1)
-    @fixtures.db.session(tenant_uuid=TENANT_UUID_1)
-    @fixtures.db.session()
+    @fixtures.db.session(uuid=SESSION_UUID_2)
+    @fixtures.db.session(uuid=SESSION_UUID_1, tenant_uuid=TENANT_UUID_1)
+    @fixtures.db.token(session_uuid=SESSION_UUID_2)
+    @fixtures.db.token(session_uuid=SESSION_UUID_1)
     def test_count(self, *_):
         result = self._session_dao.count()
         assert_that(result, equal_to(2))

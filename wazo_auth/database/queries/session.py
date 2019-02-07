@@ -7,6 +7,7 @@ from .base import BaseDAO, PaginatorMixin
 from ..models import (
     Session,
     Tenant,
+    Token,
 )
 
 
@@ -35,14 +36,15 @@ class SessionDAO(PaginatorMixin, BaseDAO):
             filter_ = Session.tenant_uuid.in_(tenant_uuids)
 
         with self.new_session() as s:
-            query = s.query(Session).filter(filter_)
+            query = s.query(Session, Token).join(Token).filter(filter_)
             query = self._paginator.update_query(query, **kwargs)
 
             return [{
-                'uuid': session.uuid,
-                'mobile': session.mobile,
-                'tenant_uuid': session.tenant_uuid,
-            } for session in query.all()]
+                'uuid': result.Session.uuid,
+                'mobile': result.Session.mobile,
+                'tenant_uuid': result.Session.tenant_uuid,
+                'user_uuid': result.Token.auth_id,
+            } for result in query.all()]
 
     def count(self, tenant_uuids=None, **kwargs):
         filter_ = text('true')
@@ -53,4 +55,4 @@ class SessionDAO(PaginatorMixin, BaseDAO):
             filter_ = and_(filter_, Session.tenant_uuid.in_(tenant_uuids))
 
         with self.new_session() as s:
-            return s.query(Session).filter(filter_).count()
+            return s.query(Session).join(Token).filter(filter_).count()
