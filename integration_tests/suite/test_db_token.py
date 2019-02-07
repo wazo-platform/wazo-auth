@@ -4,7 +4,6 @@
 import time
 import uuid
 
-from contextlib import contextmanager
 from hamcrest import (
     all_of,
     assert_that,
@@ -22,10 +21,6 @@ from .helpers import base, fixtures
 SESSION_UUID_1 = str(uuid.uuid4())
 
 
-def new_uuid():
-    return str(uuid.uuid4())
-
-
 def setup_module():
     base.DBStarter.setUpClass()
 
@@ -36,34 +31,47 @@ def teardown_module():
 
 class TestTokenDAO(base.DAOTestCase):
 
-    def test_create(self):
-        metadata = {
-            'uuid': '08b213da-9963-4d25-96a3-f02d717e82f2',
-            'id': 42,
-            'msg': 'a string field',
+    @fixtures.db.session()
+    def test_create(self, session):
+        now = int(time.time())
+        body = {
+            'auth_id': 'test',
+            'xivo_user_uuid': str(uuid.uuid4),
+            'xivo_uuid': str(uuid.uuid4),
+            'issued_t': now,
+            'expire_t': now + 120,
+            'acls': ['first', 'second'],
+            'metadata': {
+                'uuid': '08b213da-9963-4d25-96a3-f02d717e82f2',
+                'id': 42,
+                'msg': 'a string field',
+            },
+            'session_uuid': session['uuid'],
         }
+        token_uuid = self._token_dao.create(body)
 
-        with self._new_token(metadata=metadata) as e1, \
-                self._new_token(acls=['first', 'second']) as e2:
-            assert_that(e1['metadata'], has_entries(**metadata))
-            t1 = self._token_dao.get(e1['uuid'])
-            t2 = self._token_dao.get(e2['uuid'])
-            assert_that(t1, equal_to(e1))
-            assert_that(t2, equal_to(e2))
+        result = self._token_dao.get(token_uuid)
+        assert_that(
+            result,
+            has_entries(
+                uuid=token_uuid,
+                **body
+            )
+        )
 
-    def test_get(self):
-        self.assertRaises(exceptions.UnknownTokenException, self._token_dao.get,
-                          'unknown')
-        with self._new_token(), self._new_token() as expected_token, self._new_token():
-            token = self._token_dao.get(expected_token['uuid'])
-        assert_that(token, equal_to(expected_token))
+    @fixtures.db.token()
+    @fixtures.db.token()
+    @fixtures.db.token()
+    def test_get(self, token, *_):
+        self.assertRaises(exceptions.UnknownTokenException, self._token_dao.get, 'unknown')
+        result = self._token_dao.get(token['uuid'])
+        assert_that(result, equal_to(token))
 
-    def test_delete(self):
-        with self._new_token() as token:
-            self._token_dao.delete(token['uuid'])
-            self.assertRaises(exceptions.UnknownTokenException, self._token_dao.get,
-                              token['uuid'])
-            self._token_dao.delete(token['uuid'])  # No error on delete unknown
+    @fixtures.db.token()
+    def test_delete(self, token):
+        self._token_dao.delete(token['uuid'])
+        self.assertRaises(exceptions.UnknownTokenException, self._token_dao.get, token['uuid'])
+        self._token_dao.delete(token['uuid'])  # No error on delete unknown
 
     @fixtures.db.session()
     @fixtures.db.session()
@@ -112,23 +120,3 @@ class TestTokenDAO(base.DAOTestCase):
                     not_(has_items(has_properties(uuid=token_3['uuid']))),
                 )
             )
-
-    @contextmanager
-    def _new_token(self, acls=None, metadata=None, expiration=120):
-        session_uuid = self._session_dao.create()
-        now = int(time.time())
-        body = {
-            'auth_id': 'test',
-            'xivo_user_uuid': new_uuid(),
-            'xivo_uuid': new_uuid(),
-            'issued_t': now,
-            'expire_t': now + expiration,
-            'acls': acls or [],
-            'metadata': metadata or {},
-            'session_uuid': session_uuid,
-        }
-        token_uuid = self._token_dao.create(body)
-        token_data = dict(body)
-        token_data['uuid'] = token_uuid
-        yield token_data
-        self._token_dao.delete(token_uuid)
