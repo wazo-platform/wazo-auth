@@ -1,4 +1,4 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -26,7 +26,9 @@ from hamcrest import (
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from wazo_auth import exceptions
+from wazo_auth.database import models
 from wazo_auth.database.queries.token import TokenDAO
+from wazo_auth.database.queries.session import SessionDAO
 from .helpers.base import (
     AuthLaunchingTestCase,
     WazoAuthTestCase,
@@ -157,6 +159,12 @@ class TestCore(WazoAuthTestCase):
 
         until.false(self._is_token_in_the_db, token_data['token'], tries=5, interval=1)
 
+    def test_that_expired_tokens_do_not_leak_session_in_the_db(self):
+        token_data = self._post_token('foo', 'bar')
+        self.client.token.revoke(token_data['token'])
+
+        until.false(self._is_session_in_the_db, token_data['session_uuid'], tries=5, interval=1)
+
     def test_the_expiration_argument_as_a_string(self):
         self._post_token_with_expected_exception(
             'foo', 'bar', expiration="string",
@@ -254,6 +262,15 @@ class TestCore(WazoAuthTestCase):
             return True
         except exceptions.UnknownTokenException:
             return False
+
+    def _is_session_in_the_db(self, session_uuid):
+        db_uri = os.getenv('DB_URI', 'postgresql://asterisk:proformatique@localhost:{port}')
+        dao = SessionDAO(db_uri.format(port=self.service_port(5432, 'postgres')))
+        with dao.new_session() as s:
+            result = s.query(models.Session).filter(models.Session.uuid == session_uuid).first()
+        if result:
+            return True
+        return False
 
 
 class TestNoSSLCertificate(AuthLaunchingTestCase):

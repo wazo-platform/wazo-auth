@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -371,6 +371,7 @@ class TestTokenDAO(base.DAOTestCase):
 
     @contextmanager
     def _new_token(self, acls=None, metadata=None, expiration=120):
+        session_uuid = self._session_dao.create()
         now = int(time.time())
         body = {
             'auth_id': 'test',
@@ -380,6 +381,7 @@ class TestTokenDAO(base.DAOTestCase):
             'expire_t': now + expiration,
             'acls': acls or [],
             'metadata': metadata or {},
+            'session_uuid': session_uuid,
         }
         token_uuid = self._token_dao.create(body)
         token_data = dict(body)

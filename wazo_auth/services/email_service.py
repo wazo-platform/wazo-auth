@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -81,6 +81,7 @@ class EmailService(BaseService):
         return self._new_generic_token(self._reset_token_expiration, acl)
 
     def _new_generic_token(self, expiration, *acls):
+        session_uuid = self._dao.session.create()
         t = time.time()
         token_payload = {
             'auth_id': 'wazo-auth',
@@ -89,5 +90,6 @@ class EmailService(BaseService):
             'expire_t': t + expiration,
             'issued_t': t,
             'acls': acls,
+            'session_uuid': session_uuid
         }
         return self._dao.token.create(token_payload)
