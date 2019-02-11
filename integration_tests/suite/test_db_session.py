@@ -29,8 +29,8 @@ def teardown_module():
 class TestSessionDAO(base.DAOTestCase):
 
     def test_create(self):
-        tenant_uuid = self._session_dao.create()
-        assert_that(tenant_uuid, is_not(none()))
+        session_uuid = self._session_dao.create()
+        assert_that(session_uuid, is_not(none()))
 
     @fixtures.session()
     @fixtures.session(uuid=SESSION_UUID_1)
