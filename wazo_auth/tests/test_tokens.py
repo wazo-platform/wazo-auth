@@ -1,8 +1,9 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import unittest
 import time
+import uuid
 
 from hamcrest import assert_that, equal_to
 from mock import Mock, sentinel
@@ -10,6 +11,10 @@ from mock import Mock, sentinel
 from wazo_auth import token
 from ..database import queries
 from ..database.queries.token import TokenDAO
+
+
+def new_uuid():
+    return str(uuid.uuid4())
 
 
 class TestManager(unittest.TestCase):
@@ -33,10 +38,11 @@ class TestManager(unittest.TestCase):
 class TestToken(unittest.TestCase):
 
     def setUp(self):
-        self.id_ = 'the-token-id'
+        self.id_ = new_uuid()
         self.auth_id = 'the-auth-id'
-        self.xivo_user_uuid = 'the-user-uuid'
-        self.xivo_uuid = 'the-xivo-uuid'
+        self.xivo_user_uuid = new_uuid()
+        self.xivo_uuid = new_uuid()
+        self.session_uuid = new_uuid()
         self.issued_at = 1480011471.53537
         self.expires_at = 1480011513.53537
         self.acls = ['confd']
@@ -54,7 +60,9 @@ class TestToken(unittest.TestCase):
             issued_t=self.issued_at,
             expire_t=self.expires_at,
             acls=self.acls,
-            metadata=self.metadata)
+            metadata=self.metadata,
+            session_uuid=self.session_uuid,
+        )
         self.utc_issued_at = '2016-11-24T18:17:51.535370'
         self.utc_expires_at = '2016-11-24T18:18:33.535370'
 
