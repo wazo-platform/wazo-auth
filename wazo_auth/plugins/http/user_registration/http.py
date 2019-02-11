@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
@@ -30,7 +30,7 @@ class Register(http.ErrorCatchingResource):
                     continue
                 self.email_service.send_confirmation_email(result['username'], e['uuid'], address)
         except Exception:
-            self.user_service.delete_user(result['uuid'])
+            self.user_service.delete_user(tenant['uuid'], result['uuid'])
             raise
 
         return result, 200
