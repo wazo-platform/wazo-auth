@@ -62,6 +62,7 @@ class Controller:
             dao, self._tenant_tree, config, self._bus_publisher, config['enabled_external_auth_plugins'])
         group_service = services.GroupService(dao, self._tenant_tree)
         policy_service = services.PolicyService(dao, self._tenant_tree)
+        session_service = services.SessionService(dao, self._tenant_tree)
         self._user_service = services.UserService(dao, self._tenant_tree)
         self._tenant_service = services.TenantService(dao, self._tenant_tree, self._bus_publisher)
         self._metadata_plugins = plugin_helpers.load(
@@ -101,6 +102,7 @@ class Controller:
             'token_manager': self._token_manager,
             'policy_service': policy_service,
             'tenant_service': self._tenant_service,
+            'session_service': session_service,
             'template_formatter': template_formatter,
         }
         Tenant.setup(self._token_manager, self._user_service, self._tenant_service)

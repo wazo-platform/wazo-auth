@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -46,7 +46,7 @@ class TestUserDAO(base.DAOTestCase):
             email['confirmed'] = confirmed
         return email
 
-    @fixtures.user(email_address='foobar@example.com', email_confirmed=False)
+    @fixtures.db.user(email_address='foobar@example.com', email_confirmed=False)
     def test_user_email_association(self, user_uuid):
         emails = []
 
@@ -115,8 +115,8 @@ class TestUserDAO(base.DAOTestCase):
         ))
         assert_that(self._user_dao.get_emails(user_uuid), contains_inanyorder(*result))
 
-    @fixtures.policy()
-    @fixtures.user()
+    @fixtures.db.policy()
+    @fixtures.db.user()
     def test_user_policy_association(self, user_uuid, policy_uuid):
         self._user_dao.add_policy(user_uuid, policy_uuid)
         with self._user_dao.new_session() as s:
@@ -149,8 +149,8 @@ class TestUserDAO(base.DAOTestCase):
             'unknown policy',
         )
 
-    @fixtures.policy()
-    @fixtures.user()
+    @fixtures.db.policy()
+    @fixtures.db.user()
     def test_user_remove_policy(self, user_uuid, policy_uuid):
         nb_deleted = self._user_dao.remove_policy(user_uuid, policy_uuid)
         assert_that(nb_deleted, equal_to(0))
@@ -166,10 +166,10 @@ class TestUserDAO(base.DAOTestCase):
         nb_deleted = self._user_dao.remove_policy(user_uuid, policy_uuid)
         assert_that(nb_deleted, equal_to(1))
 
-    @fixtures.policy(name='c', description='The third foobar')
-    @fixtures.policy(name='b', description='The second foobar')
-    @fixtures.policy(name='a')
-    @fixtures.user()
+    @fixtures.db.policy(name='c', description='The third foobar')
+    @fixtures.db.policy(name='b', description='The second foobar')
+    @fixtures.db.policy(name='a')
+    @fixtures.db.user()
     def test_user_count_policies(self, user_uuid, policy_a, policy_b, policy_c):
         result = self._user_dao.count_policies(user_uuid)
         assert_that(result, equal_to(0), 'none associated')
@@ -256,7 +256,7 @@ class TestUserDAO(base.DAOTestCase):
         finally:
             self._user_dao.delete(user_uuid)
 
-    @fixtures.user(username='foobar')
+    @fixtures.db.user(username='foobar')
     def test_that_the_username_is_unique(self, user_uuid):
         assert_that(
             calling(self._user_dao.create).with_args(
@@ -277,7 +277,7 @@ class TestUserDAO(base.DAOTestCase):
             ),
         )
 
-    @fixtures.user(email_address='foobar@example.com')
+    @fixtures.db.user(email_address='foobar@example.com')
     def test_that_the_email_is_unique(self, user_uuid):
         assert_that(
             calling(self._user_dao.create).with_args(
@@ -298,16 +298,16 @@ class TestUserDAO(base.DAOTestCase):
             ),
         )
 
-    @fixtures.user()
-    @fixtures.user()
-    @fixtures.user()
+    @fixtures.db.user()
+    @fixtures.db.user()
+    @fixtures.db.user()
     def test_user_count_no_search_term_no_strict_filter(self, a, b, c):
         result = self._user_dao.count()
         assert_that(result, equal_to(3))
 
-    @fixtures.user(username='foo')
-    @fixtures.user(email_address='foobar@example.com')
-    @fixtures.user(username='bar', email_address='bar@example.com')
+    @fixtures.db.user(username='foo')
+    @fixtures.db.user(email_address='foobar@example.com')
+    @fixtures.db.user(username='bar', email_address='bar@example.com')
     def test_user_count_no_search_term_strict_filter(self, a, b, c):
         result = self._user_dao.count(username='foo')
         assert_that(result, equal_to(1))
@@ -318,23 +318,23 @@ class TestUserDAO(base.DAOTestCase):
         result = self._user_dao.count(uuid=c)
         assert_that(result, equal_to(1))
 
-    @fixtures.user(username='foo123')
-    @fixtures.user(email_address='foobar123@example.com')
-    @fixtures.user(username='bar456', email_address='bar456@example.com')
+    @fixtures.db.user(username='foo123')
+    @fixtures.db.user(email_address='foobar123@example.com')
+    @fixtures.db.user(username='bar456', email_address='bar456@example.com')
     def test_user_count_search_term(self, a, b, c):
         result = self._user_dao.count(search='123')
         assert_that(result, equal_to(2))
 
-    @fixtures.user(username='foo')
-    @fixtures.user(email_address='foobar@example.com')
-    @fixtures.user(username='bar', email_address='bar@example.com')
+    @fixtures.db.user(username='foo')
+    @fixtures.db.user(email_address='foobar@example.com')
+    @fixtures.db.user(username='bar', email_address='bar@example.com')
     def test_user_count_mixed_strict_and_search(self, a, b, c):
         result = self._user_dao.count(search='foo', uuid=a)
         assert_that(result, equal_to(0))
 
-    @fixtures.user(username='foo')
-    @fixtures.user(email_address='foobar@example.com')
-    @fixtures.user(username='bar', email_address='bar@example.com')
+    @fixtures.db.user(username='foo')
+    @fixtures.db.user(email_address='foobar@example.com')
+    @fixtures.db.user(username='bar', email_address='bar@example.com')
     def test_user_count_unfiltered(self, a, b, c):
         result = self._user_dao.count(search='foo', filtered=False)
         assert_that(result, equal_to(3))
@@ -342,9 +342,9 @@ class TestUserDAO(base.DAOTestCase):
         result = self._user_dao.count(uuid=a, filtered=False)
         assert_that(result, equal_to(3))
 
-    @fixtures.user(username='a', email_address='a@example.com')
-    @fixtures.user(username='b', email_address='b@example.com')
-    @fixtures.user(username='c', email_address='c@example.com')
+    @fixtures.db.user(username='a', email_address='a@example.com')
+    @fixtures.db.user(username='b', email_address='b@example.com')
+    @fixtures.db.user(username='c', email_address='c@example.com')
     def test_user_list_no_search_term_no_strict_filter(self, c, b, a):
         result = self._user_dao.list_()
 
@@ -390,9 +390,9 @@ class TestUserDAO(base.DAOTestCase):
             )
         )
 
-    @fixtures.user(username='foo', email_address='foo@example.com')
-    @fixtures.user(username='bar', email_address='bar@example.com')
-    @fixtures.user(username='baz', email_address='baz@example.com')
+    @fixtures.db.user(username='foo', email_address='foo@example.com')
+    @fixtures.db.user(username='bar', email_address='bar@example.com')
+    @fixtures.db.user(username='baz', email_address='baz@example.com')
     def test_user_list_with_search_term(self, baz, bar, foo):
         result = self._user_dao.list_(search='@example.')
 
@@ -456,9 +456,9 @@ class TestUserDAO(base.DAOTestCase):
             )
         )
 
-    @fixtures.user(username='foo', email_address='foo@example.com')
-    @fixtures.user(username='bar', email_address='bar@example.com')
-    @fixtures.user(username='baz', email_address='baz@example.com')
+    @fixtures.db.user(username='foo', email_address='foo@example.com')
+    @fixtures.db.user(username='bar', email_address='bar@example.com')
+    @fixtures.db.user(username='baz', email_address='baz@example.com')
     def test_user_list_with_strict_filters(self, baz, bar, foo):
         result = self._user_dao.list_(username='foo')
 
@@ -497,9 +497,9 @@ class TestUserDAO(base.DAOTestCase):
             )
         )
 
-    @fixtures.user(username='foo', email_address='foo@example.com')
-    @fixtures.user(username='bar', email_address='bar@example.com')
-    @fixtures.user(username='baz', email_address='baz@example.com')
+    @fixtures.db.user(username='foo', email_address='foo@example.com')
+    @fixtures.db.user(username='bar', email_address='bar@example.com')
+    @fixtures.db.user(username='baz', email_address='baz@example.com')
     def test_user_list_with_strict_filters_and_search(self, baz, bar, foo):
         result = self._user_dao.list_(username='foo', search='baz')
         assert_that(result, empty())
@@ -522,15 +522,15 @@ class TestUserDAO(base.DAOTestCase):
             )
         )
 
-    @fixtures.user(username='a')
-    @fixtures.user(username='b')
-    @fixtures.user(username='c')
-    @fixtures.user(username='d')
-    @fixtures.user(username='e')
-    @fixtures.user(username='f')
-    @fixtures.user(username='g')
-    @fixtures.user(username='h')
-    @fixtures.user(username='i')
+    @fixtures.db.user(username='a')
+    @fixtures.db.user(username='b')
+    @fixtures.db.user(username='c')
+    @fixtures.db.user(username='d')
+    @fixtures.db.user(username='e')
+    @fixtures.db.user(username='f')
+    @fixtures.db.user(username='g')
+    @fixtures.db.user(username='h')
+    @fixtures.db.user(username='i')
     def test_pagination(self, i, h, g, f, e, d, c, b, a):
         result = self._user_dao.list_(order='username', direction='desc', limit=1, offset=0)
         assert_that(result, contains_inanyorder(
@@ -549,7 +549,7 @@ class TestUserDAO(base.DAOTestCase):
             has_entries(uuid=c),
         ))
 
-    @fixtures.user(email_address='foo@example.com')
+    @fixtures.db.user(email_address='foo@example.com')
     def test_delete(self, user_uuid):
         self._user_dao.delete(user_uuid)
 
@@ -560,8 +560,8 @@ class TestUserDAO(base.DAOTestCase):
 
         assert_that(self._email_exists('foobar@example.com'), equal_to(False))
 
-    @fixtures.user(username='foobar')
-    @fixtures.user(username='foobaz', enabled=False)
+    @fixtures.db.user(username='foobar')
+    @fixtures.db.user(username='foobaz', enabled=False)
     def test_get_credential(self, *ignored_uuids):
         assert_that(
             calling(self._user_dao.get_credentials).with_args('not-foobar'),

@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -9,7 +9,7 @@ from .helpers.base import assert_http_error, assert_no_error, WazoAuthTestCase, 
 
 class TestEmailConfirmation(WazoAuthTestCase):
 
-    @fixtures.http_user_register(email_address='foobar@example.com')
+    @fixtures.http.user_register(email_address='foobar@example.com')
     def test_email_confirmation(self, user):
         email_uuid = user['emails'][0]['uuid']
 
@@ -23,7 +23,7 @@ class TestEmailConfirmation(WazoAuthTestCase):
                 address='foobar@example.com',
                 confirmed=True))))
 
-    @fixtures.http_user_register(email_address='foobar@example.com')
+    @fixtures.http.user_register(email_address='foobar@example.com')
     def test_email_confirmation_get(self, user):
         email_uuid = user['emails'][0]['uuid']
 
@@ -39,7 +39,7 @@ class TestEmailConfirmation(WazoAuthTestCase):
                 address='foobar@example.com',
                 confirmed=True))))
 
-    @fixtures.http_user_register(email_address='foobar@example.com')
+    @fixtures.http.user_register(email_address='foobar@example.com')
     def test_sending_a_new_confirmation_mail(self, user):
         email_uuid = user['emails'][0]['uuid']
 

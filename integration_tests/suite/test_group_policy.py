@@ -14,9 +14,9 @@ from .helpers import base, fixtures
 
 class TestGroupPolicyAssociation(base.WazoAuthTestCase):
 
-    @fixtures.http_policy()
-    @fixtures.http_policy()
-    @fixtures.http_group()
+    @fixtures.http.policy()
+    @fixtures.http.policy()
+    @fixtures.http.group()
     def test_delete(self, group, policy1, policy2):
         self.client.groups.add_policy(group['uuid'], policy1['uuid'])
         self.client.groups.add_policy(group['uuid'], policy2['uuid'])
@@ -41,9 +41,9 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         result = self.client.groups.get_policies(group['uuid'])
         assert_that(result, has_entries('items', contains(policy1)))
 
-    @fixtures.http_policy()
-    @fixtures.http_policy()
-    @fixtures.http_group()
+    @fixtures.http.policy()
+    @fixtures.http.policy()
+    @fixtures.http.group()
     def test_put(self, group, policy1, policy2):
         with self.client_in_subtenant() as (client, _, __):
             visible_group = client.groups.new(name='group2')
@@ -64,11 +64,11 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         result = self.client.groups.get_policies(group['uuid'])
         assert_that(result, has_entries(items=contains(policy1)))
 
-    @fixtures.http_policy(name='ignored')
-    @fixtures.http_policy(name='baz')
-    @fixtures.http_policy(name='bar')
-    @fixtures.http_policy(name='foo')
-    @fixtures.http_group()
+    @fixtures.http.policy(name='ignored')
+    @fixtures.http.policy(name='baz')
+    @fixtures.http.policy(name='bar')
+    @fixtures.http.policy(name='foo')
+    @fixtures.http.group()
     def test_list_policies(self, group, foo, bar, baz, ignored):
         for policy in (foo, bar, baz):
             self.client.groups.add_policy(group['uuid'], policy['uuid'])
@@ -90,9 +90,9 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         expected = contains(foo)
         assert_that(result, has_entries(total=3, filtered=1, items=expected))
 
-    @fixtures.http_policy(name='bar')
-    @fixtures.http_policy(name='foo')
-    @fixtures.http_group()
+    @fixtures.http.policy(name='bar')
+    @fixtures.http.policy(name='foo')
+    @fixtures.http.group()
     def test_list_policies_sorting(self, group, foo, bar):
         for policy in (foo, bar):
             self.client.groups.add_policy(group['uuid'], policy['uuid'])
@@ -101,10 +101,10 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         expected = [bar, foo]
         base.assert_sorted(action, order='name', expected=expected)
 
-    @fixtures.http_policy(name='baz')
-    @fixtures.http_policy(name='bar')
-    @fixtures.http_policy(name='foo')
-    @fixtures.http_group()
+    @fixtures.http.policy(name='baz')
+    @fixtures.http.policy(name='bar')
+    @fixtures.http.policy(name='foo')
+    @fixtures.http.group()
     def test_list_policies_paginating(self, group, foo, bar, baz):
         for policy in (foo, bar, baz):
             self.client.groups.add_policy(group['uuid'], policy['uuid'])
@@ -119,9 +119,9 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         expected = contains_inanyorder(baz, foo)
         assert_that(result, has_entries(total=3, filtered=3, items=expected))
 
-    @fixtures.http_user_register(username='foo', password='bar')
-    @fixtures.http_group(name='one')
-    @fixtures.http_policy(name='main', acl_templates=['foobar'])
+    @fixtures.http.user_register(username='foo', password='bar')
+    @fixtures.http.group(name='one')
+    @fixtures.http.policy(name='main', acl_templates=['foobar'])
     def test_generated_acl(self, policy, group, user):
         self.client.groups.add_user(group['uuid'], user['uuid'])
         self.client.groups.add_policy(group['uuid'], policy['uuid'])
@@ -130,11 +130,11 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         token_data = user_client.token.new('wazo_user', expiration=5)
         assert_that(token_data, has_entries('acls', has_items('foobar')))
 
-    @fixtures.http_user_register()
-    @fixtures.http_user_register()
-    @fixtures.http_user_register(username='foo', password='bar')
-    @fixtures.http_group(name='one')
-    @fixtures.http_policy(name='main', acl_templates=[
+    @fixtures.http.user_register()
+    @fixtures.http.user_register()
+    @fixtures.http.user_register(username='foo', password='bar')
+    @fixtures.http.group(name='one')
+    @fixtures.http.policy(name='main', acl_templates=[
         '{% for group in groups %}{% for user in group.users %}user.{{ user.uuid }}.*:{% endfor %}{% endfor %}'
     ])
     def test_generated_acl_with_group_data(self, policy, group, *users):

@@ -50,6 +50,7 @@ _DEFAULT_CONFIG = {
         'init': False,
         'password_reset': True,
         'policies': True,
+        'sessions': True,
         'tenant_user': True,
         'tenant_policy': True,
         'tenants': True,

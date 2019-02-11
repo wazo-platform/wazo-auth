@@ -115,9 +115,9 @@ class TestUserGroupList(base.WazoAuthTestCase):
 
 class TestUserGroupAssociation(base.WazoAuthTestCase):
 
-    @fixtures.http_user_register()
-    @fixtures.http_user_register()
-    @fixtures.http_group()
+    @fixtures.http.user_register()
+    @fixtures.http.user_register()
+    @fixtures.http.group()
     def test_delete(self, group, user1, user2):
         action = self.client.groups.remove_user
 
@@ -145,9 +145,9 @@ class TestUserGroupAssociation(base.WazoAuthTestCase):
                 self.client.groups.add_user(visible_group['uuid'], user1['uuid'])
                 assert_no_error(action, visible_group['uuid'], user1['uuid'])
 
-    @fixtures.http_user_register()
-    @fixtures.http_user_register()
-    @fixtures.http_group()
+    @fixtures.http.user_register()
+    @fixtures.http.user_register()
+    @fixtures.http.group()
     def test_put(self, group, user1, user2):
         action = self.client.groups.add_user
 
@@ -171,10 +171,10 @@ class TestUserGroupAssociation(base.WazoAuthTestCase):
 
                 assert_no_error(action, visible_group['uuid'], user3['uuid'])
 
-    @fixtures.http_user_register(username='foo', password='bar')
-    @fixtures.http_group(name='two')
-    @fixtures.http_group(name='one')
-    @fixtures.http_policy(name='main', acl_templates=[
+    @fixtures.http.user_register(username='foo', password='bar')
+    @fixtures.http.group(name='two')
+    @fixtures.http.group(name='one')
+    @fixtures.http.policy(name='main', acl_templates=[
         '{% for group in groups %}main.{{ group.name }}.*:{% endfor %}',
         '{% for group in groups %}main.{{ group.uuid }}:{% endfor %}',
     ])
