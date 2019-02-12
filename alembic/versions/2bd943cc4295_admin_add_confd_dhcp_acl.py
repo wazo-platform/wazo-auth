@@ -1,18 +1,16 @@
 """admin: add confd.dhcp ACL
 
 Revision ID: 2bd943cc4295
-Revises: 21ad58426cbd
+Revises: 53a816c76f56
 
 """
-
-# revision identifiers, used by Alembic.
-revision = '2bd943cc4295'
-down_revision = '21ad58426cbd'
 
 from alembic import op
 import sqlalchemy as sa
 
-
+# revision identifiers, used by Alembic.
+revision = '2bd943cc4295'
+down_revision = '53a816c76f56'
 
 POLICY_NAME = 'wazo_default_admin_policy'
 ACL_TEMPLATES = [
