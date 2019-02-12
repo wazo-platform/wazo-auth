@@ -15,6 +15,7 @@ paths:
       security:
       - wazo_auth_basic: []
       parameters:
+      - $ref: '#/parameters/wazo_session_type'
       - name: body
         in: body
         description: The token creation parameters
@@ -165,3 +166,12 @@ parameters:
     type: string
     description: The token to query
     required: true
+  wazo_session_type:
+    name: Wazo-Session-Type
+    in: header
+    type: string
+    description: The session type
+    required: false
+    enum:
+    - mobile
+    - desktop

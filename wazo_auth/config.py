@@ -90,7 +90,13 @@ _DEFAULT_CONFIG = {
         },
         'cors': {
             'enabled': True,
-            'allow_headers': ['Content-Type', 'Authorization', 'X-Auth-Token', 'Wazo-Tenant']
+            'allow_headers': [
+                'Content-Type',
+                'Authorization',
+                'X-Auth-Token',
+                'Wazo-Tenant',
+                'Wazo-Session-Type',
+            ]
         },
     },
     'consul': {

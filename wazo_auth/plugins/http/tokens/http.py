@@ -1,4 +1,4 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -31,6 +31,9 @@ class Tokens(BaseResource):
         args, error = schemas.TokenRequestSchema().load(request.get_json(force=True))
         if error:
             return http._error(400, str(error))
+
+        session_type = request.headers.get('Wazo-Session-Type', '').lower()
+        args['mobile'] = True if session_type == 'mobile' else False
 
         backend_name = args['backend']
         try:
