@@ -55,6 +55,8 @@ definitions:
     properties:
       uuid:
         type: string
+      user_uuid:
+        type: string
       tenant_uuid:
         type: string
       mobile:
