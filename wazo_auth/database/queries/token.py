@@ -66,6 +66,9 @@ class TokenDAO(BaseDAO):
         with self.new_session() as s:
             session_result = {}
             token = s.query(TokenModel).filter(filter_).first()
+            if not token:
+                return {}, {}
+
             session = token.session
             if len(session.tokens) == 1:
                 session_result = {
