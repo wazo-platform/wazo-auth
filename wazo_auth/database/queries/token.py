@@ -5,7 +5,7 @@ import json
 import time
 
 from .base import BaseDAO
-from ..models import ACL, Token as TokenModel
+from ..models import ACL, Token as TokenModel, Session
 from ... import exceptions
 
 
@@ -52,8 +52,47 @@ class TokenDAO(BaseDAO):
         with self.new_session() as s:
             s.query(TokenModel).filter(filter_).delete()
 
-    def delete_expired_tokens(self):
-        filter_ = TokenModel.expire_t < time.time()
-
+    def delete_expired_tokens_and_sessions(self):
         with self.new_session() as s:
-            s.query(TokenModel).filter(filter_).delete()
+            tokens = self._delete_expired_tokens(s)
+            sessions = self._delete_expired_sessions(s)
+
+        return tokens, sessions
+
+    def _delete_expired_tokens(self, s):
+        filter_ = TokenModel.expire_t < time.time()
+        tokens = s.query(TokenModel).filter(filter_).all()
+
+        if not tokens:
+            return []
+
+        results = []
+        for token in tokens:
+            results.append({
+                'uuid': token.uuid,
+                'auth_id': token.auth_id,
+                'session_uuid': token.session_uuid,
+                'metadata': json.loads(token.metadata_) if token.metadata_ else {},
+            })
+
+        token_uuids = [token.uuid for token in tokens]
+        filter_ = TokenModel.uuid.in_(token_uuids)
+        s.query(TokenModel).filter(filter_).delete(synchronize_session=False)
+        return results
+
+    def _delete_expired_sessions(self, s):
+        filter_ = TokenModel.uuid == None
+        sessions = s.query(Session.uuid).outerjoin(TokenModel).filter(filter_).all()
+
+        if not sessions:
+            return []
+
+        results = []
+        for session in sessions:
+            results.append({
+                'uuid': session.uuid,
+            })
+
+        filter_ = Session.uuid.in_(sessions)
+        s.query(Session).filter(filter_).delete(synchronize_session=False)
+        return results

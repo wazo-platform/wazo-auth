@@ -24,7 +24,8 @@ class TestManager(unittest.TestCase):
         self.token_dao = Mock(TokenDAO)
         dao = queries.DAO(token=self.token_dao)
         self.tenant_tree = Mock()
-        self.manager = token.Manager(self.config, dao, self.tenant_tree)
+        self.bus_publisher = Mock()
+        self.manager = token.Manager(self.config, dao, self.tenant_tree, self.bus_publisher)
 
     def test_remove_token(self):
         token_id = 'my-token'

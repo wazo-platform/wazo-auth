@@ -7,7 +7,6 @@ from .base import BaseDAO, PaginatorMixin
 from ..models import (
     Session,
     Tenant,
-    Token,
 )
 
 
@@ -55,9 +54,3 @@ class SessionDAO(PaginatorMixin, BaseDAO):
 
         with self.new_session() as s:
             return s.query(Session).filter(filter_).count()
-
-    def delete_expired(self):
-        with self.new_session() as s:
-            subquery = s.query(Session.uuid).outerjoin(Token).filter(Token.uuid == None)
-            query = s.query(Session).filter(Session.uuid.in_(subquery.subquery()))
-            query.delete(synchronize_session=False)

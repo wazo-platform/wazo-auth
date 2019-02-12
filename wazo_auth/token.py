@@ -9,6 +9,11 @@ from threading import Timer
 
 from datetime import datetime
 
+from xivo_bus.resources.auth.events import (
+    SessionCreatedEvent,
+    SessionDeletedEvent,
+)
+
 from .exceptions import (
     MissingACLTokenException,
     UnknownTokenException,
@@ -101,8 +106,9 @@ class Token:
 
 class ExpiredTokenRemover:
 
-    def __init__(self, config, dao):
+    def __init__(self, config, dao, bus_publisher):
         self._dao = dao
+        self._bus_publisher = bus_publisher
         self._cleanup_interval = config['token_cleanup_interval']
         self._debug = config['debug']
 
@@ -112,23 +118,38 @@ class ExpiredTokenRemover:
 
     def _cleanup(self):
         try:
-            self._dao.token.delete_expired_tokens()
+            tokens, sessions = self._dao.token.delete_expired_tokens_and_sessions()
         except Exception:
-            logger.warning('failed to remove expired tokens', exc_info=self._debug)
+            logger.warning('failed to remove expired tokens and sessions', exc_info=self._debug)
+            return
+
+        for session in sessions:
+            event_args = {'uuid': session['uuid'], 'user_uuid': None, 'tenant_uuid': None}
+            for token in tokens:
+                if token['session_uuid'] == session['uuid']:
+                    event_args['user_uuid'] = token['auth_id']
+                    event_args['tenant_uuid'] = token['metadata'].get('tenant_uuid')
+                    break
+            else:
+                logger.warning('session deleted without token associated: %s' % session['uuid'])
+
+            event = SessionDeletedEvent(**event_args)
+            self._bus_publisher.publish(event)
 
     def _reschedule(self, interval):
-        t = Timer(interval, self.run)
-        t.daemon = True
-        t.start()
+        thread = Timer(interval, self.run)
+        thread.daemon = True
+        thread.start()
 
 
 class Manager:
 
-    def __init__(self, config, dao, tenant_tree):
+    def __init__(self, config, dao, tenant_tree, bus_publisher):
         self._backend_policies = config.get('backend_policies', {})
         self._default_expiration = config['default_token_lifetime']
         self._dao = dao
         self._tenant_tree = tenant_tree
+        self._bus_publisher = bus_publisher
 
     def new_token(self, backend, login, args):
         metadata = backend.get_metadata(login, args)
@@ -144,7 +165,7 @@ class Manager:
 
         acls = backend.get_acls(login, args)
         expiration = args.get('expiration', self._default_expiration)
-        t = time.time()
+        current_time = time.time()
 
         session_payload = {}
         if metadata.get('tenant_uuid'):
@@ -153,12 +174,15 @@ class Manager:
             session_payload['mobile'] = args['mobile']
         session_uuid = self._dao.session.create(**session_payload)
 
+        event = SessionCreatedEvent(session_uuid, user_uuid=auth_id, **session_payload)
+        self._bus_publisher.publish(event)
+
         token_payload = {
             'auth_id': auth_id,
             'xivo_user_uuid': xivo_user_uuid,
             'xivo_uuid': xivo_uuid,
-            'expire_t': t + expiration,
-            'issued_t': t,
+            'expire_t': current_time + expiration,
+            'issued_t': current_time,
             'acls': acls or [],
             'metadata': metadata,
             'session_uuid': session_uuid,

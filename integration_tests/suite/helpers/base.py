@@ -122,13 +122,15 @@ class BaseTestCase(AuthLaunchingTestCase):
     def _get_email_filenames(self):
         return self.docker_exec(['ls', self.email_dir], 'smtp').decode('utf-8').strip().split('\n')
 
-    def _post_token(self, username, password, backend=None, expiration=None):
+    def _post_token(self, username, password, backend=None, expiration=None, session_type=None):
         client = self.new_auth_client(username, password)
         args = {}
         if backend:
             args['backend'] = backend
         if expiration:
             args['expiration'] = expiration
+        if session_type:
+            args['session_type'] = session_type
         return client.token.new(**args)
 
     def _post_token_with_expected_exception(self, username, password, backend=None, expiration=None,

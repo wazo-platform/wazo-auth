@@ -1,10 +1,8 @@
 # Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import time
 import uuid
 
-from contextlib import contextmanager
 from hamcrest import (
     assert_that,
     calling,
@@ -14,7 +12,6 @@ from hamcrest import (
     has_entries,
     has_properties,
     instance_of,
-    not_,
 )
 from xivo_test_helpers.hamcrest.raises import raises
 
@@ -22,9 +19,7 @@ from wazo_auth import exceptions
 from wazo_auth.database import models
 from .helpers import fixtures, base
 
-
-def new_uuid():
-    return str(uuid.uuid4())
+SESSION_UUID_1 = str(uuid.uuid4())
 
 
 def setup_module():
@@ -320,71 +315,3 @@ class TestExternalAuthDAO(base.DAOTestCase):
         result = self._external_auth_dao.update(user_uuid, self.auth_type, new_data)
         assert_that(result, equal_to(new_data))
         assert_that(self._external_auth_dao.get(user_uuid, self.auth_type), equal_to(new_data))
-
-
-class TestTokenDAO(base.DAOTestCase):
-
-    def test_create(self):
-        metadata = {
-            'uuid': '08b213da-9963-4d25-96a3-f02d717e82f2',
-            'id': 42,
-            'msg': 'a string field',
-        }
-
-        with self._new_token(metadata=metadata) as e1, \
-                self._new_token(acls=['first', 'second']) as e2:
-            assert_that(e1['metadata'], has_entries(**metadata))
-            t1 = self._token_dao.get(e1['uuid'])
-            t2 = self._token_dao.get(e2['uuid'])
-            assert_that(t1, equal_to(e1))
-            assert_that(t2, equal_to(e2))
-
-    def test_get(self):
-        self.assertRaises(exceptions.UnknownTokenException, self._token_dao.get,
-                          'unknown')
-        with self._new_token(), self._new_token() as expected_token, self._new_token():
-            token = self._token_dao.get(expected_token['uuid'])
-        assert_that(token, equal_to(expected_token))
-
-    def test_delete(self):
-        with self._new_token() as token:
-            self._token_dao.delete(token['uuid'])
-            self.assertRaises(exceptions.UnknownTokenException, self._token_dao.get,
-                              token['uuid'])
-            self._token_dao.delete(token['uuid'])  # No error on delete unknown
-
-    def test_delete_expired_tokens(self):
-        with self._new_token() as a, \
-                self._new_token(expiration=0) as b, \
-                self._new_token(expiration=0) as c:
-            expired = [b, c]
-            valid = [a]
-
-            self._token_dao.delete_expired_tokens()
-
-            for token in valid:
-                assert_that(calling(self._token_dao.get).with_args(token['uuid']),
-                            not_(raises(exceptions.UnknownTokenException)))
-            for token in expired:
-                assert_that(calling(self._token_dao.get).with_args(token['uuid']),
-                            raises(exceptions.UnknownTokenException))
-
-    @contextmanager
-    def _new_token(self, acls=None, metadata=None, expiration=120):
-        session_uuid = self._session_dao.create()
-        now = int(time.time())
-        body = {
-            'auth_id': 'test',
-            'xivo_user_uuid': new_uuid(),
-            'xivo_uuid': new_uuid(),
-            'issued_t': now,
-            'expire_t': now + expiration,
-            'acls': acls or [],
-            'metadata': metadata or {},
-            'session_uuid': session_uuid,
-        }
-        token_uuid = self._token_dao.create(body)
-        token_data = dict(body)
-        token_data['uuid'] = token_uuid
-        yield token_data
-        self._token_dao.delete(token_uuid)
