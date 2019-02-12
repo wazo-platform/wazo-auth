@@ -6,7 +6,6 @@ from sqlalchemy import text, and_
 from .base import BaseDAO, PaginatorMixin
 from ..models import (
     Session,
-    Tenant,
     Token,
 )
 
@@ -14,18 +13,6 @@ from ..models import (
 class SessionDAO(PaginatorMixin, BaseDAO):
 
     column_map = {'mobile': Session.mobile}
-
-    def create(self, **kwargs):
-        if not kwargs.get('tenant_uuid'):
-            with self.new_session() as s:
-                filter_ = Tenant.uuid == Tenant.parent_uuid
-                kwargs['tenant_uuid'] = s.query(Tenant).filter(filter_).first().uuid
-
-        session = Session(**kwargs)
-        with self.new_session() as s:
-            s.add(session)
-            s.commit()
-            return session.uuid
 
     def list_(self, tenant_uuids=None, **kwargs):
         filter_ = text('true')

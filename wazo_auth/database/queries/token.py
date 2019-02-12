@@ -5,13 +5,18 @@ import json
 import time
 
 from .base import BaseDAO
-from ..models import ACL, Token as TokenModel, Session
+from ..models import (
+    ACL,
+    Session,
+    Tenant,
+    Token as TokenModel,
+)
 from ... import exceptions
 
 
 class TokenDAO(BaseDAO):
 
-    def create(self, body):
+    def create(self, body, session_body):
         serialized_metadata = json.dumps(body.get('metadata', {}))
         token = TokenModel(
             auth_id=body['auth_id'],
@@ -20,13 +25,22 @@ class TokenDAO(BaseDAO):
             issued_t=int(body['issued_t']),
             expire_t=int(body['expire_t']),
             metadata_=serialized_metadata,
-            session_uuid=body['session_uuid'],
         )
         token.acls = [ACL(token_uuid=token.uuid, value=acl) for acl in body.get('acls') or []]
+
+        if not session_body.get('tenant_uuid'):
+            session_body['tenant_uuid'] = self._get_default_tenant_uuid()
+        token.session = Session(**session_body)
+
         with self.new_session() as s:
             s.add(token)
-            s.commit()
-            return token.uuid
+            s.flush()
+            return token.uuid, token.session_uuid
+
+    def _get_default_tenant_uuid(self):
+        with self.new_session() as s:
+            filter_ = Tenant.uuid == Tenant.parent_uuid
+            return s.query(Tenant).filter(filter_).first().uuid
 
     def get(self, token_uuid):
         with self.new_session() as s:

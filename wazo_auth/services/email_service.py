@@ -81,7 +81,6 @@ class EmailService(BaseService):
         return self._new_generic_token(self._reset_token_expiration, acl)
 
     def _new_generic_token(self, expiration, *acls):
-        session_uuid = self._dao.session.create()
         t = time.time()
         token_payload = {
             'auth_id': 'wazo-auth',
@@ -90,6 +89,7 @@ class EmailService(BaseService):
             'expire_t': t + expiration,
             'issued_t': t,
             'acls': acls,
-            'session_uuid': session_uuid
         }
-        return self._dao.token.create(token_payload)
+        session_payload = {}
+        token_uuid, session_uuid = self._dao.token.create(token_payload, session_payload)
+        return token_uuid

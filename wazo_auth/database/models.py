@@ -112,8 +112,10 @@ class Token(Base):
     xivo_uuid = Column(String(38))
     issued_t = Column(Integer)
     expire_t = Column(Integer)
-    acls = relationship('ACL')
     metadata_ = Column(Text, name='metadata')
+
+    acls = relationship('ACL')
+    session = relationship('Session')
 
 
 class Session(Base):

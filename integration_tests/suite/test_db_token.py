@@ -31,8 +31,7 @@ def teardown_module():
 
 class TestTokenDAO(base.DAOTestCase):
 
-    @fixtures.db.session()
-    def test_create(self, session):
+    def test_create(self):
         now = int(time.time())
         body = {
             'auth_id': 'test',
@@ -46,15 +45,16 @@ class TestTokenDAO(base.DAOTestCase):
                 'id': 42,
                 'msg': 'a string field',
             },
-            'session_uuid': session['uuid'],
         }
-        token_uuid = self._token_dao.create(body)
+        session = {}
+        token_uuid, session_uuid = self._token_dao.create(body, session)
 
         result = self._token_dao.get(token_uuid)
         assert_that(
             result,
             has_entries(
                 uuid=token_uuid,
+                session_uuid=session_uuid,
                 **body
             )
         )
@@ -73,13 +73,10 @@ class TestTokenDAO(base.DAOTestCase):
         self.assertRaises(exceptions.UnknownTokenException, self._token_dao.get, token['uuid'])
         self._token_dao.delete(token['uuid'])  # No error on delete unknown
 
-    @fixtures.db.session()
-    @fixtures.db.session()
-    @fixtures.db.session(uuid=SESSION_UUID_1)
     @fixtures.db.token(expiration=0)
     @fixtures.db.token(expiration=0)
-    @fixtures.db.token(session_uuid=SESSION_UUID_1)
-    def test_delete_expired_tokens_and_sessions(self, token_1, token_2, token_3, session_1, session_2, session_3):
+    @fixtures.db.token()
+    def test_delete_expired_tokens_and_sessions(self, token_1, token_2, token_3):
         with self._session_dao.new_session() as s:
             expired_tokens, expired_sessions = self._token_dao.delete_expired_tokens_and_sessions()
 
@@ -95,9 +92,9 @@ class TestTokenDAO(base.DAOTestCase):
             assert_that(
                 expired_sessions,
                 all_of(
-                    not_(has_items(has_entries(uuid=session_1['uuid']))),
-                    has_items(has_entries(uuid=session_2['uuid'])),
-                    has_items(has_entries(uuid=session_3['uuid'])),
+                    not_(has_items(has_entries(uuid=token_1['session_uuid']))),
+                    has_items(has_entries(uuid=token_2['session_uuid'])),
+                    has_items(has_entries(uuid=token_3['session_uuid'])),
                 )
             )
 
@@ -105,9 +102,9 @@ class TestTokenDAO(base.DAOTestCase):
             assert_that(
                 sessions,
                 all_of(
-                    has_items(has_properties(uuid=session_1['uuid'])),
-                    not_(has_items(has_properties(uuid=session_2['uuid']))),
-                    not_(has_items(has_properties(uuid=session_3['uuid']))),
+                    has_items(has_properties(uuid=token_1['session_uuid'])),
+                    not_(has_items(has_properties(uuid=token_2['session_uuid']))),
+                    not_(has_items(has_properties(uuid=token_3['session_uuid']))),
                 )
             )
 

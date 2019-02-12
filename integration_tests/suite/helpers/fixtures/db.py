@@ -67,34 +67,15 @@ def token(**token_args):
                 'acls': token_args.get('acls', []),
                 'metadata': token_args.get('metadata', {}),
             }
-            session_uuid = token_args.get('session_uuid')
-            if not session_uuid:
-                session_uuid = self._session_dao.create()
-            token['session_uuid'] = session_uuid
+            session = token_args.get('session', {})
 
-            token_uuid = self._token_dao.create(token)
+            token_uuid, session_uuid = self._token_dao.create(token, session)
             token['uuid'] = token_uuid
+            token['session_uuid'] = session_uuid
             try:
                 result = decorated(self, token, *args, **kwargs)
             finally:
                 self._token_dao.delete(token_uuid)
-                with self._session_dao.new_session() as s:
-                    s.query(models.Session).filter(models.Session.uuid == session_uuid).delete()
-            return result
-        return wrapper
-    return decorator
-
-
-def session(**session_args):
-    def decorator(decorated):
-        @wraps(decorated)
-        def wrapper(self, *args, **kwargs):
-            session_args.setdefault('uuid', str(uuid.uuid4()))
-            session_uuid = self._session_dao.create(**session_args)
-            session_args['uuid'] = session_uuid
-            try:
-                result = decorated(self, session_args, *args, **kwargs)
-            finally:
                 with self._session_dao.new_session() as s:
                     s.query(models.Session).filter(models.Session.uuid == session_uuid).delete()
             return result

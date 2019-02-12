@@ -172,10 +172,6 @@ class Manager:
             session_payload['tenant_uuid'] = metadata['tenant_uuid']
         if args.get('mobile'):
             session_payload['mobile'] = args['mobile']
-        session_uuid = self._dao.session.create(**session_payload)
-
-        event = SessionCreatedEvent(session_uuid, user_uuid=auth_id, **session_payload)
-        self._bus_publisher.publish(event)
 
         token_payload = {
             'auth_id': auth_id,
@@ -185,11 +181,13 @@ class Manager:
             'issued_t': current_time,
             'acls': acls or [],
             'metadata': metadata,
-            'session_uuid': session_uuid,
         }
 
-        token_uuid = self._dao.token.create(token_payload)
-        token = Token(token_uuid, **token_payload)
+        token_uuid, session_uuid = self._dao.token.create(token_payload, session_payload)
+        token = Token(token_uuid, session_uuid=session_uuid, **token_payload)
+
+        event = SessionCreatedEvent(session_uuid, user_uuid=auth_id, **session_payload)
+        self._bus_publisher.publish(event)
 
         return token
 
