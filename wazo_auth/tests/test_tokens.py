@@ -6,34 +6,12 @@ import time
 import uuid
 
 from hamcrest import assert_that, equal_to
-from mock import Mock, sentinel
 
 from wazo_auth import token
-from ..database import queries
-from ..database.queries.token import TokenDAO
 
 
 def new_uuid():
     return str(uuid.uuid4())
-
-
-class TestManager(unittest.TestCase):
-
-    def setUp(self):
-        self.config = {'default_token_lifetime': sentinel.default_expiration_delay}
-        self.token_dao = Mock(TokenDAO)
-        dao = queries.DAO(token=self.token_dao)
-        self.tenant_tree = Mock()
-        self.bus_publisher = Mock()
-        self.manager = token.Manager(self.config, dao, self.tenant_tree, self.bus_publisher)
-
-    def test_remove_token(self):
-        token_id = 'my-token'
-        self.manager._get_token_hash = Mock()
-
-        self.manager.remove_token(token_id)
-
-        self.token_dao.delete.assert_called_once_with(token_id)
 
 
 class TestToken(unittest.TestCase):
