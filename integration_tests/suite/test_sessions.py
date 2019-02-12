@@ -138,7 +138,7 @@ class TestSessions(base.WazoAuthTestCase):
         until.assert_(bus_received_msg, tries=10, interval=0.25)
 
     @fixtures.http.user(username='foo', password='bar')
-    def test_delete_event(self, user):
+    def test_delete_event_when_token_expired(self, user):
         routing_key = 'auth.sessions.*.deleted'
         msg_accumulator = self.new_message_accumulator(routing_key)
 
@@ -150,6 +150,28 @@ class TestSessions(base.WazoAuthTestCase):
                 contains(has_entries(
                     data={
                         'uuid': session_uuid,
+                        'user_uuid': user['uuid'],
+                        'tenant_uuid': user['tenant_uuid'],
+                    }
+                ))
+            )
+
+        until.assert_(bus_received_msg, tries=10, interval=0.25)
+
+    @fixtures.http.user(username='foo', password='bar')
+    def test_delete_event_when_token_deleted(self, user):
+        routing_key = 'auth.sessions.*.deleted'
+        msg_accumulator = self.new_message_accumulator(routing_key)
+
+        token = self._post_token('foo', 'bar')
+        self._delete_token(token['token'])
+
+        def bus_received_msg():
+            assert_that(
+                msg_accumulator.accumulate(),
+                contains(has_entries(
+                    data={
+                        'uuid': token['session_uuid'],
                         'user_uuid': user['uuid'],
                         'tenant_uuid': user['tenant_uuid'],
                     }

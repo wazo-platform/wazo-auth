@@ -130,6 +130,8 @@ class Session(Base):
     )
     mobile = Column(Boolean, nullable=False, default=False)
 
+    tokens = relationship('Token', viewonly=True)
+
 
 class Policy(Base):
 

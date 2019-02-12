@@ -198,8 +198,17 @@ class Manager:
         tenant_uuids = self._tenant_tree.list_nodes(tenant_uuid)
         return [{'uuid': uuid} for uuid in tenant_uuids]
 
-    def remove_token(self, token):
-        self._dao.token.delete(token)
+    def remove_token(self, token_uuid):
+        token, session = self._dao.token.delete(token_uuid)
+        if not session:
+            return
+
+        event = SessionDeletedEvent(
+            uuid=session['uuid'],
+            user_uuid=token['auth_id'],
+            tenant_uuid=session['tenant_uuid'],
+        )
+        self._bus_publisher.publish(event)
 
     def get(self, token_uuid, required_acl):
         token_data = self._dao.token.get(token_uuid)
