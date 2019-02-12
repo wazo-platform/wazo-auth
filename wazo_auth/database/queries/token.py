@@ -64,7 +64,26 @@ class TokenDAO(BaseDAO):
         filter_ = TokenModel.uuid == token_uuid
 
         with self.new_session() as s:
+            session_result = {}
+            token = s.query(TokenModel).filter(filter_).first()
+            if not token:
+                return {}, {}
+
+            session = token.session
+            if len(session.tokens) == 1:
+                session_result = {
+                    'uuid': session.uuid,
+                    'tenant_uuid': session.tenant_uuid,
+                }
+                s.delete(session)
+
+            token_result = {
+                'uuid': token.uuid,
+                'auth_id': token.auth_id,
+            }
             s.query(TokenModel).filter(filter_).delete()
+
+        return token_result, session_result
 
     def delete_expired_tokens_and_sessions(self):
         with self.new_session() as s:
