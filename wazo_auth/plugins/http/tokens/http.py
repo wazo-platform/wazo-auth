@@ -53,25 +53,25 @@ class Tokens(BaseResource):
 
 class Token(BaseResource):
 
-    def delete(self, token):
-        self._token_manager.remove_token(token)
+    def delete(self, token_uuid):
+        self._token_manager.remove_token(token_uuid)
 
         return {'data': {'message': 'success'}}
 
-    def get(self, token):
+    def get(self, token_uuid):
         scope = request.args.get('scope')
         tenant = request.args.get('tenant')
 
-        token = self._token_manager.get(token, scope).to_dict()
+        token = self._token_manager.get(token_uuid, scope).to_dict()
         self._assert_token_has_tenant_permission(token, tenant)
 
         return {'data': token}
 
-    def head(self, token):
+    def head(self, token_uuid):
         scope = request.args.get('scope')
         tenant = request.args.get('tenant')
 
-        token = self._token_manager.get(token, scope).to_dict()
+        token = self._token_manager.get(token_uuid, scope).to_dict()
         self._assert_token_has_tenant_permission(token, tenant)
 
         return '', 204
