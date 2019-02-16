@@ -55,7 +55,8 @@ class Controller:
         self._backends = BackendsProxy()
         email_service = services.EmailService(dao, self._tenant_tree, config, template_formatter)
         external_auth_service = services.ExternalAuthService(
-            dao, self._tenant_tree, config, self._bus_publisher, config['enabled_external_auth_plugins'])
+            dao, self._tenant_tree, config, self._bus_publisher, config['enabled_external_auth_plugins']
+        )
         group_service = services.GroupService(dao, self._tenant_tree)
         policy_service = services.PolicyService(dao, self._tenant_tree)
         session_service = services.SessionService(dao, self._tenant_tree)

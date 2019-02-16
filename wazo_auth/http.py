@@ -8,17 +8,25 @@ import time
 from flask import current_app
 from flask_restful import Resource
 from xivo.rest_api_helpers import handle_api_exception
-from xivo.auth_verifier import AuthVerifier, extract_token_id_from_query_or_header, required_acl
+from xivo.auth_verifier import (
+    AuthVerifier,
+    extract_token_id_from_query_or_header,
+    required_acl as _required_acl,
+)
 
 from . import exceptions
 
 logger = logging.getLogger(__name__)
 
+required_acl = _required_acl
+
 
 def _error(code, msg):
-    return {'reason': [msg],
-            'timestamp': [time.time()],
-            'status_code': code}, code
+    return {
+        'reason': [msg],
+        'timestamp': [time.time()],
+        'status_code': code
+    }, code
 
 
 class AuthClientFacade:
