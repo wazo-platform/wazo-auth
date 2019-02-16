@@ -25,26 +25,27 @@ def _signal_handler(signum, frame):
     sys.exit(0)
 
 
+def _check_required_config_for_other_threads(config):
+    try:
+        config['debug']
+    except KeyError as e:
+        logger.error('Missing configuration to start the application: %s', e)
+        sys.exit(1)
+
+
 class Controller:
 
     def __init__(self, config):
         self._config = config
-        try:
-            self._listen_addr = config['rest_api']['https']['listen']
-            self._listen_port = config['rest_api']['https']['port']
-            self._foreground = config['foreground']
-            self._consul_config = config['consul']
-            self._service_discovery_config = config['service_discovery']
-            self._plugins = config['enabled_backend_plugins']
-            self._bus_config = config['amqp']
-            self._log_level = config['log_level']
-            self._debug = config['debug']
-            self._bind_addr = (self._listen_addr, self._listen_port)
-            self._max_threads = config['rest_api']['max_threads']
-            self._xivo_uuid = config.get('uuid')
-        except KeyError as e:
-            logger.error('Missing configuration to start the application: %s', e)
-            sys.exit(1)
+        _check_required_config_for_other_threads(config)
+        self._service_discovery_args = [
+            'wazo-auth',
+            config.get('uuid'),
+            config['consul'],
+            config['service_discovery'],
+            config['amqp'],
+            partial(self_check, config['rest_api']['https']['port'])
+        ]
 
         template_formatter = services.helpers.TemplateFormatter(config)
         self._bus_publisher = bus.BusPublisher(config)
@@ -133,13 +134,7 @@ class Controller:
         signal.signal(signal.SIGTERM, _signal_handler)  # TODO use sigterm_handler
 
         with bus.publisher_thread(self._bus_publisher):
-            with ServiceCatalogRegistration('wazo-auth',
-                                            self._xivo_uuid,
-                                            self._consul_config,
-                                            self._service_discovery_config,
-                                            self._bus_config,
-                                            partial(self_check,
-                                                    self._listen_port)):
+            with ServiceCatalogRegistration(*self._service_discovery_args):
                 self._expired_token_remover.run()
                 local_token_manager = self._get_local_token_manager()
                 self._config['local_token_manager'] = local_token_manager
