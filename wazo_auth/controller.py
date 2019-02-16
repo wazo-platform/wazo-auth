@@ -21,8 +21,8 @@ from .service_discovery import self_check
 logger = logging.getLogger(__name__)
 
 
-def _signal_handler(signum, frame):
-    sys.exit(0)
+def _sigterm_handler(controller, signum, frame):
+    controller.stop(reason='SIGTERM')
 
 
 def _check_required_config_for_other_threads(config):
@@ -131,18 +131,19 @@ class Controller:
         self._expired_token_remover = token.ExpiredTokenRemover(config, dao, self._bus_publisher)
 
     def run(self):
-        signal.signal(signal.SIGTERM, _signal_handler)  # TODO use sigterm_handler
+        signal.signal(signal.SIGTERM, partial(_sigterm_handler, self))
 
         with bus.publisher_thread(self._bus_publisher):
             with ServiceCatalogRegistration(*self._service_discovery_args):
                 self._expired_token_remover.run()
                 local_token_manager = self._get_local_token_manager()
                 self._config['local_token_manager'] = local_token_manager
-                try:
-                    self._rest_api.run()
-                finally:
-                    self._rest_api.stop()
+                self._rest_api.run()
                 local_token_manager.revoke_token()
+
+    def stop(self, reason):
+        logger.warning('Stopping wazo-auth: %s', reason)
+        self._rest_api.stop()
 
     def _get_local_token_manager(self):
         try:
