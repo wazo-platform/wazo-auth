@@ -7,16 +7,14 @@ import sys
 
 from functools import partial
 
-from cheroot import wsgi
-from xivo import http_helpers, plugin_helpers
-from xivo.http_helpers import ReverseProxied
+from xivo import plugin_helpers
 from xivo.consul_helpers import ServiceCatalogRegistration
-from werkzeug.contrib.fixers import ProxyFix
 
 from . import bus, http, services, token
 from .database import queries
 from .flask_helpers import Tenant
 from .helpers import LocalTokenManager
+from .http_server import CoreRestApi
 from .purpose import Purposes
 from .service_discovery import self_check
 
@@ -42,15 +40,13 @@ class Controller:
             self._log_level = config['log_level']
             self._debug = config['debug']
             self._bind_addr = (self._listen_addr, self._listen_port)
-            self._ssl_cert_file = config['rest_api']['https']['certificate']
-            self._ssl_key_file = config['rest_api']['https']['private_key']
             self._max_threads = config['rest_api']['max_threads']
             self._xivo_uuid = config.get('uuid')
-            logger.debug('private key: %s', self._ssl_key_file)
         except KeyError as e:
             logger.error('Missing configuration to start the application: %s', e)
             sys.exit(1)
 
+        self._rest_api = CoreRestApi(config)
         template_formatter = services.helpers.TemplateFormatter(config)
         self._bus_publisher = bus.BusPublisher(config)
         dao = queries.DAO.from_config(self._config)
@@ -110,13 +106,7 @@ class Controller:
         self._expired_token_remover = token.ExpiredTokenRemover(config, dao, self._bus_publisher)
 
     def run(self):
-        signal.signal(signal.SIGTERM, _signal_handler)
-        wsgi_app = ReverseProxied(ProxyFix(wsgi.WSGIPathInfoDispatcher({'/': self._flask_app})))
-        server = wsgi.WSGIServer(bind_addr=self._bind_addr,
-                                 wsgi_app=wsgi_app,
-                                 numthreads=self._max_threads)
-        server.ssl_adapter = http_helpers.ssl_adapter(self._ssl_cert_file,
-                                                      self._ssl_key_file)
+        signal.signal(signal.SIGTERM, _signal_handler)  # TODO use sigterm_handler
 
         with bus.publisher_thread(self._bus_publisher):
             with ServiceCatalogRegistration('wazo-auth',
@@ -130,9 +120,9 @@ class Controller:
                 local_token_manager = self._get_local_token_manager()
                 self._config['local_token_manager'] = local_token_manager
                 try:
-                    server.start()
+                    self._rest_api.run()
                 finally:
-                    server.stop()
+                    self._rest_api.stop()
                 local_token_manager.revoke_token()
 
     def _get_local_token_manager(self):

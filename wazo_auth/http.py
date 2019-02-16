@@ -1,17 +1,17 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import functools
 import logging
 import time
 
-from flask import current_app, Flask
-from flask_cors import CORS
-from flask_restful import Api, Resource
+from flask import current_app
+from flask_restful import Resource
 from xivo.rest_api_helpers import handle_api_exception
 from xivo.auth_verifier import AuthVerifier, extract_token_id_from_query_or_header, required_acl
-from xivo import http_helpers, plugin_helpers
+from xivo import plugin_helpers
 
+from .http_server import app, api
 from . import exceptions
 
 logger = logging.getLogger(__name__)
@@ -89,14 +89,9 @@ class AuthResource(ErrorCatchingResource):
     method_decorators = [auth_verifier.verify_token] + ErrorCatchingResource.method_decorators
 
 
+# TODO remove this logic
 def new_app(dependencies):
     config = dependencies['config']
-    cors_config = dict(config['rest_api']['cors'])
-    cors_enabled = cors_config.pop('enabled')
-
-    app = Flask('wazo-auth')
-    http_helpers.add_logger(app, logger)
-    api = Api(app, prefix='/0.1')
 
     dependencies['api'] = api
 
@@ -110,15 +105,7 @@ def new_app(dependencies):
             plugin_info = getattr(extension.obj, 'plugin_info', {})
             config['external_auth_plugin_info'][extension.name] = plugin_info
 
-    app.config.update(config)
-
-    if cors_enabled:
-        CORS(app, **cors_config)
-
     app.config['token_manager'] = dependencies['token_manager']
     app.config['user_service'] = dependencies['user_service']
-
-    app.after_request(http_helpers.log_request)
-    app.before_request(http_helpers.log_before_request)
 
     return app
