@@ -9,9 +9,7 @@ from flask import current_app
 from flask_restful import Resource
 from xivo.rest_api_helpers import handle_api_exception
 from xivo.auth_verifier import AuthVerifier, extract_token_id_from_query_or_header, required_acl
-from xivo import plugin_helpers
 
-from .http_server import app, api
 from . import exceptions
 
 logger = logging.getLogger(__name__)
@@ -87,25 +85,3 @@ class ErrorCatchingResource(Resource):
 class AuthResource(ErrorCatchingResource):
     auth_verifier = auth_verifier
     method_decorators = [auth_verifier.verify_token] + ErrorCatchingResource.method_decorators
-
-
-# TODO remove this logic
-def new_app(dependencies):
-    config = dependencies['config']
-
-    dependencies['api'] = api
-
-    http_plugins = config['enabled_http_plugins']
-    external_auth_plugins = config['enabled_external_auth_plugins']
-    plugin_helpers.load('wazo_auth.http', http_plugins, dependencies)
-    manager = plugin_helpers.load('wazo_auth.external_auth', external_auth_plugins, dependencies)
-    config['external_auth_plugin_info'] = {}
-    if manager:
-        for extension in manager:
-            plugin_info = getattr(extension.obj, 'plugin_info', {})
-            config['external_auth_plugin_info'][extension.name] = plugin_info
-
-    app.config['token_manager'] = dependencies['token_manager']
-    app.config['user_service'] = dependencies['user_service']
-
-    return app

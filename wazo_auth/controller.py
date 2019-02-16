@@ -10,11 +10,11 @@ from functools import partial
 from xivo import plugin_helpers
 from xivo.consul_helpers import ServiceCatalogRegistration
 
-from . import bus, http, services, token
+from . import bus, services, token
 from .database import queries
 from .flask_helpers import Tenant
 from .helpers import LocalTokenManager
-from .http_server import CoreRestApi
+from .http_server import api, CoreRestApi
 from .purpose import Purposes
 from .service_discovery import self_check
 
@@ -46,7 +46,6 @@ class Controller:
             logger.error('Missing configuration to start the application: %s', e)
             sys.exit(1)
 
-        self._rest_api = CoreRestApi(config)
         template_formatter = services.helpers.TemplateFormatter(config)
         self._bus_publisher = bus.BusPublisher(config)
         dao = queries.DAO.from_config(self._config)
@@ -61,15 +60,18 @@ class Controller:
         session_service = services.SessionService(dao, self._tenant_tree)
         self._user_service = services.UserService(dao, self._tenant_tree)
         self._tenant_service = services.TenantService(dao, self._tenant_tree, self._bus_publisher)
+
         self._metadata_plugins = plugin_helpers.load(
-            'wazo_auth.metadata',
-            self._config['enabled_metadata_plugins'],
-            {'user_service': self._user_service,
-             'group_service': group_service,
-             'tenant_service': self._tenant_service,
-             'token_manager': self._token_manager,
-             'backends': self._backends,
-             'config': config},
+            namespace='wazo_auth.metadata',
+            names=self._config['enabled_metadata_plugins'],
+            dependencies={
+                'user_service': self._user_service,
+                'group_service': group_service,
+                'tenant_service': self._tenant_service,
+                'token_manager': self._token_manager,
+                'backends': self._backends,
+                'config': config,
+            },
         )
 
         self._purposes = Purposes(
@@ -78,17 +80,20 @@ class Controller:
         )
 
         backends = plugin_helpers.load(
-            'wazo_auth.backends',
-            self._config['enabled_backend_plugins'],
-            {'user_service': self._user_service,
-             'group_service': group_service,
-             'tenant_service': self._tenant_service,
-             'purposes': self._purposes,
-             'config': config},
+            namespace='wazo_auth.backends',
+            names=self._config['enabled_backend_plugins'],
+            dependencies={
+                'user_service': self._user_service,
+                'group_service': group_service,
+                'tenant_service': self._tenant_service,
+                'purposes': self._purposes,
+                'config': config,
+            },
         )
         self._backends.set_backends(backends)
         self._config['loaded_plugins'] = self._loaded_plugins_names(self._backends)
         dependencies = {
+            'api': api,
             'backends': self._backends,
             'config': config,
             'email_service': email_service,
@@ -102,7 +107,26 @@ class Controller:
             'template_formatter': template_formatter,
         }
         Tenant.setup(self._token_manager, self._user_service, self._tenant_service)
-        self._flask_app = http.new_app(dependencies)
+
+        plugin_helpers.load(
+            namespace='wazo_auth.http',
+            names=config['enabled_http_plugins'],
+            dependencies=dependencies,
+        )
+        manager = plugin_helpers.load(
+            namespace='wazo_auth.external_auth',
+            names=config['enabled_external_auth_plugins'],
+            dependencies=dependencies,
+        )
+
+        config['external_auth_plugin_info'] = {}
+        if manager:
+            for extension in manager:
+                plugin_info = getattr(extension.obj, 'plugin_info', {})
+                config['external_auth_plugin_info'][extension.name] = plugin_info
+
+        self._rest_api = CoreRestApi(config, self._token_manager, self._user_service)
+
         self._expired_token_remover = token.ExpiredTokenRemover(config, dao, self._bus_publisher)
 
     def run(self):
