@@ -1,15 +1,21 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
 
-from hamcrest import assert_that, equal_to, has_entries, any_of
-from mock import ANY, Mock, sentinel as s
 from unittest import TestCase
 
+from hamcrest import assert_that, equal_to, has_entries, any_of
+from flask import Flask
+from flask_restful import Api
+from mock import ANY, Mock, sentinel as s
+
+from xivo import plugin_helpers
+
 from ..config import _DEFAULT_CONFIG
-from ..http import new_app
 from .. import services
+
+initialized = False
 
 
 class HTTPAppTestCase(TestCase):
@@ -26,8 +32,15 @@ class HTTPAppTestCase(TestCase):
         external_auth_service = Mock()
         self.tokens = Mock()
         self.users = Mock()
+        self.session_service = Mock()
         self.template_formatter = Mock()
+
+        app = Flask('wazo-auth')
+        app.config['token_manager'] = token_manager
+        app.config['user_service'] = self.user_service
+        api = Api(app, prefix='/0.1')
         dependencies = {
+            'api': api,
             'config': config,
             'backends': s.backends,
             'policy_service': self.policy_service,
@@ -39,9 +52,15 @@ class HTTPAppTestCase(TestCase):
             'external_auth_service': external_auth_service,
             'tokens': self.tokens,
             'users': self.users,
+            'sessions': self.session_service,
             'template_formatter': self.template_formatter,
         }
-        self.app = new_app(dependencies).test_client()
+        plugin_helpers.load(
+            namespace='wazo_auth.http',
+            names=config['enabled_http_plugins'],
+            dependencies=dependencies,
+        )
+        self.app = app.test_client()
 
 
 TENANT = '00000000-0000-0000-0000-000000000000'
