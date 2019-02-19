@@ -7,49 +7,45 @@ import sys
 
 from functools import partial
 
-from cheroot import wsgi
-from xivo import http_helpers, plugin_helpers
-from xivo.http_helpers import ReverseProxied
+from xivo import plugin_helpers
 from xivo.consul_helpers import ServiceCatalogRegistration
-from werkzeug.contrib.fixers import ProxyFix
 
-from . import bus, http, services, token
+from . import bus, services, token
 from .database import queries
 from .flask_helpers import Tenant
 from .helpers import LocalTokenManager
+from .http_server import api, CoreRestApi
 from .purpose import Purposes
 from .service_discovery import self_check
 
 logger = logging.getLogger(__name__)
 
 
-def _signal_handler(signum, frame):
-    sys.exit(0)
+def _sigterm_handler(controller, signum, frame):
+    controller.stop(reason='SIGTERM')
+
+
+def _check_required_config_for_other_threads(config):
+    try:
+        config['debug']
+    except KeyError as e:
+        logger.error('Missing configuration to start the application: %s', e)
+        sys.exit(1)
 
 
 class Controller:
 
     def __init__(self, config):
         self._config = config
-        try:
-            self._listen_addr = config['rest_api']['https']['listen']
-            self._listen_port = config['rest_api']['https']['port']
-            self._foreground = config['foreground']
-            self._consul_config = config['consul']
-            self._service_discovery_config = config['service_discovery']
-            self._plugins = config['enabled_backend_plugins']
-            self._bus_config = config['amqp']
-            self._log_level = config['log_level']
-            self._debug = config['debug']
-            self._bind_addr = (self._listen_addr, self._listen_port)
-            self._ssl_cert_file = config['rest_api']['https']['certificate']
-            self._ssl_key_file = config['rest_api']['https']['private_key']
-            self._max_threads = config['rest_api']['max_threads']
-            self._xivo_uuid = config.get('uuid')
-            logger.debug('private key: %s', self._ssl_key_file)
-        except KeyError as e:
-            logger.error('Missing configuration to start the application: %s', e)
-            sys.exit(1)
+        _check_required_config_for_other_threads(config)
+        self._service_discovery_args = [
+            'wazo-auth',
+            config.get('uuid'),
+            config['consul'],
+            config['service_discovery'],
+            config['amqp'],
+            partial(self_check, config['rest_api']['https']['port'])
+        ]
 
         template_formatter = services.helpers.TemplateFormatter(config)
         self._bus_publisher = bus.BusPublisher(config)
@@ -59,21 +55,25 @@ class Controller:
         self._backends = BackendsProxy()
         email_service = services.EmailService(dao, self._tenant_tree, config, template_formatter)
         external_auth_service = services.ExternalAuthService(
-            dao, self._tenant_tree, config, self._bus_publisher, config['enabled_external_auth_plugins'])
+            dao, self._tenant_tree, config, self._bus_publisher, config['enabled_external_auth_plugins']
+        )
         group_service = services.GroupService(dao, self._tenant_tree)
         policy_service = services.PolicyService(dao, self._tenant_tree)
         session_service = services.SessionService(dao, self._tenant_tree)
         self._user_service = services.UserService(dao, self._tenant_tree)
         self._tenant_service = services.TenantService(dao, self._tenant_tree, self._bus_publisher)
+
         self._metadata_plugins = plugin_helpers.load(
-            'wazo_auth.metadata',
-            self._config['enabled_metadata_plugins'],
-            {'user_service': self._user_service,
-             'group_service': group_service,
-             'tenant_service': self._tenant_service,
-             'token_manager': self._token_manager,
-             'backends': self._backends,
-             'config': config},
+            namespace='wazo_auth.metadata',
+            names=self._config['enabled_metadata_plugins'],
+            dependencies={
+                'user_service': self._user_service,
+                'group_service': group_service,
+                'tenant_service': self._tenant_service,
+                'token_manager': self._token_manager,
+                'backends': self._backends,
+                'config': config,
+            },
         )
 
         self._purposes = Purposes(
@@ -82,17 +82,20 @@ class Controller:
         )
 
         backends = plugin_helpers.load(
-            'wazo_auth.backends',
-            self._config['enabled_backend_plugins'],
-            {'user_service': self._user_service,
-             'group_service': group_service,
-             'tenant_service': self._tenant_service,
-             'purposes': self._purposes,
-             'config': config},
+            namespace='wazo_auth.backends',
+            names=self._config['enabled_backend_plugins'],
+            dependencies={
+                'user_service': self._user_service,
+                'group_service': group_service,
+                'tenant_service': self._tenant_service,
+                'purposes': self._purposes,
+                'config': config,
+            },
         )
         self._backends.set_backends(backends)
         self._config['loaded_plugins'] = self._loaded_plugins_names(self._backends)
         dependencies = {
+            'api': api,
             'backends': self._backends,
             'config': config,
             'email_service': email_service,
@@ -106,34 +109,42 @@ class Controller:
             'template_formatter': template_formatter,
         }
         Tenant.setup(self._token_manager, self._user_service, self._tenant_service)
-        self._flask_app = http.new_app(dependencies)
+
+        plugin_helpers.load(
+            namespace='wazo_auth.http',
+            names=config['enabled_http_plugins'],
+            dependencies=dependencies,
+        )
+        manager = plugin_helpers.load(
+            namespace='wazo_auth.external_auth',
+            names=config['enabled_external_auth_plugins'],
+            dependencies=dependencies,
+        )
+
+        config['external_auth_plugin_info'] = {}
+        if manager:
+            for extension in manager:
+                plugin_info = getattr(extension.obj, 'plugin_info', {})
+                config['external_auth_plugin_info'][extension.name] = plugin_info
+
+        self._rest_api = CoreRestApi(config, self._token_manager, self._user_service)
+
         self._expired_token_remover = token.ExpiredTokenRemover(config, dao, self._bus_publisher)
 
     def run(self):
-        signal.signal(signal.SIGTERM, _signal_handler)
-        wsgi_app = ReverseProxied(ProxyFix(wsgi.WSGIPathInfoDispatcher({'/': self._flask_app})))
-        server = wsgi.WSGIServer(bind_addr=self._bind_addr,
-                                 wsgi_app=wsgi_app,
-                                 numthreads=self._max_threads)
-        server.ssl_adapter = http_helpers.ssl_adapter(self._ssl_cert_file,
-                                                      self._ssl_key_file)
+        signal.signal(signal.SIGTERM, partial(_sigterm_handler, self))
 
         with bus.publisher_thread(self._bus_publisher):
-            with ServiceCatalogRegistration('wazo-auth',
-                                            self._xivo_uuid,
-                                            self._consul_config,
-                                            self._service_discovery_config,
-                                            self._bus_config,
-                                            partial(self_check,
-                                                    self._listen_port)):
+            with ServiceCatalogRegistration(*self._service_discovery_args):
                 self._expired_token_remover.run()
                 local_token_manager = self._get_local_token_manager()
                 self._config['local_token_manager'] = local_token_manager
-                try:
-                    server.start()
-                finally:
-                    server.stop()
+                self._rest_api.run()
                 local_token_manager.revoke_token()
+
+    def stop(self, reason):
+        logger.warning('Stopping wazo-auth: %s', reason)
+        self._rest_api.stop()
 
     def _get_local_token_manager(self):
         try:

@@ -1,4 +1,4 @@
-# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import sys
@@ -8,6 +8,7 @@ from xivo import xivo_logging
 from xivo.config_helper import set_xivo_uuid, UUIDNotFound
 from xivo.daemonize import pidfile_context
 from xivo.user_rights import change_user
+
 from wazo_auth.config import get_config
 from wazo_auth.controller import Controller
 
@@ -21,8 +22,12 @@ def main():
 
     config = get_config(sys.argv[1:])
 
-    xivo_logging.setup_logging(config['log_filename'], config['foreground'],
-                               config['debug'], config['log_level'])
+    xivo_logging.setup_logging(
+        config['log_filename'],
+        config['foreground'],
+        config['debug'],
+        config['log_level'],
+    )
 
     user = config.get('user')
     if user:
