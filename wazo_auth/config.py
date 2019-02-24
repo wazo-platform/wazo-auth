@@ -58,6 +58,7 @@ _DEFAULT_CONFIG = {
         'user_group': True,
         'user_policy': True,
         'user_registration': False,
+        'user_session': True,
         'users': True,
     },
     'enabled_backend_plugins': {

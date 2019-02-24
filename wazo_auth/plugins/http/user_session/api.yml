@@ -1,0 +1,31 @@
+paths:
+  /users/{user_uuid}/sessions:
+    get:
+      tags:
+        - users
+      security:
+      - wazo_auth_token: []
+      description: '**Required ACL**: `auth.users.{user_uuid}.sessions.read`'
+      parameters:
+      - $ref: '#/parameters/user_uuid'
+      - $ref: '#/parameters/tenantuuid'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
+      summary: Retrieves the list of sessions associated to a user
+      responses:
+        '200':
+          description: "The sessions of the user"
+          schema:
+            $ref: '#/definitions/GetSessionsResult'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: User not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: System related error
+          schema:
+            $ref: '#/definitions/Error'

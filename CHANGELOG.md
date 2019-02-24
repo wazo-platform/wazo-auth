@@ -1,6 +1,14 @@
 Changelog
 =========
 
+19.04
+-----
+
+* New resource has been added to list user's sessions
+
+  * GET `0.1/users/<user_uuid>/sessions`
+
+
 19.03
 -----
 

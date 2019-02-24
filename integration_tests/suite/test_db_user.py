@@ -1,6 +1,7 @@
 # Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import uuid
 import os
 
 from hamcrest import (
@@ -25,6 +26,9 @@ from wazo_auth.database import models
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 
 from .helpers import fixtures, base
+
+USER_UUID = str(uuid.uuid4())
+UNKNOWN_UUID = str(uuid.uuid4())
 
 
 def setup_module():
@@ -192,6 +196,16 @@ class TestUserDAO(base.DAOTestCase):
 
         result = self._user_dao.count_policies(user_uuid, search='foobar', filtered=False)
         assert_that(result, equal_to(3), 'search not filtered')
+
+    @fixtures.db.user(uuid=USER_UUID)
+    @fixtures.db.token(auth_id=USER_UUID)
+    @fixtures.db.token(auth_id=USER_UUID)
+    def test_user_count_sessions(self, *_):
+        result = self._user_dao.count_sessions(UNKNOWN_UUID)
+        assert_that(result, equal_to(0), 'none associated')
+
+        result = self._user_dao.count_sessions(USER_UUID)
+        assert_that(result, equal_to(2), 'no filter')
 
     def test_user_creation(self):
         username = 'foobar'

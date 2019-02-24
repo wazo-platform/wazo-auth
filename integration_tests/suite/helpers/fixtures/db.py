@@ -59,7 +59,7 @@ def token(**token_args):
         def wrapper(self, *args, **kwargs):
             now = int(time.time())
             token = {
-                'auth_id': 'test',
+                'auth_id': token_args.get('auth_id', str(uuid.uuid4())),
                 'xivo_user_uuid': str(uuid.uuid4()),
                 'xivo_uuid': str(uuid.uuid4()),
                 'issued_t': now,
