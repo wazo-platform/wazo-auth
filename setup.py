@@ -56,6 +56,7 @@ setup(
             'user_registration = wazo_auth.plugins.http.user_registration.plugin:Plugin',
             'user_group = wazo_auth.plugins.http.user_group.plugin:Plugin',
             'user_policy = wazo_auth.plugins.http.user_policy.plugin:Plugin',
+            'user_session = wazo_auth.plugins.http.user_session.plugin:Plugin',
         ],
         'wazo_auth.external_auth': [],
         'wazo_auth.metadata': [

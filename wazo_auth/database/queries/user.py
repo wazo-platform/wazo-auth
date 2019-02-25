@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, text
@@ -8,6 +8,8 @@ from ..models import (
     Email,
     Group,
     Policy,
+    Session,
+    Token,
     User,
     UserEmail,
     UserGroup,
@@ -110,6 +112,14 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         with self.new_session() as s:
             return s.query(Group).join(UserGroup).filter(filter_).count()
+
+    def count_sessions(self, user_uuid, **kwargs):
+        # filtered is not implemented
+
+        filter_ = Token.auth_id == str(user_uuid)
+
+        with self.new_session() as s:
+            return s.query(Session).join(Token).filter(filter_).count()
 
     def count_policies(self, user_uuid, **kwargs):
         filtered = kwargs.get('filtered')

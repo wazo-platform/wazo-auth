@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import binascii
@@ -45,6 +45,9 @@ class UserService(BaseService):
     def count_groups(self, user_uuid, **kwargs):
         return self._dao.user.count_groups(user_uuid, **kwargs)
 
+    def count_sessions(self, user_uuid, **kwargs):
+        return self._dao.user.count_sessions(user_uuid, **kwargs)
+
     def count_policies(self, user_uuid, **kwargs):
         return self._dao.user.count_policies(user_uuid, **kwargs)
 
@@ -81,6 +84,9 @@ class UserService(BaseService):
 
     def list_groups(self, user_uuid, **kwargs):
         return self._dao.group.list_(user_uuid=user_uuid, **kwargs)
+
+    def list_sessions(self, user_uuid, **kwargs):
+        return self._dao.session.list_(user_uuid=user_uuid, **kwargs)
 
     def list_policies(self, user_uuid, **kwargs):
         return self._dao.policy.get(user_uuid=user_uuid, **kwargs)

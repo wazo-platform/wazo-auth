@@ -69,6 +69,11 @@ class TestSessionDAO(base.DAOTestCase):
             has_entries(uuid=token_1['session_uuid']),
         ))
 
+        result = self._session_dao.list_(user_uuid=token_1['auth_id'])
+        assert_that(result, contains(
+            has_entries(uuid=token_1['session_uuid']),
+        ))
+
     @fixtures.db.tenant(uuid=TENANT_UUID_1)
     @fixtures.db.token(session_uuid=SESSION_UUID_2)
     @fixtures.db.token(session={'tenant_uuid': TENANT_UUID_1})
