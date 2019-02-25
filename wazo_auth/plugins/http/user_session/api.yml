@@ -3,6 +3,7 @@ paths:
     get:
       tags:
         - users
+        - sessions
       security:
       - wazo_auth_token: []
       description: '**Required ACL**: `auth.users.{user_uuid}.sessions.read`'
