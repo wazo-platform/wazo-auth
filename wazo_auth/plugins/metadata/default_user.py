@@ -26,11 +26,7 @@ class DefaultUser(BaseMetadata):
         user = self._user_service.get_user(user_uuid)
         tenant_uuid = user['tenant_uuid']
         tenant = self._tenant_service.get(scoping_tenant_uuid=tenant_uuid, uuid=tenant_uuid)
-        sub_tenant_uuids = self._tenant_service.list_sub_tenants(tenant_uuid)
-        sub_tenants = [
-            self._tenant_service.get(scoping_tenant_uuid=tenant_uuid, uuid=sub_tenant_uuid)
-            for sub_tenant_uuid in sub_tenant_uuids
-        ]
+        sub_tenants = self._tenant_service.list_(tenant_uuid)
 
         metadata = {
             'auth_id': user_uuid,
