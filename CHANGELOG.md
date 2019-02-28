@@ -4,6 +4,7 @@ Changelog
 19.04
 -----
 
+* The `tenants` field has been removed from token metadata
 * New resource has been added to list user's sessions
 
   * GET `0.1/users/<user_uuid>/sessions`

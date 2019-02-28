@@ -29,7 +29,6 @@ class TokenService:
 
     def new_token(self, backend, login, args):
         metadata = backend.get_metadata(login, args)
-        metadata['tenants'] = self._get_tenant_list(metadata.get('tenant_uuid'))
         logger.debug('metadata for %s: %s', login, metadata)
 
         auth_id = metadata['auth_id']
