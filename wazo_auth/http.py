@@ -76,7 +76,7 @@ def handle_manager_exception(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except exceptions.ManagerException as error:
+        except exceptions.TokenServiceException as error:
             return _error(error.code, str(error))
     return wrapper
 

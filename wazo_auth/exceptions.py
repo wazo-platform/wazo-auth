@@ -1,15 +1,15 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unidecode import unidecode
 from xivo.rest_api_helpers import APIException
 
 
-class ManagerException(Exception):
+class TokenServiceException(Exception):
     pass
 
 
-class AuthenticationFailedException(ManagerException):
+class AuthenticationFailedException(TokenServiceException):
 
     code = 401
     _msg = 'Authentication Failed'
@@ -149,7 +149,7 @@ class EmailUpdateException(_BaseParamException):
     resource = 'emails'
 
 
-class InvalidInputException(ManagerException):
+class InvalidInputException(TokenServiceException):
 
     code = 400
 
@@ -161,7 +161,7 @@ class InvalidInputException(ManagerException):
         return 'Invalid value supplied for field: {}'.format(self._field)
 
 
-class InvalidLimitException(ManagerException):
+class InvalidLimitException(TokenServiceException):
 
     code = 400
 
@@ -173,7 +173,7 @@ class InvalidLimitException(ManagerException):
         return 'Invalid limit: {}'.format(self._limit)
 
 
-class InvalidOffsetException(ManagerException):
+class InvalidOffsetException(TokenServiceException):
 
     code = 400
 
@@ -185,7 +185,7 @@ class InvalidOffsetException(ManagerException):
         return 'Invalid offset: {}'.format(self._offset)
 
 
-class InvalidSortColumnException(ManagerException):
+class InvalidSortColumnException(TokenServiceException):
 
     code = 400
 
@@ -197,7 +197,7 @@ class InvalidSortColumnException(ManagerException):
         return 'Invalid sort column: {}'.format(self._field)
 
 
-class InvalidSortDirectionException(ManagerException):
+class InvalidSortDirectionException(TokenServiceException):
 
     code = 400
 
@@ -226,7 +226,7 @@ class MasterTenantConflictException(APIException):
             403, 'Conflict detected', 'conflict', details, 'tenants')
 
 
-class DuplicatePolicyException(ManagerException):
+class DuplicatePolicyException(TokenServiceException):
 
     code = 409
 
@@ -238,7 +238,7 @@ class DuplicatePolicyException(ManagerException):
         return 'Policy "{}" already exists'.format(self._name)
 
 
-class DuplicateTemplateException(ManagerException):
+class DuplicateTemplateException(TokenServiceException):
 
     code = 409
 
@@ -250,7 +250,7 @@ class DuplicateTemplateException(ManagerException):
         return 'Policy already associated to {}'.format(self._template)
 
 
-class UnknownPolicyException(ManagerException):
+class UnknownPolicyException(TokenServiceException):
 
     code = 404
 
@@ -261,7 +261,7 @@ class UnknownPolicyException(ManagerException):
         return 'No such policy "%s"'.format(self._policy_uuid)
 
 
-class UnknownTokenException(ManagerException):
+class UnknownTokenException(TokenServiceException):
 
     code = 404
 
@@ -269,7 +269,7 @@ class UnknownTokenException(ManagerException):
         return 'No such token'
 
 
-class MissingACLTokenException(ManagerException):
+class MissingACLTokenException(TokenServiceException):
 
     code = 403
 
@@ -281,7 +281,7 @@ class MissingACLTokenException(ManagerException):
         return 'Unauthorized for {}'.format(unidecode(self._required_acl))
 
 
-class MissingTenantTokenException(ManagerException):
+class MissingTenantTokenException(TokenServiceException):
 
     code = 403
 
