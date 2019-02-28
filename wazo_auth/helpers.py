@@ -49,7 +49,7 @@ class LazyTemplateRenderer:
                     yield acl
 
 
-class LocalTokenManager:
+class LocalTokenRenewer:
 
     def __init__(self, backend, token_service, user_service):
         self._username = 'wazo-auth'

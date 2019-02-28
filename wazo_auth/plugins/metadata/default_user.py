@@ -55,12 +55,12 @@ class DefaultUser(BaseMetadata):
         return metadata
 
     def get_acl_metadata(self, **kwargs):
-        local_token_manager = self._config.get('local_token_manager')
-        if not local_token_manager:
-            logger.info('no local token manager')
+        local_token_renewer = self._config.get('local_token_renewer')
+        if not local_token_renewer:
+            logger.info('no local token renewer')
             return {}
 
-        token = local_token_manager.get_token()
+        token = local_token_renewer.get_token()
         if not token:
             logger.info('cannot create local token')
             return {}
