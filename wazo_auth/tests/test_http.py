@@ -1,8 +1,6 @@
 # Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import json
-
 from unittest import TestCase
 
 from hamcrest import assert_that, equal_to, has_entries, any_of
@@ -81,14 +79,13 @@ class TestUserResource(HTTPAppTestCase):
             'password': password,
             'email_address': email_address,
         }
-        data = json.dumps(body)
         self.user_service.new_user.return_value = {
             'uuid': uuid,
             'username': username,
             'email_address': email_address,
         }
 
-        result = self.app.post(self.url, data=data, headers=self.headers)
+        result = self.app.post(self.url, json=body)
 
         assert_that(result.status_code, equal_to(200))
         self.user_service.new_user.assert_called_once_with(
@@ -102,7 +99,7 @@ class TestUserResource(HTTPAppTestCase):
         )
 
         assert_that(
-            json.loads(result.data.decode(encoding='utf-8')),
+            result.json,
             has_entries(
                 'uuid', uuid,
                 'username', username,
@@ -121,13 +118,12 @@ class TestUserResource(HTTPAppTestCase):
         for field in ['username']:
             body = dict(valid_body)
             del body[field]
-            data = json.dumps(body)
 
-            result = self.app.post(self.url, data=data, headers=self.headers)
+            result = self.app.post(self.url, json=body)
 
             assert_that(result.status_code, equal_to(400), field)
             assert_that(
-                json.loads(result.data),
+                result.json,
                 has_entries('error_id', 'invalid-data',
                             'message', 'Missing data for required field.',
                             'resource', 'users',
@@ -138,11 +134,11 @@ class TestUserResource(HTTPAppTestCase):
             )
 
     def test_that_an_empty_body_returns_400(self):
-        result = self.app.post(self.url, data='null', headers=self.headers)
+        result = self.app.post(self.url, json='null')
 
         assert_that(result.status_code, equal_to(400))
         assert_that(
-            json.loads(result.data),
+            result.json,
             has_entries('error_id', 'invalid-data')
         )
 
@@ -157,13 +153,12 @@ class TestUserResource(HTTPAppTestCase):
         for field in ['username', 'password', 'email_address']:
             body = dict(valid_body)
             body[field] = ''
-            data = json.dumps(body)
 
-            result = self.app.post(self.url, data=data, headers=self.headers)
+            result = self.app.post(self.url, json=body)
 
             assert_that(result.status_code, equal_to(400), field)
             assert_that(
-                json.loads(result.data),
+                result.json,
                 has_entries('error_id', 'invalid-data',
                             'resource', 'users',
                             'details', has_entries(field, has_entries('constraint_id', any_of('length', 'type')))),
@@ -179,13 +174,12 @@ class TestUserResource(HTTPAppTestCase):
         for field in ('username',):
             body = dict(valid_body)
             body[field] = None
-            data = json.dumps(body)
 
-            result = self.app.post(self.url, data=data, headers=self.headers)
+            result = self.app.post(self.url, json=body)
 
             assert_that(result.status_code, equal_to(400), field)
             assert_that(
-                json.loads(result.data),
+                result.json,
                 has_entries('error_id', 'invalid-data',
                             'resource', 'users',
                             'details', has_entries(field, has_entries('constraint_id', 'not_null'))),
@@ -212,11 +206,11 @@ class TestUserResource(HTTPAppTestCase):
         self.user_service.list_users.return_value = expected_result
         self.user_service.count_users.side_effect = [expected_total, expected_filtered]
 
-        result = self.app.get(self.url, query_string=params, headers=self.headers)
+        result = self.app.get(self.url, query_string=params)
 
         assert_that(result.status_code, equal_to(200))
         assert_that(
-            json.loads(result.data),
+            result.json,
             has_entries(
                 'total', expected_total,
                 'filtered', expected_filtered,
@@ -236,10 +230,10 @@ class TestUserResource(HTTPAppTestCase):
 
         invalid_params = dict(params)
         invalid_params['limit'] = -1
-        result = self.app.get(self.url, query_string=invalid_params, headers=self.headers)
+        result = self.app.get(self.url, query_string=invalid_params)
         assert_that(result.status_code, equal_to(400))
         assert_that(
-            json.loads(result.data),
+            result.json,
             has_entries(
                 'error_id', 'invalid-list-param',
                 'message', has_entries('limit', ANY),
@@ -248,10 +242,10 @@ class TestUserResource(HTTPAppTestCase):
 
         invalid_params = dict(params)
         invalid_params['offset'] = -1
-        result = self.app.get(self.url, query_string=invalid_params, headers=self.headers)
+        result = self.app.get(self.url, query_string=invalid_params)
         assert_that(result.status_code, equal_to(400))
         assert_that(
-            json.loads(result.data),
+            result.json,
             has_entries(
                 'error_id', 'invalid-list-param',
                 'message', has_entries('offset', ANY),
@@ -260,10 +254,10 @@ class TestUserResource(HTTPAppTestCase):
 
         invalid_params = dict(params)
         invalid_params['direction'] = -1
-        result = self.app.get(self.url, query_string=invalid_params, headers=self.headers)
+        result = self.app.get(self.url, query_string=invalid_params)
         assert_that(result.status_code, equal_to(400))
         assert_that(
-            json.loads(result.data),
+            result.json,
             has_entries(
                 'error_id', 'invalid-list-param',
                 'message', has_entries('direction', ANY),
@@ -272,10 +266,10 @@ class TestUserResource(HTTPAppTestCase):
 
         invalid_params = dict(params)
         invalid_params['order'] = ''
-        result = self.app.get(self.url, query_string=invalid_params, headers=self.headers)
+        result = self.app.get(self.url, query_string=invalid_params)
         assert_that(result.status_code, equal_to(400))
         assert_that(
-            json.loads(result.data),
+            result.json,
             has_entries(
                 'error_id', 'invalid-list-param',
                 'message', has_entries('order', ANY),
@@ -294,10 +288,10 @@ class TestUserResource(HTTPAppTestCase):
         }
         self.user_service.get_user.return_value = expected_result
 
-        result = self.app.get(url, headers=self.headers)
+        result = self.app.get(url)
 
         assert_that(
-            json.loads(result.data),
+            result.json,
             equal_to(expected_result),
         )
 
@@ -305,6 +299,6 @@ class TestUserResource(HTTPAppTestCase):
         uuid = '5730c531-5e47-4de6-be60-c3e28de00de4'
         url = '/'.join([self.url, uuid])
 
-        result = self.app.delete(url, headers=self.headers)
+        result = self.app.delete(url)
 
         assert_that(result.status_code, equal_to(204))
