@@ -7,6 +7,7 @@ from .group_service import GroupService
 from .policy_service import PolicyService
 from .session_service import SessionService
 from .tenant_service import TenantService
+from .token_service import TokenService
 from .user_service import UserService, PasswordEncrypter
 
 __all__ = [
@@ -17,5 +18,6 @@ __all__ = [
     "PolicyService",
     "SessionService",
     "TenantService",
+    "TokenService",
     "UserService",
 ]

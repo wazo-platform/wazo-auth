@@ -9,7 +9,7 @@ class Plugin:
     def load(self, dependencies):
         api = dependencies['api']
         args = (
-            dependencies['token_manager'],
+            dependencies['token_service'],
             dependencies['backends'],
             dependencies['user_service'],
         )

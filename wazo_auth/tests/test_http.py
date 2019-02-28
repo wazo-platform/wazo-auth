@@ -26,7 +26,7 @@ class HTTPAppTestCase(TestCase):
         self.user_service = Mock(services.UserService)
         self.policy_service = Mock()
         self.tenant_service = Mock(services.TenantService)
-        token_manager = Mock()
+        token_service = Mock()
         group_service = Mock()
         self.email_service = Mock(services.EmailService)
         external_auth_service = Mock()
@@ -36,7 +36,7 @@ class HTTPAppTestCase(TestCase):
         self.template_formatter = Mock()
 
         app = Flask('wazo-auth')
-        app.config['token_manager'] = token_manager
+        app.config['token_service'] = token_service
         app.config['user_service'] = self.user_service
         api = Api(app, prefix='/0.1')
         dependencies = {
@@ -44,7 +44,7 @@ class HTTPAppTestCase(TestCase):
             'config': config,
             'backends': s.backends,
             'policy_service': self.policy_service,
-            'token_manager': token_manager,
+            'token_service': token_service,
             'user_service': self.user_service,
             'tenant_service': self.tenant_service,
             'group_service': group_service,

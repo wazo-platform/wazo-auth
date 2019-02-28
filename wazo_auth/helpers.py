@@ -51,10 +51,10 @@ class LazyTemplateRenderer:
 
 class LocalTokenManager:
 
-    def __init__(self, backend, token_manager, user_service):
+    def __init__(self, backend, token_service, user_service):
         self._username = 'wazo-auth'
-        self._new_token = partial(token_manager.new_token, backend.obj, self._username)
-        self._remove_token = token_manager.remove_token
+        self._new_token = partial(token_service.new_token, backend.obj, self._username)
+        self._remove_token = token_service.remove_token
         self._user_service = user_service
         self._token = None
         self._renew_time = time.time() - 5

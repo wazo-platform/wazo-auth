@@ -54,22 +54,22 @@ class TestLazyTemplateRenderer(unittest.TestCase):
 class TestLocalTokenManager(unittest.TestCase):
 
     def setUp(self):
-        self._token_manager = Mock()
+        self._token_service = Mock()
         self._backend = Mock()
         self._user_service = Mock()
         self._user_service.list_users.return_value = [Mock()]
 
         self.local_token_manager = LocalTokenManager(
-            self._backend, self._token_manager, self._user_service
+            self._backend, self._token_service, self._user_service
         )
 
     def test_get_token_first_token(self):
         token = self.local_token_manager.get_token()
 
-        self._token_manager.new_token.assert_called_once_with(
+        self._token_service.new_token.assert_called_once_with(
             self._backend.obj, 'wazo-auth', {'expiration': 3600, 'backend': 'wazo_user'})
 
-        assert_that(token, equal_to(self._token_manager.new_token.return_value.token))
+        assert_that(token, equal_to(self._token_service.new_token.return_value.token))
 
     def test_that_a_new_token_is_not_created_at_each_call(self):
         token_1 = self.local_token_manager.get_token()
@@ -86,11 +86,11 @@ class TestLocalTokenManager(unittest.TestCase):
     def test_that_revoke_token_does_nothing_when_no_token(self):
         self.local_token_manager.revoke_token()
 
-        assert_that(self._token_manager.remove_token.called, equal_to(False))
+        assert_that(self._token_service.remove_token.called, equal_to(False))
 
     def test_that_revoke_revokes_the_token(self):
         token = self.local_token_manager.get_token()
 
         self.local_token_manager.revoke_token()
 
-        self._token_manager.remove_token.assert_called_once_with(token)
+        self._token_service.remove_token.assert_called_once_with(token)
