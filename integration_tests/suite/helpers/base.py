@@ -88,7 +88,7 @@ class AuthLaunchingTestCase(AssetLaunchingTestCase):
         super().setUpClass()
 
     def _assert_that_wazo_auth_is_stopping(self):
-        for _ in range(5):
+        for _ in range(20):
             if not self.service_status('auth')['State']['Running']:
                 break
             time.sleep(0.2)
