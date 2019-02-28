@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 
 class BaseResource(http.ErrorCatchingResource):
 
-    def __init__(self, token_manager, backends, user_service):
+    def __init__(self, token_service, backends, user_service):
         self._backends = backends
-        self._token_manager = token_manager
+        self._token_service = token_service
         self._user_service = user_service
 
 
@@ -46,7 +46,7 @@ class Tokens(BaseResource):
             logger.debug('Invalid password for user "%s" in backend "%s"', login, backend_name)
             return http._error(401, 'Authentication Failed')
 
-        token = self._token_manager.new_token(backend, login, args)
+        token = self._token_service.new_token(backend, login, args)
 
         return {'data': token.to_dict()}, 200
 
@@ -54,7 +54,7 @@ class Tokens(BaseResource):
 class Token(BaseResource):
 
     def delete(self, token_uuid):
-        self._token_manager.remove_token(token_uuid)
+        self._token_service.remove_token(token_uuid)
 
         return {'data': {'message': 'success'}}
 
@@ -62,7 +62,7 @@ class Token(BaseResource):
         scope = request.args.get('scope')
         tenant = request.args.get('tenant')
 
-        token = self._token_manager.get(token_uuid, scope).to_dict()
+        token = self._token_service.get(token_uuid, scope).to_dict()
         self._assert_token_has_tenant_permission(token, tenant)
 
         return {'data': token}
@@ -71,7 +71,7 @@ class Token(BaseResource):
         scope = request.args.get('scope')
         tenant = request.args.get('tenant')
 
-        token = self._token_manager.get(token_uuid, scope).to_dict()
+        token = self._token_service.get(token_uuid, scope).to_dict()
         self._assert_token_has_tenant_permission(token, tenant)
 
         return '', 204

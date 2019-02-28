@@ -90,12 +90,12 @@ class UserAuthenticationBackend(BaseAuthenticationBackend, ACLRenderingBackend,
         super().verify_password(login, passwd, args)
 
     def get_user_data(self, **kwargs):
-        local_token_manager = self._config.get('local_token_manager')
-        if not local_token_manager:
+        local_token_renewer = self._config.get('local_token_renewer')
+        if not local_token_renewer:
             logger.info('no local token manager')
             return {}
 
-        token = local_token_manager.get_token()
+        token = local_token_renewer.get_token()
         confd_client = Client(token=token, **self._confd_config)
         user_uuid = kwargs.get('uuid')
         if not user_uuid:

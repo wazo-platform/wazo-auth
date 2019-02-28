@@ -35,7 +35,7 @@ class AuthClientFacade:
 
         def is_valid(self, token_id, required_acl):
             try:
-                current_app.config['token_manager'].get(token_id, required_acl)
+                current_app.config['token_service'].get(token_id, required_acl)
                 return True
             except exceptions.UnknownTokenException:
                 return False
@@ -43,7 +43,7 @@ class AuthClientFacade:
                 return False
 
         def get(self, token_id, required_acl=None):
-            return current_app.config['token_manager'].get(token_id, required_acl).to_dict()
+            return current_app.config['token_service'].get(token_id, required_acl).to_dict()
 
     class UsersCommand:
 
@@ -76,7 +76,7 @@ def handle_manager_exception(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except exceptions.ManagerException as error:
+        except exceptions.TokenServiceException as error:
             return _error(error.code, str(error))
     return wrapper
 

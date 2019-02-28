@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class Tenant:
 
-    token_manager = None
+    token_service = None
     user_service = None
     tenant_service = None
 
@@ -81,7 +81,7 @@ class Tenant:
 
     @classmethod
     def _get_token_data(cls, token_uuid):
-        return cls.token_manager.get(token_uuid, required_acl=None)
+        return cls.token_service.get(token_uuid, required_acl=None)
 
     @classmethod
     def _get_user_tenant(cls, user_uuid):
@@ -98,7 +98,7 @@ class Tenant:
         return cls.tenant_service.list_sub_tenants(tenant_uuid)
 
     @classmethod
-    def setup(cls, token_manager, user_service, tenant_service):
-        cls.token_manager = token_manager
+    def setup(cls, token_service, user_service, tenant_service):
+        cls.token_service = token_service
         cls.user_service = user_service
         cls.tenant_service = tenant_service

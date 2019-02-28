@@ -21,14 +21,14 @@ api = Api(app, prefix='/{}'.format(VERSION))
 
 class CoreRestApi:
 
-    def __init__(self, global_config, token_manager, user_service):
+    def __init__(self, global_config, token_service, user_service):
         self.config = global_config['rest_api']
         http_helpers.add_logger(app, logger)
         app.before_request(http_helpers.log_before_request)
         app.after_request(http_helpers.log_request)
         app.secret_key = os.urandom(24)
         app.config.update(global_config)
-        app.config['token_manager'] = token_manager
+        app.config['token_service'] = token_service
         app.config['user_service'] = user_service
         app.permanent_session_lifetime = timedelta(minutes=5)
         self._load_cors()

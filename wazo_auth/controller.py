@@ -13,7 +13,7 @@ from xivo.consul_helpers import ServiceCatalogRegistration
 from . import bus, services, token
 from .database import queries
 from .flask_helpers import Tenant
-from .helpers import LocalTokenManager
+from .helpers import LocalTokenRenewer
 from .http_server import api, CoreRestApi
 from .purpose import Purposes
 from .service_discovery import self_check
@@ -51,7 +51,7 @@ class Controller:
         self._bus_publisher = bus.BusPublisher(config)
         dao = queries.DAO.from_config(self._config)
         self._tenant_tree = services.helpers.CachedTenantTree(dao.tenant)
-        self._token_manager = token.Manager(config, dao, self._tenant_tree, self._bus_publisher)
+        self._token_service = services.TokenService(config, dao, self._tenant_tree, self._bus_publisher)
         self._backends = BackendsProxy()
         email_service = services.EmailService(dao, self._tenant_tree, config, template_formatter)
         external_auth_service = services.ExternalAuthService(
@@ -70,7 +70,7 @@ class Controller:
                 'user_service': self._user_service,
                 'group_service': group_service,
                 'tenant_service': self._tenant_service,
-                'token_manager': self._token_manager,
+                'token_service': self._token_service,
                 'backends': self._backends,
                 'config': config,
             },
@@ -102,13 +102,14 @@ class Controller:
             'external_auth_service': external_auth_service,
             'group_service': group_service,
             'user_service': self._user_service,
-            'token_manager': self._token_manager,
+            'token_service': self._token_service,
+            'token_manager': self._token_service,  # For compatibility only
             'policy_service': policy_service,
             'tenant_service': self._tenant_service,
             'session_service': session_service,
             'template_formatter': template_formatter,
         }
-        Tenant.setup(self._token_manager, self._user_service, self._tenant_service)
+        Tenant.setup(self._token_service, self._user_service, self._tenant_service)
 
         plugin_helpers.load(
             namespace='wazo_auth.http',
@@ -127,7 +128,7 @@ class Controller:
                 plugin_info = getattr(extension.obj, 'plugin_info', {})
                 config['external_auth_plugin_info'][extension.name] = plugin_info
 
-        self._rest_api = CoreRestApi(config, self._token_manager, self._user_service)
+        self._rest_api = CoreRestApi(config, self._token_service, self._user_service)
 
         self._expired_token_remover = token.ExpiredTokenRemover(config, dao, self._bus_publisher)
 
@@ -137,23 +138,23 @@ class Controller:
         with bus.publisher_thread(self._bus_publisher):
             with ServiceCatalogRegistration(*self._service_discovery_args):
                 self._expired_token_remover.run()
-                local_token_manager = self._get_local_token_manager()
-                self._config['local_token_manager'] = local_token_manager
+                local_token_renewer = self._get_local_token_renewer()
+                self._config['local_token_renewer'] = local_token_renewer
                 self._rest_api.run()
-                local_token_manager.revoke_token()
+                local_token_renewer.revoke_token()
 
     def stop(self, reason):
         logger.warning('Stopping wazo-auth: %s', reason)
         self._rest_api.stop()
 
-    def _get_local_token_manager(self):
+    def _get_local_token_renewer(self):
         try:
             backend = self._backends['wazo_user']
         except KeyError:
             logger.info('wazo_user disabled no internal token will be created for wazo-auth')
             return
 
-        return LocalTokenManager(backend, self._token_manager, self._user_service)
+        return LocalTokenRenewer(backend, self._token_service, self._user_service)
 
     def _loaded_plugins_names(self, backends):
         return [backend.name for backend in backends]
