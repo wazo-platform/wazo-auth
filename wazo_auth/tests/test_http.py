@@ -8,7 +8,7 @@ from unittest import TestCase
 from hamcrest import assert_that, equal_to, has_entries, any_of
 from flask import Flask
 from flask_restful import Api
-from mock import ANY, Mock, sentinel as s
+from mock import ANY, Mock, sentinel as s, patch
 
 from xivo import plugin_helpers
 
@@ -52,7 +52,7 @@ class HTTPAppTestCase(TestCase):
             'external_auth_service': external_auth_service,
             'tokens': self.tokens,
             'users': self.users,
-            'sessions': self.session_service,
+            'session_service': self.session_service,
             'template_formatter': self.template_formatter,
         }
         plugin_helpers.load(
@@ -66,7 +66,7 @@ class HTTPAppTestCase(TestCase):
 TENANT = '00000000-0000-0000-0000-000000000000'
 
 
-@Mock('wazo_auth.plugins.users.http.Tenant', return_value=Mock(autodetect=Mock(return_value=Mock(uuid=TENANT))))
+@patch('wazo_auth.plugins.http.users.http.Tenant', Mock(autodetect=Mock(return_value=Mock(uuid=TENANT))))
 class TestUserResource(HTTPAppTestCase):
 
     def setUp(self):
@@ -96,6 +96,8 @@ class TestUserResource(HTTPAppTestCase):
             firstname=None,
             lastname=None,
             enabled=True,
+            purpose='user',
+            tenant_uuid=TENANT,
             **body
         )
 
@@ -164,7 +166,7 @@ class TestUserResource(HTTPAppTestCase):
                 json.loads(result.data),
                 has_entries('error_id', 'invalid-data',
                             'resource', 'users',
-                            'details', has_entries(field, has_entries('constraint_id', any_of('length', 'email')))),
+                            'details', has_entries(field, has_entries('constraint_id', any_of('length', 'type')))),
                 field,
             )
 
