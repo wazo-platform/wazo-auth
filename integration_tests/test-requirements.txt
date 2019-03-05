@@ -13,7 +13,7 @@ https://github.com/wazo-pbx/xivo-auth-client/archive/master.zip
 https://github.com/wazo-pbx/xivo-confd-client/archive/master.zip
 https://github.com/wazo-pbx/xivo-test-helpers/archive/master.zip
 https://github.com/wazo-pbx/xivo-lib-python/archive/master.zip
-alembic==0.8.8
+sqlalchemy==1.0.15
 jinja2==2.10
 psycopg2-binary
 stevedore==1.17.1
