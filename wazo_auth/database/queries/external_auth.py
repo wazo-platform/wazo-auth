@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -125,7 +125,13 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             query = s.query(
                 ExternalAuthType.name,
                 ExternalAuthData.data,
-            ).join(UserExternalAuth).join(ExternalAuthData).filter(filter_)
+            ).select_from(
+                UserExternalAuth
+            ).join(
+                ExternalAuthType
+            ).join(
+                ExternalAuthData
+            ).filter(filter_)
             for type_, data in query.all():
                 for row in result:
                     if row['type'] != type_:
