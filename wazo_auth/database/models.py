@@ -51,6 +51,15 @@ class Email(Base):
     confirmed = Column(Boolean, nullable=False, default=False)
 
 
+class ExternalAuthConfig(Base):
+
+    __tablename__ = 'auth_external_auth_config'
+
+    data_uuid = Column(String(36), ForeignKey('auth_external_auth_data.uuid', ondelete='CASCADE'))
+    tenant_uuid = Column(String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), primary_key=True)
+    type_uuid = Column(String(36), ForeignKey('auth_external_auth_type.uuid', ondelete='CASCADE'), primary_key=True)
+
+
 class ExternalAuthType(Base):
 
     __tablename__ = 'auth_external_auth_type'

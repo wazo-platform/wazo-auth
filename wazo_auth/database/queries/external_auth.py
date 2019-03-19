@@ -5,7 +5,7 @@ import json
 from sqlalchemy import and_, exc
 from .base import BaseDAO, PaginatorMixin
 from . import filters
-from ..models import ExternalAuthData, ExternalAuthType, User, UserExternalAuth
+from ..models import ExternalAuthConfig, ExternalAuthData, ExternalAuthType, Tenant, User, UserExternalAuth
 from ... import exceptions
 
 
@@ -54,6 +54,30 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 raise
             return data
 
+    def create_config(self, auth_type, data, tenant_uuid):
+        data = json.dumps(data)
+        with self.new_session() as s:
+            external_type = self._find_or_create_type(s, auth_type)
+            external_data = ExternalAuthData(data=data)
+            self._assert_tenant_exists(s, tenant_uuid)
+            s.add(external_data)
+            s.commit()
+            external_auth_config = ExternalAuthConfig(
+                data_uuid=external_data.uuid,
+                tenant_uuid=tenant_uuid,
+                type_uuid=external_type.uuid,
+            )
+            s.add(external_auth_config)
+            try:
+                s.commit()
+            except exc.IntegrityError as e:
+                if e.orig.pgcode in (self._UNIQUE_CONSTRAINT_CODE):
+                    constraint = e.orig.diag.constraint_name
+                    if constraint == 'auth_external_auth_config_pkey':
+                        raise exceptions.ExternalAuthConfigAlreadyExists(auth_type)
+                raise
+            return data
+
     def delete(self, user_uuid, auth_type):
         with self.new_session() as s:
             type_ = self._find_type(s, auth_type)
@@ -68,6 +92,19 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
             self._assert_user_exists(s, user_uuid)
             raise exceptions.UnknownExternalAuthException(auth_type)
+
+    def delete_config(self, auth_type, tenant_uuid):
+        with self.new_session() as s:
+            type_ = self._find_type(s, auth_type)
+            filter_ = and_(
+                ExternalAuthConfig.type_uuid == type_.uuid,
+                ExternalAuthConfig.tenant_uuid == tenant_uuid,
+            )
+            nb_deleted = s.query(ExternalAuthConfig).filter(filter_).delete()
+            if nb_deleted:
+                return
+
+            raise exceptions.UnknownExternalAuthConfigException(auth_type)
 
     def enable_all(self, auth_types):
         with self.new_session() as s:
@@ -140,9 +177,37 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         return result
 
+    def list_config(self, auth_type, tenant_uuid):
+        with self.new_session() as s:
+            external_auth_type = self._find_type(s, auth_type)
+
+            result = s.query(
+                ExternalAuthData.data
+            ).join(
+                ExternalAuthConfig
+            ).join(
+                ExternalAuthType
+            ).filter(
+                ExternalAuthType.name == external_auth_type.name,
+                ExternalAuthConfig.tenant_uuid == tenant_uuid,
+            ).first()
+
+            if result:
+                return json.loads(result.data)
+
+            raise exceptions.UnknownExternalAuthConfigException(auth_type)
+
     def update(self, user_uuid, auth_type, data):
         self.delete(user_uuid, auth_type)
         return self.create(user_uuid, auth_type, data)
+
+    def update_config(self, auth_type, data, tenant_uuid):
+        self.delete_config(auth_type, tenant_uuid)
+        return self.create_config(auth_type, data, tenant_uuid)
+
+    def _assert_tenant_exists(self, s, tenant_uuid):
+        if s.query(Tenant).filter(Tenant.uuid == str(tenant_uuid)).count() == 0:
+            raise exceptions.TenantParamException(tenant_uuid)
 
     def _assert_type_exists(self, s, auth_type):
         self._find_type(s, auth_type)

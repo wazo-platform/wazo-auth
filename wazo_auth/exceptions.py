@@ -26,6 +26,14 @@ class ExternalAuthAlreadyExists(APIException):
         super().__init__(409, msg, 'conflict', details, auth_type)
 
 
+class ExternalAuthConfigAlreadyExists(APIException):
+
+    def __init__(self, auth_type):
+        msg = 'This external authentification config has already been set: "{}"'.format(auth_type)
+        details = {'type': auth_type}
+        super().__init__(409, msg, 'conflict', details, auth_type)
+
+
 class InvalidListParamException(APIException):
 
     def __init__(self, message, details=None):
@@ -56,6 +64,14 @@ class UnknownExternalAuthException(APIException):
         super().__init__(
             404, msg, 'unknown-external-auth', details, auth_type)
 
+
+class UnknownExternalAuthConfigException(APIException):
+
+    def __init__(self, auth_type):
+        msg = 'No config found for this external auth type: "{}"'.format(auth_type)
+        details = {'type': str(auth_type)}
+        super().__init__(
+            404, msg, 'unknown-external-auth', details, auth_type)
 
 class UnknownExternalAuthTypeException(APIException):
 
