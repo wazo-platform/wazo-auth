@@ -2,10 +2,14 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
-import requests
 from uuid import uuid4
-from hamcrest import (assert_that, contains, contains_inanyorder, equal_to, has_entries)
+
+import requests
+
+from hamcrest import (assert_that, contains, contains_inanyorder, equal_to,
+                      has_entries, has_items)
 from xivo_test_helpers import until
+
 from .helpers import base, fixtures
 
 
@@ -141,3 +145,53 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
         url = 'http://localhost:{}/{}/authorize/{}'.format(port, auth_type, state)
         result = requests.get(url, params={'access_token': token})
         result.raise_for_status()
+
+
+class TestExternalAuthConfigAPI(base.WazoAuthTestCase):
+
+    asset = 'external_auth'
+    EXTERNAL_AUTH_TYPE = 'an-external-auth-type'
+    SECRET = {
+        'client_id': 'a-client-id',
+        'client_secret': 'a-client-secret',
+    }
+
+    def tearDown(self):
+        try:
+            self.client.external.delete_config(self.EXTERNAL_AUTH_TYPE)
+        except requests.HTTPError:
+            pass
+
+    def test_given_no_config_when_get_config_then_not_found(self):
+        base.assert_http_error(404, self.client.external.get_config, self.EXTERNAL_AUTH_TYPE)
+
+    def test_given_create_config_when_get_config_then_ok(self):
+        self.client.external.create_config(auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET)
+
+        response = self.client.external.get_config(self.EXTERNAL_AUTH_TYPE)
+
+        assert_that(response.get('items'), has_items(*self.SECRET))
+
+    def test_given_config_when_create_same_config_then_conflict(self):
+        self.client.external.create_config(
+            auth_type=self.EXTERNAL_AUTH_TYPE,
+            data=self.SECRET,
+        )
+
+        base.assert_http_error(409, self.client.external.create_config, self.EXTERNAL_AUTH_TYPE, self.SECRET)
+
+    def test_given_config_when_get_config_from_wrong_tenant_then_not_found(self):
+        self.client.external.create_config(auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET)
+
+        base.assert_http_error(404, self.client.external.get_config, self.EXTERNAL_AUTH_TYPE, tenant_uuid='wrong-tenant')
+
+    def test_given_config_when_put_config_then_ok(self):
+        self.client.external.create_config(auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET)
+        new_secret = dict(self.SECRET)
+        new_secret['secret'] = 'secret'
+
+        base.assert_no_error(self.client.external.update_config, self.EXTERNAL_AUTH_TYPE, new_secret)
+
+        response = self.client.external.get_config(self.EXTERNAL_AUTH_TYPE)
+
+        assert_that(response.get('items'), has_items(*new_secret))
