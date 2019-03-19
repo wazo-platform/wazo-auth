@@ -81,13 +81,20 @@ class ExternalAuthService(BaseService):
         self._bus_publisher.publish(event)
         return result
 
+    def create_config(self, auth_type, data, tenant_uuid):
+        return self._dao.external_auth.create_config(auth_type, data, tenant_uuid)
+
     def delete(self, user_uuid, auth_type):
         self._dao.external_auth.delete(user_uuid, auth_type)
         event = events.UserExternalAuthDeleted(user_uuid, auth_type)
         self._bus_publisher.publish(event)
 
+    def delete_config(self, auth_type, tenant_uuid):
+        self._dao.external_auth.delete_config(auth_type, tenant_uuid)
+
     def get(self, user_uuid, auth_type):
         return self._dao.external_auth.get(user_uuid, auth_type)
+
 
     def list_(self, user_uuid, **kwargs):
         self._populate_enabled_external_auth()
@@ -106,6 +113,9 @@ class ExternalAuthService(BaseService):
             result.append({'type': auth_type, 'data': filtered_data, 'enabled': enabled})
         return result
 
+    def list_config(self, auth_type, tenant_uuid):
+        return self._dao.external_auth.list_config(auth_type, tenant_uuid)
+
     def build_oauth2_redirect_url(self, auth_type):
         return self._url_tpl.format(auth_type=auth_type)
 
@@ -118,3 +128,6 @@ class ExternalAuthService(BaseService):
 
     def update(self, user_uuid, auth_type, data):
         return self._dao.external_auth.update(user_uuid, auth_type, data)
+
+    def update_config(self, auth_type, data, tenant_uuid):
+        return self._dao.external_auth.update_config(auth_type, data, tenant_uuid)
