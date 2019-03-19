@@ -4,6 +4,8 @@
 from flask import current_app, request
 from wazo_auth import exceptions, http, schemas
 
+from .schemas import ExternalAuthConfigQueryParameters
+
 
 class External(http.AuthResource):
 
@@ -32,3 +34,54 @@ class External(http.AuthResource):
         }
 
         return response, 200
+
+
+class ExternalConfig(http.AuthResource):
+
+
+    def __init__(self, external_auth_service, tenant_service, token_service):
+        self.external_auth_service = external_auth_service
+        self.tenant_service = tenant_service
+        self.token_service = token_service
+
+    @http.required_acl('auth.{auth_type}.external.read')
+    def get(self, auth_type):
+        tenant_uuid = self._get_tenant_uuid(auth_type)
+        response = self.external_auth_service.list_config(auth_type, tenant_uuid=tenant_uuid)
+        return {
+            'filtered': len(response),
+            'items': response,
+            'count': len(response)
+        }
+
+    @http.required_acl('auth.{auth_type}.external.write')
+    def post(self, auth_type):
+        data = request.get_json()
+        tenant_uuid = self._get_tenant_uuid(auth_type)
+        self.external_auth_service.create_config(auth_type, data, tenant_uuid)
+        return '', 201
+
+    @http.required_acl('auth.{auth_type}.external.write')
+    def put(self, auth_type):
+        data = request.get_json()
+        tenant_uuid = self._get_tenant_uuid(auth_type)
+        self.external_auth_service.update_config(auth_type, data, tenant_uuid)
+
+    @http.required_acl('auth.{auth_type}.external.delete')
+    def delete(self, auth_type):
+        tenant_uuid = self._get_tenant_uuid(auth_type)
+        self.external_auth_service.delete_config(auth_type, tenant_uuid=tenant_uuid)
+        return '', 204
+
+    def _get_tenant_uuid(self, auth_type):
+        token_tenant_uuid = self.token_service.get(
+            request.headers['X-Auth-Token'], 'auth.{auth_type}.external.read'.format(auth_type=auth_type)
+        ).metadata.get('tenant_uuid')
+
+        tenant_uuid = request.headers.get('Wazo-Tenant')
+
+        if tenant_uuid:
+            self.tenant_service.assert_tenant_under(token_tenant_uuid, tenant_uuid)
+            return tenant_uuid
+        else:
+            return token_tenant_uuid
