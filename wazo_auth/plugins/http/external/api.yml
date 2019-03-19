@@ -1,4 +1,39 @@
 paths:
+  /external/{auth_type}/config:
+    get:
+      description: '**Required ACL**: `auth.{auth_type}.external.read`'
+      summary: Retrieves the client id and client secret of the given tenant
+      tags:
+        - external
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+        - $ref: '#/parameters/auth_type'
+    post:
+      description: '**Required ACL**: `auth.{auth_type}.external.write`'
+      summary: Add the given client_id and client_secret to the given auth_type of the given tenant
+      tags:
+        - external
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+        - $ref: '#/parameters/auth_type'
+        - in: body
+          description: The client_id and client_secret for the given authentication type
+          name: config
+          required: true
+          schema:
+            - $ref: '#/definitions/ExternalConfig'
+      responses:
+        '201':
+          description: Config created
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '409':
+          description: Duplicate config
+          schema:
+            $ref: '#/definitions/Error'
+
   /users/{user_uuid}/external:
     get:
       tags:
@@ -46,3 +81,24 @@ definitions:
       data:
         type: object
         description: A cleaned up copy of the user auth data without sensible information
+  ExternalConfig:
+    type: object
+    properties:
+      client_id:
+        description: Client ID for the given authentication type
+        type: string
+        example: a-client-id
+      client_secret:
+        description: Client secret for the given authentication type
+        type: string
+        example: a-client-secret
+    required:
+      - client_id
+      - client_secret
+parameters:
+  auth_type:
+    name: auth_type
+    in: path
+    type: string
+    description: External auth type name
+    required: true
