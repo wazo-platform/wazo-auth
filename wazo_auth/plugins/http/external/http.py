@@ -4,8 +4,6 @@
 from flask import current_app, request
 from wazo_auth import exceptions, http, schemas
 
-from .schemas import ExternalAuthConfigQueryParameters
-
 
 class External(http.AuthResource):
 
