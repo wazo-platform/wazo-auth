@@ -2,15 +2,47 @@ paths:
   /external/{auth_type}/config:
     get:
       description: '**Required ACL**: `auth.{auth_type}.external.read`'
-      summary: Retrieves the client id and client secret of the given tenant
+      summary: Retrieve the client id and client secret
       tags:
         - external
       parameters:
         - $ref: '#/parameters/tenantuuid'
         - $ref: '#/parameters/auth_type'
+      responses:
+        '200':
+          description: The requested config
+          schema:
+            $ref: '#/definitions/ExternalAuthResult'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      description: '**Required ACL**: `auth.{auth_type}.external.write`'
+      summary: Delete the client id and client secret
+      tags:
+        - external
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+        - $ref: '#/parameters/auth_type'
+      responses:
+        '204':
+          description: Deletion confirmed
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/Error'
     post:
       description: '**Required ACL**: `auth.{auth_type}.external.write`'
-      summary: Add the given client_id and client_secret to the given auth_type of the given tenant
+      summary: Add the given client_id and client_secret to the given auth_type
       tags:
         - external
       parameters:
@@ -21,7 +53,7 @@ paths:
           name: config
           required: true
           schema:
-            - $ref: '#/definitions/ExternalConfig'
+            $ref: '#/definitions/ExternalConfig'
       responses:
         '201':
           description: Config created
@@ -29,8 +61,37 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/Error'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/Error'
         '409':
           description: Duplicate config
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      description: '**Required ACL**: `auth.{auth_type}.external.write`'
+      summary: Update the given client_id and client_secret to the given auth_type
+      tags:
+        - external
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+        - $ref: '#/parameters/auth_type'
+        - in: body
+          description: The client_id and client_secret for the given authentication type
+          name: config
+          required: true
+          schema:
+            $ref: '#/definitions/ExternalConfig'
+      responses:
+        '201':
+          description: Config created
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Not found
           schema:
             $ref: '#/definitions/Error'
 
