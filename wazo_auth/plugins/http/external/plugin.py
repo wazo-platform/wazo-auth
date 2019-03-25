@@ -9,7 +9,6 @@ class Plugin:
     def load(self, dependencies):
         api = dependencies['api']
         args = (dependencies['external_auth_service'],)
-        config_args = (*args, dependencies['tenant_service'], dependencies['token_service'])
 
         api.add_resource(http.External, '/users/<uuid:user_uuid>/external', resource_class_args=args)
-        api.add_resource(http.ExternalConfig, '/external/<auth_type>/config', resource_class_args=config_args)
+        api.add_resource(http.ExternalConfig, '/external/<auth_type>/config', resource_class_args=args)

@@ -182,23 +182,19 @@ class TestExternalAuthConfigAPI(base.WazoAuthTestCase):
 
     def test_given_no_config_when_delete_then_not_found(self):
         base.assert_http_error(
-                404,
-                self.client.external.delete_config,
-                self.EXTERNAL_AUTH_TYPE,
-            )
+            404,
+            self.client.external.delete_config,
+            self.EXTERNAL_AUTH_TYPE,
+        )
 
     def test_given_config_when_get_config_from_wrong_tenant_then_not_found(self):
         self.client.external.create_config(auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET)
 
-<<<<<<< HEAD
-        base.assert_http_error(404, self.client.external.get_config, self.EXTERNAL_AUTH_TYPE, tenant_uuid='wrong-tenant')
-=======
         base.assert_http_error(
             401, self.client.external.get_config,
             self.EXTERNAL_AUTH_TYPE,
             tenant_uuid='wrong-tenant'
         )
->>>>>>> 2fdf4fe... itest
 
     def test_given_config_when_update_config_then_ok(self):
         self.client.external.create_config(auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET)
