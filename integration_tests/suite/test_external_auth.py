@@ -180,12 +180,27 @@ class TestExternalAuthConfigAPI(base.WazoAuthTestCase):
 
         base.assert_http_error(409, self.client.external.create_config, self.EXTERNAL_AUTH_TYPE, self.SECRET)
 
+    def test_given_no_config_when_delete_then_not_found(self):
+        base.assert_http_error(
+                404,
+                self.client.external.delete_config,
+                self.EXTERNAL_AUTH_TYPE,
+            )
+
     def test_given_config_when_get_config_from_wrong_tenant_then_not_found(self):
         self.client.external.create_config(auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET)
 
+<<<<<<< HEAD
         base.assert_http_error(404, self.client.external.get_config, self.EXTERNAL_AUTH_TYPE, tenant_uuid='wrong-tenant')
+=======
+        base.assert_http_error(
+            401, self.client.external.get_config,
+            self.EXTERNAL_AUTH_TYPE,
+            tenant_uuid='wrong-tenant'
+        )
+>>>>>>> 2fdf4fe... itest
 
-    def test_given_config_when_put_config_then_ok(self):
+    def test_given_config_when_update_config_then_ok(self):
         self.client.external.create_config(auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET)
         new_secret = dict(self.SECRET)
         new_secret['secret'] = 'secret'
@@ -195,3 +210,26 @@ class TestExternalAuthConfigAPI(base.WazoAuthTestCase):
         response = self.client.external.get_config(self.EXTERNAL_AUTH_TYPE)
 
         assert_that(response.get('items'), has_items(*new_secret))
+
+    def test_given_no_config_when_update_config_then_not_found(self):
+        base.assert_http_error(
+                404,
+                self.client.external.update_config,
+                self.EXTERNAL_AUTH_TYPE,
+                self.SECRET,
+            )
+
+    def test_given_mastertenant_with_config_and_subtenant_when_subtenant_get_config_then_not_found(self):
+        self.client.external.create_config(auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET)
+
+        with self.client_in_subtenant(parent_uuid=self.top_tenant_uuid) as (client, _, _):
+            base.assert_http_error(
+                404,
+                client.external.get_config,
+                self.EXTERNAL_AUTH_TYPE,
+            )
+
+    def test_given_mastertenant_and_subtenant_with_config_when_mastertenant_get_config_then_ok(self):
+        with self.client_in_subtenant(parent_uuid=self.top_tenant_uuid) as (client, _, tenant):
+            client.external.create_config(auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET)
+            base.assert_no_error(self.client.external.get_config, self.EXTERNAL_AUTH_TYPE, tenant_uuid=tenant["uuid"])
