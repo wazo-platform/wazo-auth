@@ -45,7 +45,7 @@ class ExternalConfig(http.AuthResource):
     @http.required_acl('auth.{auth_type}.external.read')
     def get(self, auth_type):
         tenant_uuid = self._get_tenant_uuid(auth_type)
-        response = self.external_auth_service.list_config(auth_type, tenant_uuid=tenant_uuid)
+        response = self.external_auth_service.get_config(auth_type, tenant_uuid=tenant_uuid)
         return {
             'filtered': len(response),
             'items': response,

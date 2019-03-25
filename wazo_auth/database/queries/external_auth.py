@@ -145,6 +145,26 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             self._assert_user_exists(s, user_uuid)
             raise exceptions.UnknownExternalAuthException(auth_type)
 
+    def get_config(self, auth_type, tenant_uuid):
+        with self.new_session() as s:
+            external_auth_type = self._find_type(s, auth_type)
+
+            result = s.query(
+                ExternalAuthData.data
+            ).join(
+                ExternalAuthConfig
+            ).join(
+                ExternalAuthType
+            ).filter(
+                ExternalAuthType.name == external_auth_type.name,
+                ExternalAuthConfig.tenant_uuid == tenant_uuid,
+            ).first()
+
+            if result:
+                return json.loads(result.data)
+
+            raise exceptions.UnknownExternalAuthConfigException(auth_type)
+
     def list_(self, user_uuid, **kwargs):
         base_filter = ExternalAuthType.enabled == True
         search_filter = self.new_search_filter(**kwargs)
@@ -176,26 +196,6 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     row.update({'enabled': True, 'data': json.loads(data)})
 
         return result
-
-    def list_config(self, auth_type, tenant_uuid):
-        with self.new_session() as s:
-            external_auth_type = self._find_type(s, auth_type)
-
-            result = s.query(
-                ExternalAuthData.data
-            ).join(
-                ExternalAuthConfig
-            ).join(
-                ExternalAuthType
-            ).filter(
-                ExternalAuthType.name == external_auth_type.name,
-                ExternalAuthConfig.tenant_uuid == tenant_uuid,
-            ).first()
-
-            if result:
-                return json.loads(result.data)
-
-            raise exceptions.UnknownExternalAuthConfigException(auth_type)
 
     def update(self, user_uuid, auth_type, data):
         self.delete(user_uuid, auth_type)

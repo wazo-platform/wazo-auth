@@ -95,6 +95,8 @@ class ExternalAuthService(BaseService):
     def get(self, user_uuid, auth_type):
         return self._dao.external_auth.get(user_uuid, auth_type)
 
+    def get_config(self, auth_type, tenant_uuid):
+        return self._dao.external_auth.get_config(auth_type, tenant_uuid)
 
     def list_(self, user_uuid, **kwargs):
         self._populate_enabled_external_auth()
@@ -112,9 +114,6 @@ class ExternalAuthService(BaseService):
                     logger.info('Failed to parse %s data for user %s: %s', auth_type, user_uuid, errors)
             result.append({'type': auth_type, 'data': filtered_data, 'enabled': enabled})
         return result
-
-    def list_config(self, auth_type, tenant_uuid):
-        return self._dao.external_auth.list_config(auth_type, tenant_uuid)
 
     def build_oauth2_redirect_url(self, auth_type):
         return self._url_tpl.format(auth_type=auth_type)
