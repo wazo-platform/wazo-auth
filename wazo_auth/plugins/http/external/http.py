@@ -49,7 +49,7 @@ class ExternalConfig(http.AuthResource):
             'filtered': len(response),
             'items': response,
             'count': len(response)
-        }
+        }, 200
 
     @http.required_acl('auth.{auth_type}.external.write')
     def post(self, auth_type):
@@ -63,6 +63,7 @@ class ExternalConfig(http.AuthResource):
         data = request.get_json()
         tenant_uuid = Tenant.autodetect().uuid
         self.external_auth_service.update_config(auth_type, data, tenant_uuid)
+        return '', 204
 
     @http.required_acl('auth.{auth_type}.external.delete')
     def delete(self, auth_type):
