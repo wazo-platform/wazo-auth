@@ -1,6 +1,16 @@
 Changelog
 =========
 
+19.05
+-----
+
+* New resource has been added to manage config for a given auth_type
+
+    * GET `0.1/external/<auth_type>/config`
+    * POST `0.1/external/<auth_type>/config`
+    * DELETE `0.1/external/<auth_type>/config`
+    * PUT `0.1/external/<auth_type>/config`
+
 19.04
 -----
 
