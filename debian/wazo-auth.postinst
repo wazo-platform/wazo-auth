@@ -11,10 +11,6 @@ GROUP=$USER
 LOG_FILENAME="/var/log/${DAEMONNAME}.log"
 ALEMBIC_INI_PATH="/usr/share/${DAEMONNAME}"
 
-pg_is_running () {
-    pg_lsclusters --no-header | grep -q online
-}
-
 case "$1" in
     configure)
         previous_version="$2"
