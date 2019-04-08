@@ -34,6 +34,14 @@ class ExternalAuthConfigAlreadyExists(APIException):
         super().__init__(409, msg, 'conflict', details, auth_type)
 
 
+class ExternalAuthConfigNotFound(APIException):
+
+    def __init__(self, auth_type):
+        msg = 'Configuration for this external auth type "{}" is not defined.'.format(auth_type)
+        details = {'type': auth_type}
+        super().__init__(404, msg, 'unknown-config', details, auth_type)
+
+
 class InvalidListParamException(APIException):
 
     def __init__(self, message, details=None):
