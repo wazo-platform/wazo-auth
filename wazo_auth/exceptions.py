@@ -81,6 +81,7 @@ class UnknownExternalAuthConfigException(APIException):
         super().__init__(
             404, msg, 'unknown-external-auth', details, auth_type)
 
+
 class UnknownExternalAuthTypeException(APIException):
 
     def __init__(self, auth_type):

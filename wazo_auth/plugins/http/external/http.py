@@ -37,7 +37,6 @@ class External(http.AuthResource):
 
 class ExternalConfig(http.AuthResource):
 
-
     def __init__(self, external_auth_service):
         self.external_auth_service = external_auth_service
 
@@ -70,4 +69,3 @@ class ExternalConfig(http.AuthResource):
         tenant_uuid = Tenant.autodetect().uuid
         self.external_auth_service.delete_config(auth_type, tenant_uuid=tenant_uuid)
         return '', 204
-
