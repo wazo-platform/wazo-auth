@@ -6,8 +6,13 @@ from uuid import uuid4
 
 import requests
 
-from hamcrest import (assert_that, contains, contains_inanyorder, equal_to,
-                      has_entries, has_items)
+from hamcrest import (
+    assert_that,
+    contains,
+    contains_inanyorder,
+    equal_to,
+    has_entries,
+)
 from xivo_test_helpers import until
 
 from .helpers import base, fixtures
@@ -173,7 +178,7 @@ class TestExternalAuthConfigAPI(base.WazoAuthTestCase):
 
         response = self.client.external.get_config(self.EXTERNAL_AUTH_TYPE)
 
-        assert_that(response.get('items'), has_items(*self.SECRET))
+        assert_that(response, has_entries(self.SECRET))
 
     def test_given_config_when_create_same_config_then_conflict(self):
         self.client.external.create_config(
@@ -208,7 +213,7 @@ class TestExternalAuthConfigAPI(base.WazoAuthTestCase):
 
         response = self.client.external.get_config(self.EXTERNAL_AUTH_TYPE)
 
-        assert_that(response.get('items'), has_items(*new_secret))
+        assert_that(response, has_entries(new_secret))
 
     def test_given_no_config_when_update_config_then_not_found(self):
         base.assert_http_error(

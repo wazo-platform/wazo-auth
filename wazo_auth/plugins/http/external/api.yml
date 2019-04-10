@@ -12,7 +12,7 @@ paths:
         '200':
           description: The requested config
           schema:
-            $ref: '#/definitions/ExternalAuthResult'
+            $ref: '#/definitions/ExternalConfig'
         '401':
           description: Unauthorized
           schema:
@@ -120,28 +120,6 @@ paths:
           schema:
             $ref: '#/definitions/ExternalAuthList'
 definitions:
-  ExternalAuthList:
-    type: object
-    properties:
-      total:
-        type: integer
-      filtered:
-        type: integer
-        description: The number of items matching the searched term
-      items:
-        type: array
-        items:
-          $ref: '#/definitions/ExternalAuthResult'
-        description: A paginated list of user external auth
-  ExternalAuthResult:
-    type: object
-    properties:
-      type:
-        type: string
-        description: The name of the auth type
-      data:
-        type: object
-        description: A cleaned up copy of the user auth data without sensible information
   ExternalConfig:
     type: object
     properties:

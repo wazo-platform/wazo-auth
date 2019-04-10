@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import current_app, request
@@ -44,11 +44,7 @@ class ExternalConfig(http.AuthResource):
     def get(self, auth_type):
         tenant_uuid = Tenant.autodetect().uuid
         response = self.external_auth_service.get_config(auth_type, tenant_uuid=tenant_uuid)
-        return {
-            'filtered': len(response),
-            'items': response,
-            'count': len(response)
-        }, 200
+        return response
 
     @http.required_acl('auth.{auth_type}.external.write')
     def post(self, auth_type):
