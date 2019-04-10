@@ -162,6 +162,9 @@ class TestExternalAuthConfigAPI(base.WazoAuthTestCase):
         except requests.HTTPError:
             pass
 
+    def test_given_given_unknown_auth_type(self):
+        base.assert_http_error(404, self.client.external.get_config, 'some-unknown-auth')
+
     def test_given_no_config_when_get_config_then_not_found(self):
         base.assert_http_error(404, self.client.external.get_config, self.EXTERNAL_AUTH_TYPE)
 
