@@ -147,7 +147,10 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def get_config(self, auth_type, tenant_uuid):
         with self.new_session() as s:
-            external_auth_type = self._find_type(s, auth_type)
+            try:
+                external_auth_type = self._find_type(s, auth_type)
+            except exceptions.UnknownExternalAuthTypeException:
+                raise exceptions.ExternalAuthConfigNotFound(auth_type)
 
             result = s.query(
                 ExternalAuthData.data
