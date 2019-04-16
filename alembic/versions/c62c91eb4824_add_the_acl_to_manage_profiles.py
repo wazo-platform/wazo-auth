@@ -1,20 +1,20 @@
-"""${message}
+"""add the ACL to manage profiles
 
-Revision ID: ${up_revision}
-Revises: ${down_revision}
+Revision ID: c62c91eb4824
+Revises: e2fb0a6b62a7
 
 """
 
 from alembic import op
 import sqlalchemy as sa
-${imports if imports else ""}
 
 # revision identifiers, used by Alembic.
-revision = ${repr(up_revision)}
-down_revision = ${repr(down_revision)}
+revision = 'c62c91eb4824'
+down_revision = 'e2fb0a6b62a7'
 
-POLICY_NAME = ''
+POLICY_NAME = 'wazo_default_admin_policy'
 ACL_TEMPLATES = [
+    'dird.profiles.#',
 ]
 
 policy_table = sa.sql.table(
