@@ -36,7 +36,7 @@ class TestResetPassword(WazoAuthTestCase):
 
     def _update_password_from_email(self, raw_email, password):
         headers, body = raw_email.split('\n\n', 1)
-        email_fields = yaml.load(body)
+        email_fields = yaml.safe_load(body)
 
         token = email_fields['token']
         user_uuid = email_fields['user_uuid']
