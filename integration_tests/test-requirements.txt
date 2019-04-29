@@ -14,7 +14,7 @@ https://github.com/wazo-pbx/xivo-confd-client/archive/master.zip
 https://github.com/wazo-pbx/xivo-test-helpers/archive/master.zip
 https://github.com/wazo-pbx/xivo-lib-python/archive/master.zip
 sqlalchemy==1.0.15
-jinja2==2.10
+jinja2==2.10.1
 psycopg2-binary
 stevedore==1.17.1
 unidecode==0.04.19
