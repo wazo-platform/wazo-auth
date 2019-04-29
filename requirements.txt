@@ -14,12 +14,12 @@ psycopg2==2.6.2
 python-consul==0.7.0
 python-ldap==3.1.0
 pyyaml==3.12
-requests==2.20.0
+requests==2.21.0
 sqlalchemy==1.0.15
 stevedore==1.17.1
 unidecode==0.04.19
 alembic==0.8.8
 marshmallow==2.16.3
-jinja2==2.10
+jinja2==2.10.1
 netifaces==0.10.4
 websocket-client==0.37.0
