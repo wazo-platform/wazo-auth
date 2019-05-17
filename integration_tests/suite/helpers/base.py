@@ -18,9 +18,9 @@ from hamcrest import (
     has_properties,
     equal_to,
 )
+from wazo_auth_client import Client
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
-from xivo_auth_client import Client
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.bus import BusClient
 from wazo_auth.database import queries
