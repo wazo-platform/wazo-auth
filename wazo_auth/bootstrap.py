@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import argparse
@@ -7,7 +7,9 @@ import os
 import random
 import requests
 import string
+import tempfile
 import time
+import traceback
 import sys
 from xivo.config_helper import read_config_file_hierarchy
 
@@ -43,7 +45,8 @@ URL = 'https://localhost:{}/0.1/init'
 HEADERS = {'Accept': 'application/json', 'Content-Type': 'application/json'}
 
 ERROR_MSG = '''\
-Failed to bootstrap wazo-auth. Use the following command to bootstrap manually
+Failed to bootstrap wazo-auth. Error is logged at {log_file}.
+Use the following command to bootstrap manually:
 wazo-auth && sleep 5 && wazo-auth-bootstrap complete && killall wazo-auth
 '''
 
@@ -58,8 +61,10 @@ def main():
     elif args.action == 'complete':
         try:
             complete()
-        except Exception:
-            print(ERROR_MSG, file=sys.stderr)
+        except Exception as e:
+            with tempfile.NamedTemporaryFile(mode='w', prefix='wazo-auth-bootstrap-', delete=False) as log_file:
+                traceback.print_exc(file=log_file)
+                print(ERROR_MSG.format(log_file=log_file.name), file=sys.stderr)
             sys.exit(1)
     else:
         parser.print_help()
