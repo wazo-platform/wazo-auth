@@ -5,7 +5,7 @@ import logging
 
 from wazo_auth import BaseMetadata
 from requests.exceptions import HTTPError
-from xivo_confd_client import Client as ConfdClient
+from wazo_confd_client import Client as ConfdClient
 
 logger = logging.getLogger(__name__)
 
