@@ -7,7 +7,7 @@ import logging
 
 from requests.exceptions import HTTPError
 
-from xivo_confd_client import Client
+from wazo_confd_client import Client
 from wazo_auth.helpers import LazyTemplateRenderer
 
 DEFAULT_XIVO_UUID = os.getenv('XIVO_UUID')
