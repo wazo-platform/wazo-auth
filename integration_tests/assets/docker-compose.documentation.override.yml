@@ -3,8 +3,7 @@ services:
   sync:
     depends_on:
       - auth
-      - swagger-validator
       - postgres
       - rabbitmq
     environment:
-      TARGETS: "auth:9497 swagger-validator:8080 postgres:5432 rabbitmq:5672"
+      TARGETS: "auth:9497 postgres:5432 rabbitmq:5672"
