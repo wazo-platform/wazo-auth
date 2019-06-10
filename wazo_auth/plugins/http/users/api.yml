@@ -30,7 +30,7 @@ paths:
         **Required ACL**: `auth.users.create`
 
         Creates a new user that can be used to retrieve a token. The UUID can be used to link this user the a
-        xivo-confd user by using the same UUID
+        wazo-confd user by using the same UUID
       operationId: createUser
       tags:
         - users
