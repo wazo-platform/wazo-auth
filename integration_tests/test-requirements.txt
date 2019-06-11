@@ -1,10 +1,11 @@
 docker
 docker-compose
+kombu
 mock
 nose
+openapi-spec-validator
 pyhamcrest
 python-ldap
-kombu
 
 # for database tests
 -e ..

@@ -53,8 +53,3 @@ services:
     image: munkyboy/fakesmtp
     ports:
       - "25"
-
-  swagger-validator:
-    image: swaggerapi/swagger-validator
-    ports:
-      - "8080"
