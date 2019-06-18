@@ -1,6 +1,12 @@
 Changelog
 =========
 
+19.09
+-----
+
+* The ACL on `0.1/external/<auth_type>/config` have been change to match the URL
+
+
 19.05
 -----
 
@@ -10,6 +16,7 @@ Changelog
     * POST `0.1/external/<auth_type>/config`
     * DELETE `0.1/external/<auth_type>/config`
     * PUT `0.1/external/<auth_type>/config`
+
 
 19.04
 -----

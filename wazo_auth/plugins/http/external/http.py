@@ -40,27 +40,27 @@ class ExternalConfig(http.AuthResource):
     def __init__(self, external_auth_service):
         self.external_auth_service = external_auth_service
 
-    @http.required_acl('auth.{auth_type}.external.read')
+    @http.required_acl('auth.{auth_type}.external.config.read')
     def get(self, auth_type):
         tenant_uuid = Tenant.autodetect().uuid
         response = self.external_auth_service.get_config(auth_type, tenant_uuid=tenant_uuid)
         return response
 
-    @http.required_acl('auth.{auth_type}.external.write')
+    @http.required_acl('auth.{auth_type}.external.config.create')
     def post(self, auth_type):
         data = request.get_json()
         tenant_uuid = Tenant.autodetect().uuid
         self.external_auth_service.create_config(auth_type, data, tenant_uuid)
         return '', 201
 
-    @http.required_acl('auth.{auth_type}.external.write')
+    @http.required_acl('auth.{auth_type}.external.config.edit')
     def put(self, auth_type):
         data = request.get_json()
         tenant_uuid = Tenant.autodetect().uuid
         self.external_auth_service.update_config(auth_type, data, tenant_uuid)
         return '', 204
 
-    @http.required_acl('auth.{auth_type}.external.delete')
+    @http.required_acl('auth.{auth_type}.external.config.delete')
     def delete(self, auth_type):
         tenant_uuid = Tenant.autodetect().uuid
         self.external_auth_service.delete_config(auth_type, tenant_uuid=tenant_uuid)
