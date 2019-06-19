@@ -1,7 +1,7 @@
 paths:
   /external/{auth_type}/config:
     get:
-      description: '**Required ACL**: `auth.{auth_type}.external.read`'
+      description: '**Required ACL**: `auth.{auth_type}.external.config.read`'
       summary: Retrieve the client id and client secret
       tags:
         - external
@@ -22,7 +22,7 @@ paths:
           schema:
             $ref: '#/definitions/Error'
     delete:
-      description: '**Required ACL**: `auth.{auth_type}.external.write`'
+      description: '**Required ACL**: `auth.{auth_type}.external.config.delete`'
       summary: Delete the client id and client secret
       tags:
         - external
@@ -41,7 +41,7 @@ paths:
           schema:
             $ref: '#/definitions/Error'
     post:
-      description: '**Required ACL**: `auth.{auth_type}.external.write`'
+      description: '**Required ACL**: `auth.{auth_type}.external.config.create`'
       summary: Add the given client_id and client_secret to the given auth_type
       tags:
         - external
@@ -70,7 +70,7 @@ paths:
           schema:
             $ref: '#/definitions/Error'
     put:
-      description: '**Required ACL**: `auth.{auth_type}.external.write`'
+      description: '**Required ACL**: `auth.{auth_type}.external.config.edit`'
       summary: Update the given client_id and client_secret to the given auth_type
       tags:
         - external
