@@ -58,7 +58,9 @@ setup(
             'user_policy = wazo_auth.plugins.http.user_policy.plugin:Plugin',
             'user_session = wazo_auth.plugins.http.user_session.plugin:Plugin',
         ],
-        'wazo_auth.external_auth': [],
+        'wazo_auth.external_auth': [
+            'mobile = wazo_auth.plugins.external_auth.mobile.plugin:Plugin',
+        ],
         'wazo_auth.metadata': [
             'default_user = wazo_auth.plugins.metadata.default_user:DefaultUser',
             'default_internal = wazo_auth.plugins.metadata.default_internal:DefaultInternal',
