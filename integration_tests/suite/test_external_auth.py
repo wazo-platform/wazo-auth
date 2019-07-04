@@ -11,7 +11,9 @@ from hamcrest import (
     contains,
     contains_inanyorder,
     equal_to,
+    greater_than_or_equal_to,
     has_entries,
+    has_items,
 )
 from xivo_test_helpers import until
 
@@ -90,20 +92,32 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
             {'type': 'foo', 'data': {}, 'plugin_info': {}, 'enabled': False},
             {'type': 'bar', 'data': {}, 'plugin_info': {'foo': 'bar'}, 'enabled': False},
         ]
-        assert_that(result, has_entries(items=contains_inanyorder(*expected), total=2, filtered=2))
+        assert_that(result, has_entries(
+            items=has_items(*expected),
+            total=greater_than_or_equal_to(2),
+            filtered=greater_than_or_equal_to(2),
+        ))
 
         result = self.client.external.list_(user1['uuid'])
         expected = [
             {'type': 'foo', 'data': {}, 'plugin_info': {}, 'enabled': True},
             {'type': 'bar', 'data': self.safe_data, 'plugin_info': {'foo': 'bar'}, 'enabled': True},
         ]
-        assert_that(result, has_entries(items=contains_inanyorder(*expected), total=2, filtered=2))
+        assert_that(result, has_entries(
+            items=has_items(*expected),
+            total=greater_than_or_equal_to(2),
+            filtered=greater_than_or_equal_to(2),
+        ))
 
         result = self.client.external.list_(user1['uuid'], type='bar')
         expected = [
             {'type': 'bar', 'data': self.safe_data, 'plugin_info': {'foo': 'bar'}, 'enabled': True},
         ]
-        assert_that(result, has_entries(items=contains(*expected), total=2, filtered=1))
+        assert_that(result, has_entries(
+            items=contains(*expected),
+            total=greater_than_or_equal_to(2),
+            filtered=1,
+        ))
 
     @fixtures.http.user_register()
     def test_update(self, user):
