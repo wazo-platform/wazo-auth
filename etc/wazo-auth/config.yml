@@ -54,6 +54,9 @@ enabled_http_plugins:
 enabled_backend_plugins:
   ldap_user: false
 
+enabled_external_auth_plugins:
+  mobile: true
+
 amqp:
   uri: amqp://guest:guest@localhost:5672/
   exchange_name: xivo

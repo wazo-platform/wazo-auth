@@ -1,0 +1,76 @@
+paths:
+  /users/{user_uuid}/external/mobile:
+    get:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Get your Mobile token
+      description: "**Required ACL**: `auth.users.{user_uuid}.external.mobile.read`"
+      tags:
+        - users
+        - mobile
+      parameters:
+        - $ref: '#/parameters/user_uuid'
+      responses:
+        '200':
+          description: The auth data
+        '400':
+          description: Invalid body
+          schema:
+            $ref: '#/definitions/APIError'
+    post:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Add push mobile token device
+      description: "**Required ACL**: `auth.users.{user_uuid}.external.mobile.create`"
+      tags:
+        - users
+        - mobile
+      parameters:
+        - $ref: '#/parameters/user_uuid'
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/PostMobile'
+      responses:
+        '200':
+          description: The auth data
+          schema:
+            $ref: '#/definitions/PostMobileResult'
+        '400':
+          description: Invalid body
+          schema:
+            $ref: '#/definitions/APIError'
+    delete:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Delete a Mobile token
+      description: "**Required ACL**: `auth.users.{user_uuid}.external.mobile.delete`"
+      tags:
+        - users
+        - mobile
+      parameters:
+        - $ref: '#/parameters/user_uuid'
+      responses:
+        '204':
+          description: The auth data
+          schema:
+            $ref: '#/definitions/PostMobileResult'
+definitions:
+  PostMobile:
+    type: object
+    properties:
+      token:
+        type: string
+  PostMobileResult:
+    type: object
+    properties:
+      token:
+        type: string
+        description: The confirmation of the authorization
