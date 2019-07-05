@@ -1,0 +1,12 @@
+enabled_external_auth_plugins:
+  microsoft: true
+
+microsoft:
+  authorization_base_url: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize'
+  redirect_uri: 'http://oauth2sync:80/microsoft/authorize'
+  scope: [
+        'offline_access',
+        'Contacts.Read'
+    ]
+  token_url: 'http://oauth2sync:80/microsoft/token'
+  websocket_host: 'ws://oauth2sync:80'

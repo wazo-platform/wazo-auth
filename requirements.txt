@@ -15,6 +15,7 @@ python-consul==0.7.0
 python-ldap==3.1.0
 pyyaml==3.12
 requests==2.21.0
+requests-oauthlib
 sqlalchemy==1.0.15
 stevedore==1.17.1
 unidecode==0.04.19
