@@ -1,6 +1,14 @@
 Changelog
 =========
 
+19.10
+-----
+
+* New resource has been added to manage external auth mobile sender ids
+
+    * GET `0.1/users/<user_uuid>/external/mobile/sender_id
+
+
 19.09
 -----
 
