@@ -8,6 +8,7 @@ from flask import request
 from xivo.mallow import fields
 
 from wazo_auth import exceptions, http, schemas
+from wazo_auth.flask_helpers import Tenant
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +28,9 @@ class MobileAuthSenderID(http.AuthResource):
 
     @http.required_acl('auth.users.{user_uuid}.external.mobile.sender_id.read')
     def get(self, user_uuid):
-        user = self.user_service.get_user(user_uuid)
+        tenant = Tenant.autodetect()
         config = self.external_auth_service.get_config(
-            self.auth_type, user['tenant_uuid']
+            self.auth_type, tenant.uuid
         )
         return {"sender_id": config.get('fcm_sender_id')}, 200
 
