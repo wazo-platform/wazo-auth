@@ -5,17 +5,17 @@
 import logging
 
 from flask import request
-
 from xivo.mallow import fields
+
 from wazo_auth import exceptions, http, schemas
+from wazo_auth.flask_helpers import Tenant
 
 logger = logging.getLogger(__name__)
 
 
-class MobilePostSchema(schemas.BaseSchema):
-
-    token = fields.String(min=1, max=512)
-    apns_token = fields.String(allow_none=True)
+class MobileSchema(schemas.BaseSchema):
+    token = fields.String(min=1, max=512, missing=None)
+    apns_token = fields.String(allow_none=True, missing=None)
 
 
 class MobileAuthSenderID(http.AuthResource):
@@ -26,11 +26,12 @@ class MobileAuthSenderID(http.AuthResource):
         self.external_auth_service = external_auth_service
         self.user_service = user_service
 
-    @http.required_acl('auth.users.{user_uuid}.external.mobile.read')
+    @http.required_acl('auth.users.{user_uuid}.external.mobile.sender_id.read')
     def get(self, user_uuid):
-        user = self.user_service.get_user(user_uuid)
-        config = self.external_auth_service.get_config(self.auth_type,
-                                                       user['tenant_uuid'])
+        tenant = Tenant.autodetect()
+        config = self.external_auth_service.get_config(
+            self.auth_type, tenant.uuid
+        )
         return {"sender_id": config.get('fcm_sender_id')}, 200
 
 
@@ -50,25 +51,14 @@ class MobileAuth(http.AuthResource):
     @http.required_acl('auth.users.{user_uuid}.external.mobile.read')
     def get(self, user_uuid):
         data = self.external_auth_service.get(user_uuid, self.auth_type)
-        return self._new_get_response(data)
+        return MobileSchema().dump(data)
 
     @http.required_acl('auth.users.{user_uuid}.external.mobile.create')
     def post(self, user_uuid):
-        args, errors = MobilePostSchema().load(request.get_json())
+        args, errors = MobileSchema().load(request.get_json())
         if errors:
             raise exceptions.UserParamException.from_errors(errors)
 
         logger.info('Token created for User(%s) in plugin external mobile', str(user_uuid))
-        data = {
-            'token': args.get('token'),
-            'apns_token': args.get('apns_token')
-        }
-        self.external_auth_service.create(user_uuid, self.auth_type, data)
-        return data, 201
-
-    @staticmethod
-    def _new_get_response(data):
-        return {
-            'token': data.get('token'),
-            'apns_token': data.get('apns_token')
-        }, 200
+        self.external_auth_service.create(user_uuid, self.auth_type, args)
+        return args, 201
