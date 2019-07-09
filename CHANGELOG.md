@@ -1,70 +1,52 @@
-Changelog
-=========
+# Changelog
 
-19.10
------
+## 19.10
 
 * New resource has been added to manage external auth mobile sender ids
 
-    * GET `0.1/users/<user_uuid>/external/mobile/sender_id
+  * GET `0.1/users/<user_uuid>/external/mobile/sender_id`
 
-
-19.09
------
+## 19.09
 
 * The ACL on `0.1/external/<auth_type>/config` have been change to match the URL
 
-
-19.05
------
+## 19.05
 
 * New resource has been added to manage config for a given auth_type
 
-    * GET `0.1/external/<auth_type>/config`
-    * POST `0.1/external/<auth_type>/config`
-    * DELETE `0.1/external/<auth_type>/config`
-    * PUT `0.1/external/<auth_type>/config`
+  * GET `0.1/external/<auth_type>/config`
+  * POST `0.1/external/<auth_type>/config`
+  * DELETE `0.1/external/<auth_type>/config`
+  * PUT `0.1/external/<auth_type>/config`
 
-
-19.04
------
+## 19.04
 
 * The `tenants` field has been removed from token metadata
 * New resource has been added to list user's sessions
 
   * GET `0.1/users/<user_uuid>/sessions`
 
-
-19.03
------
+## 19.03
 
 * New resource has been added to list sessions
 
   * GET `0.1/sessions`
 
-
-19.02
------
+## 19.02
 
 * Old method `get_ids` for backend has been removed
 * GET on `/users/password/reset` does not delete the current password anymore
 
-
-19.01
------
+## 19.01
 
 * The backend `xivo_admin` has been removed
 
-
-18.14
------
+## 18.14
 
 * The backend option in `POST /tokens` is now optional. The default value is `wazo_user`
 * The backend `xivo_service` has been removed
 
-
-18.13
------
+## 18.13
 
 * `POST /init` can now take the purpose attribute
 * A user now has a `purpose` property
@@ -74,9 +56,7 @@ Changelog
   * GET `0.1/tenants/<tenant_uuid>/users`
   * GET `0.1/users/<user_uuid>/tenants`
 
-
-18.06
------
+## 18.06
 
 * Groups now have a tenant_uuid
 
@@ -88,9 +68,7 @@ Changelog
     * GET, PUT, DELETE `/groups/<group_uuid>`
     * GET /groups
 
-
-18.05
------
+## 18.05
 
 * GET and HEAD on /token now accept the "tenant" query string argument and will return 403 if the tenant is not in the user's authorized tenants.
 * The following route are now tenant filtered using the token owner's tenant of the Wazo-Tenant header
@@ -106,9 +84,7 @@ Changelog
 
   * PUT, DELETE /tenants/<tenant_uuid>/policies/<policy_uuid>
 
-
-18.04
------
+## 18.04
 
 * Add the `uuid` field on POST `0.1/tenants`
 * A user now has a tenant_uuid. It is either:
@@ -121,9 +97,7 @@ Changelog
 * The GET /users only return user from the same tenant as the requester or Wazo-Tenant
 * The recurse parameter has been added on /users to include users from all sub-tenants
 
-
-18.03
------
+## 18.03
 
 * Add the "enabled" field to a users
 * New resources have been added to update all of a user's emails
@@ -140,9 +114,7 @@ Changelog
   * GET `0.1/tenants/<tenant_uuid>/policies/`
   * GET `0.1/policies/<policy_uuid>/tenants/`
 
-
-18.02
------
+## 18.02
 
 * A new resource has been added to trigger a new email confirmation email
 
@@ -153,9 +125,7 @@ Changelog
   * POST `0.1/token`
   * GET `0.1/token/<token_uuid>`
 
-
-18.01
------
+## 18.01
 
 * Add the `firstname` and `lastname` fields to a user
 * The `name` of a tenant is now optional
@@ -190,9 +160,7 @@ Changelog
   * GET /users/password/reset
   * POST /users/password/reset
 
-
-17.17
------
+## 17.17
 
 * A new resource has been added to assign a User to a Group
 
@@ -228,9 +196,7 @@ Changelog
 
   * PUT `0.1/users/<user_uuid>/password`
 
-
-17.16
------
+## 17.16
 
 * A new resource has been added to manage Tenants
 
@@ -260,9 +226,7 @@ Changelog
   * PUT `0.1/groups/<group_uuid>`
   * DELETE `0.1/groups/<group_uuid>`
 
-
-17.15
------
+## 17.15
 
 * A new resource has been added to manage Users
 
@@ -271,9 +235,7 @@ Changelog
   * GET `0.1/users/<user_uuid>`
   * DELETE `0.1/users/<user_uuid>`
 
-
-17.02
------
+## 17.02
 
 * A new resource has been added to manage ACL policies
 
@@ -285,9 +247,7 @@ Changelog
   * PUT `/0.1/policies/<policy_uuid>/acl_templates/<template>`
   * DELETE `/0.1/policies/<policy_uuid>/acl_templates/<template>`
 
-
-16.16
------
+## 16.16
 
 * The token data in the response of POST and GET on `/0.1/token` now include the following new fields
 
@@ -295,38 +255,28 @@ Changelog
   * utc_issued_at
   * xivo_uuid
 
-
-16.02
------
+## 16.02
 
 * POST `/0.1/token`, field `expiration`: only integers are accepted, floats are now invalid.
 * Experimental backend `ldap_user_voicemail` has been removed.
 * New backend `ldap_user` has been added.
 
-
-15.19
------
+## 15.19
 
 * POST `/0.1/token` do not accept anymore argument `backend_args`
 
-
-15.17
------
+## 15.17
 
 * New backend `ldap_user_voicemail` has been added. **WARNING** this backend is **EXPERIMENTAL**.
 
-
-15.16
------
+## 15.16
 
 * HEAD and GET now take a new `scope` query string argument to check ACLs
 * Backend interface method `get_acls` is now named `get_consul_acls`
 * Backend interface method `get_acls` now returns a list of ACLs
 * HEAD and GET can now return a `403` if an ACL access is denied
 
-
-15.15
------
+## 15.15
 
 * POST `/0.1/token` accept new argument `backend_args`
 * Signature of backend method `get_ids()` has a new argument `args`
