@@ -2,6 +2,11 @@
 
 ## 19.10
 
+* New resource has been added to delete a session
+
+  * DELETE `0.1/sessions/<session_uuid>`
+  * DELETE `0.1/users/<user_uuid>/sessions/<session_uuid>`
+
 * New resource has been added to manage external auth mobile sender ids
 
   * GET `0.1/users/<user_uuid>/external/mobile/sender_id`
