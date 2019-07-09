@@ -109,6 +109,22 @@ class TestSessions(base.WazoAuthTestCase):
             )
         )
 
+    @fixtures.http.session()
+    def test_delete(self, session):
+        with self.client_in_subtenant() as (client, _, sub_tenant):
+            base.assert_no_error(client.sessions.delete, session['uuid'])
+            base.assert_http_error(
+                401, client.sessions.delete, session['uuid'], tenant_uuid=self.top_tenant_uuid
+            )
+
+        self._assert_session_exists(session['uuid'])
+        base.assert_no_error(self.client.sessions.delete, session['uuid'])
+        base.assert_no_error(self.client.sessions.delete, session['uuid'])
+
+    def _assert_session_exists(self, session_uuid):
+        sessions = self.client.sessions.list()['items']
+        assert_that(sessions, has_items(has_entries(uuid=session_uuid)))
+
     @fixtures.http.user(username='foo', password='bar')
     def test_create_event(self, user):
         routing_key = 'auth.sessions.*.created'

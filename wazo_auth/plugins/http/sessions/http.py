@@ -33,3 +33,15 @@ class Sessions(http.AuthResource):
         }
 
         return response, 200
+
+
+class Session(http.AuthResource):
+
+    def __init__(self, session_service):
+        self.session_service = session_service
+
+    @http.required_acl('auth.sessions.{session_uuid}.delete')
+    def delete(self, session_uuid):
+        scoping_tenant = Tenant.autodetect()
+        self.session_service.delete(scoping_tenant.uuid, session_uuid)
+        return '', 204

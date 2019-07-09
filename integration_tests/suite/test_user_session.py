@@ -85,3 +85,9 @@ class TestUserSession(base.WazoAuthTestCase):
                 items=has_length(response['total'] - 1)
             )
         )
+
+    @fixtures.http.user(username='username', password='pass')
+    @fixtures.http.token(username='username', password='pass')
+    def test_delete(self, token, user):
+        base.assert_no_error(self.client.users.remove_session, user['uuid'], token['session_uuid'])
+        base.assert_no_error(self.client.users.remove_session, user['uuid'], token['session_uuid'])

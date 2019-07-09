@@ -59,7 +59,7 @@ class Controller:
         )
         group_service = services.GroupService(dao, self._tenant_tree)
         policy_service = services.PolicyService(dao, self._tenant_tree)
-        session_service = services.SessionService(dao, self._tenant_tree)
+        session_service = services.SessionService(dao, self._tenant_tree, self._bus_publisher)
         self._user_service = services.UserService(dao, self._tenant_tree)
         self._tenant_service = services.TenantService(dao, self._tenant_tree, self._bus_publisher)
 
