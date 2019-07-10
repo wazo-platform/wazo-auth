@@ -39,16 +39,16 @@ class MicrosoftAuth(http.AuthResource):
 
     @http.required_acl('auth.users.{user_uuid}.external.microsoft.create')
     def post(self, user_uuid):
-        client_id, client_secret = self._get_external_config()
-        self.user_service.get_user(user_uuid)
-        self.oauth2 = OAuth2Session(client_id, scope=self.scope, redirect_uri=self.redirect_uri)
         args, errors = MicrosoftSchema().load(request.get_json())
-
         if errors:
             raise UserParamException.from_errors(errors)
 
         if args.get('scope'):
             self.oauth2.scope = args.get('scope')
+
+        client_id, client_secret = self._get_external_config()
+        self.user_service.get_user(user_uuid)
+        self.oauth2 = OAuth2Session(client_id, scope=self.scope, redirect_uri=self.redirect_uri)
 
         logger.debug('User(%s) is creating an authorize url for Microsoft', str(user_uuid))
 
