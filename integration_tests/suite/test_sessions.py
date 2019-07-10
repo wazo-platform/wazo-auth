@@ -125,6 +125,27 @@ class TestSessions(base.WazoAuthTestCase):
         sessions = self.client.sessions.list()['items']
         assert_that(sessions, has_items(has_entries(uuid=session_uuid)))
 
+    @fixtures.http.session()
+    def test_delete_event(self, session):
+        routing_key = 'auth.sessions.*.deleted'
+        msg_accumulator = self.new_message_accumulator(routing_key)
+
+        self.client.sessions.delete(session['uuid'])
+
+        def bus_received_msg():
+            assert_that(
+                msg_accumulator.accumulate(),
+                contains(has_entries(
+                    data={
+                        'uuid': session['uuid'],
+                        'user_uuid': session['user_uuid'],
+                        'tenant_uuid': session['tenant_uuid'],
+                    }
+                ))
+            )
+
+        until.assert_(bus_received_msg, tries=10, interval=0.25)
+
     @fixtures.http.user(username='foo', password='bar')
     def test_create_event(self, user):
         routing_key = 'auth.sessions.*.created'
