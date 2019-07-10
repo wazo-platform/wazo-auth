@@ -47,8 +47,8 @@ class BaseTestCase(AuthLaunchingTestCase):
             port=port,
             verify_certificate=False,
             username=cls.username,
-            password=cls.password
-            )
+            password=cls.password,
+        )
         token_data = cls.client.token.new(backend='wazo_user', expiration=7200)
         cls.admin_user_uuid = token_data['metadata']['uuid']
         cls.client.set_token(token_data['token'])
