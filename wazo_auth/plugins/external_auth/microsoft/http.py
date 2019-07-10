@@ -43,12 +43,12 @@ class MicrosoftAuth(http.AuthResource):
         if errors:
             raise UserParamException.from_errors(errors)
 
-        if args.get('scope'):
-            self.oauth2.scope = args.get('scope')
-
         client_id, client_secret = self._get_external_config()
         self.user_service.get_user(user_uuid)
         self.oauth2 = OAuth2Session(client_id, scope=self.scope, redirect_uri=self.redirect_uri)
+
+        if args.get('scope'):
+            self.oauth2.scope = args.get('scope')
 
         logger.debug('User(%s) is creating an authorize url for Microsoft', str(user_uuid))
 
