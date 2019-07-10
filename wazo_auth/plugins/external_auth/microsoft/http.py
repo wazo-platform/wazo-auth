@@ -81,7 +81,7 @@ class MicrosoftAuth(http.AuthResource):
         if self._is_token_expired(expiration):
             return self._refresh_token(user_uuid, data)
 
-        return self._create_get_response(data)
+        return MicrosoftSchema().dump(data)
 
     @http.required_acl('auth.users.{user_uuid}.external.microsoft.delete')
     def delete(self, user_uuid):
@@ -106,14 +106,10 @@ class MicrosoftAuth(http.AuthResource):
 
         self.external_auth_service.update(user_uuid, self.auth_type, data)
 
-        return self._create_get_response(data)
+        return MicrosoftSchema().dump(data)
 
     def _get_external_config(self):
         tenant = Tenant.autodetect()
         config = self.external_auth_service.get_config(self.auth_type, tenant.uuid)
 
         return config.get('client_id'), config.get('client_secret')
-
-    @staticmethod
-    def _create_get_response(data):
-        return MicrosoftSchema().dump(data)
