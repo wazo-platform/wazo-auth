@@ -154,7 +154,6 @@ class TestAuthMicrosoft(BaseTestCase):
 
     def _simulate_user_authentication(self, state):
         authorize_url = AUTHORIZE_URL.format(port=self.service_port(80, 'oauth2sync'), state=state)
-        print(authorize_url)
         response = requests.get(authorize_url)
         response.raise_for_status()
 
