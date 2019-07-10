@@ -15,6 +15,7 @@ from hamcrest import (
     has_length,
 )
 
+from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
 
 from .helpers import base, fixtures
@@ -85,3 +86,31 @@ class TestUserSession(base.WazoAuthTestCase):
                 items=has_length(response['total'] - 1)
             )
         )
+
+    @fixtures.http.user(username='username', password='pass')
+    @fixtures.http.token(username='username', password='pass')
+    def test_delete(self, token, user):
+        base.assert_no_error(self.client.users.remove_session, user['uuid'], token['session_uuid'])
+        base.assert_no_error(self.client.users.remove_session, user['uuid'], token['session_uuid'])
+
+    @fixtures.http.user(username='username', password='pass')
+    @fixtures.http.token(username='username', password='pass')
+    def test_delete_event(self, token, user):
+        routing_key = 'auth.sessions.*.deleted'
+        msg_accumulator = self.new_message_accumulator(routing_key)
+
+        self.client.users.remove_session(user['uuid'], token['session_uuid'])
+
+        def bus_received_msg():
+            assert_that(
+                msg_accumulator.accumulate(),
+                contains(has_entries(
+                    data={
+                        'uuid': token['session_uuid'],
+                        'user_uuid': user['uuid'],
+                        'tenant_uuid': user['tenant_uuid'],
+                    }
+                ))
+            )
+
+        until.assert_(bus_received_msg, tries=10, interval=0.25)

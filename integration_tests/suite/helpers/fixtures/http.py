@@ -169,3 +169,29 @@ def group(**group_args):
             return result
         return wrapper
     return decorator
+
+
+def session(**session_args):
+    user_args = {'username': _random_string(20), 'password': 'pass'}
+    if 'tenant_uuid' in session_args:
+        user_args['tenant_uuid'] = session_args['tenant_uuid']
+    token_args = {'session_type': 'mobile' if session_args.get('mobile') else None}
+
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            user = self.client.users.new(**user_args)
+            client = self.new_auth_client(user_args['username'], user_args['password'])
+            token = client.token.new(**token_args)
+            session = self.client.users.get_sessions(user['uuid'])['items'][0]
+            try:
+                result = decorated(self, session, *args, **kwargs)
+            finally:
+                try:
+                    self.client.users.delete(user['uuid'])
+                    self.client.token.revoke(token['token'])
+                except requests.HTTPError:
+                    pass
+            return result
+        return wrapper
+    return decorator

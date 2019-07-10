@@ -24,6 +24,24 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/Error'
+  /sessions/{session_uuid}:
+    delete:
+      operationId: delete_session
+      tags:
+        - sessions
+      security:
+      - wazo_auth_token: []
+      description: '**Required ACL**: `auth.sessions.{session_uuid}.delete`'
+      parameters:
+      - $ref: '#/parameters/session_uuid'
+      summary: Delete a session
+      responses:
+        '204':
+          description: The session has been removed
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
 parameters:
   session_uuid:
     name: session_uuid

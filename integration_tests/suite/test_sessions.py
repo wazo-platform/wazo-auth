@@ -22,37 +22,33 @@ TENANT_UUID_2 = str(uuid.uuid4())
 
 class TestSessions(base.WazoAuthTestCase):
 
-    @fixtures.http.user(username='one', password='pass')
-    @fixtures.http.user(username='two', password='pass')
-    @fixtures.http.token(username='one', password='pass')
-    @fixtures.http.token(username='two', password='pass', session_type='Mobile')
-    def test_list(self, token_2, token_1, *_):
+    @fixtures.http.session(mobile=False)
+    @fixtures.http.session(mobile=True)
+    def test_list(self, session_2, session_1, *_):
         response = self.client.sessions.list()
         assert_that(
             response,
             has_entries(
                 items=has_items(
-                    has_entries(uuid=token_2['session_uuid'], mobile=True),
-                    has_entries(uuid=token_1['session_uuid'], mobile=False),
+                    has_entries(uuid=session_2['uuid'], mobile=True),
+                    has_entries(uuid=session_1['uuid'], mobile=False),
                 )
             )
         )
 
     @fixtures.http.tenant(uuid=TENANT_UUID_1)
     @fixtures.http.tenant(uuid=TENANT_UUID_2)
-    @fixtures.http.user(username='one', password='pass', tenant_uuid=TENANT_UUID_1)
-    @fixtures.http.user(username='two', password='pass', tenant_uuid=TENANT_UUID_2)
-    @fixtures.http.token(username='one', password='pass')
-    @fixtures.http.token(username='two', password='pass')
-    def test_list_tenant_filtering(self, token_2, token_1, *_):
+    @fixtures.http.session(tenant_uuid=TENANT_UUID_1)
+    @fixtures.http.session(tenant_uuid=TENANT_UUID_2)
+    def test_list_tenant_filtering(self, session_2, session_1, *_):
         # Different tenant
         response = self.client.sessions.list(tenant_uuid=self.top_tenant_uuid)
         assert_that(
             response,
             has_entries(
                 items=not_(has_items(
-                    has_entries(uuid=token_2['session_uuid']),
-                    has_entries(uuid=token_1['session_uuid']),
+                    has_entries(uuid=session_2['uuid']),
+                    has_entries(uuid=session_1['uuid']),
                 ))
             )
         )
@@ -63,8 +59,8 @@ class TestSessions(base.WazoAuthTestCase):
             response,
             has_entries(
                 items=has_items(
-                    has_entries(uuid=token_1['session_uuid']),
-                    has_entries(uuid=token_2['session_uuid']),
+                    has_entries(uuid=session_1['uuid']),
+                    has_entries(uuid=session_2['uuid']),
                 )
             )
         )
@@ -76,7 +72,7 @@ class TestSessions(base.WazoAuthTestCase):
             has_entries(
                 total=1,
                 filtered=1,
-                items=contains(has_entries(uuid=token_1['session_uuid']))
+                items=contains(has_entries(uuid=session_1['uuid']))
             )
         )
 
@@ -86,15 +82,13 @@ class TestSessions(base.WazoAuthTestCase):
             has_entries(
                 total=1,
                 filtered=1,
-                items=contains(has_entries(uuid=token_2['session_uuid']))
+                items=contains(has_entries(uuid=session_2['uuid']))
             )
         )
 
-    @fixtures.http.user(username='one', password='pass')
-    @fixtures.http.user(username='two', password='pass')
-    @fixtures.http.token(username='one', password='pass')
-    @fixtures.http.token(username='two', password='pass')
-    def test_list_paginating(self, token_2, token_1, *_):
+    @fixtures.http.session()
+    @fixtures.http.session()
+    def test_list_paginating(self, session_2, session_1, *_):
         response = self.client.sessions.list(limit=1)
         assert_that(
             response,
@@ -114,6 +108,43 @@ class TestSessions(base.WazoAuthTestCase):
                 items=has_length(response['total'] - 1)
             )
         )
+
+    @fixtures.http.session()
+    def test_delete(self, session):
+        with self.client_in_subtenant() as (client, _, sub_tenant):
+            base.assert_no_error(client.sessions.delete, session['uuid'])
+            base.assert_http_error(
+                401, client.sessions.delete, session['uuid'], tenant_uuid=self.top_tenant_uuid
+            )
+
+        self._assert_session_exists(session['uuid'])
+        base.assert_no_error(self.client.sessions.delete, session['uuid'])
+        base.assert_no_error(self.client.sessions.delete, session['uuid'])
+
+    def _assert_session_exists(self, session_uuid):
+        sessions = self.client.sessions.list()['items']
+        assert_that(sessions, has_items(has_entries(uuid=session_uuid)))
+
+    @fixtures.http.session()
+    def test_delete_event(self, session):
+        routing_key = 'auth.sessions.*.deleted'
+        msg_accumulator = self.new_message_accumulator(routing_key)
+
+        self.client.sessions.delete(session['uuid'])
+
+        def bus_received_msg():
+            assert_that(
+                msg_accumulator.accumulate(),
+                contains(has_entries(
+                    data={
+                        'uuid': session['uuid'],
+                        'user_uuid': session['user_uuid'],
+                        'tenant_uuid': session['tenant_uuid'],
+                    }
+                ))
+            )
+
+        until.assert_(bus_received_msg, tries=10, interval=0.25)
 
     @fixtures.http.user(username='foo', password='bar')
     def test_create_event(self, user):
