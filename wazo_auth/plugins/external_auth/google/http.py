@@ -41,13 +41,14 @@ class GoogleAuth(http.AuthResource):
 
     @http.required_acl('auth.users.{user_uuid}.external.google.create')
     def post(self, user_uuid):
-        client_id, client_secret = self._get_external_config()
-        self.user_service.get_user(user_uuid)
-        self.oauth2 = OAuth2Session(client_id, scope=self.scope, redirect_uri=self.redirect_uri)
         args, errors = GoogleSchema().load(request.get_json())
 
         if errors:
             raise UserParamException.from_errors(errors)
+
+        client_id, client_secret = self._get_external_config()
+        self.user_service.get_user(user_uuid)
+        self.oauth2 = OAuth2Session(client_id, scope=self.scope, redirect_uri=self.redirect_uri)
 
         if args.get('scope'):
             self.oauth2.scope = args.get('scope')
