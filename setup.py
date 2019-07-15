@@ -60,6 +60,7 @@ setup(
             'user_session = wazo_auth.plugins.http.user_session.plugin:Plugin',
         ],
         'wazo_auth.external_auth': [
+            'google = wazo_auth.plugins.external_auth.google.plugin:GooglePlugin',
             'microsoft = wazo_auth.plugins.external_auth.microsoft.plugin:MicrosoftPlugin',
             'mobile = wazo_auth.plugins.external_auth.mobile.plugin:Plugin',
         ],
