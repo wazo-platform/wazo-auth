@@ -75,7 +75,8 @@ _DEFAULT_CONFIG = {
         'external_api': [],
     },
     'enabled_external_auth_plugins': {
-        'mobile': True
+        'microsoft': True,
+        'mobile': True,
     },
     'backend_policies': {
         'ldap_user': 'wazo_default_user_policy',

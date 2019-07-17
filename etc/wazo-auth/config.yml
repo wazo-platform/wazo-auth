@@ -55,7 +55,18 @@ enabled_backend_plugins:
   ldap_user: false
 
 enabled_external_auth_plugins:
+  microsoft: true
   mobile: true
+
+microsoft:
+  authorization_base_url: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize'
+  redirect_uri: 'https://oauth.wazo.io/microsoft/authorize'
+  scope: [
+        'offline_access',
+        'Contacts.Read'
+    ]
+  token_url: 'https://login.microsoftonline.com/common/oauth2/v2.0/token'
+  websocket_host: 'wss://oauth.wazo.io'
 
 amqp:
   uri: amqp://guest:guest@localhost:5672/

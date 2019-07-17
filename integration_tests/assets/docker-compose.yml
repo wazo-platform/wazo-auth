@@ -13,6 +13,7 @@ services:
     environment:
       TZ: UTC+1
       XIVO_UUID: the-predefined-xivo-uuid
+      OAUTHLIB_INSECURE_TRANSPORT: 1
     volumes:
       - "../..:/usr/src/wazo-auth"
       - "./etc/wazo-auth/conf.d/debug.yml:/etc/wazo-auth/conf.d/debug.yml"

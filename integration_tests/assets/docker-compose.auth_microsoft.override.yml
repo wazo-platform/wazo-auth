@@ -1,0 +1,14 @@
+version: '3'
+services:
+  sync:
+    depends_on:
+      - auth
+      - oauth2sync
+      - postgres
+      - rabbitmq
+    environment:
+      TARGETS: "auth:9497 oauth2sync:80 postgres:5432 rabbitmq:5672"
+
+  auth:
+    volumes:
+      - "./etc/wazo-auth/conf.d/asset.auth_microsoft.yml:/etc/wazo-auth/conf.d/microsoft.yml"
