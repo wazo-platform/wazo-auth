@@ -44,6 +44,6 @@ def get_microsoft_token(service):
         'access_token': 'access_token',
         'expires_in': 42,
         'refresh_token': 'refresh_token',
-        'scope': 'scope'
+        'scope': 'scope',
     }
     return jsonify(body), 200

@@ -5,14 +5,14 @@ Revises: 4b86dc18c6bb
 
 """
 
+from alembic import op
+import sqlalchemy as sa
+from sqlalchemy.schema import Column
+
 # revision identifiers, used by Alembic.
 revision = '4edfead052cd'
 down_revision = '4b86dc18c6bb'
 
-
-from alembic import op
-import sqlalchemy as sa
-from sqlalchemy.schema import Column
 
 TABLE_NAME = 'auth_group_policy'
 
@@ -20,14 +20,18 @@ TABLE_NAME = 'auth_group_policy'
 def upgrade():
     op.create_table(
         TABLE_NAME,
-        Column('group_uuid',
-               sa.String(38),
-               sa.ForeignKey('auth_group.uuid', ondelete='CASCADE'),
-               primary_key=True),
-        Column('policy_uuid',
-               sa.String(38),
-               sa.ForeignKey('auth_policy.uuid', ondelete='CASCADE'),
-               primary_key=True),
+        Column(
+            'group_uuid',
+            sa.String(38),
+            sa.ForeignKey('auth_group.uuid', ondelete='CASCADE'),
+            primary_key=True,
+        ),
+        Column(
+            'policy_uuid',
+            sa.String(38),
+            sa.ForeignKey('auth_policy.uuid', ondelete='CASCADE'),
+            primary_key=True,
+        ),
     )
 
 

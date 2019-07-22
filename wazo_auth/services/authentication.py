@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 
 
 class AuthenticationService:
-
     def __init__(self, dao, backends):
         self._dao = dao
         self._backends = backends
@@ -17,7 +16,9 @@ class AuthenticationService:
     def verify_auth(self, args):
         refresh_token = args.get('refresh_token')
         if refresh_token:
-            refresh_token_data = self._dao.refresh_token.get(refresh_token, args['client_id'])
+            refresh_token_data = self._dao.refresh_token.get(
+                refresh_token, args['client_id']
+            )
             backend = self._get_backend(refresh_token_data['backend_name'])
             return backend, refresh_token_data['login']
         else:

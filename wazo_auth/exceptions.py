@@ -6,23 +6,24 @@ from xivo.rest_api_helpers import APIException
 
 
 class NoSuchBackendException(Exception):
-
     def __init__(self, backend_name):
-        super().__init__('no such backend {backend_name}'.format(backend_name=backend_name))
+        super().__init__(
+            'no such backend {backend_name}'.format(backend_name=backend_name)
+        )
 
 
 class InvalidUsernamePassword(Exception):
-
     def __init__(self, login):
-        super().__init__('unknown username or password for login {login}'.format(login=login))
+        super().__init__(
+            'unknown username or password for login {login}'.format(login=login)
+        )
 
 
 class UnknownRefreshToken(Exception):
-
     def __init__(self, refresh_token, client_id):
         super().__init__(
             'unknown refresh_token "{refresh_token}" with client_id "{client_id}"'.format(
-                refresh_token=refresh_token, client_id=client_id,
+                refresh_token=refresh_token, client_id=client_id
             )
         )
 
@@ -41,31 +42,33 @@ class AuthenticationFailedException(TokenServiceException):
 
 
 class ExternalAuthAlreadyExists(APIException):
-
     def __init__(self, auth_type):
-        msg = 'This external authentification method has already been set: "{}"'.format(auth_type)
+        msg = 'This external authentification method has already been set: "{}"'.format(
+            auth_type
+        )
         details = {'type': auth_type}
         super().__init__(409, msg, 'conflict', details, auth_type)
 
 
 class ExternalAuthConfigAlreadyExists(APIException):
-
     def __init__(self, auth_type):
-        msg = 'This external authentification config has already been set: "{}"'.format(auth_type)
+        msg = 'This external authentification config has already been set: "{}"'.format(
+            auth_type
+        )
         details = {'type': auth_type}
         super().__init__(409, msg, 'conflict', details, auth_type)
 
 
 class ExternalAuthConfigNotFound(APIException):
-
     def __init__(self, auth_type):
-        msg = 'Configuration for this external auth type "{}" is not defined.'.format(auth_type)
+        msg = 'Configuration for this external auth type "{}" is not defined.'.format(
+            auth_type
+        )
         details = {'type': auth_type}
         super().__init__(404, msg, 'unknown-config', details, auth_type)
 
 
 class InvalidListParamException(APIException):
-
     def __init__(self, message, details=None):
         super().__init__(400, message, 'invalid-list-param', details, 'users')
 
@@ -79,7 +82,6 @@ class InvalidListParamException(APIException):
 
 
 class UnknownAddressException(APIException):
-
     def __init__(self, address_id):
         msg = 'No such address: "{}"'.format(address_id)
         details = {'id': address_id}
@@ -87,34 +89,27 @@ class UnknownAddressException(APIException):
 
 
 class UnknownExternalAuthException(APIException):
-
     def __init__(self, auth_type):
         msg = 'No such external auth: "{}"'.format(auth_type)
         details = {'type': str(auth_type)}
-        super().__init__(
-            404, msg, 'unknown-external-auth', details, auth_type)
+        super().__init__(404, msg, 'unknown-external-auth', details, auth_type)
 
 
 class UnknownExternalAuthConfigException(APIException):
-
     def __init__(self, auth_type):
         msg = 'No config found for this external auth type: "{}"'.format(auth_type)
         details = {'type': str(auth_type)}
-        super().__init__(
-            404, msg, 'unknown-external-auth', details, auth_type)
+        super().__init__(404, msg, 'unknown-external-auth', details, auth_type)
 
 
 class UnknownExternalAuthTypeException(APIException):
-
     def __init__(self, auth_type):
         msg = 'No such auth type: "{}"'.format(auth_type)
         details = {'type': str(auth_type)}
-        super().__init__(
-            404, msg, 'unknown-external-auth-type', details, 'external')
+        super().__init__(404, msg, 'unknown-external-auth-type', details, 'external')
 
 
 class UnknownGroupException(APIException):
-
     def __init__(self, group_uuid):
         msg = 'No such group: "{}"'.format(group_uuid)
         details = {'uuid': str(group_uuid)}
@@ -122,7 +117,6 @@ class UnknownGroupException(APIException):
 
 
 class UnknownTenantException(APIException):
-
     def __init__(self, tenant_uuid):
         msg = 'No such tenant: "{}"'.format(tenant_uuid)
         details = {'uuid': str(tenant_uuid)}
@@ -130,7 +124,6 @@ class UnknownTenantException(APIException):
 
 
 class UnknownEmailException(APIException):
-
     def __init__(self, email_uuid):
         msg = 'No such email: "{}"'.format(email_uuid)
         details = {'uuid': str(email_uuid)}
@@ -138,7 +131,6 @@ class UnknownEmailException(APIException):
 
 
 class UnknownUserException(APIException):
-
     def __init__(self, identifier, details=None):
         msg = 'No such user: "{}"'.format(identifier)
         details = details or {'uuid': str(identifier)}
@@ -146,14 +138,12 @@ class UnknownUserException(APIException):
 
 
 class UnknownUsernameException(Exception):
-
     def __init__(self, username):
         msg = 'No such user: "{}"'.format(username)
         super().__init__(msg)
 
 
 class _BaseParamException(APIException):
-
     def __init__(self, message, details=None):
         super().__init__(400, message, 'invalid-data', details, self.resource)
 
@@ -166,7 +156,6 @@ class _BaseParamException(APIException):
                 if isinstance(info, (str, bytes)):
                     info = {'message': info}
                 return cls(info['message'], {field: info})
-
 
 
 class GroupParamException(_BaseParamException):
@@ -260,7 +249,6 @@ class InvalidSortDirectionException(TokenServiceException):
 
 
 class ConflictException(APIException):
-
     def __init__(self, resource, column, username):
         msg = 'The {} "{}" is already used'.format(column, username)
         details = {column: {'constraint_id': 'unique', 'message': msg}}
@@ -268,12 +256,10 @@ class ConflictException(APIException):
 
 
 class MasterTenantConflictException(APIException):
-
     def __init__(self):
         msg = 'A master tenant already exist'
         details = {'parent_uuid': {'constraint_id': 'unique', 'msg': msg}}
-        super().__init__(
-            403, 'Conflict detected', 'conflict', details, 'tenants')
+        super().__init__(403, 'Conflict detected', 'conflict', details, 'tenants')
 
 
 class DuplicatePolicyException(TokenServiceException):

@@ -2,13 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from functools import partial
-from hamcrest import (
-    assert_that,
-    contains,
-    contains_inanyorder,
-    equal_to,
-    has_entries,
-)
+from hamcrest import assert_that, contains, contains_inanyorder, equal_to, has_entries
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers import fixtures
 from .helpers.base import (
@@ -32,39 +26,48 @@ PHONE_1 = '555-555-5555'
 
 
 class TestTenants(WazoAuthTestCase):
-
     @fixtures.http.tenant(name='foobar', address=ADDRESS_1, phone=PHONE_1)
     @fixtures.http.tenant(uuid='6668ca15-6d9e-4000-b2ec-731bc7316767', name='foobaz')
     @fixtures.http.tenant()
     def test_post(self, other, foobaz, foobar):
-        assert_that(other, has_entries(
-            uuid=uuid_(),
-            name=None,
-            parent_uuid=self.top_tenant_uuid,
-            address=has_entries(**ADDRESS_NULL),
-        ))
-
-        assert_that(foobaz, has_entries(
-            uuid='6668ca15-6d9e-4000-b2ec-731bc7316767',
-            name='foobaz',
-            parent_uuid=self.top_tenant_uuid,
-            address=has_entries(**ADDRESS_NULL),
-        ))
-
-        assert_that(foobar, has_entries(
-            uuid=uuid_(),
-            name='foobar',
-            phone=PHONE_1,
-            parent_uuid=self.top_tenant_uuid,
-            address=has_entries(**ADDRESS_1),
-        ))
-
-        with self.tenant(self.client, name='subtenant', parent_uuid=foobar['uuid']) as subtenant:
-            assert_that(subtenant, has_entries(
+        assert_that(
+            other,
+            has_entries(
                 uuid=uuid_(),
-                name='subtenant',
-                parent_uuid=foobar['uuid'],
-            ))
+                name=None,
+                parent_uuid=self.top_tenant_uuid,
+                address=has_entries(**ADDRESS_NULL),
+            ),
+        )
+
+        assert_that(
+            foobaz,
+            has_entries(
+                uuid='6668ca15-6d9e-4000-b2ec-731bc7316767',
+                name='foobaz',
+                parent_uuid=self.top_tenant_uuid,
+                address=has_entries(**ADDRESS_NULL),
+            ),
+        )
+
+        assert_that(
+            foobar,
+            has_entries(
+                uuid=uuid_(),
+                name='foobar',
+                phone=PHONE_1,
+                parent_uuid=self.top_tenant_uuid,
+                address=has_entries(**ADDRESS_1),
+            ),
+        )
+
+        with self.tenant(
+            self.client, name='subtenant', parent_uuid=foobar['uuid']
+        ) as subtenant:
+            assert_that(
+                subtenant,
+                has_entries(uuid=uuid_(), name='subtenant', parent_uuid=foobar['uuid']),
+            )
 
     @fixtures.http.tenant()
     def test_delete(self, tenant):
@@ -95,7 +98,9 @@ class TestTenants(WazoAuthTestCase):
         top_tenant = self.get_top_tenant()
 
         def then(result, total=4, filtered=4, item_matcher=contains(top_tenant)):
-            assert_that(result, has_entries(items=item_matcher, total=total, filtered=filtered))
+            assert_that(
+                result, has_entries(items=item_matcher, total=total, filtered=filtered)
+            )
 
         result = self.client.tenants.list()
         matcher = contains_inanyorder(foobaz, foobar, foobarbaz, top_tenant)
@@ -130,11 +135,7 @@ class TestTenants(WazoAuthTestCase):
     @fixtures.http.user()
     def test_put(self, user, tenant):
         name = 'foobar'
-        body = {
-            'name': name,
-            'address': ADDRESS_1,
-            'contact': user['uuid'],
-        }
+        body = {'name': name, 'address': ADDRESS_1, 'contact': user['uuid']}
         body_with_unknown_contact = dict(body)
         body_with_unknown_contact['contact'] = UNKNOWN_UUID
 
@@ -144,32 +145,43 @@ class TestTenants(WazoAuthTestCase):
 
         assert_http_error(400, self.client.tenants.edit, tenant['uuid'], name=False)
         assert_http_error(404, self.client.tenants.edit, UNKNOWN_UUID, **body)
-        assert_http_error(404, self.client.tenants.edit, tenant['uuid'], **body_with_unknown_contact)
+        assert_http_error(
+            404, self.client.tenants.edit, tenant['uuid'], **body_with_unknown_contact
+        )
 
         result = self.client.tenants.edit(tenant['uuid'], **body)
 
-        assert_that(result, has_entries(
-            uuid=tenant['uuid'],
-            name=name,
-            contact=user['uuid'],
-            address=has_entries(**ADDRESS_1)))
+        assert_that(
+            result,
+            has_entries(
+                uuid=tenant['uuid'],
+                name=name,
+                contact=user['uuid'],
+                address=has_entries(**ADDRESS_1),
+            ),
+        )
 
 
 class TestTenantPolicyAssociation(WazoAuthTestCase):
-
     @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='foo', tenant_uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='bar', tenant_uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='baz', tenant_uuid=SUB_TENANT_UUID)
     def test_policy_list(self, baz, bar, foo, _):
         assert_http_error(404, self.client.tenants.get_policies, UNKNOWN_UUID)
-        with self.client_in_subtenant(parent_uuid=SUB_TENANT_UUID) as (client, _, sub_tenant):
+        with self.client_in_subtenant(parent_uuid=SUB_TENANT_UUID) as (
+            client,
+            _,
+            sub_tenant,
+        ):
             assert_http_error(404, client.tenants.get_policies, SUB_TENANT_UUID)
 
         action = partial(self.client.tenants.get_policies, SUB_TENANT_UUID)
 
         result = action()
-        expected = contains_inanyorder(*[has_entries(name=n) for n in ('foo', 'bar', 'baz')])
+        expected = contains_inanyorder(
+            *[has_entries(name=n) for n in ('foo', 'bar', 'baz')]
+        )
         assert_that(result, has_entries(total=3, filtered=3, items=expected))
 
         result = action(search='ba')
@@ -183,7 +195,11 @@ class TestTenantPolicyAssociation(WazoAuthTestCase):
     def test_policy_list_sorting(self, baz, bar, foo, _):
         action = partial(self.client.tenants.get_policies, SUB_TENANT_UUID)
 
-        expected = [has_entries(name='bar'), has_entries(name='baz'), has_entries(name='foo')]
+        expected = [
+            has_entries(name='bar'),
+            has_entries(name='baz'),
+            has_entries(name='foo'),
+        ]
         assert_sorted(action, order='name', expected=expected)
 
     @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
@@ -191,7 +207,12 @@ class TestTenantPolicyAssociation(WazoAuthTestCase):
     @fixtures.http.policy(name='bar', tenant_uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='baz', tenant_uuid=SUB_TENANT_UUID)
     def test_list_paginating(self, baz, bar, foo, _):
-        action = partial(self.client.tenants.get_policies, SUB_TENANT_UUID, order='name', direction='asc')
+        action = partial(
+            self.client.tenants.get_policies,
+            SUB_TENANT_UUID,
+            order='name',
+            direction='asc',
+        )
 
         result = action(offset=1)
         expected = contains(has_entries(name='baz'), has_entries(name='foo'))

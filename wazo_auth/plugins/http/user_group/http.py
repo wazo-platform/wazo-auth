@@ -13,14 +13,12 @@ logger = logging.getLogger(__name__)
 
 
 class _BaseResource(http.AuthResource):
-
     def __init__(self, group_service, user_service):
         self.group_service = group_service
         self.user_service = user_service
 
 
 class GroupUser(_BaseResource):
-
     @http.required_acl('auth.groups.{group_uuid}.users.{user_uuid}.delete')
     def delete(self, group_uuid, user_uuid):
         scoping_tenant = Tenant.autodetect()
@@ -44,7 +42,6 @@ class GroupUser(_BaseResource):
 
 
 class GroupUsers(_BaseResource):
-
     @http.required_acl('auth.groups.{group_uuid}.users.read')
     def get(self, group_uuid):
         ListSchema = schemas.new_list_schema('username')
@@ -53,15 +50,21 @@ class GroupUsers(_BaseResource):
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 
-        return {
-            'items': self.group_service.list_users(group_uuid, **list_params),
-            'total': self.group_service.count_users(group_uuid, filtered=False, **list_params),
-            'filtered': self.group_service.count_users(group_uuid, filtered=True, **list_params),
-        }, 200
+        return (
+            {
+                'items': self.group_service.list_users(group_uuid, **list_params),
+                'total': self.group_service.count_users(
+                    group_uuid, filtered=False, **list_params
+                ),
+                'filtered': self.group_service.count_users(
+                    group_uuid, filtered=True, **list_params
+                ),
+            },
+            200,
+        )
 
 
 class UserGroups(http.AuthResource):
-
     def __init__(self, user_service):
         self.user_service = user_service
 
@@ -77,8 +80,15 @@ class UserGroups(http.AuthResource):
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 
-        return {
-            'items': self.user_service.list_groups(user_uuid, **list_params),
-            'total': self.user_service.count_groups(user_uuid, filtered=False, **list_params),
-            'filtered': self.user_service.count_groups(user_uuid, filtered=True, **list_params),
-        }, 200
+        return (
+            {
+                'items': self.user_service.list_groups(user_uuid, **list_params),
+                'total': self.user_service.count_groups(
+                    user_uuid, filtered=False, **list_params
+                ),
+                'filtered': self.user_service.count_groups(
+                    user_uuid, filtered=True, **list_params
+                ),
+            },
+            200,
+        )

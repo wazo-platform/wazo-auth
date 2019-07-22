@@ -5,17 +5,11 @@ import json
 import time
 
 from .base import BaseDAO
-from ..models import (
-    ACL,
-    Session,
-    Tenant,
-    Token as TokenModel,
-)
+from ..models import ACL, Session, Tenant, Token as TokenModel
 from ... import exceptions
 
 
 class TokenDAO(BaseDAO):
-
     def create(self, body, session_body):
         serialized_metadata = json.dumps(body.get('metadata', {}))
         token = TokenModel(
@@ -28,7 +22,9 @@ class TokenDAO(BaseDAO):
             remote_addr=body['remote_addr'],
             metadata_=serialized_metadata,
         )
-        token.acls = [ACL(token_uuid=token.uuid, value=acl) for acl in body.get('acls') or []]
+        token.acls = [
+            ACL(token_uuid=token.uuid, value=acl) for acl in body.get('acls') or []
+        ]
 
         if not session_body.get('tenant_uuid'):
             session_body['tenant_uuid'] = self._get_default_tenant_uuid()
@@ -81,10 +77,7 @@ class TokenDAO(BaseDAO):
                 }
                 s.delete(session)
 
-            token_result = {
-                'uuid': token.uuid,
-                'auth_id': token.auth_id,
-            }
+            token_result = {'uuid': token.uuid, 'auth_id': token.auth_id}
             s.query(TokenModel).filter(filter_).delete()
 
         return token_result, session_result
@@ -105,12 +98,14 @@ class TokenDAO(BaseDAO):
 
         results = []
         for token in tokens:
-            results.append({
-                'uuid': token.uuid,
-                'auth_id': token.auth_id,
-                'session_uuid': token.session_uuid,
-                'metadata': json.loads(token.metadata_) if token.metadata_ else {},
-            })
+            results.append(
+                {
+                    'uuid': token.uuid,
+                    'auth_id': token.auth_id,
+                    'session_uuid': token.session_uuid,
+                    'metadata': json.loads(token.metadata_) if token.metadata_ else {},
+                }
+            )
 
         token_uuids = [token.uuid for token in tokens]
         filter_ = TokenModel.uuid.in_(token_uuids)
@@ -118,7 +113,7 @@ class TokenDAO(BaseDAO):
         return results
 
     def _delete_expired_sessions(self, s):
-        filter_ = TokenModel.uuid == None
+        filter_ = TokenModel.uuid.is_(None)
         sessions = s.query(Session.uuid).outerjoin(TokenModel).filter(filter_).all()
 
         if not sessions:
@@ -126,9 +121,7 @@ class TokenDAO(BaseDAO):
 
         results = []
         for session in sessions:
-            results.append({
-                'uuid': session.uuid,
-            })
+            results.append({'uuid': session.uuid})
 
         filter_ = Session.uuid.in_(sessions)
         s.query(Session).filter(filter_).delete(synchronize_session=False)

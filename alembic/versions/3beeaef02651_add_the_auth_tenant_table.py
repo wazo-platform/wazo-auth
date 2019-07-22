@@ -5,13 +5,13 @@ Revises: 443b172ad7f6
 
 """
 
-# revision identifiers, used by Alembic.
-revision = '3beeaef02651'
-down_revision = '443b172ad7f6'
-
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.schema import Column
+
+# revision identifiers, used by Alembic.
+revision = '3beeaef02651'
+down_revision = '443b172ad7f6'
 
 
 def upgrade():

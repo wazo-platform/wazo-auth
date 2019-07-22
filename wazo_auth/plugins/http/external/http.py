@@ -9,7 +9,6 @@ from wazo_auth.flask_helpers import Tenant
 
 
 class External(http.AuthResource):
-
     def __init__(self, external_auth_service):
         self.external_auth_service = external_auth_service
 
@@ -22,31 +21,32 @@ class External(http.AuthResource):
             raise exceptions.InvalidListParamException(e.messages)
 
         items = self.external_auth_service.list_(user_uuid, **list_params)
-        total = self.external_auth_service.count(user_uuid, filtered=False, **list_params)
-        filtered = self.external_auth_service.count(user_uuid, filtered=True, **list_params)
+        total = self.external_auth_service.count(
+            user_uuid, filtered=False, **list_params
+        )
+        filtered = self.external_auth_service.count(
+            user_uuid, filtered=True, **list_params
+        )
 
         for item in items:
             plugin_info = current_app.config['external_auth_plugin_info'][item['type']]
             item['plugin_info'] = plugin_info
 
-        response = {
-            'filtered': filtered,
-            'total': total,
-            'items': items,
-        }
+        response = {'filtered': filtered, 'total': total, 'items': items}
 
         return response, 200
 
 
 class ExternalConfig(http.AuthResource):
-
     def __init__(self, external_auth_service):
         self.external_auth_service = external_auth_service
 
     @http.required_acl('auth.{auth_type}.external.config.read')
     def get(self, auth_type):
         tenant_uuid = Tenant.autodetect().uuid
-        response = self.external_auth_service.get_config(auth_type, tenant_uuid=tenant_uuid)
+        response = self.external_auth_service.get_config(
+            auth_type, tenant_uuid=tenant_uuid
+        )
         return response
 
     @http.required_acl('auth.{auth_type}.external.config.create')

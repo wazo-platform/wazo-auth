@@ -9,13 +9,11 @@ from wazo_auth.flask_helpers import Tenant
 
 
 class _BaseResource(http.AuthResource):
-
     def __init__(self, tenant_service):
         self.tenant_service = tenant_service
 
 
 class TenantUsers(_BaseResource):
-
     @http.required_acl('auth.tenants.{tenant_uuid}.users.read')
     def get(self, tenant_uuid):
         scoping_tenant = Tenant.autodetect()
@@ -27,15 +25,21 @@ class TenantUsers(_BaseResource):
 
         self.tenant_service.assert_tenant_under(scoping_tenant.uuid, tenant_uuid)
 
-        return {
-            'items': self.tenant_service.list_users(tenant_uuid, **list_params),
-            'total': self.tenant_service.count_users(tenant_uuid, filtered=False, **list_params),
-            'filtered': self.tenant_service.count_users(tenant_uuid, filtered=True, **list_params),
-        }, 200
+        return (
+            {
+                'items': self.tenant_service.list_users(tenant_uuid, **list_params),
+                'total': self.tenant_service.count_users(
+                    tenant_uuid, filtered=False, **list_params
+                ),
+                'filtered': self.tenant_service.count_users(
+                    tenant_uuid, filtered=True, **list_params
+                ),
+            },
+            200,
+        )
 
 
 class UserTenants(http.AuthResource):
-
     def __init__(self, user_service):
         self.user_service = user_service
 
@@ -50,8 +54,15 @@ class UserTenants(http.AuthResource):
 
         self.user_service.assert_user_in_subtenant(scoping_tenant.uuid, user_uuid)
 
-        return {
-            'items': self.user_service.list_tenants(user_uuid, **list_params),
-            'total': self.user_service.count_tenants(user_uuid, filtered=False, **list_params),
-            'filtered': self.user_service.count_tenants(user_uuid, filtered=True, **list_params),
-        }, 200
+        return (
+            {
+                'items': self.user_service.list_tenants(user_uuid, **list_params),
+                'total': self.user_service.count_tenants(
+                    user_uuid, filtered=False, **list_params
+                ),
+                'filtered': self.user_service.count_tenants(
+                    user_uuid, filtered=True, **list_params
+                ),
+            },
+            200,
+        )

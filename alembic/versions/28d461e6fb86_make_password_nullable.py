@@ -5,12 +5,11 @@ Revises: 13572931d28f
 
 """
 
+from alembic import op
+
 # revision identifiers, used by Alembic.
 revision = '28d461e6fb86'
 down_revision = '13572931d28f'
-
-from alembic import op
-import sqlalchemy as sa
 
 
 t = 'auth_user'

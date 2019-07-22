@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class DefaultUser(BaseMetadata):
-
     def load(self, dependencies):
         super().load(dependencies)
         self._user_service = dependencies['user_service']
@@ -25,7 +24,9 @@ class DefaultUser(BaseMetadata):
         groups = self._get_groups(user_uuid)
         user = self._user_service.get_user(user_uuid)
         tenant_uuid = user['tenant_uuid']
-        tenant = self._tenant_service.get(scoping_tenant_uuid=tenant_uuid, uuid=tenant_uuid)
+        tenant = self._tenant_service.get(
+            scoping_tenant_uuid=tenant_uuid, uuid=tenant_uuid
+        )
         sub_tenants = self._tenant_service.list_(tenant_uuid)
 
         metadata = {
@@ -36,17 +37,9 @@ class DefaultUser(BaseMetadata):
             'uuid': user_uuid,
             'tenant_uuid': user['tenant_uuid'],
             'visible_tenants': (
-                [
-                    {
-                        'uuid': tenant['uuid'],
-                        'name': tenant['name'],
-                    }
-                ] +
-                [
-                    {
-                        'uuid': sub_tenant['uuid'],
-                        'name': sub_tenant['name'],
-                    }
+                [{'uuid': tenant['uuid'], 'name': tenant['name']}]
+                + [
+                    {'uuid': sub_tenant['uuid'], 'name': sub_tenant['name']}
                     for sub_tenant in sub_tenants
                 ]
             ),
@@ -116,11 +109,7 @@ class DefaultUser(BaseMetadata):
             group_members = self._group_service.list_users(group['uuid'])
             member_uuids = [{'uuid': u['uuid']} for u in group_members]
             result.append(
-                {
-                    'uuid': group['uuid'],
-                    'name': group['name'],
-                    'users': member_uuids,
-                }
+                {'uuid': group['uuid'], 'name': group['name'], 'users': member_uuids}
             )
 
         return result

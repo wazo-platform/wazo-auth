@@ -1,22 +1,15 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import unittest
 
-from hamcrest import (
-    assert_that,
-    contains,
-    empty,
-    equal_to,
-    not_,
-)
+from hamcrest import assert_that, contains, empty, equal_to, not_
 from mock import Mock, sentinel as s
 
 from ..purpose import Purpose, Purposes
 
 
 class TestPurpose(unittest.TestCase):
-
     def test_name(self):
         purpose = Purpose(s.name)
         assert_that(purpose.name, equal_to(s.name))
@@ -55,7 +48,6 @@ class TestPurpose(unittest.TestCase):
 
 
 class TestPurposes(unittest.TestCase):
-
     def test_configure_plugin_already_configured(self):
         purposes_config = {'user': ['default_user']}
         plugin = Mock()
@@ -102,7 +94,9 @@ class TestPurposes(unittest.TestCase):
 
         assert_that(purposes.get('user'), equal_to(expected_purpose_user))
         assert_that(purposes.get('internal'), equal_to(expected_purpose_internal))
-        assert_that(purposes.get('external_api'), equal_to(expected_purpose_external_api))
+        assert_that(
+            purposes.get('external_api'), equal_to(expected_purpose_external_api)
+        )
 
     def test_get_default_when_no_loaded(self):
         purposes_config = {}

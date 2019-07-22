@@ -50,10 +50,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def change_password(self, user_uuid, salt, hash_):
         filter_ = User.uuid == str(user_uuid)
-        values = {
-            'password_salt': salt,
-            'password_hash': hash_,
-        }
+        values = {'password_salt': salt, 'password_hash': hash_}
 
         with self.new_session() as s:
             s.query(User).filter(filter_).update(values)
@@ -66,8 +63,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def remove_policy(self, user_uuid, policy_uuid):
         filter_ = and_(
-            UserPolicy.user_uuid == user_uuid,
-            UserPolicy.policy_uuid == policy_uuid,
+            UserPolicy.user_uuid == user_uuid, UserPolicy.policy_uuid == policy_uuid
         )
 
         with self.new_session() as s:
@@ -91,13 +87,13 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             filter_ = and_(filter_, strict_filter, search_filter)
 
         with self.new_session() as s:
-            return s.query(
-                User.uuid,
-            ).outerjoin(
-                UserEmail, UserEmail.user_uuid == User.uuid,
-            ).outerjoin(
-                Email, Email.uuid == UserEmail.email_uuid
-            ).filter(filter_).count()
+            return (
+                s.query(User.uuid)
+                .outerjoin(UserEmail, UserEmail.user_uuid == User.uuid)
+                .outerjoin(Email, Email.uuid == UserEmail.email_uuid)
+                .filter(filter_)
+                .count()
+            )
 
     def count_groups(self, user_uuid, **kwargs):
         filtered = kwargs.get('filtered')
@@ -133,9 +129,12 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         filter_ = and_(filter_, UserPolicy.user_uuid == user_uuid)
 
         with self.new_session() as s:
-            return s.query(Policy).join(
-                UserPolicy, UserPolicy.policy_uuid == Policy.uuid,
-            ).filter(filter_).count()
+            return (
+                s.query(Policy)
+                .join(UserPolicy, UserPolicy.policy_uuid == Policy.uuid)
+                .filter(filter_)
+                .count()
+            )
 
     def create(self, username, **kwargs):
         user_args = {
@@ -157,7 +156,10 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             try:
                 if email_address:
-                    email_args = {'address': email_address, 'confirmed': email_confirmed}
+                    email_args = {
+                        'address': email_address,
+                        'confirmed': email_confirmed,
+                    }
                     email = Email(**email_args)
                     s.add(email)
 
@@ -166,15 +168,15 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 s.flush()
                 if email_address:
                     user_email = UserEmail(
-                        user_uuid=user.uuid,
-                        email_uuid=email.uuid,
-                        main=True,
+                        user_uuid=user.uuid, email_uuid=email.uuid, main=True
                     )
                     s.add(user_email)
                     s.commit()
             except exc.IntegrityError as e:
                 if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                    column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
+                    column = self.constraint_to_column_map.get(
+                        e.orig.diag.constraint_name
+                    )
                     value = locals().get(column)
                     if column:
                         raise exceptions.ConflictException('users', column, value)
@@ -213,15 +215,11 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def get_credentials(self, username):
         filter_ = and_(
-            self.new_strict_filter(username=username),
-            User.enabled.is_(True),
+            self.new_strict_filter(username=username), User.enabled.is_(True)
         )
 
         with self.new_session() as s:
-            query = s.query(
-                User.password_salt,
-                User.password_hash,
-            ).filter(filter_)
+            query = s.query(User.password_salt, User.password_hash).filter(filter_)
 
             for row in query.all():
                 return row.password_hash, row.password_salt
@@ -237,12 +235,14 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 raise exceptions.UnknownUserException(user_uuid)
 
             for item in user.emails:
-                result.append({
-                    'uuid': item.email.uuid,
-                    'address': item.email.address,
-                    'main': item.main,
-                    'confirmed': item.email.confirmed,
-                })
+                result.append(
+                    {
+                        'uuid': item.email.uuid,
+                        'address': item.email.address,
+                        'main': item.main,
+                        'confirmed': item.email.confirmed,
+                    }
+                )
 
         return result
 
@@ -261,37 +261,39 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         users = []
         with self.new_session() as s:
-            query = s.query(
-                User,
-            ).outerjoin(
-                UserEmail,
-            ).outerjoin(
-                Email,
-            ).outerjoin(
-                UserGroup,
-            ).filter(filter_)
+            query = (
+                s.query(User)
+                .outerjoin(UserEmail)
+                .outerjoin(Email)
+                .outerjoin(UserGroup)
+                .filter(filter_)
+            )
             query = self._paginator.update_query(query, **kwargs)
 
             for user in query.all():
                 emails = []
                 for item in user.emails:
-                    emails.append({
-                        'uuid': item.email.uuid,
-                        'address': item.email.address,
-                        'main': item.main,
-                        'confirmed': item.email.confirmed,
-                    })
+                    emails.append(
+                        {
+                            'uuid': item.email.uuid,
+                            'address': item.email.address,
+                            'main': item.main,
+                            'confirmed': item.email.confirmed,
+                        }
+                    )
 
-                users.append({
-                    'username': user.username,
-                    'uuid': user.uuid,
-                    'enabled': user.enabled,
-                    'emails': emails,
-                    'firstname': user.firstname,
-                    'lastname': user.lastname,
-                    'purpose': user.purpose,
-                    'tenant_uuid': user.tenant_uuid,
-                })
+                users.append(
+                    {
+                        'username': user.username,
+                        'uuid': user.uuid,
+                        'enabled': user.enabled,
+                        'emails': emails,
+                        'firstname': user.firstname,
+                        'lastname': user.lastname,
+                        'purpose': user.purpose,
+                        'tenant_uuid': user.tenant_uuid,
+                    }
+                )
 
         return users
 
@@ -333,11 +335,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     raise exceptions.ConflictException('users', column, value)
             raise
 
-        s.add(UserEmail(
-            email_uuid=email.uuid,
-            user_uuid=user_uuid,
-            main=args['main'],
-        ))
+        s.add(UserEmail(email_uuid=email.uuid, user_uuid=user_uuid, main=args['main']))
         s.flush()
         args['uuid'] = email.uuid
 
@@ -347,7 +345,9 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         query = s.query(UserEmail.email_uuid).filter(filter_)
         email_uuids = [row.email_uuid for row in query.all()]
         if email_uuids:
-            s.query(Email).filter(Email.uuid.in_(email_uuids)).delete(synchronize_session=False)
+            s.query(Email).filter(Email.uuid.in_(email_uuids)).delete(
+                synchronize_session=False
+            )
 
     @staticmethod
     def _emails_to_dict(emails):
