@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -22,7 +22,6 @@ SIX = {'address': 'six', 'main': False, 'confirmed': False}
 
 
 class TestUserEmailPutSchema(TestCase):
-
     def setUp(self):
         self.user_schema = new_email_put_schema('user')()
 
@@ -48,11 +47,15 @@ class TestUserEmailPutSchema(TestCase):
     def test_main_field(self):
         params = {'emails': [ONE, FIVE]}
         body, error = self.user_schema.load(params)
-        assert_that(error, has_entries(_schema=contains('Only one address should be main')))
+        assert_that(
+            error, has_entries(_schema=contains('Only one address should be main'))
+        )
 
         params = {'emails': [TWO]}
         body, error = self.user_schema.load(params)
-        assert_that(error, has_entries(_schema=contains('At least one address should be main')))
+        assert_that(
+            error, has_entries(_schema=contains('At least one address should be main'))
+        )
 
     def test_address_field(self):
         params = {'emails': [ONE, SIX]}
@@ -62,7 +65,10 @@ class TestUserEmailPutSchema(TestCase):
 
         params = {'emails': [ONE, TWO, TWO]}
         body, error = self.user_schema.load(params)
-        assert_that(error, has_entries(_schema=contains('The same address can only be used once')))
+        assert_that(
+            error,
+            has_entries(_schema=contains('The same address can only be used once')),
+        )
 
         params = {}
         body, error = self.user_schema.load(params)
@@ -70,7 +76,6 @@ class TestUserEmailPutSchema(TestCase):
 
 
 class TestAdminUserEmailPutSchema(TestCase):
-
     def setUp(self):
         self.admin_schema = new_email_put_schema('admin')()
 
@@ -96,11 +101,15 @@ class TestAdminUserEmailPutSchema(TestCase):
     def test_main_field(self):
         params = {'emails': [ONE, FIVE]}
         body, error = self.admin_schema.load(params)
-        assert_that(error, has_entries(_schema=contains('Only one address should be main')))
+        assert_that(
+            error, has_entries(_schema=contains('Only one address should be main'))
+        )
 
         params = {'emails': [TWO]}
         body, error = self.admin_schema.load(params)
-        assert_that(error, has_entries(_schema=contains('At least one address should be main')))
+        assert_that(
+            error, has_entries(_schema=contains('At least one address should be main'))
+        )
 
     def test_address_field(self):
         params = {'emails': [ONE, SIX]}
@@ -110,4 +119,7 @@ class TestAdminUserEmailPutSchema(TestCase):
 
         params = {'emails': [ONE, TWO, TWO]}
         body, error = self.admin_schema.load(params)
-        assert_that(error, has_entries(_schema=contains('The same address can only be used once')))
+        assert_that(
+            error,
+            has_entries(_schema=contains('The same address can only be used once')),
+        )

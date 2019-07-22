@@ -1,22 +1,13 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import unittest
-from hamcrest import (
-    assert_that,
-    contains,
-    equal_to,
-    has_entries,
-    not_,
-)
+from hamcrest import assert_that, contains, equal_to, has_entries, not_
 
-from ..schemas import (
-    PasswordResetQueryParameters,
-)
+from ..schemas import PasswordResetQueryParameters
 
 
 class TestSchema(unittest.TestCase):
-
     def setUp(self):
         self.password_query_parameters_schema = PasswordResetQueryParameters()
 
@@ -33,7 +24,10 @@ class TestSchema(unittest.TestCase):
 
         result, errors = self.password_query_parameters_schema.load(query_string)
 
-        assert_that(errors, has_entries(_schema=contains('"username" or "email" should be used')))
+        assert_that(
+            errors,
+            has_entries(_schema=contains('"username" or "email" should be used')),
+        )
 
     def test_username_only(self):
         query_string = {'username': 'foobar'}
@@ -47,7 +41,9 @@ class TestSchema(unittest.TestCase):
 
         result, errors = self.password_query_parameters_schema.load(query_string)
 
-        assert_that(result, has_entries(username=None, email_address='foobar@example.com'))
+        assert_that(
+            result, has_entries(username=None, email_address='foobar@example.com')
+        )
 
     def test_invalid_field(self):
         query_string = {'username': 129 * 'a'}

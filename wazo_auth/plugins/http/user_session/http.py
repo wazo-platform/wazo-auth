@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class UserSessions(http.AuthResource):
-
     def __init__(self, user_service):
         self.user_service = user_service
 
@@ -26,15 +25,21 @@ class UserSessions(http.AuthResource):
         if errors:
             raise exceptions.InvalidListParamException(errors)
 
-        return {
-            'items': self.user_service.list_sessions(user_uuid, **list_params),
-            'total': self.user_service.count_sessions(user_uuid, filtered=False, **list_params),
-            'filtered': self.user_service.count_sessions(user_uuid, filtered=True, **list_params),
-        }, 200
+        return (
+            {
+                'items': self.user_service.list_sessions(user_uuid, **list_params),
+                'total': self.user_service.count_sessions(
+                    user_uuid, filtered=False, **list_params
+                ),
+                'filtered': self.user_service.count_sessions(
+                    user_uuid, filtered=True, **list_params
+                ),
+            },
+            200,
+        )
 
 
 class UserSession(http.AuthResource):
-
     def __init__(self, user_service, session_service):
         self.user_service = user_service
         self.session_service = session_service

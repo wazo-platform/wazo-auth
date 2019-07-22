@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_auth import exceptions
@@ -6,7 +6,6 @@ from wazo_auth.services.helpers import BaseService
 
 
 class GroupService(BaseService):
-
     def add_policy(self, group_uuid, policy_uuid):
         return self._dao.group.add_policy(group_uuid, policy_uuid)
 
@@ -15,7 +14,9 @@ class GroupService(BaseService):
 
     def count(self, scoping_tenant_uuid, recurse=False, **kwargs):
         if scoping_tenant_uuid:
-            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(scoping_tenant_uuid, recurse)
+            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(
+                scoping_tenant_uuid, recurse
+            )
         return self._dao.group.count(**kwargs)
 
     def count_policies(self, group_uuid, **kwargs):
@@ -36,7 +37,7 @@ class GroupService(BaseService):
         args = {
             'uuid': group_uuid,
             'limit': 1,
-            'tenant_uuids': self._tenant_tree.list_nodes(scoping_tenant_uuid)
+            'tenant_uuids': self._tenant_tree.list_nodes(scoping_tenant_uuid),
         }
 
         matching_groups = self._dao.group.list_(**args)
@@ -58,7 +59,9 @@ class GroupService(BaseService):
 
     def list_(self, scoping_tenant_uuid=None, recurse=False, **kwargs):
         if scoping_tenant_uuid:
-            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(scoping_tenant_uuid, recurse)
+            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(
+                scoping_tenant_uuid, recurse
+            )
 
         return self._dao.group.list_(**kwargs)
 

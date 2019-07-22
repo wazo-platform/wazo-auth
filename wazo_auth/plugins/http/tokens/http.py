@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class BaseResource(http.ErrorCatchingResource):
-
     def __init__(self, token_service, backends, user_service):
         self._backends = backends
         self._token_service = token_service
@@ -19,7 +18,6 @@ class BaseResource(http.ErrorCatchingResource):
 
 
 class Tokens(BaseResource):
-
     def post(self):
         if request.authorization:
             login = request.authorization.username
@@ -43,7 +41,9 @@ class Tokens(BaseResource):
             return http._error(401, 'Authentication Failed')
 
         if not backend.verify_password(login, password, args):
-            logger.debug('Invalid password for user "%s" in backend "%s"', login, backend_name)
+            logger.debug(
+                'Invalid password for user "%s" in backend "%s"', login, backend_name
+            )
             return http._error(401, 'Authentication Failed')
 
         token = self._token_service.new_token(backend, login, args)
@@ -52,7 +52,6 @@ class Tokens(BaseResource):
 
 
 class Token(BaseResource):
-
     def delete(self, token_uuid):
         self._token_service.remove_token(token_uuid)
 

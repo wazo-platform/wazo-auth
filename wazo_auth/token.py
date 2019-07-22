@@ -17,8 +17,18 @@ DEFAULT_XIVO_UUID = os.getenv('XIVO_UUID')
 
 
 class Token:
-
-    def __init__(self, id_, auth_id, xivo_user_uuid, xivo_uuid, issued_t, expire_t, acls, metadata, session_uuid):
+    def __init__(
+        self,
+        id_,
+        auth_id,
+        xivo_user_uuid,
+        xivo_uuid,
+        issued_t,
+        expire_t,
+        acls,
+        metadata,
+        session_uuid,
+    ):
         self.token = id_
         self.auth_id = auth_id
         self.xivo_user_uuid = xivo_user_uuid
@@ -31,15 +41,15 @@ class Token:
 
     def __eq__(self, other):
         return (
-            self.token == other.token and
-            self.auth_id == other.auth_id and
-            self.xivo_user_uuid == other.xivo_user_uuid and
-            self.xivo_uuid == other.xivo_uuid and
-            self.issued_t == other.issued_t and
-            self.expire_t == other.expire_t and
-            self.acls == other.acls and
-            self.metadata == other.metadata and
-            self.session_uuid == other.session_uuid
+            self.token == other.token
+            and self.auth_id == other.auth_id
+            and self.xivo_user_uuid == other.xivo_user_uuid
+            and self.xivo_uuid == other.xivo_uuid
+            and self.issued_t == other.issued_t
+            and self.expire_t == other.expire_t
+            and self.acls == other.acls
+            and self.metadata == other.metadata
+            and self.session_uuid == other.session_uuid
         )
 
     def __ne__(self, other):
@@ -58,17 +68,19 @@ class Token:
         return datetime.utcfromtimestamp(t).isoformat()
 
     def to_dict(self):
-        return {'token': self.token,
-                'auth_id': self.auth_id,
-                'xivo_user_uuid': self.xivo_user_uuid,
-                'xivo_uuid': self.xivo_uuid,
-                'issued_at': self._format_local_time(self.issued_t),
-                'expires_at': self._format_local_time(self.expire_t),
-                'utc_issued_at': self._format_utc_time(self.issued_t),
-                'utc_expires_at': self._format_utc_time(self.expire_t),
-                'acls': self.acls,
-                'metadata': self.metadata,
-                'session_uuid': self.session_uuid}
+        return {
+            'token': self.token,
+            'auth_id': self.auth_id,
+            'xivo_user_uuid': self.xivo_user_uuid,
+            'xivo_uuid': self.xivo_uuid,
+            'issued_at': self._format_local_time(self.issued_t),
+            'expires_at': self._format_local_time(self.expire_t),
+            'utc_issued_at': self._format_utc_time(self.issued_t),
+            'utc_expires_at': self._format_utc_time(self.expire_t),
+            'acls': self.acls,
+            'metadata': self.metadata,
+            'session_uuid': self.session_uuid,
+        }
 
     def is_expired(self):
         return self.expire_t and time.time() > self.expire_t
@@ -84,19 +96,22 @@ class Token:
         return False
 
     def _transform_acl_to_regex(self, acl):
-        acl_regex = re.escape(acl).replace('\*', '[^.]*?').replace('\#', '.*?')
+        acl_regex = re.escape(acl).replace('\\*', '[^.]*?').replace('\\#', '.*?')
         acl_regex = self._transform_acl_me_to_uuid_or_me(acl_regex)
         return re.compile('^{}$'.format(acl_regex))
 
     def _transform_acl_me_to_uuid_or_me(self, acl_regex):
-        acl_regex = acl_regex.replace('\.me\.', '\.(me|{auth_id})\.'.format(auth_id=self.auth_id))
-        if acl_regex.endswith('\.me'):
-            acl_regex = '{acl_start}\.(me|{auth_id})'.format(acl_start=acl_regex[:-4], auth_id=self.auth_id)
+        acl_regex = acl_regex.replace(
+            '\\.me\\.', '\\.(me|{auth_id})\\.'.format(auth_id=self.auth_id)
+        )
+        if acl_regex.endswith('\\.me'):
+            acl_regex = '{acl_start}\\.(me|{auth_id})'.format(
+                acl_start=acl_regex[:-4], auth_id=self.auth_id
+            )
         return acl_regex
 
 
 class ExpiredTokenRemover:
-
     def __init__(self, config, dao, bus_publisher):
         self._dao = dao
         self._bus_publisher = bus_publisher
@@ -111,18 +126,26 @@ class ExpiredTokenRemover:
         try:
             tokens, sessions = self._dao.token.delete_expired_tokens_and_sessions()
         except Exception:
-            logger.warning('failed to remove expired tokens and sessions', exc_info=self._debug)
+            logger.warning(
+                'failed to remove expired tokens and sessions', exc_info=self._debug
+            )
             return
 
         for session in sessions:
-            event_args = {'uuid': session['uuid'], 'user_uuid': None, 'tenant_uuid': None}
+            event_args = {
+                'uuid': session['uuid'],
+                'user_uuid': None,
+                'tenant_uuid': None,
+            }
             for token in tokens:
                 if token['session_uuid'] == session['uuid']:
                     event_args['user_uuid'] = token['auth_id']
                     event_args['tenant_uuid'] = token['metadata'].get('tenant_uuid')
                     break
             else:
-                logger.warning('session deleted without token associated: %s' % session['uuid'])
+                logger.warning(
+                    'session deleted without token associated: %s' % session['uuid']
+                )
 
             event = SessionDeletedEvent(**event_args)
             self._bus_publisher.publish(event)

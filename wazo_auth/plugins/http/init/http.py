@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -33,7 +33,6 @@ def delete_after_usage(filename):
 
 
 class Init(http.ErrorCatchingResource):
-
     def __init__(self, policy_service, user_service, config):
         self._user_service = user_service
         self._policy_service = policy_service

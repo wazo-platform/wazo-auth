@@ -14,7 +14,6 @@ EmailDestination = namedtuple('EmailDestination', ['name', 'address'])
 
 
 class EmailService(BaseService):
-
     def __init__(self, dao, tenant_uuid, config, template_formatter):
         super().__init__(dao, tenant_uuid)
         self._formatter = template_formatter
@@ -27,8 +26,7 @@ class EmailService(BaseService):
             config['email_confirmation_from_address'],
         )
         self._password_reset_from = EmailDestination(
-            config['password_reset_from_name'],
-            config['password_reset_from_address'],
+            config['password_reset_from_name'], config['password_reset_from_address']
         )
 
     def confirm(self, email_uuid):
@@ -91,5 +89,7 @@ class EmailService(BaseService):
             'acls': acls,
         }
         session_payload = {}
-        token_uuid, session_uuid = self._dao.token.create(token_payload, session_payload)
+        token_uuid, session_uuid = self._dao.token.create(
+            token_payload, session_payload
+        )
         return token_uuid

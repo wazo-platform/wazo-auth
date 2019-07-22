@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -11,13 +11,11 @@ logger = logging.getLogger(__name__)
 
 
 class BaseResource(http.AuthResource):
-
     def __init__(self, tenant_service):
         self.tenant_service = tenant_service
 
 
 class Tenant(BaseResource):
-
     @http.required_acl('auth.tenants.{tenant_uuid}.delete')
     def delete(self, tenant_uuid):
         scoping_tenant = TenantDetector.autodetect()
@@ -45,7 +43,6 @@ class Tenant(BaseResource):
 
 
 class Tenants(BaseResource):
-
     @http.required_acl('auth.tenants.read')
     def get(self):
         scoping_tenant = TenantDetector.autodetect()
@@ -55,21 +52,25 @@ class Tenants(BaseResource):
             raise exceptions.InvalidListParamException(errors)
 
         tenants = self.tenant_service.list_(scoping_tenant.uuid, **list_params)
-        total = self.tenant_service.count(scoping_tenant.uuid, filtered=False, **list_params)
-        filtered = self.tenant_service.count(scoping_tenant.uuid, filtered=True, **list_params)
+        total = self.tenant_service.count(
+            scoping_tenant.uuid, filtered=False, **list_params
+        )
+        filtered = self.tenant_service.count(
+            scoping_tenant.uuid, filtered=True, **list_params
+        )
 
-        response = {
-            'filtered': filtered,
-            'total': total,
-            'items': tenants,
-        }
+        response = {'filtered': filtered, 'total': total, 'items': tenants}
 
         return response, 200
 
     @http.required_acl('auth.tenants.create')
     def post(self):
         scoping_tenant = TenantDetector.autodetect()
-        logger.debug('creating sub-tenant of (%s): %s', scoping_tenant, request.get_json(force=True))
+        logger.debug(
+            'creating sub-tenant of (%s): %s',
+            scoping_tenant,
+            request.get_json(force=True),
+        )
         args, errors = schemas.TenantSchema().load(request.get_json())
         if errors:
             raise exceptions.TenantParamException.from_errors(errors)

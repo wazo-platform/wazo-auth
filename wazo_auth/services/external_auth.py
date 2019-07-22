@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -15,14 +15,15 @@ logger = logging.getLogger(__name__)
 
 
 class _OAuth2Synchronizer:
-
     def __init__(self, config, bus_publisher):
         self._url_tpl = config['oauth2_synchronization_ws_url_template']
         self._bus_publisher = bus_publisher
 
     def synchronize(self, event, state, success_cb):
         logger.debug('starting synchronization')
-        websocket_client_thread = threading.Thread(target=self._synchronize, args=(event, state, success_cb))
+        websocket_client_thread = threading.Thread(
+            target=self._synchronize, args=(event, state, success_cb)
+        )
         websocket_client_thread.daemon = True
         websocket_client_thread.start()
         logger.debug('synchronization started')
@@ -55,8 +56,9 @@ class _OAuth2Synchronizer:
 
 
 class ExternalAuthService(BaseService):
-
-    def __init__(self, dao, tenant_tree, config, bus_publisher=None, enabled_external_auth=None):
+    def __init__(
+        self, dao, tenant_tree, config, bus_publisher=None, enabled_external_auth=None
+    ):
         super().__init__(dao, tenant_tree)
         self._bus_publisher = bus_publisher
         self._safe_models = {}
@@ -111,16 +113,27 @@ class ExternalAuthService(BaseService):
                 data = external_auth.get('data')
                 filtered_data, errors = Model().load(data)
                 if errors:
-                    logger.info('Failed to parse %s data for user %s: %s', auth_type, user_uuid, errors)
-            result.append({'type': auth_type, 'data': filtered_data, 'enabled': enabled})
+                    logger.info(
+                        'Failed to parse %s data for user %s: %s',
+                        auth_type,
+                        user_uuid,
+                        errors,
+                    )
+            result.append(
+                {'type': auth_type, 'data': filtered_data, 'enabled': enabled}
+            )
         return result
 
     def build_oauth2_redirect_url(self, auth_type):
         return self._url_tpl.format(auth_type=auth_type)
 
-    def register_oauth2_callback(self, auth_type, user_uuid, state, cb, *args, **kwargs):
+    def register_oauth2_callback(
+        self, auth_type, user_uuid, state, cb, *args, **kwargs
+    ):
         event = events.UserExternalAuthAuthorized(user_uuid, auth_type)
-        self._oauth2_synchronizer.synchronize(event, state, partial(cb, *args, **kwargs))
+        self._oauth2_synchronizer.synchronize(
+            event, state, partial(cb, *args, **kwargs)
+        )
 
     def register_safe_auth_model(self, auth_type, model_class):
         self._safe_models[auth_type] = model_class

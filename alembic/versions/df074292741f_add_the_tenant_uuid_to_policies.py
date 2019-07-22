@@ -15,28 +15,16 @@ down_revision = '87c21c795776'
 TABLE = 'auth_policy'
 COL = 'tenant_uuid'
 
-policy_table = sa.sql.table(
-    'auth_policy',
-    sa.Column('uuid'),
-    sa.Column('tenant_uuid'),
-)
+policy_table = sa.sql.table('auth_policy', sa.Column('uuid'), sa.Column('tenant_uuid'))
 
-tenant_table = sa.sql.table(
-    'auth_tenant',
-    sa.Column('uuid'),
-    sa.Column('parent_uuid'),
-)
+tenant_table = sa.sql.table('auth_tenant', sa.Column('uuid'), sa.Column('parent_uuid'))
 tenant_policy_table = sa.sql.table(
-    'auth_tenant_policy',
-    sa.Column('tenant_uuid'),
-    sa.Column('policy_uuid'),
+    'auth_tenant_policy', sa.Column('tenant_uuid'), sa.Column('policy_uuid')
 )
 
 
 def find_master_tenant():
-    query = sa.sql.select(
-        [tenant_table.c.uuid]
-    ).where(
+    query = sa.sql.select([tenant_table.c.uuid]).where(
         tenant_table.c.uuid == tenant_table.c.parent_uuid
     )
 
@@ -77,7 +65,7 @@ def upgrade():
             sa.ForeignKey('auth_tenant.uuid', ondelete='CASCADE'),
             server_default=master_tenant,
             nullable=False,
-        )
+        ),
     )
     op.alter_column(TABLE, COL, nullable=False, server_default=None)
 
@@ -107,8 +95,10 @@ def downgrade():
         ),
     )
 
-    for policy_uuid, tenant_uuid, in get_policies_tenant().items():
-        query = tenant_policy_table.insert().values(policy_uuid=policy_uuid, tenant_uuid=tenant_uuid)
+    for policy_uuid, tenant_uuid in get_policies_tenant().items():
+        query = tenant_policy_table.insert().values(
+            policy_uuid=policy_uuid, tenant_uuid=tenant_uuid
+        )
         op.get_bind().execute(query)
 
     op.drop_column(TABLE, COL)

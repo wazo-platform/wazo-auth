@@ -4,10 +4,7 @@
 from sqlalchemy import text, and_
 
 from .base import BaseDAO, PaginatorMixin
-from ..models import (
-    Session,
-    Token,
-)
+from ..models import Session, Token
 
 
 class SessionDAO(PaginatorMixin, BaseDAO):
@@ -29,12 +26,15 @@ class SessionDAO(PaginatorMixin, BaseDAO):
             query = s.query(Session, Token).join(Token).filter(filter_)
             query = self._paginator.update_query(query, **kwargs)
 
-            return [{
-                'uuid': result.Session.uuid,
-                'mobile': result.Session.mobile,
-                'tenant_uuid': result.Session.tenant_uuid,
-                'user_uuid': result.Token.auth_id,
-            } for result in query.all()]
+            return [
+                {
+                    'uuid': result.Session.uuid,
+                    'mobile': result.Session.mobile,
+                    'tenant_uuid': result.Session.tenant_uuid,
+                    'user_uuid': result.Token.auth_id,
+                }
+                for result in query.all()
+            ]
 
     def count(self, tenant_uuids=None, **kwargs):
         filter_ = text('true')
@@ -60,16 +60,10 @@ class SessionDAO(PaginatorMixin, BaseDAO):
 
             token_result = {}
             for token in session.tokens:
-                token_result = {
-                    'uuid': token.uuid,
-                    'auth_id': token.auth_id,
-                }
+                token_result = {'uuid': token.uuid, 'auth_id': token.auth_id}
                 break
 
-            session_result = {
-                'uuid': session.uuid,
-                'tenant_uuid': session.tenant_uuid,
-            }
+            session_result = {'uuid': session.uuid, 'tenant_uuid': session.tenant_uuid}
             s.query(Session).filter(filter_).delete(synchronize_session=False)
 
         return session_result, token_result

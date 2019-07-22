@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 class BaseAuthenticationBackend(metaclass=abc.ABCMeta):
-
     def __init__(self):
         """Initialize this backend instance from the given configuration"""
         pass
@@ -71,15 +70,14 @@ class BaseAuthenticationBackend(metaclass=abc.ABCMeta):
 
 
 class ACLRenderingBackend:
-
     def render_acl(self, acl_templates, get_data_fn, *args, **kwargs):
         renderer = LazyTemplateRenderer(acl_templates, get_data_fn, *args, **kwargs)
         return renderer.render()
 
 
-class UserAuthenticationBackend(BaseAuthenticationBackend, ACLRenderingBackend,
-                                metaclass=abc.ABCMeta):
-
+class UserAuthenticationBackend(
+    BaseAuthenticationBackend, ACLRenderingBackend, metaclass=abc.ABCMeta
+):
     def load(self, dependencies):
         super().load(dependencies)
         self._config = dependencies['config']
@@ -137,7 +135,6 @@ class UserAuthenticationBackend(BaseAuthenticationBackend, ACLRenderingBackend,
 
 
 class BaseMetadata(metaclass=abc.ABCMeta):
-
     def __init__(self):
         """Initialize this plugin instance from the given configuration"""
         pass

@@ -12,11 +12,7 @@ import sqlalchemy as sa
 revision = '976f73df0476'
 down_revision = '21ad58426cbd'
 
-token_table = sa.sql.table(
-    'auth_token',
-    sa.Column('uuid'),
-    sa.Column('session_uuid'),
-)
+token_table = sa.sql.table('auth_token', sa.Column('uuid'), sa.Column('session_uuid'))
 
 
 def upgrade():
@@ -46,24 +42,20 @@ def upgrade():
 
 
 def _create_sessions_to_existing_tokens():
-    session_table = sa.sql.table(
-        'auth_session',
-        sa.Column('uuid'),
-        sa.Column('mobile'),
-    )
+    session_table = sa.sql.table('auth_session', sa.Column('uuid'), sa.Column('mobile'))
 
     query = sa.sql.select([token_table.c.uuid])
     tokens = op.get_bind().execute(query)
     for token in tokens:
-        query = (session_table
-                 .insert()
-                 .returning(session_table.c.uuid)
-                 .values(mobile=False))
+        query = (
+            session_table.insert().returning(session_table.c.uuid).values(mobile=False)
+        )
         session_uuid = op.get_bind().execute(query).scalar()
-        query = (token_table
-                 .update()
-                 .values(session_uuid=session_uuid)
-                 .where(token_table.c.uuid == token.uuid))
+        query = (
+            token_table.update()
+            .values(session_uuid=session_uuid)
+            .where(token_table.c.uuid == token.uuid)
+        )
         op.execute(query)
 
 

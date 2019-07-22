@@ -19,7 +19,12 @@ def upgrade():
         table_name,
         Column('id', Integer, primary_key=True),
         Column('value', Text, nullable=False),
-        Column('token_uuid', String(38), ForeignKey('auth_token.uuid', ondelete='CASCADE'), nullable=False)
+        Column(
+            'token_uuid',
+            String(38),
+            ForeignKey('auth_token.uuid', ondelete='CASCADE'),
+            nullable=False,
+        ),
     )
 
 

@@ -7,24 +7,15 @@ from setuptools import setup
 setup(
     name='wazo_auth',
     version='1.0',
-
     description='Wazo auth',
-
     author='Wazo Authors',
     author_email='dev@wazo.community',
-
     url='http://wazo.community',
-
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    package_data={
-        'wazo_auth.plugins.http': ['*/api.yml'],
-    },
-    scripts=[
-        'bin/wazo-auth-init-db',
-    ],
-
+    package_data={'wazo_auth.plugins.http': ['*/api.yml']},
+    scripts=['bin/wazo-auth-init-db'],
     entry_points={
         'console_scripts': [
             'wazo-auth = wazo_auth.main:main',
@@ -34,7 +25,8 @@ setup(
             'wazo_user = wazo_auth.plugins.backends.wazo_user:WazoUser',
             'ldap_user = wazo_auth.plugins.backends.ldap_user:LDAPUser',
             'broken_init = wazo_auth.plugins.backends.broken:BrokenInitBackend',
-            'broken_verify_password = wazo_auth.plugins.backends.broken:BrokenVerifyPasswordBackend',
+            'broken_verify_password '
+            '= wazo_auth.plugins.backends.broken:BrokenVerifyPasswordBackend',
         ],
         'wazo_auth.http': [
             'api = wazo_auth.plugins.http.api.plugin:Plugin',
@@ -65,7 +57,8 @@ setup(
         'wazo_auth.metadata': [
             'default_user = wazo_auth.plugins.metadata.default_user:DefaultUser',
             'default_internal = wazo_auth.plugins.metadata.default_internal:DefaultInternal',
-            'default_external_api = wazo_auth.plugins.metadata.default_external_api:DefaultExternalAPI',
+            'default_external_api '
+            '= wazo_auth.plugins.metadata.default_external_api:DefaultExternalAPI',
         ],
-    }
+    },
 )

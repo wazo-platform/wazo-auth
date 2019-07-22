@@ -5,7 +5,6 @@ from . import http
 
 
 class Plugin:
-
     def load(self, dependencies):
         api = dependencies['api']
         args = (
@@ -15,4 +14,6 @@ class Plugin:
         )
 
         api.add_resource(http.Tokens, '/token', resource_class_args=args)
-        api.add_resource(http.Token, '/token/<string:token_uuid>', resource_class_args=args)
+        api.add_resource(
+            http.Token, '/token/<string:token_uuid>', resource_class_args=args
+        )

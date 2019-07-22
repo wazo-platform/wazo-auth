@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 class WebSocketOAuth2(Thread):
-
     def __init__(self, host, auth, external_auth, client_secret, token_url, auth_type):
         super().__init__()
 
@@ -33,7 +32,8 @@ class WebSocketOAuth2(Thread):
             '{}/ws/{}'.format(self.host, state),
             on_message=self._on_message,
             on_error=self._on_error,
-            on_close=self._on_close)
+            on_close=self._on_close,
+        )
         logger.debug('WebSocketOAuth2 opened.')
         try:
             ws.run_forever()
@@ -41,7 +41,11 @@ class WebSocketOAuth2(Thread):
             ws.close()
 
     def _on_message(self, ws, message):
-        logger.debug("Confirmation has been received on websocketOAuth, message : {}.".format(message))
+        logger.debug(
+            "Confirmation has been received on websocketOAuth, message : {}.".format(
+                message
+            )
+        )
         msg = json.loads(message)
         ws.close()
         self.create_first_token(self.user_uuid, msg.get('code'))
@@ -54,12 +58,14 @@ class WebSocketOAuth2(Thread):
 
     def create_first_token(self, user_uuid, code):
         logger.debug('Trying to fetch token on {}'.format(self.token_url))
-        token_data = self.oauth2.fetch_token(self.token_url, client_secret=self.client_secret, code=code)
+        token_data = self.oauth2.fetch_token(
+            self.token_url, client_secret=self.client_secret, code=code
+        )
         data = {
             'access_token': token_data['access_token'],
             'refresh_token': token_data['refresh_token'],
             'token_expiration': get_timestamp_expiration(token_data['expires_in']),
-            'scope': token_data['scope']
+            'scope': token_data['scope'],
         }
         logger.debug('Microsoft token created.')
         try:

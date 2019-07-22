@@ -15,7 +15,6 @@ def new_uuid():
 
 
 class TestToken(unittest.TestCase):
-
     def setUp(self):
         self.id_ = new_uuid()
         self.auth_id = 'the-auth-id'
@@ -57,14 +56,18 @@ class TestToken(unittest.TestCase):
         self.token.acls = ['foo.bar.toto']
 
         assert_that(self.token.matches_required_acl('foo.bar.toto'))
-        assert_that(self.token.matches_required_acl('foo.bar.toto.tata'), equal_to(False))
+        assert_that(
+            self.token.matches_required_acl('foo.bar.toto.tata'), equal_to(False)
+        )
         assert_that(self.token.matches_required_acl('other.bar.toto'), equal_to(False))
 
     def test_matches_required_acls_when_user_acl_has_asterisks(self):
         self.token.acls = ['foo.*.*']
 
         assert_that(self.token.matches_required_acl('foo.bar.toto'))
-        assert_that(self.token.matches_required_acl('foo.bar.toto.tata'), equal_to(False))
+        assert_that(
+            self.token.matches_required_acl('foo.bar.toto.tata'), equal_to(False)
+        )
         assert_that(self.token.matches_required_acl('other.bar.toto'), equal_to(False))
 
     def test_matches_required_acls_with_multiple_acls(self):
@@ -73,7 +76,9 @@ class TestToken(unittest.TestCase):
         assert_that(self.token.matches_required_acl('foo'))
         assert_that(self.token.matches_required_acl('foo.bar'), equal_to(False))
         assert_that(self.token.matches_required_acl('foo.bar.toto'))
-        assert_that(self.token.matches_required_acl('foo.bar.toto.tata'), equal_to(False))
+        assert_that(
+            self.token.matches_required_acl('foo.bar.toto.tata'), equal_to(False)
+        )
         assert_that(self.token.matches_required_acl('other.bar.toto'))
 
     def test_matches_required_acls_when_user_acl_has_hashtag_in_middle(self):
@@ -81,7 +86,9 @@ class TestToken(unittest.TestCase):
 
         assert_that(self.token.matches_required_acl('foo.bar'), equal_to(False))
         assert_that(self.token.matches_required_acl('foo.bar.toto'), equal_to(False))
-        assert_that(self.token.matches_required_acl('foo.bar.toto.tata'), equal_to(False))
+        assert_that(
+            self.token.matches_required_acl('foo.bar.toto.tata'), equal_to(False)
+        )
         assert_that(self.token.matches_required_acl('foo.bar.toto.tata.titi'))
 
     def test_matches_required_acls_when_user_acl_ends_with_me(self):
@@ -93,8 +100,12 @@ class TestToken(unittest.TestCase):
         assert_that(self.token.matches_required_acl('foo.bar.123'))
         assert_that(self.token.matches_required_acl('foo.bar.toto.me'))
         assert_that(self.token.matches_required_acl('foo.bar.toto.123'))
-        assert_that(self.token.matches_required_acl('foo.bar.toto.me.titi'), equal_to(False))
-        assert_that(self.token.matches_required_acl('foo.bar.toto.123.titi'), equal_to(False))
+        assert_that(
+            self.token.matches_required_acl('foo.bar.toto.me.titi'), equal_to(False)
+        )
+        assert_that(
+            self.token.matches_required_acl('foo.bar.toto.123.titi'), equal_to(False)
+        )
 
     def test_matches_required_acls_when_user_acl_has_me_in_middle(self):
         self.token.acls = ['foo.#.me.bar']

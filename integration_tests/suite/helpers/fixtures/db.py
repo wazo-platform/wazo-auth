@@ -21,7 +21,9 @@ def _random_string(length):
 
 
 def email(**email_args):
-    email_args.setdefault('address', '{}@{}'.format(_random_string(5), _random_string(5)))
+    email_args.setdefault(
+        'address', '{}@{}'.format(_random_string(5), _random_string(5))
+    )
 
     def decorator(decorated):
         @wraps(decorated)
@@ -35,7 +37,9 @@ def email(**email_args):
                 except exceptions.UnknownEmailException:
                     pass
             return result
+
         return wrapper
+
     return decorator
 
 
@@ -49,7 +53,9 @@ def external_auth(*auth_types):
             finally:
                 self._external_auth_dao.enable_all([])
             return result
+
         return wrapper
+
     return decorator
 
 
@@ -77,9 +83,13 @@ def token(**token_args):
             finally:
                 self._token_dao.delete(token_uuid)
                 with self._session_dao.new_session() as s:
-                    s.query(models.Session).filter(models.Session.uuid == session_uuid).delete()
+                    s.query(models.Session).filter(
+                        models.Session.uuid == session_uuid
+                    ).delete()
             return result
+
         return wrapper
+
     return decorator
 
 
@@ -99,7 +109,9 @@ def group(**group_args):
                 except exceptions.UnknownGroupException:
                     pass
             return result
+
         return wrapper
+
     return decorator
 
 
@@ -121,7 +133,9 @@ def policy(**policy_args):
                 except exceptions.UnknownPolicyException:
                     pass
             return result
+
         return wrapper
+
     return decorator
 
 
@@ -143,7 +157,9 @@ def tenant(**tenant_args):
                 except exceptions.UnknownTenantException:
                     pass
             return result
+
         return wrapper
+
     return decorator
 
 
@@ -170,5 +186,7 @@ def user(**user_args):
                 except exceptions.UnknownUserException:
                     pass
             return result
+
         return wrapper
+
     return decorator

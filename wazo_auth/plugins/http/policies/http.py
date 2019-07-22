@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
@@ -8,13 +8,11 @@ from .schemas import PolicySchema
 
 
 class _BasePolicyRessource(http.AuthResource):
-
     def __init__(self, policy_service):
         self.policy_service = policy_service
 
 
 class Policies(_BasePolicyRessource):
-
     @http.required_acl('auth.policies.create')
     def post(self):
         schema = PolicySchema()
@@ -44,7 +42,6 @@ class Policies(_BasePolicyRessource):
 
 
 class Policy(_BasePolicyRessource):
-
     @http.required_acl('auth.policies.{policy_uuid}.read')
     def get(self, policy_uuid):
         scoping_tenant = Tenant.autodetect()
@@ -71,11 +68,12 @@ class Policy(_BasePolicyRessource):
 
 
 class PolicyTemplate(_BasePolicyRessource):
-
     @http.required_acl('auth.policies.{policy_uuid}.edit')
     def delete(self, policy_uuid, template):
         scoping_tenant = Tenant.autodetect()
-        self.policy_service.delete_acl_template(policy_uuid, template, scoping_tenant.uuid)
+        self.policy_service.delete_acl_template(
+            policy_uuid, template, scoping_tenant.uuid
+        )
         return '', 204
 
     @http.required_acl('auth.policies.{policy_uuid}.edit')

@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -15,7 +15,6 @@ AdminUserEmailPutSchema = new_email_put_schema('admin')
 
 
 class _EmailUpdate(http.AuthResource):
-
     def __init__(self, user_service):
         self.user_service = user_service
 
@@ -48,15 +47,17 @@ class UserEmailUpdate(_EmailUpdate):
 
 
 class UserEmailConfirm(http.AuthResource):
-
     def __init__(self, email_service, user_service):
         self.email_service = email_service
         self.user_service = user_service
 
     @http.required_acl('auth.users.{user_uuid}.emails.{email_uuid}.confirm.read')
     def get(self, user_uuid, email_uuid):
-        logger.debug('sending a new email confirmation user_uuid: %s email_uuid: %s',
-                     user_uuid, email_uuid)
+        logger.debug(
+            'sending a new email confirmation user_uuid: %s email_uuid: %s',
+            user_uuid,
+            email_uuid,
+        )
 
         user = self.user_service.get_user(user_uuid)
         email = self._get_email_details(user, email_uuid)

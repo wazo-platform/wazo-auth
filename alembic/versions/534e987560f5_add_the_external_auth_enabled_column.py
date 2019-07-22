@@ -5,13 +5,13 @@ Revises: 28d461e6fb86
 
 """
 
-# revision identifiers, used by Alembic.
-revision = '534e987560f5'
-down_revision = '28d461e6fb86'
-
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.schema import Column
+
+# revision identifiers, used by Alembic.
+revision = '534e987560f5'
+down_revision = '28d461e6fb86'
 
 
 TABLE = 'auth_external_auth_type'

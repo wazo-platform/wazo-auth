@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import post_load, validates_schema, ValidationError
@@ -53,7 +53,9 @@ def new_email_put_schema(user_type):
             if not emails:
                 return
 
-            addresses = list(email['address'] for email in emails if email.get('address'))
+            addresses = list(
+                email['address'] for email in emails if email.get('address')
+            )
             if len(addresses) != len(set(addresses)):
                 raise ValidationError('The same address can only be used once')
 
