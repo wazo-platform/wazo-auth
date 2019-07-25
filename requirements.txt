@@ -14,7 +14,7 @@ psycopg2==2.7.7
 python-consul==0.7.1
 python-ldap==3.1.0
 pyyaml==3.13
-requests==0.4.13
+requests==2.21.0
 requests-oauthlib
 sqlalchemy==1.2.18
 stevedore==1.29.0
