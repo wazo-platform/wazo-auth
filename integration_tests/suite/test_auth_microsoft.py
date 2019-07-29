@@ -3,7 +3,6 @@
 
 import time
 import requests
-import os
 
 from hamcrest import (
     assert_that,
