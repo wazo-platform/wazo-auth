@@ -4,6 +4,8 @@
 import logging
 
 from flask import request
+import marshmallow
+
 from wazo_auth import exceptions, http
 from . import schemas
 
@@ -28,9 +30,10 @@ class Tokens(BaseResource):
             login = ''
             password = ''
 
-        args, error = schemas.TokenRequestSchema().load(request.get_json(force=True))
-        if error:
-            return http._error(400, str(error))
+        try:
+            args = schemas.TokenRequestSchema().load(request.get_json(force=True))
+        except marshmallow.ValidationError as e:
+            return http._error(400, str(e.messages))
 
         session_type = request.headers.get('Wazo-Session-Type', '').lower()
         args['mobile'] = True if session_type == 'mobile' else False

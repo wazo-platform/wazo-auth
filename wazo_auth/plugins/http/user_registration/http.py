@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
+import marshmallow
+
 from wazo_auth import exceptions, http
 from wazo_auth.schemas import TenantSchema
 from .schemas import UserRegisterPostSchema
@@ -15,11 +17,12 @@ class Register(http.ErrorCatchingResource):
         self.user_service = user_service
 
     def post(self):
-        args, errors = UserRegisterPostSchema().load(request.get_json())
-        if errors:
-            raise exceptions.UserParamException.from_errors(errors)
+        try:
+            args = UserRegisterPostSchema().load(request.get_json())
+        except marshmallow.ValidationError as e:
+            raise exceptions.UserParamException.from_errors(e.messages)
 
-        tenant_body = TenantSchema().load({'name': args['username']}).data
+        tenant_body = TenantSchema().load({'name': args['username']})
         tenant = self.tenant_service.new(**tenant_body)
         result = self.user_service.new_user(enabled=True, tenant_uuid=tenant['uuid'], **args)
 

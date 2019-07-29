@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import current_app, request
+import marshmallow
+
 from wazo_auth import exceptions, http, schemas
 from wazo_auth.flask_helpers import Tenant
 
@@ -14,9 +16,10 @@ class External(http.AuthResource):
     @http.required_acl('auth.users.{user_uuid}.external.read')
     def get(self, user_uuid):
         ListSchema = schemas.new_list_schema('type')
-        list_params, errors = ListSchema().load(request.args)
-        if errors:
-            raise exceptions.InvalidListParamException(errors)
+        try:
+            list_params = ListSchema().load(request.args)
+        except marshmallow.ValidationError as e:
+            raise exceptions.InvalidListParamException(e.messages)
 
         items = self.external_auth_service.list_(user_uuid, **list_params)
         total = self.external_auth_service.count(user_uuid, filtered=False, **list_params)

@@ -1,9 +1,11 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
 from flask import request
+import marshmallow
+
 from wazo_auth import exceptions, http
 
 from .exceptions import EmailAlreadyConfirmedException
@@ -20,9 +22,10 @@ class _EmailUpdate(http.AuthResource):
         self.user_service = user_service
 
     def put(self, user_uuid):
-        args, errors = self.EmailPutSchema().load(request.get_json())
-        if errors:
-            raise exceptions.EmailUpdateException(errors)
+        try:
+            args = self.EmailPutSchema().load(request.get_json())
+        except marshmallow.ValidationError as e:
+            raise exceptions.EmailUpdateException(e.messages)
 
         logger.debug('updating user %s emails: %s', user_uuid, args)
         result = self.user_service.update_emails(user_uuid, args)

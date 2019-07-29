@@ -8,6 +8,7 @@ from datetime import datetime
 from threading import Thread
 
 from flask import request
+import marshmallow
 from requests_oauthlib import OAuth2Session
 from wazo_auth import http
 from wazo_auth.exceptions import UserParamException
@@ -39,9 +40,10 @@ class MicrosoftAuth(http.AuthResource):
 
     @http.required_acl('auth.users.{user_uuid}.external.microsoft.create')
     def post(self, user_uuid):
-        args, errors = MicrosoftSchema().load(request.get_json())
-        if errors:
-            raise UserParamException.from_errors(errors)
+        try:
+            args = MicrosoftSchema().load(request.get_json())
+        except marshmallow.ValidationError as e:
+            raise UserParamException.from_errors(e.messages)
 
         client_id, client_secret = self._get_external_config()
         self.user_service.get_user(user_uuid)

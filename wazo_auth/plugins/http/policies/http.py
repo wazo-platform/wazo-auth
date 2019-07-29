@@ -1,7 +1,9 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
+import marshmallow
+
 from wazo_auth import exceptions, http, schemas
 from wazo_auth.flask_helpers import Tenant
 from .schemas import PolicySchema
@@ -18,9 +20,10 @@ class Policies(_BasePolicyRessource):
     @http.required_acl('auth.policies.create')
     def post(self):
         schema = PolicySchema()
-        body, errors = schema.load(request.get_json(force=True))
-        if errors:
-            for field in errors:
+        try:
+            body = schema.load(request.get_json(force=True))
+        except marshmallow.ValidationError as e:
+            for field in e.messages:
                 raise exceptions.InvalidInputException(field)
 
         body['tenant_uuid'] = Tenant.autodetect().uuid
@@ -32,9 +35,10 @@ class Policies(_BasePolicyRessource):
     def get(self):
         scoping_tenant = Tenant.autodetect()
         ListSchema = schemas.new_list_schema('name')
-        list_params, errors = ListSchema().load(request.args)
-        if errors:
-            raise exceptions.InvalidListParamException(errors)
+        try:
+            list_params = ListSchema().load(request.args)
+        except marshmallow.ValidationError as e:
+            raise exceptions.InvalidListParamException(e.messages)
 
         list_params['scoping_tenant_uuid'] = scoping_tenant.uuid
 
@@ -60,9 +64,10 @@ class Policy(_BasePolicyRessource):
     @http.required_acl('auth.policies.{policy_uuid}.edit')
     def put(self, policy_uuid):
         scoping_tenant = Tenant.autodetect()
-        body, errors = PolicySchema().load(request.get_json(force=True))
-        if errors:
-            for field in errors:
+        try:
+            body = PolicySchema().load(request.get_json(force=True))
+        except marshmallow.ValidationError as e:
+            for field in e.messages:
                 raise exceptions.InvalidInputException(field)
 
         body['scoping_tenant_uuid'] = scoping_tenant.uuid

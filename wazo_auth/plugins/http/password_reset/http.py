@@ -4,6 +4,8 @@
 import logging
 
 from flask import request
+import marshmallow
+
 from xivo.auth_verifier import extract_token_id_from_query_or_header, Unauthorized
 from wazo_auth import http
 from .schemas import PasswordResetPostParameters, PasswordResetQueryParameters
@@ -20,9 +22,10 @@ class PasswordReset(http.ErrorCatchingResource):
         self.user_service = user_service
 
     def get(self):
-        args, errors = PasswordResetQueryParameters().load(request.args)
-        if errors:
-            raise PasswordResetException.from_errors(errors)
+        try:
+            args = PasswordResetQueryParameters().load(request.args)
+        except marshmallow.ValidationError as e:
+            raise PasswordResetException.from_errors(e.messages)
 
         logger.debug('resetting password for %s', args['username'] or args['email_address'])
         search_params = {k: v for k, v in args.items() if v}
@@ -49,9 +52,10 @@ class PasswordReset(http.ErrorCatchingResource):
         if not self.auth_client.token.is_valid(token_id, required_acl=acl):
             raise Unauthorized(token_id)
 
-        args, errors = PasswordResetPostParameters().load(request.get_json())
-        if errors:
-            raise PasswordResetException.from_errors(errors)
+        try:
+            args = PasswordResetPostParameters().load(request.get_json())
+        except marshmallow.ValidationError as e:
+            raise PasswordResetException.from_errors(e.messages)
 
         if args['password'] is None:
             logger.debug('resetting password for %s', user_uuid)

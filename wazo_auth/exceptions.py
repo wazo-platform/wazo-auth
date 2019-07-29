@@ -141,7 +141,10 @@ class _BaseParamException(APIException):
             if not isinstance(infos, list):
                 infos = [infos]
             for info in infos:
+                if isinstance(info, (str, bytes)):
+                    info = {'message': info}
                 return cls(info['message'], {field: info})
+
 
 
 class GroupParamException(_BaseParamException):

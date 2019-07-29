@@ -1,9 +1,11 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
 from flask import request
+import marshmallow
+
 from wazo_auth import exceptions, http, schemas
 from wazo_auth.flask_helpers import Tenant
 
@@ -50,9 +52,10 @@ class GroupPolicies(_BaseResource):
         self.group_service.assert_group_in_subtenant(scoping_tenant.uuid, group_uuid)
 
         ListSchema = schemas.new_list_schema('name')
-        list_params, errors = ListSchema().load(request.args)
-        if errors:
-            raise exceptions.InvalidListParamException(errors)
+        try:
+            list_params = ListSchema().load(request.args)
+        except marshmallow.ValidationError as e:
+            raise exceptions.InvalidListParamException(e.messages)
 
         return {
             'items': self.group_service.list_policies(group_uuid, **list_params),
