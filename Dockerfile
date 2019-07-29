@@ -1,4 +1,4 @@
-FROM python:3.5-buster
+FROM python:3.7-buster
 MAINTAINER Wazo Maintainers <dev@wazo.community>
 
 ADD . /usr/src/wazo-auth
