@@ -35,7 +35,7 @@ paths:
     delete:
       operationId: user_delete_session
       tags:
-        - user
+        - users
         - sessions
       security:
       - wazo_auth_token: []
