@@ -283,7 +283,7 @@ class UnknownPolicyException(TokenServiceException):
         self._policy_uuid = policy_uuid
 
     def __str__(self):
-        return 'No such policy "%s"'.format(self._policy_uuid)
+        return 'No such policy {}'.format(self._policy_uuid)
 
 
 class UnknownTokenException(TokenServiceException):
