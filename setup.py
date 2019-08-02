@@ -20,6 +20,7 @@ setup(
     zip_safe=False,
     package_data={
         'wazo_auth.plugins.http': ['*/api.yml'],
+        'wazo_auth.plugins.external_auth': ['*/api.yml'],
     },
     scripts=[
         'bin/wazo-auth-init-db',
