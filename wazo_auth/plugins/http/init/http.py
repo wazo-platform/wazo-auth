@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -23,7 +23,7 @@ def delete_after_usage(filename):
         raise exceptions.AuthenticationFailedException()
 
     # Do not wrap this call in a try finally
-    # We do not want to erase the key if the operaion fail
+    # We do not want to erase the key if the operation fails
     yield key
 
     try:

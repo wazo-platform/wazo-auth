@@ -1,3 +1,2 @@
 etc/nginx/locations/https-enabled
 etc/wazo-auth/conf.d
-var/lib/wazo-auth/templates
