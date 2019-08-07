@@ -1,0 +1,5 @@
+google:
+  authorization_base_url: 'https://accounts.google.com/o/oauth2/v2/auth'
+  redirect_uri: 'http://oauth2sync:80/google/authorize'
+  token_url: 'http://oauth2sync:80/google/token'
+  websocket_host: 'ws://oauth2sync:80'

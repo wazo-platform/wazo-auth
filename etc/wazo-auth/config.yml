@@ -55,6 +55,7 @@ enabled_backend_plugins:
   ldap_user: false
 
 enabled_external_auth_plugins:
+  google: true
   microsoft: true
   mobile: true
 
@@ -66,6 +67,16 @@ microsoft:
         'Contacts.Read'
     ]
   token_url: 'https://login.microsoftonline.com/common/oauth2/v2.0/token'
+  websocket_host: 'wss://oauth.wazo.io'
+
+google:
+  authorization_base_url: 'https://accounts.google.com/o/oauth2/v2/auth'
+  redirect_uri: 'https://oauth.wazo.io/google/authorize'
+  scope: [
+        'https://www.googleapis.com/auth/userinfo.profile',
+        'https://www.googleapis.com/auth/contacts'
+    ]
+  token_url: 'https://www.googleapis.com/oauth2/v4/token'
   websocket_host: 'wss://oauth.wazo.io'
 
 amqp:
