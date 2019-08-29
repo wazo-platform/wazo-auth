@@ -8,7 +8,7 @@ X-Python-Version: >= 3.5
 
 Package: wazo-auth
 Architecture: all
-Depends: ${python:Depends},
+Depends: ${python3:Depends},
          ${misc:Depends},
          adduser,
          alembic (>= 0.8.8),
