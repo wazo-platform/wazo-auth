@@ -1,10 +1,19 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
 from uuid import UUID
-from hamcrest import assert_that, empty, equal_to, has_entries
+from hamcrest import (
+    assert_that,
+    calling,
+    equal_to,
+    has_entries,
+    has_property,
+)
 from mock import ANY
+
+import marshmallow
+from xivo_test_helpers.hamcrest.raises import raises
 from werkzeug.datastructures import MultiDict
 
 from .. import schemas
@@ -25,10 +34,9 @@ class TestListSchema(TestCase):
             ('username', 'foobaz'),
         ])
 
-        list_params, errors = self.Schema().load(args)
+        list_params = self.Schema().load(args)
 
         assert_that(list_params, has_entries('username', 'foobaz', 'search', 'foobar'))
-        assert_that(errors, empty())
 
     def test_that_errors_are_not_ignored_by_the_arbitrary_field_validator(self):
         args = MultiDict([
@@ -36,9 +44,14 @@ class TestListSchema(TestCase):
             ('search', 'term'),
         ])
 
-        list_params, errors = self.Schema().load(args)
-
-        assert_that(errors, has_entries('direction', ANY))
+        assert_that(
+            calling(self.Schema().load).with_args(args),
+            raises(marshmallow.ValidationError, has_property(
+                "messages", has_entries(
+                    direction=ANY
+                )
+            ))
+        )
 
 
 class _Address:
@@ -68,7 +81,7 @@ class TenantSchema(TestCase):
         uuid = '9b644581-5799-4d36-9306-50483a4d4f28'
         tenant = _Tenant(uuid=uuid)
 
-        result = self.schema.dump(tenant).data
+        result = self.schema.dump(tenant)
 
         assert_that(result, equal_to({
             'uuid': uuid,
@@ -90,7 +103,7 @@ class TenantSchema(TestCase):
         address = _Address(line_1='here', country='Canada')
         tenant = _Tenant(uuid=uuid, address=address)
 
-        result = self.schema.dump(tenant).data
+        result = self.schema.dump(tenant)
 
         assert_that(result, has_entries(
             uuid=uuid,
@@ -108,7 +121,7 @@ class TenantSchema(TestCase):
     def test_that_a_null_contact_is_accepted(self):
         body = {'contact': None}
 
-        result = self.schema.load(body).data
+        result = self.schema.load(body)
 
         assert_that(result, has_entries(contact_uuid=None))
 
@@ -116,14 +129,14 @@ class TenantSchema(TestCase):
         contact = 'e04f397c-0d52-4a83-aa8e-7ee374e9eed3'
         tenant = _Tenant(contact=contact)
 
-        result = self.schema.dump(tenant).data
+        result = self.schema.dump(tenant)
 
         assert_that(result, has_entries(contact=contact))
 
     def test_uuid(self):
         body = {'name': 'foobar'}
 
-        result = self.schema.load(body).data
+        result = self.schema.load(body)
 
         assert_that(
             result,
@@ -135,7 +148,7 @@ class TenantSchema(TestCase):
 
         uuid_ = body['uuid'] = 'c5b146ac-a442-4d65-a087-09a5f943ca53'
 
-        result = self.schema.load(body).data
+        result = self.schema.load(body)
 
         assert_that(
             result,

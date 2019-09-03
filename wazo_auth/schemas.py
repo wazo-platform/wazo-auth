@@ -1,12 +1,14 @@
 # Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from marshmallow import Schema, fields, pre_load, post_dump, post_load
+from marshmallow import Schema, fields, pre_load, post_dump, post_load, EXCLUDE
 from xivo.mallow import fields as xfields
 from xivo.mallow import validate
 
 
 class BaseSchema(Schema):
+    class Meta:
+        unknown = EXCLUDE
 
     @pre_load
     def ensure_dict(self, data):
@@ -28,18 +30,21 @@ class TenantAddress(BaseSchema):
     zip_code = xfields.String(validate=validate.Length(min=1, max=16), missing=None, default=None)
 
 
+empty_tenant_address = TenantAddress().dump({})
+
 class TenantSchema(BaseSchema):
 
     uuid = xfields.UUID(missing=None)
     parent_uuid = xfields.UUID(dump_only=True)
     name = xfields.String(validate=validate.Length(min=1, max=128), default=None, missing=None)
-    contact_uuid = xfields.UUID(load_from='contact', dump_to='contact', missing=None, default=None)
+    contact_uuid = xfields.UUID(data_key='contact', missing=None, default=None)
     phone = xfields.String(validate=validate.Length(min=1, max=32), default=None, missing=None)
-    address = xfields.Nested(TenantAddress, missing=dict, default=dict, allow_none=False)
+    address = xfields.Nested(TenantAddress, missing=empty_tenant_address,
+                             default=empty_tenant_address, allow_none=False)
 
     @post_dump
     def add_empty_address(self, data):
-        data['address'] = data['address'] or TenantAddress().dump(data['address']).data
+        data['address'] = data['address'] or empty_tenant_address
         return data
 
 

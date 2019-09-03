@@ -1,9 +1,11 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
 from flask import request
+import marshmallow
+
 from wazo_auth import exceptions, http, schemas
 from wazo_auth.flask_helpers import Tenant
 
@@ -46,9 +48,10 @@ class GroupUsers(_BaseResource):
     @http.required_acl('auth.groups.{group_uuid}.users.read')
     def get(self, group_uuid):
         ListSchema = schemas.new_list_schema('username')
-        list_params, errors = ListSchema().load(request.args)
-        if errors:
-            raise exceptions.InvalidListParamException(errors)
+        try:
+            list_params = ListSchema().load(request.args)
+        except marshmallow.ValidationError as e:
+            raise exceptions.InvalidListParamException(e.messages)
 
         return {
             'items': self.group_service.list_users(group_uuid, **list_params),
@@ -69,9 +72,10 @@ class UserGroups(http.AuthResource):
         self.user_service.assert_user_in_subtenant(scoping_tenant.uuid, user_uuid)
 
         ListSchema = schemas.new_list_schema('name')
-        list_params, errors = ListSchema().load(request.args)
-        if errors:
-            raise exceptions.InvalidListParamException(errors)
+        try:
+            list_params = ListSchema().load(request.args)
+        except marshmallow.ValidationError as e:
+            raise exceptions.InvalidListParamException(e.messages)
 
         return {
             'items': self.user_service.list_groups(user_uuid, **list_params),

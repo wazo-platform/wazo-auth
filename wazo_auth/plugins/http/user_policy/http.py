@@ -1,9 +1,11 @@
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
 from flask import request
+import marshmallow
+
 from wazo_auth import http, schemas, exceptions
 
 logger = logging.getLogger(__name__)
@@ -21,9 +23,10 @@ class UserPolicies(_BaseUserPolicyResource):
     def get(self, user_uuid):
         logger.debug('listing user %s policies', user_uuid)
         ListSchema = schemas.new_list_schema('name')
-        list_params, errors = ListSchema().load(request.args)
-        if errors:
-            raise exceptions.InvalidListParamException(errors)
+        try:
+            list_params = ListSchema().load(request.args)
+        except marshmallow.ValidationError as e:
+            raise exceptions.InvalidListParamException(e.messages)
 
         return {
             'items': self.user_service.list_policies(user_uuid, **list_params),

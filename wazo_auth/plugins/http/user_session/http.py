@@ -4,6 +4,8 @@
 import logging
 
 from flask import request
+import marshmallow
+
 from wazo_auth import exceptions, http, schemas
 from wazo_auth.flask_helpers import Tenant
 
@@ -22,9 +24,10 @@ class UserSessions(http.AuthResource):
         self.user_service.assert_user_in_subtenant(scoping_tenant.uuid, user_uuid)
 
         ListSchema = schemas.new_list_schema()
-        list_params, errors = ListSchema().load(request.args)
-        if errors:
-            raise exceptions.InvalidListParamException(errors)
+        try:
+            list_params = ListSchema().load(request.args)
+        except marshmallow.ValidationError as e:
+            raise exceptions.InvalidListParamException(e.messages)
 
         return {
             'items': self.user_service.list_sessions(user_uuid, **list_params),

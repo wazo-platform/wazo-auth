@@ -12,6 +12,11 @@ from wazo_auth.services.helpers import BaseService
 
 EmailDestination = namedtuple('EmailDestination', ['name', 'address'])
 
+# NOTE(sileht): default socket timeout is None on linux
+# Our client http client is 10s, since sending mail is currently synchronous
+# we have to be sure we return before the 10s, so we set the SMTP timeout.
+SMTP_TIMEOUT = 4
+
 
 class EmailService(BaseService):
 
@@ -66,11 +71,9 @@ class EmailService(BaseService):
         msg['From'] = email_utils.formataddr(from_)
         msg['Subject'] = subject
 
-        server = smtplib.SMTP(self._smtp_host, self._smtp_port)
-        try:
+        with smtplib.SMTP(self._smtp_host, self._smtp_port,
+                          timeout=SMTP_TIMEOUT) as server:
             server.sendmail(from_.address, [to.address], msg.as_string())
-        finally:
-            server.close()
 
     def _new_email_confirmation_token(self, email_uuid):
         acl = 'auth.emails.{}.confirm.edit'.format(email_uuid)

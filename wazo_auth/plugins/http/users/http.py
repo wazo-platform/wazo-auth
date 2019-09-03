@@ -1,8 +1,10 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 from flask import request
+import marshmallow
+
 from wazo_auth import exceptions, http, schemas
 from wazo_auth.flask_helpers import Tenant
 
@@ -33,9 +35,10 @@ class User(BaseUserService):
     @http.required_acl('auth.users.{user_uuid}.edit')
     def put(self, user_uuid):
         scoping_tenant = Tenant.autodetect()
-        args, errors = UserPutSchema().load(request.get_json())
-        if errors:
-            raise exceptions.UserParamException.from_errors(errors)
+        try:
+            args = UserPutSchema().load(request.get_json())
+        except marshmallow.ValidationError as e:
+            raise exceptions.UserParamException.from_errors(e.messages)
 
         result = self.user_service.update(scoping_tenant.uuid, user_uuid, **args)
         return result, 200
@@ -45,9 +48,10 @@ class UserPassword(BaseUserService):
 
     @http.required_acl('auth.users.{user_uuid}.password.edit')
     def put(self, user_uuid):
-        args, errors = ChangePasswordSchema().load(request.get_json())
-        if errors:
-            raise exceptions.PasswordChangeException.from_errors(errors)
+        try:
+            args = ChangePasswordSchema().load(request.get_json())
+        except marshmallow.ValidationError as e:
+            raise exceptions.PasswordChangeException.from_errors(e.messages)
         self.user_service.change_password(user_uuid, **args)
         return '', 204
 
@@ -61,9 +65,10 @@ class Users(BaseUserService):
     def get(self):
         scoping_tenant = Tenant.autodetect()
         ListSchema = schemas.new_list_schema('username')
-        list_params, errors = ListSchema().load(request.args)
-        if errors:
-            raise exceptions.InvalidListParamException(errors)
+        try:
+            list_params = ListSchema().load(request.args)
+        except marshmallow.ValidationError as e:
+            raise exceptions.InvalidListParamException(e.messages)
 
         users = self.user_service.list_users(scoping_tenant_uuid=scoping_tenant.uuid, **list_params)
         total = self.user_service.count_users(scoping_tenant.uuid, filtered=False, **list_params)
@@ -79,10 +84,11 @@ class Users(BaseUserService):
 
     @http.required_acl('auth.users.create')
     def post(self):
-        args, errors = UserPostSchema().load(request.get_json())
         tenant = Tenant.autodetect()
-        if errors:
-            raise exceptions.UserParamException.from_errors(errors)
+        try:
+            args = UserPostSchema().load(request.get_json())
+        except marshmallow.ValidationError as e:
+            raise exceptions.UserParamException.from_errors(e.messages)
         logger.debug('creating user in tenant: %s', tenant.uuid)
         result = self.user_service.new_user(email_confirmed=True, tenant_uuid=tenant.uuid, **args)
         return result, 200

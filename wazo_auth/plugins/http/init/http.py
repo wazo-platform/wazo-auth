@@ -1,11 +1,13 @@
 # Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from contextlib import contextmanager
 import logging
 import os
 
-from contextlib import contextmanager
 from flask import request
+import marshmallow
+
 from wazo_auth import exceptions, http
 from .schemas import InitPostSchema
 
@@ -41,9 +43,10 @@ class Init(http.ErrorCatchingResource):
         self._policy_name = config['init_policy_name']
 
     def post(self):
-        args, errors = InitPostSchema().load(request.get_json())
-        if errors:
-            raise exceptions.InitParamException.from_errors(errors)
+        try:
+            args = InitPostSchema().load(request.get_json())
+        except marshmallow.ValidationError as e:
+            raise exceptions.InitParamException.from_errors(e.messages)
 
         with delete_after_usage(self._init_key_filename) as key:
             if args.pop('key') != key:

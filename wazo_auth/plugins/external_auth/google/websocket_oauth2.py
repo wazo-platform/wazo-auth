@@ -30,30 +30,30 @@ class WebSocketOAuth2(Thread):
         self.user_uuid = user_uuid
 
         url = '{}/ws/{}'.format(self.host, state)
-        ws = websocket.WebSocketApp(
+        self.ws = websocket.WebSocketApp(
             url,
             on_message=self._on_message,
             on_error=self._on_error,
             on_close=self._on_close)
         logger.debug('Opening WebSocketOAuth2 %s', url)
         try:
-            ws.run_forever()
+            self.ws.run_forever()
         finally:
-            ws.close()
+            self.ws.close()
 
-    def _on_message(self, ws, message):
+    def _on_message(self, message):
         try:
             logger.debug("Confirmation has been received on websocketOAuth, message : %s", message)
             msg = json.loads(message)
-            ws.close()
+            self.ws.close()
             self.create_first_token(self.user_uuid, msg.get('code'))
         except Exception as e:
             logger.error('error when receiving websocket event %s', e)
 
-    def _on_error(self, ws, error):
+    def _on_error(self, error):
         logger.error(error)
 
-    def _on_close(self, ws):
+    def _on_close(self):
         logger.debug("WebsocketOAuth closed")
 
     def create_first_token(self, user_uuid, code):

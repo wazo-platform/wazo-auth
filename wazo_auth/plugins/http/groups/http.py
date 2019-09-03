@@ -1,7 +1,8 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
+import marshmallow
 from wazo_auth import exceptions, http, schemas
 from wazo_auth.flask_helpers import Tenant
 
@@ -31,9 +32,10 @@ class Group(_BaseGroupResource):
 
         self.group_service.assert_group_in_subtenant(scoping_tenant.uuid, group_uuid)
 
-        args, errors = schemas.GroupRequestSchema().load(request.get_json())
-        if errors:
-            raise exceptions.GroupParamException.from_errors(errors)
+        try:
+            args = schemas.GroupRequestSchema().load(request.get_json())
+        except marshmallow.ValidationError as e:
+            raise exceptions.GroupParamException.from_errors(e.messages)
 
         group = self.group_service.update(group_uuid, **args)
         return group, 200
@@ -45,9 +47,10 @@ class Groups(_BaseGroupResource):
     def get(self):
         scoping_tenant = Tenant.autodetect()
         ListSchema = schemas.new_list_schema('name')
-        list_params, errors = ListSchema().load(request.args)
-        if errors:
-            raise exceptions.InvalidListParamException(errors)
+        try:
+            list_params = ListSchema().load(request.args)
+        except marshmallow.ValidationError as e:
+            raise exceptions.InvalidListParamException(e.messages)
 
         list_params['scoping_tenant_uuid'] = scoping_tenant.uuid
 
@@ -65,9 +68,10 @@ class Groups(_BaseGroupResource):
 
     @http.required_acl('auth.groups.create')
     def post(self):
-        args, errors = schemas.GroupRequestSchema().load(request.get_json())
-        if errors:
-            raise exceptions.GroupParamException.from_errors(errors)
+        try:
+            args = schemas.GroupRequestSchema().load(request.get_json())
+        except marshmallow.ValidationError as e:
+            raise exceptions.GroupParamException.from_errors(e.messages)
 
         args['tenant_uuid'] = Tenant.autodetect().uuid
         result = self.group_service.create(**args)

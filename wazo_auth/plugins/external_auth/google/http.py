@@ -8,6 +8,7 @@ from datetime import datetime
 from threading import Thread
 
 from flask import request
+from marshmallow import ValidationError
 from requests_oauthlib import OAuth2Session
 from wazo_auth import http
 from wazo_auth.exceptions import UserParamException
@@ -41,10 +42,10 @@ class GoogleAuth(http.AuthResource):
 
     @http.required_acl('auth.users.{user_uuid}.external.google.create')
     def post(self, user_uuid):
-        args, errors = GoogleSchema().load(request.get_json())
-
-        if errors:
-            raise UserParamException.from_errors(errors)
+        try:
+            args = GoogleSchema().load(request.get_json())
+        except ValidationError as e:
+            raise UserParamException.from_errors(e.messages)
 
         client_id, client_secret = self._get_external_config()
         self.user_service.get_user(user_uuid)

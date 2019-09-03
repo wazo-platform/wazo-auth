@@ -1,7 +1,9 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
+import marshmallow
+
 from wazo_auth import exceptions, http, schemas
 from wazo_auth.flask_helpers import Tenant
 
@@ -18,9 +20,10 @@ class TenantUsers(_BaseResource):
     def get(self, tenant_uuid):
         scoping_tenant = Tenant.autodetect()
         ListSchema = schemas.new_list_schema('username')
-        list_params, errors = ListSchema().load(request.args)
-        if errors:
-            raise exceptions.InvalidListParamException(errors)
+        try:
+            list_params = ListSchema().load(request.args)
+        except marshmallow.ValidationError as e:
+            raise exceptions.InvalidListParamException(e.messages)
 
         self.tenant_service.assert_tenant_under(scoping_tenant.uuid, tenant_uuid)
 
@@ -40,9 +43,10 @@ class UserTenants(http.AuthResource):
     def get(self, user_uuid):
         scoping_tenant = Tenant.autodetect()
         ListSchema = schemas.new_list_schema('name')
-        list_params, errors = ListSchema().load(request.args)
-        if errors:
-            raise exceptions.InvalidListParamException(errors)
+        try:
+            list_params = ListSchema().load(request.args)
+        except marshmallow.ValidationError as e:
+            raise exceptions.InvalidListParamException(e.messages)
 
         self.user_service.assert_user_in_subtenant(scoping_tenant.uuid, user_uuid)
 

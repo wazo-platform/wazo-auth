@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
+import marshmallow
 
 from wazo_auth import exceptions, http, schemas
 from wazo_auth.flask_helpers import Tenant
@@ -16,9 +17,10 @@ class Sessions(http.AuthResource):
     def get(self):
         scoping_tenant = Tenant.autodetect()
         ListSchema = schemas.new_list_schema()
-        list_params, errors = ListSchema().load(request.args)
-        if errors:
-            raise exceptions.InvalidListParamException(errors)
+        try:
+            list_params = ListSchema().load(request.args)
+        except marshmallow.ValidationError as e:
+            raise exceptions.InvalidListParamException(e.messages)
 
         list_params['scoping_tenant_uuid'] = scoping_tenant.uuid
 

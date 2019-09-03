@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, text
@@ -139,7 +139,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
             def to_dict(tenant, address):
                 tenant.address = address
-                return schema.dump(tenant).data
+                return schema.dump(tenant)
 
             return [to_dict(*row) for row in query.all()]
 

@@ -5,6 +5,7 @@
 import logging
 
 from flask import request
+import marshmallow
 from xivo.mallow import fields
 
 from wazo_auth import exceptions, http, schemas
@@ -55,9 +56,10 @@ class MobileAuth(http.AuthResource):
 
     @http.required_acl('auth.users.{user_uuid}.external.mobile.create')
     def post(self, user_uuid):
-        args, errors = MobileSchema().load(request.get_json())
-        if errors:
-            raise exceptions.UserParamException.from_errors(errors)
+        try:
+            args = MobileSchema().load(request.get_json())
+        except marshmallow.ValidationError as e:
+            raise exceptions.UserParamException.from_errors(e.messages)
 
         logger.info('Token created for User(%s) in plugin external mobile', str(user_uuid))
         self.external_auth_service.create(user_uuid, self.auth_type, args)

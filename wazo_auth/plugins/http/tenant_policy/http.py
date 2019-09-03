@@ -1,9 +1,11 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
 from flask import request
+import marshmallow
+
 from wazo_auth import exceptions, http, schemas
 from wazo_auth.flask_helpers import Tenant
 
@@ -20,9 +22,10 @@ class TenantPolicies(http.AuthResource):
     def get(self, tenant_uuid):
         scoping_tenant = Tenant.autodetect()
         ListSchema = schemas.new_list_schema('name')
-        list_params, errors = ListSchema().load(request.args)
-        if errors:
-            raise exceptions.InvalidListParamException(errors)
+        try:
+            list_params = ListSchema().load(request.args)
+        except marshmallow.ValidationError as e:
+            raise exceptions.InvalidListParamException(e.messages)
 
         list_params['scoping_tenant_uuid'] = scoping_tenant.uuid
         total = self.tenant_service.count_policies(tenant_uuid, filtered=False, **list_params)

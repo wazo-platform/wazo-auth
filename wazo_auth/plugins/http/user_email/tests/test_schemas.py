@@ -1,15 +1,21 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
 from hamcrest import (
     assert_that,
+    calling,
     contains,
     contains_inanyorder,
     equal_to,
     has_entries,
+    has_entry,
     has_key,
+    has_property,
 )
+from marshmallow import ValidationError, EXCLUDE
+
+from xivo_test_helpers.hamcrest.raises import raises
 
 from ..schemas import new_email_put_schema
 
@@ -30,7 +36,7 @@ class TestUserEmailPutSchema(TestCase):
         params = {'emails': []}
         expected = []
 
-        body, error = self.user_schema.load(params)
+        body = self.user_schema.load(params)
         assert_that(body, equal_to(expected))
 
     def test_confirmed_field(self):
@@ -42,31 +48,56 @@ class TestUserEmailPutSchema(TestCase):
             equal_to({'address': FOUR['address'], 'main': False}),
         )
 
-        body, error = self.user_schema.load(params)
+        body = self.user_schema.load(params)
         assert_that(body, expected)
 
     def test_main_field(self):
         params = {'emails': [ONE, FIVE]}
-        body, error = self.user_schema.load(params)
-        assert_that(error, has_entries(_schema=contains('Only one address should be main')))
+        assert_that(
+            calling(self.user_schema.load).with_args(params),
+            raises(ValidationError, has_property(
+                "messages", has_entries(_schema=contains('Only one address should be main'))
+            ))
+        )
 
         params = {'emails': [TWO]}
-        body, error = self.user_schema.load(params)
-        assert_that(error, has_entries(_schema=contains('At least one address should be main')))
+        assert_that(
+            calling(self.user_schema.load).with_args(params),
+            raises(ValidationError, has_property(
+                "messages", has_entries(_schema=contains('At least one address should be main'))
+            ))
+        )
 
     def test_address_field(self):
         params = {'emails': [ONE, SIX]}
-        body, error = self.user_schema.load(params)
-        field = list(error['emails'][1].keys())[0]
-        assert_that(field, equal_to('address'))
+        assert_that(
+            calling(self.user_schema.load).with_args(params),
+            raises(ValidationError, has_property(
+                "messages", has_entries(
+                    "emails", has_entry(
+                        1, has_key('address')
+                    )
+                )
+            ))
+        )
 
         params = {'emails': [ONE, TWO, TWO]}
-        body, error = self.user_schema.load(params)
-        assert_that(error, has_entries(_schema=contains('The same address can only be used once')))
+        assert_that(
+            calling(self.user_schema.load).with_args(params),
+            raises(ValidationError, has_property(
+                "messages", has_entries(
+                    _schema=contains('The same address can only be used once')
+                )
+            ))
+        )
 
         params = {}
-        body, error = self.user_schema.load(params)
-        assert_that(error, has_key('emails'))
+        assert_that(
+            calling(self.user_schema.load).with_args(params),
+            raises(ValidationError, has_property(
+                "messages", has_key('emails')
+            ))
+        )
 
 
 class TestAdminUserEmailPutSchema(TestCase):
@@ -78,7 +109,7 @@ class TestAdminUserEmailPutSchema(TestCase):
         params = {'emails': []}
         expected = []
 
-        body, error = self.admin_schema.load(params)
+        body = self.admin_schema.load(params)
         assert_that(body, equal_to(expected))
 
     def test_confirmed_field(self):
@@ -90,24 +121,45 @@ class TestAdminUserEmailPutSchema(TestCase):
             has_entries(address=FOUR['address'], confirmed=False),
         )
 
-        body, error = self.admin_schema.load(params)
+        body = self.admin_schema.load(params)
         assert_that(body, expected)
 
     def test_main_field(self):
         params = {'emails': [ONE, FIVE]}
-        body, error = self.admin_schema.load(params)
-        assert_that(error, has_entries(_schema=contains('Only one address should be main')))
+        assert_that(
+            calling(self.admin_schema.load).with_args(params),
+            raises(ValidationError, has_property(
+                "messages", has_entries(_schema=contains('Only one address should be main'))
+            ))
+        )
 
         params = {'emails': [TWO]}
-        body, error = self.admin_schema.load(params)
-        assert_that(error, has_entries(_schema=contains('At least one address should be main')))
+        assert_that(
+            calling(self.admin_schema.load).with_args(params),
+            raises(ValidationError, has_property(
+                "messages", has_entries(_schema=contains('At least one address should be main'))
+            ))
+        )
 
     def test_address_field(self):
         params = {'emails': [ONE, SIX]}
-        body, error = self.admin_schema.load(params)
-        field = list(error['emails'][1].keys())[0]
-        assert_that(field, equal_to('address'))
+        assert_that(
+            calling(self.admin_schema.load).with_args(params),
+            raises(ValidationError, has_property(
+                "messages", has_entries(
+                    "emails", has_entry(
+                        1, has_key('address')
+                    )
+                )
+            ))
+        )
 
         params = {'emails': [ONE, TWO, TWO]}
-        body, error = self.admin_schema.load(params)
-        assert_that(error, has_entries(_schema=contains('The same address can only be used once')))
+        assert_that(
+            calling(self.admin_schema.load).with_args(params),
+            raises(ValidationError, has_property(
+                "messages", has_entries(
+                    _schema=contains('The same address can only be used once')
+                )
+            ))
+        )

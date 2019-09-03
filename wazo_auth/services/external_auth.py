@@ -1,4 +1,4 @@
-# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -7,6 +7,7 @@ import threading
 import websocket
 
 from functools import partial
+import marshmallow
 from xivo_bus.resources.auth import events
 
 from wazo_auth.services.helpers import BaseService
@@ -109,9 +110,12 @@ class ExternalAuthService(BaseService):
             filtered_data = {}
             if Model:
                 data = external_auth.get('data')
-                filtered_data, errors = Model().load(data)
-                if errors:
-                    logger.info('Failed to parse %s data for user %s: %s', auth_type, user_uuid, errors)
+                try:
+                    filtered_data = Model().load(data)
+                except marshmallow.ValidationError as e:
+                    filtered_data = e.valid_data
+                    logger.info('Failed to parse %s data for user %s: %s',
+                                auth_type, user_uuid, e.messages)
             result.append({'type': auth_type, 'data': filtered_data, 'enabled': enabled})
         return result
 

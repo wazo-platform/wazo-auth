@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -6,6 +6,8 @@ import logging
 from flask import request
 from wazo_auth import exceptions, http, schemas
 from wazo_auth.flask_helpers import Tenant as TenantDetector
+
+from marshmallow import ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -36,9 +38,10 @@ class Tenant(BaseResource):
     @http.required_acl('auth.tenants.{tenant_uuid}.edit')
     def put(self, tenant_uuid):
         scoping_tenant = TenantDetector.autodetect()
-        args, errors = schemas.TenantSchema().load(request.get_json())
-        if errors:
-            raise exceptions.TenantParamException.from_errors(errors)
+        try:
+            args = schemas.TenantSchema().load(request.get_json())
+        except ValidationError as e:
+            raise exceptions.TenantParamException.from_errors(e.messages)
 
         result = self.tenant_service.update(scoping_tenant.uuid, tenant_uuid, **args)
         return result, 200
@@ -50,9 +53,10 @@ class Tenants(BaseResource):
     def get(self):
         scoping_tenant = TenantDetector.autodetect()
         ListSchema = schemas.new_list_schema('name')
-        list_params, errors = ListSchema().load(request.args)
-        if errors:
-            raise exceptions.InvalidListParamException(errors)
+        try:
+            list_params = ListSchema().load(request.args)
+        except ValidationError as e:
+            raise exceptions.InvalidListParamException(e.messages)
 
         tenants = self.tenant_service.list_(scoping_tenant.uuid, **list_params)
         total = self.tenant_service.count(scoping_tenant.uuid, filtered=False, **list_params)
@@ -70,9 +74,10 @@ class Tenants(BaseResource):
     def post(self):
         scoping_tenant = TenantDetector.autodetect()
         logger.debug('creating sub-tenant of (%s): %s', scoping_tenant, request.get_json(force=True))
-        args, errors = schemas.TenantSchema().load(request.get_json())
-        if errors:
-            raise exceptions.TenantParamException.from_errors(errors)
+        try:
+            args = schemas.TenantSchema().load(request.get_json())
+        except ValidationError as e:
+            raise exceptions.TenantParamException.from_errors(e.messages)
 
         result = self.tenant_service.new(parent_uuid=scoping_tenant.uuid, **args)
         return result, 200
