@@ -1,8 +1,8 @@
-https://github.com/wazo-pbx/wazo-confd-client/archive/buster.zip
-https://github.com/wazo-pbx/xivo-bus/archive/buster.zip
-https://github.com/wazo-pbx/xivo-lib-rest-client/archive/buster.zip
-https://github.com/wazo-pbx/xivo-dao/archive/buster.zip
-https://github.com/wazo-pbx/xivo-lib-python/archive/buster.zip
+https://github.com/wazo-pbx/wazo-confd-client/archive/master.zip
+https://github.com/wazo-pbx/xivo-bus/archive/master.zip
+https://github.com/wazo-pbx/xivo-lib-rest-client/archive/master.zip
+https://github.com/wazo-pbx/xivo-dao/archive/master.zip
+https://github.com/wazo-pbx/xivo-lib-python/archive/master.zip
 anytree==2.4.3
 cheroot==6.5.4
 flask-cors==3.0.7

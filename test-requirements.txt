@@ -1,6 +1,6 @@
 mock
 nose
 pyhamcrest
-https://github.com/wazo-pbx/xivo-test-helpers/archive/buster.zip
+https://github.com/wazo-pbx/xivo-test-helpers/archive/master.zip
 # for http tests that use stevedore plugins
 -e .
