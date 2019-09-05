@@ -23,6 +23,9 @@ class BaseResource(http.ErrorCatchingResource):
 class Tokens(BaseResource):
 
     def post(self):
+        user_agent = request.headers.get('User-Agent', '')
+        remote_addr = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+
         if request.authorization:
             login = request.authorization.username
             password = request.authorization.password
@@ -46,7 +49,7 @@ class Tokens(BaseResource):
             return http._error(401, 'Authentication Failed')
 
         if not backend.verify_password(login, password, args):
-            logger.debug('Invalid password for user "%s" in backend "%s"', login, backend_name)
+            logger.info('invalid authentication attemps from %s %s', remote_addr, user_agent)
             return http._error(401, 'Authentication Failed')
 
         token = self._token_service.new_token(backend, login, args)
