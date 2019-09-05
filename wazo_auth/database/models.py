@@ -122,6 +122,8 @@ class Token(Base):
     issued_t = Column(Integer)
     expire_t = Column(Integer)
     metadata_ = Column(Text, name='metadata')
+    user_agent = Column(Text)
+    remote_addr = Column(Text)
 
     acls = relationship('ACL')
     session = relationship('Session')
