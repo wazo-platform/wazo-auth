@@ -56,6 +56,8 @@ class TokenService:
             'issued_t': current_time,
             'acls': acls or [],
             'metadata': metadata,
+            'user_agent': args['user_agent'],
+            'remote_addr': args['remote_addr'],
         }
 
         token_uuid, session_uuid = self._dao.token.create(token_payload, session_payload)

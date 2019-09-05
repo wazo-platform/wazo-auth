@@ -45,6 +45,8 @@ class TestTokenDAO(base.DAOTestCase):
                 'id': 42,
                 'msg': 'a string field',
             },
+            'user_agent': 'my-user-agent',
+            'remote_addr': '192.168.1.1',
         }
         session = {}
         token_uuid, session_uuid = self._token_dao.create(body, session)

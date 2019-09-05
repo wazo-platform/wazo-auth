@@ -40,6 +40,8 @@ class Tokens(BaseResource):
 
         session_type = request.headers.get('Wazo-Session-Type', '').lower()
         args['mobile'] = True if session_type == 'mobile' else False
+        args['user_agent'] = user_agent
+        args['remote_addr'] = remote_addr
 
         backend_name = args['backend']
         try:
