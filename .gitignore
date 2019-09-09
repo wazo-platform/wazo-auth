@@ -12,3 +12,4 @@ nosetests.xml
 pep8.txt
 pylint.txt
 pycodestyle.txt
+unit-tests.xml
