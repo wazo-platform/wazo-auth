@@ -132,6 +132,9 @@ class Token(Base):
 class RefreshToken(Base):
 
     __tablename__ = 'auth_refresh_token'
+    __table_args__ = (
+        UniqueConstraint('client_id', 'user_uuid'),
+    )
 
     uuid = Column(String(36), server_default=text('uuid_generate_v4()'), primary_key=True)
     client_id = Column(Text)

@@ -21,6 +21,7 @@ class Token:
     def __init__(
             self, id_, auth_id, xivo_user_uuid, xivo_uuid, issued_t,
             expire_t, acls, metadata, session_uuid, user_agent, remote_addr,
+            refresh_token=None,
     ):
         self.token = id_
         self.auth_id = auth_id
@@ -33,6 +34,7 @@ class Token:
         self.session_uuid = session_uuid
         self.user_agent = user_agent
         self.remote_addr = remote_addr
+        self.refresh_token = refresh_token
 
     def __eq__(self, other):
         return (
@@ -65,7 +67,7 @@ class Token:
         return datetime.utcfromtimestamp(t).isoformat()
 
     def to_dict(self):
-        return {
+        result = {
             'token': self.token,
             'auth_id': self.auth_id,
             'xivo_user_uuid': self.xivo_user_uuid,
@@ -80,6 +82,9 @@ class Token:
             'remote_addr': self.remote_addr,
             'user_agent': self.user_agent,
         }
+        if self.refresh_token:
+            result['refresh_token'] = self.refresh_token
+        return result
 
     def is_expired(self):
         return self.expire_t and time.time() > self.expire_t

@@ -22,7 +22,7 @@ class AuthenticationService:
             return backend, refresh_token_data['login']
         else:
             backend = self._get_backend(args['backend'])
-            login = args.pop('login', '')
+            login = args.get('login', '')
             if not backend.verify_password(login, args.pop('password', ''), args):
                 raise InvalidUsernamePassword(login)
             return backend, login

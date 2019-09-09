@@ -25,6 +25,11 @@ def upgrade():
         Column('backend', sa.Text),
         Column('login', sa.Text),
     )
+    op.create_unique_constraint(
+        'auth_refresh_token_client_id_user_uuid',
+        'auth_refresh_token',
+        ['client_id', 'user_uuid'],
+    )
 
 
 def downgrade():
