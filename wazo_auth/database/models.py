@@ -129,6 +129,17 @@ class Token(Base):
     session = relationship('Session')
 
 
+class RefreshToken(Base):
+
+    __tablename__ = 'auth_refresh_token'
+
+    uuid = Column(String(36), server_default=text('uuid_generate_v4()'), primary_key=True)
+    client_id = Column(Text)
+    user_uuid = Column(String(36), ForeignKey('auth_user.uuid', ondelete='CASCADE'))
+    backend = Column(Text)
+    login = Column(Text)
+
+
 class Session(Base):
 
     __tablename__ = 'auth_session'
