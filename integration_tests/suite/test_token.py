@@ -3,12 +3,15 @@
 
 from hamcrest import (
     assert_that,
+    calling,
     ends_with,
     equal_to,
     has_entries,
     has_key,
+    has_properties,
     not_,
 )
+from xivo_test_helpers.hamcrest.raises import raises
 
 from .helpers.base import WazoAuthTestCase
 
@@ -47,3 +50,20 @@ class TestTokens(WazoAuthTestCase):
         result_2 = self.client.token.new(expiration=1, access_type='offline', client_id=client_id)
 
         assert_that(result_1['refresh_token'], equal_to(result_2['refresh_token']))
+
+    def test_refresh_token_with_the_wrong_client_id(self):
+        client_id = 'my-test'
+
+        result = self.client.token.new(expiration=1, access_type='offline', client_id=client_id)
+        assert_that(result, has_entries(refresh_token=not_(None)))
+
+        refresh_token = result['refresh_token']
+
+        assert_that(
+            calling(self.client.token.new).with_args(
+                expiration=1,
+                refresh_token=refresh_token,
+                client_id='another-client-id',
+            ),
+            raises(Exception).matching(has_properties(response=has_properties(status_code=401)))
+        )
