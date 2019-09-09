@@ -12,12 +12,7 @@ from ..models import RefreshToken
 class RefreshTokenDAO(BaseDAO):
 
     def create(self, body):
-        refresh_token = RefreshToken(
-            client_id=body['client_id'],
-            user_uuid=body['user_uuid'],
-            backend=body['backend_name'],
-            login=body['login'],
-        )
+        refresh_token = RefreshToken(**body)
         with self.new_session() as s:
             s.add(refresh_token)
             try:

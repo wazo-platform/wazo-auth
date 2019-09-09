@@ -24,6 +24,8 @@ def upgrade():
         Column('user_uuid', sa.String(36), sa.ForeignKey('auth_user.uuid', ondelete='CASCADE')),
         Column('backend', sa.Text),
         Column('login', sa.Text),
+        Column('user_agent', sa.Text),
+        Column('remote_addr', sa.Text),
     )
     op.create_unique_constraint(
         'auth_refresh_token_client_id_user_uuid',

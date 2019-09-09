@@ -141,6 +141,8 @@ class RefreshToken(Base):
     user_uuid = Column(String(36), ForeignKey('auth_user.uuid', ondelete='CASCADE'))
     backend = Column(Text)
     login = Column(Text)
+    user_agent = Column(Text)
+    remote_addr = Column(Text)
 
 
 class Session(Base):

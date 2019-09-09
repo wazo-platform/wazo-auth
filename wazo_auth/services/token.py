@@ -62,10 +62,12 @@ class TokenService:
 
         if args.get('access_type', 'online') == 'offline':
             body = {
-                'backend_name': args['backend'],
+                'backend': args['backend'],
                 'login': args['login'],
                 'client_id': args['client_id'],
                 'user_uuid': metadata['uuid'],
+                'user_agent': args['user_agent'],
+                'remote_addr': args['remote_addr'],
             }
             refresh_token = self._dao.refresh_token.create(body)
             token_payload['refresh_token'] = refresh_token
