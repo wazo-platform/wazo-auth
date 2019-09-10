@@ -14,39 +14,40 @@ logger = logging.getLogger(__name__)
 
 class BaseResource(http.ErrorCatchingResource):
 
-    def __init__(self, token_service, backends, user_service):
-        self._backends = backends
+    def __init__(self, token_service, user_service, authentication_service):
         self._token_service = token_service
         self._user_service = user_service
+        self._authentication_service = authentication_service
 
 
 class Tokens(BaseResource):
 
     def post(self):
-        if request.authorization:
-            login = request.authorization.username
-            password = request.authorization.password
-        else:
-            login = ''
-            password = ''
+        user_agent = request.headers.get('User-Agent', '')
+        remote_addr = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
 
         try:
             args = schemas.TokenRequestSchema().load(request.get_json(force=True))
         except marshmallow.ValidationError as e:
             return http._error(400, str(e.messages))
 
+        if request.authorization:
+            args['login'] = request.authorization.username
+            args['password'] = request.authorization.password
+
         session_type = request.headers.get('Wazo-Session-Type', '').lower()
         args['mobile'] = True if session_type == 'mobile' else False
+        args['user_agent'] = user_agent
+        args['remote_addr'] = remote_addr
 
-        backend_name = args['backend']
         try:
-            backend = self._backends[backend_name].obj
-        except KeyError:
-            logger.debug('Backend not found: "%s"', backend_name)
-            return http._error(401, 'Authentication Failed')
-
-        if not backend.verify_password(login, password, args):
-            logger.debug('Invalid password for user "%s" in backend "%s"', login, backend_name)
+            backend, login = self._authentication_service.verify_auth(args)
+        except (
+            exceptions.NoSuchBackendException,
+            exceptions.InvalidUsernamePassword,
+            exceptions.UnknownRefreshToken,
+        ) as e:
+            logger.info('failed login %s from %s %s', e, remote_addr, user_agent)
             return http._error(401, 'Authentication Failed')
 
         token = self._token_service.new_token(backend, login, args)

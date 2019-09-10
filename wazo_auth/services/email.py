@@ -92,6 +92,8 @@ class EmailService(BaseService):
             'expire_t': t + expiration,
             'issued_t': t,
             'acls': acls,
+            'user_agent': 'wazo-auth-email-reset',
+            'remote_addr': '',
         }
         session_payload = {}
         token_uuid, session_uuid = self._dao.token.create(token_payload, session_payload)

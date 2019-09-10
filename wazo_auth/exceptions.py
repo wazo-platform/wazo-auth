@@ -5,6 +5,24 @@ from unidecode import unidecode
 from xivo.rest_api_helpers import APIException
 
 
+class NoSuchBackendException(Exception):
+
+    def __init__(self, backend_name):
+        super().__init__(f'no such backend {backend_name}')
+
+
+class InvalidUsernamePassword(Exception):
+
+    def __init__(self, login):
+        super().__init__(f'unknown username or password for login {login}')
+
+
+class UnknownRefreshToken(Exception):
+
+    def __init__(self, refresh_token, client_id):
+        super().__init__(f'unknown refresh_token "{refresh_token}" with client_id "{client_id}"')
+
+
 class TokenServiceException(Exception):
     pass
 
