@@ -18,11 +18,7 @@ DEFAULT_XIVO_UUID = os.getenv('XIVO_UUID')
 
 class Token:
 
-    def __init__(
-            self, id_, auth_id, xivo_user_uuid, xivo_uuid, issued_t,
-            expire_t, acls, metadata, session_uuid, user_agent, remote_addr,
-            refresh_token=None,
-    ):
+    def __init__(self, id_, auth_id, xivo_user_uuid, xivo_uuid, issued_t, expire_t, acls, metadata, session_uuid):
         self.token = id_
         self.auth_id = auth_id
         self.xivo_user_uuid = xivo_user_uuid
@@ -32,9 +28,6 @@ class Token:
         self.acls = acls
         self.metadata = metadata
         self.session_uuid = session_uuid
-        self.user_agent = user_agent
-        self.remote_addr = remote_addr
-        self.refresh_token = refresh_token
 
     def __eq__(self, other):
         return (
@@ -46,9 +39,7 @@ class Token:
             self.expire_t == other.expire_t and
             self.acls == other.acls and
             self.metadata == other.metadata and
-            self.session_uuid == other.session_uuid and
-            self.user_agent == other.user_agent and
-            self.remote_addr == other.remote_addr
+            self.session_uuid == other.session_uuid
         )
 
     def __ne__(self, other):
@@ -67,24 +58,17 @@ class Token:
         return datetime.utcfromtimestamp(t).isoformat()
 
     def to_dict(self):
-        result = {
-            'token': self.token,
-            'auth_id': self.auth_id,
-            'xivo_user_uuid': self.xivo_user_uuid,
-            'xivo_uuid': self.xivo_uuid,
-            'issued_at': self._format_local_time(self.issued_t),
-            'expires_at': self._format_local_time(self.expire_t),
-            'utc_issued_at': self._format_utc_time(self.issued_t),
-            'utc_expires_at': self._format_utc_time(self.expire_t),
-            'acls': self.acls,
-            'metadata': self.metadata,
-            'session_uuid': self.session_uuid,
-            'remote_addr': self.remote_addr,
-            'user_agent': self.user_agent,
-        }
-        if self.refresh_token:
-            result['refresh_token'] = self.refresh_token
-        return result
+        return {'token': self.token,
+                'auth_id': self.auth_id,
+                'xivo_user_uuid': self.xivo_user_uuid,
+                'xivo_uuid': self.xivo_uuid,
+                'issued_at': self._format_local_time(self.issued_t),
+                'expires_at': self._format_local_time(self.expire_t),
+                'utc_issued_at': self._format_utc_time(self.issued_t),
+                'utc_expires_at': self._format_utc_time(self.expire_t),
+                'acls': self.acls,
+                'metadata': self.metadata,
+                'session_uuid': self.session_uuid}
 
     def is_expired(self):
         return self.expire_t and time.time() > self.expire_t

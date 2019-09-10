@@ -24,8 +24,6 @@ class TokenDAO(BaseDAO):
             xivo_uuid=body['xivo_uuid'],
             issued_t=int(body['issued_t']),
             expire_t=int(body['expire_t']),
-            user_agent=body['user_agent'],
-            remote_addr=body['remote_addr'],
             metadata_=serialized_metadata,
         )
         token.acls = [ACL(token_uuid=token.uuid, value=acl) for acl in body.get('acls') or []]
@@ -58,8 +56,6 @@ class TokenDAO(BaseDAO):
                     'acls': [acl.value for acl in token.acls],
                     'metadata': json.loads(token.metadata_) if token.metadata_ else {},
                     'session_uuid': token.session_uuid,
-                    'remote_addr': token.remote_addr,
-                    'user_agent': token.user_agent,
                 }
 
             raise exceptions.UnknownTokenException()

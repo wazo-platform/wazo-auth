@@ -122,27 +122,9 @@ class Token(Base):
     issued_t = Column(Integer)
     expire_t = Column(Integer)
     metadata_ = Column(Text, name='metadata')
-    user_agent = Column(Text)
-    remote_addr = Column(Text)
 
     acls = relationship('ACL')
     session = relationship('Session')
-
-
-class RefreshToken(Base):
-
-    __tablename__ = 'auth_refresh_token'
-    __table_args__ = (
-        UniqueConstraint('client_id', 'user_uuid'),
-    )
-
-    uuid = Column(String(36), server_default=text('uuid_generate_v4()'), primary_key=True)
-    client_id = Column(Text)
-    user_uuid = Column(String(36), ForeignKey('auth_user.uuid', ondelete='CASCADE'))
-    backend = Column(Text)
-    login = Column(Text)
-    user_agent = Column(Text)
-    remote_addr = Column(Text)
 
 
 class Session(Base):

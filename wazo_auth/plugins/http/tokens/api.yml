@@ -6,18 +6,9 @@ paths:
       produces:
       - application/json
       summary: Creates a token
-      description: |
-        Creates a valid token for the supplied username and password combination or refresh_token
-        using the specified backend.
-
-        The stock backends are: ``wazo_user``, ``ldap_user``.
-
-        Creating  a token with the `access_type` *offline* will also create a refresh token which can be used
-        to create a new token without specifying the username and password.
-
-        The username/password and refresh_token method of authentication are mutually exclusive
-
-        For more details about the backends, see http://documentation.wazo.community/en/latest/system/wazo-auth/stock_plugins.html#backends-plugins
+      description: 'Creates a valid token for the supplied username and password combination
+        using the specified backend. The stock backends are: ``wazo_user``,
+        ``ldap_user``. For more details about the backends, see http://documentation.wazo.community/en/latest/system/wazo-auth/stock_plugins.html#backends-plugins'
       operationId: createToken
       tags:
       - token
@@ -37,33 +28,6 @@ paths:
               default: wazo_user
             expiration:
               type: integer
-            access_type:
-              type: string
-              description: |
-                The `access_type` indicates whether your application can refresh the tokens when the user is not
-                present at the browser. Valid parameter values are *online*, which is the default value, and *offline*
-
-                Only one refresh token will be created for a given user with a given `client_id`. The old refresh
-                for `client_id` will be revoken when creating a new one.
-
-                The *client_id* field is required when using the `access_type` *offline*
-              default: online
-              enum:
-                - online
-                - offline
-            client_id:
-              type: string
-              description: |
-                The `client_id` is used in conjunction with the `access_type` *offline* to known for which application
-                a refresh token has been emitted.
-
-                *Required when using `access_type: offline`*
-            refresh_token:
-              type: string
-              description: |
-                The `refresh_token` can be used to get a new access token without using the username/password.
-                This is useful for client application that should not store the username and password once the
-                user has logged in a first time.
       responses:
         '200':
           description: "The created token's data"

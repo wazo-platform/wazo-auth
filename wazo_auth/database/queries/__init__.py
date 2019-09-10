@@ -10,7 +10,6 @@ from .session import SessionDAO
 from .tenant import TenantDAO
 from .token import TokenDAO
 from .user import UserDAO
-from .refresh_token import RefreshTokenDAO
 
 from xivo import sqlalchemy_helper
 
@@ -23,7 +22,6 @@ class DAO:
         'external_auth': ExternalAuthDAO,
         'group': GroupDAO,
         'policy': PolicyDAO,
-        'refresh_token': RefreshTokenDAO,
         'session': SessionDAO,
         'tenant': TenantDAO,
         'token': TokenDAO,
