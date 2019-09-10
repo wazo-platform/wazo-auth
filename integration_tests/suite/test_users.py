@@ -17,6 +17,7 @@ from hamcrest import (
     has_properties,
     not_,
 )
+from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from xivo_test_helpers.hamcrest.raises import raises
 from .helpers import fixtures
@@ -271,10 +272,16 @@ class TestUsers(WazoAuthTestCase):
         )
         self.start_service('smtp')
 
-        user = self.client.users.register(**args)
-        assert_that(user, has_entries(username='foobar'))
+        def user_registered():
+            try:
+                user = self.client.users.register(**args)
+            except Exception as e:
+                self.fail(e)
 
-        self.client.users.delete(user['uuid'])
+            assert_that(user, has_entries(username='foobar'))
+            self.client.users.delete(user['uuid'])
+
+        until.assert_(user_registered, timeout=3.0)
 
     @fixtures.http.user_register(username='foo', password='foobar', email_address='foo@example.com')
     @fixtures.http.policy(acl_templates=['auth.users.{{ uuid }}.password.edit'])
