@@ -53,6 +53,7 @@ class Controller:
         self._tenant_tree = services.helpers.CachedTenantTree(dao.tenant)
         self._token_service = services.TokenService(config, dao, self._tenant_tree, self._bus_publisher)
         self._backends = BackendsProxy()
+        authentication_service = services.AuthenticationService(dao, self._backends)
         email_service = services.EmailService(dao, self._tenant_tree, config, template_formatter)
         external_auth_service = services.ExternalAuthService(
             dao, self._tenant_tree, config, self._bus_publisher, config['enabled_external_auth_plugins']
@@ -96,6 +97,7 @@ class Controller:
         self._config['loaded_plugins'] = self._loaded_plugins_names(self._backends)
         dependencies = {
             'api': api,
+            'authentication_service': authentication_service,
             'backends': self._backends,
             'config': config,
             'email_service': email_service,
