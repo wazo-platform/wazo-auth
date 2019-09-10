@@ -8,13 +8,13 @@ from xivo.rest_api_helpers import APIException
 class NoSuchBackendException(Exception):
 
     def __init__(self, backend_name):
-        super().__init__(f'no such backend {backend_name}')
+        super().__init__('no such backend {backend_name}'.format(backend_name=backend_name))
 
 
 class InvalidUsernamePassword(Exception):
 
     def __init__(self, login):
-        super().__init__(f'unknown username or password for login {login}')
+        super().__init__('unknown username or password for login {login}'.format(login=login))
 
 
 class UnknownRefreshToken(Exception):
