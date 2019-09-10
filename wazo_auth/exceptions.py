@@ -20,7 +20,11 @@ class InvalidUsernamePassword(Exception):
 class UnknownRefreshToken(Exception):
 
     def __init__(self, refresh_token, client_id):
-        super().__init__(f'unknown refresh_token "{refresh_token}" with client_id "{client_id}"')
+        super().__init__(
+            'unknown refresh_token "{refresh_token}" with client_id "{client_id}"'.format(
+                refresh_token=refresh_token, client_id=client_id,
+            )
+        )
 
 
 class TokenServiceException(Exception):
