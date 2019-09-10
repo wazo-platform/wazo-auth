@@ -32,7 +32,7 @@ class TokenService:
         logger.debug('metadata for %s: %s', login, metadata)
 
         auth_id = metadata['auth_id']
-        xivo_user_uuid = metadata.get('xivo_user_uuid')
+        user_uuid = metadata.get('xivo_user_uuid')
         xivo_uuid = metadata['xivo_uuid']
 
         args['acl_templates'] = self._get_acl_templates(args['backend'])
@@ -50,13 +50,27 @@ class TokenService:
 
         token_payload = {
             'auth_id': auth_id,
-            'xivo_user_uuid': xivo_user_uuid,
+            'xivo_user_uuid': user_uuid,
             'xivo_uuid': xivo_uuid,
             'expire_t': current_time + expiration,
             'issued_t': current_time,
             'acls': acls or [],
             'metadata': metadata,
+            'user_agent': args['user_agent'],
+            'remote_addr': args['remote_addr'],
         }
+
+        if args.get('access_type', 'online') == 'offline':
+            body = {
+                'backend': args['backend'],
+                'login': args['login'],
+                'client_id': args['client_id'],
+                'user_uuid': metadata['uuid'],
+                'user_agent': args['user_agent'],
+                'remote_addr': args['remote_addr'],
+            }
+            refresh_token = self._dao.refresh_token.create(body)
+            token_payload['refresh_token'] = refresh_token
 
         token_uuid, session_uuid = self._dao.token.create(token_payload, session_payload)
         token = Token(token_uuid, session_uuid=session_uuid, **token_payload)
