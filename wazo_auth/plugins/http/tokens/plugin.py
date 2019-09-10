@@ -10,8 +10,8 @@ class Plugin:
         api = dependencies['api']
         args = (
             dependencies['token_service'],
+            dependencies['backends'],
             dependencies['user_service'],
-            dependencies['authentication_service'],
         )
 
         api.add_resource(http.Tokens, '/token', resource_class_args=args)

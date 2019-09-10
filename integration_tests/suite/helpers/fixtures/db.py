@@ -66,8 +66,6 @@ def token(**token_args):
                 'expire_t': now + token_args.get('expiration', 120),
                 'acls': token_args.get('acls', []),
                 'metadata': token_args.get('metadata', {}),
-                'user_agent': token_args.get('user_agent', ''),
-                'remote_addr': token_args.get('remote_addr', ''),
             }
             session = token_args.get('session', {})
 

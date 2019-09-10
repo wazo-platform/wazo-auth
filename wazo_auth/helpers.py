@@ -68,12 +68,7 @@ class LocalTokenRenewer:
                 return
 
             self._renew_time = time.time() + self._delay - self._threshold
-            self._token = self._new_token({
-                'expiration': 3600,
-                'backend': 'wazo_user',
-                'user_agent': '',
-                'remote_addr': '127.0.0.1',
-            })
+            self._token = self._new_token({'expiration': 3600, 'backend': 'wazo_user'})
 
         return self._token.token
 

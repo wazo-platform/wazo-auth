@@ -30,8 +30,6 @@ class TestToken(unittest.TestCase):
             'auth_id': self.auth_id,
             'xivo_user_uuid': self.xivo_user_uuid,
         }
-        self.user_agent = 'user-agent'
-        self.remote_addr = '192.168.1.1'
 
         self.token = token.Token(
             self.id_,
@@ -43,8 +41,6 @@ class TestToken(unittest.TestCase):
             acls=self.acls,
             metadata=self.metadata,
             session_uuid=self.session_uuid,
-            user_agent=self.user_agent,
-            remote_addr=self.remote_addr,
         )
         self.utc_issued_at = '2016-11-24T18:17:51.535370'
         self.utc_expires_at = '2016-11-24T18:18:33.535370'
