@@ -67,7 +67,15 @@ class TestLocalTokenRenewer(unittest.TestCase):
         token = self.local_token_renewer.get_token()
 
         self._token_service.new_token.assert_called_once_with(
-            self._backend.obj, 'wazo-auth', {'expiration': 3600, 'backend': 'wazo_user'})
+            self._backend.obj,
+            'wazo-auth',
+            {
+                'expiration': 3600,
+                'backend': 'wazo_user',
+                'user_agent': '',
+                'remote_addr': '127.0.0.1',
+            },
+        )
 
         assert_that(token, equal_to(self._token_service.new_token.return_value.token))
 
