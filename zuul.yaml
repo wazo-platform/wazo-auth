@@ -2,4 +2,19 @@
     templates:
       - wazo-tox-linters
       - wazo-tox-py37
-      - wazo-tox-integration
+    check:
+      jobs:
+        - auth-tox-integration:
+            nodeset: debian9-vm
+    gate:
+      jobs:
+        - auth-tox-integration:
+            nodeset: debian9-vm
+
+- job:
+    name: auth-tox-integration
+    description: Run auth integration tests
+    parent: wazo-tox-integration
+    timeout: 10800
+    vars:
+      integration_test_timeout: 60
