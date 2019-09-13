@@ -13,7 +13,7 @@ from hamcrest import (
     has_key,
     has_property,
 )
-from marshmallow import ValidationError, EXCLUDE
+from marshmallow import ValidationError
 
 from xivo_test_helpers.hamcrest.raises import raises
 

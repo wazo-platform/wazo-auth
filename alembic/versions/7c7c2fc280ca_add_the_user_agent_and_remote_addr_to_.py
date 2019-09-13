@@ -5,12 +5,12 @@ Revises: 63acf2b9a7b9
 
 """
 
+from alembic import op
+import sqlalchemy as sa
+
 # revision identifiers, used by Alembic.
 revision = '7c7c2fc280ca'
 down_revision = '63acf2b9a7b9'
-
-from alembic import op
-import sqlalchemy as sa
 
 
 def upgrade():
