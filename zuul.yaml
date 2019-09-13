@@ -5,11 +5,11 @@
     check:
       jobs:
         - auth-tox-integration:
-            nodeset: debian9-vm
+            nodeset: debian10-vm
     gate:
       jobs:
         - auth-tox-integration:
-            nodeset: debian9-vm
+            nodeset: debian10-vm
 
 - job:
     name: auth-tox-integration
