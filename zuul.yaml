@@ -1,5 +1,5 @@
 - project:
     templates:
       - wazo-tox-linters
-      - wazo-tox-py35
+      - wazo-tox-py37
       - wazo-tox-integration
