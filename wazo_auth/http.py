@@ -22,11 +22,17 @@ required_acl = _required_acl
 
 
 def _error(code, msg):
-    return {'reason': [msg], 'timestamp': [time.time()], 'status_code': code}, code
+    return {
+        'reason': [msg],
+        'timestamp': [time.time()],
+        'status_code': code
+    }, code
 
 
 class AuthClientFacade:
+
     class TokenCommand:
+
         def is_valid(self, token_id, required_acl):
             try:
                 current_app.config['token_service'].get(token_id, required_acl)
@@ -37,13 +43,10 @@ class AuthClientFacade:
                 return False
 
         def get(self, token_id, required_acl=None):
-            return (
-                current_app.config['token_service']
-                .get(token_id, required_acl)
-                .to_dict()
-            )
+            return current_app.config['token_service'].get(token_id, required_acl).to_dict()
 
     class UsersCommand:
+
         def get(self, user_uuid):
             return current_app.config['user_service'].get_user(user_uuid)
 
@@ -51,7 +54,10 @@ class AuthClientFacade:
             tenants = current_app.config['user_service'].list_tenants(user_uuid)
             return {
                 'items': [
-                    {'uuid': tenant['uuid'], 'name': tenant['name']}
+                    {
+                        'uuid': tenant['uuid'],
+                        'name': tenant['name'],
+                    }
                     for tenant in tenants
                 ]
             }
@@ -72,19 +78,18 @@ def handle_manager_exception(func):
             return func(*args, **kwargs)
         except exceptions.TokenServiceException as error:
             return _error(error.code, str(error))
-
     return wrapper
 
 
 class ErrorCatchingResource(Resource):
-    method_decorators = [
-        handle_manager_exception,
-        handle_api_exception,
-    ] + Resource.method_decorators
+    method_decorators = (
+        [
+            handle_manager_exception,
+            handle_api_exception,
+        ] + Resource.method_decorators
+    )
 
 
 class AuthResource(ErrorCatchingResource):
     auth_verifier = auth_verifier
-    method_decorators = [
-        auth_verifier.verify_token
-    ] + ErrorCatchingResource.method_decorators
+    method_decorators = [auth_verifier.verify_token] + ErrorCatchingResource.method_decorators

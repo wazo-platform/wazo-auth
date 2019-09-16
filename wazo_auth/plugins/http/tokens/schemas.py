@@ -40,5 +40,5 @@ class TokenRequestSchema(Schema):
         client_id = data.get('client_id')
         if not client_id:
             raise ValidationError(
-                '"client_id" must be specified when using a "refresh_token"'
+                '"client_id" must be specified when using a "refresh_token"',
             )

@@ -21,20 +21,24 @@ _DEFAULT_CONFIG = {
     'token_cleanup_interval': 60.0,
     'init_key_filename': None,
     'init_policy_name': 'wazo_default_master_user_policy',
+
     'password_reset_expiration': 172800,
     'password_reset_from_name': 'wazo-auth',
     'password_reset_from_address': 'noreply@wazo.community',
     'password_reset_email_template': '/var/lib/wazo-auth/templates/password_reset_email.jinja',
-    'password_reset_email_subject_template': '/var/lib/wazo-auth/templates/password_reset_email_subject.jinja',  # noqa
+    'password_reset_email_subject_template': '/var/lib/wazo-auth/templates/password_reset_email_subject.jinja',
+
     'email_confirmation_expiration': 172800,
     'email_confirmation_template': '/var/lib/wazo-auth/templates/email_confirmation.jinja',
-    'email_confirmation_subject_template': '/var/lib/wazo-auth/templates/email_confirmation_subject.jinja',  # noqa
+    'email_confirmation_subject_template': '/var/lib/wazo-auth/templates/email_confirmation_subject.jinja',
     'email_confirmation_from_name': 'wazo-auth',
     'email_confirmation_from_address': 'noreply@wazo.community',
-    'email_confirmation_get_reponse_body_template': '/var/lib/wazo-auth/templates/email_confirmation_get_body.jinja',  # noqa
+    'email_confirmation_get_reponse_body_template': '/var/lib/wazo-auth/templates/email_confirmation_get_body.jinja',
     'email_confirmation_get_mimetype': 'text/html',
+
     'oauth2_synchronization_ws_url_template': 'wss://oauth.wazo.io/ws/{state}',
     'oauth2_synchronization_redirect_url_template': 'https://oauth.wazo.io/{auth_type}/authorize',
+
     'enabled_http_plugins': {
         'api': True,
         'backends': True,
@@ -57,14 +61,23 @@ _DEFAULT_CONFIG = {
         'user_session': True,
         'users': True,
     },
-    'enabled_backend_plugins': {'wazo_user': True},
+    'enabled_backend_plugins': {
+        'wazo_user': True,
+    },
     'enabled_metadata_plugins': {
         'default_user': True,
         'default_internal': True,
         'default_external_api': True,
     },
-    'purpose_metadata_mapping': {'user': [], 'internal': [], 'external_api': []},
-    'enabled_external_auth_plugins': {'microsoft': True, 'mobile': True},
+    'purpose_metadata_mapping': {
+        'user': [],
+        'internal': [],
+        'external_api': [],
+    },
+    'enabled_external_auth_plugins': {
+        'microsoft': True,
+        'mobile': True,
+    },
     'backend_policies': {
         'ldap_user': 'wazo_default_user_policy',
         'wazo_user': 'wazo_default_user_policy',
@@ -85,7 +98,7 @@ _DEFAULT_CONFIG = {
                 'X-Auth-Token',
                 'Wazo-Tenant',
                 'Wazo-Session-Type',
-            ],
+            ]
         },
     },
     'consul': {
@@ -115,7 +128,10 @@ _DEFAULT_CONFIG = {
         'exchange_name': 'xivo',
         'exchange_type': 'topic',
     },
-    'smtp': {'hostname': 'localhost', 'port': 25},
+    'smtp': {
+        'hostname': 'localhost',
+        'port': 25,
+    },
     'db_uri': 'postgresql://asterisk:proformatique@localhost/asterisk',
     'confd_db_uri': 'postgresql://asterisk:proformatique@localhost/asterisk',
 }
@@ -123,21 +139,15 @@ _DEFAULT_CONFIG = {
 
 def _parse_cli_args(argv):
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '-c', '--config-file', action='store', help='The path to the config file'
-    )
+    parser.add_argument('-c', '--config-file', action='store', help='The path to the config file')
     parser.add_argument('-u', '--user', help='User to run the daemon')
     parser.add_argument('-d', '--debug', action='store_true', help='Log debug messages')
-    parser.add_argument(
-        '-f', '--foreground', action='store_true', help="Foreground, don't daemonize"
-    )
-    parser.add_argument(
-        '-l',
-        '--log-level',
-        action='store',
-        help="Logs messages with LOG_LEVEL details. Must be one of:\n"
-        "critical, error, warning, info, debug. Default: %(default)s",
-    )
+    parser.add_argument('-f', '--foreground', action='store_true', help="Foreground, don't daemonize")
+    parser.add_argument('-l',
+                        '--log-level',
+                        action='store',
+                        help="Logs messages with LOG_LEVEL details. Must be one of:\n"
+                             "critical, error, warning, info, debug. Default: %(default)s")
     parsed_args = parser.parse_args(argv)
 
     result = {}
@@ -168,7 +178,5 @@ def _get_reinterpreted_raw_values(config):
 def get_config(argv):
     cli_config = _parse_cli_args(argv)
     file_config = read_config_file_hierarchy(ChainMap(cli_config, _DEFAULT_CONFIG))
-    reinterpreted_config = _get_reinterpreted_raw_values(
-        ChainMap(cli_config, file_config, _DEFAULT_CONFIG)
-    )
+    reinterpreted_config = _get_reinterpreted_raw_values(ChainMap(cli_config, file_config, _DEFAULT_CONFIG))
     return ChainMap(reinterpreted_config, cli_config, file_config, _DEFAULT_CONFIG)

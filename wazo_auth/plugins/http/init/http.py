@@ -35,6 +35,7 @@ def delete_after_usage(filename):
 
 
 class Init(http.ErrorCatchingResource):
+
     def __init__(self, policy_service, user_service, config):
         self._user_service = user_service
         self._policy_service = policy_service

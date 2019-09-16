@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseResource(http.ErrorCatchingResource):
+
     def __init__(self, token_service, user_service, authentication_service):
         self._token_service = token_service
         self._user_service = user_service
@@ -20,6 +21,7 @@ class BaseResource(http.ErrorCatchingResource):
 
 
 class Tokens(BaseResource):
+
     def post(self):
         user_agent = request.headers.get('User-Agent', '')
         remote_addr = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
@@ -54,6 +56,7 @@ class Tokens(BaseResource):
 
 
 class Token(BaseResource):
+
     def delete(self, token_uuid):
         self._token_service.remove_token(token_uuid)
 

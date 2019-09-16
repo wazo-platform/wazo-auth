@@ -8,11 +8,13 @@ from wazo_auth.flask_helpers import Tenant
 
 
 class _BaseGroupResource(http.AuthResource):
+
     def __init__(self, group_service):
         self.group_service = group_service
 
 
 class Group(_BaseGroupResource):
+
     @http.required_acl('auth.groups.{group_uuid}.delete')
     def delete(self, group_uuid):
         scoping_tenant = Tenant.autodetect()
@@ -40,6 +42,7 @@ class Group(_BaseGroupResource):
 
 
 class Groups(_BaseGroupResource):
+
     @http.required_acl('auth.groups.read')
     def get(self):
         scoping_tenant = Tenant.autodetect()
@@ -55,7 +58,11 @@ class Groups(_BaseGroupResource):
         total = self.group_service.count(filtered=False, **list_params)
         filtered = self.group_service.count(filtered=True, **list_params)
 
-        response = {'filtered': filtered, 'total': total, 'items': groups}
+        response = {
+            'filtered': filtered,
+            'total': total,
+            'items': groups,
+        }
 
         return response, 200
 

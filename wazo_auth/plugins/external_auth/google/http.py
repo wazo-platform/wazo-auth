@@ -49,9 +49,7 @@ class GoogleAuth(http.AuthResource):
 
         client_id, client_secret = self._get_external_config()
         self.user_service.get_user(user_uuid)
-        self.oauth2 = OAuth2Session(
-            client_id, scope=self.scope, redirect_uri=self.redirect_uri
-        )
+        self.oauth2 = OAuth2Session(client_id, scope=self.scope, redirect_uri=self.redirect_uri)
 
         if args.get('scope'):
             self.oauth2.scope = args.get('scope')
@@ -59,7 +57,9 @@ class GoogleAuth(http.AuthResource):
         logger.debug('User(%s) is creating an authorize url for Google', str(user_uuid))
 
         authorization_url, state = self.oauth2.authorization_url(
-            self.authorization_base_url, access_type='offline', prompt='consent'
+            self.authorization_base_url,
+            access_type='offline',
+            prompt='consent',
         )
         logger.debug('Authorization url : %s', authorization_url)
 
@@ -69,20 +69,23 @@ class GoogleAuth(http.AuthResource):
             external_auth=self.external_auth_service,
             client_secret=client_secret,
             token_url=self.token_url,
-            auth_type=self.auth_type,
+            auth_type=self.auth_type
         )
 
         # TODO find something better than a thread per request
         websocket_thread = Thread(
-            target=self.websocket.run, args=(state, user_uuid), name='websocket_thread'
+            target=self.websocket.run,
+            args=(state, user_uuid),
+            name='websocket_thread',
         )
         websocket_thread.daemon = True
         websocket_thread.start()
-        import time
+        import time; time.sleep(0.1)
 
-        time.sleep(0.1)
-
-        return {'authorization_url': authorization_url, 'state': state}, 201
+        return {
+            'authorization_url': authorization_url,
+            'state': state,
+        }, 201
 
     @http.required_acl('auth.users.{user_uuid}.external.google.read')
     def get(self, user_uuid):
@@ -109,7 +112,9 @@ class GoogleAuth(http.AuthResource):
         client_id, client_secret = self._get_external_config()
         oauth2 = OAuth2Session(client_id, token=data)
         token_data = oauth2.refresh_token(
-            self.token_url, client_id=client_id, client_secret=client_secret
+            self.token_url,
+            client_id=client_id,
+            client_secret=client_secret,
         )
 
         data['refresh_token'] = token_data['refresh_token']

@@ -14,11 +14,17 @@ down_revision = 'bbd6a0735a7b'
 
 TABLE = 'auth_user'
 COL = 'tenant_uuid'
-tenant_table = sa.sql.table('auth_tenant', sa.Column('uuid'), sa.Column('parent_uuid'))
+tenant_table = sa.sql.table(
+    'auth_tenant',
+    sa.Column('uuid'),
+    sa.Column('parent_uuid'),
+)
 
 
 def upgrade():
-    query = sa.sql.select([tenant_table.c.uuid]).where(
+    query = sa.sql.select(
+        [tenant_table.c.uuid]
+    ).where(
         tenant_table.c.uuid == tenant_table.c.parent_uuid
     )
 

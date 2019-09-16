@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import unittest
-
 from hamcrest import (
     assert_that,
     calling,
@@ -16,10 +15,13 @@ from hamcrest import (
 from marshmallow import ValidationError
 from xivo_test_helpers.hamcrest.raises import raises
 
-from ..schemas import PasswordResetQueryParameters
+from ..schemas import (
+    PasswordResetQueryParameters,
+)
 
 
 class TestSchema(unittest.TestCase):
+
     def setUp(self):
         self.password_query_parameters_schema = PasswordResetQueryParameters()
 
@@ -36,15 +38,11 @@ class TestSchema(unittest.TestCase):
 
         assert_that(
             calling(self.password_query_parameters_schema.load).with_args(query_string),
-            raises(
-                ValidationError,
-                has_property(
-                    "messages",
-                    has_entries(
-                        _schema=contains('"username" or "email" should be used')
-                    ),
-                ),
-            ),
+            raises(ValidationError, has_property(
+                "messages", has_entries(
+                    _schema=contains('"username" or "email" should be used')
+                )
+            ))
         )
 
     def test_username_only(self):
@@ -59,19 +57,17 @@ class TestSchema(unittest.TestCase):
 
         result = self.password_query_parameters_schema.load(query_string)
 
-        assert_that(
-            result, has_entries(username=None, email_address='foobar@example.com')
-        )
+        assert_that(result, has_entries(username=None, email_address='foobar@example.com'))
 
     def test_invalid_field(self):
         query_string = {'username': 300 * 'a'}
         assert_that(
             calling(self.password_query_parameters_schema.load).with_args(query_string),
-            raises(ValidationError, has_property("messages", not_(equal_to(None)))),
+            raises(ValidationError, has_property("messages", not_(equal_to(None))))
         )
 
         query_string = {'email': 'patate'}
         assert_that(
             calling(self.password_query_parameters_schema.load).with_args(query_string),
-            raises(ValidationError, has_property("messages", not_(equal_to(None)))),
+            raises(ValidationError, has_property("messages", not_(equal_to(None))))
         )

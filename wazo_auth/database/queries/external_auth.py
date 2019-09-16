@@ -5,14 +5,7 @@ import json
 from sqlalchemy import and_, exc
 from .base import BaseDAO, PaginatorMixin
 from . import filters
-from ..models import (
-    ExternalAuthConfig,
-    ExternalAuthData,
-    ExternalAuthType,
-    Tenant,
-    User,
-    UserExternalAuth,
-)
+from ..models import ExternalAuthConfig, ExternalAuthData, ExternalAuthType, Tenant, User, UserExternalAuth
 from ... import exceptions
 
 
@@ -24,7 +17,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def count(self, user_uuid, **kwargs):
         filtered = kwargs.get('filtered')
-        base_filter = ExternalAuthType.enabled.is_(True)
+        base_filter = ExternalAuthType.enabled == True
 
         if filtered is False:
             filter_ = base_filter
@@ -52,10 +45,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             try:
                 s.commit()
             except exc.IntegrityError as e:
-                if e.orig.pgcode in (
-                    self._UNIQUE_CONSTRAINT_CODE,
-                    self._FKEY_CONSTRAINT_CODE,
-                ):
+                if e.orig.pgcode in (self._UNIQUE_CONSTRAINT_CODE, self._FKEY_CONSTRAINT_CODE):
                     constraint = e.orig.diag.constraint_name
                     if constraint == 'auth_external_user_type_auth_constraint':
                         raise exceptions.ExternalAuthAlreadyExists(auth_type)
@@ -144,13 +134,9 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         )
 
         with self.new_session() as s:
-            data = (
-                s.query(ExternalAuthData.data)
-                .join(UserExternalAuth)
-                .join(ExternalAuthType)
-                .filter(filter_)
-                .first()
-            )
+            data = s.query(
+                ExternalAuthData.data,
+            ).join(UserExternalAuth).join(ExternalAuthType).filter(filter_).first()
 
             if data:
                 return json.loads(data.data)
@@ -166,16 +152,16 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             except exceptions.UnknownExternalAuthTypeException:
                 raise exceptions.ExternalAuthConfigNotFound(auth_type)
 
-            result = (
-                s.query(ExternalAuthData.data)
-                .join(ExternalAuthConfig)
-                .join(ExternalAuthType)
-                .filter(
-                    ExternalAuthType.name == external_auth_type.name,
-                    ExternalAuthConfig.tenant_uuid == tenant_uuid,
-                )
-                .first()
-            )
+            result = s.query(
+                ExternalAuthData.data
+            ).join(
+                ExternalAuthConfig
+            ).join(
+                ExternalAuthType
+            ).filter(
+                ExternalAuthType.name == external_auth_type.name,
+                ExternalAuthConfig.tenant_uuid == tenant_uuid,
+            ).first()
 
             if result:
                 return json.loads(result.data)
@@ -183,7 +169,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             raise exceptions.UnknownExternalAuthConfigException(auth_type)
 
     def list_(self, user_uuid, **kwargs):
-        base_filter = ExternalAuthType.enabled.is_(True)
+        base_filter = ExternalAuthType.enabled == True
         search_filter = self.new_search_filter(**kwargs)
         strict_filter = self.new_strict_filter(**kwargs)
         filter_ = and_(base_filter, search_filter, strict_filter)
@@ -193,18 +179,19 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             query = s.query(ExternalAuthType).filter(filter_)
             query = self._paginator.update_query(query, **kwargs)
-            result = [
-                {'type': r.name, 'data': {}, 'enabled': False} for r in query.all()
-            ]
+            result = [{'type': r.name, 'data': {}, 'enabled': False} for r in query.all()]
 
             filter_ = and_(filter_, UserExternalAuth.user_uuid == str(user_uuid))
-            query = (
-                s.query(ExternalAuthType.name, ExternalAuthData.data)
-                .select_from(UserExternalAuth)
-                .join(ExternalAuthType)
-                .join(ExternalAuthData)
-                .filter(filter_)
-            )
+            query = s.query(
+                ExternalAuthType.name,
+                ExternalAuthData.data,
+            ).select_from(
+                UserExternalAuth
+            ).join(
+                ExternalAuthType
+            ).join(
+                ExternalAuthData
+            ).filter(filter_)
             for type_, data in query.all():
                 for row in result:
                     if row['type'] != type_:
@@ -233,9 +220,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             raise exceptions.UnknownUserException(user_uuid)
 
     def _find_type(self, s, auth_type):
-        type_ = (
-            s.query(ExternalAuthType).filter(ExternalAuthType.name == auth_type).first()
-        )
+        type_ = s.query(ExternalAuthType).filter(ExternalAuthType.name == auth_type).first()
         if type_:
             return type_
         raise exceptions.UnknownExternalAuthTypeException(auth_type)

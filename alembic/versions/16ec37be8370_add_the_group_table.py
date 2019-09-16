@@ -5,13 +5,13 @@ Revises: c11c395a7b6
 
 """
 
-from alembic import op
-import sqlalchemy as sa
-from sqlalchemy.schema import Column
-
 # revision identifiers, used by Alembic.
 revision = '16ec37be8370'
 down_revision = 'c11c395a7b6'
+
+from alembic import op
+import sqlalchemy as sa
+from sqlalchemy.schema import Column
 
 TABLE_NAME = 'auth_group'
 

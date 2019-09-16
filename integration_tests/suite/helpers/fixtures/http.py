@@ -24,9 +24,7 @@ def admin_client(**decorator_args):
             policy = self.client.policies.new('tmp', acl_templates=['auth.#'])
             self.client.users.add_policy(creator['uuid'], policy['uuid'])
 
-            creator_client = self.new_auth_client(
-                username='creator', password='opensesame'
-            )
+            creator_client = self.new_auth_client(username='creator', password='opensesame')
             creator_token = creator_client.token.new()
             creator_client.set_token(creator_token['token'])
 
@@ -34,7 +32,9 @@ def admin_client(**decorator_args):
 
             username, password = decorator_args['username'], 'secret'
             created_user = creator_client.users.new(
-                username=username, password=password, tenant_uuid=tenant['uuid']
+                username=username,
+                password=password,
+                tenant_uuid=tenant['uuid'],
             )
 
             created_client = self.new_auth_client(username=username, password=password)
@@ -50,9 +50,7 @@ def admin_client(**decorator_args):
             self.client.tenants.delete(tenant['uuid'])
 
             return result
-
         return wrapper
-
     return decorator
 
 
@@ -69,9 +67,7 @@ def tenant(**tenant_args):
                 except requests.HTTPError:
                     pass
             return result
-
         return wrapper
-
     return decorator
 
 
@@ -91,9 +87,7 @@ def token(**token_args):
                 except requests.HTTPError:
                     pass
             return result
-
         return wrapper
-
     return decorator
 
 
@@ -113,18 +107,14 @@ def user(**user_args):
                 except requests.HTTPError:
                     pass
             return result
-
         return wrapper
-
     return decorator
 
 
 def user_register(**user_args):
     user_args.setdefault('username', _random_string(20))
     user_args.setdefault('password', _random_string(20))
-    user_args.setdefault(
-        'email_address', '{}@example.com'.format(user_args['username'])
-    )
+    user_args.setdefault('email_address', '{}@example.com'.format(user_args['username']))
 
     def decorator(decorated):
         @wraps(decorated)
@@ -138,9 +128,7 @@ def user_register(**user_args):
                 except requests.HTTPError:
                     pass
             return result
-
         return wrapper
-
     return decorator
 
 
@@ -160,9 +148,7 @@ def policy(**policy_args):
                 except requests.HTTPError:
                     pass
             return result
-
         return wrapper
-
     return decorator
 
 
@@ -181,9 +167,7 @@ def group(**group_args):
                 except requests.HTTPError:
                     pass
             return result
-
         return wrapper
-
     return decorator
 
 
@@ -209,7 +193,5 @@ def session(**session_args):
                 except requests.HTTPError:
                     pass
             return result
-
         return wrapper
-
     return decorator

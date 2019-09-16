@@ -4,14 +4,21 @@
 from sqlalchemy import and_, exc, text
 from wazo_auth import schemas
 from .base import BaseDAO, PaginatorMixin
-from ..models import Address, Policy, Tenant, User
+from ..models import (
+    Address,
+    Policy,
+    Tenant,
+    User,
+)
 from . import filters
 from ... import exceptions
 
 
 class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
-    constraint_to_column_map = {'auth_tenant_name_key': 'name'}
+    constraint_to_column_map = {
+        'auth_tenant_name_key': 'name',
+    }
     search_filter = filters.tenant_search_filter
     strict_filter = filters.tenant_strict_filter
     column_map = {'name': Tenant.name}
@@ -80,9 +87,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 s.commit()
             except exc.IntegrityError as e:
                 if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                    column = self.constraint_to_column_map.get(
-                        e.orig.diag.constraint_name
-                    )
+                    column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
                     value = locals().get(column)
                     if column:
                         raise exceptions.ConflictException('tenants', column, value)
@@ -95,9 +100,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def find_top_tenant(self):
         with self.new_session() as s:
-            return (
-                s.query(Tenant).filter(Tenant.uuid == Tenant.parent_uuid).first().uuid
-            )
+            return s.query(Tenant).filter(Tenant.uuid == Tenant.parent_uuid).first().uuid
 
     def delete(self, uuid):
         with self.new_session() as s:
@@ -111,11 +114,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def get_address_id(self, tenant_uuid):
         with self.new_session() as s:
-            return (
-                s.query(Tenant.address_id)
-                .filter(Tenant.uuid == str(tenant_uuid))
-                .scalar()
-            )
+            return s.query(Tenant.address_id).filter(Tenant.uuid == str(tenant_uuid)).scalar()
 
     def list_(self, **kwargs):
         schema = schemas.TenantSchema()
@@ -130,12 +129,12 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         filter_ = and_(filter_, strict_filter, search_filter)
 
         with self.new_session() as s:
-            query = (
-                s.query(Tenant, Address)
-                .outerjoin(Address)
-                .filter(filter_)
-                .group_by(Tenant, Address)
-            )
+            query = s.query(
+                Tenant,
+                Address,
+            ).outerjoin(
+                Address
+            ).filter(filter_).group_by(Tenant, Address)
             query = self._paginator.update_query(query, **kwargs)
 
             def to_dict(tenant, address):

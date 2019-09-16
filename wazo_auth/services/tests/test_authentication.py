@@ -10,10 +10,13 @@ from ..authentication import AuthenticationService
 
 
 class TestAuthenticationService(TestCase):
+
     def setUp(self):
         self.dao = Mock()
         self.backend = Mock()
-        self.backends = {s.backend_name: Mock(obj=self.backend)}
+        self.backends = {
+            s.backend_name: Mock(obj=self.backend),
+        }
 
         self.service = AuthenticationService(self.dao, self.backends)
 

@@ -5,10 +5,15 @@ import yaml
 from hamcrest import assert_that, contains_inanyorder, contains_string
 
 from .helpers import fixtures
-from .helpers.base import assert_http_error, assert_no_error, WazoAuthTestCase
+from .helpers.base import (
+    assert_http_error,
+    assert_no_error,
+    WazoAuthTestCase,
+)
 
 
 class TestResetPassword(WazoAuthTestCase):
+
     @fixtures.http.user(username='foo', email_address='foo@example.com')
     @fixtures.http.user(username='bar', email_address='bar@example.com')
     def test_password_reset(self, bar, foo):
@@ -17,12 +22,9 @@ class TestResetPassword(WazoAuthTestCase):
 
         emails = self.get_emails()
 
-        assert_that(
-            emails,
-            contains_inanyorder(
-                contains_string('username: foo'), contains_string('username: bar')
-            ),
-        )
+        assert_that(emails, contains_inanyorder(
+            contains_string('username: foo'),
+            contains_string('username: bar')))
 
         new_password = '5ecr37'
         for email in emails:

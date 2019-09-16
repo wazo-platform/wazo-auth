@@ -20,6 +20,7 @@ api = Api(app, prefix='/{}'.format(VERSION))
 
 
 class CoreRestApi:
+
     def __init__(self, global_config, token_service, user_service):
         self.config = global_config['rest_api']
         http_helpers.add_logger(app, logger)
@@ -49,13 +50,14 @@ class CoreRestApi:
             numthreads=self.config['max_threads'],
         )
         self.server.ssl_adapter = http_helpers.ssl_adapter(
-            self.config['https']['certificate'], self.config['https']['private_key']
+            self.config['https']['certificate'],
+            self.config['https']['private_key']
         )
         logger.debug(
             'WSGIServer starting... uid: %s, listen: %s:%s',
             os.getuid(),
             bind_addr[0],
-            bind_addr[1],
+            bind_addr[1]
         )
         for route in http_helpers.list_routes(app):
             logger.debug(route)

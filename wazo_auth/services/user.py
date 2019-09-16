@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class UserService(BaseService):
+
     def __init__(self, dao, tenant_tree, encrypter=None):
         super().__init__(dao, tenant_tree)
         self._encrypter = encrypter or PasswordEncrypter()
@@ -55,9 +56,7 @@ class UserService(BaseService):
 
     def count_users(self, scoping_tenant_uuid=None, recurse=False, **kwargs):
         if scoping_tenant_uuid:
-            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(
-                scoping_tenant_uuid, recurse
-            )
+            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(scoping_tenant_uuid, recurse)
 
         return self._dao.user.count(**kwargs)
 
@@ -99,17 +98,13 @@ class UserService(BaseService):
 
     def list_users(self, scoping_tenant_uuid=None, recurse=False, **kwargs):
         if scoping_tenant_uuid:
-            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(
-                scoping_tenant_uuid, recurse
-            )
+            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(scoping_tenant_uuid, recurse)
 
         return self._dao.user.list_(**kwargs)
 
     def new_user(self, **kwargs):
         password = kwargs.pop('password', None)
-        logger.info(
-            'creating a new user with params: %s', kwargs
-        )  # log after poping the password
+        logger.info('creating a new user with params: %s', kwargs)  # log after poping the password
         if password:
             kwargs['salt'], kwargs['hash_'] = self._encrypter.encrypt_password(password)
 
@@ -176,7 +171,5 @@ class PasswordEncrypter:
 
     def compute_password_hash(self, password, salt):
         password_bytes = password.encode('utf-8')
-        dk = hashlib.pbkdf2_hmac(
-            self._hash_algo, password_bytes, salt, self._iterations
-        )
+        dk = hashlib.pbkdf2_hmac(self._hash_algo, password_bytes, salt, self._iterations)
         return binascii.hexlify(dk).decode('utf-8')

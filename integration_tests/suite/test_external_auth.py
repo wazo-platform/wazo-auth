@@ -9,6 +9,7 @@ import requests
 from hamcrest import (
     assert_that,
     contains,
+    contains_inanyorder,
     equal_to,
     greater_than_or_equal_to,
     has_entries,
@@ -36,28 +37,15 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
         def bus_received_msg():
             assert_that(
                 msg_accumulator.accumulate(),
-                contains(
-                    has_entries(
-                        data=dict(user_uuid=user['uuid'], external_auth_name='foo')
-                    )
-                ),
-            )
+                contains(has_entries(data=dict(user_uuid=user['uuid'], external_auth_name='foo'))))
 
         until.assert_(bus_received_msg, tries=10, interval=0.25)
 
         data = self.client.external.get('foo', user['uuid'])
         assert_that(data, has_entries(**self.original_data))
 
-        base.assert_http_error(
-            404, self.client.external.create, 'notfoo', user['uuid'], self.original_data
-        )
-        base.assert_http_error(
-            404,
-            self.client.external.create,
-            'foo',
-            base.UNKNOWN_UUID,
-            self.original_data,
-        )
+        base.assert_http_error(404, self.client.external.create, 'notfoo', user['uuid'], self.original_data)
+        base.assert_http_error(404, self.client.external.create, 'foo', base.UNKNOWN_UUID, self.original_data)
 
     @fixtures.http.user_register()
     def test_delete(self, user):
@@ -67,20 +55,13 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
         self.client.external.create('foo', user['uuid'], self.original_data)
 
         base.assert_http_error(404, self.client.external.delete, 'notfoo', user['uuid'])
-        base.assert_http_error(
-            404, self.client.external.delete, 'foo', base.UNKNOWN_UUID
-        )
+        base.assert_http_error(404, self.client.external.delete, 'foo', base.UNKNOWN_UUID)
         base.assert_no_error(self.client.external.delete, 'foo', user['uuid'])
 
         def bus_received_msg():
             assert_that(
                 msg_accumulator.accumulate(),
-                contains(
-                    has_entries(
-                        data=dict(user_uuid=user['uuid'], external_auth_name='foo')
-                    )
-                ),
-            )
+                contains(has_entries(data=dict(user_uuid=user['uuid'], external_auth_name='foo'))))
 
         until.assert_(bus_received_msg, tries=10, interval=0.25)
 
@@ -96,8 +77,7 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
 
         assert_that(
             self.client.external.get('foo', user1['uuid']),
-            has_entries(**self.original_data),
-        )
+            has_entries(**self.original_data))
 
     @fixtures.http.user_register()
     @fixtures.http.user_register()
@@ -110,71 +90,43 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
         result = self.client.external.list_(user3['uuid'])
         expected = [
             {'type': 'foo', 'data': {}, 'plugin_info': {}, 'enabled': False},
-            {
-                'type': 'bar',
-                'data': {},
-                'plugin_info': {'foo': 'bar'},
-                'enabled': False,
-            },
+            {'type': 'bar', 'data': {}, 'plugin_info': {'foo': 'bar'}, 'enabled': False},
         ]
-        assert_that(
-            result,
-            has_entries(
-                items=has_items(*expected),
-                total=greater_than_or_equal_to(2),
-                filtered=greater_than_or_equal_to(2),
-            ),
-        )
+        assert_that(result, has_entries(
+            items=has_items(*expected),
+            total=greater_than_or_equal_to(2),
+            filtered=greater_than_or_equal_to(2),
+        ))
 
         result = self.client.external.list_(user1['uuid'])
         expected = [
             {'type': 'foo', 'data': {}, 'plugin_info': {}, 'enabled': True},
-            {
-                'type': 'bar',
-                'data': self.safe_data,
-                'plugin_info': {'foo': 'bar'},
-                'enabled': True,
-            },
+            {'type': 'bar', 'data': self.safe_data, 'plugin_info': {'foo': 'bar'}, 'enabled': True},
         ]
-        assert_that(
-            result,
-            has_entries(
-                items=has_items(*expected),
-                total=greater_than_or_equal_to(2),
-                filtered=greater_than_or_equal_to(2),
-            ),
-        )
+        assert_that(result, has_entries(
+            items=has_items(*expected),
+            total=greater_than_or_equal_to(2),
+            filtered=greater_than_or_equal_to(2),
+        ))
 
         result = self.client.external.list_(user1['uuid'], type='bar')
         expected = [
-            {
-                'type': 'bar',
-                'data': self.safe_data,
-                'plugin_info': {'foo': 'bar'},
-                'enabled': True,
-            }
+            {'type': 'bar', 'data': self.safe_data, 'plugin_info': {'foo': 'bar'}, 'enabled': True},
         ]
-        assert_that(
-            result,
-            has_entries(
-                items=contains(*expected), total=greater_than_or_equal_to(2), filtered=1
-            ),
-        )
+        assert_that(result, has_entries(
+            items=contains(*expected),
+            total=greater_than_or_equal_to(2),
+            filtered=1,
+        ))
 
     @fixtures.http.user_register()
     def test_update(self, user):
         new_data = {'foo': 'bar'}
 
-        base.assert_http_error(
-            404, self.client.external.update, 'foo', user['uuid'], new_data
-        )
+        base.assert_http_error(404, self.client.external.update, 'foo', user['uuid'], new_data)
         self.client.external.create('foo', user['uuid'], self.original_data)
-        base.assert_http_error(
-            404, self.client.external.update, 'foo', base.UNKNOWN_UUID, new_data
-        )
-        base.assert_http_error(
-            404, self.client.external.update, 'notfoo', user['uuid'], new_data
-        )
+        base.assert_http_error(404, self.client.external.update, 'foo', base.UNKNOWN_UUID, new_data)
+        base.assert_http_error(404, self.client.external.update, 'notfoo', user['uuid'], new_data)
 
         result = self.client.external.update('foo', user['uuid'], new_data)
         assert_that(result, equal_to(new_data))
@@ -203,12 +155,7 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
         def bus_received_msg():
             assert_that(
                 msg_accumulator.accumulate(),
-                contains(
-                    has_entries(
-                        data=dict(user_uuid=user['uuid'], external_auth_name='foo')
-                    )
-                ),
-            )
+                contains(has_entries(data=dict(user_uuid=user['uuid'], external_auth_name='foo'))))
 
         until.assert_(bus_received_msg, tries=10, interval=0.25)
 
@@ -223,7 +170,10 @@ class TestExternalAuthConfigAPI(base.WazoAuthTestCase):
 
     asset = 'external_auth'
     EXTERNAL_AUTH_TYPE = 'an-external-auth-type'
-    SECRET = {'client_id': 'a-client-id', 'client_secret': 'a-client-secret'}
+    SECRET = {
+        'client_id': 'a-client-id',
+        'client_secret': 'a-client-secret',
+    }
 
     def tearDown(self):
         try:
@@ -232,19 +182,13 @@ class TestExternalAuthConfigAPI(base.WazoAuthTestCase):
             pass
 
     def test_given_given_unknown_auth_type(self):
-        base.assert_http_error(
-            404, self.client.external.get_config, 'some-unknown-auth'
-        )
+        base.assert_http_error(404, self.client.external.get_config, 'some-unknown-auth')
 
     def test_given_no_config_when_get_config_then_not_found(self):
-        base.assert_http_error(
-            404, self.client.external.get_config, self.EXTERNAL_AUTH_TYPE
-        )
+        base.assert_http_error(404, self.client.external.get_config, self.EXTERNAL_AUTH_TYPE)
 
     def test_given_create_config_when_get_config_then_ok(self):
-        self.client.external.create_config(
-            auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET
-        )
+        self.client.external.create_config(auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET)
 
         response = self.client.external.get_config(self.EXTERNAL_AUTH_TYPE)
 
@@ -252,43 +196,34 @@ class TestExternalAuthConfigAPI(base.WazoAuthTestCase):
 
     def test_given_config_when_create_same_config_then_conflict(self):
         self.client.external.create_config(
-            auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET
+            auth_type=self.EXTERNAL_AUTH_TYPE,
+            data=self.SECRET,
         )
 
-        base.assert_http_error(
-            409,
-            self.client.external.create_config,
-            self.EXTERNAL_AUTH_TYPE,
-            self.SECRET,
-        )
+        base.assert_http_error(409, self.client.external.create_config, self.EXTERNAL_AUTH_TYPE, self.SECRET)
 
     def test_given_no_config_when_delete_then_not_found(self):
         base.assert_http_error(
-            404, self.client.external.delete_config, self.EXTERNAL_AUTH_TYPE
+            404,
+            self.client.external.delete_config,
+            self.EXTERNAL_AUTH_TYPE,
         )
 
     def test_given_config_when_get_config_from_wrong_tenant_then_not_found(self):
-        self.client.external.create_config(
-            auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET
-        )
+        self.client.external.create_config(auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET)
 
         base.assert_http_error(
-            401,
-            self.client.external.get_config,
+            401, self.client.external.get_config,
             self.EXTERNAL_AUTH_TYPE,
-            tenant_uuid='wrong-tenant',
+            tenant_uuid='wrong-tenant'
         )
 
     def test_given_config_when_update_config_then_ok(self):
-        self.client.external.create_config(
-            auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET
-        )
+        self.client.external.create_config(auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET)
         new_secret = dict(self.SECRET)
         new_secret['secret'] = 'secret'
 
-        base.assert_no_error(
-            self.client.external.update_config, self.EXTERNAL_AUTH_TYPE, new_secret
-        )
+        base.assert_no_error(self.client.external.update_config, self.EXTERNAL_AUTH_TYPE, new_secret)
 
         response = self.client.external.get_config(self.EXTERNAL_AUTH_TYPE)
 
@@ -296,41 +231,23 @@ class TestExternalAuthConfigAPI(base.WazoAuthTestCase):
 
     def test_given_no_config_when_update_config_then_not_found(self):
         base.assert_http_error(
-            404,
-            self.client.external.update_config,
-            self.EXTERNAL_AUTH_TYPE,
-            self.SECRET,
-        )
-
-    def test_given_mastertenant_with_config_and_subtenant_when_subtenant_get_config_then_not_found(
-        self
-    ):
-        self.client.external.create_config(
-            auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET
-        )
-
-        with self.client_in_subtenant(parent_uuid=self.top_tenant_uuid) as (
-            client,
-            _,
-            _,
-        ):
-            base.assert_http_error(
-                404, client.external.get_config, self.EXTERNAL_AUTH_TYPE
-            )
-
-    def test_given_mastertenant_and_subtenant_with_config_when_mastertenant_get_config_then_ok(
-        self
-    ):
-        with self.client_in_subtenant(parent_uuid=self.top_tenant_uuid) as (
-            client,
-            _,
-            tenant,
-        ):
-            client.external.create_config(
-                auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET
-            )
-            base.assert_no_error(
-                self.client.external.get_config,
+                404,
+                self.client.external.update_config,
                 self.EXTERNAL_AUTH_TYPE,
-                tenant_uuid=tenant["uuid"],
+                self.SECRET,
             )
+
+    def test_given_mastertenant_with_config_and_subtenant_when_subtenant_get_config_then_not_found(self):
+        self.client.external.create_config(auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET)
+
+        with self.client_in_subtenant(parent_uuid=self.top_tenant_uuid) as (client, _, _):
+            base.assert_http_error(
+                404,
+                client.external.get_config,
+                self.EXTERNAL_AUTH_TYPE,
+            )
+
+    def test_given_mastertenant_and_subtenant_with_config_when_mastertenant_get_config_then_ok(self):
+        with self.client_in_subtenant(parent_uuid=self.top_tenant_uuid) as (client, _, tenant):
+            client.external.create_config(auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET)
+            base.assert_no_error(self.client.external.get_config, self.EXTERNAL_AUTH_TYPE, tenant_uuid=tenant["uuid"])

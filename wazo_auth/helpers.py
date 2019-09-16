@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class LazyTemplateRenderer:
+
     def __init__(self, acl_templates, get_data_fn, *args, **kwargs):
         self._acl_templates = acl_templates
         self._get_data_fn = get_data_fn
@@ -49,6 +50,7 @@ class LazyTemplateRenderer:
 
 
 class LocalTokenRenewer:
+
     def __init__(self, backend, token_service, user_service):
         self._username = 'wazo-auth'
         self._new_token = partial(token_service.new_token, backend.obj, self._username)
@@ -62,20 +64,16 @@ class LocalTokenRenewer:
     def get_token(self):
         if self._need_new_token():
             if not self._user_exists(self._username):
-                logger.info(
-                    '%s user not found no local token will be created', self._username
-                )
+                logger.info('%s user not found no local token will be created', self._username)
                 return
 
             self._renew_time = time.time() + self._delay - self._threshold
-            self._token = self._new_token(
-                {
-                    'expiration': 3600,
-                    'backend': 'wazo_user',
-                    'user_agent': '',
-                    'remote_addr': '127.0.0.1',
-                }
-            )
+            self._token = self._new_token({
+                'expiration': 3600,
+                'backend': 'wazo_user',
+                'user_agent': '',
+                'remote_addr': '127.0.0.1',
+            })
 
         return self._token.token
 

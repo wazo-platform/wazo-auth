@@ -16,16 +16,32 @@ down_revision = '5a81ee363008'
 TABLE = 'auth_group'
 COL = 'tenant_uuid'
 
-group_table = sa.sql.table('auth_group', sa.Column('uuid'), sa.Column('tenant_uuid'))
-tenant_table = sa.sql.table('auth_tenant', sa.Column('uuid'), sa.Column('parent_uuid'))
-user_group_table = sa.sql.table(
-    'auth_user_group', sa.Column('user_uuid'), sa.Column('group_uuid')
+group_table = sa.sql.table(
+    'auth_group',
+    sa.Column('uuid'),
+    sa.Column('tenant_uuid'),
 )
-user_table = sa.sql.table('auth_user', sa.Column('uuid'), sa.Column('tenant_uuid'))
+tenant_table = sa.sql.table(
+    'auth_tenant',
+    sa.Column('uuid'),
+    sa.Column('parent_uuid'),
+)
+user_group_table = sa.sql.table(
+    'auth_user_group',
+    sa.Column('user_uuid'),
+    sa.Column('group_uuid'),
+)
+user_table = sa.sql.table(
+    'auth_user',
+    sa.Column('uuid'),
+    sa.Column('tenant_uuid'),
+)
 
 
 def find_master_tenant():
-    query = sa.sql.select([tenant_table.c.uuid]).where(
+    query = sa.sql.select(
+        [tenant_table.c.uuid]
+    ).where(
         tenant_table.c.uuid == tenant_table.c.parent_uuid
     )
 
@@ -41,7 +57,9 @@ def find_all_group_uuids():
 
 
 def find_all_users_in_group(group_uuid):
-    query = sa.sql.select([user_group_table.c.user_uuid]).where(
+    query = sa.sql.select(
+        [user_group_table.c.user_uuid]
+    ).where(
         user_group_table.c.group_uuid == group_uuid
     )
 
@@ -49,7 +67,9 @@ def find_all_users_in_group(group_uuid):
 
 
 def get_user(user_uuid):
-    query = sa.sql.select([user_table.c.tenant_uuid]).where(
+    query = sa.sql.select(
+        [user_table.c.tenant_uuid]
+    ).where(
         user_table.c.uuid == user_uuid
     )
 
@@ -73,7 +93,7 @@ def upgrade():
             sa.ForeignKey('auth_tenant.uuid', ondelete='CASCADE'),
             server_default=master_tenant,
             nullable=False,
-        ),
+        )
     )
     op.alter_column(TABLE, COL, nullable=False, server_default=None)
 

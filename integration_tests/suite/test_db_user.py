@@ -56,17 +56,20 @@ class TestUserDAO(base.DAOTestCase):
 
         assert_that(
             calling(self._user_dao.update_emails).with_args(base.UNKNOWN_UUID, emails),
-            raises(exceptions.UnknownUserException),
-        )
+            raises(exceptions.UnknownUserException))
 
         result = self._user_dao.update_emails(user_uuid, emails)
         assert_that(result, empty())
         assert_that(self._user_dao.get_emails(user_uuid), equal_to(result))
         assert_that(self._email_exists('foobar@example.com'), equal_to(False))
 
-        emails = [self._email('foobar@example.com', main=True, confirmed=False)]
+        emails = [
+            self._email('foobar@example.com', main=True, confirmed=False),
+        ]
         result = self._user_dao.update_emails(user_uuid, emails)
-        assert_that(result, contains(*[has_entries(**email) for email in emails]))
+        assert_that(result, contains(
+            *[has_entries(**email) for email in emails]
+        ))
         assert_that(self._user_dao.get_emails(user_uuid), contains_inanyorder(*result))
 
         emails = [
@@ -74,14 +77,11 @@ class TestUserDAO(base.DAOTestCase):
             self._email('foobaz@example.com', main=True, confirmed=True),
         ]
         result = self._user_dao.update_emails(user_uuid, emails)
-        assert_that(
-            result,
-            contains_inanyorder(
-                # foobar "lost"" main and stayed unconfirmed
-                has_entries(address='foobar@example.com', main=False, confirmed=False),
-                has_entries(address='foobaz@example.com', main=True, confirmed=True),
-            ),
-        )
+        assert_that(result, contains_inanyorder(
+            # foobar "lost"" main and stayed unconfirmed
+            has_entries(address='foobar@example.com', main=False, confirmed=False),
+            has_entries(address='foobaz@example.com', main=True, confirmed=True),
+        ))
         assert_that(self._user_dao.get_emails(user_uuid), contains_inanyorder(*result))
 
         emails = [
@@ -89,14 +89,11 @@ class TestUserDAO(base.DAOTestCase):
             self._email('foobaz@example.com', main=True),
         ]
         result = self._user_dao.update_emails(user_uuid, emails)
-        assert_that(
-            result,
-            contains_inanyorder(
-                has_entries(address='foobar@example.com', main=False, confirmed=True),
-                # confirmed does not change if unspecified for an existing address
-                has_entries(address='foobaz@example.com', main=True, confirmed=True),
-            ),
-        )
+        assert_that(result, contains_inanyorder(
+            has_entries(address='foobar@example.com', main=False, confirmed=True),
+            # confirmed does not change if unspecified for an existing address
+            has_entries(address='foobaz@example.com', main=True, confirmed=True),
+        ))
         assert_that(self._user_dao.get_emails(user_uuid), contains_inanyorder(*result))
 
         emails = [
@@ -104,14 +101,11 @@ class TestUserDAO(base.DAOTestCase):
             self._email('foobaz@example.com', main=False),
         ]
         result = self._user_dao.update_emails(user_uuid, emails)
-        assert_that(
-            result,
-            contains_inanyorder(
-                # confirmed is false when unspecified and inexistant
-                has_entries(address='bazinga@example.com', main=True, confirmed=False),
-                has_entries(address='foobaz@example.com', main=False, confirmed=True),
-            ),
-        )
+        assert_that(result, contains_inanyorder(
+            # confirmed is false when unspecified and inexistant
+            has_entries(address='bazinga@example.com', main=True, confirmed=False),
+            has_entries(address='foobaz@example.com', main=False, confirmed=True),
+        ))
         assert_that(self._user_dao.get_emails(user_uuid), contains_inanyorder(*result))
 
         emails = [
@@ -119,13 +113,10 @@ class TestUserDAO(base.DAOTestCase):
             {'address': 'foobaz@example.com', 'main': False, 'confirmed': None},
         ]
         result = self._user_dao.update_emails(user_uuid, emails)
-        assert_that(
-            result,
-            contains_inanyorder(
-                has_entries(address='bazinga@example.com', main=True, confirmed=False),
-                has_entries(address='foobaz@example.com', main=False, confirmed=True),
-            ),
-        )
+        assert_that(result, contains_inanyorder(
+            has_entries(address='bazinga@example.com', main=True, confirmed=False),
+            has_entries(address='foobaz@example.com', main=False, confirmed=True),
+        ))
         assert_that(self._user_dao.get_emails(user_uuid), contains_inanyorder(*result))
 
     @fixtures.db.policy()
@@ -133,16 +124,14 @@ class TestUserDAO(base.DAOTestCase):
     def test_user_policy_association(self, user_uuid, policy_uuid):
         self._user_dao.add_policy(user_uuid, policy_uuid)
         with self._user_dao.new_session() as s:
-            count = (
-                s.query(func.count(models.UserPolicy.user_uuid))
-                .filter(
-                    and_(
-                        models.UserPolicy.user_uuid == user_uuid,
-                        models.UserPolicy.policy_uuid == policy_uuid,
-                    )
+            count = s.query(
+                func.count(models.UserPolicy.user_uuid),
+            ).filter(
+                and_(
+                    models.UserPolicy.user_uuid == user_uuid,
+                    models.UserPolicy.policy_uuid == policy_uuid,
                 )
-                .scalar()
-            )
+            ).scalar()
 
             assert_that(count, equal_to(1))
 
@@ -205,9 +194,7 @@ class TestUserDAO(base.DAOTestCase):
         result = self._user_dao.count_policies(user_uuid, search='foobar')
         assert_that(result, equal_to(2), 'search')
 
-        result = self._user_dao.count_policies(
-            user_uuid, search='foobar', filtered=False
-        )
+        result = self._user_dao.count_policies(user_uuid, search='foobar', filtered=False)
         assert_that(result, equal_to(3), 'search not filtered')
 
     @fixtures.db.user(uuid=USER_UUID)
@@ -237,19 +224,9 @@ class TestUserDAO(base.DAOTestCase):
         try:
             assert_that(user_uuid, equal_to(ANY_UUID))
             result = self._user_dao.list_(uuid=user_uuid)
-            assert_that(
-                result,
-                contains(
-                    has_entries(
-                        username=username,
-                        emails=contains(
-                            has_entries(
-                                address=email_address, confirmed=False, main=True
-                            )
-                        ),
-                    )
-                ),
-            )
+            assert_that(result, contains(has_entries(
+                username=username,
+                emails=contains(has_entries(address=email_address, confirmed=False, main=True)))))
             assert_that(
                 calling(self._user_dao.create).with_args(
                     'foo',
@@ -263,10 +240,10 @@ class TestUserDAO(base.DAOTestCase):
                 raises(
                     exceptions.ConflictException,
                     has_properties(
-                        status_code=409, resource='users', details=has_entries(uuid=ANY)
-                    ),
-                ),
-            )
+                        status_code=409,
+                        resource='users',
+                        details=has_entries(uuid=ANY),
+                    )))
         finally:
             self._user_dao.delete(user_uuid)
 
@@ -287,19 +264,9 @@ class TestUserDAO(base.DAOTestCase):
 
         try:
             result = self._user_dao.list_(uuid=user_uuid)
-            assert_that(
-                result,
-                contains(
-                    has_entries(
-                        username=username,
-                        emails=contains(
-                            has_entries(
-                                uuid=uuid_(), address=email_address, confirmed=True
-                            )
-                        ),
-                    )
-                ),
-            )
+            assert_that(result, contains(has_entries(
+                username=username,
+                emails=contains(has_entries(uuid=uuid_(), address=email_address, confirmed=True)))))
         finally:
             self._user_dao.delete(user_uuid)
 
@@ -317,7 +284,9 @@ class TestUserDAO(base.DAOTestCase):
             raises(
                 exceptions.ConflictException,
                 has_properties(
-                    status_code=409, resource='users', details=has_entries(username=ANY)
+                    status_code=409,
+                    resource='users',
+                    details=has_entries(username=ANY),
                 ),
             ),
         )
@@ -401,7 +370,11 @@ class TestUserDAO(base.DAOTestCase):
                     username='a',
                     tenant_uuid=self.top_tenant_uuid,
                     emails=contains_inanyorder(
-                        has_entries(address='a@example.com', main=True, confirmed=False)
+                        has_entries(
+                            address='a@example.com',
+                            main=True,
+                            confirmed=False,
+                        ),
                     ),
                 ),
                 has_entries(
@@ -409,7 +382,11 @@ class TestUserDAO(base.DAOTestCase):
                     username='b',
                     tenant_uuid=self.top_tenant_uuid,
                     emails=contains_inanyorder(
-                        has_entries(address='b@example.com', main=True, confirmed=False)
+                        has_entries(
+                            address='b@example.com',
+                            main=True,
+                            confirmed=False,
+                        ),
                     ),
                 ),
                 has_entries(
@@ -417,10 +394,14 @@ class TestUserDAO(base.DAOTestCase):
                     username='c',
                     tenant_uuid=self.top_tenant_uuid,
                     emails=contains_inanyorder(
-                        has_entries(address='c@example.com', main=True, confirmed=False)
+                        has_entries(
+                            address='c@example.com',
+                            main=True,
+                            confirmed=False,
+                        ),
                     ),
-                ),
-            ),
+                )
+            )
         )
 
     @fixtures.db.user(username='foo', email_address='foo@example.com')
@@ -438,8 +419,10 @@ class TestUserDAO(base.DAOTestCase):
                     tenant_uuid=self.top_tenant_uuid,
                     emails=contains_inanyorder(
                         has_entries(
-                            address='foo@example.com', main=True, confirmed=False
-                        )
+                            address='foo@example.com',
+                            main=True,
+                            confirmed=False,
+                        ),
                     ),
                 ),
                 has_entries(
@@ -448,8 +431,10 @@ class TestUserDAO(base.DAOTestCase):
                     tenant_uuid=self.top_tenant_uuid,
                     emails=contains_inanyorder(
                         has_entries(
-                            address='bar@example.com', main=True, confirmed=False
-                        )
+                            address='bar@example.com',
+                            main=True,
+                            confirmed=False,
+                        ),
                     ),
                 ),
                 has_entries(
@@ -458,11 +443,13 @@ class TestUserDAO(base.DAOTestCase):
                     tenant_uuid=self.top_tenant_uuid,
                     emails=contains_inanyorder(
                         has_entries(
-                            address='baz@example.com', main=True, confirmed=False
-                        )
+                            address='baz@example.com',
+                            main=True,
+                            confirmed=False,
+                        ),
                     ),
-                ),
-            ),
+                )
+            )
         )
 
         result = self._user_dao.list_(search='foo')
@@ -474,11 +461,13 @@ class TestUserDAO(base.DAOTestCase):
                     username='foo',
                     emails=contains_inanyorder(
                         has_entries(
-                            address='foo@example.com', main=True, confirmed=False
-                        )
+                            address='foo@example.com',
+                            main=True,
+                            confirmed=False,
+                        ),
                     ),
                 )
-            ),
+            )
         )
 
     @fixtures.db.user(username='foo', email_address='foo@example.com')
@@ -495,11 +484,13 @@ class TestUserDAO(base.DAOTestCase):
                     username='foo',
                     emails=contains_inanyorder(
                         has_entries(
-                            address='foo@example.com', main=True, confirmed=False
-                        )
+                            address='foo@example.com',
+                            main=True,
+                            confirmed=False,
+                        ),
                     ),
-                )
-            ),
+                ),
+            )
         )
 
         result = self._user_dao.list_(uuid=foo)
@@ -511,11 +502,13 @@ class TestUserDAO(base.DAOTestCase):
                     username='foo',
                     emails=contains_inanyorder(
                         has_entries(
-                            address='foo@example.com', main=True, confirmed=False
-                        )
+                            address='foo@example.com',
+                            main=True,
+                            confirmed=False,
+                        ),
                     ),
                 )
-            ),
+            )
         )
 
     @fixtures.db.user(username='foo', email_address='foo@example.com')
@@ -534,11 +527,13 @@ class TestUserDAO(base.DAOTestCase):
                     username='foo',
                     emails=contains_inanyorder(
                         has_entries(
-                            address='foo@example.com', main=True, confirmed=False
-                        )
+                            address='foo@example.com',
+                            main=True,
+                            confirmed=False,
+                        ),
                     ),
                 )
-            ),
+            )
         )
 
     @fixtures.db.user(username='a')
@@ -551,24 +546,22 @@ class TestUserDAO(base.DAOTestCase):
     @fixtures.db.user(username='h')
     @fixtures.db.user(username='i')
     def test_pagination(self, i, h, g, f, e, d, c, b, a):
-        result = self._user_dao.list_(
-            order='username', direction='desc', limit=1, offset=0
-        )
-        assert_that(result, contains_inanyorder(has_entries(uuid=i)))
+        result = self._user_dao.list_(order='username', direction='desc', limit=1, offset=0)
+        assert_that(result, contains_inanyorder(
+            has_entries(uuid=i),
+        ))
 
-        result = self._user_dao.list_(
-            order='username', direction='asc', limit=2, offset=1
-        )
-        assert_that(
-            result, contains_inanyorder(has_entries(uuid=b), has_entries(uuid=c))
-        )
+        result = self._user_dao.list_(order='username', direction='asc', limit=2, offset=1)
+        assert_that(result, contains_inanyorder(
+            has_entries(uuid=b),
+            has_entries(uuid=c),
+        ))
 
-        result = self._user_dao.list_(
-            order='username', direction='asc', limit=2, offset=1
-        )
-        assert_that(
-            result, contains_inanyorder(has_entries(uuid=b), has_entries(uuid=c))
-        )
+        result = self._user_dao.list_(order='username', direction='asc', limit=2, offset=1)
+        assert_that(result, contains_inanyorder(
+            has_entries(uuid=b),
+            has_entries(uuid=c),
+        ))
 
     @fixtures.db.user(email_address='foo@example.com')
     def test_delete(self, user_uuid):

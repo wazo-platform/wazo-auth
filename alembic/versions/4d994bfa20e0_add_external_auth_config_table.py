@@ -33,8 +33,8 @@ def upgrade():
             'tenant_uuid',
             String(38),
             ForeignKey('auth_tenant.uuid', ondelete='CASCADE'),
-            primary_key=True,
-        ),
+            primary_key=True
+        )
     )
 
 

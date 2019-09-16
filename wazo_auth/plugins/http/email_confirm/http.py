@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import Response
@@ -7,6 +7,7 @@ from wazo_auth import http
 
 
 class EmailConfirm(http.AuthResource):
+
     def __init__(self, email_service, template_formatter, config):
         self.email_service = email_service
         self._mimetype = config['email_confirmation_get_mimetype']

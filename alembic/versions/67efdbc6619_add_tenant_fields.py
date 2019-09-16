@@ -27,21 +27,13 @@ def upgrade():
     )
     op.add_column(
         'auth_tenant',
-        Column(
-            'address_id',
-            sa.Integer,
-            sa.ForeignKey('auth_address.id', ondelete='SET NULL'),
-        ),
-    )
-    op.add_column('auth_tenant', Column('phone', sa.Text))
+        Column('address_id', sa.Integer, sa.ForeignKey('auth_address.id', ondelete='SET NULL')))
     op.add_column(
         'auth_tenant',
-        Column(
-            'contact_uuid',
-            sa.String(38),
-            sa.ForeignKey('auth_user.uuid', ondelete='SET NULL'),
-        ),
-    )
+        Column('phone', sa.Text))
+    op.add_column(
+        'auth_tenant',
+        Column('contact_uuid', sa.String(38), sa.ForeignKey('auth_user.uuid', ondelete='SET NULL')))
 
 
 def downgrade():
