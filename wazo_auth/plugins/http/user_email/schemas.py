@@ -1,12 +1,7 @@
 # Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from marshmallow import (
-    EXCLUDE,
-    post_load,
-    validates_schema,
-    ValidationError,
-)
+from marshmallow import EXCLUDE, post_load, validates_schema, ValidationError
 from xivo.mallow import fields
 from wazo_auth.schemas import BaseSchema
 
@@ -24,8 +19,6 @@ class _UserEmailSchema(BaseSchema):
     main = fields.Boolean(missing=False)
 
 
-
-
 def new_email_put_schema(user_type):
     if user_type == 'admin':
         EmailSchema = _AdminEmailSchema
@@ -34,8 +27,7 @@ def new_email_put_schema(user_type):
 
     class EmailPutSchema(BaseSchema):
 
-        emails = fields.Nested(EmailSchema, required=True, many=True,
-                               unknown=EXCLUDE)
+        emails = fields.Nested(EmailSchema, required=True, many=True, unknown=EXCLUDE)
 
         @post_load
         def as_list(self, data):
@@ -61,7 +53,9 @@ def new_email_put_schema(user_type):
             if not emails:
                 return
 
-            addresses = list(email['address'] for email in emails if email.get('address'))
+            addresses = list(
+                email['address'] for email in emails if email.get('address')
+            )
             if len(addresses) != len(set(addresses)):
                 raise ValidationError('The same address can only be used once')
 

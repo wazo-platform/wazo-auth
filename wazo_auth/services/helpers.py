@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 class BaseService:
-
     def __init__(self, dao, tenant_tree):
         self._dao = dao
         self._top_tenant_uuid = None
@@ -63,13 +62,12 @@ class TemplateLoader(BaseLoader):
 
 
 class TemplateFormatter:
-
     def __init__(self, config):
-        self.environment = Environment(
-            loader=TemplateLoader(config),
-        )
+        self.environment = Environment(loader=TemplateLoader(config))
         self.environment.globals['port'] = config['service_discovery']['advertise_port']
-        self.environment.globals['hostname'] = address_from_config(config['service_discovery'])
+        self.environment.globals['hostname'] = address_from_config(
+            config['service_discovery']
+        )
 
     def format_confirmation_email(self, context):
         template = self.environment.get_template('email_confirmation')
@@ -94,7 +92,6 @@ class TemplateFormatter:
 
 
 class TenantTree:
-
     def __init__(self, tenant_dao):
         self._tenant_dao = tenant_dao
         self._tenant_tree = None
@@ -141,7 +138,6 @@ class TenantTree:
 
 
 class CachedTenantTree(TenantTree):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._tree_lock = threading.Lock()

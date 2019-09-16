@@ -12,7 +12,6 @@ from ..schemas import TokenRequestSchema
 
 
 class TestTokenRequestSchema(TestCase):
-
     def setUp(self):
         self.schema = TokenRequestSchema()
 
@@ -24,7 +23,7 @@ class TestTokenRequestSchema(TestCase):
             assert_that(
                 calling(self.schema.load).with_args(body),
                 raises(ValidationError).matching(
-                    has_properties(field_names=has_item('expiration')),
+                    has_properties(field_names=has_item('expiration'))
                 ),
             )
 
@@ -38,17 +37,14 @@ class TestTokenRequestSchema(TestCase):
         assert_that(
             calling(self.schema.load).with_args(body),
             raises(ValidationError).matching(
-                has_properties(field_names=has_item('_schema')),
-            )
+                has_properties(field_names=has_item('_schema'))
+            ),
         )
 
     def test_that_the_access_type_is_online_when_using_a_refresh_token(self):
         body = {'refresh_token': 'foobar', 'client_id': 'x'}
 
-        assert_that(
-            calling(self.schema.load).with_args(body),
-            not_(raises(Exception)),
-        )
+        assert_that(calling(self.schema.load).with_args(body), not_(raises(Exception)))
 
         assert_that(
             calling(self.schema.load).with_args(dict(access_type='online', **body)),
@@ -58,8 +54,8 @@ class TestTokenRequestSchema(TestCase):
         assert_that(
             calling(self.schema.load).with_args(dict(access_type='offline', **body)),
             raises(ValidationError).matching(
-                has_properties(field_names=has_item('_schema')),
-            )
+                has_properties(field_names=has_item('_schema'))
+            ),
         )
 
     def test_that_a_refresh_token_requires_a_client_id(self):
@@ -73,6 +69,6 @@ class TestTokenRequestSchema(TestCase):
         assert_that(
             calling(self.schema.load).with_args(body),
             raises(ValidationError).matching(
-                has_properties(field_names=has_item('_schema')),
-            )
+                has_properties(field_names=has_item('_schema'))
+            ),
         )

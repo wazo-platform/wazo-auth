@@ -32,7 +32,6 @@ def teardown_module():
 
 
 class TestGroupDAO(base.DAOTestCase):
-
     @fixtures.db.policy()
     @fixtures.db.group()
     def test_add_policy(self, group_uuid, policy_uuid):
@@ -45,13 +44,17 @@ class TestGroupDAO(base.DAOTestCase):
         self._group_dao.add_policy(group_uuid, policy_uuid)  # twice
 
         assert_that(
-            calling(self._group_dao.add_policy).with_args(self.unknown_uuid, policy_uuid),
+            calling(self._group_dao.add_policy).with_args(
+                self.unknown_uuid, policy_uuid
+            ),
             raises(exceptions.UnknownGroupException),
             'unknown group',
         )
 
         assert_that(
-            calling(self._group_dao.add_policy).with_args(group_uuid, self.unknown_uuid),
+            calling(self._group_dao.add_policy).with_args(
+                group_uuid, self.unknown_uuid
+            ),
             raises(exceptions.UnknownPolicyException),
             'unknown policy',
         )
@@ -107,18 +110,16 @@ class TestGroupDAO(base.DAOTestCase):
         with self._group_dao.new_session() as s:
             filter_ = models.Group.uuid == group_uuid
             group = s.query(models.Group).filter(filter_).first()
-            assert_that(group, has_properties(
-                name=name,
-                tenant_uuid=tenant_uuid,
-            ))
+            assert_that(group, has_properties(name=name, tenant_uuid=tenant_uuid))
 
         assert_that(
             calling(self._group_dao.create).with_args(name, tenant_uuid),
             raises(exceptions.ConflictException).matching(
                 has_properties(
-                    'status_code', 409,
-                    'resource', 'groups',
-                    'details', has_key('name'))))
+                    'status_code', 409, 'resource', 'groups', 'details', has_key('name')
+                )
+            ),
+        )
 
     @fixtures.db.group()
     def test_delete(self, group_uuid):

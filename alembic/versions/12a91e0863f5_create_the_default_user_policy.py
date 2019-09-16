@@ -5,12 +5,12 @@ Revises: 4d42b4db090f
 
 """
 
+from alembic import op
+import sqlalchemy as sa
+
 # revision identifiers, used by Alembic.
 revision = '12a91e0863f5'
 down_revision = '4d42b4db090f'
-
-from alembic import op
-import sqlalchemy as sa
 
 POLICY_NAME = 'wazo_default_user_policy'
 POLICY_DESCRIPTION = '''\
@@ -58,9 +58,7 @@ policy_table = sa.sql.table(
     sa.Column('description', sa.Text),
 )
 acl_template_table = sa.sql.table(
-    'auth_acl_template',
-    sa.Column('id', sa.Integer),
-    sa.Column('template', sa.Text),
+    'auth_acl_template', sa.Column('id', sa.Integer), sa.Column('template', sa.Text)
 )
 policy_template = sa.sql.table(
     'auth_policy_template',
@@ -73,29 +71,34 @@ def upgrade():
     op.execute(policy_table.delete().where(policy_table.c.name == POLICY_NAME))
 
     conn = op.get_bind()
-    query = policy_table.insert().returning(policy_table.c.uuid).values(
-        name=POLICY_NAME,
-        description=POLICY_DESCRIPTION,
+    query = (
+        policy_table.insert()
+        .returning(policy_table.c.uuid)
+        .values(name=POLICY_NAME, description=POLICY_DESCRIPTION)
     )
     policy_uuid = conn.execute(query).scalar()
     acl_template_ids = []
     for acl_template in DEFAULT_USER_ACL_TEMPLATES:
-        query = sa.sql.select(
-            [acl_template_table.c.id]
-        ).where(
-            acl_template_table.c.template == acl_template,
-        ).limit(1)
+        query = (
+            sa.sql.select([acl_template_table.c.id])
+            .where(acl_template_table.c.template == acl_template)
+            .limit(1)
+        )
         acl_template_id = conn.execute(query).scalar()
         if not acl_template_id:
-            query = acl_template_table.insert().returning(acl_template_table.c.id).values(
-                template=acl_template,
+            query = (
+                acl_template_table.insert()
+                .returning(acl_template_table.c.id)
+                .values(template=acl_template)
             )
             acl_template_id = conn.execute(query).scalar()
         acl_template_ids.append(acl_template_id)
     op.bulk_insert(
         policy_template,
-        [{'policy_uuid': policy_uuid,
-          'template_id': template_id} for template_id in acl_template_ids],
+        [
+            {'policy_uuid': policy_uuid, 'template_id': template_id}
+            for template_id in acl_template_ids
+        ],
     )
 
 

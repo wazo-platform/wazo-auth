@@ -5,25 +5,19 @@ Revises: 41ef5facca2d
 
 """
 
+from alembic import op
+import sqlalchemy as sa
+
 # revision identifiers, used by Alembic.
 revision = '3022a18d6fe'
 down_revision = '41ef5facca2d'
-
-from alembic import op
-import sqlalchemy as sa
 
 table_name = 'auth_user'
 
 
 def upgrade():
-    op.add_column(
-        table_name,
-        sa.Column('firstname', sa.Text),
-    )
-    op.add_column(
-        table_name,
-        sa.Column('lastname', sa.Text),
-    )
+    op.add_column(table_name, sa.Column('firstname', sa.Text))
+    op.add_column(table_name, sa.Column('lastname', sa.Text))
 
 
 def downgrade():

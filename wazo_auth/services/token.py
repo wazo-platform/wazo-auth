@@ -4,22 +4,15 @@
 import time
 import logging
 
-from xivo_bus.resources.auth.events import (
-    SessionCreatedEvent,
-    SessionDeletedEvent,
-)
+from xivo_bus.resources.auth.events import SessionCreatedEvent, SessionDeletedEvent
 
 from wazo_auth.token import Token
-from ..exceptions import (
-    MissingACLTokenException,
-    UnknownTokenException,
-)
+from ..exceptions import MissingACLTokenException, UnknownTokenException
 
 logger = logging.getLogger(__name__)
 
 
 class TokenService:
-
     def __init__(self, config, dao, tenant_tree, bus_publisher):
         self._backend_policies = config.get('backend_policies', {})
         self._default_expiration = config['default_token_lifetime']
@@ -72,7 +65,9 @@ class TokenService:
             refresh_token = self._dao.refresh_token.create(body)
             token_payload['refresh_token'] = refresh_token
 
-        token_uuid, session_uuid = self._dao.token.create(token_payload, session_payload)
+        token_uuid, session_uuid = self._dao.token.create(
+            token_payload, session_payload
+        )
         token = Token(token_uuid, session_uuid=session_uuid, **token_payload)
 
         event = SessionCreatedEvent(session_uuid, user_uuid=auth_id, **session_payload)
@@ -124,5 +119,9 @@ class TokenService:
         for policy in matching_policies:
             return policy['acl_templates']
 
-        logger.info('Unknown policy name "%s" configured for backend "%s"', policy_name, backend_name)
+        logger.info(
+            'Unknown policy name "%s" configured for backend "%s"',
+            policy_name,
+            backend_name,
+        )
         return []

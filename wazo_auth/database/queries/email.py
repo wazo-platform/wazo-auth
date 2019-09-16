@@ -1,4 +1,4 @@
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_auth import exceptions
@@ -8,7 +8,6 @@ from ..models import Email
 
 
 class EmailDAO(BaseDAO):
-
     def create(self, address, confirmed=False):
         email = Email(address=address, confirmed=confirmed)
         with self.new_session() as s:

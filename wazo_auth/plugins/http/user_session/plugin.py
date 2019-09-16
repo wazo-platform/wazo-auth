@@ -5,7 +5,6 @@ from . import http
 
 
 class Plugin:
-
     def load(self, dependencies):
         api = dependencies['api']
         user_service = dependencies['user_service']

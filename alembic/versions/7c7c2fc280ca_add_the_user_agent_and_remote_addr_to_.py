@@ -5,17 +5,21 @@ Revises: 63acf2b9a7b9
 
 """
 
+from alembic import op
+import sqlalchemy as sa
+
 # revision identifiers, used by Alembic.
 revision = '7c7c2fc280ca'
 down_revision = '63acf2b9a7b9'
 
-from alembic import op
-import sqlalchemy as sa
-
 
 def upgrade():
-    op.add_column('auth_token', sa.Column('user_agent', sa.Text, server_default='', default=''))
-    op.add_column('auth_token', sa.Column('remote_addr', sa.Text, server_default='', default=''))
+    op.add_column(
+        'auth_token', sa.Column('user_agent', sa.Text, server_default='', default='')
+    )
+    op.add_column(
+        'auth_token', sa.Column('remote_addr', sa.Text, server_default='', default='')
+    )
 
 
 def downgrade():

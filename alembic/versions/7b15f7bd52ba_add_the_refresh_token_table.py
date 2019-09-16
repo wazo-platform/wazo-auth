@@ -18,10 +18,17 @@ def upgrade():
     op.create_table(
         'auth_refresh_token',
         Column(
-            'uuid', sa.String(36), server_default=sa.text('uuid_generate_v4()'), primary_key=True,
+            'uuid',
+            sa.String(36),
+            server_default=sa.text('uuid_generate_v4()'),
+            primary_key=True,
         ),
         Column('client_id', sa.Text),
-        Column('user_uuid', sa.String(36), sa.ForeignKey('auth_user.uuid', ondelete='CASCADE')),
+        Column(
+            'user_uuid',
+            sa.String(36),
+            sa.ForeignKey('auth_user.uuid', ondelete='CASCADE'),
+        ),
         Column('backend', sa.Text),
         Column('login', sa.Text),
         Column('user_agent', sa.Text),

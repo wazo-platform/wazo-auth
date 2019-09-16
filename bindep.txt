@@ -1,0 +1,3 @@
+libldap2-dev  [platform:dpkg]
+libsasl2-dev  [platform:dpkg]
+libssl-dev    [platform:dpkg]
