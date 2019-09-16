@@ -14,7 +14,10 @@ down_revision = '25d2207a6994'
 
 
 def upgrade():
-    op.add_column('auth_user', sa.Column('enabled', sa.Boolean, server_default='true'))
+    op.add_column(
+        'auth_user',
+        sa.Column('enabled', sa.Boolean, server_default='true'),
+    )
 
 
 def downgrade():

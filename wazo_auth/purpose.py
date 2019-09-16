@@ -1,12 +1,12 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-
 logger = logging.getLogger()
 
 
 class Purpose:
+
     def __init__(self, name, metadata_plugins=None):
         self.name = name
         metadata_plugins = metadata_plugins or []
@@ -21,10 +21,7 @@ class Purpose:
             self._metadata_plugins.append(metadata_plugin)
 
     def __eq__(self, other):
-        return (
-            self.name == other.name
-            and self._metadata_plugins == other._metadata_plugins
-        )
+        return self.name == other.name and self._metadata_plugins == other._metadata_plugins
 
     def __ne__(self, other):
         return not self == other
@@ -75,17 +72,13 @@ class Purposes:
         try:
             return self._metadata_plugins[plugin]
         except KeyError:
-            logger.warning(
-                "Purposes must have the following metadata plugins enabled: %s", plugin
-            )
+            logger.warning("Purposes must have the following metadata plugins enabled: %s", plugin)
 
     def _get_metadata_plugin(self, name):
         try:
             return self._metadata_plugins[name]
         except KeyError:
-            logger.warning(
-                "A purpose has been assigned to an invalid metadata plugin: %s", name
-            )
+            logger.warning("A purpose has been assigned to an invalid metadata plugin: %s", name)
 
     def get(self, name):
         return self._purposes.get(name)

@@ -5,12 +5,15 @@ from . import http
 
 
 class Plugin:
+
     def load(self, dependencies):
         api = dependencies['api']
         session_service = dependencies['session_service']
 
         api.add_resource(
-            http.Sessions, '/sessions', resource_class_args=[session_service]
+            http.Sessions,
+            '/sessions',
+            resource_class_args=[session_service],
         )
         api.add_resource(
             http.Session,

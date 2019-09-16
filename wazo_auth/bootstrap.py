@@ -61,10 +61,8 @@ def main():
     elif args.action == 'complete':
         try:
             complete()
-        except Exception:
-            with tempfile.NamedTemporaryFile(
-                mode='w', prefix='wazo-auth-bootstrap-', delete=False
-            ) as log_file:
+        except Exception as e:
+            with tempfile.NamedTemporaryFile(mode='w', prefix='wazo-auth-bootstrap-', delete=False) as log_file:
                 traceback.print_exc(file=log_file)
                 print(ERROR_MSG.format(log_file=log_file.name), file=sys.stderr)
             sys.exit(1)
@@ -82,18 +80,19 @@ def complete():
             break
 
     password = random_string(28)
-    body = {'key': key, 'username': USERNAME, 'password': password, 'purpose': PURPOSE}
+    body = {
+        'key': key,
+        'username': USERNAME,
+        'password': password,
+        'purpose': PURPOSE,
+    }
 
-    wazo_auth_config = read_config_file_hierarchy(
-        {'config_file': DEFAULT_WAZO_AUTH_CONFIG_FILE}
-    )
+    wazo_auth_config = read_config_file_hierarchy({'config_file': DEFAULT_WAZO_AUTH_CONFIG_FILE})
     port = wazo_auth_config['rest_api']['https']['port']
     url = URL.format(port)
     for _ in range(40):
         try:
-            response = requests.post(
-                url, data=json.dumps(body), headers=HEADERS, verify=False
-            )
+            response = requests.post(url, data=json.dumps(body), headers=HEADERS, verify=False)
             break
         except requests.exceptions.ConnectionError:
             time.sleep(0.25)

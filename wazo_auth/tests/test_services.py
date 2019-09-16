@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that, contains, calling, equal_to, has_entries, not_, raises
@@ -10,19 +10,11 @@ from unittest import TestCase
 from wazo_auth.config import _DEFAULT_CONFIG
 from .. import exceptions, services
 from ..database import queries
-from ..database.queries import (
-    address,
-    email,
-    external_auth,
-    group,
-    policy,
-    tenant,
-    token,
-    user,
-)
+from ..database.queries import address, email, external_auth, group, policy, tenant, token, user
 
 
 class BaseServiceTestCase(TestCase):
+
     def setUp(self):
         self.top_tenant_uuid = 'c699f101-2c71-4069-85da-e1ca7f680393'
 
@@ -52,6 +44,7 @@ class BaseServiceTestCase(TestCase):
 
 
 class TestExternalAuthService(BaseServiceTestCase):
+
     class Auth1SafeFields(BaseSchema):
 
         scope = fields.List(fields.String)
@@ -59,69 +52,43 @@ class TestExternalAuthService(BaseServiceTestCase):
     def setUp(self):
         super().setUp()
         self._tenant_tree = Mock()
-        self.service = services.ExternalAuthService(
-            self.dao, self._tenant_tree, _DEFAULT_CONFIG
-        )
+        self.service = services.ExternalAuthService(self.dao, self._tenant_tree, _DEFAULT_CONFIG)
 
     def test_list_external_auth(self):
         # No safe model registered for any auth type
         self.external_auth_dao.list_.return_value = [
-            {
-                'type': 'auth_1',
-                'data': {'scope': ['scope'], 'token': 'supersecret'},
-                'enabled': True,
-            },
-            {
-                'type': 'auth_2',
-                'data': {'scope': ['one', 'two', 42], 'password': 'l337'},
-                'enabled': True,
-            },
+            {'type': 'auth_1', 'data': {'scope': ['scope'], 'token': 'supersecret'}, 'enabled': True},
+            {'type': 'auth_2', 'data': {'scope': ['one', 'two', 42], 'password': 'l337'}, 'enabled': True},
         ]
 
         result = self.service.list_(s.user_uuid)
-        assert_that(
-            result,
-            contains(
-                {'type': 'auth_1', 'data': {}, 'enabled': True},
-                {'type': 'auth_2', 'data': {}, 'enabled': True},
-            ),
-        )
+        assert_that(result, contains(
+            {'type': 'auth_1', 'data': {}, 'enabled': True},
+            {'type': 'auth_2', 'data': {}, 'enabled': True},
+        ))
 
         # With a safe model for auth_1
         self.service.register_safe_auth_model('auth_1', self.Auth1SafeFields)
         result = self.service.list_(s.user_uuid)
-        assert_that(
-            result,
-            contains(
-                {'type': 'auth_1', 'data': {'scope': ['scope']}, 'enabled': True},
-                {'type': 'auth_2', 'data': {}, 'enabled': True},
-            ),
-        )
+        assert_that(result, contains(
+            {'type': 'auth_1', 'data': {'scope': ['scope']}, 'enabled': True},
+            {'type': 'auth_2', 'data': {}, 'enabled': True},
+        ))
 
         # With data not matching the model fallback to {}
         self.external_auth_dao.list_.return_value = [
-            {
-                'type': 'auth_1',
-                'data': {'scope': 42, 'token': 'supersecret'},
-                'enabled': True,
-            },
-            {
-                'type': 'auth_2',
-                'data': {'scope': ['one', 'two', 42], 'password': 'l337'},
-                'enabled': True,
-            },
+            {'type': 'auth_1', 'data': {'scope': 42, 'token': 'supersecret'}, 'enabled': True},
+            {'type': 'auth_2', 'data': {'scope': ['one', 'two', 42], 'password': 'l337'}, 'enabled': True},
         ]
         result = self.service.list_(s.user_uuid)
-        assert_that(
-            result,
-            contains(
-                {'type': 'auth_1', 'data': {}, 'enabled': True},
-                {'type': 'auth_2', 'data': {}, 'enabled': True},
-            ),
-        )
+        assert_that(result, contains(
+            {'type': 'auth_1', 'data': {}, 'enabled': True},
+            {'type': 'auth_2', 'data': {}, 'enabled': True},
+        ))
 
 
 class TestGroupService(BaseServiceTestCase):
+
     def setUp(self):
         super().setUp()
         self._tenant_tree = Mock()
@@ -136,26 +103,22 @@ class TestGroupService(BaseServiceTestCase):
         when(nb_deleted=0, group_exists=False)
         assert_that(
             calling(self.service.remove_policy).with_args(s.group_uuid, s.policy_uuid),
-            raises(exceptions.UnknownGroupException),
-        )
+            raises(exceptions.UnknownGroupException))
 
         when(nb_deleted=0, policy_exists=False)
         assert_that(
             calling(self.service.remove_policy).with_args(s.group_uuid, s.policy_uuid),
-            raises(exceptions.UnknownPolicyException),
-        )
+            raises(exceptions.UnknownPolicyException))
 
         when(nb_deleted=0)
         assert_that(
             calling(self.service.remove_policy).with_args(s.group_uuid, s.policy_uuid),
-            not_(raises(Exception)),
-        )
+            not_(raises(Exception)))
 
         when(nb_deleted=1)
         assert_that(
             calling(self.service.remove_policy).with_args(s.group_uuid, s.policy_uuid),
-            not_(raises(Exception)),
-        )
+            not_(raises(Exception)))
 
     def test_remove_user(self):
         def when(nb_deleted, group_exists=True, user_exists=True):
@@ -166,29 +129,26 @@ class TestGroupService(BaseServiceTestCase):
         when(nb_deleted=0, group_exists=False)
         assert_that(
             calling(self.service.remove_user).with_args(s.group_uuid, s.user_uuid),
-            raises(exceptions.UnknownGroupException),
-        )
+            raises(exceptions.UnknownGroupException))
 
         when(nb_deleted=0, user_exists=False)
         assert_that(
             calling(self.service.remove_user).with_args(s.group_uuid, s.user_uuid),
-            raises(exceptions.UnknownUserException),
-        )
+            raises(exceptions.UnknownUserException))
 
         when(nb_deleted=0)
         assert_that(
             calling(self.service.remove_user).with_args(s.group_uuid, s.user_uuid),
-            not_(raises(Exception)),
-        )
+            not_(raises(Exception)))
 
         when(nb_deleted=1)
         assert_that(
             calling(self.service.remove_user).with_args(s.group_uuid, s.user_uuid),
-            not_(raises(Exception)),
-        )
+            not_(raises(Exception)))
 
 
 class TestPolicyService(BaseServiceTestCase):
+
     def setUp(self):
         super().setUp()
         self.tenant_tree = Mock()
@@ -203,49 +163,49 @@ class TestPolicyService(BaseServiceTestCase):
             when(nb_deleted=0, policy_exists=False)
             assert_that(
                 calling(self.service.delete_acl_template).with_args(
-                    s.policy_uuid, s.acl_template, s.scoping_tenant
+                    s.policy_uuid,
+                    s.acl_template,
+                    s.scoping_tenant,
                 ),
-                raises(exceptions.UnknownPolicyException),
-            )
+                raises(exceptions.UnknownPolicyException))
 
             when(nb_deleted=0)
             assert_that(
                 calling(self.service.delete_acl_template).with_args(
-                    s.policy_uuid, s.acl_template, s.scoping_tenant
+                    s.policy_uuid,
+                    s.acl_template,
+                    s.scoping_tenant,
                 ),
-                not_(raises(Exception)),
-            )
+                not_(raises(Exception)))
 
             when(nb_deleted=1)
             assert_that(
                 calling(self.service.delete_acl_template).with_args(
-                    s.policy_uuid, s.acl_template, s.scoping_tenant
+                    s.policy_uuid,
+                    s.acl_template,
+                    s.scoping_tenant,
                 ),
-                not_(raises(Exception)),
-            )
+                not_(raises(Exception)))
 
 
 class TestUserService(BaseServiceTestCase):
+
     def setUp(self):
         super().setUp()
         self.tenant_tree = Mock()
-        self.service = services.UserService(
-            self.dao, self.tenant_tree, encrypter=self.encrypter
-        )
+        self.service = services.UserService(self.dao, self.tenant_tree, encrypter=self.encrypter)
 
     def test_change_password(self):
         self.user_dao.list_.return_value = []
         assert_that(
             calling(self.service.change_password).with_args(s.uuid, s.old, s.new),
-            raises(exceptions.UnknownUserException),
-        )
+            raises(exceptions.UnknownUserException))
 
         self.user_dao.list_.return_value = [{'username': 'foobar'}]
         with patch.object(self.service, 'verify_password', return_value=False):
             assert_that(
                 calling(self.service.change_password).with_args(s.uuid, s.old, s.new),
-                raises(exceptions.AuthenticationFailedException),
-            )
+                raises(exceptions.AuthenticationFailedException))
 
         self.user_dao.list_.return_value = [{'username': 'foobar'}]
         with patch.object(self.service, 'verify_password', return_value=True):
@@ -256,32 +216,22 @@ class TestUserService(BaseServiceTestCase):
     def test_delete_password(self):
         self.user_dao.list_.return_value = []
         assert_that(
-            calling(self.service.delete_password).with_args(
-                username=s.username, email_address=None
-            ),
-            raises(exceptions.UnknownUserException),
-        )
+            calling(self.service.delete_password).with_args(username=s.username, email_address=None),
+            raises(exceptions.UnknownUserException))
         self.user_dao.list_.assert_called_once_with(username=s.username, limit=1)
 
         self.user_dao.list_.reset_mock()
         assert_that(
-            calling(self.service.delete_password).with_args(
-                username=None, email_address=s.email_address
-            ),
-            raises(exceptions.UnknownUserException),
-        )
-        self.user_dao.list_.assert_called_once_with(
-            email_address=s.email_address, limit=1
-        )
+            calling(self.service.delete_password).with_args(username=None, email_address=s.email_address),
+            raises(exceptions.UnknownUserException))
+        self.user_dao.list_.assert_called_once_with(email_address=s.email_address, limit=1)
 
         user_uuid = '4a2c93b6-4045-4116-8d53-263e3eac83dd'
         self.user_dao.list_.return_value = [{'uuid': user_uuid}]
 
         result = self.service.delete_password(email_address=s.email_address)
 
-        self.user_dao.change_password.assert_called_once_with(
-            user_uuid, salt=None, hash_=None
-        )
+        self.user_dao.change_password.assert_called_once_with(user_uuid, salt=None, hash_=None)
         assert_that(result, has_entries(uuid=user_uuid))
 
     def test_remove_policy(self):
@@ -293,26 +243,22 @@ class TestUserService(BaseServiceTestCase):
         when(nb_deleted=0, user_exists=False)
         assert_that(
             calling(self.service.remove_policy).with_args(s.user_uuid, s.policy_uuid),
-            raises(exceptions.UnknownUserException),
-        )
+            raises(exceptions.UnknownUserException))
 
         when(nb_deleted=0, policy_exists=False)
         assert_that(
             calling(self.service.remove_policy).with_args(s.user_uuid, s.policy_uuid),
-            raises(exceptions.UnknownPolicyException),
-        )
+            raises(exceptions.UnknownPolicyException))
 
         when(nb_deleted=0)
         assert_that(
             calling(self.service.remove_policy).with_args(s.user_uuid, s.policy_uuid),
-            not_(raises(Exception)),
-        )
+            not_(raises(Exception)))
 
         when(nb_deleted=1)
         assert_that(
             calling(self.service.remove_policy).with_args(s.user_uuid, s.policy_uuid),
-            not_(raises(Exception)),
-        )
+            not_(raises(Exception)))
 
     def test_that_new_user_calls_the_dao(self):
         params = {

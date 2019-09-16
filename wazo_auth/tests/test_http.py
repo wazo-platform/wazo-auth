@@ -64,11 +64,9 @@ class HTTPAppTestCase(TestCase):
 TENANT = '00000000-0000-0000-0000-000000000000'
 
 
-@patch(
-    'wazo_auth.plugins.http.users.http.Tenant',
-    Mock(autodetect=Mock(return_value=Mock(uuid=TENANT))),
-)
+@patch('wazo_auth.plugins.http.users.http.Tenant', Mock(autodetect=Mock(return_value=Mock(uuid=TENANT))))
 class TestUserResource(HTTPAppTestCase):
+
     def setUp(self):
         super().setUp(_DEFAULT_CONFIG)
         self.url = '/0.1/users'
@@ -103,7 +101,9 @@ class TestUserResource(HTTPAppTestCase):
         assert_that(
             result.json,
             has_entries(
-                'uuid', uuid, 'username', username, 'email_address', email_address
+                'uuid', uuid,
+                'username', username,
+                'email_address', email_address,
             ),
         )
 
@@ -124,22 +124,12 @@ class TestUserResource(HTTPAppTestCase):
             assert_that(result.status_code, equal_to(400), field)
             assert_that(
                 result.json,
-                has_entries(
-                    'error_id',
-                    'invalid-data',
-                    'message',
-                    'Missing data for required field.',
-                    'resource',
-                    'users',
-                    'details',
-                    {
-                        field: {
-                            'constraint_id': 'required',
-                            'constraint': 'required',
-                            'message': ANY,
-                        }
-                    },
-                ),
+                has_entries('error_id', 'invalid-data',
+                            'message', 'Missing data for required field.',
+                            'resource', 'users',
+                            'details', {field: {'constraint_id': 'required',
+                                                'constraint': 'required',
+                                                'message': ANY}}),
                 field,
             )
 
@@ -147,7 +137,10 @@ class TestUserResource(HTTPAppTestCase):
         result = self.app.post(self.url, json='null')
 
         assert_that(result.status_code, equal_to(400))
-        assert_that(result.json, has_entries('error_id', 'invalid-data'))
+        assert_that(
+            result.json,
+            has_entries('error_id', 'invalid-data')
+        )
 
     def test_that_empty_fields_are_not_valid(self):
         username, password, email_address = 'foobar', 'b3h01D', 'foobar@example.com'
@@ -166,22 +159,17 @@ class TestUserResource(HTTPAppTestCase):
             assert_that(result.status_code, equal_to(400), field)
             assert_that(
                 result.json,
-                has_entries(
-                    'error_id',
-                    'invalid-data',
-                    'resource',
-                    'users',
-                    'details',
-                    has_entries(
-                        field, has_entries('constraint_id', any_of('length', 'type'))
-                    ),
-                ),
+                has_entries('error_id', 'invalid-data',
+                            'resource', 'users',
+                            'details', has_entries(field, has_entries('constraint_id', any_of('length', 'type')))),
                 field,
             )
 
     def test_that_null_fields_are_not_valid(self):
         username = 'foobar'
-        valid_body = {'username': username}
+        valid_body = {
+            'username': username,
+        }
 
         for field in ('username',):
             body = dict(valid_body)
@@ -192,14 +180,9 @@ class TestUserResource(HTTPAppTestCase):
             assert_that(result.status_code, equal_to(400), field)
             assert_that(
                 result.json,
-                has_entries(
-                    'error_id',
-                    'invalid-data',
-                    'resource',
-                    'users',
-                    'details',
-                    has_entries(field, has_entries('constraint_id', 'not_null')),
-                ),
+                has_entries('error_id', 'invalid-data',
+                            'resource', 'users',
+                            'details', has_entries(field, has_entries('constraint_id', 'not_null'))),
                 field,
             )
 
@@ -218,7 +201,7 @@ class TestUserResource(HTTPAppTestCase):
                 'username': 'foobar',
                 'email_address': 'foobar@example.com',
                 'uuid': '5941aabb-9e4a-4d2e-9e1e-7f9929354458',
-            }
+            },
         ]
         self.user_service.list_users.return_value = expected_result
         self.user_service.count_users.side_effect = [expected_total, expected_filtered]
@@ -229,13 +212,10 @@ class TestUserResource(HTTPAppTestCase):
         assert_that(
             result.json,
             has_entries(
-                'total',
-                expected_total,
-                'filtered',
-                expected_filtered,
-                'items',
-                expected_result,
-            ),
+                'total', expected_total,
+                'filtered', expected_filtered,
+                'items', expected_result,
+            )
         )
 
     def test_user_list_invalid_list_params(self):
@@ -255,8 +235,9 @@ class TestUserResource(HTTPAppTestCase):
         assert_that(
             result.json,
             has_entries(
-                'error_id', 'invalid-list-param', 'message', has_entries('limit', ANY)
-            ),
+                'error_id', 'invalid-list-param',
+                'message', has_entries('limit', ANY),
+            )
         )
 
         invalid_params = dict(params)
@@ -266,8 +247,9 @@ class TestUserResource(HTTPAppTestCase):
         assert_that(
             result.json,
             has_entries(
-                'error_id', 'invalid-list-param', 'message', has_entries('offset', ANY)
-            ),
+                'error_id', 'invalid-list-param',
+                'message', has_entries('offset', ANY),
+            )
         )
 
         invalid_params = dict(params)
@@ -277,11 +259,9 @@ class TestUserResource(HTTPAppTestCase):
         assert_that(
             result.json,
             has_entries(
-                'error_id',
-                'invalid-list-param',
-                'message',
-                has_entries('direction', ANY),
-            ),
+                'error_id', 'invalid-list-param',
+                'message', has_entries('direction', ANY),
+            )
         )
 
         invalid_params = dict(params)
@@ -291,8 +271,9 @@ class TestUserResource(HTTPAppTestCase):
         assert_that(
             result.json,
             has_entries(
-                'error_id', 'invalid-list-param', 'message', has_entries('order', ANY)
-            ),
+                'error_id', 'invalid-list-param',
+                'message', has_entries('order', ANY),
+            )
         )
 
     def test_user_get(self):
@@ -302,14 +283,17 @@ class TestUserResource(HTTPAppTestCase):
             'username': 'foobar',
             'uuid': uuid,
             'emails': [
-                {'address': 'foobar@example.com', 'confirmed': True, 'main': True}
+                {'address': 'foobar@example.com', 'confirmed': True, 'main': True},
             ],
         }
         self.user_service.get_user.return_value = expected_result
 
         result = self.app.get(url)
 
-        assert_that(result.json, equal_to(expected_result))
+        assert_that(
+            result.json,
+            equal_to(expected_result),
+        )
 
     def test_user_delete(self):
         uuid = '5730c531-5e47-4de6-be60-c3e28de00de4'

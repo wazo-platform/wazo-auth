@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that, contains_inanyorder
@@ -24,6 +24,7 @@ def tenant(name, parent, uuid=None):
 
 
 class TestTenantTree(TestCase):
+
     def setUp(self):
         top_tenant_uuid = uuid4()
 
@@ -37,17 +38,7 @@ class TestTenantTree(TestCase):
         self.g = tenant('g', self.b['uuid'])
         self.h = tenant('h', self.top['uuid'])
 
-        self.tenants = [
-            self.top,
-            self.a,
-            self.b,
-            self.c,
-            self.d,
-            self.e,
-            self.f,
-            self.g,
-            self.h,
-        ]
+        self.tenants = [self.top, self.a, self.b, self.c, self.d, self.e, self.f, self.g, self.h]
 
         self.tenant_dao = Mock()
         self.tenant_dao.list_.return_value = self.tenants
@@ -65,13 +56,10 @@ class TestTenantTree(TestCase):
         assert_that(result, contains_inanyorder(*[t['uuid'] for t in self.tenants]))
 
         result = self.tree.list_nodes(self.a['uuid'])
-        assert_that(
-            result,
-            contains_inanyorder(
-                self.a['uuid'],
-                self.b['uuid'],
-                self.c['uuid'],
-                self.d['uuid'],
-                self.g['uuid'],
-            ),
-        )
+        assert_that(result, contains_inanyorder(
+            self.a['uuid'],
+            self.b['uuid'],
+            self.c['uuid'],
+            self.d['uuid'],
+            self.g['uuid'],
+        ))

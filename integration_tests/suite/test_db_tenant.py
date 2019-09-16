@@ -30,6 +30,7 @@ def teardown_module():
 
 
 class TestTenantDAO(base.DAOTestCase):
+
     @fixtures.db.tenant(name='c')
     @fixtures.db.tenant(name='b')
     @fixtures.db.tenant(name='a')
@@ -129,13 +130,17 @@ class TestTenantDAO(base.DAOTestCase):
     def _assert_tenant_matches(self, uuid, name, parent_uuid=ANY_UUID):
         assert_that(uuid, equal_to(ANY_UUID))
         with self._tenant_dao.new_session() as s:
-            tenant = (
-                s.query(models.Tenant.name, models.Tenant.parent_uuid)
-                .filter(models.Tenant.uuid == uuid)
-                .first()
-            )
+            tenant = s.query(
+                models.Tenant.name,
+                models.Tenant.parent_uuid,
+            ).filter(
+                models.Tenant.uuid == uuid
+            ).first()
 
-            assert_that(tenant, has_properties(name=name, parent_uuid=parent_uuid))
+            assert_that(
+                tenant,
+                has_properties(name=name, parent_uuid=parent_uuid),
+            )
 
     def _create_tenant(self, **kwargs):
         kwargs.setdefault('name', None)
@@ -146,8 +151,8 @@ class TestTenantDAO(base.DAOTestCase):
 
     def _top_tenant_uuid(self):
         with self._tenant_dao.new_session() as s:
-            return (
-                s.query(models.Tenant.uuid)
-                .filter(models.Tenant.uuid == models.Tenant.parent_uuid)
-                .scalar()
-            )
+            return s.query(
+                models.Tenant.uuid,
+            ).filter(
+                models.Tenant.uuid == models.Tenant.parent_uuid
+            ).scalar()

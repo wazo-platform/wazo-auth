@@ -2,12 +2,23 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from functools import partial
-from hamcrest import assert_that, contains, contains_inanyorder, has_entries, has_items
+from hamcrest import (
+    assert_that,
+    contains,
+    contains_inanyorder,
+    has_entries,
+    has_items,
+)
 from .helpers import base, fixtures
-from .helpers.base import assert_http_error, assert_no_error, assert_sorted
+from .helpers.base import (
+    assert_http_error,
+    assert_no_error,
+    assert_sorted,
+)
 
 
 class TestGroupUserList(base.WazoAuthTestCase):
+
     def setUp(self):
         super().setUp()
         self.foo = self.client.users.new(username='foo')
@@ -53,6 +64,7 @@ class TestGroupUserList(base.WazoAuthTestCase):
 
 
 class TestUserGroupList(base.WazoAuthTestCase):
+
     def setUp(self):
         super().setUp()
         self.foo = self.client.groups.new(name='foo')
@@ -102,6 +114,7 @@ class TestUserGroupList(base.WazoAuthTestCase):
 
 
 class TestUserGroupAssociation(base.WazoAuthTestCase):
+
     @fixtures.http.user_register()
     @fixtures.http.user_register()
     @fixtures.http.group()
@@ -161,13 +174,10 @@ class TestUserGroupAssociation(base.WazoAuthTestCase):
     @fixtures.http.user_register(username='foo', password='bar')
     @fixtures.http.group(name='two')
     @fixtures.http.group(name='one')
-    @fixtures.http.policy(
-        name='main',
-        acl_templates=[
-            '{% for group in groups %}main.{{ group.name }}.*:{% endfor %}',
-            '{% for group in groups %}main.{{ group.uuid }}:{% endfor %}',
-        ],
-    )
+    @fixtures.http.policy(name='main', acl_templates=[
+        '{% for group in groups %}main.{{ group.name }}.*:{% endfor %}',
+        '{% for group in groups %}main.{{ group.uuid }}:{% endfor %}',
+    ])
     def test_generated_acl(self, policy, group_1, group_2, user):
         self.client.groups.add_user(group_1['uuid'], user['uuid'])
         self.client.groups.add_user(group_2['uuid'], user['uuid'])

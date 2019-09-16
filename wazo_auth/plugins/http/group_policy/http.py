@@ -13,12 +13,14 @@ logger = logging.getLogger(__name__)
 
 
 class _BaseResource(http.AuthResource):
+
     def __init__(self, group_service, policy_service):
         self.group_service = group_service
         self.policy_service = policy_service
 
 
 class GroupPolicy(_BaseResource):
+
     @http.required_acl('auth.groups.{group_uuid}.policies.{policy_uuid}.create')
     def delete(self, group_uuid, policy_uuid):
         scoping_tenant = Tenant.autodetect()
@@ -42,6 +44,7 @@ class GroupPolicy(_BaseResource):
 
 
 class GroupPolicies(_BaseResource):
+
     @http.required_acl('auth.groups.{group_uuid}.policies.read')
     def get(self, group_uuid):
         scoping_tenant = Tenant.autodetect()
@@ -54,15 +57,8 @@ class GroupPolicies(_BaseResource):
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 
-        return (
-            {
-                'items': self.group_service.list_policies(group_uuid, **list_params),
-                'total': self.group_service.count_policies(
-                    group_uuid, filtered=False, **list_params
-                ),
-                'filtered': self.group_service.count_policies(
-                    group_uuid, filtered=True, **list_params
-                ),
-            },
-            200,
-        )
+        return {
+            'items': self.group_service.list_policies(group_uuid, **list_params),
+            'total': self.group_service.count_policies(group_uuid, filtered=False, **list_params),
+            'filtered': self.group_service.count_policies(group_uuid, filtered=True, **list_params),
+        }, 200

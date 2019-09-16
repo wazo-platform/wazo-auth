@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -21,7 +21,10 @@ class TestTenantPost(HTTPAppTestCase):
     def test_invalid_posts(self, TenantDetector):
         TenantDetector.autodetect.return_value = Mock(uuid=s.tenant_uuid)
 
-        invalid_datas = [{'name': 42}, {'name': 100 * 'foobar'}]
+        invalid_datas = [
+            {'name': 42},
+            {'name': 100 * 'foobar'},
+        ]
 
         for invalid_data in invalid_datas:
             result = self.post(invalid_data)
@@ -29,21 +32,18 @@ class TestTenantPost(HTTPAppTestCase):
             assert_that(
                 result.json,
                 has_entries(
-                    'error_id',
-                    'invalid-data',
-                    'message',
-                    ANY,
-                    'resource',
-                    'tenants',
-                    'details',
-                    has_entries(
-                        'name',
-                        has_entries(
-                            'constraint_id', ANY, 'constraint', ANY, 'message', ANY
+                    'error_id', 'invalid-data',
+                    'message', ANY,
+                    'resource', 'tenants',
+                    'details', has_entries(
+                        'name', has_entries(
+                            'constraint_id', ANY,
+                            'constraint', ANY,
+                            'message', ANY,
                         ),
                     ),
                 ),
-                invalid_data,
+                invalid_data
             )
 
     @patch('wazo_auth.plugins.http.tenants.http.TenantDetector')
@@ -72,9 +72,7 @@ class TestTenantPost(HTTPAppTestCase):
                 city=None,
                 state=None,
                 zip_code=None,
-                country=None,
-            ),
-        )
+                country=None))
 
     def post(self, data):
         return self.app.post(self.url, data=json.dumps(data), headers=self.headers)

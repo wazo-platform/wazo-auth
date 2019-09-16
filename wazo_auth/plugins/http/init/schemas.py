@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo.mallow import fields
@@ -13,5 +13,5 @@ class InitPostSchema(BaseSchema):
     key = fields.String(validate=validate.Length(equal=20), required=True)
     purpose = fields.String(
         missing='internal',
-        validate=validate.OneOf(['user', 'internal', 'external_api']),
+        validate=validate.OneOf(['user', 'internal', 'external_api'])
     )

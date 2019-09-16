@@ -16,13 +16,21 @@ TABLE = 'auth_session'
 COL = 'tenant_uuid'
 
 session_table = sa.sql.table(
-    'auth_session', sa.Column('uuid'), sa.Column('tenant_uuid')
+    'auth_session',
+    sa.Column('uuid'),
+    sa.Column('tenant_uuid'),
 )
-tenant_table = sa.sql.table('auth_tenant', sa.Column('uuid'), sa.Column('parent_uuid'))
+tenant_table = sa.sql.table(
+    'auth_tenant',
+    sa.Column('uuid'),
+    sa.Column('parent_uuid'),
+)
 
 
 def find_master_tenant():
-    query = sa.sql.select([tenant_table.c.uuid]).where(
+    query = sa.sql.select(
+        [tenant_table.c.uuid]
+    ).where(
         tenant_table.c.uuid == tenant_table.c.parent_uuid
     )
 
@@ -42,7 +50,7 @@ def upgrade():
             sa.ForeignKey('auth_tenant.uuid', ondelete='CASCADE'),
             server_default=master_tenant,
             nullable=False,
-        ),
+        )
     )
     op.alter_column(TABLE, COL, nullable=False, server_default=None)
 

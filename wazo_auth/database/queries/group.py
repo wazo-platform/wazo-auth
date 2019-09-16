@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, text
@@ -10,15 +10,18 @@ from ... import exceptions
 
 class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
-    constraint_to_column_map = {'auth_group_name_key': 'name'}
+    constraint_to_column_map = {
+        'auth_group_name_key': 'name',
+    }
     search_filter = filters.group_search_filter
     strict_filter = filters.group_strict_filter
-    column_map = {'name': Group.name, 'uuid': Group.uuid}
+    column_map = {
+        'name': Group.name,
+        'uuid': Group.uuid,
+    }
 
     def add_policy(self, group_uuid, policy_uuid):
-        group_policy = GroupPolicy(
-            policy_uuid=str(policy_uuid), group_uuid=str(group_uuid)
-        )
+        group_policy = GroupPolicy(policy_uuid=str(policy_uuid), group_uuid=str(group_uuid))
         with self.new_session() as s:
             s.add(group_policy)
             try:
@@ -95,14 +98,15 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             filter_ = and_(filter_, strict_filter, search_filter)
 
         with self.new_session() as s:
-            return (
-                s.query(UserGroup)
-                .join(User)
-                .outerjoin(UserEmail)
-                .outerjoin(Email)
-                .filter(filter_)
-                .count()
-            )
+            return s.query(
+                UserGroup,
+            ).join(
+                User,
+            ).outerjoin(
+                UserEmail,
+            ).outerjoin(
+                Email,
+            ).filter(filter_).count()
 
     def create(self, name, tenant_uuid, **ignored):
         group = Group(name=name, tenant_uuid=tenant_uuid)
@@ -112,9 +116,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 s.commit()
             except exc.IntegrityError as e:
                 if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                    column = self.constraint_to_column_map.get(
-                        e.orig.diag.constraint_name
-                    )
+                    column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
                     value = locals().get(column)
                     if column:
                         raise exceptions.ConflictException('groups', column, value)
@@ -130,9 +132,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             filter_ = and_(filter_, Group.tenant_uuid.in_(tenant_uuids))
 
         with self.new_session() as s:
-            nb_deleted = (
-                s.query(Group).filter(filter_).delete(synchronize_session=False)
-            )
+            nb_deleted = s.query(Group).filter(filter_).delete(synchronize_session=False)
 
         if not nb_deleted:
             raise exceptions.UnknownGroupException(uuid)
@@ -154,14 +154,11 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             query = s.query(Group).outerjoin(UserGroup).filter(filter_).group_by(Group)
             query = self._paginator.update_query(query, **kwargs)
 
-            return [
-                {
-                    'uuid': group.uuid,
-                    'name': group.name,
-                    'tenant_uuid': group.tenant_uuid,
-                }
-                for group in query.all()
-            ]
+            return [{
+                'uuid': group.uuid,
+                'name': group.name,
+                'tenant_uuid': group.tenant_uuid,
+            } for group in query.all()]
 
     def update(self, group_uuid, **body):
         with self.new_session() as s:
@@ -174,9 +171,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 s.commit()
             except exc.IntegrityError as e:
                 if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                    column = self.constraint_to_column_map.get(
-                        e.orig.diag.constraint_name
-                    )
+                    column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
                     value = body.get(column)
                     if column:
                         raise exceptions.ConflictException('groups', column, value)

@@ -10,6 +10,7 @@ from ..helpers import LazyTemplateRenderer, LocalTokenRenewer
 
 
 class TestLazyTemplateRenderer(unittest.TestCase):
+
     def test_render_no_templates(self):
         renderer = LazyTemplateRenderer([], None)
 
@@ -18,7 +19,10 @@ class TestLazyTemplateRenderer(unittest.TestCase):
         assert_that(acls, empty())
 
     def test_render_no_substitution(self):
-        expected = ['confd.user.#', 'dird.me.#']
+        expected = [
+            'confd.user.#',
+            'dird.me.#',
+        ]
         renderer = LazyTemplateRenderer(expected, None)
 
         acls = renderer.render()
@@ -27,7 +31,9 @@ class TestLazyTemplateRenderer(unittest.TestCase):
 
     def test_multi_line_template(self):
         def get():
-            return {'lines': [1, 42]}
+            return {
+                'lines': [1, 42],
+            }
 
         templates = [
             'dird.me.#',
@@ -37,11 +43,16 @@ class TestLazyTemplateRenderer(unittest.TestCase):
 
         acls = renderer.render()
 
-        expected = ['confd.lines.1.#', 'confd.lines.42.#', 'dird.me.#']
+        expected = [
+            'confd.lines.1.#',
+            'confd.lines.42.#',
+            'dird.me.#',
+        ]
         assert_that(acls, contains_inanyorder(*expected))
 
 
 class TestLocalTokenRenewer(unittest.TestCase):
+
     def setUp(self):
         self._token_service = Mock()
         self._backend = Mock()

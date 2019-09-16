@@ -14,9 +14,7 @@ down_revision = 'df074292741f'
 
 def upgrade():
     op.drop_constraint('auth_policy_name', 'auth_policy')
-    op.create_unique_constraint(
-        'auth_policy_name_tenant', 'auth_policy', ['name', 'tenant_uuid']
-    )
+    op.create_unique_constraint('auth_policy_name_tenant', 'auth_policy', ['name', 'tenant_uuid'])
 
 
 def downgrade():

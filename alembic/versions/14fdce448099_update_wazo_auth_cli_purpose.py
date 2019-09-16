@@ -12,7 +12,11 @@ import sqlalchemy as sa
 revision = '14fdce448099'
 down_revision = '7386d3b3e545'
 
-user = sa.sql.table('auth_user', sa.Column('username'), sa.Column('purpose'))
+user = sa.sql.table(
+    'auth_user',
+    sa.Column('username'),
+    sa.Column('purpose'),
+)
 
 USERNAME = 'wazo-auth-cli'
 NEW_PURPOSE = 'internal'
@@ -28,5 +32,8 @@ def downgrade():
 
 
 def _update_purpose(purpose):
-    query = user.update().values(purpose=purpose).where(user.c.username == USERNAME)
+    query = (user
+             .update()
+             .values(purpose=purpose)
+             .where(user.c.username == USERNAME))
     op.execute(query)

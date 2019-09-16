@@ -46,9 +46,7 @@ def assert_sorted(action, order, expected):
     asc_items = action(order=order, direction='asc')['items']
     desc_items = action(order=order, direction='desc')['items']
 
-    assert_that(
-        asc_items, has_length(greater_than(1)), 'sorting requires atleast 2 items'
-    )
+    assert_that(asc_items, has_length(greater_than(1)), 'sorting requires atleast 2 items')
     assert_that(asc_items, contains(*expected))
     assert_that(desc_items, contains(*reversed(expected)))
 
@@ -122,16 +120,9 @@ class BaseTestCase(AuthLaunchingTestCase):
         ).decode('utf-8')
 
     def _get_email_filenames(self):
-        return (
-            self.docker_exec(['ls', self.email_dir], 'smtp')
-            .decode('utf-8')
-            .strip()
-            .split('\n')
-        )
+        return self.docker_exec(['ls', self.email_dir], 'smtp').decode('utf-8').strip().split('\n')
 
-    def _post_token(
-        self, username, password, backend=None, expiration=None, session_type=None
-    ):
+    def _post_token(self, username, password, backend=None, expiration=None, session_type=None):
         client = self.new_auth_client(username, password)
         args = {}
         if backend:
@@ -142,15 +133,8 @@ class BaseTestCase(AuthLaunchingTestCase):
             args['session_type'] = session_type
         return client.token.new(**args)
 
-    def _post_token_with_expected_exception(
-        self,
-        username,
-        password,
-        backend=None,
-        expiration=None,
-        status_code=None,
-        msg=None,
-    ):
+    def _post_token_with_expected_exception(self, username, password, backend=None, expiration=None,
+                                            status_code=None, msg=None):
         try:
             self._post_token(username, password, backend, expiration)
         except requests.HTTPError as e:
@@ -171,9 +155,7 @@ class BaseTestCase(AuthLaunchingTestCase):
 
         return client.token.get(token, **args)
 
-    def _get_token_with_expected_exception(
-        self, token, acls=None, tenant=None, status_code=None, msg=None
-    ):
+    def _get_token_with_expected_exception(self, token, acls=None, tenant=None, status_code=None, msg=None):
         try:
             self._get_token(token, acls, tenant)
         except requests.HTTPError as e:
@@ -197,7 +179,10 @@ class BaseTestCase(AuthLaunchingTestCase):
 
     @classmethod
     def new_auth_client(cls, username=None, password=None):
-        kwargs = {'port': cls.auth_port, 'verify_certificate': False}
+        kwargs = {
+            'port': cls.auth_port,
+            'verify_certificate': False,
+        }
 
         if username and password:
             kwargs['username'] = username
@@ -247,21 +232,15 @@ class WazoAuthTestCase(BaseTestCase):
 
     @contextmanager
     def client_in_subtenant(self, username=None, parent_uuid=None):
-        def random_string(n):
-            return ''.join(random.choice(string.ascii_letters) for _ in range(n))
-
+        random_string = lambda n: ''.join(random.choice(string.ascii_letters) for _ in range(n))
         username = username or random_string(8)
         password = 'secre7'
         tenant_args = {'name': 'mytenant'}
         if parent_uuid:
             tenant_args['parent_uuid'] = parent_uuid
         tenant = self.client.tenants.new(**tenant_args)
-        user = self.client.users.new(
-            username=username, password=password, tenant_uuid=tenant['uuid']
-        )
-        policy = self.client.policies.new(
-            name=random_string(5), acl_templates=['auth.#']
-        )
+        user = self.client.users.new(username=username, password=password, tenant_uuid=tenant['uuid'])
+        policy = self.client.policies.new(name=random_string(5), acl_templates=['auth.#'])
         self.client.users.add_policy(user['uuid'], policy['uuid'])
         client = self.new_auth_client(username, password)
         token = client.token.new(backend='wazo_user', expiration=3600)['token']
@@ -325,9 +304,7 @@ def assert_http_error(status_code, fn, *args, **kwargs):
     assert_that(
         calling(fn).with_args(*args, **kwargs),
         raises(requests.HTTPError).matching(
-            has_properties('response', has_properties('status_code', status_code))
-        ),
-    )
+            has_properties('response', has_properties('status_code', status_code))))
 
 
 @contextmanager

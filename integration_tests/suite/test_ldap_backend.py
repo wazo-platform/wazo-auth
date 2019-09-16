@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import ldap
@@ -6,7 +6,10 @@ import time
 
 from collections import namedtuple
 from ldap.modlist import addModlist
-from hamcrest import assert_that, has_entries
+from hamcrest import (
+    assert_that,
+    has_entries,
+)
 
 from .helpers.base import BaseTestCase
 
@@ -20,7 +23,8 @@ class LDAPHelper:
     ADMIN_PASSWORD = 'wazopassword'
     PEOPLE_DN = 'ou=people,{}'.format(BASE_DN)
     QUEBEC_DN = 'ou=quebec,{}'.format(PEOPLE_DN)
-    OU_DN = {'people': PEOPLE_DN, 'quebec': QUEBEC_DN}
+    OU_DN = {'people': PEOPLE_DN,
+             'quebec': QUEBEC_DN}
 
     def __init__(self, ldap_uri):
         self._ldap_obj = ldap.initialize(ldap_uri)
@@ -28,27 +32,27 @@ class LDAPHelper:
 
     def add_contact(self, contact, ou):
         dn = 'cn={},{}'.format(contact.cn, self.OU_DN[ou])
-        modlist = addModlist(
-            {
-                'objectClass': [b'inetOrgPerson'],
-                'cn': [contact.cn.encode('utf-8')],
-                'sn': [contact.cn.encode('utf-8')],
-                'uid': [contact.uid.encode('utf-8')],
-                'userPassword': [contact.password.encode('utf-8')],
-                'mail': [contact.mail.encode('utf-8')],
-            }
-        )
+        modlist = addModlist({
+            'objectClass': [b'inetOrgPerson'],
+            'cn': [contact.cn.encode('utf-8')],
+            'sn': [contact.cn.encode('utf-8')],
+            'uid': [contact.uid.encode('utf-8')],
+            'userPassword': [contact.password.encode('utf-8')],
+            'mail': [contact.mail.encode('utf-8')]
+        })
 
         self._ldap_obj.add_s(dn, modlist)
 
     def add_ou(self):
-        modlist = addModlist(
-            {'objectClass': [b'organizationalUnit'], 'ou': [b'people']}
-        )
+        modlist = addModlist({
+            'objectClass': [b'organizationalUnit'],
+            'ou': [b'people'],
+        })
         self._ldap_obj.add_s(self.PEOPLE_DN, modlist)
-        modlist = addModlist(
-            {'objectClass': [b'organizationalUnit'], 'ou': [b'quebec']}
-        )
+        modlist = addModlist({
+            'objectClass': [b'organizationalUnit'],
+            'ou': [b'quebec'],
+        })
         self._ldap_obj.add_s(self.QUEBEC_DN, modlist)
 
 
@@ -69,6 +73,7 @@ def add_contacts(contacts, ldap_uri):
 
 
 class _BaseLDAPTestCase(BaseTestCase):
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -87,25 +92,15 @@ class TestLDAP(_BaseLDAPTestCase):
     asset = 'ldap'
 
     CONTACTS = [
-        Contact(
-            'Alice Wonderland',
-            'awonderland',
-            'awonderland_password',
-            'awonderland@wazo-auth.com',
-            'cn',
-        )
+        Contact('Alice Wonderland', 'awonderland', 'awonderland_password', 'awonderland@wazo-auth.com', 'cn'),
     ]
 
     def test_ldap_authentication(self):
-        response = self._post_token(
-            'Alice Wonderland', 'awonderland_password', backend='ldap_user'
-        )
+        response = self._post_token('Alice Wonderland', 'awonderland_password', backend='ldap_user')
         assert_that(response, has_entries(xivo_user_uuid='1'))
 
     def test_ldap_authentication_fail_when_wrong_password(self):
-        self._post_token_with_expected_exception(
-            'Alice Wonderland', 'wrong_password', backend='ldap_user', status_code=401
-        )
+        self._post_token_with_expected_exception('Alice Wonderland', 'wrong_password', backend='ldap_user', status_code=401)
 
 
 class TestLDAPAnonymous(_BaseLDAPTestCase):
@@ -113,28 +108,16 @@ class TestLDAPAnonymous(_BaseLDAPTestCase):
     asset = 'ldap_anonymous'
 
     CONTACTS = [
-        Contact(
-            'Alice Wonderland',
-            'awonderland',
-            'awonderland_password',
-            'awonderland@wazo-auth.com',
-            'mail',
-        )
+        Contact('Alice Wonderland', 'awonderland', 'awonderland_password', 'awonderland@wazo-auth.com', 'mail'),
     ]
 
     def test_ldap_authentication(self):
-        response = self._post_token(
-            'awonderland@wazo-auth.com', 'awonderland_password', backend='ldap_user'
-        )
+        response = self._post_token('awonderland@wazo-auth.com', 'awonderland_password', backend='ldap_user')
         assert_that(response, has_entries(xivo_user_uuid='1'))
 
     def test_ldap_authentication_fail_when_wrong_password(self):
         self._post_token_with_expected_exception(
-            'awonderland@wazo-auth.com',
-            'wrong_password',
-            backend='ldap_user',
-            status_code=401,
-        )
+            'awonderland@wazo-auth.com', 'wrong_password', backend='ldap_user', status_code=401)
 
 
 class TestLDAPServiceUser(_BaseLDAPTestCase):
@@ -142,22 +125,13 @@ class TestLDAPServiceUser(_BaseLDAPTestCase):
     asset = 'ldap_service_user'
 
     CONTACTS = [
-        Contact(
-            'Alice Wonderland',
-            'awonderland',
-            'awonderland_password',
-            'awonderland@wazo-auth.com',
-            'uid',
-        )
+        Contact('Alice Wonderland', 'awonderland', 'awonderland_password', 'awonderland@wazo-auth.com', 'uid'),
     ]
 
     def test_ldap_authentication(self):
-        response = self._post_token(
-            'awonderland', 'awonderland_password', backend='ldap_user'
-        )
+        response = self._post_token('awonderland', 'awonderland_password', backend='ldap_user')
         assert_that(response, has_entries(xivo_user_uuid='1'))
 
     def test_ldap_authentication_fail_when_wrong_password(self):
         self._post_token_with_expected_exception(
-            'awonderland', 'wrong_password', backend='ldap_user', status_code=401
-        )
+            'awonderland', 'wrong_password', backend='ldap_user', status_code=401)

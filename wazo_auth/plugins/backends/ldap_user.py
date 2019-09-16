@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2018 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class LDAPUser(UserAuthenticationBackend):
+
     def load(self, dependencies):
         super().load(dependencies)
         config = dependencies['config']
@@ -85,22 +86,17 @@ class LDAPUser(UserAuthenticationBackend):
         with session_scope():
             xivo_user = find_by(email=user_email)
             if not xivo_user:
-                logger.warning(
-                    '%s does not have an email associated with a XiVO user', user_email
-                )
+                logger.warning('%s does not have an email associated with a XiVO user', user_email)
                 return xivo_user
             return xivo_user.uuid
 
     def _build_dn_with_config(self, login):
         login_esc = escape_dn_chars(login)
-        return '{}={},{}'.format(
-            self.user_login_attribute, login_esc, self.user_base_dn
-        )
+        return '{}={},{}'.format(self.user_login_attribute, login_esc, self.user_base_dn)
 
     def _get_user_ldap_email(self, xivo_ldap, user_dn):
-        _, obj = xivo_ldap.perform_search(
-            user_dn, ldap.SCOPE_BASE, attrlist=[self.user_email_attribute]
-        )
+        _, obj = xivo_ldap.perform_search(user_dn, ldap.SCOPE_BASE,
+                                          attrlist=[self.user_email_attribute])
         email = obj.get(self.user_email_attribute, None)
         email = email[0] if isinstance(email, list) else email
         if not email:
@@ -110,19 +106,16 @@ class LDAPUser(UserAuthenticationBackend):
     def _perform_search_dn(self, xivo_ldap, username):
         username_esc = escape_filter_chars(username)
         filterstr = '{}={}'.format(self.user_login_attribute, username_esc)
-        dn, _ = xivo_ldap.perform_search(
-            self.user_base_dn, ldap.SCOPE_SUBTREE, filterstr=filterstr, attrlist=['']
-        )
+        dn, _ = xivo_ldap.perform_search(self.user_base_dn, ldap.SCOPE_SUBTREE,
+                                         filterstr=filterstr,
+                                         attrlist=[''])
         if not dn:
-            logger.debug(
-                'LDAP : No user DN for user_base dn: %s and filterstr: %s',
-                self.user_base_dn,
-                filterstr,
-            )
+            logger.debug('LDAP : No user DN for user_base dn: %s and filterstr: %s', self.user_base_dn, filterstr)
         return dn
 
 
 class _XivoLDAP:
+
     def __init__(self, uri):
         self.uri = uri
         self.ldapobj = self._create_ldap_obj(self.uri)
@@ -139,32 +132,23 @@ class _XivoLDAP:
             self.ldapobj.simple_bind_s(username, password)
             logger.debug('LDAP : simple bind done with %s on %s', username, self.uri)
         except ldap.INVALID_CREDENTIALS:
-            logger.info(
-                'LDAP : simple bind failed with %s on %s : invalid credentials!',
-                username,
-                self.uri,
-            )
+            logger.info('LDAP : simple bind failed with %s on %s : invalid credentials!', username, self.uri)
             return False
 
         return True
 
     def perform_search(self, base, scope, filterstr='(objectClass=*)', attrlist=None):
         try:
-            results = self.ldapobj.search_ext_s(
-                base, scope, filterstr=filterstr, attrlist=attrlist, sizelimit=1
-            )
+            results = self.ldapobj.search_ext_s(base, scope,
+                                                filterstr=filterstr,
+                                                attrlist=attrlist,
+                                                sizelimit=1)
         except ldap.SIZELIMIT_EXCEEDED:
-            logger.debug(
-                'LDAP : More than 1 result for base: %s and filterstr: %s',
-                base,
-                filterstr,
-            )
+            logger.debug('LDAP : More than 1 result for base: %s and filterstr: %s', base, filterstr)
             return None, None
 
         if not results:
-            logger.debug(
-                'LDAP : No result found for base: %s and filterstr: %s', base, filterstr
-            )
+            logger.debug('LDAP : No result found for base: %s and filterstr: %s', base, filterstr)
             return None, None
 
         return results[0]

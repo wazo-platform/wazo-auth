@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class WebSocketOAuth2(Thread):
+
     def __init__(self, host, auth, external_auth, client_secret, token_url, auth_type):
         super().__init__()
 
@@ -33,8 +34,7 @@ class WebSocketOAuth2(Thread):
             url,
             on_message=self._on_message,
             on_error=self._on_error,
-            on_close=self._on_close,
-        )
+            on_close=self._on_close)
         logger.debug('Opening WebSocketOAuth2 %s', url)
         try:
             self.ws.run_forever()
@@ -43,10 +43,7 @@ class WebSocketOAuth2(Thread):
 
     def _on_message(self, message):
         try:
-            logger.debug(
-                "Confirmation has been received on websocketOAuth, message : %s",
-                message,
-            )
+            logger.debug("Confirmation has been received on websocketOAuth, message : %s", message)
             msg = json.loads(message)
             self.ws.close()
             self.create_first_token(self.user_uuid, msg.get('code'))
@@ -62,13 +59,15 @@ class WebSocketOAuth2(Thread):
     def create_first_token(self, user_uuid, code):
         logger.debug('Trying to fetch token on %s', self.token_url)
         token_data = self.oauth2.fetch_token(
-            self.token_url, client_secret=self.client_secret, code=code
+            self.token_url,
+            client_secret=self.client_secret,
+            code=code,
         )
         data = {
             'access_token': token_data['access_token'],
             'refresh_token': token_data['refresh_token'],
             'token_expiration': get_timestamp_expiration(token_data['expires_in']),
-            'scope': token_data['scope'],
+            'scope': token_data['scope']
         }
         logger.debug('Google token created')
         try:

@@ -34,6 +34,7 @@ def _check_required_config_for_other_threads(config):
 
 
 class Controller:
+
     def __init__(self, config):
         self._config = config
         _check_required_config_for_other_threads(config)
@@ -43,37 +44,25 @@ class Controller:
             config['consul'],
             config['service_discovery'],
             config['amqp'],
-            partial(self_check, config['rest_api']['https']['port']),
+            partial(self_check, config['rest_api']['https']['port'])
         ]
 
         template_formatter = services.helpers.TemplateFormatter(config)
         self._bus_publisher = bus.BusPublisher(config)
         dao = queries.DAO.from_config(self._config)
         self._tenant_tree = services.helpers.CachedTenantTree(dao.tenant)
-        self._token_service = services.TokenService(
-            config, dao, self._tenant_tree, self._bus_publisher
-        )
+        self._token_service = services.TokenService(config, dao, self._tenant_tree, self._bus_publisher)
         self._backends = BackendsProxy()
         authentication_service = services.AuthenticationService(dao, self._backends)
-        email_service = services.EmailService(
-            dao, self._tenant_tree, config, template_formatter
-        )
+        email_service = services.EmailService(dao, self._tenant_tree, config, template_formatter)
         external_auth_service = services.ExternalAuthService(
-            dao,
-            self._tenant_tree,
-            config,
-            self._bus_publisher,
-            config['enabled_external_auth_plugins'],
+            dao, self._tenant_tree, config, self._bus_publisher, config['enabled_external_auth_plugins']
         )
         group_service = services.GroupService(dao, self._tenant_tree)
         policy_service = services.PolicyService(dao, self._tenant_tree)
-        session_service = services.SessionService(
-            dao, self._tenant_tree, self._bus_publisher
-        )
+        session_service = services.SessionService(dao, self._tenant_tree, self._bus_publisher)
         self._user_service = services.UserService(dao, self._tenant_tree)
-        self._tenant_service = services.TenantService(
-            dao, self._tenant_tree, self._bus_publisher
-        )
+        self._tenant_service = services.TenantService(dao, self._tenant_tree, self._bus_publisher)
 
         self._metadata_plugins = plugin_helpers.load(
             namespace='wazo_auth.metadata',
@@ -89,7 +78,8 @@ class Controller:
         )
 
         self._purposes = Purposes(
-            self._config['purpose_metadata_mapping'], self._metadata_plugins
+            self._config['purpose_metadata_mapping'],
+            self._metadata_plugins,
         )
 
         backends = plugin_helpers.load(
@@ -142,9 +132,7 @@ class Controller:
 
         self._rest_api = CoreRestApi(config, self._token_service, self._user_service)
 
-        self._expired_token_remover = token.ExpiredTokenRemover(
-            config, dao, self._bus_publisher
-        )
+        self._expired_token_remover = token.ExpiredTokenRemover(config, dao, self._bus_publisher)
 
     def run(self):
         signal.signal(signal.SIGTERM, partial(_sigterm_handler, self))
@@ -165,9 +153,7 @@ class Controller:
         try:
             backend = self._backends['wazo_user']
         except KeyError:
-            logger.info(
-                'wazo_user disabled no internal token will be created for wazo-auth'
-            )
+            logger.info('wazo_user disabled no internal token will be created for wazo-auth')
             return
 
         return LocalTokenRenewer(backend, self._token_service, self._user_service)
@@ -177,6 +163,7 @@ class Controller:
 
 
 class BackendsProxy:
+
     def __init__(self):
         self._backends = {}
 

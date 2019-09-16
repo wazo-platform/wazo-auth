@@ -19,6 +19,7 @@ SMTP_TIMEOUT = 4
 
 
 class EmailService(BaseService):
+
     def __init__(self, dao, tenant_uuid, config, template_formatter):
         super().__init__(dao, tenant_uuid)
         self._formatter = template_formatter
@@ -31,7 +32,8 @@ class EmailService(BaseService):
             config['email_confirmation_from_address'],
         )
         self._password_reset_from = EmailDestination(
-            config['password_reset_from_name'], config['password_reset_from_address']
+            config['password_reset_from_name'],
+            config['password_reset_from_address'],
         )
 
     def confirm(self, email_uuid):
@@ -69,9 +71,8 @@ class EmailService(BaseService):
         msg['From'] = email_utils.formataddr(from_)
         msg['Subject'] = subject
 
-        with smtplib.SMTP(
-            self._smtp_host, self._smtp_port, timeout=SMTP_TIMEOUT
-        ) as server:
+        with smtplib.SMTP(self._smtp_host, self._smtp_port,
+                          timeout=SMTP_TIMEOUT) as server:
             server.sendmail(from_.address, [to.address], msg.as_string())
 
     def _new_email_confirmation_token(self, email_uuid):
@@ -95,7 +96,5 @@ class EmailService(BaseService):
             'remote_addr': '',
         }
         session_payload = {}
-        token_uuid, session_uuid = self._dao.token.create(
-            token_payload, session_payload
-        )
+        token_uuid, session_uuid = self._dao.token.create(token_payload, session_payload)
         return token_uuid

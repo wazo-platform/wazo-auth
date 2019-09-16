@@ -13,7 +13,10 @@ from hamcrest import (
 )
 from xivo_test_helpers.hamcrest.raises import raises
 
-from .helpers import base, fixtures
+from .helpers import (
+    base,
+    fixtures,
+)
 
 TENANT_UUID = 'ad235675-053d-482a-9e07-6d36de6a48b5'
 
@@ -40,9 +43,7 @@ class TestExternalAuthMobile(base.WazoAuthTestCase):
     @fixtures.http.token(username='one', password='pass')
     def test_mobile_workflow(self, token, user, tenant):
         self.client.set_tenant(tenant['uuid'])
-        self.client.external.create_config(
-            auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET
-        )
+        self.client.external.create_config(auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET)
 
         response = self.client.external.get_config(self.EXTERNAL_AUTH_TYPE)
         assert_that(response, has_entries(self.SECRET))
@@ -53,19 +54,30 @@ class TestExternalAuthMobile(base.WazoAuthTestCase):
             calling(self.client.external.get).with_args(
                 self.EXTERNAL_AUTH_TYPE, user['uuid']
             ),
-            raises(requests.HTTPError).matching(
-                has_property('response', has_properties(status_code=404))
-            ),
+            raises(requests.HTTPError).matching(has_property(
+                'response', has_properties(
+                    status_code=404
+                )
+            ))
         )
 
         response = self.client.external.create(
-            self.EXTERNAL_AUTH_TYPE,
-            user['uuid'],
-            {'token': 'TOKEN', 'apns_token': 'APNS'},
+            self.EXTERNAL_AUTH_TYPE, user['uuid'], {
+                'token': 'TOKEN',
+                'apns_token': 'APNS'
+            }
         )
-        assert_that(response, has_entries(token='TOKEN', apns_token='APNS'))
-        response = self.client.external.get(self.EXTERNAL_AUTH_TYPE, user['uuid'])
-        assert_that(response, has_entries(token='TOKEN', apns_token='APNS'))
+        assert_that(response, has_entries(
+            token='TOKEN',
+            apns_token='APNS'
+        ))
+        response = self.client.external.get(
+            self.EXTERNAL_AUTH_TYPE, user['uuid']
+        )
+        assert_that(response, has_entries(
+            token='TOKEN',
+            apns_token='APNS'
+        ))
 
         response = self.get_sender_id(user)
         assert_that(response, has_entry('sender_id', 'fcm_sender_id'))
@@ -75,18 +87,21 @@ class TestExternalAuthMobile(base.WazoAuthTestCase):
             calling(self.client.external.get).with_args(
                 self.EXTERNAL_AUTH_TYPE, user['uuid']
             ),
-            raises(requests.HTTPError).matching(
-                has_property('response', has_properties(status_code=404))
-            ),
+            raises(requests.HTTPError).matching(has_property(
+                'response', has_properties(
+                    status_code=404
+                )
+            ))
         )
 
     def get_sender_id(self, user):
         # NOTE(sileht): client doesn't have this endpoints has its specific to
         # android application
         r = self.client.external.session.get(
-            self.client.external._build_url(self.EXTERNAL_AUTH_TYPE, user['uuid'])
-            + '/sender_id',
-            headers=self.client.external._ro_headers,
+            self.client.external._build_url(
+                self.EXTERNAL_AUTH_TYPE, user['uuid']
+            ) + '/sender_id',
+            headers=self.client.external._ro_headers
         )
         if r.status_code != 200:
             self.client.external.raise_from_response(r)

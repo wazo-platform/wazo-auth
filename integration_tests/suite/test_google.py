@@ -47,8 +47,8 @@ class BaseGoogleTestCase(AuthLaunchingTestCase):
             port=port,
             verify_certificate=False,
             username=cls.username,
-            password=cls.password,
-        )
+            password=cls.password
+            )
         token_data = cls.client.token.new(backend='wazo_user', expiration=7200)
         cls.admin_user_uuid = token_data['metadata']['uuid']
         cls.client.set_token(token_data['token'])
@@ -67,7 +67,10 @@ class TestAuthGoogle(BaseGoogleTestCase):
     @classmethod
     def setUpClass(self):
         super().setUpClass()
-        config = {'client_id': 'a-client-id', 'client_secret': 'a-client-secret'}
+        config = {
+            'client_id': 'a-client-id',
+            'client_secret': 'a-client-secret',
+        }
         self.client.external.create_config(GOOGLE, config, self.top_tenant_uuid)
 
     @classmethod
@@ -91,7 +94,7 @@ class TestAuthGoogle(BaseGoogleTestCase):
 
         assert_that(
             calling(self.client.external.get).with_args(GOOGLE, self.admin_user_uuid),
-            not_(raises(requests.HTTPError)),
+            not_(raises(requests.HTTPError))
         )
 
     def test_when_create_twice_with_authorize_then_does_not_raise(self):
@@ -102,7 +105,7 @@ class TestAuthGoogle(BaseGoogleTestCase):
 
         assert_that(
             calling(self.client.external.get).with_args(GOOGLE, self.admin_user_uuid),
-            not_(raises(requests.HTTPError)),
+            not_(raises(requests.HTTPError))
         )
 
     def test_when_get_then_token_returned(self):
@@ -111,33 +114,24 @@ class TestAuthGoogle(BaseGoogleTestCase):
 
         response = self.client.external.get(GOOGLE, self.admin_user_uuid)
 
-        assert_that(
-            response,
-            has_entries(
-                access_token=not_(none()),
-                token_expiration=not_(none()),
-                scope=not_(empty()),
-            ),
-        )
+        assert_that(response, has_entries(
+            access_token=not_(none()),
+            token_expiration=not_(none()),
+            scope=not_(empty()),
+        ))
 
     def test_given_no_external_auth_confirmed_when_get_then_not_found(self):
         result = self.client.external.create(GOOGLE, self.admin_user_uuid, {})
 
-        _assert_that_raises_http_error(
-            404, self.client.external.get, GOOGLE, self.admin_user_uuid
-        )
+        _assert_that_raises_http_error(404, self.client.external.get, GOOGLE, self.admin_user_uuid)
         self._simulate_user_authentication(result['state'])
         self.client.external.get(GOOGLE, self.admin_user_uuid)
 
     def test_given_no_external_auth_when_delete_then_not_found(self):
-        _assert_that_raises_http_error(
-            404, self.client.external.delete, GOOGLE, self.admin_user_uuid
-        )
+        _assert_that_raises_http_error(404, self.client.external.delete, GOOGLE, self.admin_user_uuid)
 
     def test_given_no_external_auth_when_get_then_not_found(self):
-        _assert_that_raises_http_error(
-            404, self.client.external.get, GOOGLE, self.admin_user_uuid
-        )
+        _assert_that_raises_http_error(404, self.client.external.get, GOOGLE, self.admin_user_uuid)
 
     def test_when_create_then_url_returned(self):
         response = self.client.external.create(GOOGLE, self.admin_user_uuid, {})
@@ -148,26 +142,18 @@ class TestAuthGoogle(BaseGoogleTestCase):
         self.client.external.create(GOOGLE, self.admin_user_uuid, {})
 
         assert_that(
-            calling(self.client.external.create).with_args(
-                GOOGLE, self.admin_user_uuid, {}
-            ),
-            not_(raises(requests.HTTPError)),
+            calling(self.client.external.create).with_args(GOOGLE, self.admin_user_uuid, {}),
+            not_(raises(requests.HTTPError))
         )
 
     def test_when_delete_then_not_found(self):
-        _assert_that_raises_http_error(
-            404, self.client.external.delete, GOOGLE, self.admin_user_uuid
-        )
+        _assert_that_raises_http_error(404, self.client.external.delete, GOOGLE, self.admin_user_uuid)
 
     def test_when_delete_nothing_then_not_found(self):
-        _assert_that_raises_http_error(
-            404, self.client.external.delete, GOOGLE, self.admin_user_uuid
-        )
+        _assert_that_raises_http_error(404, self.client.external.delete, GOOGLE, self.admin_user_uuid)
 
     def _simulate_user_authentication(self, state):
-        authorize_url = AUTHORIZE_URL.format(
-            port=self.service_port(80, 'oauth2sync'), state=state
-        )
+        authorize_url = AUTHORIZE_URL.format(port=self.service_port(80, 'oauth2sync'), state=state)
         response = requests.get(authorize_url)
         response.raise_for_status()
 
@@ -189,9 +175,7 @@ class TestAuthGoogleWithNoConfig(BaseGoogleTestCase):
     asset = 'auth_google'
 
     def test_given_no_config_when_create_then_not_found(self):
-        _assert_that_raises_http_error(
-            404, self.client.external.create, GOOGLE, self.admin_user_uuid, {}
-        )
+        _assert_that_raises_http_error(404, self.client.external.create, GOOGLE, self.admin_user_uuid, {})
 
 
 def _assert_that_raises_http_error(status_code, fn, *args, **kwargs):
@@ -199,5 +183,5 @@ def _assert_that_raises_http_error(status_code, fn, *args, **kwargs):
         calling(fn).with_args(*args, **kwargs),
         raises(requests.HTTPError).matching(
             has_property('response', has_properties('status_code', status_code))
-        ),
+        )
     )

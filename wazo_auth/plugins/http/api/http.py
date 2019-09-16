@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import yaml
@@ -16,15 +16,11 @@ class Swagger(Resource):
 
     def get(self):
         http_specs = load_all_api_specs('wazo_auth.http', self.api_filename)
-        external_auth_specs = load_all_api_specs(
-            'wazo_auth.external_auth', self.api_filename
-        )
+        external_auth_specs = load_all_api_specs('wazo_auth.external_auth', self.api_filename)
         specs = chain(http_specs, external_auth_specs)
 
         api_spec = ChainMap(*specs)
         if not api_spec.get('info'):
             return {'error': "API spec does not exist"}, 404
 
-        return make_response(
-            yaml.dump(dict(api_spec)), 200, {'Content-Type': 'application/x-yaml'}
-        )
+        return make_response(yaml.dump(dict(api_spec)), 200, {'Content-Type': 'application/x-yaml'})

@@ -30,7 +30,9 @@ class MobileAuthSenderID(http.AuthResource):
     @http.required_acl('auth.users.{user_uuid}.external.mobile.sender_id.read')
     def get(self, user_uuid):
         tenant = Tenant.autodetect()
-        config = self.external_auth_service.get_config(self.auth_type, tenant.uuid)
+        config = self.external_auth_service.get_config(
+            self.auth_type, tenant.uuid
+        )
         return {"sender_id": config.get('fcm_sender_id')}, 200
 
 
@@ -59,8 +61,6 @@ class MobileAuth(http.AuthResource):
         except marshmallow.ValidationError as e:
             raise exceptions.UserParamException.from_errors(e.messages)
 
-        logger.info(
-            'Token created for User(%s) in plugin external mobile', str(user_uuid)
-        )
+        logger.info('Token created for User(%s) in plugin external mobile', str(user_uuid))
         self.external_auth_service.create(user_uuid, self.auth_type, args)
         return args, 201
