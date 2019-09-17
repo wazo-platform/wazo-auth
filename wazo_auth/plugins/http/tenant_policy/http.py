@@ -18,7 +18,7 @@ class TenantPolicies(http.AuthResource):
     def __init__(self, tenant_service):
         self.tenant_service = tenant_service
 
-    @http.required_acl('auth.tenants.{tenant_uuid}.users.read')
+    @http.required_acl('auth.tenants.{tenant_uuid}.policies.read')
     def get(self, tenant_uuid):
         scoping_tenant = Tenant.autodetect()
         ListSchema = schemas.new_list_schema('name')
