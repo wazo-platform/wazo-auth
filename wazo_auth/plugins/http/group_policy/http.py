@@ -51,9 +51,8 @@ class GroupPolicies(_BaseResource):
 
         self.group_service.assert_group_in_subtenant(scoping_tenant.uuid, group_uuid)
 
-        ListSchema = schemas.new_list_schema('name')
         try:
-            list_params = ListSchema().load(request.args)
+            list_params = schemas.GroupPolicyListSchema().load(request.args)
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 

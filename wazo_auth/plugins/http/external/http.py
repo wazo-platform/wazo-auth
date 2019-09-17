@@ -15,9 +15,8 @@ class External(http.AuthResource):
 
     @http.required_acl('auth.users.{user_uuid}.external.read')
     def get(self, user_uuid):
-        ListSchema = schemas.new_list_schema('type')
         try:
-            list_params = ListSchema().load(request.args)
+            list_params = schemas.ExternalListSchema().load(request.args)
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 

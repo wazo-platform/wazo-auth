@@ -21,9 +21,8 @@ class TenantPolicies(http.AuthResource):
     @http.required_acl('auth.tenants.{tenant_uuid}.policies.read')
     def get(self, tenant_uuid):
         scoping_tenant = Tenant.autodetect()
-        ListSchema = schemas.new_list_schema('name')
         try:
-            list_params = ListSchema().load(request.args)
+            list_params = schemas.TenantPolicyListSchema().load(request.args)
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 

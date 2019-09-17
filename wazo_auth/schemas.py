@@ -1,9 +1,10 @@
 # Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from marshmallow import Schema, fields, pre_load, post_dump, post_load, EXCLUDE
+from marshmallow import Schema, fields, pre_load, post_dump, EXCLUDE
 from xivo.mallow import fields as xfields
 from xivo.mallow import validate
+from xivo import mallow_helpers as mallow
 
 
 class BaseSchema(Schema):
@@ -32,6 +33,7 @@ class TenantAddress(BaseSchema):
 
 empty_tenant_address = TenantAddress().dump({})
 
+
 class TenantSchema(BaseSchema):
 
     uuid = xfields.UUID(missing=None)
@@ -48,21 +50,109 @@ class TenantSchema(BaseSchema):
         return data
 
 
-def new_list_schema(default_sort_column=None):
+class _BaseListSchema(mallow.ListSchema):
+    recurse = fields.Boolean(missing=False)
 
-    class ListSchema(BaseSchema):
 
-        direction = fields.String(validate=validate.OneOf(['asc', 'desc']), missing='asc')
-        order = fields.String(validate=validate.Length(min=1), missing=default_sort_column)
-        limit = fields.Integer(validate=validate.Range(min=0), missing=None)
-        offset = fields.Integer(validate=validate.Range(min=0), missing=0)
-        search = fields.String(missing=None)
-        recurse = fields.Boolean(missing=False)
+class ExternalListSchema(_BaseListSchema):
+    sort_columns = ['type']
+    default_sort_column = 'type'
+    searchable_columns = ['type']
 
-        @post_load(pass_original=True)
-        def add_arbitrary_fields(self, data, original_data):
-            for key, value in original_data.items():
-                data.setdefault(key, value)
-            return data
 
-    return ListSchema
+class GroupListSchema(_BaseListSchema):
+    sort_columns = ['name', 'uuid']
+    default_sort_column = 'name'
+    searchable_columns = ['uuid', 'name', 'user_uuid']
+
+
+class UserGroupListSchema(_BaseListSchema):
+    sort_columns = ['name', 'uuid']
+    default_sort_column = 'name'
+    searchable_columns = ['uuid', 'name', 'user_uuid']
+
+
+class PolicyListSchema(_BaseListSchema):
+    sort_columns = ['name', 'description', 'uuid']
+    default_sort_column = 'name'
+    searchable_columns = ['uuid', 'name', 'user_uuid', 'group_uuid', 'tenant_uuid']
+
+
+class GroupPolicyListSchema(_BaseListSchema):
+    sort_columns = ['name', 'description', 'uuid']
+    default_sort_column = 'name'
+    searchable_columns = ['uuid', 'name', 'user_uuid', 'group_uuid', 'tenant_uuid']
+
+
+class TenantPolicyListSchema(_BaseListSchema):
+    sort_columns = ['name', 'description', 'uuid']
+    default_sort_column = 'name'
+    searchable_columns = ['uuid', 'name', 'user_uuid', 'group_uuid', 'tenant_uuid']
+
+
+class UserPolicyListSchema(_BaseListSchema):
+    sort_columns = ['name', 'description', 'uuid']
+    default_sort_column = 'name'
+    searchable_columns = ['uuid', 'name', 'user_uuid', 'group_uuid', 'tenant_uuid']
+
+
+class SessionListSchema(_BaseListSchema):
+    sort_columns = ['mobile']
+
+
+class UserSessionListSchema(_BaseListSchema):
+    sort_columns = ['mobile']
+
+
+class TenantListSchema(_BaseListSchema):
+    sort_columns = ['name']
+    default_sort_column = 'name'
+    searchable_columns = ['uuid', 'uuids', 'name']
+
+
+class UserTenantListSchema(_BaseListSchema):
+    sort_columns = ['name']
+    default_sort_column = 'name'
+    searchable_columns = ['uuid', 'uuids', 'name']
+
+
+class UserListSchema(_BaseListSchema):
+    sort_columns = ['username']
+    default_sort_column = 'username'
+    searchable_columns = [
+        'uuid',
+        'username',
+        'firstname',
+        'lastname',
+        'purpose',
+        'email_address',
+        'group_uuid',
+    ]
+
+
+class GroupUserListSchema(_BaseListSchema):
+    sort_columns = ['username']
+    default_sort_column = 'username'
+    searchable_columns = [
+        'uuid',
+        'username',
+        'firstname',
+        'lastname',
+        'purpose',
+        'email_address',
+        'group_uuid',
+    ]
+
+
+class TenantUserListSchema(_BaseListSchema):
+    sort_columns = ['username']
+    default_sort_column = 'username'
+    searchable_columns = [
+        'uuid',
+        'username',
+        'firstname',
+        'lastname',
+        'purpose',
+        'email_address',
+        'group_uuid',
+    ]

@@ -19,9 +19,8 @@ class TenantUsers(_BaseResource):
     @http.required_acl('auth.tenants.{tenant_uuid}.users.read')
     def get(self, tenant_uuid):
         scoping_tenant = Tenant.autodetect()
-        ListSchema = schemas.new_list_schema('username')
         try:
-            list_params = ListSchema().load(request.args)
+            list_params = schemas.TenantUserListSchema().load(request.args)
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 
@@ -42,9 +41,8 @@ class UserTenants(http.AuthResource):
     @http.required_acl('auth.users.{user_uuid}.tenants.read')
     def get(self, user_uuid):
         scoping_tenant = Tenant.autodetect()
-        ListSchema = schemas.new_list_schema('name')
         try:
-            list_params = ListSchema().load(request.args)
+            list_params = schemas.UserTenantListSchema().load(request.args)
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 

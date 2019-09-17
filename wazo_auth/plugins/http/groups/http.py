@@ -46,9 +46,8 @@ class Groups(_BaseGroupResource):
     @http.required_acl('auth.groups.read')
     def get(self):
         scoping_tenant = Tenant.autodetect()
-        ListSchema = schemas.new_list_schema('name')
         try:
-            list_params = ListSchema().load(request.args)
+            list_params = schemas.GroupListSchema().load(request.args)
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 

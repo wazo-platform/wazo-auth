@@ -5,53 +5,11 @@ from unittest import TestCase
 from uuid import UUID
 from hamcrest import (
     assert_that,
-    calling,
     equal_to,
     has_entries,
-    has_property,
 )
-from mock import ANY
-
-import marshmallow
-from xivo_test_helpers.hamcrest.raises import raises
-from werkzeug.datastructures import MultiDict
 
 from .. import schemas
-
-
-class TestListSchema(TestCase):
-
-    def setUp(self):
-        self.Schema = schemas.new_list_schema('username')
-
-    def test_that_none_pagination_fields_remain_untouched(self):
-        args = MultiDict([
-            ('direction', 'asc'),
-            ('order', 'name'),
-            ('limit', 42),
-            ('offset', 4),
-            ('search', 'foobar'),
-            ('username', 'foobaz'),
-        ])
-
-        list_params = self.Schema().load(args)
-
-        assert_that(list_params, has_entries('username', 'foobaz', 'search', 'foobar'))
-
-    def test_that_errors_are_not_ignored_by_the_arbitrary_field_validator(self):
-        args = MultiDict([
-            ('direction', 'foobar'),
-            ('search', 'term'),
-        ])
-
-        assert_that(
-            calling(self.Schema().load).with_args(args),
-            raises(marshmallow.ValidationError, has_property(
-                "messages", has_entries(
-                    direction=ANY
-                )
-            ))
-        )
 
 
 class _Address:

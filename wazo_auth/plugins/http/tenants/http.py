@@ -52,9 +52,8 @@ class Tenants(BaseResource):
     @http.required_acl('auth.tenants.read')
     def get(self):
         scoping_tenant = TenantDetector.autodetect()
-        ListSchema = schemas.new_list_schema('name')
         try:
-            list_params = ListSchema().load(request.args)
+            list_params = schemas.TenantListSchema().load(request.args)
         except ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 

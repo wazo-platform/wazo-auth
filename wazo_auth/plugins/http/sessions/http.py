@@ -16,9 +16,8 @@ class Sessions(http.AuthResource):
     @http.required_acl('auth.sessions.read')
     def get(self):
         scoping_tenant = Tenant.autodetect()
-        ListSchema = schemas.new_list_schema()
         try:
-            list_params = ListSchema().load(request.args)
+            list_params = schemas.SessionListSchema().load(request.args)
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 
