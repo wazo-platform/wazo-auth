@@ -47,9 +47,8 @@ class GroupUsers(_BaseResource):
 
     @http.required_acl('auth.groups.{group_uuid}.users.read')
     def get(self, group_uuid):
-        ListSchema = schemas.new_list_schema('username')
         try:
-            list_params = ListSchema().load(request.args)
+            list_params = schemas.GroupUserListSchema().load(request.args)
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 
@@ -71,9 +70,8 @@ class UserGroups(http.AuthResource):
 
         self.user_service.assert_user_in_subtenant(scoping_tenant.uuid, user_uuid)
 
-        ListSchema = schemas.new_list_schema('name')
         try:
-            list_params = ListSchema().load(request.args)
+            list_params = schemas.UserGroupListSchema().load(request.args)
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 

@@ -22,9 +22,8 @@ class UserPolicies(_BaseUserPolicyResource):
     @http.required_acl('auth.users.{user_uuid}.policies.read')
     def get(self, user_uuid):
         logger.debug('listing user %s policies', user_uuid)
-        ListSchema = schemas.new_list_schema('name')
         try:
-            list_params = ListSchema().load(request.args)
+            list_params = schemas.UserPolicyListSchema().load(request.args)
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 

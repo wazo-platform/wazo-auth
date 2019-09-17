@@ -34,9 +34,8 @@ class Policies(_BasePolicyRessource):
     @http.required_acl('auth.policies.read')
     def get(self):
         scoping_tenant = Tenant.autodetect()
-        ListSchema = schemas.new_list_schema('name')
         try:
-            list_params = ListSchema().load(request.args)
+            list_params = schemas.PolicyListSchema().load(request.args)
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 

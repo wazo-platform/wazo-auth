@@ -23,9 +23,8 @@ class UserSessions(http.AuthResource):
 
         self.user_service.assert_user_in_subtenant(scoping_tenant.uuid, user_uuid)
 
-        ListSchema = schemas.new_list_schema()
         try:
-            list_params = ListSchema().load(request.args)
+            list_params = schemas.UserSessionListSchema().load(request.args)
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 

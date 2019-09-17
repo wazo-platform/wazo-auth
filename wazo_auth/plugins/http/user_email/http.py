@@ -8,12 +8,10 @@ import marshmallow
 
 from wazo_auth import exceptions, http
 
+from . import schemas
 from .exceptions import EmailAlreadyConfirmedException
-from .schemas import new_email_put_schema
 
 logger = logging.getLogger(__name__)
-
-AdminUserEmailPutSchema = new_email_put_schema('admin')
 
 
 class _EmailUpdate(http.AuthResource):
@@ -34,7 +32,7 @@ class _EmailUpdate(http.AuthResource):
 
 class AdminUserEmailUpdate(_EmailUpdate):
 
-    EmailPutSchema = new_email_put_schema('admin')
+    EmailPutSchema = schemas.AdminEmailPutSchema
 
     @http.required_acl('auth.admin.users.{user_uuid}.emails.edit')
     def put(self, user_uuid):
@@ -43,7 +41,7 @@ class AdminUserEmailUpdate(_EmailUpdate):
 
 class UserEmailUpdate(_EmailUpdate):
 
-    EmailPutSchema = new_email_put_schema('user')
+    EmailPutSchema = schemas.UserEmailPutSchema
 
     @http.required_acl('auth.users.{user_uuid}.emails.edit')
     def put(self, user_uuid):

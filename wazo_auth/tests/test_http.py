@@ -189,7 +189,7 @@ class TestUserResource(HTTPAppTestCase):
     def test_user_list(self):
         params = {
             'direction': 'desc',
-            'order': 'email_address',
+            'order': 'username',
             'limit': 5,
             'offset': 42,
             'search': 'foo',

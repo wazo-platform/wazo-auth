@@ -13,11 +13,11 @@ from hamcrest import (
     has_key,
     has_property,
 )
-from marshmallow import ValidationError, EXCLUDE
+from marshmallow import ValidationError
 
 from xivo_test_helpers.hamcrest.raises import raises
 
-from ..schemas import new_email_put_schema
+from .. import schemas
 
 ONE = {'address': 'one@example.com', 'main': True}
 TWO = {'address': 'two@example.com', 'main': False, 'confirmed': None}
@@ -30,7 +30,7 @@ SIX = {'address': 'six', 'main': False, 'confirmed': False}
 class TestUserEmailPutSchema(TestCase):
 
     def setUp(self):
-        self.user_schema = new_email_put_schema('user')()
+        self.user_schema = schemas.UserEmailPutSchema()
 
     def test_empty_list(self):
         params = {'emails': []}
@@ -103,7 +103,7 @@ class TestUserEmailPutSchema(TestCase):
 class TestAdminUserEmailPutSchema(TestCase):
 
     def setUp(self):
-        self.admin_schema = new_email_put_schema('admin')()
+        self.admin_schema = schemas.AdminEmailPutSchema()
 
     def test_empty_list(self):
         params = {'emails': []}

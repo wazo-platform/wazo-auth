@@ -64,9 +64,8 @@ class Users(BaseUserService):
     @http.required_acl('auth.users.read')
     def get(self):
         scoping_tenant = Tenant.autodetect()
-        ListSchema = schemas.new_list_schema('username')
         try:
-            list_params = ListSchema().load(request.args)
+            list_params = schemas.UserListSchema().load(request.args)
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 
