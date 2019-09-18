@@ -1,5 +1,14 @@
 # Changelog
 
+## 19.13
+
+* The `0.1/token` resource now accept the following optionnal body paremeters
+
+  * `client_id`
+  * `refresh_token`
+  * `access_type`
+
+
 ## 19.10
 
 * New resource has been added to delete a session
