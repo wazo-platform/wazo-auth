@@ -14,13 +14,11 @@ logger = logging.getLogger(__name__)
 
 
 class BaseUserService(http.AuthResource):
-
     def __init__(self, user_service):
         self.user_service = user_service
 
 
 class User(BaseUserService):
-
     @http.required_acl('auth.users.{user_uuid}.read')
     def get(self, user_uuid):
         scoping_tenant = Tenant.autodetect()
@@ -45,7 +43,6 @@ class User(BaseUserService):
 
 
 class UserPassword(BaseUserService):
-
     @http.required_acl('auth.users.{user_uuid}.password.edit')
     def put(self, user_uuid):
         try:
@@ -57,7 +54,6 @@ class UserPassword(BaseUserService):
 
 
 class Users(BaseUserService):
-
     def __init__(self, user_service):
         self.user_service = user_service
 
@@ -69,15 +65,17 @@ class Users(BaseUserService):
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 
-        users = self.user_service.list_users(scoping_tenant_uuid=scoping_tenant.uuid, **list_params)
-        total = self.user_service.count_users(scoping_tenant.uuid, filtered=False, **list_params)
-        filtered = self.user_service.count_users(scoping_tenant.uuid, filtered=True, **list_params)
+        users = self.user_service.list_users(
+            scoping_tenant_uuid=scoping_tenant.uuid, **list_params
+        )
+        total = self.user_service.count_users(
+            scoping_tenant.uuid, filtered=False, **list_params
+        )
+        filtered = self.user_service.count_users(
+            scoping_tenant.uuid, filtered=True, **list_params
+        )
 
-        response = {
-            'filtered': filtered,
-            'total': total,
-            'items': users,
-        }
+        response = {'filtered': filtered, 'total': total, 'items': users}
 
         return response, 200
 
@@ -89,5 +87,7 @@ class Users(BaseUserService):
         except marshmallow.ValidationError as e:
             raise exceptions.UserParamException.from_errors(e.messages)
         logger.debug('creating user in tenant: %s', tenant.uuid)
-        result = self.user_service.new_user(email_confirmed=True, tenant_uuid=tenant.uuid, **args)
+        result = self.user_service.new_user(
+            email_confirmed=True, tenant_uuid=tenant.uuid, **args
+        )
         return result, 200

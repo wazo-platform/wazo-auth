@@ -1,5 +1,5 @@
 mock
-nose
+pytest
 pyhamcrest
 https://github.com/wazo-platform/xivo-test-helpers/archive/master.zip
 # for http tests that use stevedore plugins

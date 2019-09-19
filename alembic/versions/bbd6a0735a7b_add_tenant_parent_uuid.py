@@ -15,15 +15,13 @@ down_revision = '13295ff5b213'
 TABLE = 'auth_tenant'
 COL = 'parent_uuid'
 INITIAL_TENANT = 'master'
-tenant_table = sa.sql.table(
-    'auth_tenant',
-    sa.Column('uuid'),
-    sa.Column('name'),
-)
+tenant_table = sa.sql.table('auth_tenant', sa.Column('uuid'), sa.Column('name'))
 
 
 def upgrade():
-    query = tenant_table.insert().returning(tenant_table.c.uuid).values(name=INITIAL_TENANT)
+    query = (
+        tenant_table.insert().returning(tenant_table.c.uuid).values(name=INITIAL_TENANT)
+    )
     tenant_uuid = op.get_bind().execute(query).scalar()
 
     op.add_column(

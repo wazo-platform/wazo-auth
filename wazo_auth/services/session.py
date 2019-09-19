@@ -6,19 +6,22 @@ from xivo_bus.resources.auth.events import SessionDeletedEvent
 
 
 class SessionService(BaseService):
-
     def __init__(self, dao, tenant_tree, bus_publisher):
         super().__init__(dao, tenant_tree)
         self._bus_publisher = bus_publisher
 
     def count(self, scoping_tenant_uuid, recurse=False, **kwargs):
         if scoping_tenant_uuid:
-            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(scoping_tenant_uuid, recurse)
+            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(
+                scoping_tenant_uuid, recurse
+            )
         return self._dao.session.count(**kwargs)
 
     def list_(self, scoping_tenant_uuid=None, recurse=False, **kwargs):
         if scoping_tenant_uuid:
-            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(scoping_tenant_uuid, recurse)
+            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(
+                scoping_tenant_uuid, recurse
+            )
 
         return self._dao.session.list_(**kwargs)
 

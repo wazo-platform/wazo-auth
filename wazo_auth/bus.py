@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -30,7 +30,6 @@ def publisher_thread(publisher):
 
 
 class BusPublisher:
-
     def __init__(self, global_config):
         self.config = global_config['amqp']
         self._uuid = global_config['uuid']
@@ -44,8 +43,12 @@ class BusPublisher:
     def _make_publisher(self):
         bus_url = self.config['uri']
         bus_connection = Connection(bus_url)
-        bus_exchange = Exchange(self.config['exchange_name'], type=self.config['exchange_type'])
-        bus_producer = Producer(bus_connection, exchange=bus_exchange, auto_declare=True)
+        bus_exchange = Exchange(
+            self.config['exchange_name'], type=self.config['exchange_type']
+        )
+        bus_producer = Producer(
+            bus_connection, exchange=bus_exchange, auto_declare=True
+        )
         bus_marshaler = Marshaler(self._uuid)
         return Publisher(bus_producer, bus_marshaler)
 

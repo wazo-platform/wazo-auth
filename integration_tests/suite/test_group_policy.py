@@ -2,18 +2,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from functools import partial
-from hamcrest import (
-    assert_that,
-    contains,
-    contains_inanyorder,
-    has_entries,
-    has_items,
-)
+from hamcrest import assert_that, contains, contains_inanyorder, has_entries, has_items
 from .helpers import base, fixtures
 
 
 class TestGroupPolicyAssociation(base.WazoAuthTestCase):
-
     @fixtures.http.policy()
     @fixtures.http.policy()
     @fixtures.http.group()
@@ -27,16 +20,28 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
 
             # group not in client's sub-tenant tree
             self.client.groups.add_policy(group['uuid'], visible_policy['uuid'])
-            base.assert_http_error(404, client.groups.remove_policy, group['uuid'], visible_policy['uuid'])
+            base.assert_http_error(
+                404, client.groups.remove_policy, group['uuid'], visible_policy['uuid']
+            )
 
             # Any policies of a visible group can be removed.
             self.client.groups.add_policy(visible_group['uuid'], policy1['uuid'])
-            base.assert_no_error(client.groups.remove_policy, visible_group['uuid'], policy1['uuid'])
+            base.assert_no_error(
+                client.groups.remove_policy, visible_group['uuid'], policy1['uuid']
+            )
 
-        base.assert_http_error(404, self.client.groups.remove_policy, base.UNKNOWN_UUID, policy1['uuid'])
-        base.assert_http_error(404, self.client.groups.remove_policy, group['uuid'], base.UNKNOWN_UUID)
-        base.assert_no_error(self.client.groups.remove_policy, group['uuid'], policy2['uuid'])
-        base.assert_no_error(self.client.groups.remove_policy, group['uuid'], policy2['uuid'])
+        base.assert_http_error(
+            404, self.client.groups.remove_policy, base.UNKNOWN_UUID, policy1['uuid']
+        )
+        base.assert_http_error(
+            404, self.client.groups.remove_policy, group['uuid'], base.UNKNOWN_UUID
+        )
+        base.assert_no_error(
+            self.client.groups.remove_policy, group['uuid'], policy2['uuid']
+        )
+        base.assert_no_error(
+            self.client.groups.remove_policy, group['uuid'], policy2['uuid']
+        )
 
         result = self.client.groups.get_policies(group['uuid'])
         assert_that(result, has_entries('items', contains(policy1)))
@@ -49,17 +54,31 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
             visible_group = client.groups.new(name='group2')
             visible_policy = client.policies.new(name='policy3')
 
-            base.assert_no_error(client.groups.add_policy, visible_group['uuid'], visible_policy['uuid'])
-            base.assert_http_error(404, client.groups.add_policy, group['uuid'], visible_policy['uuid'])
-            base.assert_http_error(404, client.groups.add_policy, visible_group['uuid'], policy1['uuid'])
+            base.assert_no_error(
+                client.groups.add_policy, visible_group['uuid'], visible_policy['uuid']
+            )
+            base.assert_http_error(
+                404, client.groups.add_policy, group['uuid'], visible_policy['uuid']
+            )
+            base.assert_http_error(
+                404, client.groups.add_policy, visible_group['uuid'], policy1['uuid']
+            )
 
             result = client.groups.get_policies(visible_group['uuid'])
             assert_that(result, has_entries(items=contains(visible_policy)))
 
-        base.assert_http_error(404, self.client.groups.add_policy, base.UNKNOWN_UUID, policy1['uuid'])
-        base.assert_http_error(404, self.client.groups.add_policy, group['uuid'], base.UNKNOWN_UUID)
-        base.assert_no_error(self.client.groups.add_policy, group['uuid'], policy1['uuid'])
-        base.assert_no_error(self.client.groups.add_policy, group['uuid'], policy1['uuid'])  # Twice
+        base.assert_http_error(
+            404, self.client.groups.add_policy, base.UNKNOWN_UUID, policy1['uuid']
+        )
+        base.assert_http_error(
+            404, self.client.groups.add_policy, group['uuid'], base.UNKNOWN_UUID
+        )
+        base.assert_no_error(
+            self.client.groups.add_policy, group['uuid'], policy1['uuid']
+        )
+        base.assert_no_error(
+            self.client.groups.add_policy, group['uuid'], policy1['uuid']
+        )  # Twice
 
         result = self.client.groups.get_policies(group['uuid'])
         assert_that(result, has_entries(items=contains(policy1)))
@@ -134,9 +153,16 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
     @fixtures.http.user_register()
     @fixtures.http.user_register(username='foo', password='bar')
     @fixtures.http.group(name='one')
-    @fixtures.http.policy(name='main', acl_templates=[
-        '{% for group in groups %}{% for user in group.users %}user.{{ user.uuid }}.*:{% endfor %}{% endfor %}'
-    ])
+    @fixtures.http.policy(
+        name='main',
+        acl_templates=[
+            '{% for group in groups %}'
+            '{% for user in group.users %}'
+            'user.{{ user.uuid }}.*:'
+            '{% endfor %}'
+            '{% endfor %}'
+        ],
+    )
     def test_generated_acl_with_group_data(self, policy, group, *users):
         for user in users:
             self.client.groups.add_user(group['uuid'], user['uuid'])
