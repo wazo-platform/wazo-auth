@@ -1,4 +1,4 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, distinct, exc, func, text
@@ -46,7 +46,9 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 ACLTemplatePolicy.policy_uuid == policy_uuid,
             )
 
-            template_id = s.query(ACLTemplate.id_).join(ACLTemplatePolicy).filter(filter_).first()
+            template_id = (
+                s.query(ACLTemplate.id_).join(ACLTemplatePolicy).filter(filter_).first()
+            )
             if not template_id:
                 return 0
 
@@ -96,7 +98,9 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
 
         with self.new_session() as s:
-            nb_deleted = s.query(Policy).filter(filter_).delete(synchronize_session=False)
+            nb_deleted = (
+                s.query(Policy).filter(filter_).delete(synchronize_session=False)
+            )
 
         if not nb_deleted:
             raise exceptions.UnknownPolicyException(policy_uuid)
@@ -114,26 +118,22 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
 
         with self.new_session() as s:
-            query = s.query(
-                Policy.uuid,
-                Policy.name,
-                Policy.description,
-                Policy.tenant_uuid,
-                func.array_agg(distinct(ACLTemplate.template)).label('acl_templates'),
-            ).outerjoin(
-                ACLTemplatePolicy,
-            ).outerjoin(
-                ACLTemplate,
-            ).outerjoin(
-                UserPolicy,
-            ).outerjoin(
-                GroupPolicy,
-            ).filter(
-                filter_,
-            ).group_by(
-                Policy.uuid,
-                Policy.name,
-                Policy.description,
+            query = (
+                s.query(
+                    Policy.uuid,
+                    Policy.name,
+                    Policy.description,
+                    Policy.tenant_uuid,
+                    func.array_agg(distinct(ACLTemplate.template)).label(
+                        'acl_templates'
+                    ),
+                )
+                .outerjoin(ACLTemplatePolicy)
+                .outerjoin(ACLTemplate)
+                .outerjoin(UserPolicy)
+                .outerjoin(GroupPolicy)
+                .filter(filter_)
+                .group_by(Policy.uuid, Policy.name, Policy.description)
             )
             query = self._paginator.update_query(query, **kwargs)
 
@@ -164,9 +164,14 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             query = s.query(Policy).filter(filter_).group_by(Policy)
             query = self._paginator.update_query(query, **kwargs)
 
-            return [{'uuid': policy.uuid,
-                     'name': policy.name,
-                     'tenant_uuid': policy.tenant_uuid} for policy in query.all()]
+            return [
+                {
+                    'uuid': policy.uuid,
+                    'name': policy.name,
+                    'tenant_uuid': policy.tenant_uuid,
+                }
+                for policy in query.all()
+            ]
 
     def update(self, policy_uuid, name, description, acl_templates, tenant_uuids=None):
         with self.new_session() as s:
@@ -175,7 +180,11 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
 
             body = {'name': name, 'description': description}
-            affected_rows = s.query(Policy).filter(filter_).update(body, synchronize_session='fetch')
+            affected_rows = (
+                s.query(Policy)
+                .filter(filter_)
+                .update(body, synchronize_session='fetch')
+            )
             if not affected_rows:
                 raise exceptions.UnknownPolicyException(policy_uuid)
 
@@ -191,7 +200,9 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def _associate_acl_templates(self, session, policy_uuid, acl_templates):
         ids = self._create_or_find_acl_templates(session, acl_templates)
-        template_policies = [ACLTemplatePolicy(policy_uuid=policy_uuid, template_id=id_) for id_ in ids]
+        template_policies = [
+            ACLTemplatePolicy(policy_uuid=policy_uuid, template_id=id_) for id_ in ids
+        ]
         session.add_all(template_policies)
 
     def _create_or_find_acl_templates(self, s, acl_templates):

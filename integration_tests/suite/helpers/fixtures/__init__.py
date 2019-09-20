@@ -3,7 +3,4 @@
 
 from . import db, http
 
-__all__ = [
-    'db',
-    'http',
-]
+__all__ = ['db', 'http']

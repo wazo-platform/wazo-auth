@@ -20,7 +20,8 @@ from .websocket_oauth2 import WebSocketOAuth2
 
 logger = logging.getLogger(__name__)
 
-# Allow token scope to not match requested scope. (Requests-OAuthlib raises exception on scope mismatch by default.)
+# Allow token scope to not match requested scope.
+# (Requests-OAuthlib raises exception on scope mismatch by default.)
 os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
 os.environ['OAUTHLIB_IGNORE_SCOPE_CHANGE'] = '1'
 
@@ -47,14 +48,20 @@ class MicrosoftAuth(http.AuthResource):
 
         client_id, client_secret = self._get_external_config()
         self.user_service.get_user(user_uuid)
-        self.oauth2 = OAuth2Session(client_id, scope=self.scope, redirect_uri=self.redirect_uri)
+        self.oauth2 = OAuth2Session(
+            client_id, scope=self.scope, redirect_uri=self.redirect_uri
+        )
 
         if args.get('scope'):
             self.oauth2.scope = args.get('scope')
 
-        logger.debug('User(%s) is creating an authorize url for Microsoft', str(user_uuid))
+        logger.debug(
+            'User(%s) is creating an authorize url for Microsoft', str(user_uuid)
+        )
 
-        authorization_url, state = self.oauth2.authorization_url(self.authorization_base_url)
+        authorization_url, state = self.oauth2.authorization_url(
+            self.authorization_base_url
+        )
         logger.debug('Authorization url : {}'.format(authorization_url))
 
         self.websocket = WebSocketOAuth2(
@@ -63,16 +70,15 @@ class MicrosoftAuth(http.AuthResource):
             external_auth=self.external_auth_service,
             client_secret=client_secret,
             token_url=self.token_url,
-            auth_type=self.auth_type
+            auth_type=self.auth_type,
         )
-        websocket_thread = Thread(target=self.websocket.run, args=(state, user_uuid), name='websocket_thread')
+        websocket_thread = Thread(
+            target=self.websocket.run, args=(state, user_uuid), name='websocket_thread'
+        )
         websocket_thread.daemon = True
         websocket_thread.start()
 
-        return {
-            'authorization_url': authorization_url,
-            'state': state,
-        }, 201
+        return {'authorization_url': authorization_url, 'state': state}, 201
 
     @http.required_acl('auth.users.{user_uuid}.external.microsoft.read')
     def get(self, user_uuid):
@@ -98,7 +104,9 @@ class MicrosoftAuth(http.AuthResource):
     def _refresh_token(self, user_uuid, data):
         client_id, client_secret = self._get_external_config()
         oauth2 = OAuth2Session(client_id, token=data)
-        token_data = oauth2.refresh_token(self.token_url, client_id=client_id, client_secret=client_secret)
+        token_data = oauth2.refresh_token(
+            self.token_url, client_id=client_id, client_secret=client_secret
+        )
 
         logger.critical('refresh token info: %s', token_data)
         data['refresh_token'] = token_data['refresh_token']

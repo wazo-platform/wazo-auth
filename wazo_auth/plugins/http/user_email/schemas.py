@@ -1,12 +1,7 @@
 # Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from marshmallow import (
-    EXCLUDE,
-    post_load,
-    validates_schema,
-    ValidationError,
-)
+from marshmallow import EXCLUDE, post_load, validates_schema, ValidationError
 from xivo.mallow import fields
 from wazo_auth.schemas import BaseSchema
 
@@ -25,7 +20,6 @@ class _UserEmailSchema(BaseSchema):
 
 
 class _EmailPutSchema(BaseSchema):
-
     @post_load
     def as_list(self, data):
         return data['emails']

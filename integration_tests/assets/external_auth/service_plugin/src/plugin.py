@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -13,7 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 def new_state():
-    return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(16))
+    return ''.join(
+        random.choice(string.ascii_uppercase + string.digits) for _ in range(16)
+    )
 
 
 class FooService(http.AuthResource):
@@ -39,11 +41,7 @@ class FooService(http.AuthResource):
         data = request.get_json(force=True)
         data['state'] = state
         self.external_auth_service.register_oauth2_callback(
-            self.auth_type,
-            user_uuid,
-            state,
-            self.create_first_token,
-            user_uuid,
+            self.auth_type, user_uuid, state, self.create_first_token, user_uuid
         )
         return self.external_auth_service.create(user_uuid, self.auth_type, data), 200
 
@@ -106,13 +104,16 @@ class BarPlugin(object):
         args = (external_auth_service,)
         external_auth_service.register_safe_auth_model('bar', BarSafeData)
 
-        api.add_resource(BarService, '/users/<uuid:user_uuid>/external/bar', resource_class_args=args)
+        api.add_resource(
+            BarService, '/users/<uuid:user_uuid>/external/bar', resource_class_args=args
+        )
 
 
 class FooPlugin(object):
-
     def load(self, dependencies):
         api = dependencies['api']
         args = (dependencies['external_auth_service'],)
 
-        api.add_resource(FooService, '/users/<uuid:user_uuid>/external/foo', resource_class_args=args)
+        api.add_resource(
+            FooService, '/users/<uuid:user_uuid>/external/foo', resource_class_args=args
+        )

@@ -22,7 +22,7 @@ egg-info:
 	cd .. && python3 setup.py egg_info
 
 test:
-	nosetests -x
+	pytest -x
 
 mount:
 	for f in $$(ls assets/*/docker-compose.yml); do echo "updating $$f" && sed -i 's/# - "$${LOCAL_GIT_REPOS}/- "$${LOCAL_GIT_REPOS}/' $$f; done

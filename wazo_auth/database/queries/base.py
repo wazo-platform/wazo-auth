@@ -1,12 +1,9 @@
-# Copyright 2017-2018 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from contextlib import contextmanager
 from sqlalchemy import create_engine
-from sqlalchemy import event
-from sqlalchemy import exc
 from sqlalchemy.orm import sessionmaker, scoped_session
-from sqlalchemy.pool import Pool
 from ... import exceptions
 
 
@@ -17,7 +14,9 @@ class QueryPaginator:
     def __init__(self, column_map):
         self._column_map = column_map
 
-    def update_query(self, query, limit=None, offset=None, order=None, direction=None, **ignored):
+    def update_query(
+        self, query, limit=None, offset=None, order=None, direction=None, **ignored
+    ):
         if order and direction:
             order_field = self._column_map.get(order)
             if not order_field:
@@ -26,15 +25,21 @@ class QueryPaginator:
             if direction not in self._valid_directions:
                 raise exceptions.InvalidSortDirectionException(direction)
 
-            order_clause = order_field.asc() if direction == 'asc' else order_field.desc()
+            order_clause = (
+                order_field.asc() if direction == 'asc' else order_field.desc()
+            )
             query = query.order_by(order_clause)
 
         if limit is not None:
-            limit = self._check_valid_limit_or_offset(limit, None, exceptions.InvalidLimitException)
+            limit = self._check_valid_limit_or_offset(
+                limit, None, exceptions.InvalidLimitException
+            )
             query = query.limit(limit)
 
         if offset is not None:
-            offset = self._check_valid_limit_or_offset(offset, 0, exceptions.InvalidOffsetException)
+            offset = self._check_valid_limit_or_offset(
+                offset, 0, exceptions.InvalidOffsetException
+            )
             query = query.offset(offset)
 
         return query
