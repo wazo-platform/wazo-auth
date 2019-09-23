@@ -17,3 +17,8 @@ class Plugin:
         api.add_resource(
             http.Token, '/token/<string:token_uuid>', resource_class_args=args
         )
+        api.add_resource(
+            http.UserRefreshTokens,
+            '/users/<string:user_uuid_or_me>/tokens',
+            resource_class_args=args,
+        )

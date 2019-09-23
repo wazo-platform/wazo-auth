@@ -19,6 +19,14 @@ class BaseResource(http.ErrorCatchingResource):
         self._authentication_service = authentication_service
 
 
+class UserRefreshTokens(BaseResource):
+    @http.required_acl('auth.users.{user_uuid}.tokens.read')
+    def get(self, user_uuid_or_me):
+        filtered = total = 0
+        items = []
+        return {'total': total, 'filtered': filtered, 'items': items}
+
+
 class Tokens(BaseResource):
     def post(self):
         user_agent = request.headers.get('User-Agent', '')
