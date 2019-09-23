@@ -1,6 +1,7 @@
 # wazo-auth
 
 [![Build Status](https://jenkins.wazo.community/buildStatus/icon?job=wazo-auth)](https://jenkins.wazo.community/job/wazo-auth)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fwazo-platform%2Fwazo-auth.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fwazo-platform%2Fwazo-auth?ref=badge_shield)
 
 A micro-service to create tokens, check ACLs and delete expired tokens
 
@@ -151,3 +152,7 @@ Available ACL policies are:
 
 * `wazo_default_admin_policy`
 * `wazo_default_user_policy`
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fwazo-platform%2Fwazo-auth.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fwazo-platform%2Fwazo-auth?ref=badge_large)
