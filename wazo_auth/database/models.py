@@ -5,6 +5,7 @@ from sqlalchemy import (
     Boolean,
     CheckConstraint,
     Column,
+    DateTime,
     ForeignKey,
     Integer,
     LargeBinary,
@@ -169,6 +170,7 @@ class RefreshToken(Base):
     login = Column(Text)
     user_agent = Column(Text)
     remote_addr = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=text('NOW()'))
 
 
 class Session(Base):
