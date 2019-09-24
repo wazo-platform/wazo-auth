@@ -33,6 +33,7 @@ class DefaultUser(BaseMetadata):
             'auth_id': user_uuid,
             'username': login,
             'xivo_user_uuid': user_uuid,
+            'user_uuid': user_uuid,
             'xivo_uuid': self.get_xivo_uuid(args),
             'uuid': user_uuid,
             'tenant_uuid': user['tenant_uuid'],
