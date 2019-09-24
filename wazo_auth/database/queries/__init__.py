@@ -16,25 +16,43 @@ from xivo import sqlalchemy_helper
 
 
 class DAO:
-
-    _daos = {
-        'address': AddressDAO,
-        'email': EmailDAO,
-        'external_auth': ExternalAuthDAO,
-        'group': GroupDAO,
-        'policy': PolicyDAO,
-        'refresh_token': RefreshTokenDAO,
-        'session': SessionDAO,
-        'tenant': TenantDAO,
-        'token': TokenDAO,
-        'user': UserDAO,
-    }
-
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        address,
+        email,
+        external_auth,
+        group,
+        policy,
+        refresh_token,
+        session,
+        tenant,
+        token,
+        user,
+    ):
         sqlalchemy_helper.handle_db_restart()
-        for name, dao in kwargs.items():
-            setattr(self, name, dao)
+
+        self.address = address
+        self.email = email
+        self.external_auth = external_auth
+        self.group = group
+        self.policy = policy
+        self.refresh_token = refresh_token
+        self.session = session
+        self.tenant = tenant
+        self.token = token
+        self.user = user
 
     @classmethod
-    def from_config(cls, config):
-        return cls(**{name: DAO(config['db_uri']) for name, DAO in cls._daos.items()})
+    def from_defaults(cls):
+        return cls(
+            address=AddressDAO(),
+            email=EmailDAO(),
+            external_auth=ExternalAuthDAO(),
+            group=GroupDAO(),
+            policy=PolicyDAO(),
+            refresh_token=RefreshTokenDAO(),
+            session=SessionDAO(),
+            tenant=TenantDAO(),
+            token=TokenDAO(),
+            user=UserDAO(),
+        )

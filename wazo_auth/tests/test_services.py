@@ -16,6 +16,8 @@ from ..database.queries import (
     external_auth,
     group,
     policy,
+    refresh_token,
+    session,
     tenant,
     token,
     user,
@@ -31,6 +33,8 @@ class BaseServiceTestCase(TestCase):
         self.external_auth_dao = Mock(external_auth.ExternalAuthDAO)
         self.group_dao = Mock(group.GroupDAO)
         self.policy_dao = Mock(policy.PolicyDAO)
+        self.refresh_token_dao = Mock(refresh_token.RefreshTokenDAO)
+        self.session_dao = Mock(session.SessionDAO)
         self.tenant_dao = Mock(tenant.TenantDAO)
         self.token_dao = Mock(token.TokenDAO)
         self.user_dao = Mock(user.UserDAO)
@@ -45,6 +49,8 @@ class BaseServiceTestCase(TestCase):
             external_auth=self.external_auth_dao,
             group=self.group_dao,
             policy=self.policy_dao,
+            refresh_token=self.refresh_token_dao,
+            session=self.session_dao,
             tenant=self.tenant_dao,
             token=self.token_dao,
             user=self.user_dao,

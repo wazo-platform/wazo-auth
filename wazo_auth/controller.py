@@ -12,6 +12,7 @@ from xivo.consul_helpers import ServiceCatalogRegistration
 
 from . import bus, services, token
 from .database import queries
+from .database.helpers import init_db
 from .flask_helpers import Tenant
 from .helpers import LocalTokenRenewer
 from .http_server import api, CoreRestApi
@@ -35,6 +36,7 @@ def _check_required_config_for_other_threads(config):
 
 class Controller:
     def __init__(self, config):
+        init_db(config['db_uri'])
         self._config = config
         _check_required_config_for_other_threads(config)
         self._service_discovery_args = [
@@ -48,7 +50,7 @@ class Controller:
 
         template_formatter = services.helpers.TemplateFormatter(config)
         self._bus_publisher = bus.BusPublisher(config)
-        dao = queries.DAO.from_config(self._config)
+        dao = queries.DAO.from_defaults()
         self._tenant_tree = services.helpers.CachedTenantTree(dao.tenant)
         self._token_service = services.TokenService(
             config, dao, self._tenant_tree, self._bus_publisher
