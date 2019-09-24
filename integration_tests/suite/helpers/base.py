@@ -24,7 +24,15 @@ from xivo_test_helpers.hamcrest.raises import raises
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.bus import BusClient
 from wazo_auth.database import queries
-from wazo_auth.database.queries import group, policy, tenant, token, user, session
+from wazo_auth.database.queries import (
+    group,
+    policy,
+    tenant,
+    token,
+    user,
+    refresh_token,
+    session,
+)
 
 from .database import Database
 
@@ -72,6 +80,7 @@ class DAOTestCase(unittest.TestCase):
         self._group_dao = group.GroupDAO(db_uri)
         self._policy_dao = policy.PolicyDAO(db_uri)
         self._user_dao = user.UserDAO(db_uri)
+        self._refresh_token_dao = refresh_token.RefreshTokenDAO(db_uri)
         self._tenant_dao = tenant.TenantDAO(db_uri)
         self._token_dao = token.TokenDAO(db_uri)
         self._session_dao = session.SessionDAO(db_uri)

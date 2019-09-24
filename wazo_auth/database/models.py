@@ -13,8 +13,10 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     schema,
+    sql,
     text,
 )
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -171,6 +173,24 @@ class RefreshToken(Base):
     user_agent = Column(Text)
     remote_addr = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=text('NOW()'))
+    user = relationship(
+        'User',
+        primaryjoin='RefreshToken.user_uuid == User.uuid',
+        foreign_keys='RefreshToken.user_uuid',
+        viewonly=True,
+    )
+
+    @hybrid_property
+    def tenant_uuid(self):
+        return self.user.tenant_uuid
+
+    @tenant_uuid.expression
+    def tenant_uuid(cls):
+        return (
+            sql.select([User.tenant_uuid])
+            .where(User.uuid == cls.user_uuid)
+            .label('tenant_uuid')
+        )
 
 
 class Session(Base):

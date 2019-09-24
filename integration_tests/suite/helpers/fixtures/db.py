@@ -142,14 +142,15 @@ def policy(**policy_args):
 
 
 def tenant(**tenant_args):
-    tenant_args.setdefault('name', None)
-    tenant_args.setdefault('phone', None)
-    tenant_args.setdefault('contact_uuid', None)
-    tenant_args.setdefault('address_id', None)
-
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
+            tenant_args.setdefault('name', None)
+            tenant_args.setdefault('phone', None)
+            tenant_args.setdefault('contact_uuid', None)
+            tenant_args.setdefault('address_id', None)
+            tenant_args.setdefault('parent_uuid', self.top_tenant_uuid)
+
             tenant_uuid = self._tenant_dao.create(**tenant_args)
             try:
                 result = decorated(self, tenant_uuid, *args, **kwargs)
@@ -187,6 +188,23 @@ def user(**user_args):
                     self._user_dao.delete(user_uuid)
                 except exceptions.UnknownUserException:
                     pass
+            return result
+
+        return wrapper
+
+    return decorator
+
+
+def refresh_token(**refresh_token_args):
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            refresh_token = self._refresh_token_dao.create(refresh_token_args)
+            try:
+                result = decorated(self, refresh_token, *args, **kwargs)
+            finally:
+                # TODO(pcm): remove the refresh token when delete gets implemented
+                pass
             return result
 
         return wrapper

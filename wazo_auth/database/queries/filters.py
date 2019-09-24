@@ -8,6 +8,7 @@ from ..models import (
     Group,
     GroupPolicy,
     Policy,
+    RefreshToken,
     Tenant,
     User,
     UserGroup,
@@ -77,6 +78,11 @@ policy_strict_filter = StrictFilter(
     ('group_uuid', GroupPolicy.group_uuid, str),
     ('tenant_uuid', Policy.tenant_uuid, str),
 )
+refresh_token_strict_filter = StrictFilter(
+    ('uuid', RefreshToken.uuid, str),
+    ('client_id', RefreshToken.client_id, None),
+    ('created_at', RefreshToken.created_at, None),
+)
 tenant_strict_filter = StrictFilter(
     ('uuid', Tenant.uuid, str),
     ('uuids', Tenant.uuid, list),
@@ -99,3 +105,4 @@ tenant_search_filter = SearchFilter(Tenant.name)
 user_search_filter = SearchFilter(
     User.firstname, User.lastname, User.username, Email.address
 )
+refresh_token_search_filter = SearchFilter(RefreshToken.client_id)

@@ -1,15 +1,36 @@
 # Copyright 2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from sqlalchemy import and_, exc
+from sqlalchemy import and_, exc, text
 
 from wazo_auth import exceptions
 
+from . import filters
 from .base import BaseDAO
 from ..models import RefreshToken
 
 
-class RefreshTokenDAO(BaseDAO):
+class RefreshTokenDAO(filters.FilterMixin, BaseDAO):
+
+    strict_filter = filters.refresh_token_strict_filter
+    search_filter = filters.refresh_token_search_filter
+
+    def count(self, user_uuid, tenant_uuids=None, filtered=False, **search_params):
+        filter_ = RefreshToken.user_uuid == user_uuid
+        if tenant_uuids is not None:
+            if not tenant_uuids:
+                filter_ = and_(filter_, text('false'))
+            else:
+                filter_ = and_(filter_, RefreshToken.tenant_uuid.in_(tenant_uuids))
+
+        if filtered is not False:
+            strict_filter = self.new_strict_filter(**search_params)
+            search_filter = self.new_search_filter(**search_params)
+            filter_ = and_(filter_, strict_filter, search_filter)
+
+        with self.new_session() as s:
+            return s.query(RefreshToken).filter(filter_).count()
+
     def create(self, body):
         refresh_token = RefreshToken(**body)
         with self.new_session() as s:
