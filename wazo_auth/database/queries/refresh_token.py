@@ -57,6 +57,20 @@ class RefreshTokenDAO(filters.FilterMixin, BaseDAO):
 
         raise exceptions.UnknownRefreshToken(refresh_token, client_id)
 
+    def list_(self, user_uuid, tenant_uuids=None, **search_params):
+        filter_ = RefreshToken.user_uuid == user_uuid
+        if tenant_uuids is not None:
+            if not tenant_uuids:
+                filter_ = and_(filter_, text('false'))
+            else:
+                filter_ = and_(filter_, RefreshToken.tenant_uuid.in_(tenant_uuids))
+
+        strict_filter = self.new_strict_filter(**search_params)
+        search_filter = self.new_search_filter(**search_params)
+        filter_ = and_(filter_, strict_filter, search_filter)
+
+        return self.session.query(RefreshToken).filter(filter_).all()
+
     def _get_existing_refresh_token(self, client_id, user_uuid):
         filter_ = and_(
             RefreshToken.client_id == client_id, RefreshToken.user_uuid == user_uuid
