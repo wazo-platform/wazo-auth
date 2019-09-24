@@ -1,9 +1,12 @@
 # Copyright 2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from mock import ANY
 from hamcrest import (
     assert_that,
     calling,
+    contains,
+    contains_inanyorder,
     ends_with,
     equal_to,
     has_entries,
@@ -13,7 +16,9 @@ from hamcrest import (
 )
 from xivo_test_helpers.hamcrest.raises import raises
 
-from .helpers.base import WazoAuthTestCase
+from .helpers import fixtures
+from .helpers.base import WazoAuthTestCase, assert_http_error
+from .helpers.constants import UNKNOWN_UUID
 
 
 class TestTokens(WazoAuthTestCase):
@@ -72,5 +77,108 @@ class TestTokens(WazoAuthTestCase):
             ),
             raises(Exception).matching(
                 has_properties(response=has_properties(status_code=401))
+            ),
+        )
+
+    @fixtures.http.user(username='foo', password='bar')
+    @fixtures.http.token(username='foo', password='bar', access_type='offline')
+    @fixtures.http.token(username='foo', password='bar', access_type='offline')
+    @fixtures.http.token(
+        username='foo', password='bar', access_type='offline', client_id='foobaz'
+    )
+    def test_refresh_token_list(self, token_1, token_2, token_3, user):
+        result = self.client.token.list(user_uuid=user['uuid'])
+        assert_that(
+            result,
+            has_entries(
+                total=3,
+                filtered=3,
+                items=contains_inanyorder(
+                    has_entries(
+                        uuid=token_1['refresh_token'],
+                        client_id=token_1['client_id'],
+                        created_at=ANY,
+                    ),
+                    has_entries(
+                        uuid=token_2['refresh_token'],
+                        client_id=token_2['client_id'],
+                        created_at=ANY,
+                    ),
+                    has_entries(
+                        uuid=token_3['refresh_token'],
+                        client_id=token_3['client_id'],
+                        created_at=ANY,
+                    ),
+                ),
+            ),
+        )
+
+        assert_http_error(404, self.client.token.list, UNKNOWN_UUID)
+        assert_http_error(
+            400, self.client.token.list, user['uuid'], limit='not a number'
+        )
+        assert_http_error(400, self.client.token.list, user['uuid'], offset=-1)
+        assert_http_error(400, self.client.token.list, user['uuid'], direction='up')
+        assert_http_error(400, self.client.token.list, user['uuid'], order='lol')
+
+        result = self.client.token.list(user_uuid=user['uuid'], search='baz')
+        assert_that(
+            result,
+            has_entries(
+                items=contains_inanyorder(has_entries(uuid=token_1['refresh_token']))
+            ),
+        )
+
+        result = self.client.token.list(
+            user_uuid=user['uuid'], order='created_at', direction='asc'
+        )
+        assert_that(
+            result,
+            has_entries(
+                items=contains(
+                    has_entries(uuid=token_3['refresh_token']),
+                    has_entries(uuid=token_2['refresh_token']),
+                    has_entries(uuid=token_1['refresh_token']),
+                )
+            ),
+        )
+
+        result = self.client.token.list(
+            user_uuid=user['uuid'], order='created_at', direction='desc'
+        )
+        assert_that(
+            result,
+            has_entries(
+                items=contains(
+                    has_entries(uuid=token_1['refresh_token']),
+                    has_entries(uuid=token_2['refresh_token']),
+                    has_entries(uuid=token_3['refresh_token']),
+                )
+            ),
+        )
+
+        result = self.client.token.list(
+            user_uuid=user['uuid'], order='created_at', limit=2
+        )
+        assert_that(
+            result,
+            has_entries(
+                items=contains(
+                    has_entries(uuid=token_3['refresh_token']),
+                    has_entries(uuid=token_2['refresh_token']),
+                )
+            ),
+        )
+
+        result = self.client.token.list(
+            user_uuid=user['uuid'], order='created_at', offset=1
+        )
+        assert_that(
+            result,
+            has_entries(
+                items=contains(
+                    has_entries(uuid=token_2['refresh_token']),
+                    has_entries(uuid=token_1['refresh_token']),
+                )
             ),
         )

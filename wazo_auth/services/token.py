@@ -7,18 +7,35 @@ import logging
 from xivo_bus.resources.auth.events import SessionCreatedEvent, SessionDeletedEvent
 
 from wazo_auth.token import Token
+from wazo_auth.services.helpers import BaseService
+
 from ..exceptions import MissingACLTokenException, UnknownTokenException
 
 logger = logging.getLogger(__name__)
 
 
-class TokenService:
+class TokenService(BaseService):
     def __init__(self, config, dao, tenant_tree, bus_publisher):
+        super().__init__(dao, tenant_tree)
         self._backend_policies = config.get('backend_policies', {})
         self._default_expiration = config['default_token_lifetime']
-        self._dao = dao
-        self._tenant_tree = tenant_tree
         self._bus_publisher = bus_publisher
+
+    def count_refresh_tokens(
+        self, scoping_tenant_uuid=None, recurse=False, **search_params
+    ):
+        search_params['tenant_uuids'] = self._get_scoped_tenant_uuids(
+            scoping_tenant_uuid, recurse
+        )
+        return self._dao.refresh_token.count(**search_params)
+
+    def list_refresh_tokens(
+        self, scoping_tenant_uuid=None, recurse=False, **search_params
+    ):
+        search_params['tenant_uuids'] = self._get_scoped_tenant_uuids(
+            scoping_tenant_uuid, recurse
+        )
+        return self._dao.refresh_token.list_(**search_params)
 
     def new_token(self, backend, login, args):
         metadata = backend.get_metadata(login, args)

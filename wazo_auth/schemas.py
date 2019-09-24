@@ -70,73 +70,73 @@ class TenantSchema(BaseSchema):
         return data
 
 
-class _BaseListSchema(mallow.ListSchema):
+class BaseListSchema(mallow.ListSchema):
     recurse = fields.Boolean(missing=False)
 
 
-class ExternalListSchema(_BaseListSchema):
+class ExternalListSchema(BaseListSchema):
     sort_columns = ['type']
     default_sort_column = 'type'
     searchable_columns = ['type']
 
 
-class GroupListSchema(_BaseListSchema):
+class GroupListSchema(BaseListSchema):
     sort_columns = ['name', 'uuid']
     default_sort_column = 'name'
     searchable_columns = ['uuid', 'name', 'user_uuid']
 
 
-class UserGroupListSchema(_BaseListSchema):
+class UserGroupListSchema(BaseListSchema):
     sort_columns = ['name', 'uuid']
     default_sort_column = 'name'
     searchable_columns = ['uuid', 'name', 'user_uuid']
 
 
-class PolicyListSchema(_BaseListSchema):
+class PolicyListSchema(BaseListSchema):
     sort_columns = ['name', 'description', 'uuid']
     default_sort_column = 'name'
     searchable_columns = ['uuid', 'name', 'user_uuid', 'group_uuid', 'tenant_uuid']
 
 
-class GroupPolicyListSchema(_BaseListSchema):
+class GroupPolicyListSchema(BaseListSchema):
     sort_columns = ['name', 'description', 'uuid']
     default_sort_column = 'name'
     searchable_columns = ['uuid', 'name', 'user_uuid', 'group_uuid', 'tenant_uuid']
 
 
-class TenantPolicyListSchema(_BaseListSchema):
+class TenantPolicyListSchema(BaseListSchema):
     sort_columns = ['name', 'description', 'uuid']
     default_sort_column = 'name'
     searchable_columns = ['uuid', 'name', 'user_uuid', 'group_uuid', 'tenant_uuid']
 
 
-class UserPolicyListSchema(_BaseListSchema):
+class UserPolicyListSchema(BaseListSchema):
     sort_columns = ['name', 'description', 'uuid']
     default_sort_column = 'name'
     searchable_columns = ['uuid', 'name', 'user_uuid', 'group_uuid', 'tenant_uuid']
 
 
-class SessionListSchema(_BaseListSchema):
+class SessionListSchema(BaseListSchema):
     sort_columns = ['mobile']
 
 
-class UserSessionListSchema(_BaseListSchema):
+class UserSessionListSchema(BaseListSchema):
     sort_columns = ['mobile']
 
 
-class TenantListSchema(_BaseListSchema):
+class TenantListSchema(BaseListSchema):
     sort_columns = ['name']
     default_sort_column = 'name'
     searchable_columns = ['uuid', 'uuids', 'name']
 
 
-class UserTenantListSchema(_BaseListSchema):
+class UserTenantListSchema(BaseListSchema):
     sort_columns = ['name']
     default_sort_column = 'name'
     searchable_columns = ['uuid', 'uuids', 'name']
 
 
-class UserListSchema(_BaseListSchema):
+class UserListSchema(BaseListSchema):
     sort_columns = ['username']
     default_sort_column = 'username'
     searchable_columns = [
@@ -150,7 +150,7 @@ class UserListSchema(_BaseListSchema):
     ]
 
 
-class GroupUserListSchema(_BaseListSchema):
+class GroupUserListSchema(BaseListSchema):
     sort_columns = ['username']
     default_sort_column = 'username'
     searchable_columns = [
@@ -164,7 +164,7 @@ class GroupUserListSchema(_BaseListSchema):
     ]
 
 
-class TenantUserListSchema(_BaseListSchema):
+class TenantUserListSchema(BaseListSchema):
     sort_columns = ['username']
     default_sort_column = 'username'
     searchable_columns = [

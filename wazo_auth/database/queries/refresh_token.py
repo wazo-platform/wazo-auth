@@ -6,14 +6,18 @@ from sqlalchemy import and_, exc, text
 from wazo_auth import exceptions
 
 from . import filters
-from .base import BaseDAO
+from .base import BaseDAO, PaginatorMixin
 from ..models import RefreshToken
 
 
-class RefreshTokenDAO(filters.FilterMixin, BaseDAO):
+class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     strict_filter = filters.refresh_token_strict_filter
     search_filter = filters.refresh_token_search_filter
+    column_map = {
+        'created_at': RefreshToken.created_at,
+        'client_id': RefreshToken.client_id,
+    }
 
     def count(self, user_uuid, tenant_uuids=None, filtered=False, **search_params):
         filter_ = RefreshToken.user_uuid == user_uuid
@@ -69,7 +73,10 @@ class RefreshTokenDAO(filters.FilterMixin, BaseDAO):
         search_filter = self.new_search_filter(**search_params)
         filter_ = and_(filter_, strict_filter, search_filter)
 
-        return self.session.query(RefreshToken).filter(filter_).all()
+        query = self.session.query(RefreshToken).filter(filter_)
+        query = self._paginator.update_query(query, **search_params)
+
+        return query.all()
 
     def _get_existing_refresh_token(self, client_id, user_uuid):
         filter_ = and_(
