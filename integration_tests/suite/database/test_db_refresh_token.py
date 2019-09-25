@@ -5,19 +5,11 @@ import datetime
 import uuid
 
 from hamcrest import assert_that, contains_inanyorder, empty, equal_to, has_properties
-from .helpers import fixtures, base
+from ..helpers import fixtures, base
 
 ALICE_UUID = str(uuid.uuid4())
 TENANT_UUID = str(uuid.uuid4())
 CREATED_AT = datetime.datetime.now()
-
-
-def setup_module():
-    base.DBStarter.setUpClass()
-
-
-def teardown_module():
-    base.DBStarter.tearDownClass()
 
 
 class TestRefreshTokenDAO(base.DAOTestCase):

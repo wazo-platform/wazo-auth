@@ -16,17 +16,9 @@ from xivo_test_helpers.hamcrest.raises import raises
 
 from wazo_auth import exceptions
 from wazo_auth.database import models
-from .helpers import fixtures, base
+from ..helpers import fixtures, base
 
 SESSION_UUID_1 = str(uuid.uuid4())
-
-
-def setup_module():
-    base.DBStarter.setUpClass()
-
-
-def teardown_module():
-    base.DBStarter.tearDownClass()
 
 
 class TestExternalAuthDAO(base.DAOTestCase):

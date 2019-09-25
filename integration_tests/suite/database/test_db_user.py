@@ -25,18 +25,10 @@ from wazo_auth import exceptions
 from wazo_auth.database import models
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 
-from .helpers import fixtures, base
-from .helpers.constants import UNKNOWN_UUID
+from ..helpers import fixtures, base
+from ..helpers.constants import UNKNOWN_UUID
 
 USER_UUID = str(uuid.uuid4())
-
-
-def setup_module():
-    base.DBStarter.setUpClass()
-
-
-def teardown_module():
-    base.DBStarter.tearDownClass()
 
 
 class TestUserDAO(base.DAOTestCase):

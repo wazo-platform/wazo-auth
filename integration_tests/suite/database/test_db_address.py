@@ -6,17 +6,9 @@ import uuid
 from hamcrest import assert_that, calling, equal_to, instance_of
 from xivo_test_helpers.hamcrest.raises import raises
 
-from .helpers import base
+from ..helpers import base
 
 SESSION_UUID_1 = str(uuid.uuid4())
-
-
-def setup_module():
-    base.DBStarter.setUpClass()
-
-
-def teardown_module():
-    base.DBStarter.tearDownClass()
 
 
 class TestAddressDAO(base.DAOTestCase):

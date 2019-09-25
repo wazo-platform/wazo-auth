@@ -16,17 +16,9 @@ from hamcrest import (
 
 from wazo_auth import exceptions
 from wazo_auth.database import models
-from .helpers import base, fixtures
+from ..helpers import base, fixtures
 
 SESSION_UUID_1 = str(uuid.uuid4())
-
-
-def setup_module():
-    base.DBStarter.setUpClass()
-
-
-def teardown_module():
-    base.DBStarter.tearDownClass()
 
 
 class TestTokenDAO(base.DAOTestCase):

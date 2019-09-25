@@ -14,16 +14,8 @@ from hamcrest import (
 )
 from xivo_test_helpers.hamcrest.raises import raises
 from wazo_auth import exceptions
-from .helpers import fixtures, base
-from .helpers.constants import UNKNOWN_UUID
-
-
-def setup_module():
-    base.DBStarter.setUpClass()
-
-
-def teardown_module():
-    base.DBStarter.tearDownClass()
+from ..helpers import fixtures, base
+from ..helpers.constants import UNKNOWN_UUID
 
 
 class TestPolicyDAO(base.DAOTestCase):

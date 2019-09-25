@@ -17,18 +17,10 @@ from xivo_test_helpers.hamcrest.raises import raises
 
 from wazo_auth import exceptions
 from wazo_auth.database import models
-from .helpers import fixtures, base
+from ..helpers import fixtures, base
 
 
 TENANT_UUID = 'a26c4ed8-767f-463e-a10a-42c4f220d375'
-
-
-def setup_module():
-    base.DBStarter.setUpClass()
-
-
-def teardown_module():
-    base.DBStarter.tearDownClass()
 
 
 class TestGroupDAO(base.DAOTestCase):
