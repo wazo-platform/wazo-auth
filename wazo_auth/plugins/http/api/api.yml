@@ -8,7 +8,7 @@ info:
     url: http://wazo.community
     email: dev@wazo.community
   license:
-    name: GPLv3
+    name: GPL-3.0-or-later
     url: http://www.gnu.org/licenses/gpl-3.0.html
 x-xivo-port: 9497
 x-xivo-name: auth
