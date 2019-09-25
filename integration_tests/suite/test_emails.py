@@ -4,7 +4,8 @@
 from hamcrest import assert_that, contains_inanyorder, empty, has_entries
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers import fixtures
-from .helpers.base import assert_http_error, WazoAuthTestCase, UNKNOWN_UUID
+from .helpers.base import assert_http_error, WazoAuthTestCase
+from .helpers.constants import UNKNOWN_UUID
 
 ONE = {'address': 'one@example.com', 'main': True, 'confirmed': True}
 TWO = {'address': 'two@example.com', 'main': False, 'confirmed': False}

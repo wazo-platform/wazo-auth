@@ -20,6 +20,7 @@ from xivo_test_helpers.hamcrest.raises import raises
 from wazo_auth import exceptions
 from wazo_auth.database import models
 from .helpers import fixtures, base
+from .helpers.constants import UNKNOWN_UUID
 
 SESSION_UUID_1 = str(uuid.uuid4())
 
@@ -79,7 +80,7 @@ class TestEmailDAO(base.DAOTestCase):
     def test_confirm(self, email_uuid):
         assert_that(self.is_email_confirmed(email_uuid), equal_to(False))
         assert_that(
-            calling(self._email_dao.confirm).with_args(base.UNKNOWN_UUID),
+            calling(self._email_dao.confirm).with_args(UNKNOWN_UUID),
             raises(exceptions.UnknownEmailException),
         )
         self._email_dao.confirm(email_uuid)

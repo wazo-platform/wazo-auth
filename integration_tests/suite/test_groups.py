@@ -14,6 +14,7 @@ from hamcrest import (
 )
 from mock import ANY
 from .helpers import base, fixtures
+from .helpers.constants import UNKNOWN_UUID
 
 
 class TestGroups(base.WazoAuthTestCase):
@@ -22,7 +23,7 @@ class TestGroups(base.WazoAuthTestCase):
 
     @fixtures.http.group(name='foobar')
     def test_delete(self, foobar):
-        base.assert_http_error(404, self.client.groups.delete, base.UNKNOWN_UUID)
+        base.assert_http_error(404, self.client.groups.delete, UNKNOWN_UUID)
 
         with self.client_in_subtenant() as (client, _, __):
             base.assert_http_error(404, client.groups.delete, foobar['uuid'])
@@ -33,7 +34,7 @@ class TestGroups(base.WazoAuthTestCase):
     def test_get(self, foobar):
         action = self.client.groups.get
 
-        base.assert_http_error(404, action, base.UNKNOWN_UUID)
+        base.assert_http_error(404, action, UNKNOWN_UUID)
 
         with self.client_in_subtenant() as (client, _, __):
             base.assert_http_error(404, client.groups.get, foobar['uuid'])
@@ -60,7 +61,7 @@ class TestGroups(base.WazoAuthTestCase):
     @fixtures.http.group(name='duplicate')
     def test_put(self, duplicate, group):
         base.assert_http_error(
-            404, self.client.groups.edit, base.UNKNOWN_UUID, name='foobaz'
+            404, self.client.groups.edit, UNKNOWN_UUID, name='foobaz'
         )
 
         with self.client_in_subtenant() as (client, _, __):

@@ -17,6 +17,7 @@ from hamcrest import (
 from xivo_test_helpers import until
 
 from .helpers import base, fixtures
+from .helpers.constants import UNKNOWN_UUID
 
 
 class TestExternalAuthAPI(base.WazoAuthTestCase):
@@ -52,11 +53,7 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
             404, self.client.external.create, 'notfoo', user['uuid'], self.original_data
         )
         base.assert_http_error(
-            404,
-            self.client.external.create,
-            'foo',
-            base.UNKNOWN_UUID,
-            self.original_data,
+            404, self.client.external.create, 'foo', UNKNOWN_UUID, self.original_data
         )
 
     @fixtures.http.user_register()
@@ -67,9 +64,7 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
         self.client.external.create('foo', user['uuid'], self.original_data)
 
         base.assert_http_error(404, self.client.external.delete, 'notfoo', user['uuid'])
-        base.assert_http_error(
-            404, self.client.external.delete, 'foo', base.UNKNOWN_UUID
-        )
+        base.assert_http_error(404, self.client.external.delete, 'foo', UNKNOWN_UUID)
         base.assert_no_error(self.client.external.delete, 'foo', user['uuid'])
 
         def bus_received_msg():
@@ -170,7 +165,7 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
         )
         self.client.external.create('foo', user['uuid'], self.original_data)
         base.assert_http_error(
-            404, self.client.external.update, 'foo', base.UNKNOWN_UUID, new_data
+            404, self.client.external.update, 'foo', UNKNOWN_UUID, new_data
         )
         base.assert_http_error(
             404, self.client.external.update, 'notfoo', user['uuid'], new_data

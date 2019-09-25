@@ -39,7 +39,6 @@ from .database import Database
 
 HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
 SUB_TENANT_UUID = '76502c2b-cce5-409c-ab8f-d1fe41141a2d'
-UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
 ADDRESS_NULL = {
     'line_1': None,
     'line_2': None,

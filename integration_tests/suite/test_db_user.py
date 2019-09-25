@@ -26,9 +26,9 @@ from wazo_auth.database import models
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 
 from .helpers import fixtures, base
+from .helpers.constants import UNKNOWN_UUID
 
 USER_UUID = str(uuid.uuid4())
-UNKNOWN_UUID = str(uuid.uuid4())
 
 
 def setup_module():
@@ -55,7 +55,7 @@ class TestUserDAO(base.DAOTestCase):
         emails = []
 
         assert_that(
-            calling(self._user_dao.update_emails).with_args(base.UNKNOWN_UUID, emails),
+            calling(self._user_dao.update_emails).with_args(UNKNOWN_UUID, emails),
             raises(exceptions.UnknownUserException),
         )
 
