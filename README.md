@@ -127,7 +127,7 @@ Running the tests
 with the following content in '/tmp/body.json'
 
 ```javascript
-{"backend": "xivo_user"}
+{"backend": "wazo_user"}
 ```
 
 ```sh
