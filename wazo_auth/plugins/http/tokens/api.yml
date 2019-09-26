@@ -152,7 +152,7 @@ paths:
       operationId: deleteRefreshTokens
       summary: "Delete a user's refresh token"
       description: |
-        **Required ACL**: `auth.users.{user_uuid}.tokens.{refresh_token_uuid}.delete`
+        **Required ACL**: `auth.users.{user_uuid}.tokens.{client_id}.delete`
 
         Remove a given refresh token. This only prevent this refresh token from creating new
         access tokens. Any tokens that are currently issued are still usable and should be
@@ -164,7 +164,7 @@ paths:
         - wazo_auth_token: []
       parameters:
         - $ref: '#/parameters/user_uuid_or_me'
-        - $ref: '#/parameters/refresh_token_uuid'
+        - $ref: '#/parameters/client_id'
       responses:
         '204':
           description: The refresh token has been deleted
@@ -322,9 +322,9 @@ parameters:
     type: string
     description: The UUID of the user or `me` to refer to the user doing the query
     required: true
-  refresh_token_uuid:
-    name: refresh_token_uuid
+  client_id:
+    name: client_id
     in: path
     type: string
-    description: The refresh token to revoke
+    description: The client_id of the refresh token to revoke
     required: true
