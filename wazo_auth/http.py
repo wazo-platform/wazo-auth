@@ -12,6 +12,7 @@ from xivo.auth_verifier import (
     AuthVerifier,
     extract_token_id_from_query_or_header,
     required_acl as _required_acl,
+    Unauthorized,
 )
 
 from . import exceptions
@@ -37,11 +38,14 @@ class AuthClientFacade:
                 return False
 
         def get(self, token_id, required_acl=None):
-            return (
-                current_app.config['token_service']
-                .get(token_id, required_acl)
-                .to_dict()
-            )
+            try:
+                return (
+                    current_app.config['token_service']
+                    .get(token_id, required_acl)
+                    .to_dict()
+                )
+            except exceptions.UnknownTokenException:
+                raise Unauthorized(token_id)
 
     class UsersCommand:
         def get(self, user_uuid):

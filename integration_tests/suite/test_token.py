@@ -170,3 +170,19 @@ class TestTokens(WazoAuthTestCase):
                 )
             ),
         )
+
+    @fixtures.http.user(username='foo', password='bar')
+    @fixtures.http.token(username='foo', password='bar', access_type='offline')
+    @fixtures.http.token(username='foo', password='bar', access_type='offline')
+    @fixtures.http.token(
+        username='foo', password='bar', access_type='offline', client_id='foobaz'
+    )
+    def test_refresh_token_list_from_user(self, token_1, token_2, token_3, user):
+        client = self.new_auth_client('foo', 'bar')
+        assert_http_error(401, client.token.list, user_uuid='me')
+
+        client.set_token(token_1['token'])
+        result = client.token.list(user_uuid='me')
+        expected = self.client.token.list(user_uuid=user['uuid'])
+
+        assert_that(result, equal_to(expected))

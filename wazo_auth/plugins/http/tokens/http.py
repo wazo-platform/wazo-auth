@@ -20,10 +20,13 @@ class BaseResource(http.ErrorCatchingResource):
         self._authentication_service = authentication_service
 
 
-class UserRefreshTokens(BaseResource):
-    @http.required_acl('auth.users.{user_uuid}.tokens.read')
-    def get(self, user_uuid_or_me):
-        user_uuid = self._find_user_uuid(user_uuid_or_me)
+class _BaseRefreshTokens(http.AuthResource):
+    def __init__(self, token_service, user_service, authentication_service):
+        self._token_service = token_service
+        self._user_service = user_service
+        self._authentication_service = authentication_service
+
+    def _get(self, user_uuid):
         scoping_tenant = Tenant.autodetect()
 
         self._assert_user_is_visible_in_tenant(user_uuid, scoping_tenant.uuid)
@@ -56,13 +59,23 @@ class UserRefreshTokens(BaseResource):
 
         return search_params
 
-    def _find_user_uuid(self, user_uuid_or_me):
-        if user_uuid_or_me != 'me':
-            return user_uuid_or_me
 
+class UserMeRefreshTokens(_BaseRefreshTokens):
+    @http.required_acl('auth.users.me.tokens.read')
+    def get(self):
+        user_uuid = self._find_user_uuid()
+        return self._get(user_uuid)
+
+    def _find_user_uuid(self):
         token = request.headers.get('X-Auth-Token') or request.args.get('token')
         token_data = self._token_service.get(token, required_acl=None)
         return token_data.xivo_user_uuid
+
+
+class UserRefreshTokens(_BaseRefreshTokens):
+    @http.required_acl('auth.users.{user_uuid}.tokens.read')
+    def get(self, user_uuid):
+        return self._get(str(user_uuid))
 
 
 class Tokens(BaseResource):
