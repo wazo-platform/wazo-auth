@@ -81,12 +81,14 @@ def token(**token_args):
         def wrapper(self, *args, **kwargs):
             token_args.setdefault('backend', 'wazo_user')
             token_args.setdefault('expiration', 1)
-            token_args.setdefault('client_id', _random_string(20))
+            if 'access_type' in token_args:
+                token_args.setdefault('client_id', _random_string(20))
             username = token_args.pop('username')
             password = token_args.pop('password')
             client = self.new_auth_client(username, password)
             token = client.token.new(**token_args)
-            token['client_id'] = token_args['client_id']
+            if token_args['client_id']:
+                token['client_id'] = token_args['client_id']
             try:
                 result = decorated(self, token, *args, **kwargs)
             finally:
