@@ -173,12 +173,7 @@ class RefreshToken(Base):
     user_agent = Column(Text)
     remote_addr = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=text('NOW()'))
-    user = relationship(
-        'User',
-        primaryjoin='RefreshToken.user_uuid == User.uuid',
-        foreign_keys='RefreshToken.user_uuid',
-        viewonly=True,
-    )
+    user = relationship('User', viewonly=True)
 
     @hybrid_property
     def tenant_uuid(self):
