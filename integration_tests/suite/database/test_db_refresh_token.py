@@ -48,11 +48,6 @@ class TestRefreshTokenDAO(base.DAOTestCase):
         assert_that(result, equal_to(1))
 
         result = self._refresh_token_dao.count(
-            user_uuid=ALICE_UUID, filtered=True, uuid=token_1
-        )
-        assert_that(result, equal_to(1))
-
-        result = self._refresh_token_dao.count(
             user_uuid=ALICE_UUID, filtered=True, created_at=CREATED_AT
         )
         assert_that(result, equal_to(1))
@@ -119,9 +114,6 @@ class TestRefreshTokenDAO(base.DAOTestCase):
 
         result = self._refresh_token_dao.list_(user_uuid=ALICE_UUID, client_id='foobar')
         assert_that(result, contains_inanyorder(has_properties(uuid=token_3)))
-
-        result = self._refresh_token_dao.list_(user_uuid=ALICE_UUID, uuid=token_1)
-        assert_that(result, contains_inanyorder(has_properties(uuid=token_1)))
 
         result = self._refresh_token_dao.list_(
             user_uuid=ALICE_UUID, created_at=CREATED_AT
