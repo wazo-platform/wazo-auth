@@ -196,9 +196,6 @@ definitions:
   RefreshToken:
     type: object
     properties:
-      uuid:
-        type: string
-        description: The UUID of the refresh token
       client_id:
         type: string
         description: The `client_id` that was used to create this refresh token

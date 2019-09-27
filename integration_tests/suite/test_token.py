@@ -94,21 +94,9 @@ class TestTokens(WazoAuthTestCase):
                 total=3,
                 filtered=3,
                 items=contains_inanyorder(
-                    has_entries(
-                        uuid=token_1['refresh_token'],
-                        client_id=token_1['client_id'],
-                        created_at=ANY,
-                    ),
-                    has_entries(
-                        uuid=token_2['refresh_token'],
-                        client_id=token_2['client_id'],
-                        created_at=ANY,
-                    ),
-                    has_entries(
-                        uuid=token_3['refresh_token'],
-                        client_id=token_3['client_id'],
-                        created_at=ANY,
-                    ),
+                    has_entries(client_id=token_1['client_id'], created_at=ANY),
+                    has_entries(client_id=token_2['client_id'], created_at=ANY),
+                    has_entries(client_id=token_3['client_id'], created_at=ANY),
                 ),
             ),
         )
@@ -125,7 +113,7 @@ class TestTokens(WazoAuthTestCase):
         assert_that(
             result,
             has_entries(
-                items=contains_inanyorder(has_entries(uuid=token_1['refresh_token']))
+                items=contains_inanyorder(has_entries(client_id=token_1['client_id']))
             ),
         )
 
@@ -136,9 +124,9 @@ class TestTokens(WazoAuthTestCase):
             result,
             has_entries(
                 items=contains(
-                    has_entries(uuid=token_3['refresh_token']),
-                    has_entries(uuid=token_2['refresh_token']),
-                    has_entries(uuid=token_1['refresh_token']),
+                    has_entries(client_id=token_3['client_id']),
+                    has_entries(client_id=token_2['client_id']),
+                    has_entries(client_id=token_1['client_id']),
                 )
             ),
         )
@@ -150,9 +138,9 @@ class TestTokens(WazoAuthTestCase):
             result,
             has_entries(
                 items=contains(
-                    has_entries(uuid=token_1['refresh_token']),
-                    has_entries(uuid=token_2['refresh_token']),
-                    has_entries(uuid=token_3['refresh_token']),
+                    has_entries(client_id=token_1['client_id']),
+                    has_entries(client_id=token_2['client_id']),
+                    has_entries(client_id=token_3['client_id']),
                 )
             ),
         )
@@ -164,8 +152,8 @@ class TestTokens(WazoAuthTestCase):
             result,
             has_entries(
                 items=contains(
-                    has_entries(uuid=token_3['refresh_token']),
-                    has_entries(uuid=token_2['refresh_token']),
+                    has_entries(client_id=token_3['client_id']),
+                    has_entries(client_id=token_2['client_id']),
                 )
             ),
         )
@@ -177,8 +165,8 @@ class TestTokens(WazoAuthTestCase):
             result,
             has_entries(
                 items=contains(
-                    has_entries(uuid=token_2['refresh_token']),
-                    has_entries(uuid=token_1['refresh_token']),
+                    has_entries(client_id=token_2['client_id']),
+                    has_entries(client_id=token_1['client_id']),
                 )
             ),
         )

@@ -56,6 +56,5 @@ class RefreshTokenListSchema(BaseListSchema):
 
 class RefreshTokenSchema(BaseSchema):
 
-    uuid = xfields.UUID(dump_only=True)
     client_id = xfields.String(min=1, max=1024)
     created_at = xfields.DateTime()
