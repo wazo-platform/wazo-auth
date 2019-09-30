@@ -69,7 +69,7 @@ class UserMeRefreshTokens(_BaseRefreshTokens):
     def _find_user_uuid(self):
         token = request.headers.get('X-Auth-Token') or request.args.get('token')
         token_data = self._token_service.get(token, required_acl=None)
-        return token_data.pbx_user_uuid
+        return token_data.metadata.get('uuid')
 
 
 class UserRefreshTokens(_BaseRefreshTokens):
