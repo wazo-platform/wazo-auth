@@ -238,10 +238,14 @@ definitions:
           auth_id:
             type: string
             description: The unique identifier retrieved from the backend
-          pbx_user_uuid:
+          xivo_user_uuid:
             type: string
-            description: The UUID of the Wazo user matching these credentials, this
-              field can be None
+            description: |
+              The UUID of the matching wazo-confd user if there is one. This
+              field can be null.
+
+              This field yould NOT be used anymore, the "pbx_user_uuid" in the
+              metadata field is the prefered method to access this information.
           xivo_uuid:
             type: string
           acls:
