@@ -16,18 +16,12 @@ class TestWazoUserBackend(WazoAuthTestCase):
         assert_that(
             response,
             has_entries(
-                'token',
-                uuid_(),
-                'auth_id',
-                user['uuid'],
-                'pbx_user_uuid',
-                user['uuid'],
-                'xivo_user_uuid',
-                user['uuid'],
-                'acls',
-                has_items('confd.#', 'plugind.#'),
-                'session_uuid',
-                uuid_(),
+                token=uuid_(),
+                auth_id=user['uuid'],
+                pbx_user_uuid=user['uuid'],
+                xivo_user_uuid=user['uuid'],
+                acls=has_items('confd.#', 'plugind.#'),
+                session_uuid=uuid_(),
             ),
         )
 
