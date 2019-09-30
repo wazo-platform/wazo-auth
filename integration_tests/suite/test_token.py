@@ -87,9 +87,6 @@ class TestTokens(WazoAuthTestCase):
         username='foo', password='bar', access_type='offline', client_id='foobaz'
     )
     def test_refresh_token_list(self, token_1, token_2, token_3, user):
-        print('user_uuid', user['uuid'])
-        print('tenant_uuid', user['tenant_uuid'])
-        print(token_1)
         result = self.client.token.list(user_uuid=user['uuid'])
         assert_that(
             result,
@@ -116,7 +113,9 @@ class TestTokens(WazoAuthTestCase):
         assert_that(
             result,
             has_entries(
-                items=contains_inanyorder(has_entries(client_id=token_1['client_id']))
+                items=contains_inanyorder(has_entries(client_id=token_1['client_id'])),
+                filtered=1,
+                total=3,
             ),
         )
 

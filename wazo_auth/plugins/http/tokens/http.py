@@ -40,7 +40,7 @@ class _BaseRefreshTokens(http.AuthResource):
                 filtered=False, **search_params
             ),
             'filtered': self._token_service.count_refresh_tokens(
-                filtered=False, **search_params
+                filtered=True, **search_params
             ),
             'items': schemas.RefreshTokenSchema().dump(refresh_tokens, many=True),
         }
