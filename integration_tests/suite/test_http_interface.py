@@ -97,7 +97,7 @@ class TestCore(WazoAuthTestCase):
 
         response = self._get_token(token)
 
-        assert_that(response, has_key('pbx_user_uuid'))
+        assert_that(response, has_entries(metadata=has_key('pbx_user_uuid')))
         assert_that(response, has_key('xivo_user_uuid'))  # Compatibility
 
     def test_that_get_does_not_work_after_delete(self):

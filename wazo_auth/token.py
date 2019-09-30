@@ -80,7 +80,6 @@ class Token:
             'token': self.token,
             'auth_id': self.auth_id,
             'xivo_user_uuid': self.pbx_user_uuid,
-            'pbx_user_uuid': self.pbx_user_uuid,
             'xivo_uuid': self.xivo_uuid,
             'issued_at': self._format_local_time(self.issued_t),
             'expires_at': self._format_local_time(self.expire_t),
