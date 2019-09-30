@@ -92,12 +92,13 @@ class TestCore(WazoAuthTestCase):
 
         assert_that(response, has_entries(xivo_uuid='the-predefined-xivo-uuid'))
 
-    def test_that_get_returns_the_xivo_user_uuid(self):
+    def test_that_get_returns_the_pbx_user_uuid(self):
         token = self._post_token('foo', 'bar')['token']
 
         response = self._get_token(token)
 
-        assert_that(response, has_key('xivo_user_uuid'))
+        assert_that(response, has_key('pbx_user_uuid'))
+        assert_that(response, has_key('xivo_user_uuid'))  # Compatibility
 
     def test_that_get_does_not_work_after_delete(self):
         token = self._post_token('foo', 'bar')['token']

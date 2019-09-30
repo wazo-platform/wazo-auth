@@ -146,7 +146,7 @@ class Token(Base):
         String(36), ForeignKey('auth_session.uuid', ondelete='CASCADE'), nullable=False
     )
     auth_id = Column(Text, nullable=False)
-    user_uuid = Column(String(38))
+    pbx_user_uuid = Column(String(36))
     xivo_uuid = Column(String(38))
     issued_t = Column(Integer)
     expire_t = Column(Integer)

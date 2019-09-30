@@ -66,7 +66,7 @@ def token(**token_args):
             now = int(time.time())
             token = {
                 'auth_id': token_args.get('auth_id', str(uuid.uuid4())),
-                'xivo_user_uuid': str(uuid.uuid4()),
+                'pbx_user_uuid': str(uuid.uuid4()),
                 'xivo_uuid': str(uuid.uuid4()),
                 'issued_t': now,
                 'expire_t': now + token_args.get('expiration', 120),

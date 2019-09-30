@@ -27,7 +27,7 @@ class TestDefaultTokenMetadata(WazoAuthTestCase):
                 auth_id=user['uuid'],
                 username=user['username'],
                 xivo_uuid='the-predefined-xivo-uuid',
-                xivo_user_uuid=user['uuid'],
+                pbx_user_uuid=user['uuid'],
             ),
         )
 
@@ -43,7 +43,7 @@ class TestDefaultTokenMetadata(WazoAuthTestCase):
                 auth_id=user['uuid'],
                 username=user['username'],
                 xivo_uuid='the-predefined-xivo-uuid',
-                xivo_user_uuid=None,
+                pbx_user_uuid=None,
             ),
         )
 
@@ -59,6 +59,6 @@ class TestDefaultTokenMetadata(WazoAuthTestCase):
                 auth_id=user['uuid'],
                 username=user['username'],
                 xivo_uuid='the-predefined-xivo-uuid',
-                xivo_user_uuid=None,
+                pbx_user_uuid=None,
             ),
         )

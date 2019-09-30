@@ -42,7 +42,7 @@ class TokenService(BaseService):
         logger.debug('metadata for %s: %s', login, metadata)
 
         auth_id = metadata['auth_id']
-        user_uuid = metadata.get('xivo_user_uuid')
+        pbx_user_uuid = metadata.get('pbx_user_uuid')
         xivo_uuid = metadata['xivo_uuid']
 
         args['acl_templates'] = self._get_acl_templates(args['backend'])
@@ -60,7 +60,7 @@ class TokenService(BaseService):
 
         token_payload = {
             'auth_id': auth_id,
-            'xivo_user_uuid': user_uuid,
+            'pbx_user_uuid': pbx_user_uuid,
             'xivo_uuid': xivo_uuid,
             'expire_t': current_time + expiration,
             'issued_t': current_time,

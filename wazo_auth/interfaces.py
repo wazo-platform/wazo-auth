@@ -44,7 +44,7 @@ class BaseAuthenticationBackend(metaclass=abc.ABCMeta):
             'auth_id': None,
             'username': login,
             'xivo_uuid': self.get_xivo_uuid(args),
-            'xivo_user_uuid': None,
+            'pbx_user_uuid': None,
         }
 
         return metadata
@@ -153,7 +153,7 @@ class BaseMetadata(metaclass=abc.ABCMeta):
             'auth_id': auth_uuid,
             'username': login,
             'xivo_uuid': self.get_xivo_uuid(args),
-            'xivo_user_uuid': None,
+            'pbx_user_uuid': None,
         }
         return metadata
 

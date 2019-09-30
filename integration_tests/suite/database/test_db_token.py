@@ -26,7 +26,7 @@ class TestTokenDAO(base.DAOTestCase):
         now = int(time.time())
         body = {
             'auth_id': 'test',
-            'xivo_user_uuid': str(uuid.uuid4),
+            'pbx_user_uuid': str(uuid.uuid4),
             'xivo_uuid': str(uuid.uuid4),
             'issued_t': now,
             'expire_t': now + 120,

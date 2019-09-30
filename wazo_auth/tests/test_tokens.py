@@ -18,16 +18,16 @@ class TestToken(unittest.TestCase):
     def setUp(self):
         self.id_ = new_uuid()
         self.auth_id = 'the-auth-id'
-        self.xivo_user_uuid = new_uuid()
+        self.pbx_user_uuid = new_uuid()
         self.xivo_uuid = new_uuid()
         self.session_uuid = new_uuid()
         self.issued_at = 1480011471.53537
         self.expires_at = 1480011513.53537
         self.acls = ['confd']
         self.metadata = {
-            'uuid': self.xivo_user_uuid,
+            'uuid': self.pbx_user_uuid,
             'auth_id': self.auth_id,
-            'xivo_user_uuid': self.xivo_user_uuid,
+            'pbx_user_uuid': self.pbx_user_uuid,
         }
         self.user_agent = 'user-agent'
         self.remote_addr = '192.168.1.1'
@@ -35,7 +35,7 @@ class TestToken(unittest.TestCase):
         self.token = token.Token(
             self.id_,
             auth_id=self.auth_id,
-            xivo_user_uuid=self.xivo_user_uuid,
+            pbx_user_uuid=self.pbx_user_uuid,
             xivo_uuid=self.xivo_uuid,
             issued_t=self.issued_at,
             expire_t=self.expires_at,

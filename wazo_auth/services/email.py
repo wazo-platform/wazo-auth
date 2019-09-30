@@ -86,7 +86,7 @@ class EmailService(BaseService):
         t = time.time()
         token_payload = {
             'auth_id': 'wazo-auth',
-            'xivo_user_uuid': None,
+            'pbx_user_uuid': None,
             'xivo_uuid': None,
             'expire_t': t + expiration,
             'issued_t': t,

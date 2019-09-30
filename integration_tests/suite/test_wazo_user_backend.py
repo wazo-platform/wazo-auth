@@ -20,6 +20,8 @@ class TestWazoUserBackend(WazoAuthTestCase):
                 uuid_(),
                 'auth_id',
                 user['uuid'],
+                'pbx_user_uuid',
+                user['uuid'],
                 'xivo_user_uuid',
                 user['uuid'],
                 'acls',

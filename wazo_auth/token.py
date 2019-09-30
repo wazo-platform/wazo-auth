@@ -21,7 +21,7 @@ class Token:
         self,
         id_,
         auth_id,
-        xivo_user_uuid,
+        pbx_user_uuid,
         xivo_uuid,
         issued_t,
         expire_t,
@@ -34,7 +34,7 @@ class Token:
     ):
         self.token = id_
         self.auth_id = auth_id
-        self.xivo_user_uuid = xivo_user_uuid
+        self.pbx_user_uuid = pbx_user_uuid
         self.xivo_uuid = xivo_uuid
         self.issued_t = issued_t
         self.expire_t = expire_t
@@ -49,7 +49,7 @@ class Token:
         return (
             self.token == other.token
             and self.auth_id == other.auth_id
-            and self.xivo_user_uuid == other.xivo_user_uuid
+            and self.pbx_user_uuid == other.pbx_user_uuid
             and self.xivo_uuid == other.xivo_uuid
             and self.issued_t == other.issued_t
             and self.expire_t == other.expire_t
@@ -79,7 +79,8 @@ class Token:
         result = {
             'token': self.token,
             'auth_id': self.auth_id,
-            'xivo_user_uuid': self.xivo_user_uuid,
+            'xivo_user_uuid': self.pbx_user_uuid,
+            'pbx_user_uuid': self.pbx_user_uuid,
             'xivo_uuid': self.xivo_uuid,
             'issued_at': self._format_local_time(self.issued_t),
             'expires_at': self._format_local_time(self.expire_t),

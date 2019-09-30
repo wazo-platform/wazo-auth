@@ -87,7 +87,7 @@ def token(**token_args):
             password = token_args.pop('password')
             client = self.new_auth_client(username, password)
             token = client.token.new(**token_args)
-            if token_args['client_id']:
+            if 'client_id' in token_args:
                 token['client_id'] = token_args['client_id']
             try:
                 result = decorated(self, token, *args, **kwargs)
