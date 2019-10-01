@@ -37,7 +37,7 @@ class TestExternalAuthMobile(base.WazoAuthTestCase):
 
     @fixtures.http.tenant(uuid=TENANT_UUID)
     @fixtures.http.user(username='one', password='pass', tenant_uuid=TENANT_UUID)
-    @fixtures.http.token(username='one', password='pass')
+    @fixtures.http.token(username='one', password='pass', expiration=30)
     def test_mobile_workflow(self, token, user, tenant):
         self.client.set_tenant(tenant['uuid'])
         self.client.external.create_config(
