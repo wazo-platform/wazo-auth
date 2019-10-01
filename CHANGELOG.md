@@ -5,7 +5,7 @@
 * A new resource has been added to manage refresh tokens
 
   * GET `0.1/users/<user_uuid>/tokens`
-  * DELETE `0.1/users/<user_uuid>/tokens`
+  * DELETE `0.1/users/<user_uuid>/tokens/<client_id>`
 
 
 ## 19.13

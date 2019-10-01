@@ -148,39 +148,6 @@ paths:
           schema:
             $ref: '#/definitions/Error'
   /users/{user_uuid_or_me}/tokens:
-    delete:
-      operationId: deleteRefreshTokens
-      summary: "Delete a user's refresh token"
-      description: |
-        **Required ACL**: `auth.users.{user_uuid}.tokens.{client_id}.delete`
-
-        Remove a given refresh token. This only prevent this refresh token from creating new
-        access tokens. Any tokens that are currently issued are still usable and should be
-        revoked if needed.
-      tags:
-        - token
-        - users
-      security:
-        - wazo_auth_token: []
-      parameters:
-        - $ref: '#/parameters/user_uuid_or_me'
-        - $ref: '#/parameters/client_id'
-      responses:
-        '204':
-          description: The refresh token has been deleted
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/APIError'
-        '404':
-          description: User or refresh token not found
-          schema:
-            $ref: '#/definitions/APIError'
-        '500':
-          description: System related token error
-          schema:
-            $ref: '#/definitions/APIError'
-
     get:
       operationId: listRefreshTokens
       summary: "Retrieve a user's refresh token list"
@@ -218,6 +185,39 @@ paths:
             $ref: '#/definitions/APIError'
         '404':
           description: User not found
+          schema:
+            $ref: '#/definitions/APIError'
+        '500':
+          description: System related token error
+          schema:
+            $ref: '#/definitions/APIError'
+ /users/{user_uuid_or_me}/tokens/{client_id}:
+     delete:
+      operationId: deleteRefreshTokens
+      summary: "Delete a user's refresh token"
+      description: |
+        **Required ACL**: `auth.users.{user_uuid}.tokens.{client_id}.delete`
+
+        Remove a given refresh token. This only prevent this refresh token from creating new
+        access tokens. Any tokens that are currently issued are still usable and should be
+        revoked if needed.
+      tags:
+        - token
+        - users
+      security:
+        - wazo_auth_token: []
+      parameters:
+        - $ref: '#/parameters/user_uuid_or_me'
+        - $ref: '#/parameters/client_id'
+      responses:
+        '204':
+          description: The refresh token has been deleted
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/APIError'
+        '404':
+          description: User or refresh token not found
           schema:
             $ref: '#/definitions/APIError'
         '500':
