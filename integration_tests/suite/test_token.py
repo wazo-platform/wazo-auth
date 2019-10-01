@@ -25,7 +25,7 @@ class TestTokens(WazoAuthTestCase):
     def test_that_a_token_has_a_remote_address_and_user_agent(self):
         ua = 'My Test Runner'
 
-        post_result = self.client.token.new(expiration=1, user_agent=ua)
+        post_result = self.client.token.new(expiration=10, user_agent=ua)
         assert_that(
             post_result, has_entries(user_agent=ua, remote_addr=ends_with('.1'))
         )
