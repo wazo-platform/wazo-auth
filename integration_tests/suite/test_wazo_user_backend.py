@@ -21,7 +21,9 @@ class TestWazoUserBackend(WazoAuthTestCase):
                 xivo_user_uuid=user['uuid'],  # For API compatibility reason
                 acls=has_items('confd.#', 'plugind.#'),
                 session_uuid=uuid_(),
-                metadata=has_entries(pbx_user_uuid=user['uuid']),
+                metadata=has_entries(
+                    pbx_user_uuid=user['uuid'], xivo_user_uuid=user['uuid']
+                ),
             ),
         )
 

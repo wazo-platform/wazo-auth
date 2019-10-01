@@ -33,6 +33,7 @@ class DefaultUser(BaseMetadata):
             'auth_id': user_uuid,
             'username': login,
             'pbx_user_uuid': user_uuid,
+            'xivo_user_uuid': user_uuid,  # For API compatibility
             'user_uuid': user_uuid,
             'xivo_uuid': self.get_xivo_uuid(args),
             'uuid': user_uuid,
