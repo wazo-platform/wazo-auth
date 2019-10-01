@@ -11,12 +11,8 @@ from hamcrest import (
     starts_with,
 )
 from .helpers import fixtures
-from .helpers.base import (
-    assert_http_error,
-    assert_no_error,
-    WazoAuthTestCase,
-    UNKNOWN_UUID,
-)
+from .helpers.base import assert_http_error, assert_no_error, WazoAuthTestCase
+from .helpers.constants import UNKNOWN_UUID
 
 
 class TestEmailConfirmation(WazoAuthTestCase):

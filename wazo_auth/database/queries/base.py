@@ -2,9 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from contextlib import contextmanager
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
 from ... import exceptions
+from ..helpers import get_dao_session
 
 
 class QueryPaginator:
@@ -76,19 +75,15 @@ class BaseDAO:
     _UNIQUE_CONSTRAINT_CODE = '23505'
     _FKEY_CONSTRAINT_CODE = '23503'
 
-    def __init__(self, db_uri):
-        self._Session = scoped_session(sessionmaker())
-        engine = create_engine(db_uri)
-        self._Session.configure(bind=engine)
+    @property
+    def session(self):
+        return get_dao_session()
 
     @contextmanager
     def new_session(self):
-        session = self._Session()
         try:
-            yield session
-            session.commit()
+            yield self.session
+            self.session.commit()
         except Exception:
-            session.rollback()
+            self.session.rollback()
             raise
-        finally:
-            self._Session.remove()

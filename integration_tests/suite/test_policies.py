@@ -25,8 +25,7 @@ from .helpers.base import (
     WazoAuthTestCase,
 )
 from .helpers import fixtures
-
-UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
+from .helpers.constants import UNKNOWN_UUID
 
 
 class TestPolicies(WazoAuthTestCase):

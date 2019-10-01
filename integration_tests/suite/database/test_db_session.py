@@ -11,19 +11,11 @@ from hamcrest import (
     empty,
     has_entries,
 )
-from .helpers import base, fixtures
+from ..helpers import base, fixtures
 
 TENANT_UUID_1 = str(uuid.uuid4())
 SESSION_UUID_1 = str(uuid.uuid4())
 SESSION_UUID_2 = str(uuid.uuid4())
-
-
-def setup_module():
-    base.DBStarter.setUpClass()
-
-
-def teardown_module():
-    base.DBStarter.tearDownClass()
 
 
 class TestSessionDAO(base.DAOTestCase):

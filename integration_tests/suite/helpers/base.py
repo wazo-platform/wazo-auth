@@ -23,15 +23,22 @@ from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.bus import BusClient
-from wazo_auth.database import queries
-from wazo_auth.database.queries import group, policy, tenant, token, user, session
+from wazo_auth.database import queries, helpers
+from wazo_auth.database.queries import (
+    group,
+    policy,
+    tenant,
+    token,
+    user,
+    refresh_token,
+    session,
+)
 
+from .constants import DB_URI
 from .database import Database
 
-DB_URI = os.getenv('DB_URI', 'postgresql://asterisk:proformatique@localhost:{port}')
 HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
 SUB_TENANT_UUID = '76502c2b-cce5-409c-ab8f-d1fe41141a2d'
-UNKNOWN_UUID = '00000000-0000-0000-0000-000000000000'
 ADDRESS_NULL = {
     'line_1': None,
     'line_2': None,
@@ -59,22 +66,33 @@ class DBStarter(AssetLaunchingTestCase):
     assets_root = os.path.join(os.path.dirname(__file__), '../..', 'assets')
     service = 'postgres'
 
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.db_uri = DB_URI.format(port=DBStarter.service_port(5432, 'postgres'))
+        helpers.init_db(cls.db_uri, echo=False)
+
+    @classmethod
+    def tearDownClass(cls):
+        helpers.Session.remove()
+        super().tearDownClass()
+
 
 class DAOTestCase(unittest.TestCase):
 
     unknown_uuid = '00000000-0000-0000-0000-000000000000'
 
     def setUp(self):
-        db_uri = DB_URI.format(port=DBStarter.service_port(5432, 'postgres'))
-        self._address_dao = queries.AddressDAO(db_uri)
-        self._email_dao = queries.EmailDAO(db_uri)
-        self._external_auth_dao = queries.ExternalAuthDAO(db_uri)
-        self._group_dao = group.GroupDAO(db_uri)
-        self._policy_dao = policy.PolicyDAO(db_uri)
-        self._user_dao = user.UserDAO(db_uri)
-        self._tenant_dao = tenant.TenantDAO(db_uri)
-        self._token_dao = token.TokenDAO(db_uri)
-        self._session_dao = session.SessionDAO(db_uri)
+        self._address_dao = queries.AddressDAO()
+        self._email_dao = queries.EmailDAO()
+        self._external_auth_dao = queries.ExternalAuthDAO()
+        self._group_dao = group.GroupDAO()
+        self._policy_dao = policy.PolicyDAO()
+        self._user_dao = user.UserDAO()
+        self._refresh_token_dao = refresh_token.RefreshTokenDAO()
+        self._tenant_dao = tenant.TenantDAO()
+        self._token_dao = token.TokenDAO()
+        self._session_dao = session.SessionDAO()
 
         self.top_tenant_uuid = self._tenant_dao.find_top_tenant()
 

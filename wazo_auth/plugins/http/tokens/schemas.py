@@ -5,6 +5,10 @@ from marshmallow import Schema, fields, validates_schema
 from marshmallow.validate import Length, Range, OneOf
 from marshmallow.exceptions import ValidationError
 
+from xivo.mallow import fields as xfields
+
+from wazo_auth.schemas import BaseListSchema, BaseSchema
+
 
 class TokenRequestSchema(Schema):
     backend = fields.String(missing='wazo_user')
@@ -42,3 +46,15 @@ class TokenRequestSchema(Schema):
             raise ValidationError(
                 '"client_id" must be specified when using a "refresh_token"'
             )
+
+
+class RefreshTokenListSchema(BaseListSchema):
+    sort_columns = ['created_at', 'client_id']
+    default_sort_column = 'created_at'
+    searchable_columns = ['created_at', 'client_id']
+
+
+class RefreshTokenSchema(BaseSchema):
+
+    client_id = xfields.String(min=1, max=1024)
+    created_at = xfields.DateTime()

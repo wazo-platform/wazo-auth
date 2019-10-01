@@ -18,15 +18,7 @@ from xivo_test_helpers.mock import ANY_UUID
 from wazo_auth import exceptions
 from wazo_auth.database import models
 
-from .helpers import fixtures, base
-
-
-def setup_module():
-    base.DBStarter.setUpClass()
-
-
-def teardown_module():
-    base.DBStarter.tearDownClass()
+from ..helpers import fixtures, base
 
 
 class TestTenantDAO(base.DAOTestCase):

@@ -14,7 +14,7 @@ class TokenDAO(BaseDAO):
         serialized_metadata = json.dumps(body.get('metadata', {}))
         token = TokenModel(
             auth_id=body['auth_id'],
-            user_uuid=body['xivo_user_uuid'],
+            pbx_user_uuid=body['pbx_user_uuid'],
             xivo_uuid=body['xivo_uuid'],
             issued_t=int(body['issued_t']),
             expire_t=int(body['expire_t']),
@@ -47,7 +47,7 @@ class TokenDAO(BaseDAO):
                 return {
                     'uuid': token.uuid,
                     'auth_id': token.auth_id,
-                    'xivo_user_uuid': token.user_uuid,
+                    'pbx_user_uuid': token.pbx_user_uuid,
                     'xivo_uuid': token.xivo_uuid,
                     'issued_t': token.issued_t,
                     'expire_t': token.expire_t,

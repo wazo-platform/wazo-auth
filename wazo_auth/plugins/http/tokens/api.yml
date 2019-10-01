@@ -88,7 +88,7 @@ paths:
       parameters:
         - $ref: '#/parameters/token'
         - $ref: '#/parameters/scope'
-        - $ref: '#/parameters/tenant'
+        - $ref: '#/parameters/tenantuuid'
       responses:
         '200':
           description: "The token's data"
@@ -116,7 +116,7 @@ paths:
       parameters:
         - $ref: '#/parameters/token'
         - $ref: '#/parameters/scope'
-        - $ref: '#/parameters/tenant'
+        - $ref: '#/parameters/tenantuuid'
       responses:
         '204':
           description: No data
@@ -147,7 +147,75 @@ paths:
           description: System related token error
           schema:
             $ref: '#/definitions/Error'
+  /users/{user_uuid_or_me}/tokens:
+    get:
+      operationId: listRefreshTokens
+      summary: "Retrieve a user's refresh token list"
+      description: |
+        **Required ACL**: `auth.users.{user_uuid}.tokens.read`
+
+        Finds all of a user's refresh token and return the list. Access tokens are not included in the result.
+
+        Doing a query with the `user_uuid` `me` will result in the current user's token being used.
+      tags:
+        - token
+        - users
+      security:
+        - wazo_auth_token: []
+      parameters:
+        - $ref: '#/parameters/user_uuid_or_me'
+        - $ref: '#/parameters/tenantuuid'
+        - $ref: '#/parameters/order'
+        - $ref: '#/parameters/direction'
+        - $ref: '#/parameters/limit'
+        - $ref: '#/parameters/offset'
+        - $ref: '#/parameters/search'
+      responses:
+        '200':
+          description: A refresh token list
+          schema:
+            $ref: '#/definitions/RefreshTokenList'
+        '400':
+          description: Invalid parameters
+          schema:
+            $ref: '#/definitions/APIError'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/APIError'
+        '404':
+          description: User not found
+          schema:
+            $ref: '#/definitions/APIError'
+        '500':
+          description: System related token error
+          schema:
+            $ref: '#/definitions/APIError'
+
 definitions:
+  RefreshToken:
+    type: object
+    properties:
+      client_id:
+        type: string
+        description: The `client_id` that was used to create this refresh token
+      created_at:
+        type: string
+        description: The time at which this token was created
+  RefreshTokenList:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: The number of refresh tokens for that user
+      filtered:
+        type: integer
+        description: The number of refresh token matching the searched terms
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/RefreshToken'
+        description: A paginated list of refresh tokens
   Token:
     type: object
     properties:
@@ -172,8 +240,12 @@ definitions:
             description: The unique identifier retrieved from the backend
           xivo_user_uuid:
             type: string
-            description: The UUID of the Wazo user matching these credentials, this
-              field can be None
+            description: |
+              The UUID of the matching wazo-confd user if there is one. This
+              field can be null.
+
+              This field yould NOT be used anymore, the "pbx_user_uuid" in the
+              metadata field is the prefered method to access this information.
           xivo_uuid:
             type: string
           acls:
@@ -211,3 +283,9 @@ parameters:
     enum:
     - mobile
     - desktop
+  user_uuid_or_me:
+    name: user_uuid_or_me
+    in: path
+    type: string
+    description: The UUID of the user or `me` to refer to the user doing the query
+    required: true

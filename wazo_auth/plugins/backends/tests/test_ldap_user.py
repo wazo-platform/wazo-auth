@@ -22,7 +22,7 @@ class TestGetACLS(unittest.TestCase):
                 'user_login_attribute': 'uid',
             },
         }
-        self.args = {'xivo_user_uuid': 'alice-uuid'}
+        self.args = {'pbx_user_uuid': 'alice-uuid'}
         self.backend = LDAPUser()
         self.backend.load({'config': config})
 
@@ -44,12 +44,12 @@ class TestGetMetadata(unittest.TestCase):
                 'user_login_attribute': 'uid',
             },
         }
-        self.args = {'xivo_user_uuid': 'alice-uuid'}
+        self.args = {'pbx_user_uuid': 'alice-uuid'}
         self.backend = LDAPUser()
         self.backend.load({'config': config})
 
     def test_that_get_metadata_calls_the_dao(self, find_by):
-        expected_result = has_entries(auth_id='alice-uuid', xivo_user_uuid='alice-uuid')
+        expected_result = has_entries(auth_id='alice-uuid', pbx_user_uuid='alice-uuid')
         result = self.backend.get_metadata('alice', self.args)
         assert_that(result, expected_result)
 
@@ -198,7 +198,7 @@ class TestVerifyPassword(unittest.TestCase):
         result = backend.verify_password('foo', 'bar', args)
 
         assert_that(result, equal_to(True))
-        assert_that(args, equal_to({'xivo_user_uuid': 'alice-uuid'}))
+        assert_that(args, equal_to({'pbx_user_uuid': 'alice-uuid'}))
         expected_call = [call('', ''), call(self.expected_user_dn, 'bar')]
         xivo_ldap.perform_bind.assert_has_calls(expected_call)
 
@@ -240,7 +240,7 @@ class TestVerifyPassword(unittest.TestCase):
         result = backend.verify_password('foo', 'bar', args)
 
         assert_that(result, equal_to(True))
-        assert_that(args, equal_to({'xivo_user_uuid': 'alice-uuid'}))
+        assert_that(args, equal_to({'pbx_user_uuid': 'alice-uuid'}))
         expected_call = [
             call('uid=foo,dc=example,dc=com', 'S3cr$t'),
             call(self.expected_user_dn, 'bar'),
@@ -267,7 +267,7 @@ class TestVerifyPassword(unittest.TestCase):
         result = backend.verify_password('foo', 'bar', args)
 
         assert_that(result, equal_to(True))
-        assert_that(args, equal_to({'xivo_user_uuid': 'alice-uuid'}))
+        assert_that(args, equal_to({'pbx_user_uuid': 'alice-uuid'}))
         xivo_ldap.perform_bind.assert_called_once_with(self.expected_user_dn, 'bar')
 
 

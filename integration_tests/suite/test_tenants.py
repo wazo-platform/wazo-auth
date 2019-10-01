@@ -11,9 +11,9 @@ from .helpers.base import (
     assert_no_error,
     assert_sorted,
     WazoAuthTestCase,
-    UNKNOWN_UUID,
     SUB_TENANT_UUID,
 )
+from .helpers.constants import UNKNOWN_UUID
 
 ADDRESS_1 = {
     'line_1': 'Here',

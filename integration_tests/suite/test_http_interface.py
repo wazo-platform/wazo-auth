@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
-import os
 import uuid
 import logging
 
@@ -25,11 +24,10 @@ from hamcrest import (
 
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
-from wazo_auth import exceptions
 from wazo_auth.database import models
-from wazo_auth.database.queries.token import TokenDAO
-from wazo_auth.database.queries.session import SessionDAO
+from wazo_auth.database import helpers
 from .helpers.base import AuthLaunchingTestCase, WazoAuthTestCase
+from .helpers.constants import DB_URI
 from .helpers import fixtures
 
 requests.packages.urllib3.disable_warnings()
@@ -43,6 +41,17 @@ def _new_token_id():
 
 
 class TestCore(WazoAuthTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.db_uri = DB_URI.format(port=cls.service_port(5432, 'postgres'))
+        helpers.init_db(cls.db_uri, echo=False)
+
+    @classmethod
+    def tearDownClass(cls):
+        helpers.Session.remove()
+        super().tearDownClass()
+
     def setUp(self):
         self.user = self.client.users.new(username='foo', password='bar')
 
@@ -83,12 +92,13 @@ class TestCore(WazoAuthTestCase):
 
         assert_that(response, has_entries(xivo_uuid='the-predefined-xivo-uuid'))
 
-    def test_that_get_returns_the_xivo_user_uuid(self):
+    def test_that_get_returns_the_pbx_user_uuid(self):
         token = self._post_token('foo', 'bar')['token']
 
         response = self._get_token(token)
 
-        assert_that(response, has_key('xivo_user_uuid'))
+        assert_that(response, has_entries(metadata=has_key('pbx_user_uuid')))
+        assert_that(response, has_key('xivo_user_uuid'))  # Compatibility
 
     def test_that_get_does_not_work_after_delete(self):
         token = self._post_token('foo', 'bar')['token']
@@ -252,30 +262,22 @@ class TestCore(WazoAuthTestCase):
         assert_that(self._is_valid(token))
 
     def _is_token_in_the_db(self, token):
-        db_uri = os.getenv(
-            'DB_URI', 'postgresql://asterisk:proformatique@localhost:{port}'
-        )
-        dao = TokenDAO(db_uri.format(port=self.service_port(5432, 'postgres')))
-        try:
-            dao.get(token)
-            return True
-        except exceptions.UnknownTokenException:
-            return False
+        db_uri = DB_URI.format(port=self.service_port(5432, 'postgres'))
+        helpers.init_db(db_uri, echo=False)
+
+        s = helpers.get_dao_session()
+        result = s.query(models.Token).filter(models.Token.uuid == token).first()
+        return True if result else False
 
     def _is_session_in_the_db(self, session_uuid):
-        db_uri = os.getenv(
-            'DB_URI', 'postgresql://asterisk:proformatique@localhost:{port}'
+        db_uri = DB_URI.format(port=self.service_port(5432, 'postgres'))
+        helpers.init_db(db_uri, echo=False)
+
+        s = helpers.get_dao_session()
+        result = (
+            s.query(models.Session).filter(models.Session.uuid == session_uuid).first()
         )
-        dao = SessionDAO(db_uri.format(port=self.service_port(5432, 'postgres')))
-        with dao.new_session() as s:
-            result = (
-                s.query(models.Session)
-                .filter(models.Session.uuid == session_uuid)
-                .first()
-            )
-        if result:
-            return True
-        return False
+        return True if result else False
 
 
 class TestNoSSLCertificate(AuthLaunchingTestCase):

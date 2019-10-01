@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that, contains, contains_inanyorder, has_entries
-from .helpers.base import assert_http_error, UNKNOWN_UUID, WazoAuthTestCase
+from .helpers.base import assert_http_error, WazoAuthTestCase
+from .helpers.constants import UNKNOWN_UUID
 
 
 class TestUserTenant(WazoAuthTestCase):

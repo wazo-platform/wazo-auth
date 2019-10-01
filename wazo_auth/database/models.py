@@ -5,6 +5,7 @@ from sqlalchemy import (
     Boolean,
     CheckConstraint,
     Column,
+    DateTime,
     ForeignKey,
     Integer,
     LargeBinary,
@@ -12,8 +13,10 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     schema,
+    sql,
     text,
 )
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -143,7 +146,7 @@ class Token(Base):
         String(36), ForeignKey('auth_session.uuid', ondelete='CASCADE'), nullable=False
     )
     auth_id = Column(Text, nullable=False)
-    user_uuid = Column(String(38))
+    pbx_user_uuid = Column(String(36))
     xivo_uuid = Column(String(38))
     issued_t = Column(Integer)
     expire_t = Column(Integer)
@@ -169,6 +172,20 @@ class RefreshToken(Base):
     login = Column(Text)
     user_agent = Column(Text)
     remote_addr = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=text('NOW()'))
+    user = relationship('User', viewonly=True)
+
+    @hybrid_property
+    def tenant_uuid(self):
+        return self.user.tenant_uuid
+
+    @tenant_uuid.expression
+    def tenant_uuid(cls):
+        return (
+            sql.select([User.tenant_uuid])
+            .where(User.uuid == cls.user_uuid)
+            .label('tenant_uuid')
+        )
 
 
 class Session(Base):

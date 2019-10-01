@@ -4,6 +4,7 @@
 from functools import partial
 from hamcrest import assert_that, contains, contains_inanyorder, has_entries, has_items
 from .helpers import base, fixtures
+from .helpers.constants import UNKNOWN_UUID
 
 
 class TestGroupPolicyAssociation(base.WazoAuthTestCase):
@@ -31,10 +32,10 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
             )
 
         base.assert_http_error(
-            404, self.client.groups.remove_policy, base.UNKNOWN_UUID, policy1['uuid']
+            404, self.client.groups.remove_policy, UNKNOWN_UUID, policy1['uuid']
         )
         base.assert_http_error(
-            404, self.client.groups.remove_policy, group['uuid'], base.UNKNOWN_UUID
+            404, self.client.groups.remove_policy, group['uuid'], UNKNOWN_UUID
         )
         base.assert_no_error(
             self.client.groups.remove_policy, group['uuid'], policy2['uuid']
@@ -68,10 +69,10 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
             assert_that(result, has_entries(items=contains(visible_policy)))
 
         base.assert_http_error(
-            404, self.client.groups.add_policy, base.UNKNOWN_UUID, policy1['uuid']
+            404, self.client.groups.add_policy, UNKNOWN_UUID, policy1['uuid']
         )
         base.assert_http_error(
-            404, self.client.groups.add_policy, group['uuid'], base.UNKNOWN_UUID
+            404, self.client.groups.add_policy, group['uuid'], UNKNOWN_UUID
         )
         base.assert_no_error(
             self.client.groups.add_policy, group['uuid'], policy1['uuid']

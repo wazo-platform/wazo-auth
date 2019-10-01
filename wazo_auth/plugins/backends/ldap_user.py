@@ -31,14 +31,14 @@ class LDAPUser(UserAuthenticationBackend):
 
     def get_acls(self, login, args):
         acl_templates = args.get('acl_templates', [])
-        xivo_user_uuid = args.get('xivo_user_uuid')
-        return self.render_acl(acl_templates, self.get_user_data, uuid=xivo_user_uuid)
+        pbx_user_uuid = args.get('pbx_user_uuid')
+        return self.render_acl(acl_templates, self.get_user_data, uuid=pbx_user_uuid)
 
     def get_metadata(self, username, args):
         metadata = super().get_metadata(username, args)
         user_data = {
-            'auth_id': args['xivo_user_uuid'],
-            'xivo_user_uuid': args['xivo_user_uuid'],
+            'auth_id': args['pbx_user_uuid'],  # TODO the auth id should be the ldap id
+            'pbx_user_uuid': args['pbx_user_uuid'],
         }
         metadata.update(user_data)
         return metadata
@@ -69,11 +69,11 @@ class LDAPUser(UserAuthenticationBackend):
             logger.exception('ldap.LDAPError (%r, %r)', self.config, exc)
             return False
 
-        xivo_user_uuid = self._get_xivo_user_uuid_by_ldap_attribute(user_email)
-        if not xivo_user_uuid:
+        pbx_user_uuid = self._get_pbx_user_uuid_by_ldap_attribute(user_email)
+        if not pbx_user_uuid:
             return False
 
-        args['xivo_user_uuid'] = xivo_user_uuid
+        args['pbx_user_uuid'] = pbx_user_uuid
 
         return True
 
@@ -81,12 +81,12 @@ class LDAPUser(UserAuthenticationBackend):
     def should_be_loaded(config):
         return bool(config.get('ldap', False))
 
-    def _get_xivo_user_uuid_by_ldap_attribute(self, user_email):
+    def _get_pbx_user_uuid_by_ldap_attribute(self, user_email):
         with session_scope():
             xivo_user = find_by(email=user_email)
             if not xivo_user:
                 logger.warning(
-                    '%s does not have an email associated with a XiVO user', user_email
+                    '%s does not have an email associated with a PBX user', user_email
                 )
                 return xivo_user
             return xivo_user.uuid

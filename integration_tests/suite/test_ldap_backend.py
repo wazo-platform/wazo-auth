@@ -100,7 +100,7 @@ class TestLDAP(_BaseLDAPTestCase):
         response = self._post_token(
             'Alice Wonderland', 'awonderland_password', backend='ldap_user'
         )
-        assert_that(response, has_entries(xivo_user_uuid='1'))
+        assert_that(response, has_entries(metadata=has_entries(pbx_user_uuid='1')))
 
     def test_ldap_authentication_fail_when_wrong_password(self):
         self._post_token_with_expected_exception(
@@ -126,7 +126,7 @@ class TestLDAPAnonymous(_BaseLDAPTestCase):
         response = self._post_token(
             'awonderland@wazo-auth.com', 'awonderland_password', backend='ldap_user'
         )
-        assert_that(response, has_entries(xivo_user_uuid='1'))
+        assert_that(response, has_entries(metadata=has_entries(pbx_user_uuid='1')))
 
     def test_ldap_authentication_fail_when_wrong_password(self):
         self._post_token_with_expected_exception(
@@ -155,7 +155,7 @@ class TestLDAPServiceUser(_BaseLDAPTestCase):
         response = self._post_token(
             'awonderland', 'awonderland_password', backend='ldap_user'
         )
-        assert_that(response, has_entries(xivo_user_uuid='1'))
+        assert_that(response, has_entries(metadata=has_entries(pbx_user_uuid='1')))
 
     def test_ldap_authentication_fail_when_wrong_password(self):
         self._post_token_with_expected_exception(

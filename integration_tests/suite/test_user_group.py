@@ -5,6 +5,7 @@ from functools import partial
 from hamcrest import assert_that, contains, contains_inanyorder, has_entries, has_items
 from .helpers import base, fixtures
 from .helpers.base import assert_http_error, assert_no_error, assert_sorted
+from .helpers.constants import UNKNOWN_UUID
 
 
 class TestGroupUserList(base.WazoAuthTestCase):
@@ -111,8 +112,8 @@ class TestUserGroupAssociation(base.WazoAuthTestCase):
         self.client.groups.add_user(group['uuid'], user1['uuid'])
         self.client.groups.add_user(group['uuid'], user2['uuid'])
 
-        assert_http_error(404, action, base.UNKNOWN_UUID, user1['uuid'])
-        assert_http_error(404, action, group['uuid'], base.UNKNOWN_UUID)
+        assert_http_error(404, action, UNKNOWN_UUID, user1['uuid'])
+        assert_http_error(404, action, group['uuid'], UNKNOWN_UUID)
         assert_no_error(action, group['uuid'], user2['uuid'])
         assert_no_error(action, group['uuid'], user2['uuid'])  # Twice
 
@@ -138,8 +139,8 @@ class TestUserGroupAssociation(base.WazoAuthTestCase):
     def test_put(self, group, user1, user2):
         action = self.client.groups.add_user
 
-        assert_http_error(404, action, base.UNKNOWN_UUID, user1['uuid'])
-        assert_http_error(404, action, group['uuid'], base.UNKNOWN_UUID)
+        assert_http_error(404, action, UNKNOWN_UUID, user1['uuid'])
+        assert_http_error(404, action, group['uuid'], UNKNOWN_UUID)
         assert_no_error(action, group['uuid'], user1['uuid'])
         assert_no_error(action, group['uuid'], user1['uuid'])  # Twice
 

@@ -14,15 +14,8 @@ from hamcrest import (
 )
 from xivo_test_helpers.hamcrest.raises import raises
 from wazo_auth import exceptions
-from .helpers import fixtures, base
-
-
-def setup_module():
-    base.DBStarter.setUpClass()
-
-
-def teardown_module():
-    base.DBStarter.tearDownClass()
+from ..helpers import fixtures, base
+from ..helpers.constants import UNKNOWN_UUID
 
 
 class TestPolicyDAO(base.DAOTestCase):
@@ -117,7 +110,7 @@ class TestPolicyDAO(base.DAOTestCase):
             ),
         )
 
-        result = self._policy_dao.get(uuid=base.UNKNOWN_UUID)
+        result = self._policy_dao.get(uuid=UNKNOWN_UUID)
         assert_that(result, empty())
 
     def test_get_sort_and_pagination(self):
@@ -252,16 +245,14 @@ class TestPolicyDAO(base.DAOTestCase):
 
         assert_that(
             calling(self._policy_dao.delete).with_args(
-                base.UNKNOWN_UUID, [self.top_tenant_uuid]
+                UNKNOWN_UUID, [self.top_tenant_uuid]
             ),
             raises(exceptions.UnknownPolicyException),
         )
 
     def test_update(self):
         assert_that(
-            calling(self._policy_dao.update).with_args(
-                base.UNKNOWN_UUID, 'foo', '', []
-            ),
+            calling(self._policy_dao.update).with_args(UNKNOWN_UUID, 'foo', '', []),
             raises(exceptions.UnknownPolicyException),
         )
 

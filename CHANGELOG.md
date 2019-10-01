@@ -1,5 +1,12 @@
 # Changelog
 
+## 19.14
+
+* A new resource has been added to manage refresh tokens
+
+  * GET `0.1/users/<user_uuid>/tokens`
+
+
 ## 19.13
 
 * The `0.1/token` resource now accept the following optionnal body paremeters
