@@ -85,6 +85,8 @@ class TokenDAO(BaseDAO):
     def get_tokens_and_session_that_expire_soon(self, _time):
         with self.new_session() as s:
             tokens = self._get_tokens_with_expiration_less_than(s, time.time() + _time)
+            if not tokens:
+                return [], []
             filter_ = TokenModel.uuid.in_([token['uuid'] for token in tokens])
             sessions = self._get_sessions_from_token_filter(s, filter_)
         return tokens, sessions
@@ -122,6 +124,8 @@ class TokenDAO(BaseDAO):
     @classmethod
     def _delete_expired_tokens(cls, s):
         results = cls._get_tokens_with_expiration_less_than(s, time.time())
+        if not results:
+            return results
         token_uuids = [token['uuid'] for token in results]
         filter_ = TokenModel.uuid.in_(token_uuids)
         s.query(TokenModel).filter(filter_).delete(synchronize_session=False)
@@ -131,6 +135,8 @@ class TokenDAO(BaseDAO):
     def _delete_expired_sessions(cls, s):
         filter_ = TokenModel.uuid.is_(None)
         results = cls._get_sessions_from_token_filter(s, filter_)
+        if not results:
+            return results
         session_uuids = [session['uuid'] for session in results]
         filter_ = Session.uuid.in_(session_uuids)
         s.query(Session).filter(filter_).delete(synchronize_session=False)
