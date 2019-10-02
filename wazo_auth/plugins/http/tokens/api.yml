@@ -191,7 +191,7 @@ paths:
           description: System related token error
           schema:
             $ref: '#/definitions/APIError'
- /users/{user_uuid_or_me}/tokens/{client_id}:
+  /users/{user_uuid_or_me}/tokens/{client_id}:
      delete:
       operationId: deleteRefreshTokens
       summary: "Delete a user's refresh token"
