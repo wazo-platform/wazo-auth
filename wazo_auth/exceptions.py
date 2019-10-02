@@ -23,8 +23,9 @@ class UnknownRefreshToken(APIException):
     def __init__(self, client_id):
         details = {'client_id': client_id}
         msg = f'unknown refresh_token for client_id "{client_id}"'
+        error_id = 'cannot-find-refresh-token-matching-client-id'
 
-        super().__init__(404, msg, 'unknown-refresh-token', details, resource='tokens')
+        super().__init__(404, msg, error_id, details, resource='tokens')
 
 
 class TokenServiceException(Exception):

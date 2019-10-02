@@ -115,7 +115,7 @@ class TestTokens(WazoAuthTestCase):
         assert_that(
             excinfo.value.response.json(),
             has_entries(
-                error_id='unknown-refresh-token',
+                error_id='cannot-find-refresh-token-matching-client-id',
                 resource='tokens',
                 details=has_entries(client_id=client_id),
             ),
