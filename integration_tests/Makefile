@@ -9,10 +9,11 @@ test-db:
 	docker build -f ../contribs/docker/Dockerfile-db -t wazopbx/wazo-auth-db ..
 
 test-prerequisite:
-	docker pull wazopbx/wait
-	docker pull wazopbx/postgres-test
-	docker pull rabbitmq
 	docker pull munkyboy/fakesmtp
+	docker pull nickstenning/slapd
+	docker pull rabbitmq
+	docker pull wazopbx/postgres-test
+	docker pull wazopbx/wait
 
 test-image:
 	docker build --no-cache -t wazopbx/wazo-auth ..
