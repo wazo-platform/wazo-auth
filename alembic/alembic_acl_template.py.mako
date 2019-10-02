@@ -74,6 +74,13 @@ def _insert_acl_template(conn, acl_templates):
     return acl_template_ids
 
 
+def _get_acl_template_ids(conn, policy_uuid):
+    query = sa.sql.select([policy_template.c.template_id]).where(
+        policy_template.c.policy_uuid == policy_uuid
+    )
+    return [acl_template_id for (acl_template_id,) in conn.execute(query).fetchall()]
+
+
 def upgrade():
     conn = op.get_bind()
     policy_uuid = _get_policy_uuid(conn, POLICY_NAME)
@@ -81,11 +88,10 @@ def upgrade():
         return
 
     acl_template_ids = _insert_acl_template(conn, ACL_TEMPLATES)
-    op.bulk_insert(
-        policy_template,
-        [{'policy_uuid': policy_uuid,
-          'template_id': template_id} for template_id in acl_template_ids],
-    )
+    acl_template_ids_already_associated = _get_acl_template_ids(conn, policy_uuid)
+    for template_id in (set(acl_template_ids) - set(acl_template_ids_already_associated)):
+        query = policy_template.insert().values(policy_uuid=policy_uuid, template_id=template_id)
+        conn.execute(query)
 
 
 def downgrade():
