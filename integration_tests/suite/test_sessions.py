@@ -177,6 +177,29 @@ class TestSessions(base.WazoAuthTestCase):
         until.assert_(bus_received_msg, tries=10, interval=0.25)
 
     @fixtures.http.user(username='foo', password='bar')
+    def test_expire_soon_event_when_token_is_about_to_expire(self, user):
+        routing_key = 'auth.sessions.*.expire_soon'
+        msg_accumulator = self.new_message_accumulator(routing_key)
+
+        session_uuid = self._post_token('foo', 'bar', expiration=1)['session_uuid']
+
+        def bus_received_msg():
+            assert_that(
+                msg_accumulator.accumulate(),
+                contains(
+                    has_entries(
+                        data={
+                            'uuid': session_uuid,
+                            'user_uuid': user['uuid'],
+                            'tenant_uuid': user['tenant_uuid'],
+                        }
+                    )
+                ),
+            )
+
+        until.assert_(bus_received_msg, tries=10, interval=0.25)
+
+    @fixtures.http.user(username='foo', password='bar')
     def test_delete_event_when_token_expired(self, user):
         routing_key = 'auth.sessions.*.deleted'
         msg_accumulator = self.new_message_accumulator(routing_key)
