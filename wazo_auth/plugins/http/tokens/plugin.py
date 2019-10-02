@@ -23,5 +23,16 @@ class Plugin:
             resource_class_args=args,
         )
         api.add_resource(
+            http.UserRefreshToken,
+            '/users/<uuid:user_uuid>/tokens/<string:client_id>',
+            resource_class_args=args,
+        )
+
+        api.add_resource(
             http.UserMeRefreshTokens, '/users/me/tokens', resource_class_args=args
+        )
+        api.add_resource(
+            http.UserMeRefreshToken,
+            '/users/me/tokens/<string:client_id>',
+            resource_class_args=args,
         )

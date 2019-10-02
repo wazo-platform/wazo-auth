@@ -29,6 +29,10 @@ class TokenService(BaseService):
         )
         return self._dao.refresh_token.count(**search_params)
 
+    def delete_refresh_token(self, scoping_tenant_uuid, user_uuid, client_id):
+        tenant_uuids = self._get_scoped_tenant_uuids(scoping_tenant_uuid, True)
+        return self._dao.refresh_token.delete(tenant_uuids, user_uuid, client_id)
+
     def list_refresh_tokens(
         self, scoping_tenant_uuid=None, recurse=False, **search_params
     ):

@@ -48,6 +48,20 @@ class _BaseRefreshTokens(http.AuthResource):
     def _assert_user_is_visible_in_tenant(self, user_uuid, scoping_tenant_uuid):
         self._user_service.get_user(user_uuid, scoping_tenant_uuid)
 
+    def _delete(self, user_uuid, client_id):
+        scoping_tenant = Tenant.autodetect()
+
+        self._assert_user_is_visible_in_tenant(user_uuid, scoping_tenant.uuid)
+
+        self._token_service.delete_refresh_token(
+            scoping_tenant.uuid, user_uuid, client_id
+        )
+
+    def _find_user_uuid(self):
+        token = request.headers.get('X-Auth-Token') or request.args.get('token')
+        token_data = self._token_service.get(token, required_acl=None)
+        return token_data.metadata.get('uuid')
+
     def _build_search_params(self, user_uuid, scoping_tenant_uuid):
         try:
             search_params = schemas.RefreshTokenListSchema().load(request.args)
@@ -66,16 +80,26 @@ class UserMeRefreshTokens(_BaseRefreshTokens):
         user_uuid = self._find_user_uuid()
         return self._get(user_uuid)
 
-    def _find_user_uuid(self):
-        token = request.headers.get('X-Auth-Token') or request.args.get('token')
-        token_data = self._token_service.get(token, required_acl=None)
-        return token_data.metadata.get('uuid')
+
+class UserMeRefreshToken(_BaseRefreshTokens):
+    @http.required_acl('auth.users.me.tokens.{client_id}.delete')
+    def delete(self, client_id):
+        user_uuid = self._find_user_uuid()
+        self._delete(user_uuid, client_id)
+        return '', 204
 
 
 class UserRefreshTokens(_BaseRefreshTokens):
     @http.required_acl('auth.users.{user_uuid}.tokens.read')
     def get(self, user_uuid):
         return self._get(str(user_uuid))
+
+
+class UserRefreshToken(_BaseRefreshTokens):
+    @http.required_acl('auth.users.{user_uuid}.tokens.{client_id}.delete')
+    def delete(self, user_uuid, client_id):
+        self._delete(str(user_uuid), client_id)
+        return '', 204
 
 
 class Tokens(BaseResource):
