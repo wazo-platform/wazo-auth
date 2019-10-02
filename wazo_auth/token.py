@@ -5,11 +5,11 @@ import logging
 import os
 import re
 import time
-from threading import Timer
+import threading
 
 from datetime import datetime
 
-from xivo_bus.resources.auth.events import SessionDeletedEvent
+from xivo_bus.resources.auth.events import SessionDeletedEvent, SessionExpireSoonEvent
 
 logger = logging.getLogger(__name__)
 
@@ -131,11 +131,37 @@ class ExpiredTokenRemover:
         self._cleanup_interval = config['token_cleanup_interval']
         self._debug = config['debug']
 
-    def run(self):
-        self._cleanup()
-        self._reschedule(self._cleanup_interval)
+        self._tombstone = threading.Event()
+        self._thread = threading.Thread(target=self._loop)
+        self._thread.daemon = True
 
-    def _cleanup(self):
+    def start(self):
+        self._thread.start()
+
+    def stop(self):
+        self._tombstone.set()
+        self._thread.join()
+        self._tombstone.clear()
+
+    def _loop(self):
+        while not self._tombstone.is_set():
+            started = time.monotonic()
+
+            self._tokens_cleanup()
+            self._tokens_notice()
+
+            elapsed = time.monotonic() - started
+
+            if elapsed >= self._cleanup_interval:
+                log_level = logging.WARNING
+            else:
+                log_level = logging.DEBUG
+            logger.log(log_level, "ExpiredTokenRemover tooks %s seconds", elapsed)
+
+            if elapsed < self._cleanup_interval:
+                self._tombstone.wait(self._cleanup_interval - elapsed)
+
+    def _tokens_cleanup(self):
         try:
             tokens, sessions = self._dao.token.delete_expired_tokens_and_sessions()
         except Exception:
@@ -144,6 +170,23 @@ class ExpiredTokenRemover:
             )
             return
 
+        self._publish_event(tokens, sessions, SessionDeletedEvent)
+
+    def _tokens_notice(self):
+        try:
+            tokens, sessions = self._dao.token.get_tokens_and_session_that_expire_soon(
+                self._cleanup_interval
+            )
+        except Exception:
+            logger.warning(
+                'failed to get tokens and sessions that expire soon',
+                exc_info=self._debug,
+            )
+            return
+
+        self._publish_event(tokens, sessions, SessionExpireSoonEvent)
+
+    def _publish_event(self, tokens, sessions, event_class):
         for session in sessions:
             event_args = {
                 'uuid': session['uuid'],
@@ -157,13 +200,7 @@ class ExpiredTokenRemover:
                     break
             else:
                 logger.warning(
-                    'session deleted without token associated: %s' % session['uuid']
+                    'session without token associated: {}'.format(session['uuid'])
                 )
 
-            event = SessionDeletedEvent(**event_args)
-            self._bus_publisher.publish(event)
-
-    def _reschedule(self, interval):
-        thread = Timer(interval, self.run)
-        thread.daemon = True
-        thread.start()
+            self._bus_publisher.publish(event_class(**event_args))

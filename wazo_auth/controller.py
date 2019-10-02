@@ -153,7 +153,7 @@ class Controller:
 
         with bus.publisher_thread(self._bus_publisher):
             with ServiceCatalogRegistration(*self._service_discovery_args):
-                self._expired_token_remover.run()
+                self._expired_token_remover.start()
                 local_token_renewer = self._get_local_token_renewer()
                 self._config['local_token_renewer'] = local_token_renewer
                 self._rest_api.run()
@@ -161,6 +161,7 @@ class Controller:
 
     def stop(self, reason):
         logger.warning('Stopping wazo-auth: %s', reason)
+        self._expired_token_remover.stop()
         self._rest_api.stop()
 
     def _get_local_token_renewer(self):

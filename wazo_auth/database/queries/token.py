@@ -82,20 +82,25 @@ class TokenDAO(BaseDAO):
 
         return token_result, session_result
 
+    def get_tokens_and_session_that_expire_soon(self, _time):
+        with self.new_session() as s:
+            tokens = self._get_tokens_with_expiration_less_than(s, time.time() + _time)
+            if not tokens:
+                return [], []
+            filter_ = TokenModel.uuid.in_([token['uuid'] for token in tokens])
+            sessions = self._get_sessions_from_token_filter(s, filter_)
+        return tokens, sessions
+
     def delete_expired_tokens_and_sessions(self):
         with self.new_session() as s:
             tokens = self._delete_expired_tokens(s)
             sessions = self._delete_expired_sessions(s)
-
         return tokens, sessions
 
-    def _delete_expired_tokens(self, s):
-        filter_ = TokenModel.expire_t < time.time()
+    @staticmethod
+    def _get_tokens_with_expiration_less_than(s, epoch):
+        filter_ = TokenModel.expire_t < epoch
         tokens = s.query(TokenModel).filter(filter_).all()
-
-        if not tokens:
-            return []
-
         results = []
         for token in tokens:
             results.append(
@@ -106,23 +111,33 @@ class TokenDAO(BaseDAO):
                     'metadata': json.loads(token.metadata_) if token.metadata_ else {},
                 }
             )
+        return results
 
-        token_uuids = [token.uuid for token in tokens]
+    @staticmethod
+    def _get_sessions_from_token_filter(s, filter_):
+        sessions = s.query(Session.uuid).outerjoin(TokenModel).filter(filter_).all()
+        results = []
+        for session in sessions:
+            results.append({'uuid': session.uuid})
+        return results
+
+    @classmethod
+    def _delete_expired_tokens(cls, s):
+        results = cls._get_tokens_with_expiration_less_than(s, time.time())
+        if not results:
+            return results
+        token_uuids = [token['uuid'] for token in results]
         filter_ = TokenModel.uuid.in_(token_uuids)
         s.query(TokenModel).filter(filter_).delete(synchronize_session=False)
         return results
 
-    def _delete_expired_sessions(self, s):
+    @classmethod
+    def _delete_expired_sessions(cls, s):
         filter_ = TokenModel.uuid.is_(None)
-        sessions = s.query(Session.uuid).outerjoin(TokenModel).filter(filter_).all()
-
-        if not sessions:
-            return []
-
-        results = []
-        for session in sessions:
-            results.append({'uuid': session.uuid})
-
-        filter_ = Session.uuid.in_(sessions)
+        results = cls._get_sessions_from_token_filter(s, filter_)
+        if not results:
+            return results
+        session_uuids = [session['uuid'] for session in results]
+        filter_ = Session.uuid.in_(session_uuids)
         s.query(Session).filter(filter_).delete(synchronize_session=False)
         return results
