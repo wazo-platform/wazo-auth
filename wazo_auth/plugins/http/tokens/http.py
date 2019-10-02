@@ -85,7 +85,8 @@ class UserMeRefreshToken(_BaseRefreshTokens):
     @http.required_acl('auth.users.me.tokens.{client_id}.delete')
     def delete(self, client_id):
         user_uuid = self._find_user_uuid()
-        return self._delete(user_uuid, client_id)
+        self._delete(user_uuid, client_id)
+        return '', 204
 
 
 class UserRefreshTokens(_BaseRefreshTokens):
@@ -97,7 +98,8 @@ class UserRefreshTokens(_BaseRefreshTokens):
 class UserRefreshToken(_BaseRefreshTokens):
     @http.required_acl('auth.users.{user_uuid}.tokens.{client_id}.delete')
     def delete(self, user_uuid, client_id):
-        return self._delete(str(user_uuid), client_id)
+        self._delete(str(user_uuid), client_id)
+        return '', 204
 
 
 class Tokens(BaseResource):
