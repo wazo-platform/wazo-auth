@@ -9,7 +9,7 @@ from threading import Timer
 
 from datetime import datetime
 
-from xivo_bus.resources.auth.events import SessionDeletedEvent
+from xivo_bus.resources.auth.events import SessionDeletedEvent, SessionExpireSoonEvent
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +133,7 @@ class ExpiredTokenRemover:
 
     def run(self):
         self._cleanup()
+        self._tokens_expiration_notice()
         self._reschedule(self._cleanup_interval)
 
     def _cleanup(self):
@@ -144,6 +145,23 @@ class ExpiredTokenRemover:
             )
             return
 
+        self._publish_event(tokens, sessions, SessionDeletedEvent)
+
+    def _tokens_expiration_notice(self):
+        try:
+            tokens, sessions = self._dao.token.get_tokens_and_session_that_expire_soon(
+                self._cleanup_interval
+            )
+        except Exception:
+            logger.warning(
+                'failed to get tokens and sessions that expire soon',
+                exc_info=self._debug,
+            )
+            return
+
+        self._publish_event(tokens, sessions, SessionExpireSoonEvent)
+
+    def _publish_event(self, tokens, sessions, event_class):
         for session in sessions:
             event_args = {
                 'uuid': session['uuid'],
@@ -157,11 +175,10 @@ class ExpiredTokenRemover:
                     break
             else:
                 logger.warning(
-                    'session deleted without token associated: %s' % session['uuid']
+                    'session without token associated: {}'.format(session['uuid'])
                 )
 
-            event = SessionDeletedEvent(**event_args)
-            self._bus_publisher.publish(event)
+            self._bus_publisher.publish(event_class(**event_args))
 
     def _reschedule(self, interval):
         thread = Timer(interval, self.run)
