@@ -86,8 +86,10 @@ def upgrade():
 
     acl_template_ids = _insert_acl_template(conn, ACL_TEMPLATES)
     acl_template_ids_already_associated = _get_acl_template_ids(conn, policy_uuid)
-    for template_id in (set(acl_template_ids) - set(acl_template_ids_already_associated)):
-        query = policy_template.insert().values(policy_uuid=policy_uuid, template_id=template_id)
+    for template_id in set(acl_template_ids) - set(acl_template_ids_already_associated):
+        query = policy_template.insert().values(
+            policy_uuid=policy_uuid, template_id=template_id
+        )
         conn.execute(query)
 
 
