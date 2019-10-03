@@ -181,7 +181,7 @@ class TestSessions(base.WazoAuthTestCase):
         routing_key = 'auth.sessions.*.expire_soon'
         msg_accumulator = self.new_message_accumulator(routing_key)
 
-        session_uuid = self._post_token('foo', 'bar', expiration=1)['session_uuid']
+        session_uuid = self._post_token('foo', 'bar', expiration=3)['session_uuid']
 
         def bus_received_msg():
             assert_that(
