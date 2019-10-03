@@ -1,7 +1,7 @@
 """event_expired_soon
 
 Revision ID: f6df424cb3b8
-Revises: 7f187985cc62
+Revises: ef31dc4a87f6
 
 """
 
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'f6df424cb3b8'
-down_revision = '7f187985cc62'
+down_revision = 'ef31dc4a87f6'
 
 POLICY_NAME = 'wazo_default_user_policy'
 ACL_TEMPLATES = [
