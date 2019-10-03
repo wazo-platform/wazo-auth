@@ -1,20 +1,22 @@
-"""${message}
+"""event_expired_soon
 
-Revision ID: ${up_revision}
-Revises: ${down_revision}
+Revision ID: f6df424cb3b8
+Revises: ef31dc4a87f6
 
 """
 
 from alembic import op
 import sqlalchemy as sa
-${imports if imports else ""}
+
 
 # revision identifiers, used by Alembic.
-revision = ${repr(up_revision)}
-down_revision = ${repr(down_revision)}
+revision = 'f6df424cb3b8'
+down_revision = 'ef31dc4a87f6'
 
-POLICY_NAME = ''
+POLICY_NAME = 'wazo_default_user_policy'
 ACL_TEMPLATES = [
+    'events.auth.users.me.sessions.*.expire_soon',
+    'events.auth.users.{{ user_uuid }}.sessions.*.expire_soon',
 ]
 
 policy_table = sa.sql.table(
