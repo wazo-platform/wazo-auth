@@ -80,7 +80,7 @@ def token(**token_args):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
             token_args.setdefault('backend', 'wazo_user')
-            token_args.setdefault('expiration', 1)
+            token_args.setdefault('expiration', 5)
             if 'access_type' in token_args:
                 token_args.setdefault('client_id', _random_string(20))
             username = token_args.pop('username')
