@@ -5,10 +5,10 @@ Before=monit.service
 
 [Service]
 Type=forking
-ExecStartPre=/usr/bin/install -d -o wazo-auth -g wazo-auth /var/run/wazo-auth
+ExecStartPre=/usr/bin/install -d -o wazo-auth -g wazo-auth /run/wazo-auth
 ExecStartPost=/usr/bin/wazo-auth-bootstrap complete
 ExecStart=/usr/bin/wazo-auth
-PIDFile=/var/run/wazo-auth/wazo-auth.pid
+PIDFile=/run/wazo-auth/wazo-auth.pid
 
 [Install]
 WantedBy=multi-user.target
