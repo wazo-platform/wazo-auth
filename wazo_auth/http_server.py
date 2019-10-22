@@ -75,9 +75,10 @@ class CoreRestApi:
             wsgi_app=wsgi_app,
             numthreads=self.config['max_threads'],
         )
-        self.server.ssl_adapter = http_helpers.ssl_adapter(
-            self.config['https']['certificate'], self.config['https']['private_key']
-        )
+        if self.config['https']['certificate'] and self.config['https']['private_key']:
+            self.server.ssl_adapter = http_helpers.ssl_adapter(
+                self.config['https']['certificate'], self.config['https']['private_key']
+            )
         logger.debug(
             'WSGIServer starting... uid: %s, listen: %s:%s',
             os.getuid(),
