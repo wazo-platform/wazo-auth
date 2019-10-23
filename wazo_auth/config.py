@@ -71,12 +71,10 @@ _DEFAULT_CONFIG = {
     },
     'rest_api': {
         'max_threads': 25,
-        'https': {
-            'listen': '0.0.0.0',
-            'port': _DEFAULT_HTTP_PORT,
-            'certificate': '/usr/share/xivo-certs/server.crt',
-            'private_key': '/usr/share/xivo-certs/server.key',
-        },
+        'listen': '0.0.0.0',
+        'port': _DEFAULT_HTTP_PORT,
+        'certificate': '/usr/share/xivo-certs/server.crt',
+        'private_key': '/usr/share/xivo-certs/server.key',
         'cors': {
             'enabled': True,
             'allow_headers': [

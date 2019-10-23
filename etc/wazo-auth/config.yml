@@ -35,11 +35,10 @@ rest_api:
   # The maximum number of threads in the webserver thread pool
   max_threads: 25
 
-  https:
-    listen: 0.0.0.0
-    port: 9497
-    certificate: /usr/share/xivo-certs/server.crt
-    private_key: /usr/share/xivo-certs/server.key
+  listen: 0.0.0.0
+  port: 9497
+  certificate: /usr/share/xivo-certs/server.crt
+  private_key: /usr/share/xivo-certs/server.key
 
     #CORS configuration. See Flask-CORS documentation for other values.
   cors:

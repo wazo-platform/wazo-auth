@@ -67,7 +67,7 @@ class CoreRestApi:
             CORS(app, **cors_config)
 
     def run(self):
-        bind_addr = (self.config['https']['listen'], self.config['https']['port'])
+        bind_addr = (self.config['listen'], self.config['port'])
 
         wsgi_app = wsgi.WSGIPathInfoDispatcher({'/': app})
         self.server = wsgi.WSGIServer(
@@ -75,9 +75,9 @@ class CoreRestApi:
             wsgi_app=wsgi_app,
             numthreads=self.config['max_threads'],
         )
-        if self.config['https']['certificate'] and self.config['https']['private_key']:
+        if self.config['certificate'] and self.config['private_key']:
             self.server.ssl_adapter = http_helpers.ssl_adapter(
-                self.config['https']['certificate'], self.config['https']['private_key']
+                self.config['certificate'], self.config['private_key']
             )
         logger.debug(
             'WSGIServer starting... uid: %s, listen: %s:%s',

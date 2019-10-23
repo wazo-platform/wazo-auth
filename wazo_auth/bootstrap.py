@@ -87,10 +87,10 @@ def complete():
     wazo_auth_config = read_config_file_hierarchy(
         {'config_file': DEFAULT_WAZO_AUTH_CONFIG_FILE}
     )
-    port = wazo_auth_config['rest_api']['https']['port']
+    port = wazo_auth_config['rest_api']['port']
     https = (
-        wazo_auth_config['rest_api']['https']['certificate']
-        and wazo_auth_config['rest_api']['https']['private_key']
+        wazo_auth_config['rest_api']['certificate']
+        and wazo_auth_config['rest_api']['private_key']
     )
     scheme = 'https' if https else 'http'
     url = URL.format(scheme, port)
