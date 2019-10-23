@@ -41,7 +41,7 @@ VALID_CHARS = string.digits + string.ascii_lowercase + string.ascii_uppercase
 USER = 'wazo-auth'
 USERNAME = 'wazo-auth-cli'
 PURPOSE = 'internal'
-URL = 'https://localhost:{}/0.1/init'
+URL = '{}://localhost:{}/0.1/init'
 HEADERS = {'Accept': 'application/json', 'Content-Type': 'application/json'}
 
 ERROR_MSG = '''\
@@ -88,7 +88,12 @@ def complete():
         {'config_file': DEFAULT_WAZO_AUTH_CONFIG_FILE}
     )
     port = wazo_auth_config['rest_api']['https']['port']
-    url = URL.format(port)
+    https = (
+        wazo_auth_config['rest_api']['https']['certificate']
+        and wazo_auth_config['rest_api']['https']['private_key']
+    )
+    scheme = 'https' if https else 'http'
+    url = URL.format(scheme, port)
     for _ in range(40):
         try:
             response = requests.post(
