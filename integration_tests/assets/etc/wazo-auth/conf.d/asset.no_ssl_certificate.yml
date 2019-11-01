@@ -1,3 +1,2 @@
 rest_api:
-  https:
-    certificate: /missing_server.crt
+  certificate: /missing_server.crt

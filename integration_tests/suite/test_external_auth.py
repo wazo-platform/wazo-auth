@@ -298,7 +298,7 @@ class TestExternalAuthConfigAPI(base.WazoAuthTestCase):
         )
 
     def test_given_mastertenant_with_config_and_subtenant_when_subtenant_get_config_then_not_found(
-        self
+        self,
     ):
         self.client.external.create_config(
             auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET
@@ -314,7 +314,7 @@ class TestExternalAuthConfigAPI(base.WazoAuthTestCase):
             )
 
     def test_given_mastertenant_and_subtenant_with_config_when_mastertenant_get_config_then_ok(
-        self
+        self,
     ):
         with self.client_in_subtenant(parent_uuid=self.top_tenant_uuid) as (
             client,
