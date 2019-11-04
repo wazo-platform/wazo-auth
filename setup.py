@@ -38,7 +38,6 @@ setup(
             'external = wazo_auth.plugins.http.external.plugin:Plugin',
             'groups = wazo_auth.plugins.http.groups.plugin:Plugin',
             'group_policy = wazo_auth.plugins.http.group_policy.plugin:Plugin',
-            'init = wazo_auth.plugins.http.init.plugin:Plugin',
             'password_reset = wazo_auth.plugins.http.password_reset.plugin:Plugin',
             'policies = wazo_auth.plugins.http.policies.plugin:Plugin',
             'sessions = wazo_auth.plugins.http.sessions.plugin:Plugin',
