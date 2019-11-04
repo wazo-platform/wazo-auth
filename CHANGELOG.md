@@ -1,5 +1,12 @@
 # Changelog
 
+## 19.15
+
+* wazo-auth-bootstrap setup is a noop
+* wazo-auth-bootstrap complete now directly connect to the database
+* wazo-auth-bootstrap initial-user have been added to simplify container setup.
+* `0.1/init` endpoint have been removed
+
 ## 19.14
 
 * A new resource has been added to manage refresh tokens
