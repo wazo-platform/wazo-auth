@@ -41,6 +41,18 @@ case "$1" in
             chown -R "${USER}:${GROUP}" "${HOME}"
         fi
 
+        # Enable the /init resource: added in 18.01
+        # If root's configuration file is already there, do not bootstrap again
+        if [ ! -f "/root/.config/wazo-auth-cli/050-credentials.yml" ]; then
+
+            # If user explicitly refused to bootstrap, skip
+            db_get wazo-auth/bootstrap-skip
+            bootstrap_skip="$RET"
+            if [ "$bootstrap_skip" = "false" ] ; then
+                wazo-auth-bootstrap complete
+            fi
+        fi
+
         db_get wazo-auth/db-skip
         db_skip="$RET"
         if [ "$db_skip" = "false" ] ; then
