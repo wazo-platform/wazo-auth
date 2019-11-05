@@ -19,14 +19,17 @@ from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
 from wazo_auth_client import Client
 
-from .helpers.base import AuthLaunchingTestCase
+from wazo_auth import bootstrap
+from wazo_auth.database import helpers
+
+from .helpers.base import BaseTestCase
 
 
 GOOGLE = 'google'
 AUTHORIZE_URL = 'http://localhost:{port}/google/authorize/{state}'
 
 
-class BaseGoogleTestCase(AuthLaunchingTestCase):
+class BaseGoogleTestCase(BaseTestCase):
 
     username = 'mario'
     password = 'mario'
@@ -34,14 +37,17 @@ class BaseGoogleTestCase(AuthLaunchingTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        port = cls.service_port(9497, 'auth')
-        key = cls.docker_exec(['cat', '/var/lib/wazo-auth/init.key']).decode('utf-8')
-        url = 'https://localhost:{}/0.1/init'.format(port)
-        headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
-        body = {'key': key, 'username': cls.username, 'password': cls.password}
-        response = requests.post(url, json=body, headers=headers, verify=False)
-        response.raise_for_status()
+        database = cls.new_db_client()
+        until.true(database.is_up, timeout=5, message='Postgres did not come back up')
+        bootstrap.create_initial_user(
+            database.uri,
+            cls.username,
+            cls.password,
+            bootstrap.PURPOSE,
+            bootstrap.DEFAULT_POLICY_NAME,
+        )
 
+        port = cls.service_port(9497, 'auth')
         cls.client = Client(
             'localhost',
             port=port,
@@ -54,6 +60,11 @@ class BaseGoogleTestCase(AuthLaunchingTestCase):
         cls.client.set_token(token_data['token'])
 
         cls.top_tenant_uuid = cls.get_top_tenant()['uuid']
+
+    @classmethod
+    def tearDownClass(cls):
+        helpers.deinit_db()
+        super().tearDownClass()
 
     @classmethod
     def get_top_tenant(cls):

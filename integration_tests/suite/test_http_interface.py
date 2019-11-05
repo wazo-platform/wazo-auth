@@ -27,7 +27,6 @@ from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from wazo_auth.database import helpers
 from wazo_auth.database import models
 from .helpers.base import AuthLaunchingTestCase, WazoAuthTestCase
-from .helpers.constants import DB_URI
 from .helpers import fixtures
 
 requests.packages.urllib3.disable_warnings()
@@ -41,17 +40,6 @@ def _new_token_id():
 
 
 class TestCore(WazoAuthTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.db_uri = DB_URI.format(port=cls.service_port(5432, 'postgres'))
-        helpers.init_db(cls.db_uri)
-
-    @classmethod
-    def tearDownClass(cls):
-        helpers.deinit_db()
-        super().tearDownClass()
-
     def setUp(self):
         self.user = self.client.users.new(username='foo', password='bar')
 

@@ -23,6 +23,7 @@ from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.bus import BusClient
+from wazo_auth import bootstrap
 from wazo_auth.database import queries, helpers
 from wazo_auth.database.queries import (
     group,
@@ -245,13 +246,15 @@ class WazoAuthTestCase(BaseTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
-        url = 'https://{}:{}/0.1/init'.format(cls.auth_host, cls.auth_port)
-
-        key = cls.docker_exec(['cat', '/var/lib/wazo-auth/init.key']).decode('utf-8')
-        body = {'key': key, 'username': cls.username, 'password': cls.password}
-        response = requests.post(url, json=body, headers=headers, verify=False)
-        response.raise_for_status()
+        database = cls.new_db_client()
+        until.true(database.is_up, timeout=5, message='Postgres did not come back up')
+        bootstrap.create_initial_user(
+            database.uri,
+            cls.username,
+            cls.password,
+            bootstrap.PURPOSE,
+            bootstrap.DEFAULT_POLICY_NAME,
+        )
 
         cls.client = cls.new_auth_client(cls.username, cls.password)
         token_data = cls.client.token.new(backend='wazo_user', expiration=7200)
@@ -260,6 +263,11 @@ class WazoAuthTestCase(BaseTestCase):
         cls.client.set_token(token_data['token'])
 
         cls.top_tenant_uuid = cls.get_top_tenant()['uuid']
+
+    @classmethod
+    def tearDownClass(cls):
+        helpers.deinit_db()
+        super().tearDownClass()
 
     @classmethod
     def get_top_tenant(cls):
