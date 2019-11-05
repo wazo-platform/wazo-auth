@@ -12,8 +12,6 @@ from .token import TokenDAO
 from .user import UserDAO
 from .refresh_token import RefreshTokenDAO
 
-from xivo import sqlalchemy_helper
-
 
 class DAO:
     def __init__(
@@ -29,8 +27,6 @@ class DAO:
         token,
         user,
     ):
-        sqlalchemy_helper.handle_db_restart()
-
         self.address = address
         self.email = email
         self.external_auth = external_auth
