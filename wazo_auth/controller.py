@@ -60,12 +60,17 @@ class Controller:
         email_service = services.EmailService(
             dao, self._tenant_tree, config, template_formatter
         )
+        enabled_external_auth_plugins = [
+            name
+            for name, value in config['enabled_external_auth_plugins'].items()
+            if value is True
+        ]
         external_auth_service = services.ExternalAuthService(
             dao,
             self._tenant_tree,
             config,
             self._bus_publisher,
-            config['enabled_external_auth_plugins'],
+            enabled_external_auth_plugins,
         )
         group_service = services.GroupService(dao, self._tenant_tree)
         policy_service = services.PolicyService(dao, self._tenant_tree)

@@ -1,0 +1,14 @@
+version: '3'
+services:
+  sync:
+    depends_on:
+      - auth
+      - postgres
+      - rabbitmq
+      - smtp
+    environment:
+      TARGETS: "smtp:25 auth:9497 postgres:5432 rabbitmq:5672"
+
+  auth:
+    volumes:
+      - "./etc/wazo-auth/conf.d/asset.external_auth_missing_plugin.yml:/etc/wazo-auth/conf.d/asset.external_auth_missing_plugin.yml"
