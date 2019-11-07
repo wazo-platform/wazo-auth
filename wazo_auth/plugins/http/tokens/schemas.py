@@ -58,3 +58,4 @@ class RefreshTokenSchema(BaseSchema):
 
     client_id = xfields.String(min=1, max=1024)
     created_at = xfields.DateTime()
+    mobile = xfields.Boolean()

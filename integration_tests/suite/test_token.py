@@ -25,6 +25,22 @@ from .helpers.constants import UNKNOWN_UUID
 
 
 class TestTokens(WazoAuthTestCase):
+    @fixtures.http.user(username='foo', password='bar')
+    @fixtures.http.token(
+        username='foo', password='bar', client_id='foobar',
+        access_type='offline', session_type='mobile',
+    )
+    @fixtures.http.token(
+        username='foo', password='bar', client_id='foobaz', access_type='offline'
+    )
+    def test_that_a_token_has_a_mobile_field(self, _, __, user):
+        result = self.client.token.list(user_uuid=user['uuid'])
+
+        assert_that(result, has_entries(items=contains_inanyorder(
+            has_entries(client_id='foobar', mobile=True),
+            has_entries(client_id='foobaz', mobile=False),
+        )))
+
     def test_that_a_token_has_a_remote_address_and_user_agent(self):
         ua = 'My Test Runner'
 

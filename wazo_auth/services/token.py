@@ -82,6 +82,7 @@ class TokenService(BaseService):
                 'user_uuid': metadata['uuid'],
                 'user_agent': args['user_agent'],
                 'remote_addr': args['remote_addr'],
+                'mobile': args['mobile'],
             }
             refresh_token = self._dao.refresh_token.create(body)
             token_payload['refresh_token'] = refresh_token
