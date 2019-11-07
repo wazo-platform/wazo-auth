@@ -49,7 +49,7 @@ case "$1" in
             db_get wazo-auth/bootstrap-skip
             bootstrap_skip="$RET"
             if [ "$bootstrap_skip" = "false" ] ; then
-                wazo-auth-bootstrap setup
+                wazo-auth-bootstrap complete
             fi
         fi
 

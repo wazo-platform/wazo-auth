@@ -24,10 +24,9 @@ from hamcrest import (
 
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
-from wazo_auth.database import models
 from wazo_auth.database import helpers
+from wazo_auth.database import models
 from .helpers.base import AuthLaunchingTestCase, WazoAuthTestCase
-from .helpers.constants import DB_URI
 from .helpers import fixtures
 
 requests.packages.urllib3.disable_warnings()
@@ -41,17 +40,6 @@ def _new_token_id():
 
 
 class TestCore(WazoAuthTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.db_uri = DB_URI.format(port=cls.service_port(5432, 'postgres'))
-        helpers.init_db(cls.db_uri, echo=False)
-
-    @classmethod
-    def tearDownClass(cls):
-        helpers.Session.remove()
-        super().tearDownClass()
-
     def setUp(self):
         self.user = self.client.users.new(username='foo', password='bar')
 
@@ -262,22 +250,18 @@ class TestCore(WazoAuthTestCase):
         assert_that(self._is_valid(token))
 
     def _is_token_in_the_db(self, token):
-        db_uri = DB_URI.format(port=self.service_port(5432, 'postgres'))
-        helpers.init_db(db_uri, echo=False)
-
-        s = helpers.get_dao_session()
-        result = s.query(models.Token).filter(models.Token.uuid == token).first()
-        return True if result else False
+        with helpers.new_session() as s:
+            result = s.query(models.Token).filter(models.Token.uuid == token).first()
+            return True if result else False
 
     def _is_session_in_the_db(self, session_uuid):
-        db_uri = DB_URI.format(port=self.service_port(5432, 'postgres'))
-        helpers.init_db(db_uri, echo=False)
-
-        s = helpers.get_dao_session()
-        result = (
-            s.query(models.Session).filter(models.Session.uuid == session_uuid).first()
-        )
-        return True if result else False
+        with helpers.new_session() as s:
+            result = (
+                s.query(models.Session)
+                .filter(models.Session.uuid == session_uuid)
+                .first()
+            )
+            return True if result else False
 
 
 class TestNoSSLCertificate(AuthLaunchingTestCase):

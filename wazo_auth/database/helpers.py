@@ -6,23 +6,22 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
-from xivo import sqlalchemy_helper
-
 Session = scoped_session(sessionmaker())
 
 
-def init_db(db_uri, echo=False):
-    engine = create_engine(db_uri, echo=echo)
+def init_db(db_uri):
+    engine = create_engine(db_uri, pool_pre_ping=True)
     Session.configure(bind=engine)
-    sqlalchemy_helper.handle_db_restart()
 
 
-def get_dao_session():
-    return Session()
+def deinit_db():
+    Session.get_bind().dispose()
+    Session.remove()
+    Session.configure(bind=None)
 
 
 @contextmanager
-def session_scope():
+def new_session():
     session = Session()
     try:
         yield session
@@ -31,4 +30,4 @@ def session_scope():
         session.rollback()
         raise
     finally:
-        Session.remove()
+        session.close()

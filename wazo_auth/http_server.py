@@ -12,7 +12,6 @@ from flask_cors import CORS
 from flask_restful import Api
 from xivo import http_helpers
 
-from sqlalchemy.exc import SQLAlchemyError
 from wazo_auth.database.helpers import Session
 
 VERSION = 0.1
@@ -22,27 +21,13 @@ app = Flask('wazo-auth')
 api = Api(app, prefix='/{}'.format(VERSION))
 
 
-def rollback_database():
-    Session.rollback()
-
-
-def commit_database():
+def teardown_appcontext(response_or_exc):
     try:
-        Session.commit()
-    except SQLAlchemyError:
-        Session.rollback()
-        raise
+        if response_or_exc is None:
+            Session.commit()
     finally:
         Session.remove()
-
-
-def teardown_appcontext(exception):
-    if exception is None:
-        commit_database()
-    else:
-        rollback_database()
-
-    return exception
+    return response_or_exc
 
 
 class CoreRestApi:

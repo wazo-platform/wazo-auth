@@ -10,5 +10,4 @@ RUN true \
     && python setup.py install \
     && cd /usr/src/wazo-auth \
     && python setup.py develop \
-    && wazo-auth-bootstrap setup \
     && true

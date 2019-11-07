@@ -1,9 +1,8 @@
 # Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from contextlib import contextmanager
+from .. import helpers
 from ... import exceptions
-from ..helpers import get_dao_session
 
 
 class QueryPaginator:
@@ -75,15 +74,4 @@ class BaseDAO:
     _UNIQUE_CONSTRAINT_CODE = '23505'
     _FKEY_CONSTRAINT_CODE = '23503'
 
-    @property
-    def session(self):
-        return get_dao_session()
-
-    @contextmanager
-    def new_session(self):
-        try:
-            yield self.session
-            self.session.commit()
-        except Exception:
-            self.session.rollback()
-            raise
+    new_session = staticmethod(helpers.new_session)
