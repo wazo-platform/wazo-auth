@@ -188,6 +188,11 @@ class TestTokens(WazoAuthTestCase):
         )
 
         result = self.client.token.list(
+            user_uuid=user['uuid'], order='mobile', direction='desc'
+        )
+        assert_that(result['items'][0], has_entries(client_id=token_1['client_id']))
+
+        result = self.client.token.list(
             user_uuid=user['uuid'], order='created_at', direction='asc'
         )
         assert_that(
