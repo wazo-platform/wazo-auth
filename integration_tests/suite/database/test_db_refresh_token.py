@@ -82,7 +82,7 @@ class TestRefreshTokenDAO(base.DAOTestCase):
     @fixtures.db.user(username='bob', tenant_uuid=TENANT_UUID)
     @fixtures.db.refresh_token(user_uuid=ALICE_UUID, client_id='foobar')
     @fixtures.db.refresh_token(user_uuid=ALICE_UUID, created_at=CREATED_AT)
-    @fixtures.db.refresh_token(user_uuid=ALICE_UUID)
+    @fixtures.db.refresh_token(user_uuid=ALICE_UUID, mobile=True)
     def test_list(self, token_1, token_2, token_3, bob_uuid, alice_uuid, tenant):
         all_refresh_tokens = contains_inanyorder(
             has_properties(uuid=token_1),
@@ -119,6 +119,11 @@ class TestRefreshTokenDAO(base.DAOTestCase):
             user_uuid=ALICE_UUID, created_at=CREATED_AT
         )
         assert_that(result, contains_inanyorder(has_properties(uuid=token_2)))
+
+        result = self._refresh_token_dao.list_(
+            user_uuid=ALICE_UUID, mobile=True,
+        )
+        assert_that(result, contains_inanyorder(has_properties(uuid=token_1)))
 
         result = self._refresh_token_dao.list_(user_uuid=ALICE_UUID, search='foo')
         assert_that(result, contains_inanyorder(has_properties(uuid=token_3)))

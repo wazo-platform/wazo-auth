@@ -17,6 +17,7 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     column_map = {
         'created_at': RefreshToken.created_at,
         'client_id': RefreshToken.client_id,
+        'mobile': RefreshToken.mobile,
     }
 
     def count(self, user_uuid, tenant_uuids=None, filtered=False, **search_params):

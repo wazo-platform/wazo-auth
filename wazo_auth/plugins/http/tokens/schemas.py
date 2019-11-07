@@ -51,7 +51,7 @@ class TokenRequestSchema(Schema):
 class RefreshTokenListSchema(BaseListSchema):
     sort_columns = ['created_at', 'client_id']
     default_sort_column = 'created_at'
-    searchable_columns = ['created_at', 'client_id']
+    searchable_columns = ['created_at', 'client_id', 'mobile']
 
 
 class RefreshTokenSchema(BaseSchema):

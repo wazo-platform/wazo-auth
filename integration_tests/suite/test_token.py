@@ -141,7 +141,8 @@ class TestTokens(WazoAuthTestCase):
     @fixtures.http.token(username='foo', password='bar', access_type='offline')
     @fixtures.http.token(username='foo', password='bar', access_type='offline')
     @fixtures.http.token(
-        username='foo', password='bar', access_type='offline', client_id='foobaz'
+        username='foo', password='bar',
+        access_type='offline', client_id='foobaz', session_type='mobile',
     )
     def test_refresh_token_list(self, token_1, token_2, token_3, user):
         result = self.client.token.list(user_uuid=user['uuid'])
@@ -167,6 +168,16 @@ class TestTokens(WazoAuthTestCase):
         assert_http_error(400, self.client.token.list, user['uuid'], order='lol')
 
         result = self.client.token.list(user_uuid=user['uuid'], search='baz')
+        assert_that(
+            result,
+            has_entries(
+                items=contains_inanyorder(has_entries(client_id=token_1['client_id'])),
+                filtered=1,
+                total=3,
+            ),
+        )
+
+        result = self.client.token.list(user_uuid=user['uuid'], mobile=True)
         assert_that(
             result,
             has_entries(
