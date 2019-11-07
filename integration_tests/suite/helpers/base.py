@@ -70,11 +70,11 @@ class DBStarter(AssetLaunchingTestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.db_uri = DB_URI.format(port=DBStarter.service_port(5432, 'postgres'))
-        helpers.init_db(cls.db_uri, echo=False)
+        helpers.init_db(cls.db_uri)
 
     @classmethod
     def tearDownClass(cls):
-        helpers.Session.remove()
+        helpers.deinit_db()
         super().tearDownClass()
 
 
@@ -232,6 +232,8 @@ class BaseTestCase(AuthLaunchingTestCase):
         self.restart_service('postgres')
         database = self.new_db_client()
         until.true(database.is_up, timeout=5, message='Postgres did not come back up')
+        helpers.deinit_db()
+        helpers.init_db(database.uri)
 
 
 class WazoAuthTestCase(BaseTestCase):
