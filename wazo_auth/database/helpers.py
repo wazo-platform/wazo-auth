@@ -31,4 +31,4 @@ def session_scope():
         session.rollback()
         raise
     finally:
-        Session.remove()
+        session.remove()
