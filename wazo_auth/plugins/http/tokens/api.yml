@@ -235,6 +235,9 @@ definitions:
       created_at:
         type: string
         description: The time at which this token was created
+      mobile:
+        type: boolean
+        description: Indicate if that refresh token was created with a mobile session type
   RefreshTokenList:
     type: object
     properties:
