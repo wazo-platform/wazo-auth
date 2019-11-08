@@ -64,6 +64,9 @@ def main():
         default=os.getenv("WAZO_AUTH_BOOTSTRAP_PASSWORD", random_string(28)),
     )
     initial_user_parser.add_argument(
+        "--purpose", default=os.getenv("WAZO_AUTH_BOOTSTRAP_PURPOSE", PURPOSE)
+    )
+    initial_user_parser.add_argument(
         "--policy-name",
         default=os.getenv("WAZO_AUTH_BOOTSTRAP_POLICY_NAME", DEFAULT_POLICY_NAME),
     )
@@ -80,7 +83,9 @@ def main():
     elif args.action == 'initial-user':
         uri = args.uri or get_database_uri_from_config()
         try:
-            create_initial_user(uri, args.username, args.password, args.policy_name)
+            create_initial_user(
+                uri, args.username, args.password, args.purpose, args.policy_name
+            )
         except Exception:
             save_exception_and_exit()
     else:
