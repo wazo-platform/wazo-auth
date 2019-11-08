@@ -18,6 +18,7 @@ from hamcrest import (
 )
 from requests.exceptions import HTTPError
 from xivo_test_helpers.hamcrest.raises import raises
+from xivo_test_helpers import until
 
 from .helpers import fixtures
 from .helpers.base import WazoAuthTestCase, assert_http_error
@@ -67,6 +68,35 @@ class TestTokens(WazoAuthTestCase):
             expiration=1, refresh_token=refresh_token, client_id=client_id
         )
         assert_that(result, not_(has_key('refresh_token')))
+
+    @fixtures.http.user(username='foo', password='bar')
+    def test_refresh_token_created_event(self, user):
+        routing_key = 'auth.users.{uuid}.tokens.*.created'.format(**user)
+        msg_accumulator = self.new_message_accumulator(routing_key)
+
+        client_id = 'mytestapp'
+        self._post_token(
+            'foo', 'bar',
+            session_type='Mobile',
+            access_type='offline', client_id=client_id,
+        )
+
+        def bus_received_msg():
+            assert_that(
+                msg_accumulator.accumulate(),
+                contains(
+                    has_entries(
+                        data={
+                            'client_id': client_id,
+                            'user_uuid': user['uuid'],
+                            'tenant_uuid': user['tenant_uuid'],
+                            'mobile': True,
+                        }
+                    )
+                ),
+            )
+
+        until.assert_(bus_received_msg, tries=10, interval=0.25)
 
     def test_that_only_one_refresh_token_exist_for_each_user_uuid_client_id(self):
         client_id = 'two-refresh-token'

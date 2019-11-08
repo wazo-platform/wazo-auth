@@ -4,7 +4,11 @@
 import time
 import logging
 
-from xivo_bus.resources.auth.events import SessionCreatedEvent, SessionDeletedEvent
+from xivo_bus.resources.auth.events import (
+    RefreshTokenCreatedEvent,
+    SessionCreatedEvent,
+    SessionDeletedEvent,
+)
 
 from wazo_auth.token import Token
 from wazo_auth.services.helpers import BaseService
@@ -85,6 +89,8 @@ class TokenService(BaseService):
                 'mobile': args['mobile'],
             }
             refresh_token = self._dao.refresh_token.create(body)
+            event = RefreshTokenCreatedEvent(tenant_uuid=metadata.get('tenant_uuid'), **body)
+            self._bus_publisher.publish(event)
             token_payload['refresh_token'] = refresh_token
 
         token_uuid, session_uuid = self._dao.token.create(
