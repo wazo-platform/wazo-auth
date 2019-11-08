@@ -148,30 +148,13 @@ class BaseTestCase(AuthLaunchingTestCase):
             .split('\n')
         )
 
-    def _post_token(
-        self, username, password, backend=None, expiration=None, session_type=None
-    ):
+    def _post_token(self, username, password, *args, **kwargs):
         client = self.new_auth_client(username, password)
-        args = {}
-        if backend:
-            args['backend'] = backend
-        if expiration:
-            args['expiration'] = expiration
-        if session_type:
-            args['session_type'] = session_type
-        return client.token.new(**args)
+        return client.token.new(*args, **kwargs)
 
-    def _post_token_with_expected_exception(
-        self,
-        username,
-        password,
-        backend=None,
-        expiration=None,
-        status_code=None,
-        msg=None,
-    ):
+    def _post_token_with_expected_exception(self, *args, status_code=None, msg=None, **kwargs):
         try:
-            self._post_token(username, password, backend, expiration)
+            self._post_token(*args, **kwargs)
         except requests.HTTPError as e:
             if status_code:
                 assert_that(e.response.status_code, equal_to(status_code))
