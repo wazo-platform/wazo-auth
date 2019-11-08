@@ -168,6 +168,41 @@ class TestTokens(WazoAuthTestCase):
         )
 
     @fixtures.http.user(username='foo', password='bar')
+    @fixtures.http.token(
+        username='foo',
+        password='bar',
+        client_id='foobar',
+        access_type='offline',
+        session_type='mobile',
+    )
+    def test_refresh_token_deleted_event(self, token, user):
+        client_id = 'foobar'
+        routing_key = 'auth.users.{user_uuid}.tokens.{client_id}.deleted'.format(
+            user_uuid=user['uuid'],
+            client_id=client_id,
+        )
+        msg_accumulator = self.new_message_accumulator(routing_key)
+
+        self.client.token.delete(user['uuid'], client_id)
+
+        def bus_received_msg():
+            assert_that(
+                msg_accumulator.accumulate(),
+                contains(
+                    has_entries(
+                        data={
+                            'client_id': client_id,
+                            'user_uuid': user['uuid'],
+                            'tenant_uuid': user['tenant_uuid'],
+                            'mobile': True,
+                        }
+                    )
+                ),
+            )
+
+        until.assert_(bus_received_msg, tries=10, interval=0.25)
+
+    @fixtures.http.user(username='foo', password='bar')
     @fixtures.http.token(username='foo', password='bar', access_type='offline')
     @fixtures.http.token(username='foo', password='bar', access_type='offline')
     @fixtures.http.token(

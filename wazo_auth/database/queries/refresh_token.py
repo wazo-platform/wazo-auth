@@ -85,6 +85,20 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
             raise exceptions.UnknownRefreshToken(client_id)
 
+    def get_by_user(self, tenant_uuids, user_uuid, client_id):
+        filter_ = and_(
+            RefreshToken.client_id == client_id,
+            RefreshToken.user_uuid == user_uuid,
+            RefreshToken.tenant_uuid.in_(tenant_uuids),
+        )
+
+        with self.new_session() as session:
+            query = session.query(RefreshToken.tenant_uuid, RefreshToken.mobile).filter(filter_)
+            for refresh_token in query.all():
+                return {'tenant_uuid': refresh_token.tenant_uuid, 'mobile': refresh_token.mobile}
+
+            raise exceptions.UnknownRefreshToken(client_id)
+
     def list_(self, user_uuid, tenant_uuids=None, **search_params):
         filter_ = RefreshToken.user_uuid == user_uuid
         if tenant_uuids is not None:

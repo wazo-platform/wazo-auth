@@ -6,6 +6,7 @@ import logging
 
 from xivo_bus.resources.auth.events import (
     RefreshTokenCreatedEvent,
+    RefreshTokenDeletedEvent,
     SessionCreatedEvent,
     SessionDeletedEvent,
 )
@@ -35,7 +36,21 @@ class TokenService(BaseService):
 
     def delete_refresh_token(self, scoping_tenant_uuid, user_uuid, client_id):
         tenant_uuids = self._get_scoped_tenant_uuids(scoping_tenant_uuid, True)
-        return self._dao.refresh_token.delete(tenant_uuids, user_uuid, client_id)
+        refresh_token = self._dao.refresh_token.get_by_user(
+            tenant_uuids=tenant_uuids,
+            user_uuid=user_uuid,
+            client_id=client_id,
+        )
+
+        event = RefreshTokenDeletedEvent(
+            client_id=client_id,
+            user_uuid=user_uuid,
+            tenant_uuid=refresh_token['tenant_uuid'],
+            mobile=refresh_token['mobile'],
+        )
+        self._bus_publisher.publish(event)
+
+        self._dao.refresh_token.delete(tenant_uuids, user_uuid, client_id)
 
     def list_refresh_tokens(
         self, scoping_tenant_uuid=None, recurse=False, **search_params
