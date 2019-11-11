@@ -37,9 +37,7 @@ class TokenService(BaseService):
     def delete_refresh_token(self, scoping_tenant_uuid, user_uuid, client_id):
         tenant_uuids = self._get_scoped_tenant_uuids(scoping_tenant_uuid, True)
         refresh_token = self._dao.refresh_token.get_by_user(
-            tenant_uuids=tenant_uuids,
-            user_uuid=user_uuid,
-            client_id=client_id,
+            tenant_uuids=tenant_uuids, user_uuid=user_uuid, client_id=client_id,
         )
 
         event = RefreshTokenDeletedEvent(
@@ -104,7 +102,9 @@ class TokenService(BaseService):
                 'mobile': args['mobile'],
             }
             refresh_token = self._dao.refresh_token.create(body)
-            event = RefreshTokenCreatedEvent(tenant_uuid=metadata.get('tenant_uuid'), **body)
+            event = RefreshTokenCreatedEvent(
+                tenant_uuid=metadata.get('tenant_uuid'), **body
+            )
             self._bus_publisher.publish(event)
             token_payload['refresh_token'] = refresh_token
 

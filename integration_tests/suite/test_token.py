@@ -9,6 +9,7 @@ from hamcrest import (
     calling,
     contains,
     contains_inanyorder,
+    empty,
     ends_with,
     equal_to,
     has_entries,
@@ -28,8 +29,11 @@ from .helpers.constants import UNKNOWN_UUID
 class TestTokens(WazoAuthTestCase):
     @fixtures.http.user(username='foo', password='bar')
     @fixtures.http.token(
-        username='foo', password='bar', client_id='foobar',
-        access_type='offline', session_type='mobile',
+        username='foo',
+        password='bar',
+        client_id='foobar',
+        access_type='offline',
+        session_type='mobile',
     )
     @fixtures.http.token(
         username='foo', password='bar', client_id='foobaz', access_type='offline'
@@ -37,10 +41,15 @@ class TestTokens(WazoAuthTestCase):
     def test_that_a_token_has_a_mobile_field(self, _, __, user):
         result = self.client.token.list(user_uuid=user['uuid'])
 
-        assert_that(result, has_entries(items=contains_inanyorder(
-            has_entries(client_id='foobar', mobile=True),
-            has_entries(client_id='foobaz', mobile=False),
-        )))
+        assert_that(
+            result,
+            has_entries(
+                items=contains_inanyorder(
+                    has_entries(client_id='foobar', mobile=True),
+                    has_entries(client_id='foobaz', mobile=False),
+                )
+            ),
+        )
 
     def test_that_a_token_has_a_remote_address_and_user_agent(self):
         ua = 'My Test Runner'
@@ -76,9 +85,11 @@ class TestTokens(WazoAuthTestCase):
 
         client_id = 'mytestapp'
         self._post_token(
-            'foo', 'bar',
+            'foo',
+            'bar',
             session_type='Mobile',
-            access_type='offline', client_id=client_id,
+            access_type='offline',
+            client_id=client_id,
         )
 
         def bus_received_msg():
@@ -178,8 +189,7 @@ class TestTokens(WazoAuthTestCase):
     def test_refresh_token_deleted_event(self, token, user):
         client_id = 'foobar'
         routing_key = 'auth.users.{user_uuid}.tokens.{client_id}.deleted'.format(
-            user_uuid=user['uuid'],
-            client_id=client_id,
+            user_uuid=user['uuid'], client_id=client_id,
         )
         msg_accumulator = self.new_message_accumulator(routing_key)
 
@@ -206,8 +216,11 @@ class TestTokens(WazoAuthTestCase):
     @fixtures.http.token(username='foo', password='bar', access_type='offline')
     @fixtures.http.token(username='foo', password='bar', access_type='offline')
     @fixtures.http.token(
-        username='foo', password='bar',
-        access_type='offline', client_id='foobaz', session_type='mobile',
+        username='foo',
+        password='bar',
+        access_type='offline',
+        client_id='foobaz',
+        session_type='mobile',
     )
     def test_refresh_token_list(self, token_1, token_2, token_3, user):
         result = self.client.token.list(user_uuid=user['uuid'])
@@ -339,3 +352,117 @@ class TestTokens(WazoAuthTestCase):
         client.token.delete('me', 'foobar')
 
         assert_http_error(404, client.token.delete, 'me', 'foobar')
+
+    @fixtures.http.tenant()
+    @fixtures.http.user(username='foo', password='bar')
+    @fixtures.http.token(username='foo', password='bar', access_type='offline')
+    @fixtures.http.token(username='foo', password='bar', access_type='offline')
+    @fixtures.http.token(
+        username='foo',
+        password='bar',
+        access_type='offline',
+        client_id='foobaz',
+        session_type='Mobile',
+    )
+    def test_list_all_refresh_tokens(self, token_3, token_2, token_1, user, sub_tenant):
+        result = self.client.refresh_tokens.list()
+
+        assert_that(
+            result,
+            has_entries(
+                items=contains_inanyorder(
+                    has_entries(
+                        client_id=token_1['client_id'],
+                        user_uuid=user['uuid'],
+                        tenant_uuid=user['tenant_uuid'],
+                    ),
+                    has_entries(
+                        client_id=token_2['client_id'],
+                        user_uuid=user['uuid'],
+                        tenant_uuid=user['tenant_uuid'],
+                    ),
+                    has_entries(
+                        client_id=token_3['client_id'],
+                        user_uuid=user['uuid'],
+                        tenant_uuid=user['tenant_uuid'],
+                    ),
+                ),
+            ),
+        )
+
+        result = self.client.refresh_tokens.list(tenant_uuid=sub_tenant['uuid'])
+        assert_that(result, has_entries(items=empty()))
+
+        assert_http_error(400, self.client.refresh_tokens.list, limit='not a number')
+        assert_http_error(400, self.client.refresh_tokens.list, offset=-1)
+        assert_http_error(400, self.client.refresh_tokens.list, direction='up')
+        assert_http_error(400, self.client.refresh_tokens.list, order='lol')
+
+        result = self.client.refresh_tokens.list(search='baz')
+        assert_that(
+            result,
+            has_entries(
+                items=contains_inanyorder(has_entries(client_id=token_3['client_id'])),
+                filtered=1,
+                total=3,
+            ),
+        )
+
+        result = self.client.refresh_tokens.list(mobile=True)
+        assert_that(
+            result,
+            has_entries(
+                items=contains_inanyorder(has_entries(client_id=token_3['client_id'])),
+                filtered=1,
+                total=3,
+            ),
+        )
+
+        result = self.client.refresh_tokens.list(order='mobile', direction='desc')
+        assert_that(result['items'][0], has_entries(client_id=token_3['client_id']))
+
+        result = self.client.refresh_tokens.list(order='created_at', direction='asc')
+        assert_that(
+            result,
+            has_entries(
+                items=contains(
+                    has_entries(client_id=token_1['client_id']),
+                    has_entries(client_id=token_2['client_id']),
+                    has_entries(client_id=token_3['client_id']),
+                )
+            ),
+        )
+
+        result = self.client.refresh_tokens.list(order='created_at', direction='desc')
+        assert_that(
+            result,
+            has_entries(
+                items=contains(
+                    has_entries(client_id=token_3['client_id']),
+                    has_entries(client_id=token_2['client_id']),
+                    has_entries(client_id=token_1['client_id']),
+                )
+            ),
+        )
+
+        result = self.client.refresh_tokens.list(order='created_at', limit=2)
+        assert_that(
+            result,
+            has_entries(
+                items=contains(
+                    has_entries(client_id=token_1['client_id']),
+                    has_entries(client_id=token_2['client_id']),
+                )
+            ),
+        )
+
+        result = self.client.refresh_tokens.list(order='created_at', offset=1)
+        assert_that(
+            result,
+            has_entries(
+                items=contains(
+                    has_entries(client_id=token_2['client_id']),
+                    has_entries(client_id=token_3['client_id']),
+                )
+            ),
+        )

@@ -147,9 +147,46 @@ paths:
           description: System related token error
           schema:
             $ref: '#/definitions/Error'
-  /users/{user_uuid_or_me}/tokens:
+  /tokens:
     get:
       operationId: listRefreshTokens
+      summary: "Retrieve a list of refresh tokens that have been created on the system"
+      description: |
+        **Required ACL**: `auth.tokens.read`
+
+        Finds all refresh tokens and return the list. Access tokens are not included in the result.
+      tags:
+        - token
+      security:
+        - wazo_auth_token: []
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+        - $ref: '#/parameters/recurse'
+        - $ref: '#/parameters/order'
+        - $ref: '#/parameters/direction'
+        - $ref: '#/parameters/limit'
+        - $ref: '#/parameters/offset'
+        - $ref: '#/parameters/search'
+      responses:
+        '200':
+          description: A refresh token list
+          schema:
+            $ref: '#/definitions/RefreshTokenList'
+        '400':
+          description: Invalid parameters
+          schema:
+            $ref: '#/definitions/APIError'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/APIError'
+        '500':
+          description: System related token error
+          schema:
+            $ref: '#/definitions/APIError'
+  /users/{user_uuid_or_me}/tokens:
+    get:
+      operationId: listUserRefreshTokens
       summary: "Retrieve a user's refresh token list"
       description: |
         **Required ACL**: `auth.users.{user_uuid}.tokens.read`
@@ -238,6 +275,12 @@ definitions:
       mobile:
         type: boolean
         description: Indicate if that refresh token was created with a mobile session type
+      user_uuid:
+        type: string
+        description: The UUID of the user which created this refresh token
+      tenant_uuid:
+        type: string
+        description: The tenant UUID of the user which created this refresh token
   RefreshTokenList:
     type: object
     properties:

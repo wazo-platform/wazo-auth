@@ -152,7 +152,9 @@ class BaseTestCase(AuthLaunchingTestCase):
         client = self.new_auth_client(username, password)
         return client.token.new(*args, **kwargs)
 
-    def _post_token_with_expected_exception(self, *args, status_code=None, msg=None, **kwargs):
+    def _post_token_with_expected_exception(
+        self, *args, status_code=None, msg=None, **kwargs
+    ):
         try:
             self._post_token(*args, **kwargs)
         except requests.HTTPError as e:

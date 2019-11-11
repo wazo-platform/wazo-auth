@@ -62,14 +62,15 @@ class _BaseRefreshTokens(http.AuthResource):
         token_data = self._token_service.get(token, required_acl=None)
         return token_data.metadata.get('uuid')
 
-    def _build_search_params(self, user_uuid, scoping_tenant_uuid):
+    def _build_search_params(self, user_uuid=None, scoping_tenant_uuid=None):
         try:
             search_params = schemas.RefreshTokenListSchema().load(request.args)
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 
         search_params['scoping_tenant_uuid'] = scoping_tenant_uuid
-        search_params['user_uuid'] = user_uuid
+        if user_uuid is not None:
+            search_params['user_uuid'] = user_uuid
 
         return search_params
 
@@ -100,6 +101,28 @@ class UserRefreshToken(_BaseRefreshTokens):
     def delete(self, user_uuid, client_id):
         self._delete(str(user_uuid), client_id)
         return '', 204
+
+
+class RefreshTokens(_BaseRefreshTokens):
+    @http.required_acl('auth.tokens.read')
+    def get(self):
+        scoping_tenant = Tenant.autodetect()
+
+        search_params = self._build_search_params(
+            user_uuid=None, scoping_tenant_uuid=scoping_tenant.uuid,
+        )
+
+        refresh_tokens = self._token_service.list_refresh_tokens(**search_params)
+
+        return {
+            'total': self._token_service.count_refresh_tokens(
+                filtered=False, **search_params
+            ),
+            'filtered': self._token_service.count_refresh_tokens(
+                filtered=True, **search_params
+            ),
+            'items': schemas.RefreshTokenSchema().dump(refresh_tokens, many=True),
+        }
 
 
 class Tokens(BaseResource):
