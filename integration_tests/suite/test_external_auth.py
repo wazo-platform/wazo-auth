@@ -8,13 +8,16 @@ import requests
 
 from hamcrest import (
     assert_that,
+    calling,
     contains,
     equal_to,
     greater_than_or_equal_to,
     has_entries,
     has_items,
+    not_,
 )
 from xivo_test_helpers import until
+from xivo_test_helpers.hamcrest.raises import raises
 
 from .helpers import base, fixtures
 from .helpers.constants import UNKNOWN_UUID
@@ -329,3 +332,15 @@ class TestExternalAuthConfigAPI(base.WazoAuthTestCase):
                 self.EXTERNAL_AUTH_TYPE,
                 tenant_uuid=tenant["uuid"],
             )
+
+
+class TestExternalAuthMissingPlugin(base.WazoAuthTestCase):
+
+    asset = 'external_auth_missing_plugin'
+
+    @fixtures.http.user_register()
+    def test_list_do_not_return_error(self, user):
+        assert_that(
+            calling(self.client.external.list_).with_args(user['uuid']),
+            not_(raises(requests.HTTPError)),
+        )
