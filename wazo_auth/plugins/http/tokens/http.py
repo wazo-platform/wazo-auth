@@ -26,12 +26,14 @@ class _BaseRefreshTokens(http.AuthResource):
         self._user_service = user_service
         self._authentication_service = authentication_service
 
-    def _get(self, user_uuid):
+    def _get(self, user_uuid, recurse=False):
         scoping_tenant = Tenant.autodetect()
 
         self._assert_user_is_visible_in_tenant(user_uuid, scoping_tenant.uuid)
 
-        search_params = self._build_search_params(user_uuid, scoping_tenant.uuid)
+        search_params = self._build_search_params(
+            user_uuid, scoping_tenant.uuid, recurse
+        )
 
         refresh_tokens = self._token_service.list_refresh_tokens(**search_params)
 
@@ -62,7 +64,9 @@ class _BaseRefreshTokens(http.AuthResource):
         token_data = self._token_service.get(token, required_acl=None)
         return token_data.metadata.get('uuid')
 
-    def _build_search_params(self, user_uuid=None, scoping_tenant_uuid=None):
+    def _build_search_params(
+        self, user_uuid=None, scoping_tenant_uuid=None, recurse=None
+    ):
         try:
             search_params = schemas.RefreshTokenListSchema().load(request.args)
         except marshmallow.ValidationError as e:
@@ -71,6 +75,9 @@ class _BaseRefreshTokens(http.AuthResource):
         search_params['scoping_tenant_uuid'] = scoping_tenant_uuid
         if user_uuid is not None:
             search_params['user_uuid'] = user_uuid
+
+        if recurse is not None:
+            search_params['recurse'] = recurse
 
         return search_params
 
@@ -93,7 +100,7 @@ class UserMeRefreshToken(_BaseRefreshTokens):
 class UserRefreshTokens(_BaseRefreshTokens):
     @http.required_acl('auth.users.{user_uuid}.tokens.read')
     def get(self, user_uuid):
-        return self._get(str(user_uuid))
+        return self._get(str(user_uuid), recurse=True)
 
 
 class UserRefreshToken(_BaseRefreshTokens):

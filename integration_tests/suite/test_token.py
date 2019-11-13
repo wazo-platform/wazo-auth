@@ -466,3 +466,30 @@ class TestTokens(WazoAuthTestCase):
                 )
             ),
         )
+
+    @fixtures.http.tenant(name='sub')
+    def test_that_a_user_can_list_tokens_from_subtenants(self, sub):
+        args = {
+            'username': 'foobar',
+            'firstname': 'Alice',
+            'email_address': 'foobar@example.com',
+            'password': 's3cr37',
+            'tenant_uuid': sub['uuid'],
+        }
+
+        with self.user(self.client, **args) as user:
+            client = self.new_auth_client('foobar', 's3cr37')
+            client.token.new(expiration=1, client_id='myapp', access_type='offline')
+            result = self.client.token.list(user['uuid'])
+            assert_that(
+                result,
+                has_entries(
+                    items=contains(
+                        has_entries(
+                            client_id='myapp',
+                            user_uuid=user['uuid'],
+                            tenant_uuid=sub['uuid'],
+                        )
+                    )
+                ),
+            )
