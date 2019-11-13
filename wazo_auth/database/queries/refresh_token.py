@@ -17,10 +17,15 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     column_map = {
         'created_at': RefreshToken.created_at,
         'client_id': RefreshToken.client_id,
+        'mobile': RefreshToken.mobile,
     }
 
-    def count(self, user_uuid, tenant_uuids=None, filtered=False, **search_params):
-        filter_ = RefreshToken.user_uuid == user_uuid
+    def count(self, user_uuid=None, tenant_uuids=None, filtered=False, **search_params):
+        filter_ = text('true')
+
+        if user_uuid is not None:
+            filter_ = and_(filter_, RefreshToken.user_uuid == user_uuid)
+
         if tenant_uuids is not None:
             if not tenant_uuids:
                 filter_ = and_(filter_, text('false'))
@@ -84,8 +89,31 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
             raise exceptions.UnknownRefreshToken(client_id)
 
-    def list_(self, user_uuid, tenant_uuids=None, **search_params):
-        filter_ = RefreshToken.user_uuid == user_uuid
+    def get_by_user(self, tenant_uuids, user_uuid, client_id):
+        filter_ = and_(
+            RefreshToken.client_id == client_id,
+            RefreshToken.user_uuid == user_uuid,
+            RefreshToken.tenant_uuid.in_(tenant_uuids),
+        )
+
+        with self.new_session() as session:
+            query = session.query(RefreshToken.tenant_uuid, RefreshToken.mobile).filter(
+                filter_
+            )
+            for refresh_token in query.all():
+                return {
+                    'tenant_uuid': refresh_token.tenant_uuid,
+                    'mobile': refresh_token.mobile,
+                }
+
+            raise exceptions.UnknownRefreshToken(client_id)
+
+    def list_(self, user_uuid=None, tenant_uuids=None, **search_params):
+        filter_ = text('true')
+
+        if user_uuid is not None:
+            filter_ = and_(filter_, RefreshToken.user_uuid == user_uuid)
+
         if tenant_uuids is not None:
             if not tenant_uuids:
                 filter_ = and_(filter_, text('false'))
@@ -102,8 +130,18 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
             refresh_tokens = []
             for refresh_token in query.all():
-                session.expunge(refresh_token)
-                refresh_tokens.append(refresh_token)
+                refresh_tokens.append(
+                    {
+                        'uuid': refresh_token.uuid,
+                        'user_uuid': refresh_token.user_uuid,
+                        'tenant_uuid': refresh_token.tenant_uuid,
+                        'client_id': refresh_token.client_id,
+                        'mobile': refresh_token.mobile,
+                        'created_at': refresh_token.created_at,
+                        'user_agent': refresh_token.user_agent,
+                        'remote_addr': refresh_token.remote_addr,
+                    }
+                )
             return refresh_tokens
 
     def _get_existing_refresh_token(self, session, client_id, user_uuid):

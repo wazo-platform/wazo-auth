@@ -4,7 +4,12 @@
 import time
 import logging
 
-from xivo_bus.resources.auth.events import SessionCreatedEvent, SessionDeletedEvent
+from xivo_bus.resources.auth.events import (
+    RefreshTokenCreatedEvent,
+    RefreshTokenDeletedEvent,
+    SessionCreatedEvent,
+    SessionDeletedEvent,
+)
 
 from wazo_auth.token import Token
 from wazo_auth.services.helpers import BaseService
@@ -31,7 +36,19 @@ class TokenService(BaseService):
 
     def delete_refresh_token(self, scoping_tenant_uuid, user_uuid, client_id):
         tenant_uuids = self._get_scoped_tenant_uuids(scoping_tenant_uuid, True)
-        return self._dao.refresh_token.delete(tenant_uuids, user_uuid, client_id)
+        refresh_token = self._dao.refresh_token.get_by_user(
+            tenant_uuids=tenant_uuids, user_uuid=user_uuid, client_id=client_id,
+        )
+
+        event = RefreshTokenDeletedEvent(
+            client_id=client_id,
+            user_uuid=user_uuid,
+            tenant_uuid=refresh_token['tenant_uuid'],
+            mobile=refresh_token['mobile'],
+        )
+        self._bus_publisher.publish(event)
+
+        self._dao.refresh_token.delete(tenant_uuids, user_uuid, client_id)
 
     def list_refresh_tokens(
         self, scoping_tenant_uuid=None, recurse=False, **search_params
@@ -82,8 +99,13 @@ class TokenService(BaseService):
                 'user_uuid': metadata['uuid'],
                 'user_agent': args['user_agent'],
                 'remote_addr': args['remote_addr'],
+                'mobile': args['mobile'],
             }
             refresh_token = self._dao.refresh_token.create(body)
+            event = RefreshTokenCreatedEvent(
+                tenant_uuid=metadata.get('tenant_uuid'), **body
+            )
+            self._bus_publisher.publish(event)
             token_payload['refresh_token'] = refresh_token
 
         token_uuid, session_uuid = self._dao.token.create(

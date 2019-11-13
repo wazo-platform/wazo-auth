@@ -173,6 +173,7 @@ class RefreshToken(Base):
     user_agent = Column(Text)
     remote_addr = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=text('NOW()'))
+    mobile = Column(Boolean, nullable=False, default=False)
     user = relationship('User', viewonly=True)
 
     @hybrid_property

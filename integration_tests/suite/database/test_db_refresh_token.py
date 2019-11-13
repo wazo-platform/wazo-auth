@@ -4,7 +4,7 @@
 import datetime
 import uuid
 
-from hamcrest import assert_that, contains_inanyorder, empty, equal_to, has_properties
+from hamcrest import assert_that, contains_inanyorder, empty, equal_to, has_entries
 from ..helpers import fixtures, base
 
 ALICE_UUID = str(uuid.uuid4())
@@ -82,12 +82,12 @@ class TestRefreshTokenDAO(base.DAOTestCase):
     @fixtures.db.user(username='bob', tenant_uuid=TENANT_UUID)
     @fixtures.db.refresh_token(user_uuid=ALICE_UUID, client_id='foobar')
     @fixtures.db.refresh_token(user_uuid=ALICE_UUID, created_at=CREATED_AT)
-    @fixtures.db.refresh_token(user_uuid=ALICE_UUID)
+    @fixtures.db.refresh_token(user_uuid=ALICE_UUID, mobile=True)
     def test_list(self, token_1, token_2, token_3, bob_uuid, alice_uuid, tenant):
         all_refresh_tokens = contains_inanyorder(
-            has_properties(uuid=token_1),
-            has_properties(uuid=token_2),
-            has_properties(uuid=token_3),
+            has_entries(uuid=token_1),
+            has_entries(uuid=token_2),
+            has_entries(uuid=token_3),
         )
 
         result = self._refresh_token_dao.list_(user_uuid=ALICE_UUID)
@@ -113,12 +113,15 @@ class TestRefreshTokenDAO(base.DAOTestCase):
         assert_that(result, all_refresh_tokens)
 
         result = self._refresh_token_dao.list_(user_uuid=ALICE_UUID, client_id='foobar')
-        assert_that(result, contains_inanyorder(has_properties(uuid=token_3)))
+        assert_that(result, contains_inanyorder(has_entries(uuid=token_3)))
 
         result = self._refresh_token_dao.list_(
             user_uuid=ALICE_UUID, created_at=CREATED_AT
         )
-        assert_that(result, contains_inanyorder(has_properties(uuid=token_2)))
+        assert_that(result, contains_inanyorder(has_entries(uuid=token_2)))
+
+        result = self._refresh_token_dao.list_(user_uuid=ALICE_UUID, mobile=True,)
+        assert_that(result, contains_inanyorder(has_entries(uuid=token_1)))
 
         result = self._refresh_token_dao.list_(user_uuid=ALICE_UUID, search='foo')
-        assert_that(result, contains_inanyorder(has_properties(uuid=token_3)))
+        assert_that(result, contains_inanyorder(has_entries(uuid=token_3)))

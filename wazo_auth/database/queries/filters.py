@@ -81,6 +81,7 @@ policy_strict_filter = StrictFilter(
 refresh_token_strict_filter = StrictFilter(
     ('client_id', RefreshToken.client_id, None),
     ('created_at', RefreshToken.created_at, None),
+    ('mobile', RefreshToken.mobile, None),
 )
 tenant_strict_filter = StrictFilter(
     ('uuid', Tenant.uuid, str),

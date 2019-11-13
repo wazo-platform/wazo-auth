@@ -49,12 +49,15 @@ class TokenRequestSchema(Schema):
 
 
 class RefreshTokenListSchema(BaseListSchema):
-    sort_columns = ['created_at', 'client_id']
+    sort_columns = ['created_at', 'client_id', 'mobile']
     default_sort_column = 'created_at'
-    searchable_columns = ['created_at', 'client_id']
+    searchable_columns = ['created_at', 'client_id', 'mobile']
 
 
 class RefreshTokenSchema(BaseSchema):
 
     client_id = xfields.String(min=1, max=1024)
     created_at = xfields.DateTime()
+    mobile = xfields.Boolean()
+    user_uuid = xfields.String()
+    tenant_uuid = xfields.String()
