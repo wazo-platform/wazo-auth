@@ -274,6 +274,15 @@ class DuplicatePolicyException(TokenServiceException):
         return 'Policy "{}" already exists'.format(self._name)
 
 
+class DuplicatedRefreshTokenException(Exception):
+    def __init__(self, user_uuid, client_id):
+        self.client_id = client_id
+        self.user_uuid = user_uuid
+        super().__init__(
+            f'Duplicated Refresh Token for user_uuid {user_uuid} and client_id {client_id}',
+        )
+
+
 class DuplicateTemplateException(TokenServiceException):
 
     code = 409
