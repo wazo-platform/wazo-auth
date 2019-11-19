@@ -51,8 +51,8 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     constraint = e.orig.diag.constraint_name
                     if constraint == 'auth_refresh_token_client_id_user_uuid':
                         session.rollback()
-                        return self._get_existing_refresh_token(
-                            session, body['client_id'], body['user_uuid']
+                        raise exceptions.DuplicatedRefreshTokenException(
+                            body['user_uuid'], body['client_id'],
                         )
                 raise
 
@@ -144,7 +144,7 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 )
             return refresh_tokens
 
-    def _get_existing_refresh_token(self, session, client_id, user_uuid):
+    def get_existing_refresh_token(self, client_id, user_uuid):
         filter_ = and_(
             RefreshToken.client_id == client_id, RefreshToken.user_uuid == user_uuid
         )

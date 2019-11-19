@@ -109,6 +109,50 @@ class TestTokens(WazoAuthTestCase):
 
         until.assert_(bus_received_msg, tries=10, interval=0.25)
 
+    @fixtures.http.user(username='foo', password='bar')
+    def test_refresh_token_created_event_not_duplicated(self, user):
+        client_id = 'mytestapp'
+        self._post_token(
+            'foo',
+            'bar',
+            session_type='Mobile',
+            access_type='offline',
+            client_id=client_id,
+        )
+
+        routing_key = 'auth.users.{uuid}.tokens.#'.format(**user)
+        msg_accumulator = self.new_message_accumulator(routing_key)
+
+        # The same same refresh token is returned, not a new one
+        self._post_token(
+            'foo',
+            'bar',
+            session_type='Mobile',
+            access_type='offline',
+            client_id=client_id,
+        )
+
+        # The delete is to avoid waiting an arbitrary amount of time before considering that the
+        # created event was not published
+        self.client.token.delete(user['uuid'], client_id)
+
+        def bus_received_msg():
+            assert_that(
+                msg_accumulator.accumulate(),
+                contains(
+                    has_entries(
+                        name='auth_refresh_token_deleted',
+                        data=has_entries(
+                            client_id=client_id,
+                            user_uuid=user['uuid'],
+                            tenant_uuid=user['tenant_uuid'],
+                        ),
+                    )
+                ),
+            )
+
+        until.assert_(bus_received_msg, tries=10, interval=0.25)
+
     def test_that_only_one_refresh_token_exist_for_each_user_uuid_client_id(self):
         client_id = 'two-refresh-token'
 
