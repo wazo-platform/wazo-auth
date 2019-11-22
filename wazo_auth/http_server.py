@@ -5,6 +5,7 @@ import logging
 import os
 
 from datetime import timedelta
+from functools import partial
 
 from cheroot import wsgi
 from flask import Flask
@@ -34,7 +35,9 @@ class CoreRestApi:
     def __init__(self, global_config, token_service, user_service):
         self.config = global_config['rest_api']
         http_helpers.add_logger(app, logger)
-        app.before_request(http_helpers.log_before_request)
+        app.before_request(
+            partial(http_helpers.log_before_request, hidden_fields=['refresh_token'])
+        )
         app.after_request(http_helpers.log_request)
         app.teardown_appcontext(teardown_appcontext)
         app.secret_key = os.urandom(24)
