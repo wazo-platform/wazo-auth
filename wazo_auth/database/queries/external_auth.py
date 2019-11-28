@@ -42,7 +42,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             external_type = self._find_or_create_type(s, auth_type)
             external_data = ExternalAuthData(data=serialized_data)
             s.add(external_data)
-            s.commit()
+            s.flush()
             user_external_auth = UserExternalAuth(
                 user_uuid=str(user_uuid),
                 external_auth_type_uuid=external_type.uuid,
@@ -50,7 +50,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             )
             s.add(user_external_auth)
             try:
-                s.commit()
+                s.flush()
             except exc.IntegrityError as e:
                 if e.orig.pgcode in (
                     self._UNIQUE_CONSTRAINT_CODE,
@@ -71,7 +71,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             external_data = ExternalAuthData(data=data)
             self._assert_tenant_exists(s, tenant_uuid)
             s.add(external_data)
-            s.commit()
+            s.flush()
             external_auth_config = ExternalAuthConfig(
                 data_uuid=external_data.uuid,
                 tenant_uuid=tenant_uuid,
@@ -79,7 +79,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             )
             s.add(external_auth_config)
             try:
-                s.commit()
+                s.flush()
             except exc.IntegrityError as e:
                 if e.orig.pgcode in (self._UNIQUE_CONSTRAINT_CODE):
                     constraint = e.orig.diag.constraint_name

@@ -22,7 +22,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             s.add(group_policy)
             try:
-                s.commit()
+                s.flush()
             except exc.IntegrityError as e:
                 if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                     # This association already exists.
@@ -41,7 +41,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             s.add(user_group)
             try:
-                s.commit()
+                s.flush()
             except exc.IntegrityError as e:
                 if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                     # This association already exists.
@@ -109,7 +109,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             s.add(group)
             try:
-                s.commit()
+                s.flush()
             except exc.IntegrityError as e:
                 if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                     column = self.constraint_to_column_map.get(
@@ -171,7 +171,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 if not affected_rows:
                     raise exceptions.UnknownGroupException(group_uuid)
 
-                s.commit()
+                s.flush()
             except exc.IntegrityError as e:
                 if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                     column = self.constraint_to_column_map.get(

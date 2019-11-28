@@ -29,7 +29,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             self._associate_acl_templates(s, policy_uuid, [acl_template])
             try:
-                s.commit()
+                s.flush()
             except exc.IntegrityError as e:
                 if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                     raise exceptions.DuplicateTemplateException(acl_template)
@@ -84,7 +84,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             s.add(policy)
             try:
-                s.commit()
+                s.flush()
             except exc.IntegrityError as e:
                 if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                     raise exceptions.DuplicatePolicyException(name)
@@ -189,7 +189,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 raise exceptions.UnknownPolicyException(policy_uuid)
 
             try:
-                s.commit()
+                s.flush()
             except exc.IntegrityError as e:
                 if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                     raise exceptions.DuplicatePolicyException(name)
@@ -225,7 +225,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def _insert_acl_template(self, s, template):
         tpl = ACLTemplate(template=template)
         s.add(tpl)
-        s.commit()
+        s.flush()
         return tpl.id_
 
     def _policy_exists(self, s, policy_uuid, tenant_uuids=None):

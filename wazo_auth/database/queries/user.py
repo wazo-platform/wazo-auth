@@ -34,7 +34,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             s.add(user_policy)
             try:
-                s.commit()
+                s.flush()
             except exc.IntegrityError as e:
                 if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                     # This association already exists.
@@ -171,7 +171,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                         user_uuid=user.uuid, email_uuid=email.uuid, main=True
                     )
                     s.add(user_email)
-                    s.commit()
+                    s.flush()
             except exc.IntegrityError as e:
                 if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                     column = self.constraint_to_column_map.get(
