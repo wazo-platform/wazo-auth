@@ -77,7 +77,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         with self.new_session() as s:
             s.add(tenant)
             try:
-                s.commit()
+                s.flush()
             except exc.IntegrityError as e:
                 if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                     column = self.constraint_to_column_map.get(

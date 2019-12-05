@@ -33,7 +33,7 @@ class AddressDAO(BaseDAO):
         address = Address(**kwargs)
         with self.new_session() as s:
             s.add(address)
-            s.commit()
+            s.flush()
             return address.id_
 
     def update(self, address_id, **kwargs):
