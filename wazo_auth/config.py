@@ -84,7 +84,7 @@ _DEFAULT_CONFIG = {
         },
     },
     'consul': {
-        'scheme': 'https',
+        'scheme': 'http',
         'host': 'localhost',
         'port': 8500,
         'verify': '/usr/share/xivo-certs/server.crt',
