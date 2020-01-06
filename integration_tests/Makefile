@@ -1,19 +1,10 @@
-.PHONY: test-setup test test-image test-prerequisite test-db
-
-test-setup: test-prerequisite test-image egg-info test-db build-oauth2-sync
+test-setup: test-image egg-info test-db build-oauth2-sync
 
 build-oauth2-sync:
 	docker build --no-cache -t oauth2-synchronization-service -f assets/external_auth/oauth2_synchronization_service/Dockerfile assets/external_auth/oauth2_synchronization_service
 
 test-db:
 	docker build -f ../contribs/docker/Dockerfile-db -t wazopbx/wazo-auth-db ..
-
-test-prerequisite:
-	docker pull munkyboy/fakesmtp
-	docker pull nickstenning/slapd
-	docker pull rabbitmq
-	docker pull wazopbx/postgres-test
-	docker pull wazopbx/wait
 
 test-image:
 	docker build --no-cache -t wazopbx/wazo-auth ..
@@ -30,3 +21,5 @@ mount:
 
 umount:
 	for f in $$(ls assets/*/docker-compose.yml); do echo "updating $$f" && sed -i 's/- "$${LOCAL_GIT_REPOS}/# - "$${LOCAL_GIT_REPOS}/' $$f; done
+
+.PHONY: test-setup test test-image test-prerequisite test-db
