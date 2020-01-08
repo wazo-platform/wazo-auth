@@ -22,4 +22,4 @@ mount:
 umount:
 	for f in $$(ls assets/*/docker-compose.yml); do echo "updating $$f" && sed -i 's/- "$${LOCAL_GIT_REPOS}/# - "$${LOCAL_GIT_REPOS}/' $$f; done
 
-.PHONY: test-setup test test-image test-prerequisite test-db
+.PHONY: test-setup test test-image test-db
