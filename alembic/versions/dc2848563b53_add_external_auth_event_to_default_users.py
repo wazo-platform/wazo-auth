@@ -14,9 +14,7 @@ revision = 'dc2848563b53'
 down_revision = '4d03433e57fd'
 
 POLICY_NAME = 'wazo_default_user_policy'
-ACL_TEMPLATES = [
-    'events.auth.users.{{ user_uuid }}.external.#'
-]
+ACL_TEMPLATES = ['events.auth.users.{{ user_uuid }}.external.#']
 
 policy_table = sa.sql.table(
     'auth_policy', sa.Column('uuid', sa.String(38)), sa.Column('name', sa.String(80))
