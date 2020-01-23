@@ -45,7 +45,7 @@ class Controller:
             config['consul'],
             config['service_discovery'],
             config['amqp'],
-            partial(self_check, config['rest_api']['port']),
+            partial(self_check, config),
         ]
 
         template_formatter = services.helpers.TemplateFormatter(config)
