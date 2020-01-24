@@ -107,8 +107,8 @@ confd:
   verify_certificate: /usr/share/xivo-certs/server.crt
 
 # Database connection informations.
-db_uri: postgresql://asterisk:proformatique@localhost/asterisk
-confd_db_uri: postgresql://asterisk:proformatique@localhost/asterisk
+db_uri: postgresql://asterisk:proformatique@localhost/asterisk?application_name=wazo-auth
+confd_db_uri: postgresql://asterisk:proformatique@localhost/asterisk?application_name=wazo-auth
 
 # Service discovery configuration. all time intervals are in seconds
 service_discovery:
