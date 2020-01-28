@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -49,8 +49,8 @@ class LazyTemplateRenderer:
 
 
 class LocalTokenRenewer:
-    def __init__(self, backend, token_service, user_service):
-        self._username = 'wazo-auth'
+    def __init__(self, backend, token_service, user_service, username='wazo-auth'):
+        self._username = username
         self._new_token = partial(token_service.new_token, backend.obj, self._username)
         self._remove_token = token_service.remove_token
         self._user_service = user_service
