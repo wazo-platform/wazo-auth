@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -7,8 +7,6 @@ import threading
 
 from jinja2 import BaseLoader, Environment, TemplateNotFound
 from anytree import Node, PreOrderIter
-
-from xivo.consul_helpers import address_from_config
 
 logger = logging.getLogger(__name__)
 
@@ -64,10 +62,6 @@ class TemplateLoader(BaseLoader):
 class TemplateFormatter:
     def __init__(self, config):
         self.environment = Environment(loader=TemplateLoader(config))
-        self.environment.globals['port'] = config['service_discovery']['advertise_port']
-        self.environment.globals['hostname'] = address_from_config(
-            config['service_discovery']
-        )
 
     def format_confirmation_email(self, context):
         template = self.environment.get_template('email_confirmation')

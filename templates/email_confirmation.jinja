@@ -2,5 +2,5 @@ You've registered a new account on wazo-auth for {{ username }}
 
 Click on the following link to confirm this email address:
 
-https://{{ hostname }}:{{ port }}/0.1/emails/{{ email_uuid }}/confirm?token={{ token }}
+https://{{ hostname }}{% if port %}:{{ port }}{% endif %}{% if prefix %}{{ prefix }}{% endif %}/0.1/emails/{{ email_uuid }}/confirm?token={{ token }}
 

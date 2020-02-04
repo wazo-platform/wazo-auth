@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
@@ -6,6 +6,7 @@ import marshmallow
 
 from wazo_auth import exceptions, http
 from wazo_auth.schemas import TenantSchema
+from wazo_auth.plugin_helpers.flask import extract_connection_params
 from .schemas import UserRegisterPostSchema
 
 
@@ -32,8 +33,9 @@ class Register(http.ErrorCatchingResource):
             for e in result['emails']:
                 if e['address'] != address:
                     continue
+                connection_params = extract_connection_params(request.headers)
                 self.email_service.send_confirmation_email(
-                    result['username'], e['uuid'], address
+                    result['username'], e['uuid'], address, connection_params,
                 )
         except Exception:
             self.user_service.delete_user(tenant['uuid'], result['uuid'])
