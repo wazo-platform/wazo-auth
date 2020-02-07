@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -8,6 +8,8 @@ import marshmallow
 
 from xivo.auth_verifier import extract_token_id_from_query_or_header, Unauthorized
 from wazo_auth import http
+from wazo_auth.plugin_helpers.flask import extract_connection_params
+
 from .schemas import PasswordResetPostParameters, PasswordResetQueryParameters
 from .exceptions import PasswordResetException
 
@@ -39,8 +41,9 @@ class PasswordReset(http.ErrorCatchingResource):
             logger.debug('user: %s', user)
             email_address = args['email_address'] or self._extract_email(user)
             if email_address:
+                connection_params = extract_connection_params(request.headers)
                 self.email_service.send_reset_email(
-                    user['uuid'], user['username'], email_address
+                    user['uuid'], user['username'], email_address, connection_params,
                 )
             else:
                 logger.debug('No confirmed email %s', args)

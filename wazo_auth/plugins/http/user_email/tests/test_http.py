@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from uuid import UUID
@@ -95,7 +95,12 @@ class TestUserEmailConfirmResource(HTTPAppTestCase):
         url = self.url.format(USER_UUID, EMAIL_UUID)
         result = self.app.get(url)
 
-        expected_args = USERNAME, str(EMAIL_UUID), EMAIL_ADDRESS
+        expected_args = (
+            USERNAME,
+            str(EMAIL_UUID),
+            EMAIL_ADDRESS,
+            {'hostname': 'localhost'},
+        )
         self.email_service.send_confirmation_email.assert_called_once_with(
             *expected_args
         )

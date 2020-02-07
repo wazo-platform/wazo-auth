@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -7,6 +7,7 @@ from flask import request
 import marshmallow
 
 from wazo_auth import exceptions, http
+from wazo_auth.plugin_helpers.flask import extract_connection_params
 
 from . import schemas
 from .exceptions import EmailAlreadyConfirmedException
@@ -64,7 +65,10 @@ class UserEmailConfirm(http.AuthResource):
         email = self._get_email_details(user, email_uuid)
 
         username, uuid, address = user['username'], str(email_uuid), email['address']
-        self.email_service.send_confirmation_email(username, uuid, address)
+        connection_params = extract_connection_params(request.headers)
+        self.email_service.send_confirmation_email(
+            username, uuid, address, connection_params
+        )
 
         return '', 204
 
