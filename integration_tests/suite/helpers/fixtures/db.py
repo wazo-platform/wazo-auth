@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -84,10 +84,10 @@ def token(**token_args):
                 result = decorated(self, token, *args, **kwargs)
             finally:
                 self._token_dao.delete(token_uuid)
-                with self._session_dao.new_session() as s:
-                    s.query(models.Session).filter(
-                        models.Session.uuid == session_uuid
-                    ).delete()
+                s = self._session_dao.session
+                s.query(models.Session).filter(
+                    models.Session.uuid == session_uuid
+                ).delete()
             return result
 
         return wrapper

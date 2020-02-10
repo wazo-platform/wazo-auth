@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
@@ -99,10 +99,10 @@ class TestGroupDAO(base.DAOTestCase):
         name = 'foobar'
 
         assert_that(group_uuid, equal_to(ANY_UUID))
-        with self._group_dao.new_session() as s:
-            filter_ = models.Group.uuid == group_uuid
-            group = s.query(models.Group).filter(filter_).first()
-            assert_that(group, has_properties(name=name, tenant_uuid=tenant_uuid))
+        s = self.session
+        filter_ = models.Group.uuid == group_uuid
+        group = s.query(models.Group).filter(filter_).first()
+        assert_that(group, has_properties(name=name, tenant_uuid=tenant_uuid))
 
         assert_that(
             calling(self._group_dao.create).with_args(name, tenant_uuid),

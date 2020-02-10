@@ -146,11 +146,11 @@ class TestExternalAuthDAO(base.DAOTestCase):
     @fixtures.db.user()
     def test_enable_all(self, user_uuid):
         def assert_enabled(enabled_types):
-            with self._external_auth_dao.new_session() as s:
-                query = s.query(
-                    models.ExternalAuthType.name, models.ExternalAuthType.enabled
-                )
-                result = {r.name: r.enabled for r in query.all()}
+            s = self.session
+            query = s.query(
+                models.ExternalAuthType.name, models.ExternalAuthType.enabled
+            )
+            result = {r.name: r.enabled for r in query.all()}
             expected = has_entries({t: True for t in enabled_types})
             assert_that(result, expected)
             nb_enabled = len([t for t, enabled in result.items() if enabled])

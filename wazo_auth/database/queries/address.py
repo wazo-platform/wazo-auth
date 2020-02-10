@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_auth import exceptions
@@ -9,20 +9,20 @@ from ..models import Address
 
 class AddressDAO(BaseDAO):
     def delete(self, address_id):
-        with self.new_session() as s:
-            s.query(Address).filter(Address.id_ == address_id).delete()
+        s = self.session
+        s.query(Address).filter(Address.id_ == address_id).delete()
 
     def get(self, address_id):
-        with self.new_session() as s:
-            for row in s.query(Address).filter(Address.id_ == address_id).all():
-                return dict(
-                    line_1=row.line_1,
-                    line_2=row.line_2,
-                    city=row.city,
-                    state=row.state,
-                    country=row.country,
-                    zip_code=row.zip_code,
-                )
+        s = self.session
+        for row in s.query(Address).filter(Address.id_ == address_id).all():
+            return dict(
+                line_1=row.line_1,
+                line_2=row.line_2,
+                city=row.city,
+                state=row.state,
+                country=row.country,
+                zip_code=row.zip_code,
+            )
 
         raise exceptions.UnknownAddressException(address_id)
 
@@ -31,18 +31,18 @@ class AddressDAO(BaseDAO):
             return None
 
         address = Address(**kwargs)
-        with self.new_session() as s:
-            s.add(address)
-            s.flush()
-            return address.id_
+        s = self.session
+        s.add(address)
+        s.flush()
+        return address.id_
 
     def update(self, address_id, **kwargs):
         if self._address_is_empty(**kwargs):
             self.delete(address_id)
             return None
 
-        with self.new_session() as s:
-            s.query(Address).filter(Address.id_ == address_id).update(kwargs)
+        s = self.session
+        s.query(Address).filter(Address.id_ == address_id).update(kwargs)
 
         return address_id
 

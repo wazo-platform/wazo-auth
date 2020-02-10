@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import argparse
@@ -12,7 +12,7 @@ from xivo.config_helper import parse_config_file, read_config_file_hierarchy
 
 from wazo_auth import services
 from wazo_auth.database import queries
-from wazo_auth.database.helpers import init_db
+from wazo_auth.database.helpers import init_db, Session
 
 from pwd import getpwnam
 
@@ -120,6 +120,10 @@ def create_initial_user(db_uri, username, password, purpose, policy_name):
             )
             policy_uuid = policy_service.list(name=policy_name)[0]['uuid']
             user_service.add_policy(user['uuid'], policy_uuid)
+    try:
+        Session.commit()
+    finally:
+        Session.close()
 
 
 def complete():

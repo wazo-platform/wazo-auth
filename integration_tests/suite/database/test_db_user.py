@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -124,19 +124,19 @@ class TestUserDAO(base.DAOTestCase):
     @fixtures.db.user()
     def test_user_policy_association(self, user_uuid, policy_uuid):
         self._user_dao.add_policy(user_uuid, policy_uuid)
-        with self._user_dao.new_session() as s:
-            count = (
-                s.query(func.count(models.UserPolicy.user_uuid))
-                .filter(
-                    and_(
-                        models.UserPolicy.user_uuid == user_uuid,
-                        models.UserPolicy.policy_uuid == policy_uuid,
-                    )
+        s = self.session
+        count = (
+            s.query(func.count(models.UserPolicy.user_uuid))
+            .filter(
+                and_(
+                    models.UserPolicy.user_uuid == user_uuid,
+                    models.UserPolicy.policy_uuid == policy_uuid,
                 )
-                .scalar()
             )
+            .scalar()
+        )
 
-            assert_that(count, equal_to(1))
+        assert_that(count, equal_to(1))
 
         assert_that(
             calling(self._user_dao.add_policy).with_args(user_uuid, policy_uuid),
@@ -592,5 +592,5 @@ class TestUserDAO(base.DAOTestCase):
 
     def _email_exists(self, address):
         filter_ = models.Email.address == address
-        with self._user_dao.new_session() as s:
-            return s.query(func.count(models.Email.uuid)).filter(filter_).scalar() > 0
+        s = self.session
+        return s.query(func.count(models.Email.uuid)).filter(filter_).scalar() > 0

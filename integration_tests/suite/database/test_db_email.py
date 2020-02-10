@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -26,8 +26,8 @@ class TestEmailDAO(base.DAOTestCase):
         assert_that(self.is_email_confirmed(email_uuid), equal_to(True))
 
     def is_email_confirmed(self, email_uuid):
-        with self._email_dao.new_session() as s:
-            emails = s.query(models.Email).filter(models.Email.uuid == str(email_uuid))
-            for email in emails.all():
-                return email.confirmed
+        s = self.session
+        emails = s.query(models.Email).filter(models.Email.uuid == str(email_uuid))
+        for email in emails.all():
+            return email.confirmed
         return False
