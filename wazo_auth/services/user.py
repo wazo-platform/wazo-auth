@@ -167,7 +167,7 @@ class PasswordEncrypter:
 
     _salt_len = 64
     _hash_algo = 'sha512'
-    _iterations = 250000
+    _iterations = 100000
 
     def encrypt_password(self, password):
         salt = os.urandom(self._salt_len)
