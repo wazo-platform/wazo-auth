@@ -157,20 +157,20 @@ definitions:
       client_id:
         description: |
           Client ID for the given authentication type.
-          Valid and require only for 'google' and 'microsoft' authentication types.
+          Required only for `google` and `microsoft` authentication types.
         type: string
         example: a-client-id
       client_secret:
         description: |
           Client secret for the given authentication type.
-          Valid and required only for 'google' and 'microsoft' authentication types.
+          Required only for `google` and `microsoft` authentication types.
         type: string
         example: a-client-secret
       ios_apn_certificate:
         description: Public certificate to use for Apple Push Notification Service
         type: string
       ios_apn_private:
-        description: Private certificate to use for Apple Push Notification Service
+        description: Private key to use for Apple Push Notification Service
         type: boolean
       use_sandbox:
         description: Whether to use sandbox for Apple Push Notification Service
