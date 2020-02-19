@@ -9,9 +9,6 @@ import uuid
 
 from functools import wraps
 
-from wazo_auth import exceptions
-from wazo_auth.database import models
-
 
 A_SALT = os.urandom(64)
 
@@ -29,17 +26,12 @@ def email(**email_args):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
             email_uuid = self._email_dao.create(**email_args)
+            self.session.begin_nested()
             try:
-                result = decorated(self, email_uuid, *args, **kwargs)
+                return decorated(self, email_uuid, *args, **kwargs)
             finally:
-                try:
-                    self._email_dao.delete(email_uuid)
-                except exceptions.UnknownEmailException:
-                    pass
-            return result
-
+                self.session.rollback()
         return wrapper
-
     return decorator
 
 
@@ -48,14 +40,12 @@ def external_auth(*auth_types):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
             self._external_auth_dao.enable_all(auth_types)
+            self.session.begin_nested()
             try:
-                result = decorated(self, auth_types, *args, **kwargs)
+                return decorated(self, auth_types, *args, **kwargs)
             finally:
-                self._external_auth_dao.enable_all([])
-            return result
-
+                self.session.rollback()
         return wrapper
-
     return decorator
 
 
@@ -80,18 +70,12 @@ def token(**token_args):
             token_uuid, session_uuid = self._token_dao.create(token, session)
             token['uuid'] = token_uuid
             token['session_uuid'] = session_uuid
+            self.session.begin_nested()
             try:
-                result = decorated(self, token, *args, **kwargs)
+                return decorated(self, token, *args, **kwargs)
             finally:
-                self._token_dao.delete(token_uuid)
-                s = self._session_dao.session
-                s.query(models.Session).filter(
-                    models.Session.uuid == session_uuid
-                ).delete()
-            return result
-
+                self.session.rollback()
         return wrapper
-
     return decorator
 
 
@@ -103,17 +87,12 @@ def group(**group_args):
         def wrapper(self, *args, **kwargs):
             group_args.setdefault('tenant_uuid', self.top_tenant_uuid)
             group_uuid = self._group_dao.create(**group_args)
+            self.session.begin_nested()
             try:
-                result = decorated(self, group_uuid, *args, **kwargs)
+                return decorated(self, group_uuid, *args, **kwargs)
             finally:
-                try:
-                    self._group_dao.delete(group_uuid)
-                except exceptions.UnknownGroupException:
-                    pass
-            return result
-
+                self.session.rollback()
         return wrapper
-
     return decorator
 
 
@@ -127,17 +106,12 @@ def policy(**policy_args):
         def wrapper(self, *args, **kwargs):
             policy_args.setdefault('tenant_uuid', self.top_tenant_uuid)
             policy_uuid = self._policy_dao.create(**policy_args)
+            self.session.begin_nested()
             try:
-                result = decorated(self, policy_uuid, *args, **kwargs)
+                return decorated(self, policy_uuid, *args, **kwargs)
             finally:
-                try:
-                    self._policy_dao.delete(policy_uuid, [policy_args['tenant_uuid']])
-                except exceptions.UnknownPolicyException:
-                    pass
-            return result
-
+                self.session.rollback()
         return wrapper
-
     return decorator
 
 
@@ -152,17 +126,12 @@ def tenant(**tenant_args):
             tenant_args.setdefault('parent_uuid', self.top_tenant_uuid)
 
             tenant_uuid = self._tenant_dao.create(**tenant_args)
+            self.session.begin_nested()
             try:
-                result = decorated(self, tenant_uuid, *args, **kwargs)
+                return decorated(self, tenant_uuid, *args, **kwargs)
             finally:
-                try:
-                    self._tenant_dao.delete(tenant_uuid)
-                except exceptions.UnknownTenantException:
-                    pass
-            return result
-
+                self.session.rollback()
         return wrapper
-
     return decorator
 
 
@@ -181,17 +150,12 @@ def user(**user_args):
         def wrapper(self, *args, **kwargs):
             user_args.setdefault('tenant_uuid', self.top_tenant_uuid)
             user_uuid = self._user_dao.create(**user_args)['uuid']
+            self.session.begin_nested()
             try:
-                result = decorated(self, user_uuid, *args, **kwargs)
+                return decorated(self, user_uuid, *args, **kwargs)
             finally:
-                try:
-                    self._user_dao.delete(user_uuid)
-                except exceptions.UnknownUserException:
-                    pass
-            return result
-
+                self.session.rollback()
         return wrapper
-
     return decorator
 
 
@@ -200,13 +164,10 @@ def refresh_token(**refresh_token_args):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
             refresh_token = self._refresh_token_dao.create(refresh_token_args)
+            self.session.begin_nested()
             try:
-                result = decorated(self, refresh_token, *args, **kwargs)
+                return decorated(self, refresh_token, *args, **kwargs)
             finally:
-                # TODO(pcm): remove the refresh token when delete gets implemented
-                pass
-            return result
-
+                self.session.rollback()
         return wrapper
-
     return decorator
