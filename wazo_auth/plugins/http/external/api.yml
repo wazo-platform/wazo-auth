@@ -175,6 +175,9 @@ definitions:
       use_sandbox:
         description: Whether to use sandbox for Apple Push Notification Service
         type: boolean
+      fcm_api_key:
+        description: The API key to use for Firebase Cloud Messaging
+        type: string
 parameters:
   auth_type:
     name: auth_type
