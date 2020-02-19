@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -26,7 +26,7 @@ class TestExternalAuthMobile(base.WazoAuthTestCase):
         'fcm_api_key': 'fcm_api_key',
         'fcm_sender_id': 'fcm_sender_id',
         'ios_apn_certificate': 'ios_apn_private',
-        'is_sandbox': True,
+        'use_sandbox': True,
     }
 
     def tearDown(self):
