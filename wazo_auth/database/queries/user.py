@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, text
@@ -32,13 +32,14 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def add_policy(self, user_uuid, policy_uuid):
         user_policy = UserPolicy(user_uuid=user_uuid, policy_uuid=policy_uuid)
         s = self.session
+        s.begin_nested()
         s.add(user_policy)
         try:
-            s.flush()
+            s.commit()
         except exc.IntegrityError as e:
+            s.rollback()
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 # This association already exists.
-                s.rollback()
                 return
             if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
                 constraint = e.orig.diag.constraint_name
@@ -174,9 +175,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 s.flush()
         except exc.IntegrityError as e:
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                column = self.constraint_to_column_map.get(
-                    e.orig.diag.constraint_name
-                )
+                column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
                 value = locals().get(column)
                 if column:
                     raise exceptions.ConflictException('users', column, value)

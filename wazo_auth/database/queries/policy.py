@@ -27,10 +27,12 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def associate_policy_template(self, policy_uuid, acl_template):
         s = self.session
+        s.begin_nested()
         self._associate_acl_templates(s, policy_uuid, [acl_template])
         try:
-            s.flush()
+            s.commit()
         except exc.IntegrityError as e:
+            s.rollback()
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 raise exceptions.DuplicateTemplateException(acl_template)
             if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
@@ -98,9 +100,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
 
         s = self.session
-        nb_deleted = (
-            s.query(Policy).filter(filter_).delete(synchronize_session=False)
-        )
+        nb_deleted = s.query(Policy).filter(filter_).delete(synchronize_session=False)
 
         if not nb_deleted:
             raise exceptions.UnknownPolicyException(policy_uuid)
@@ -124,9 +124,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 Policy.name,
                 Policy.description,
                 Policy.tenant_uuid,
-                func.array_agg(distinct(ACLTemplate.template)).label(
-                    'acl_templates'
-                ),
+                func.array_agg(distinct(ACLTemplate.template)).label('acl_templates'),
             )
             .outerjoin(ACLTemplatePolicy)
             .outerjoin(ACLTemplate)
@@ -181,9 +179,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         body = {'name': name, 'description': description}
         affected_rows = (
-            s.query(Policy)
-            .filter(filter_)
-            .update(body, synchronize_session='fetch')
+            s.query(Policy).filter(filter_).update(body, synchronize_session='fetch')
         )
         if not affected_rows:
             raise exceptions.UnknownPolicyException(policy_uuid)

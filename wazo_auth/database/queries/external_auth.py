@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -48,10 +48,12 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             external_auth_type_uuid=external_type.uuid,
             external_auth_data_uuid=external_data.uuid,
         )
+        s.begin_nested()
         s.add(user_external_auth)
         try:
-            s.flush()
+            s.commit()
         except exc.IntegrityError as e:
+            s.rollback()
             if e.orig.pgcode in (
                 self._UNIQUE_CONSTRAINT_CODE,
                 self._FKEY_CONSTRAINT_CODE,
@@ -77,10 +79,12 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             tenant_uuid=tenant_uuid,
             type_uuid=external_type.uuid,
         )
+        s.begin_nested()
         s.add(external_auth_config)
         try:
-            s.flush()
+            s.commit()
         except exc.IntegrityError as e:
+            s.rollback()
             if e.orig.pgcode in (self._UNIQUE_CONSTRAINT_CODE):
                 constraint = e.orig.diag.constraint_name
                 if constraint == 'auth_external_auth_config_pkey':
@@ -95,7 +99,6 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             UserExternalAuth.user_uuid == str(user_uuid),
             UserExternalAuth.external_auth_type_uuid == type_.uuid,
         )
-
         nb_deleted = s.query(UserExternalAuth).filter(filter_).delete()
         if nb_deleted:
             return
@@ -193,9 +196,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         s = self.session
         query = s.query(ExternalAuthType).filter(filter_)
         query = self._paginator.update_query(query, **kwargs)
-        result = [
-            {'type': r.name, 'data': {}, 'enabled': False} for r in query.all()
-        ]
+        result = [{'type': r.name, 'data': {}, 'enabled': False} for r in query.all()]
 
         filter_ = and_(filter_, UserExternalAuth.user_uuid == str(user_uuid))
         query = (

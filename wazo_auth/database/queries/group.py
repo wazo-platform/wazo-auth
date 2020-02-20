@@ -20,13 +20,14 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             policy_uuid=str(policy_uuid), group_uuid=str(group_uuid)
         )
         s = self.session
+        s.begin_nested()
         s.add(group_policy)
         try:
-            s.flush()
+            s.commit()
         except exc.IntegrityError as e:
+            s.rollback()
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 # This association already exists.
-                s.rollback()
                 return
             if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
                 constraint = e.orig.diag.constraint_name
@@ -39,13 +40,14 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def add_user(self, group_uuid, user_uuid):
         user_group = UserGroup(user_uuid=str(user_uuid), group_uuid=str(group_uuid))
         s = self.session
+        s.begin_nested()
         s.add(user_group)
         try:
-            s.flush()
+            s.commit()
         except exc.IntegrityError as e:
+            s.rollback()
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 # This association already exists.
-                s.rollback()
                 return
             if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
                 constraint = e.orig.diag.constraint_name
@@ -112,9 +114,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             s.flush()
         except exc.IntegrityError as e:
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                column = self.constraint_to_column_map.get(
-                    e.orig.diag.constraint_name
-                )
+                column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
                 value = locals().get(column)
                 if column:
                     raise exceptions.ConflictException('groups', column, value)
@@ -130,9 +130,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             filter_ = and_(filter_, Group.tenant_uuid.in_(tenant_uuids))
 
         s = self.session
-        nb_deleted = (
-            s.query(Group).filter(filter_).delete(synchronize_session=False)
-        )
+        nb_deleted = s.query(Group).filter(filter_).delete(synchronize_session=False)
 
         if not nb_deleted:
             raise exceptions.UnknownGroupException(uuid)
@@ -155,11 +153,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         query = self._paginator.update_query(query, **kwargs)
 
         return [
-            {
-                'uuid': group.uuid,
-                'name': group.name,
-                'tenant_uuid': group.tenant_uuid,
-            }
+            {'uuid': group.uuid, 'name': group.name, 'tenant_uuid': group.tenant_uuid,}
             for group in query.all()
         ]
 
@@ -174,9 +168,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             s.flush()
         except exc.IntegrityError as e:
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                column = self.constraint_to_column_map.get(
-                    e.orig.diag.constraint_name
-                )
+                column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
                 value = body.get(column)
                 if column:
                     raise exceptions.ConflictException('groups', column, value)
