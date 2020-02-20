@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -95,9 +95,10 @@ class TestExternalAuthDAO(base.DAOTestCase):
             ),
         )
 
+    @fixtures.db.external_auth('foobarcrm')
     @fixtures.db.user()
     @fixtures.db.user()
-    def test_delete(self, user_1_uuid, user_2_uuid):
+    def test_delete(self, user_1_uuid, user_2_uuid, _):
         assert_that(
             calling(self._external_auth_dao.delete).with_args(
                 self.unknown_uuid, self.auth_type
@@ -172,9 +173,10 @@ class TestExternalAuthDAO(base.DAOTestCase):
         self._external_auth_dao.enable_all(auth_types)
         assert_enabled(auth_types)
 
+    @fixtures.db.external_auth('foobarcrm')
     @fixtures.db.user()
     @fixtures.db.user()
-    def test_get(self, user_1_uuid, user_2_uuid):
+    def test_get(self, user_1_uuid, user_2_uuid, _):
         assert_that(
             calling(self._external_auth_dao.get).with_args(
                 self.unknown_uuid, self.auth_type
@@ -263,8 +265,9 @@ class TestExternalAuthDAO(base.DAOTestCase):
         expected = [{'type': 'one', 'data': data_one, 'enabled': True}]
         assert_that(result, contains(*expected))
 
+    @fixtures.db.external_auth('foobarcrm')
     @fixtures.db.user()
-    def test_update(self, user_uuid):
+    def test_update(self, user_uuid, _):
         new_data = {'foo': 'bar'}
 
         assert_that(
