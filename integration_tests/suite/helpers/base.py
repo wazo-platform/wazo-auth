@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -97,6 +97,11 @@ class DAOTestCase(unittest.TestCase):
         self._session_dao = session.SessionDAO()
 
         self.top_tenant_uuid = self._tenant_dao.find_top_tenant()
+
+        self.session.begin_nested()
+
+    def tearDown(self):
+        self.session.rollback()
 
     @property
     def session(self):

@@ -226,41 +226,36 @@ class TestUserDAO(base.DAOTestCase):
             purpose='user',
         )['uuid']
 
-        try:
-            assert_that(user_uuid, equal_to(ANY_UUID))
-            result = self._user_dao.list_(uuid=user_uuid)
-            assert_that(
-                result,
-                contains(
-                    has_entries(
-                        username=username,
-                        emails=contains(
-                            has_entries(
-                                address=email_address, confirmed=False, main=True
-                            )
-                        ),
-                    )
-                ),
-            )
-            assert_that(
-                calling(self._user_dao.create).with_args(
-                    'foo',
-                    uuid=user_uuid,
-                    email_address='foo@bar.baz',
-                    tenant_uuid=self.top_tenant_uuid,
-                    hash_='',
-                    salt=b'',
-                    purpose='user',
-                ),
-                raises(
-                    exceptions.ConflictException,
-                    has_properties(
-                        status_code=409, resource='users', details=has_entries(uuid=ANY)
+        assert_that(user_uuid, equal_to(ANY_UUID))
+        result = self._user_dao.list_(uuid=user_uuid)
+        assert_that(
+            result,
+            contains(
+                has_entries(
+                    username=username,
+                    emails=contains(
+                        has_entries(address=email_address, confirmed=False, main=True)
                     ),
+                )
+            ),
+        )
+        assert_that(
+            calling(self._user_dao.create).with_args(
+                'foo',
+                uuid=user_uuid,
+                email_address='foo@bar.baz',
+                tenant_uuid=self.top_tenant_uuid,
+                hash_='',
+                salt=b'',
+                purpose='user',
+            ),
+            raises(
+                exceptions.ConflictException,
+                has_properties(
+                    status_code=409, resource='users', details=has_entries(uuid=ANY)
                 ),
-            )
-        finally:
-            self._user_dao.delete(user_uuid)
+            ),
+        )
 
     def test_user_creation_email_confirmed(self):
         username = 'foobar'
