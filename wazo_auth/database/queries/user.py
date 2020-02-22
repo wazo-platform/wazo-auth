@@ -296,24 +296,24 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         emails_as_dict = self._emails_to_dict(emails)
         updated_emails = self._merge_existing_emails(emails_as_dict, existing_addresses)
 
-        self._delete_all_emails(self.session, user_uuid)
+        self._delete_all_emails(user_uuid)
 
         for email in updated_emails.values():
-            self._add_user_email(self.session, user_uuid, email)
+            self._add_user_email(user_uuid, email)
 
         return emails
 
-    def _add_user_email(self, s, user_uuid, args):
+    def _add_user_email(self, user_uuid, args):
         args.setdefault('confirmed', False)
         email = Email(address=args['address'])
         email.confirmed = args['confirmed']
         uuid = args.get('uuid')
         if uuid:
             email.uuid = uuid
-        s.add(email)
+        self.session.add(email)
 
         try:
-            s.flush()
+            self.session.flush()
         except exc.IntegrityError as e:
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
@@ -322,17 +322,19 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     raise exceptions.ConflictException('users', column, value)
             raise
 
-        s.add(UserEmail(email_uuid=email.uuid, user_uuid=user_uuid, main=args['main']))
-        s.flush()
+        self.session.add(
+            UserEmail(email_uuid=email.uuid, user_uuid=user_uuid, main=args['main'])
+        )
+        self.session.flush()
         args['uuid'] = email.uuid
 
-    def _delete_all_emails(self, s, user_uuid):
+    def _delete_all_emails(self, user_uuid):
         filter_ = UserEmail.user_uuid == str(user_uuid)
 
-        query = s.query(UserEmail.email_uuid).filter(filter_)
+        query = self.session.query(UserEmail.email_uuid).filter(filter_)
         email_uuids = [row.email_uuid for row in query.all()]
         if email_uuids:
-            s.query(Email).filter(Email.uuid.in_(email_uuids)).delete(
+            self.session.query(Email).filter(Email.uuid.in_(email_uuids)).delete(
                 synchronize_session=False
             )
 

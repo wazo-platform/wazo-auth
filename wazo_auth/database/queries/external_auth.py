@@ -37,7 +37,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def create(self, user_uuid, auth_type, data):
         serialized_data = json.dumps(data)
-        external_type = self._find_or_create_type(self.session, auth_type)
+        external_type = self._find_or_create_type(auth_type)
         external_data = ExternalAuthData(data=serialized_data)
         self.session.add(external_data)
         self.session.flush()
@@ -66,9 +66,9 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def create_config(self, auth_type, data, tenant_uuid):
         data = json.dumps(data)
-        external_type = self._find_or_create_type(self.session, auth_type)
+        external_type = self._find_or_create_type(auth_type)
         external_data = ExternalAuthData(data=data)
-        self._assert_tenant_exists(self.session, tenant_uuid)
+        self._assert_tenant_exists(tenant_uuid)
         self.session.add(external_data)
         self.session.flush()
         external_auth_config = ExternalAuthConfig(
@@ -90,7 +90,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return data
 
     def delete(self, user_uuid, auth_type):
-        type_ = self._find_type(self.session, auth_type)
+        type_ = self._find_type(auth_type)
         filter_ = and_(
             UserExternalAuth.user_uuid == str(user_uuid),
             UserExternalAuth.external_auth_type_uuid == type_.uuid,
@@ -99,11 +99,11 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if nb_deleted:
             return
 
-        self._assert_user_exists(self.session, user_uuid)
+        self._assert_user_exists(user_uuid)
         raise exceptions.UnknownExternalAuthException(auth_type)
 
     def delete_config(self, auth_type, tenant_uuid):
-        type_ = self._find_type(self.session, auth_type)
+        type_ = self._find_type(auth_type)
         filter_ = and_(
             ExternalAuthConfig.type_uuid == type_.uuid,
             ExternalAuthConfig.tenant_uuid == tenant_uuid,
@@ -153,13 +153,13 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if data:
             return json.loads(data.data)
 
-        self._assert_type_exists(self.session, auth_type)
-        self._assert_user_exists(self.session, user_uuid)
+        self._assert_type_exists(auth_type)
+        self._assert_user_exists(user_uuid)
         raise exceptions.UnknownExternalAuthException(auth_type)
 
     def get_config(self, auth_type, tenant_uuid):
         try:
-            external_auth_type = self._find_type(self.session, auth_type)
+            external_auth_type = self._find_type(auth_type)
         except exceptions.UnknownExternalAuthTypeException:
             raise exceptions.ExternalAuthConfigNotFound(auth_type)
 
@@ -215,29 +215,34 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         self.delete_config(auth_type, tenant_uuid)
         return self.create_config(auth_type, data, tenant_uuid)
 
-    def _assert_tenant_exists(self, s, tenant_uuid):
-        if s.query(Tenant).filter(Tenant.uuid == str(tenant_uuid)).count() == 0:
+    def _assert_tenant_exists(self, tenant_uuid):
+        if (
+            self.session.query(Tenant).filter(Tenant.uuid == str(tenant_uuid)).count()
+            == 0
+        ):
             raise exceptions.TenantParamException(tenant_uuid)
 
-    def _assert_type_exists(self, s, auth_type):
-        self._find_type(s, auth_type)
+    def _assert_type_exists(self, auth_type):
+        self._find_type(auth_type)
 
-    def _assert_user_exists(self, s, user_uuid):
-        if s.query(User).filter(User.uuid == str(user_uuid)).count() == 0:
+    def _assert_user_exists(self, user_uuid):
+        if self.session.query(User).filter(User.uuid == str(user_uuid)).count() == 0:
             raise exceptions.UnknownUserException(user_uuid)
 
-    def _find_type(self, s, auth_type):
+    def _find_type(self, auth_type):
         type_ = (
-            s.query(ExternalAuthType).filter(ExternalAuthType.name == auth_type).first()
+            self.session.query(ExternalAuthType)
+            .filter(ExternalAuthType.name == auth_type)
+            .first()
         )
         if type_:
             return type_
         raise exceptions.UnknownExternalAuthTypeException(auth_type)
 
-    def _find_or_create_type(self, s, auth_type):
+    def _find_or_create_type(self, auth_type):
         try:
-            type_ = self._find_type(s, auth_type)
+            type_ = self._find_type(auth_type)
         except exceptions.UnknownExternalAuthTypeException:
             type_ = ExternalAuthType(name=auth_type)
-            s.add(type_)
+            self.session.add(type_)
         return type_

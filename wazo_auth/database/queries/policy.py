@@ -27,7 +27,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def associate_policy_template(self, policy_uuid, acl_template):
         self.session.begin_nested()
-        self._associate_acl_templates(self.session, policy_uuid, [acl_template])
+        self._associate_acl_templates(policy_uuid, [acl_template])
         try:
             self.session.commit()
         except exc.IntegrityError as e:
@@ -89,7 +89,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 raise exceptions.DuplicatePolicyException(name)
             raise
-        self._associate_acl_templates(self.session, policy.uuid, acl_templates)
+        self._associate_acl_templates(policy.uuid, acl_templates)
         return policy.uuid
 
     def delete(self, policy_uuid, tenant_uuids):
@@ -105,7 +105,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             raise exceptions.UnknownPolicyException(policy_uuid)
 
     def exists(self, uuid, tenant_uuids=None):
-        return self._policy_exists(self.session, uuid, tenant_uuids)
+        return self._policy_exists(uuid, tenant_uuids)
 
     def get(self, tenant_uuids=None, **kwargs):
         strict_filter = self.new_strict_filter(**kwargs)
@@ -188,40 +188,44 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 raise exceptions.DuplicatePolicyException(name)
             raise
 
-        self._dissociate_all_acl_templates(self.session, policy_uuid)
-        self._associate_acl_templates(self.session, policy_uuid, acl_templates)
+        self._dissociate_all_acl_templates(policy_uuid)
+        self._associate_acl_templates(policy_uuid, acl_templates)
 
-    def _associate_acl_templates(self, session, policy_uuid, acl_templates):
-        ids = self._create_or_find_acl_templates(session, acl_templates)
+    def _associate_acl_templates(self, policy_uuid, acl_templates):
+        ids = self._create_or_find_acl_templates(acl_templates)
         template_policies = [
             ACLTemplatePolicy(policy_uuid=policy_uuid, template_id=id_) for id_ in ids
         ]
-        session.add_all(template_policies)
+        self.session.add_all(template_policies)
 
-    def _create_or_find_acl_templates(self, s, acl_templates):
+    def _create_or_find_acl_templates(self, acl_templates):
         if not acl_templates:
             return []
 
-        tpl = s.query(ACLTemplate).filter(ACLTemplate.template.in_(acl_templates)).all()
+        tpl = (
+            self.session.query(ACLTemplate)
+            .filter(ACLTemplate.template.in_(acl_templates))
+            .all()
+        )
         existing = {t.template: t.id_ for t in tpl}
         for template in acl_templates:
             if template in existing:
                 continue
-            id_ = self._insert_acl_template(s, template)
+            id_ = self._insert_acl_template(template)
             existing[template] = id_
         return existing.values()
 
-    def _dissociate_all_acl_templates(self, s, policy_uuid):
+    def _dissociate_all_acl_templates(self, policy_uuid):
         filter_ = ACLTemplatePolicy.policy_uuid == policy_uuid
-        s.query(ACLTemplatePolicy).filter(filter_).delete()
+        self.session.query(ACLTemplatePolicy).filter(filter_).delete()
 
-    def _insert_acl_template(self, s, template):
+    def _insert_acl_template(self, template):
         tpl = ACLTemplate(template=template)
-        s.add(tpl)
-        s.flush()
+        self.session.add(tpl)
+        self.session.flush()
         return tpl.id_
 
-    def _policy_exists(self, s, policy_uuid, tenant_uuids=None):
+    def _policy_exists(self, policy_uuid, tenant_uuids=None):
         filter_ = Policy.uuid == str(policy_uuid)
 
         if tenant_uuids is not None:
@@ -230,4 +234,4 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
             filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
 
-        return s.query(Policy).filter(filter_).count() > 0
+        return self.session.query(Policy).filter(filter_).count() > 0
