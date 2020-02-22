@@ -99,9 +99,8 @@ class TestGroupDAO(base.DAOTestCase):
         name = 'foobar'
 
         assert_that(group_uuid, equal_to(ANY_UUID))
-        s = self.session
         filter_ = models.Group.uuid == group_uuid
-        group = s.query(models.Group).filter(filter_).first()
+        group = self.session.query(models.Group).filter(filter_).first()
         assert_that(group, has_properties(name=name, tenant_uuid=tenant_uuid))
 
         assert_that(

@@ -137,9 +137,8 @@ class TestTenantDAO(base.DAOTestCase):
         return self._tenant_dao.create(**kwargs)
 
     def _top_tenant_uuid(self):
-        s = self.session
         return (
-            s.query(models.Tenant.uuid)
+            self.session.query(models.Tenant.uuid)
             .filter(models.Tenant.uuid == models.Tenant.parent_uuid)
             .scalar()
         )

@@ -9,12 +9,10 @@ from ..models import Address
 
 class AddressDAO(BaseDAO):
     def delete(self, address_id):
-        s = self.session
-        s.query(Address).filter(Address.id_ == address_id).delete()
+        self.session.query(Address).filter(Address.id_ == address_id).delete()
 
     def get(self, address_id):
-        s = self.session
-        for row in s.query(Address).filter(Address.id_ == address_id).all():
+        for row in self.session.query(Address).filter(Address.id_ == address_id).all():
             return dict(
                 line_1=row.line_1,
                 line_2=row.line_2,
@@ -31,9 +29,8 @@ class AddressDAO(BaseDAO):
             return None
 
         address = Address(**kwargs)
-        s = self.session
-        s.add(address)
-        s.flush()
+        self.session.add(address)
+        self.session.flush()
         return address.id_
 
     def update(self, address_id, **kwargs):
@@ -41,8 +38,7 @@ class AddressDAO(BaseDAO):
             self.delete(address_id)
             return None
 
-        s = self.session
-        s.query(Address).filter(Address.id_ == address_id).update(kwargs)
+        self.session.query(Address).filter(Address.id_ == address_id).update(kwargs)
 
         return address_id
 

@@ -124,9 +124,8 @@ class TestUserDAO(base.DAOTestCase):
     @fixtures.db.user()
     def test_user_policy_association(self, user_uuid, policy_uuid):
         self._user_dao.add_policy(user_uuid, policy_uuid)
-        s = self.session
         count = (
-            s.query(func.count(models.UserPolicy.user_uuid))
+            self.session.query(func.count(models.UserPolicy.user_uuid))
             .filter(
                 and_(
                     models.UserPolicy.user_uuid == user_uuid,
@@ -587,5 +586,7 @@ class TestUserDAO(base.DAOTestCase):
 
     def _email_exists(self, address):
         filter_ = models.Email.address == address
-        s = self.session
-        return s.query(func.count(models.Email.uuid)).filter(filter_).scalar() > 0
+        return (
+            self.session.query(func.count(models.Email.uuid)).filter(filter_).scalar()
+            > 0
+        )

@@ -26,13 +26,12 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     }
 
     def associate_policy_template(self, policy_uuid, acl_template):
-        s = self.session
-        s.begin_nested()
-        self._associate_acl_templates(s, policy_uuid, [acl_template])
+        self.session.begin_nested()
+        self._associate_acl_templates(self.session, policy_uuid, [acl_template])
         try:
-            s.commit()
+            self.session.commit()
         except exc.IntegrityError as e:
-            s.rollback()
+            self.session.rollback()
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 raise exceptions.DuplicateTemplateException(acl_template)
             if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
@@ -42,14 +41,16 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             raise
 
     def dissociate_policy_template(self, policy_uuid, acl_template):
-        s = self.session
         filter_ = and_(
             ACLTemplate.template == acl_template,
             ACLTemplatePolicy.policy_uuid == policy_uuid,
         )
 
         template_id = (
-            s.query(ACLTemplate.id_).join(ACLTemplatePolicy).filter(filter_).first()
+            self.session.query(ACLTemplate.id_)
+            .join(ACLTemplatePolicy)
+            .filter(filter_)
+            .first()
         )
         if not template_id:
             return 0
@@ -58,7 +59,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             ACLTemplatePolicy.policy_uuid == policy_uuid,
             ACLTemplatePolicy.template_id == template_id,
         )
-        return s.query(ACLTemplatePolicy).filter(filter_).delete()
+        return self.session.query(ACLTemplatePolicy).filter(filter_).delete()
 
     def count_tenants(self, policy_uuid, **kwargs):
         filtered = kwargs.get('filtered')
@@ -69,8 +70,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         else:
             filter_ = text('true')
 
-        s = self.session
-        return s.query(Tenant).filter(filter_).count()
+        return self.session.query(Tenant).filter(filter_).count()
 
     def count(self, search, tenant_uuids=None, **ignored):
         filter_ = self.new_search_filter(search=search)
@@ -78,20 +78,18 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if tenant_uuids is not None:
             filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
 
-        s = self.session
-        return s.query(Policy).filter(filter_).count()
+        return self.session.query(Policy).filter(filter_).count()
 
     def create(self, name, description, acl_templates, tenant_uuid):
         policy = Policy(name=name, description=description, tenant_uuid=tenant_uuid)
-        s = self.session
-        s.add(policy)
+        self.session.add(policy)
         try:
-            s.flush()
+            self.session.flush()
         except exc.IntegrityError as e:
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 raise exceptions.DuplicatePolicyException(name)
             raise
-        self._associate_acl_templates(s, policy.uuid, acl_templates)
+        self._associate_acl_templates(self.session, policy.uuid, acl_templates)
         return policy.uuid
 
     def delete(self, policy_uuid, tenant_uuids):
@@ -99,15 +97,15 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if tenant_uuids is not None:
             filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
 
-        s = self.session
-        nb_deleted = s.query(Policy).filter(filter_).delete(synchronize_session=False)
+        nb_deleted = (
+            self.session.query(Policy).filter(filter_).delete(synchronize_session=False)
+        )
 
         if not nb_deleted:
             raise exceptions.UnknownPolicyException(policy_uuid)
 
     def exists(self, uuid, tenant_uuids=None):
-        s = self.session
-        return self._policy_exists(s, uuid, tenant_uuids)
+        return self._policy_exists(self.session, uuid, tenant_uuids)
 
     def get(self, tenant_uuids=None, **kwargs):
         strict_filter = self.new_strict_filter(**kwargs)
@@ -117,9 +115,8 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if tenant_uuids is not None:
             filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
 
-        s = self.session
         query = (
-            s.query(
+            self.session.query(
                 Policy.uuid,
                 Policy.name,
                 Policy.description,
@@ -158,8 +155,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         strict_filter = self.new_strict_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
 
-        s = self.session
-        query = s.query(Policy).filter(filter_).group_by(Policy)
+        query = self.session.query(Policy).filter(filter_).group_by(Policy)
         query = self._paginator.update_query(query, **kwargs)
 
         return [
@@ -172,27 +168,28 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         ]
 
     def update(self, policy_uuid, name, description, acl_templates, tenant_uuids=None):
-        s = self.session
         filter_ = Policy.uuid == policy_uuid
         if tenant_uuids is not None:
             filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
 
         body = {'name': name, 'description': description}
         affected_rows = (
-            s.query(Policy).filter(filter_).update(body, synchronize_session='fetch')
+            self.session.query(Policy)
+            .filter(filter_)
+            .update(body, synchronize_session='fetch')
         )
         if not affected_rows:
             raise exceptions.UnknownPolicyException(policy_uuid)
 
         try:
-            s.flush()
+            self.session.flush()
         except exc.IntegrityError as e:
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 raise exceptions.DuplicatePolicyException(name)
             raise
 
-        self._dissociate_all_acl_templates(s, policy_uuid)
-        self._associate_acl_templates(s, policy_uuid, acl_templates)
+        self._dissociate_all_acl_templates(self.session, policy_uuid)
+        self._associate_acl_templates(self.session, policy_uuid, acl_templates)
 
     def _associate_acl_templates(self, session, policy_uuid, acl_templates):
         ids = self._create_or_find_acl_templates(session, acl_templates)

@@ -28,8 +28,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             search_filter = self.new_search_filter(**kwargs)
             filter_ = and_(filter_, strict_filter, search_filter)
 
-        s = self.session
-        return s.query(Tenant).filter(filter_).count()
+        return self.session.query(Tenant).filter(filter_).count()
 
     def count_policies(self, tenant_uuid, filtered=False, **kwargs):
         filter_ = Policy.tenant_uuid == str(tenant_uuid)
@@ -39,8 +38,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             search_filter = filters.policy_search_filter.new_filter(**kwargs)
             filter_ = and_(filter_, strict_filter, search_filter)
 
-        s = self.session
-        return s.query(Policy.uuid).filter(filter_).count()
+        return self.session.query(Policy.uuid).filter(filter_).count()
 
     def count_users(self, tenant_uuid, **kwargs):
         filtered = kwargs.get('filtered')
@@ -50,8 +48,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             search_filter = filters.user_search_filter.new_filter(**kwargs)
             filter_ = and_(filter_, strict_filter, search_filter)
 
-        s = self.session
-        return s.query(User).filter(filter_).count()
+        return self.session.query(User).filter(filter_).count()
 
     def create(self, **kwargs):
         parent_uuid = kwargs.get('parent_uuid')
@@ -74,10 +71,9 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if uuid_:
             tenant.uuid = str(uuid_)
 
-        s = self.session
-        s.add(tenant)
+        self.session.add(tenant)
         try:
-            s.flush()
+            self.session.flush()
         except exc.IntegrityError as e:
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
@@ -92,12 +88,17 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return tenant.uuid
 
     def find_top_tenant(self):
-        s = self.session
-        return s.query(Tenant).filter(Tenant.uuid == Tenant.parent_uuid).first().uuid
+        return (
+            self.session.query(Tenant)
+            .filter(Tenant.uuid == Tenant.parent_uuid)
+            .first()
+            .uuid
+        )
 
     def delete(self, uuid):
-        s = self.session
-        nb_deleted = s.query(Tenant).filter(Tenant.uuid == str(uuid)).delete()
+        nb_deleted = (
+            self.session.query(Tenant).filter(Tenant.uuid == str(uuid)).delete()
+        )
 
         if not nb_deleted:
             if not self.list_(uuid=uuid):
@@ -106,9 +107,10 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 raise exceptions.UnknownUserException(uuid)
 
     def get_address_id(self, tenant_uuid):
-        s = self.session
         return (
-            s.query(Tenant.address_id).filter(Tenant.uuid == str(tenant_uuid)).scalar()
+            self.session.query(Tenant.address_id)
+            .filter(Tenant.uuid == str(tenant_uuid))
+            .scalar()
         )
 
     def list_(self, **kwargs):
@@ -123,9 +125,8 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         strict_filter = self.new_strict_filter(**kwargs)
         filter_ = and_(filter_, strict_filter, search_filter)
 
-        s = self.session
         query = (
-            s.query(Tenant, Address)
+            self.session.query(Tenant, Address)
             .outerjoin(Address)
             .filter(filter_)
             .group_by(Tenant, Address)
@@ -147,9 +148,8 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             'address_id': kwargs.get('address_id'),
         }
 
-        s = self.session
         try:
-            s.query(Tenant).filter(filter_).update(values)
+            self.session.query(Tenant).filter(filter_).update(values)
         except exc.IntegrityError as e:
             if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
                 constraint = e.orig.diag.constraint_name

@@ -69,7 +69,6 @@ class TestTokenDAO(base.DAOTestCase):
     @fixtures.db.token(expiration=0)
     @fixtures.db.token()
     def test_delete_expired_tokens_and_sessions(self, token_1, token_2, token_3):
-        s = self.session
         (
             expired_tokens,
             expired_sessions,
@@ -93,7 +92,7 @@ class TestTokenDAO(base.DAOTestCase):
             ),
         )
 
-        sessions = s.query(models.Session).all()
+        sessions = self.session.query(models.Session).all()
         assert_that(
             sessions,
             all_of(
@@ -103,7 +102,7 @@ class TestTokenDAO(base.DAOTestCase):
             ),
         )
 
-        tokens = s.query(models.Token).all()
+        tokens = self.session.query(models.Token).all()
         assert_that(
             tokens,
             all_of(

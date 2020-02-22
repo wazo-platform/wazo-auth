@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import text, and_
@@ -22,8 +22,7 @@ class SessionDAO(PaginatorMixin, BaseDAO):
         if user_uuid is not None:
             filter_ = and_(filter_, Token.auth_id == str(user_uuid))
 
-        s = self.session
-        query = s.query(Session, Token).join(Token).filter(filter_)
+        query = self.session.query(Session, Token).join(Token).filter(filter_)
         query = self._paginator.update_query(query, **kwargs)
 
         return [
@@ -44,8 +43,7 @@ class SessionDAO(PaginatorMixin, BaseDAO):
                 return 0
             filter_ = and_(filter_, Session.tenant_uuid.in_(tenant_uuids))
 
-        s = self.session
-        return s.query(Session).join(Token).filter(filter_).count()
+        return self.session.query(Session).join(Token).filter(filter_).count()
 
     def delete(self, session_uuid, tenant_uuids):
         filter_ = Session.uuid == str(session_uuid)
@@ -53,8 +51,7 @@ class SessionDAO(PaginatorMixin, BaseDAO):
             return {}, {}
         filter_ = and_(filter_, Session.tenant_uuid.in_(tenant_uuids))
 
-        s = self.session
-        session = s.query(Session).filter(filter_).first()
+        session = self.session.query(Session).filter(filter_).first()
         if not session:
             return {}, {}
 
@@ -64,6 +61,6 @@ class SessionDAO(PaginatorMixin, BaseDAO):
             break
 
         session_result = {'uuid': session.uuid, 'tenant_uuid': session.tenant_uuid}
-        s.query(Session).filter(filter_).delete(synchronize_session=False)
+        self.session.query(Session).filter(filter_).delete(synchronize_session=False)
 
         return session_result, token_result

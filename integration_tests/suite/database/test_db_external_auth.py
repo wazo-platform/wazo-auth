@@ -147,8 +147,7 @@ class TestExternalAuthDAO(base.DAOTestCase):
     @fixtures.db.user()
     def test_enable_all(self, user_uuid):
         def assert_enabled(enabled_types):
-            s = self.session
-            query = s.query(
+            query = self.session.query(
                 models.ExternalAuthType.name, models.ExternalAuthType.enabled
             )
             result = {r.name: r.enabled for r in query.all()}

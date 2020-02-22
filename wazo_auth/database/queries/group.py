@@ -19,13 +19,12 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         group_policy = GroupPolicy(
             policy_uuid=str(policy_uuid), group_uuid=str(group_uuid)
         )
-        s = self.session
-        s.begin_nested()
-        s.add(group_policy)
+        self.session.begin_nested()
+        self.session.add(group_policy)
         try:
-            s.commit()
+            self.session.commit()
         except exc.IntegrityError as e:
-            s.rollback()
+            self.session.rollback()
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 # This association already exists.
                 return
@@ -39,13 +38,12 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def add_user(self, group_uuid, user_uuid):
         user_group = UserGroup(user_uuid=str(user_uuid), group_uuid=str(group_uuid))
-        s = self.session
-        s.begin_nested()
-        s.add(user_group)
+        self.session.begin_nested()
+        self.session.add(user_group)
         try:
-            s.commit()
+            self.session.commit()
         except exc.IntegrityError as e:
-            s.rollback()
+            self.session.rollback()
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 # This association already exists.
                 return
@@ -71,8 +69,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             search_filter = self.new_search_filter(**kwargs)
             filter_ = and_(filter_, strict_filter, search_filter)
 
-        s = self.session
-        return s.query(Group).filter(filter_).count()
+        return self.session.query(Group).filter(filter_).count()
 
     def count_policies(self, group_uuid, **kwargs):
         filtered = kwargs.get('filtered')
@@ -85,8 +82,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         filter_ = and_(filter_, GroupPolicy.group_uuid == str(group_uuid))
 
-        s = self.session
-        return s.query(GroupPolicy).join(Policy).filter(filter_).count()
+        return self.session.query(GroupPolicy).join(Policy).filter(filter_).count()
 
     def count_users(self, group_uuid, filtered=False, **kwargs):
         filter_ = UserGroup.group_uuid == str(group_uuid)
@@ -96,9 +92,8 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             search_filter = filters.user_search_filter.new_filter(**kwargs)
             filter_ = and_(filter_, strict_filter, search_filter)
 
-        s = self.session
         return (
-            s.query(UserGroup)
+            self.session.query(UserGroup)
             .join(User)
             .outerjoin(UserEmail)
             .outerjoin(Email)
@@ -108,10 +103,9 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def create(self, name, tenant_uuid, **ignored):
         group = Group(name=name, tenant_uuid=tenant_uuid)
-        s = self.session
-        s.add(group)
+        self.session.add(group)
         try:
-            s.flush()
+            self.session.flush()
         except exc.IntegrityError as e:
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
@@ -129,8 +123,9 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
             filter_ = and_(filter_, Group.tenant_uuid.in_(tenant_uuids))
 
-        s = self.session
-        nb_deleted = s.query(Group).filter(filter_).delete(synchronize_session=False)
+        nb_deleted = (
+            self.session.query(Group).filter(filter_).delete(synchronize_session=False)
+        )
 
         if not nb_deleted:
             raise exceptions.UnknownGroupException(uuid)
@@ -148,24 +143,27 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
             filter_ = and_(filter_, Group.tenant_uuid.in_(tenant_uuids))
 
-        s = self.session
-        query = s.query(Group).outerjoin(UserGroup).filter(filter_).group_by(Group)
+        query = (
+            self.session.query(Group)
+            .outerjoin(UserGroup)
+            .filter(filter_)
+            .group_by(Group)
+        )
         query = self._paginator.update_query(query, **kwargs)
 
         return [
-            {'uuid': group.uuid, 'name': group.name, 'tenant_uuid': group.tenant_uuid,}
+            {'uuid': group.uuid, 'name': group.name, 'tenant_uuid': group.tenant_uuid}
             for group in query.all()
         ]
 
     def update(self, group_uuid, **body):
-        s = self.session
         filter_ = Group.uuid == str(group_uuid)
         try:
-            affected_rows = s.query(Group).filter(filter_).update(body)
+            affected_rows = self.session.query(Group).filter(filter_).update(body)
             if not affected_rows:
                 raise exceptions.UnknownGroupException(group_uuid)
 
-            s.flush()
+            self.session.flush()
         except exc.IntegrityError as e:
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
@@ -182,8 +180,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             GroupPolicy.group_uuid == str(group_uuid),
         )
 
-        s = self.session
-        return s.query(GroupPolicy).filter(filter_).delete()
+        return self.session.query(GroupPolicy).filter(filter_).delete()
 
     def remove_user(self, group_uuid, user_uuid):
         filter_ = and_(
@@ -191,5 +188,4 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             UserGroup.group_uuid == str(group_uuid),
         )
 
-        s = self.session
-        return s.query(UserGroup).filter(filter_).delete()
+        return self.session.query(UserGroup).filter(filter_).delete()

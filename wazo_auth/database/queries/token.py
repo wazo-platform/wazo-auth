@@ -30,19 +30,16 @@ class TokenDAO(BaseDAO):
             session_body['tenant_uuid'] = self._get_default_tenant_uuid()
         token.session = Session(**session_body)
 
-        s = self.session
-        s.add(token)
-        s.flush()
+        self.session.add(token)
+        self.session.flush()
         return token.uuid, token.session_uuid
 
     def _get_default_tenant_uuid(self):
-        s = self.session
         filter_ = Tenant.uuid == Tenant.parent_uuid
-        return s.query(Tenant).filter(filter_).first().uuid
+        return self.session.query(Tenant).filter(filter_).first().uuid
 
     def get(self, token_uuid):
-        s = self.session
-        token = s.query(TokenModel).get(token_uuid)
+        token = self.session.query(TokenModel).get(token_uuid)
         if token:
             return {
                 'uuid': token.uuid,
@@ -63,9 +60,8 @@ class TokenDAO(BaseDAO):
     def delete(self, token_uuid):
         filter_ = TokenModel.uuid == token_uuid
 
-        s = self.session
         session_result = {}
-        token = s.query(TokenModel).filter(filter_).first()
+        token = self.session.query(TokenModel).filter(filter_).first()
         if not token:
             return {}, {}
 
@@ -75,26 +71,26 @@ class TokenDAO(BaseDAO):
                 'uuid': session.uuid,
                 'tenant_uuid': session.tenant_uuid,
             }
-            s.delete(session)
+            self.session.delete(session)
 
         token_result = {'uuid': token.uuid, 'auth_id': token.auth_id}
-        s.query(TokenModel).filter(filter_).delete()
+        self.session.query(TokenModel).filter(filter_).delete()
 
         return token_result, session_result
 
     def get_tokens_and_session_that_expire_soon(self, _time):
-        s = self.session
-        tokens = self._get_tokens_with_expiration_less_than(s, time.time() + _time)
+        tokens = self._get_tokens_with_expiration_less_than(
+            self.session, time.time() + _time
+        )
         if not tokens:
             return [], []
         filter_ = TokenModel.uuid.in_([token['uuid'] for token in tokens])
-        sessions = self._get_sessions_from_token_filter(s, filter_)
+        sessions = self._get_sessions_from_token_filter(self.session, filter_)
         return tokens, sessions
 
     def delete_expired_tokens_and_sessions(self):
-        s = self.session
-        tokens = self._delete_expired_tokens(s)
-        sessions = self._delete_expired_sessions(s)
+        tokens = self._delete_expired_tokens(self.session)
+        sessions = self._delete_expired_sessions(self.session)
         return tokens, sessions
 
     @staticmethod

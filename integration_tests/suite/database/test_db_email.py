@@ -26,8 +26,9 @@ class TestEmailDAO(base.DAOTestCase):
         assert_that(self.is_email_confirmed(email_uuid), equal_to(True))
 
     def is_email_confirmed(self, email_uuid):
-        s = self.session
-        emails = s.query(models.Email).filter(models.Email.uuid == str(email_uuid))
+        emails = self.session.query(models.Email).filter(
+            models.Email.uuid == str(email_uuid)
+        )
         for email in emails.all():
             return email.confirmed
         return False
