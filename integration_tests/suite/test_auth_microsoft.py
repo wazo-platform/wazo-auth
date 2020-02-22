@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -23,13 +23,13 @@ from xivo_test_helpers.hamcrest.raises import raises
 from wazo_auth import bootstrap
 from wazo_auth.database import helpers
 
-from .helpers.base import BaseTestCase
+from .helpers.base import BaseTestCase as _BaseTestCase
 
 MICROSOFT = 'microsoft'
 AUTHORIZE_URL = 'http://localhost:{port}/microsoft/authorize/{state}'
 
 
-class BaseTestCase(BaseTestCase):
+class BaseTestCase(_BaseTestCase):
 
     username = 'mario'
     password = 'mario'
