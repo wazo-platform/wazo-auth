@@ -92,9 +92,9 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             RefreshToken.tenant_uuid.in_(tenant_uuids),
         )
 
-        query = self.session.query(RefreshToken.tenant_uuid, RefreshToken.mobile).filter(
-            filter_
-        )
+        query = self.session.query(
+            RefreshToken.tenant_uuid, RefreshToken.mobile
+        ).filter(filter_)
         for refresh_token in query.all():
             return {
                 'tenant_uuid': refresh_token.tenant_uuid,

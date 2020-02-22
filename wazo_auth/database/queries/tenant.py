@@ -80,9 +80,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             s.flush()
         except exc.IntegrityError as e:
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                column = self.constraint_to_column_map.get(
-                    e.orig.diag.constraint_name
-                )
+                column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
                 value = locals().get(column)
                 if column:
                     raise exceptions.ConflictException('tenants', column, value)
@@ -95,9 +93,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def find_top_tenant(self):
         s = self.session
-        return (
-            s.query(Tenant).filter(Tenant.uuid == Tenant.parent_uuid).first().uuid
-        )
+        return s.query(Tenant).filter(Tenant.uuid == Tenant.parent_uuid).first().uuid
 
     def delete(self, uuid):
         s = self.session
@@ -112,9 +108,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def get_address_id(self, tenant_uuid):
         s = self.session
         return (
-            s.query(Tenant.address_id)
-            .filter(Tenant.uuid == str(tenant_uuid))
-            .scalar()
+            s.query(Tenant.address_id).filter(Tenant.uuid == str(tenant_uuid)).scalar()
         )
 
     def list_(self, **kwargs):

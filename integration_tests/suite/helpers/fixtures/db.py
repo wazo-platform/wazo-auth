@@ -31,7 +31,9 @@ def email(**email_args):
                 return decorated(self, email_uuid, *args, **kwargs)
             finally:
                 self.session.rollback()
+
         return wrapper
+
     return decorator
 
 
@@ -45,7 +47,9 @@ def external_auth(*auth_types):
                 return decorated(self, auth_types, *args, **kwargs)
             finally:
                 self.session.rollback()
+
         return wrapper
+
     return decorator
 
 
@@ -75,7 +79,9 @@ def token(**token_args):
                 return decorated(self, token, *args, **kwargs)
             finally:
                 self.session.rollback()
+
         return wrapper
+
     return decorator
 
 
@@ -92,7 +98,9 @@ def group(**group_args):
                 return decorated(self, group_uuid, *args, **kwargs)
             finally:
                 self.session.rollback()
+
         return wrapper
+
     return decorator
 
 
@@ -111,7 +119,9 @@ def policy(**policy_args):
                 return decorated(self, policy_uuid, *args, **kwargs)
             finally:
                 self.session.rollback()
+
         return wrapper
+
     return decorator
 
 
@@ -131,7 +141,9 @@ def tenant(**tenant_args):
                 return decorated(self, tenant_uuid, *args, **kwargs)
             finally:
                 self.session.rollback()
+
         return wrapper
+
     return decorator
 
 
@@ -155,7 +167,9 @@ def user(**user_args):
                 return decorated(self, user_uuid, *args, **kwargs)
             finally:
                 self.session.rollback()
+
         return wrapper
+
     return decorator
 
 
@@ -169,5 +183,7 @@ def refresh_token(**refresh_token_args):
                 return decorated(self, refresh_token, *args, **kwargs)
             finally:
                 self.session.rollback()
+
         return wrapper
+
     return decorator
