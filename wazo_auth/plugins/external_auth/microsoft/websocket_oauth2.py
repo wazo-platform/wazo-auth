@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -8,6 +8,7 @@ from threading import Thread
 import websocket
 
 from wazo_auth.exceptions import ExternalAuthAlreadyExists
+from wazo_auth.database.helpers import Session
 from .helpers import get_timestamp_expiration
 
 logger = logging.getLogger(__name__)
@@ -54,6 +55,10 @@ class WebSocketOAuth2(Thread):
             self.ws.close()
             self.ws = None
         self.create_first_token(self.user_uuid, msg.get('code'))
+        try:
+            Session.commit()
+        finally:
+            Session.close()
 
     def _on_error(self, error):
         logger.error(error)
