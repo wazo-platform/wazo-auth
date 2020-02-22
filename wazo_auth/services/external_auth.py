@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -11,6 +11,7 @@ import marshmallow
 from xivo_bus.resources.auth import events
 
 from wazo_auth.services.helpers import BaseService
+from wazo_auth.database.helpers import Session
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +46,10 @@ class _OAuth2Synchronizer:
         try:
             msg = json.loads(msg)
             success_cb(msg)
+            try:
+                Session.commit()
+            finally:
+                Session.close()
             self._bus_publisher.publish(event)
         finally:
             ws.close()

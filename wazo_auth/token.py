@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -10,6 +10,8 @@ import threading
 from datetime import datetime
 
 from xivo_bus.resources.auth.events import SessionDeletedEvent, SessionExpireSoonEvent
+
+from wazo_auth.database.helpers import Session
 
 logger = logging.getLogger(__name__)
 
@@ -164,11 +166,14 @@ class ExpiredTokenRemover:
     def _tokens_cleanup(self):
         try:
             tokens, sessions = self._dao.token.delete_expired_tokens_and_sessions()
+            Session.commit()
         except Exception:
             logger.warning(
                 'failed to remove expired tokens and sessions', exc_info=self._debug
             )
             return
+        finally:
+            Session.close()
 
         self._publish_event(tokens, sessions, SessionDeletedEvent)
 

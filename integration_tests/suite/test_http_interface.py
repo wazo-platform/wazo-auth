@@ -250,16 +250,14 @@ class TestCore(WazoAuthTestCase):
         assert_that(self._is_valid(token))
 
     def _is_token_in_the_db(self, token):
-        s = self.session
+        s = helpers.get_db_session()
         result = s.query(models.Token).filter(models.Token.uuid == token).first()
         return True if result else False
 
     def _is_session_in_the_db(self, session_uuid):
-        s = self.session
+        s = helpers.get_db_session()
         result = (
-            s.query(models.Session)
-            .filter(models.Session.uuid == session_uuid)
-            .first()
+            s.query(models.Session).filter(models.Session.uuid == session_uuid).first()
         )
         return True if result else False
 
