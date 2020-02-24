@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -190,13 +190,14 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
 
         def oauth2_is_done():
             try:
-                return self.client.external.get('foo', user['uuid'])
+                assert_that(
+                    self.client.external.get('foo', user['uuid']),
+                    has_entries(access_token=token),
+                )
             except requests.HTTPError:
-                return False
+                assert False
 
-        data = until.true(oauth2_is_done, timeout=5, interval=0.25)
-
-        assert_that(data, has_entries(access_token=token))
+        until.assert_(oauth2_is_done, timeout=5, interval=0.25)
 
         def bus_received_msg():
             assert_that(
