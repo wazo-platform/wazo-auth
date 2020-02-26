@@ -27,5 +27,6 @@ def commit_or_rollback():
         Session.commit()
     except Exception:
         Session.rollback()
+        raise
     finally:
         Session.close()
