@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -11,6 +11,7 @@ from cheroot import wsgi
 from flask import Flask
 from flask_cors import CORS
 from flask_restful import Api
+from sqlalchemy.exc import SQLAlchemyError
 from xivo import http_helpers
 
 from wazo_auth.database.helpers import Session
@@ -25,9 +26,15 @@ api = Api(app, prefix='/{}'.format(VERSION))
 def teardown_appcontext(response_or_exc):
     try:
         if response_or_exc is None:
-            Session.commit()
+            try:
+                Session.commit()
+            except SQLAlchemyError:
+                Session.rollback()
+        else:
+            Session.rollback()
     finally:
         Session.remove()
+
     return response_or_exc
 
 

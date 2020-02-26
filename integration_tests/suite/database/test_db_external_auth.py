@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -66,14 +66,15 @@ class TestExternalAuthDAO(base.DAOTestCase):
 
     @fixtures.db.user()
     def test_create(self, user_uuid):
-        assert_that(
-            calling(self._external_auth_dao.create).with_args(
-                self.unknown_uuid, self.auth_type, self.data
-            ),
-            raises(exceptions.UnknownUserException).matching(
-                has_properties(status_code=404, resource='users')
-            ),
-        )
+        with self.auto_rollback():
+            assert_that(
+                calling(self._external_auth_dao.create).with_args(
+                    self.unknown_uuid, self.auth_type, self.data
+                ),
+                raises(exceptions.UnknownUserException).matching(
+                    has_properties(status_code=404, resource='users')
+                ),
+            )
 
         result = self._external_auth_dao.create(user_uuid, self.auth_type, self.data)
         assert_that(result, equal_to(self.data))
@@ -95,9 +96,10 @@ class TestExternalAuthDAO(base.DAOTestCase):
             ),
         )
 
+    @fixtures.db.external_auth('foobarcrm')
     @fixtures.db.user()
     @fixtures.db.user()
-    def test_delete(self, user_1_uuid, user_2_uuid):
+    def test_delete(self, user_1_uuid, user_2_uuid, _):
         assert_that(
             calling(self._external_auth_dao.delete).with_args(
                 self.unknown_uuid, self.auth_type
@@ -146,11 +148,10 @@ class TestExternalAuthDAO(base.DAOTestCase):
     @fixtures.db.user()
     def test_enable_all(self, user_uuid):
         def assert_enabled(enabled_types):
-            with self._external_auth_dao.new_session() as s:
-                query = s.query(
-                    models.ExternalAuthType.name, models.ExternalAuthType.enabled
-                )
-                result = {r.name: r.enabled for r in query.all()}
+            query = self.session.query(
+                models.ExternalAuthType.name, models.ExternalAuthType.enabled
+            )
+            result = {r.name: r.enabled for r in query.all()}
             expected = has_entries({t: True for t in enabled_types})
             assert_that(result, expected)
             nb_enabled = len([t for t, enabled in result.items() if enabled])
@@ -172,9 +173,10 @@ class TestExternalAuthDAO(base.DAOTestCase):
         self._external_auth_dao.enable_all(auth_types)
         assert_enabled(auth_types)
 
+    @fixtures.db.external_auth('foobarcrm')
     @fixtures.db.user()
     @fixtures.db.user()
-    def test_get(self, user_1_uuid, user_2_uuid):
+    def test_get(self, user_1_uuid, user_2_uuid, _):
         assert_that(
             calling(self._external_auth_dao.get).with_args(
                 self.unknown_uuid, self.auth_type
@@ -263,8 +265,9 @@ class TestExternalAuthDAO(base.DAOTestCase):
         expected = [{'type': 'one', 'data': data_one, 'enabled': True}]
         assert_that(result, contains(*expected))
 
+    @fixtures.db.external_auth('foobarcrm')
     @fixtures.db.user()
-    def test_update(self, user_uuid):
+    def test_update(self, user_uuid, _):
         new_data = {'foo': 'bar'}
 
         assert_that(

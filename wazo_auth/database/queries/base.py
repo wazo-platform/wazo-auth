@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from .. import helpers
@@ -74,4 +74,6 @@ class BaseDAO:
     _UNIQUE_CONSTRAINT_CODE = '23505'
     _FKEY_CONSTRAINT_CODE = '23503'
 
-    new_session = staticmethod(helpers.new_session)
+    @property
+    def session(self):
+        return helpers.get_db_session()

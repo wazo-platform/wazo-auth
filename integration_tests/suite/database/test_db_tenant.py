@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from uuid import uuid4
@@ -120,14 +120,14 @@ class TestTenantDAO(base.DAOTestCase):
 
     def _assert_tenant_matches(self, uuid, name, parent_uuid=ANY_UUID):
         assert_that(uuid, equal_to(ANY_UUID))
-        with self._tenant_dao.new_session() as s:
-            tenant = (
-                s.query(models.Tenant.name, models.Tenant.parent_uuid)
-                .filter(models.Tenant.uuid == uuid)
-                .first()
-            )
+        s = self._tenant_dao.session
+        tenant = (
+            s.query(models.Tenant.name, models.Tenant.parent_uuid)
+            .filter(models.Tenant.uuid == uuid)
+            .first()
+        )
 
-            assert_that(tenant, has_properties(name=name, parent_uuid=parent_uuid))
+        assert_that(tenant, has_properties(name=name, parent_uuid=parent_uuid))
 
     def _create_tenant(self, **kwargs):
         kwargs.setdefault('name', None)
@@ -137,9 +137,8 @@ class TestTenantDAO(base.DAOTestCase):
         return self._tenant_dao.create(**kwargs)
 
     def _top_tenant_uuid(self):
-        with self._tenant_dao.new_session() as s:
-            return (
-                s.query(models.Tenant.uuid)
-                .filter(models.Tenant.uuid == models.Tenant.parent_uuid)
-                .scalar()
-            )
+        return (
+            self.session.query(models.Tenant.uuid)
+            .filter(models.Tenant.uuid == models.Tenant.parent_uuid)
+            .scalar()
+        )

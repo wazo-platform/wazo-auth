@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_auth import exceptions
@@ -9,20 +9,19 @@ from ..models import Address
 
 class AddressDAO(BaseDAO):
     def delete(self, address_id):
-        with self.new_session() as s:
-            s.query(Address).filter(Address.id_ == address_id).delete()
+        self.session.query(Address).filter(Address.id_ == address_id).delete()
+        self.session.flush()
 
     def get(self, address_id):
-        with self.new_session() as s:
-            for row in s.query(Address).filter(Address.id_ == address_id).all():
-                return dict(
-                    line_1=row.line_1,
-                    line_2=row.line_2,
-                    city=row.city,
-                    state=row.state,
-                    country=row.country,
-                    zip_code=row.zip_code,
-                )
+        for row in self.session.query(Address).filter(Address.id_ == address_id).all():
+            return dict(
+                line_1=row.line_1,
+                line_2=row.line_2,
+                city=row.city,
+                state=row.state,
+                country=row.country,
+                zip_code=row.zip_code,
+            )
 
         raise exceptions.UnknownAddressException(address_id)
 
@@ -31,19 +30,18 @@ class AddressDAO(BaseDAO):
             return None
 
         address = Address(**kwargs)
-        with self.new_session() as s:
-            s.add(address)
-            s.flush()
-            return address.id_
+        self.session.add(address)
+        self.session.flush()
+        return address.id_
 
     def update(self, address_id, **kwargs):
         if self._address_is_empty(**kwargs):
             self.delete(address_id)
+            self.session.flush()
             return None
 
-        with self.new_session() as s:
-            s.query(Address).filter(Address.id_ == address_id).update(kwargs)
-
+        self.session.query(Address).filter(Address.id_ == address_id).update(kwargs)
+        self.session.flush()
         return address_id
 
     def _address_is_empty(self, **kwargs):

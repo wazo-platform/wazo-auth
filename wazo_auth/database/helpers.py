@@ -1,7 +1,5 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
-
-from contextlib import contextmanager
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
@@ -20,14 +18,15 @@ def deinit_db():
     Session.configure(bind=None)
 
 
-@contextmanager
-def new_session():
-    session = Session()
+def get_db_session():
+    return Session()
+
+
+def commit_or_rollback():
     try:
-        yield session
-        session.commit()
+        Session.commit()
     except Exception:
-        session.rollback()
+        Session.rollback()
         raise
     finally:
-        session.close()
+        Session.close()

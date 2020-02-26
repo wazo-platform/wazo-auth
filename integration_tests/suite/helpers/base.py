@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -84,6 +84,7 @@ class DAOTestCase(unittest.TestCase):
     unknown_uuid = '00000000-0000-0000-0000-000000000000'
 
     def setUp(self):
+        self.Session = helpers.Session
         self._address_dao = queries.AddressDAO()
         self._email_dao = queries.EmailDAO()
         self._external_auth_dao = queries.ExternalAuthDAO()
@@ -96,6 +97,23 @@ class DAOTestCase(unittest.TestCase):
         self._session_dao = session.SessionDAO()
 
         self.top_tenant_uuid = self._tenant_dao.find_top_tenant()
+
+        self.session.begin_nested()
+
+    def tearDown(self):
+        self.session.rollback()
+        helpers.Session.remove()
+
+    @contextmanager
+    def auto_rollback(self):
+        try:
+            yield
+        finally:
+            self.session.rollback()
+
+    @property
+    def session(self):
+        return helpers.get_db_session()
 
 
 class AuthLaunchingTestCase(AssetLaunchingTestCase):

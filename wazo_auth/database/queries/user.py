@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, text
@@ -31,29 +31,29 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def add_policy(self, user_uuid, policy_uuid):
         user_policy = UserPolicy(user_uuid=user_uuid, policy_uuid=policy_uuid)
-        with self.new_session() as s:
-            s.add(user_policy)
-            try:
-                s.flush()
-            except exc.IntegrityError as e:
-                if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                    # This association already exists.
-                    s.rollback()
-                    return
-                if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
-                    constraint = e.orig.diag.constraint_name
-                    if constraint == 'auth_user_policy_user_uuid_fkey':
-                        raise exceptions.UnknownUserException(user_uuid)
-                    elif constraint == 'auth_user_policy_policy_uuid_fkey':
-                        raise exceptions.UnknownPolicyException(policy_uuid)
-                raise
+        self.session.begin_nested()
+        self.session.add(user_policy)
+        try:
+            self.session.commit()
+        except exc.IntegrityError as e:
+            self.session.rollback()
+            if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                # This association already exists.
+                return
+            if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
+                constraint = e.orig.diag.constraint_name
+                if constraint == 'auth_user_policy_user_uuid_fkey':
+                    raise exceptions.UnknownUserException(user_uuid)
+                elif constraint == 'auth_user_policy_policy_uuid_fkey':
+                    raise exceptions.UnknownPolicyException(policy_uuid)
+            raise
 
     def change_password(self, user_uuid, salt, hash_):
         filter_ = User.uuid == str(user_uuid)
         values = {'password_salt': salt, 'password_hash': hash_}
 
-        with self.new_session() as s:
-            s.query(User).filter(filter_).update(values)
+        self.session.query(User).filter(filter_).update(values)
+        self.session.flush()
 
     def exists(self, user_uuid, tenant_uuids=None):
         kwargs = {'uuid': user_uuid}
@@ -66,15 +66,16 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             UserPolicy.user_uuid == user_uuid, UserPolicy.policy_uuid == policy_uuid
         )
 
-        with self.new_session() as s:
-            return s.query(UserPolicy).filter(filter_).delete()
+        result = self.session.query(UserPolicy).filter(filter_).delete()
+        self.session.flush()
+        return result
 
     def count(self, **kwargs):
         filter_ = text('true')
 
         tenant_uuid = kwargs.get('tenant_uuid')
         if tenant_uuid:
-            filter_ = User.tenant_uuid == tenant_uuid
+            filter_ = User.tenantreturn_uuid == tenant_uuid
 
         tenant_uuids = kwargs.get('tenant_uuids')
         if tenant_uuids:
@@ -86,14 +87,13 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             search_filter = self.new_search_filter(**kwargs)
             filter_ = and_(filter_, strict_filter, search_filter)
 
-        with self.new_session() as s:
-            return (
-                s.query(User.uuid)
-                .outerjoin(UserEmail, UserEmail.user_uuid == User.uuid)
-                .outerjoin(Email, Email.uuid == UserEmail.email_uuid)
-                .filter(filter_)
-                .count()
-            )
+        return (
+            self.session.query(User.uuid)
+            .outerjoin(UserEmail, UserEmail.user_uuid == User.uuid)
+            .outerjoin(Email, Email.uuid == UserEmail.email_uuid)
+            .filter(filter_)
+            .count()
+        )
 
     def count_groups(self, user_uuid, **kwargs):
         filtered = kwargs.get('filtered')
@@ -106,16 +106,14 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         filter_ = and_(filter_, UserGroup.user_uuid == str(user_uuid))
 
-        with self.new_session() as s:
-            return s.query(Group).join(UserGroup).filter(filter_).count()
+        return self.session.query(Group).join(UserGroup).filter(filter_).count()
 
     def count_sessions(self, user_uuid, **kwargs):
         # filtered is not implemented
 
         filter_ = Token.auth_id == str(user_uuid)
 
-        with self.new_session() as s:
-            return s.query(Session).join(Token).filter(filter_).count()
+        return self.session.query(Session).join(Token).filter(filter_).count()
 
     def count_policies(self, user_uuid, **kwargs):
         filtered = kwargs.get('filtered')
@@ -128,13 +126,12 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         filter_ = and_(filter_, UserPolicy.user_uuid == user_uuid)
 
-        with self.new_session() as s:
-            return (
-                s.query(Policy)
-                .join(UserPolicy, UserPolicy.policy_uuid == Policy.uuid)
-                .filter(filter_)
-                .count()
-            )
+        return (
+            self.session.query(Policy)
+            .join(UserPolicy, UserPolicy.policy_uuid == Policy.uuid)
+            .filter(filter_)
+            .count()
+        )
 
     def create(self, username, **kwargs):
         user_args = {
@@ -153,96 +150,93 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         email_confirmed = kwargs.get('email_confirmed', False)
         email_address = kwargs.get('email_address', None)
-        with self.new_session() as s:
-            try:
-                if email_address:
-                    email_args = {
-                        'address': email_address,
-                        'confirmed': email_confirmed,
-                    }
-                    email = Email(**email_args)
-                    s.add(email)
-
-                user = User(**user_args)
-                s.add(user)
-                s.flush()
-                if email_address:
-                    user_email = UserEmail(
-                        user_uuid=user.uuid, email_uuid=email.uuid, main=True
-                    )
-                    s.add(user_email)
-                    s.flush()
-            except exc.IntegrityError as e:
-                if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                    column = self.constraint_to_column_map.get(
-                        e.orig.diag.constraint_name
-                    )
-                    value = locals().get(column)
-                    if column:
-                        raise exceptions.ConflictException('users', column, value)
-                raise
-
+        try:
             if email_address:
-                email = {
-                    'uuid': email.uuid,
+                email_args = {
                     'address': email_address,
                     'confirmed': email_confirmed,
-                    'main': True,
                 }
-                emails = [email]
-            else:
-                emails = []
+                email = Email(**email_args)
+                self.session.add(email)
 
-            return {
-                'uuid': user.uuid,
-                'username': username,
-                'firstname': user.firstname,
-                'lastname': user.lastname,
-                'purpose': user.purpose,
-                'emails': emails,
-                'enabled': user.enabled,
-                'tenant_uuid': user.tenant_uuid,
+            user = User(**user_args)
+            self.session.add(user)
+            self.session.flush()
+            if email_address:
+                user_email = UserEmail(
+                    user_uuid=user.uuid, email_uuid=email.uuid, main=True
+                )
+                self.session.add(user_email)
+                self.session.flush()
+        except exc.IntegrityError as e:
+            if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
+                value = locals().get(column)
+                if column:
+                    raise exceptions.ConflictException('users', column, value)
+            raise
+
+        if email_address:
+            email = {
+                'uuid': email.uuid,
+                'address': email_address,
+                'confirmed': email_confirmed,
+                'main': True,
             }
+            emails = [email]
+        else:
+            emails = []
+
+        return {
+            'uuid': user.uuid,
+            'username': username,
+            'firstname': user.firstname,
+            'lastname': user.lastname,
+            'purpose': user.purpose,
+            'emails': emails,
+            'enabled': user.enabled,
+            'tenant_uuid': user.tenant_uuid,
+        }
 
     def delete(self, user_uuid):
-        with self.new_session() as s:
-            user = s.query(User).filter(User.uuid == str(user_uuid)).first()
+        user = self.session.query(User).filter(User.uuid == str(user_uuid)).first()
 
-            if not user:
-                raise exceptions.UnknownUserException(user_uuid)
+        if not user:
+            raise exceptions.UnknownUserException(user_uuid)
 
-            s.delete(user)
+        self.session.delete(user)
+        self.session.flush()
 
     def get_credentials(self, username):
         filter_ = and_(
             self.new_strict_filter(username=username), User.enabled.is_(True)
         )
 
-        with self.new_session() as s:
-            query = s.query(User.password_salt, User.password_hash).filter(filter_)
+        query = self.session.query(User.password_salt, User.password_hash).filter(
+            filter_
+        )
 
-            for row in query.all():
-                return row.password_hash, row.password_salt
+        for row in query.all():
+            return row.password_hash, row.password_salt
 
-            raise exceptions.UnknownUsernameException(username)
+        raise exceptions.UnknownUsernameException(username)
 
     def get_emails(self, user_uuid):
         result = []
 
-        with self.new_session() as s:
-            user = s.query(User).filter(User.uuid == str(user_uuid)).first()
-            if not user:
-                raise exceptions.UnknownUserException(user_uuid)
+        user = self.session.query(User).filter(User.uuid == str(user_uuid)).first()
+        if not user:
+            raise exceptions.UnknownUserException(user_uuid)
 
-            for item in user.emails:
-                result.append(
-                    {
-                        'uuid': item.email.uuid,
-                        'address': item.email.address,
-                        'main': item.main,
-                        'confirmed': item.email.confirmed,
-                    }
-                )
+        for item in user.emails:
+            result.append(
+                {
+                    'uuid': item.email.uuid,
+                    'address': item.email.address,
+                    'main': item.main,
+                    'confirmed': item.email.confirmed,
+                }
+            )
 
         return result
 
@@ -260,73 +254,72 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             filter_ = and_(filter_, User.tenant_uuid == str(tenant_uuid))
 
         users = []
-        with self.new_session() as s:
-            query = (
-                s.query(User)
-                .outerjoin(UserEmail)
-                .outerjoin(Email)
-                .outerjoin(UserGroup)
-                .filter(filter_)
-            )
-            query = self._paginator.update_query(query, **kwargs)
+        query = (
+            self.session.query(User)
+            .outerjoin(UserEmail)
+            .outerjoin(Email)
+            .outerjoin(UserGroup)
+            .filter(filter_)
+        )
+        query = self._paginator.update_query(query, **kwargs)
 
-            for user in query.all():
-                emails = []
-                for item in user.emails:
-                    emails.append(
-                        {
-                            'uuid': item.email.uuid,
-                            'address': item.email.address,
-                            'main': item.main,
-                            'confirmed': item.email.confirmed,
-                        }
-                    )
-
-                users.append(
+        for user in query.all():
+            emails = []
+            for item in user.emails:
+                emails.append(
                     {
-                        'username': user.username,
-                        'uuid': user.uuid,
-                        'enabled': user.enabled,
-                        'emails': emails,
-                        'firstname': user.firstname,
-                        'lastname': user.lastname,
-                        'purpose': user.purpose,
-                        'tenant_uuid': user.tenant_uuid,
+                        'uuid': item.email.uuid,
+                        'address': item.email.address,
+                        'main': item.main,
+                        'confirmed': item.email.confirmed,
                     }
                 )
+
+            users.append(
+                {
+                    'username': user.username,
+                    'uuid': user.uuid,
+                    'enabled': user.enabled,
+                    'emails': emails,
+                    'firstname': user.firstname,
+                    'lastname': user.lastname,
+                    'purpose': user.purpose,
+                    'tenant_uuid': user.tenant_uuid,
+                }
+            )
 
         return users
 
     def update(self, user_uuid, **kwargs):
         filter_ = User.uuid == str(user_uuid)
 
-        with self.new_session() as s:
-            s.query(User).filter(filter_).update(kwargs)
+        self.session.query(User).filter(filter_).update(kwargs)
+        self.session.flush()
 
     def update_emails(self, user_uuid, emails):
         existing_addresses = self._emails_to_dict(self.get_emails(user_uuid))
         emails_as_dict = self._emails_to_dict(emails)
         updated_emails = self._merge_existing_emails(emails_as_dict, existing_addresses)
 
-        with self.new_session() as s:
-            self._delete_all_emails(s, user_uuid)
+        self._delete_all_emails(user_uuid)
 
-            for email in updated_emails.values():
-                self._add_user_email(s, user_uuid, email)
+        for email in updated_emails.values():
+            self._add_user_email(user_uuid, email)
 
+        self.session.flush()
         return emails
 
-    def _add_user_email(self, s, user_uuid, args):
+    def _add_user_email(self, user_uuid, args):
         args.setdefault('confirmed', False)
         email = Email(address=args['address'])
         email.confirmed = args['confirmed']
         uuid = args.get('uuid')
         if uuid:
             email.uuid = uuid
-        s.add(email)
+        self.session.add(email)
 
         try:
-            s.flush()
+            self.session.flush()
         except exc.IntegrityError as e:
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
@@ -335,19 +328,22 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     raise exceptions.ConflictException('users', column, value)
             raise
 
-        s.add(UserEmail(email_uuid=email.uuid, user_uuid=user_uuid, main=args['main']))
-        s.flush()
+        self.session.add(
+            UserEmail(email_uuid=email.uuid, user_uuid=user_uuid, main=args['main'])
+        )
+        self.session.flush()
         args['uuid'] = email.uuid
 
-    def _delete_all_emails(self, s, user_uuid):
+    def _delete_all_emails(self, user_uuid):
         filter_ = UserEmail.user_uuid == str(user_uuid)
 
-        query = s.query(UserEmail.email_uuid).filter(filter_)
+        query = self.session.query(UserEmail.email_uuid).filter(filter_)
         email_uuids = [row.email_uuid for row in query.all()]
         if email_uuids:
-            s.query(Email).filter(Email.uuid.in_(email_uuids)).delete(
+            self.session.query(Email).filter(Email.uuid.in_(email_uuids)).delete(
                 synchronize_session=False
             )
+        self.session.flush()
 
     @staticmethod
     def _emails_to_dict(emails):

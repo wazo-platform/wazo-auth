@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -124,19 +124,18 @@ class TestUserDAO(base.DAOTestCase):
     @fixtures.db.user()
     def test_user_policy_association(self, user_uuid, policy_uuid):
         self._user_dao.add_policy(user_uuid, policy_uuid)
-        with self._user_dao.new_session() as s:
-            count = (
-                s.query(func.count(models.UserPolicy.user_uuid))
-                .filter(
-                    and_(
-                        models.UserPolicy.user_uuid == user_uuid,
-                        models.UserPolicy.policy_uuid == policy_uuid,
-                    )
+        count = (
+            self.session.query(func.count(models.UserPolicy.user_uuid))
+            .filter(
+                and_(
+                    models.UserPolicy.user_uuid == user_uuid,
+                    models.UserPolicy.policy_uuid == policy_uuid,
                 )
-                .scalar()
             )
+            .scalar()
+        )
 
-            assert_that(count, equal_to(1))
+        assert_that(count, equal_to(1))
 
         assert_that(
             calling(self._user_dao.add_policy).with_args(user_uuid, policy_uuid),
@@ -226,41 +225,36 @@ class TestUserDAO(base.DAOTestCase):
             purpose='user',
         )['uuid']
 
-        try:
-            assert_that(user_uuid, equal_to(ANY_UUID))
-            result = self._user_dao.list_(uuid=user_uuid)
-            assert_that(
-                result,
-                contains(
-                    has_entries(
-                        username=username,
-                        emails=contains(
-                            has_entries(
-                                address=email_address, confirmed=False, main=True
-                            )
-                        ),
-                    )
-                ),
-            )
-            assert_that(
-                calling(self._user_dao.create).with_args(
-                    'foo',
-                    uuid=user_uuid,
-                    email_address='foo@bar.baz',
-                    tenant_uuid=self.top_tenant_uuid,
-                    hash_='',
-                    salt=b'',
-                    purpose='user',
-                ),
-                raises(
-                    exceptions.ConflictException,
-                    has_properties(
-                        status_code=409, resource='users', details=has_entries(uuid=ANY)
+        assert_that(user_uuid, equal_to(ANY_UUID))
+        result = self._user_dao.list_(uuid=user_uuid)
+        assert_that(
+            result,
+            contains(
+                has_entries(
+                    username=username,
+                    emails=contains(
+                        has_entries(address=email_address, confirmed=False, main=True)
                     ),
+                )
+            ),
+        )
+        assert_that(
+            calling(self._user_dao.create).with_args(
+                'foo',
+                uuid=user_uuid,
+                email_address='foo@bar.baz',
+                tenant_uuid=self.top_tenant_uuid,
+                hash_='',
+                salt=b'',
+                purpose='user',
+            ),
+            raises(
+                exceptions.ConflictException,
+                has_properties(
+                    status_code=409, resource='users', details=has_entries(uuid=ANY)
                 ),
-            )
-        finally:
-            self._user_dao.delete(user_uuid)
+            ),
+        )
 
     def test_user_creation_email_confirmed(self):
         username = 'foobar'
@@ -592,5 +586,7 @@ class TestUserDAO(base.DAOTestCase):
 
     def _email_exists(self, address):
         filter_ = models.Email.address == address
-        with self._user_dao.new_session() as s:
-            return s.query(func.count(models.Email.uuid)).filter(filter_).scalar() > 0
+        return (
+            self.session.query(func.count(models.Email.uuid)).filter(filter_).scalar()
+            > 0
+        )

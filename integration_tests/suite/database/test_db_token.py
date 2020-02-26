@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -69,46 +69,45 @@ class TestTokenDAO(base.DAOTestCase):
     @fixtures.db.token(expiration=0)
     @fixtures.db.token()
     def test_delete_expired_tokens_and_sessions(self, token_1, token_2, token_3):
-        with self._session_dao.new_session() as s:
-            (
-                expired_tokens,
-                expired_sessions,
-            ) = self._token_dao.delete_expired_tokens_and_sessions()
+        (
+            expired_tokens,
+            expired_sessions,
+        ) = self._token_dao.delete_expired_tokens_and_sessions()
 
-            assert_that(
-                expired_tokens,
-                all_of(
-                    not_(has_items(has_entries(uuid=token_1['uuid']))),
-                    has_items(has_entries(uuid=token_2['uuid'])),
-                    has_items(has_entries(uuid=token_3['uuid'])),
-                ),
-            )
+        assert_that(
+            expired_tokens,
+            all_of(
+                not_(has_items(has_entries(uuid=token_1['uuid']))),
+                has_items(has_entries(uuid=token_2['uuid'])),
+                has_items(has_entries(uuid=token_3['uuid'])),
+            ),
+        )
 
-            assert_that(
-                expired_sessions,
-                all_of(
-                    not_(has_items(has_entries(uuid=token_1['session_uuid']))),
-                    has_items(has_entries(uuid=token_2['session_uuid'])),
-                    has_items(has_entries(uuid=token_3['session_uuid'])),
-                ),
-            )
+        assert_that(
+            expired_sessions,
+            all_of(
+                not_(has_items(has_entries(uuid=token_1['session_uuid']))),
+                has_items(has_entries(uuid=token_2['session_uuid'])),
+                has_items(has_entries(uuid=token_3['session_uuid'])),
+            ),
+        )
 
-            sessions = s.query(models.Session).all()
-            assert_that(
-                sessions,
-                all_of(
-                    has_items(has_properties(uuid=token_1['session_uuid'])),
-                    not_(has_items(has_properties(uuid=token_2['session_uuid']))),
-                    not_(has_items(has_properties(uuid=token_3['session_uuid']))),
-                ),
-            )
+        sessions = self.session.query(models.Session).all()
+        assert_that(
+            sessions,
+            all_of(
+                has_items(has_properties(uuid=token_1['session_uuid'])),
+                not_(has_items(has_properties(uuid=token_2['session_uuid']))),
+                not_(has_items(has_properties(uuid=token_3['session_uuid']))),
+            ),
+        )
 
-            tokens = s.query(models.Token).all()
-            assert_that(
-                tokens,
-                all_of(
-                    has_items(has_properties(uuid=token_1['uuid'])),
-                    not_(has_items(has_properties(uuid=token_2['uuid']))),
-                    not_(has_items(has_properties(uuid=token_3['uuid']))),
-                ),
-            )
+        tokens = self.session.query(models.Token).all()
+        assert_that(
+            tokens,
+            all_of(
+                has_items(has_properties(uuid=token_1['uuid'])),
+                not_(has_items(has_properties(uuid=token_2['uuid']))),
+                not_(has_items(has_properties(uuid=token_3['uuid']))),
+            ),
+        )
