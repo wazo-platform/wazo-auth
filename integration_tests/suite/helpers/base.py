@@ -102,6 +102,7 @@ class DAOTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.session.rollback()
+        helpers.Session.remove()
 
     @property
     def session(self):
