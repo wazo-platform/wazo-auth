@@ -6,7 +6,6 @@ import os
 import threading
 
 from jinja2 import BaseLoader, Environment, TemplateNotFound
-from anytree import Node, PreOrderIter
 
 logger = logging.getLogger(__name__)
 
@@ -88,47 +87,10 @@ class TemplateFormatter:
 class TenantTree:
     def __init__(self, tenant_dao):
         self._tenant_dao = tenant_dao
-        self._tenant_tree = None
 
-    def list_nodes(self, nid):
-        tree = self._build_tree(self._tenant_dao.list_())
-        subtree = self._find_subtree(tree, nid)
-        return [n.name for n in PreOrderIter(subtree)]
-
-    def _find_subtree(self, tree, uuid):
-        for node in PreOrderIter(tree):
-            if node.name == uuid:
-                return node
-
-    def _build_tree(self, tenants):
-        logger.debug('rebuilding tenant tree')
-        nb_tenants = len(tenants)
-        inserted_tenants = set()
-
-        for tenant in tenants:
-            if tenant['uuid'] == tenant['parent_uuid']:
-                top = Node(tenant['uuid'])
-                inserted_tenants.add(tenant['uuid'])
-
-        while True:
-            if len(inserted_tenants) == nb_tenants:
-                break
-
-            for tenant in tenants:
-                if tenant['uuid'] in inserted_tenants:
-                    continue
-
-                if tenant['parent_uuid'] not in inserted_tenants:
-                    continue
-
-                parent = self._find_subtree(top, tenant['parent_uuid'])
-                if not parent:
-                    raise Exception('Could not find parent in tree')
-
-                Node(tenant['uuid'], parent=parent)
-                inserted_tenants.add(tenant['uuid'])
-
-        return top
+    def list_nodes(self, scoping_tenant_uuid):
+        visible_tenants = self._tenant_dao.list_visible_tenants(scoping_tenant_uuid)
+        return [tenant.uuid for tenant in visible_tenants]
 
 
 class CachedTenantTree(TenantTree):
