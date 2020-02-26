@@ -104,6 +104,13 @@ class DAOTestCase(unittest.TestCase):
         self.session.rollback()
         helpers.Session.remove()
 
+    @contextmanager
+    def auto_rollback(self):
+        try:
+            yield
+        finally:
+            self.session.rollback()
+
     @property
     def session(self):
         return helpers.get_db_session()

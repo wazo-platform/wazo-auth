@@ -26,12 +26,10 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     }
 
     def associate_policy_template(self, policy_uuid, acl_template):
-        self.session.begin_nested()
         self._associate_acl_templates(policy_uuid, [acl_template])
         try:
-            self.session.commit()
+            self.session.flush()
         except exc.IntegrityError as e:
-            self.session.rollback()
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 raise exceptions.DuplicateTemplateException(acl_template)
             if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:

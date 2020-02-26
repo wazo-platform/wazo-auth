@@ -66,14 +66,15 @@ class TestExternalAuthDAO(base.DAOTestCase):
 
     @fixtures.db.user()
     def test_create(self, user_uuid):
-        assert_that(
-            calling(self._external_auth_dao.create).with_args(
-                self.unknown_uuid, self.auth_type, self.data
-            ),
-            raises(exceptions.UnknownUserException).matching(
-                has_properties(status_code=404, resource='users')
-            ),
-        )
+        with self.auto_rollback():
+            assert_that(
+                calling(self._external_auth_dao.create).with_args(
+                    self.unknown_uuid, self.auth_type, self.data
+                ),
+                raises(exceptions.UnknownUserException).matching(
+                    has_properties(status_code=404, resource='users')
+                ),
+            )
 
         result = self._external_auth_dao.create(user_uuid, self.auth_type, self.data)
         assert_that(result, equal_to(self.data))

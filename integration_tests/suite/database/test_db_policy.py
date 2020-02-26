@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from contextlib import contextmanager
@@ -37,20 +37,24 @@ class TestPolicyDAO(base.DAOTestCase):
             self.get_policy(uuid), has_entries(acl_templates=contains_inanyorder('#'))
         )
 
-        assert_that(
-            calling(self._policy_dao.associate_policy_template).with_args(uuid, '#'),
-            raises(exceptions.DuplicateTemplateException),
-        )
+        with self.auto_rollback():
+            assert_that(
+                calling(self._policy_dao.associate_policy_template).with_args(
+                    uuid, '#'
+                ),
+                raises(exceptions.DuplicateTemplateException),
+            )
 
         self._policy_dao.dissociate_policy_template(uuid, '#')
         assert_that(self.get_policy(uuid), has_entries(acl_templates=empty()))
 
-        assert_that(
-            calling(self._policy_dao.associate_policy_template).with_args(
-                'unknown', '#'
-            ),
-            raises(exceptions.UnknownPolicyException),
-        )
+        with self.auto_rollback():
+            assert_that(
+                calling(self._policy_dao.associate_policy_template).with_args(
+                    'unknown', '#'
+                ),
+                raises(exceptions.UnknownPolicyException),
+            )
 
         assert_that(
             self._policy_dao.dissociate_policy_template('unknown', '#'), equal_to(0)

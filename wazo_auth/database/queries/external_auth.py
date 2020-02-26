@@ -46,12 +46,10 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             external_auth_type_uuid=external_type.uuid,
             external_auth_data_uuid=external_data.uuid,
         )
-        self.session.begin_nested()
         self.session.add(user_external_auth)
         try:
-            self.session.commit()
+            self.session.flush()
         except exc.IntegrityError as e:
-            self.session.rollback()
             if e.orig.pgcode in (
                 self._UNIQUE_CONSTRAINT_CODE,
                 self._FKEY_CONSTRAINT_CODE,
@@ -76,12 +74,10 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             tenant_uuid=tenant_uuid,
             type_uuid=external_type.uuid,
         )
-        self.session.begin_nested()
         self.session.add(external_auth_config)
         try:
-            self.session.commit()
+            self.session.flush()
         except exc.IntegrityError as e:
-            self.session.rollback()
             if e.orig.pgcode in (self._UNIQUE_CONSTRAINT_CODE):
                 constraint = e.orig.diag.constraint_name
                 if constraint == 'auth_external_auth_config_pkey':
