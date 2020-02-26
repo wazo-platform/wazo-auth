@@ -20,3 +20,12 @@ def deinit_db():
 
 def get_db_session():
     return Session()
+
+
+def commit_or_rollback():
+    try:
+        Session.commit()
+    except Exception:
+        Session.rollback()
+    finally:
+        Session.close()

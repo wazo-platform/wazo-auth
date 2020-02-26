@@ -168,6 +168,7 @@ class ExpiredTokenRemover:
             tokens, sessions = self._dao.token.delete_expired_tokens_and_sessions()
             Session.commit()
         except Exception:
+            Session.rollback()
             logger.warning(
                 'failed to remove expired tokens and sessions', exc_info=self._debug
             )

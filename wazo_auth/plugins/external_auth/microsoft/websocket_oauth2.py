@@ -8,7 +8,7 @@ from threading import Thread
 import websocket
 
 from wazo_auth.exceptions import ExternalAuthAlreadyExists
-from wazo_auth.database.helpers import Session
+from wazo_auth.database.helpers import commit_or_rollback
 from .helpers import get_timestamp_expiration
 
 logger = logging.getLogger(__name__)
@@ -55,10 +55,7 @@ class WebSocketOAuth2(Thread):
             self.ws.close()
             self.ws = None
         self.create_first_token(self.user_uuid, msg.get('code'))
-        try:
-            Session.commit()
-        finally:
-            Session.close()
+        commit_or_rollback()
 
     def _on_error(self, error):
         logger.error(error)

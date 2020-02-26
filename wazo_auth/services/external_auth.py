@@ -11,7 +11,7 @@ import marshmallow
 from xivo_bus.resources.auth import events
 
 from wazo_auth.services.helpers import BaseService
-from wazo_auth.database.helpers import Session
+from wazo_auth.database.helpers import commit_or_rollback
 
 logger = logging.getLogger(__name__)
 
@@ -46,10 +46,7 @@ class _OAuth2Synchronizer:
         try:
             msg = json.loads(msg)
             success_cb(msg)
-            try:
-                Session.commit()
-            finally:
-                Session.close()
+            commit_or_rollback()
             self._bus_publisher.publish(event)
         finally:
             ws.close()
