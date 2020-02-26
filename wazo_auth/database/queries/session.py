@@ -62,5 +62,6 @@ class SessionDAO(PaginatorMixin, BaseDAO):
 
         session_result = {'uuid': session.uuid, 'tenant_uuid': session.tenant_uuid}
         self.session.query(Session).filter(filter_).delete(synchronize_session=False)
+        self.session.flush()
 
         return session_result, token_result

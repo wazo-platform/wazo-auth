@@ -53,6 +53,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         values = {'password_salt': salt, 'password_hash': hash_}
 
         self.session.query(User).filter(filter_).update(values)
+        self.session.flush()
 
     def exists(self, user_uuid, tenant_uuids=None):
         kwargs = {'uuid': user_uuid}
@@ -65,14 +66,16 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             UserPolicy.user_uuid == user_uuid, UserPolicy.policy_uuid == policy_uuid
         )
 
-        return self.session.query(UserPolicy).filter(filter_).delete()
+        result = self.session.query(UserPolicy).filter(filter_).delete()
+        self.session.flush()
+        return result
 
     def count(self, **kwargs):
         filter_ = text('true')
 
         tenant_uuid = kwargs.get('tenant_uuid')
         if tenant_uuid:
-            filter_ = User.tenant_uuid == tenant_uuid
+            filter_ = User.tenantreturn_uuid == tenant_uuid
 
         tenant_uuids = kwargs.get('tenant_uuids')
         if tenant_uuids:
@@ -202,6 +205,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             raise exceptions.UnknownUserException(user_uuid)
 
         self.session.delete(user)
+        self.session.flush()
 
     def get_credentials(self, username):
         filter_ = and_(
@@ -290,6 +294,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         filter_ = User.uuid == str(user_uuid)
 
         self.session.query(User).filter(filter_).update(kwargs)
+        self.session.flush()
 
     def update_emails(self, user_uuid, emails):
         existing_addresses = self._emails_to_dict(self.get_emails(user_uuid))
@@ -301,6 +306,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         for email in updated_emails.values():
             self._add_user_email(user_uuid, email)
 
+        self.session.flush()
         return emails
 
     def _add_user_email(self, user_uuid, args):
@@ -337,6 +343,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             self.session.query(Email).filter(Email.uuid.in_(email_uuids)).delete(
                 synchronize_session=False
             )
+        self.session.flush()
 
     @staticmethod
     def _emails_to_dict(emails):

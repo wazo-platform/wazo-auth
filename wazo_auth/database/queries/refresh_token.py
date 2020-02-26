@@ -69,6 +69,7 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             .delete(synchronize_session=False)
         )
 
+        self.session.flush()
         if not nb_deleted:
             raise exceptions.UnknownRefreshToken(client_id)
 

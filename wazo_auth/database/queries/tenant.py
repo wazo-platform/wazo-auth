@@ -99,7 +99,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         nb_deleted = (
             self.session.query(Tenant).filter(Tenant.uuid == str(uuid)).delete()
         )
-
+        self.session.flush()
         if not nb_deleted:
             if not self.list_(uuid=uuid):
                 raise exceptions.UnknownTenantException(uuid)

@@ -59,7 +59,9 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             ACLTemplatePolicy.policy_uuid == policy_uuid,
             ACLTemplatePolicy.template_id == template_id,
         )
-        return self.session.query(ACLTemplatePolicy).filter(filter_).delete()
+        result = self.session.query(ACLTemplatePolicy).filter(filter_).delete()
+        self.session.flush()
+        return result
 
     def count_tenants(self, policy_uuid, **kwargs):
         filtered = kwargs.get('filtered')
@@ -90,6 +92,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 raise exceptions.DuplicatePolicyException(name)
             raise
         self._associate_acl_templates(policy.uuid, acl_templates)
+        self.session.flush()
         return policy.uuid
 
     def delete(self, policy_uuid, tenant_uuids):
@@ -100,7 +103,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         nb_deleted = (
             self.session.query(Policy).filter(filter_).delete(synchronize_session=False)
         )
-
+        self.session.flush()
         if not nb_deleted:
             raise exceptions.UnknownPolicyException(policy_uuid)
 
@@ -190,6 +193,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         self._dissociate_all_acl_templates(policy_uuid)
         self._associate_acl_templates(policy_uuid, acl_templates)
+        self.session.flush()
 
     def _associate_acl_templates(self, policy_uuid, acl_templates):
         ids = self._create_or_find_acl_templates(acl_templates)
@@ -213,11 +217,14 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 continue
             id_ = self._insert_acl_template(template)
             existing[template] = id_
-        return existing.values()
+        result = existing.values()
+        self.session.flush()
+        return result
 
     def _dissociate_all_acl_templates(self, policy_uuid):
         filter_ = ACLTemplatePolicy.policy_uuid == policy_uuid
         self.session.query(ACLTemplatePolicy).filter(filter_).delete()
+        self.session.flush()
 
     def _insert_acl_template(self, template):
         tpl = ACLTemplate(template=template)
@@ -234,4 +241,6 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
             filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
 
-        return self.session.query(Policy).filter(filter_).count() > 0
+        result = self.session.query(Policy).filter(filter_).count() > 0
+        self.session.flush()
+        return result

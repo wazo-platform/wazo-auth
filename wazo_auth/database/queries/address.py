@@ -10,6 +10,7 @@ from ..models import Address
 class AddressDAO(BaseDAO):
     def delete(self, address_id):
         self.session.query(Address).filter(Address.id_ == address_id).delete()
+        self.session.flush()
 
     def get(self, address_id):
         for row in self.session.query(Address).filter(Address.id_ == address_id).all():
@@ -36,10 +37,11 @@ class AddressDAO(BaseDAO):
     def update(self, address_id, **kwargs):
         if self._address_is_empty(**kwargs):
             self.delete(address_id)
+            self.session.flush()
             return None
 
         self.session.query(Address).filter(Address.id_ == address_id).update(kwargs)
-
+        self.session.flush()
         return address_id
 
     def _address_is_empty(self, **kwargs):

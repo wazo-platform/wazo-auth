@@ -96,6 +96,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             UserExternalAuth.external_auth_type_uuid == type_.uuid,
         )
         nb_deleted = self.session.query(UserExternalAuth).filter(filter_).delete()
+        self.session.flush()
         if nb_deleted:
             return
 
@@ -109,6 +110,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             ExternalAuthConfig.tenant_uuid == tenant_uuid,
         )
         nb_deleted = self.session.query(ExternalAuthConfig).filter(filter_).delete()
+        self.session.flush()
         if nb_deleted:
             return
 
@@ -135,6 +137,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             self.session.query(ExternalAuthType).filter(filter_).update(
                 {'enabled': value}
             )
+        self.session.flush()
 
     def get(self, user_uuid, auth_type):
         filter_ = and_(
@@ -209,11 +212,15 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def update(self, user_uuid, auth_type, data):
         self.delete(user_uuid, auth_type)
-        return self.create(user_uuid, auth_type, data)
+        result = self.create(user_uuid, auth_type, data)
+        self.session.flush()
+        return result
 
     def update_config(self, auth_type, data, tenant_uuid):
         self.delete_config(auth_type, tenant_uuid)
-        return self.create_config(auth_type, data, tenant_uuid)
+        result = self.create_config(auth_type, data, tenant_uuid)
+        self.session.flush()
+        return result
 
     def _assert_tenant_exists(self, tenant_uuid):
         if (
@@ -245,4 +252,5 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         except exceptions.UnknownExternalAuthTypeException:
             type_ = ExternalAuthType(name=auth_type)
             self.session.add(type_)
+        self.session.flush()
         return type_

@@ -127,6 +127,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             self.session.query(Group).filter(filter_).delete(synchronize_session=False)
         )
 
+        self.session.flush()
         if not nb_deleted:
             raise exceptions.UnknownGroupException(uuid)
 
@@ -180,7 +181,9 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             GroupPolicy.group_uuid == str(group_uuid),
         )
 
-        return self.session.query(GroupPolicy).filter(filter_).delete()
+        result = self.session.query(GroupPolicy).filter(filter_).delete()
+        self.session.flush()
+        return result
 
     def remove_user(self, group_uuid, user_uuid):
         filter_ = and_(
@@ -188,4 +191,6 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             UserGroup.group_uuid == str(group_uuid),
         )
 
-        return self.session.query(UserGroup).filter(filter_).delete()
+        result = self.session.query(UserGroup).filter(filter_).delete()
+        self.session.flush()
+        return result

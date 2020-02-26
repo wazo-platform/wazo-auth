@@ -75,6 +75,7 @@ class TokenDAO(BaseDAO):
 
         token_result = {'uuid': token.uuid, 'auth_id': token.auth_id}
         self.session.query(TokenModel).filter(filter_).delete()
+        self.session.flush()
 
         return token_result, session_result
 
@@ -89,6 +90,7 @@ class TokenDAO(BaseDAO):
     def delete_expired_tokens_and_sessions(self):
         tokens = self._delete_expired_tokens()
         sessions = self._delete_expired_sessions()
+        self.session.flush()
         return tokens, sessions
 
     def _get_tokens_with_expiration_less_than(self, epoch):
@@ -122,6 +124,7 @@ class TokenDAO(BaseDAO):
         token_uuids = [token['uuid'] for token in results]
         filter_ = TokenModel.uuid.in_(token_uuids)
         self.session.query(TokenModel).filter(filter_).delete(synchronize_session=False)
+        self.session.flush()
         return results
 
     def _delete_expired_sessions(self):
@@ -132,4 +135,5 @@ class TokenDAO(BaseDAO):
         session_uuids = [session['uuid'] for session in results]
         filter_ = Session.uuid.in_(session_uuids)
         self.session.query(Session).filter(filter_).delete(synchronize_session=False)
+        self.session.flush()
         return results

@@ -19,6 +19,7 @@ class EmailDAO(BaseDAO):
         nb_updated = (
             self.session.query(Email).filter(filter_).update({'confirmed': True})
         )
+        self.session.flush()
 
         if not nb_updated:
             raise exceptions.UnknownEmailException(email_uuid)
@@ -26,6 +27,7 @@ class EmailDAO(BaseDAO):
     def delete(self, email_uuid):
         filter_ = Email.uuid == str(email_uuid)
         nb_deleted = self.session.query(Email).filter(filter_).delete()
+        self.session.flush()
 
         if not nb_deleted:
             raise exceptions.UnknownEmailException(email_uuid)
