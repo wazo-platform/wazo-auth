@@ -195,7 +195,7 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
                     has_entries(access_token=token),
                 )
             except requests.HTTPError:
-                assert False
+                assert_that(False)
 
         until.assert_(oauth2_is_done, timeout=5, interval=0.25)
 
