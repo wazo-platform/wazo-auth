@@ -8,6 +8,7 @@ from hamcrest import (
     calling,
     contains,
     contains_inanyorder,
+    empty,
     equal_to,
     has_entries,
     has_properties,
@@ -18,7 +19,7 @@ from xivo_test_helpers.mock import ANY_UUID
 from wazo_auth import exceptions
 from wazo_auth.database import models
 
-from ..helpers import fixtures, base
+from ..helpers import fixtures, base, constants
 
 
 class TestTenantDAO(base.DAOTestCase):
@@ -79,6 +80,10 @@ class TestTenantDAO(base.DAOTestCase):
         # Leaves can see themselves only
         result = self._tenant_dao.list_(scoping_tenant_uuid=c_uuid)
         assert_that(result, contains(has_properties(uuid=c_uuid)))
+
+        # An unknown tenant returns nothing
+        result = self._tenant_dao.list_(scoping_tenant_uuid=constants.UNKNOWN_UUID)
+        assert_that(result, empty())
 
         # A tenant sees all of its subtenant and itself
         result = self._tenant_dao.list_(scoping_tenant_uuid=a_uuid)
