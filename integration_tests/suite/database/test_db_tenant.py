@@ -22,6 +22,77 @@ from ..helpers import fixtures, base
 
 
 class TestTenantDAO(base.DAOTestCase):
+    def test_tenant_segregation(self):
+        # This test will use the following tenant scructure
+        #         top
+        #       /  |  \
+        #      a   e   h
+        #     / \  |
+        #    d  b  f
+        #       /\
+        #      g  c
+
+        top_uuid = self._top_tenant_uuid()
+        a_uuid = self._create_tenant(name='a', parent_uuid=top_uuid)
+        e_uuid = self._create_tenant(name='e', parent_uuid=top_uuid)
+        h_uuid = self._create_tenant(name='h', parent_uuid=top_uuid)
+        d_uuid = self._create_tenant(name='d', parent_uuid=a_uuid)
+        b_uuid = self._create_tenant(name='b', parent_uuid=a_uuid)
+        f_uuid = self._create_tenant(name='f', parent_uuid=e_uuid)
+        g_uuid = self._create_tenant(name='g', parent_uuid=b_uuid)
+        c_uuid = self._create_tenant(name='c', parent_uuid=b_uuid)
+
+        # No scoping tenant returns all tenants
+        result = self._tenant_dao.list_()
+        assert_that(
+            result,
+            contains_inanyorder(
+                has_properties(uuid=top_uuid),
+                has_properties(uuid=a_uuid),
+                has_properties(uuid=b_uuid),
+                has_properties(uuid=c_uuid),
+                has_properties(uuid=d_uuid),
+                has_properties(uuid=e_uuid),
+                has_properties(uuid=f_uuid),
+                has_properties(uuid=g_uuid),
+                has_properties(uuid=h_uuid),
+            ),
+        )
+
+        # Top tenant sees everyone
+        result = self._tenant_dao.list_(scoping_tenant_uuid=top_uuid)
+        assert_that(
+            result,
+            contains_inanyorder(
+                has_properties(uuid=top_uuid),
+                has_properties(uuid=a_uuid),
+                has_properties(uuid=b_uuid),
+                has_properties(uuid=c_uuid),
+                has_properties(uuid=d_uuid),
+                has_properties(uuid=e_uuid),
+                has_properties(uuid=f_uuid),
+                has_properties(uuid=g_uuid),
+                has_properties(uuid=h_uuid),
+            ),
+        )
+
+        # Leaves can see themselves only
+        result = self._tenant_dao.list_(scoping_tenant_uuid=c_uuid)
+        assert_that(result, contains(has_properties(uuid=c_uuid)))
+
+        # A tenant sees all of its subtenant and itself
+        result = self._tenant_dao.list_(scoping_tenant_uuid=a_uuid)
+        assert_that(
+            result,
+            contains_inanyorder(
+                has_properties(uuid=a_uuid),
+                has_properties(uuid=b_uuid),
+                has_properties(uuid=c_uuid),
+                has_properties(uuid=d_uuid),
+                has_properties(uuid=g_uuid),
+            ),
+        )
+
     @fixtures.db.tenant(name='c')
     @fixtures.db.tenant(name='b')
     @fixtures.db.tenant(name='a')
