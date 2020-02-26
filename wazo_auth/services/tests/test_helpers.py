@@ -1,5 +1,8 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+
+import random
+import time
 
 from hamcrest import assert_that, contains_inanyorder
 from uuid import uuid4
@@ -75,3 +78,26 @@ class TestTenantTree(TestCase):
                 self.g['uuid'],
             ),
         )
+
+    def test_speed_to_build_and_query(self):
+        number_of_tenants = 1000
+        max_allowed_time = 0.5
+        tenants = []
+        for i in range(number_of_tenants):
+            if not tenants:
+                top_tenant_uuid = uuid4()
+                t = tenant('top', top_tenant_uuid, top_tenant_uuid)
+            else:
+                parent = random.choice(tenants)
+                t = tenant('tenant_{}'.format(i), parent['uuid'])
+            tenants.append(t)
+
+        self.tenant_dao = Mock()
+        self.tenant_dao.list_.return_value = tenants
+
+        t0 = time.time()
+        tree = TenantTree(self.tenant_dao)
+        node = random.choice(tenants)
+        _ = tree.list_nodes(node['uuid'])
+        t1 = time.time()
+        assert t1 - t0 < max_allowed_time
