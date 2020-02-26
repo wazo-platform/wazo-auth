@@ -150,6 +150,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         try:
             self.session.query(Tenant).filter(filter_).update(values)
+            self.session.flush()
         except exc.IntegrityError as e:
             if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
                 constraint = e.orig.diag.constraint_name
