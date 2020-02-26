@@ -113,10 +113,11 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             .scalar()
         )
 
-    def list_(self, scoping_tenant_uuid=None, **kwargs):
+    def list_visible_tenants(self, scoping_tenant_uuid=None):
         query = self._tenant_query(scoping_tenant_uuid)
         return query.all()
 
+    def list_(self, **kwargs):
         schema = schemas.TenantSchema()
         filter_ = text('true')
 

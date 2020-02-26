@@ -44,7 +44,7 @@ class TestTenantDAO(base.DAOTestCase):
         c_uuid = self._create_tenant(name='c', parent_uuid=b_uuid)
 
         # No scoping tenant returns all tenants
-        result = self._tenant_dao.list_()
+        result = self._tenant_dao.list_visible_tenants()
         assert_that(
             result,
             contains_inanyorder(
@@ -61,7 +61,7 @@ class TestTenantDAO(base.DAOTestCase):
         )
 
         # Top tenant sees everyone
-        result = self._tenant_dao.list_(scoping_tenant_uuid=top_uuid)
+        result = self._tenant_dao.list_visible_tenants(scoping_tenant_uuid=top_uuid)
         assert_that(
             result,
             contains_inanyorder(
@@ -78,15 +78,17 @@ class TestTenantDAO(base.DAOTestCase):
         )
 
         # Leaves can see themselves only
-        result = self._tenant_dao.list_(scoping_tenant_uuid=c_uuid)
+        result = self._tenant_dao.list_visible_tenants(scoping_tenant_uuid=c_uuid)
         assert_that(result, contains(has_properties(uuid=c_uuid)))
 
         # An unknown tenant returns nothing
-        result = self._tenant_dao.list_(scoping_tenant_uuid=constants.UNKNOWN_UUID)
+        result = self._tenant_dao.list_visible_tenants(
+            scoping_tenant_uuid=constants.UNKNOWN_UUID
+        )
         assert_that(result, empty())
 
         # A tenant sees all of its subtenant and itself
-        result = self._tenant_dao.list_(scoping_tenant_uuid=a_uuid)
+        result = self._tenant_dao.list_visible_tenants(scoping_tenant_uuid=a_uuid)
         assert_that(
             result,
             contains_inanyorder(
