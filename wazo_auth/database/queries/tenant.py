@@ -166,6 +166,9 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if scoping_tenant_uuid is None:
             scoping_tenant_uuid = top_tenant_uuid
 
+        if scoping_tenant_uuid == top_tenant_uuid:
+            return self.session.query(Tenant)
+
         tenant = self.session.query(Tenant).get(str(scoping_tenant_uuid))
         if tenant:
             included_tenants = (
