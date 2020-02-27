@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import binascii
@@ -94,7 +94,7 @@ class UserService(BaseService):
 
     def list_tenants(self, user_uuid, **kwargs):
         tenant_uuid = self.get_user(user_uuid)['tenant_uuid']
-        tenant_uuids = self._tenant_tree.list_nodes(tenant_uuid)
+        tenant_uuids = self._tenant_tree.list_visible_tenants(tenant_uuid)
         return self._dao.tenant.list_(uuids=tenant_uuids, **kwargs)
 
     def list_users(self, scoping_tenant_uuid=None, recurse=False, **kwargs):
@@ -139,7 +139,7 @@ class UserService(BaseService):
 
     def user_has_sub_tenant(self, user_uuid, tenant_uuid):
         user = self.get_user(user_uuid)
-        visible_tenants = self._tenant_tree.list_nodes(user['tenant_uuid'])
+        visible_tenants = self._tenant_tree.list_visible_tenants(user['tenant_uuid'])
         return tenant_uuid in visible_tenants
 
     def verify_password(self, username, password, reset=False):
@@ -157,7 +157,7 @@ class UserService(BaseService):
         return hash_ == self._encrypter.compute_password_hash(password, salt)
 
     def assert_user_in_subtenant(self, scoping_tenant_uuid, user_uuid):
-        tenant_uuids = self._tenant_tree.list_nodes(scoping_tenant_uuid)
+        tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
         user_exists = self._dao.user.exists(user_uuid, tenant_uuids=tenant_uuids)
         if not user_exists:
             raise exceptions.UnknownUserException(user_uuid)

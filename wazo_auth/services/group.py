@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_auth import exceptions
@@ -30,14 +30,14 @@ class GroupService(BaseService):
         return dict(uuid=uuid, **kwargs)
 
     def delete(self, group_uuid, scoping_tenant_uuid):
-        tenant_uuids = self._tenant_tree.list_nodes(scoping_tenant_uuid)
+        tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
         return self._dao.group.delete(group_uuid, tenant_uuids=tenant_uuids)
 
     def get(self, group_uuid, scoping_tenant_uuid):
         args = {
             'uuid': group_uuid,
             'limit': 1,
-            'tenant_uuids': self._tenant_tree.list_nodes(scoping_tenant_uuid),
+            'tenant_uuids': self._tenant_tree.list_visible_tenants(scoping_tenant_uuid),
         }
 
         matching_groups = self._dao.group.list_(**args)
@@ -97,7 +97,7 @@ class GroupService(BaseService):
         return self._dao.group.update(group_uuid, **kwargs)
 
     def assert_group_in_subtenant(self, scoping_tenant_uuid, uuid):
-        tenant_uuids = self._tenant_tree.list_nodes(scoping_tenant_uuid)
+        tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
         exists = self._dao.group.exists(uuid, tenant_uuids=tenant_uuids)
         if not exists:
             raise exceptions.UnknownGroupException(uuid)

@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -132,7 +132,7 @@ class TokenService(BaseService):
         if not tenant_uuid:
             return []
 
-        tenant_uuids = self._tenant_tree.list_nodes(tenant_uuid)
+        tenant_uuids = self._tenant_tree.list_visible_tenants(tenant_uuid)
         return [{'uuid': uuid} for uuid in tenant_uuids]
 
     def remove_token(self, token_uuid):

@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_auth import exceptions
@@ -12,7 +12,7 @@ class PolicyService(BaseService):
         return self._dao.policy.associate_policy_template(policy_uuid, acl_template)
 
     def assert_policy_in_subtenant(self, scoping_tenant_uuid, uuid):
-        tenant_uuids = self._tenant_tree.list_nodes(scoping_tenant_uuid)
+        tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
         exists = self._dao.policy.exists(uuid, tenant_uuids=tenant_uuids)
         if not exists:
             raise exceptions.UnknownPolicyException(uuid)
@@ -24,7 +24,7 @@ class PolicyService(BaseService):
         if scoping_tenant_uuid:
             recurse = kwargs.get('recurse')
             if recurse:
-                kwargs['tenant_uuids'] = self._tenant_tree.list_nodes(
+                kwargs['tenant_uuids'] = self._tenant_tree.list_visible_tenants(
                     scoping_tenant_uuid
                 )
             else:
@@ -38,7 +38,9 @@ class PolicyService(BaseService):
     def delete(self, policy_uuid, scoping_tenant_uuid):
         args = {}
         if scoping_tenant_uuid:
-            args['tenant_uuids'] = self._tenant_tree.list_nodes(scoping_tenant_uuid)
+            args['tenant_uuids'] = self._tenant_tree.list_visible_tenants(
+                scoping_tenant_uuid
+            )
 
         return self._dao.policy.delete(policy_uuid, **args)
 
@@ -57,7 +59,7 @@ class PolicyService(BaseService):
     def get(self, policy_uuid, scoping_tenant_uuid):
         args = {
             'uuid': policy_uuid,
-            'tenant_uuids': self._tenant_tree.list_nodes(scoping_tenant_uuid),
+            'tenant_uuids': self._tenant_tree.list_visible_tenants(scoping_tenant_uuid),
         }
 
         matching_policies = self._dao.policy.get(**args)
@@ -80,7 +82,9 @@ class PolicyService(BaseService):
     def update(self, policy_uuid, scoping_tenant_uuid=None, **body):
         args = dict(body)
         if scoping_tenant_uuid:
-            args['tenant_uuids'] = self._tenant_tree.list_nodes(scoping_tenant_uuid)
+            args['tenant_uuids'] = self._tenant_tree.list_visible_tenants(
+                scoping_tenant_uuid
+            )
 
         self._dao.policy.update(policy_uuid, **args)
         return dict(uuid=policy_uuid, **body)
@@ -89,7 +93,9 @@ class PolicyService(BaseService):
         if not scoping_tenant_uuid:
             return
 
-        visible_tenant_uuids = self._tenant_tree.list_nodes(scoping_tenant_uuid)
+        visible_tenant_uuids = self._tenant_tree.list_visible_tenants(
+            scoping_tenant_uuid
+        )
         matching_policies = self._dao.policy.get(
             uuid=policy_uuid, tenant_uuids=visible_tenant_uuids
         )

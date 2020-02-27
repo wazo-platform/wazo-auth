@@ -17,7 +17,7 @@ class BaseService:
 
     def _get_scoped_tenant_uuids(self, scoping_tenant_uuid, recurse):
         if recurse:
-            return self._tenant_tree.list_nodes(scoping_tenant_uuid)
+            return self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
 
         return [scoping_tenant_uuid]
 
@@ -87,6 +87,6 @@ class TenantTree:
     def __init__(self, tenant_dao):
         self._tenant_dao = tenant_dao
 
-    def list_nodes(self, scoping_tenant_uuid):
+    def list_visible_tenants(self, scoping_tenant_uuid):
         visible_tenants = self._tenant_dao.list_visible_tenants(scoping_tenant_uuid)
         return [tenant.uuid for tenant in visible_tenants]

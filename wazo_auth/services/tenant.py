@@ -70,7 +70,7 @@ class TenantService(BaseService):
         return self._dao.user.list_(tenant_uuid=tenant_uuid, **kwargs)
 
     def list_sub_tenants(self, tenant_uuid):
-        return self._tenant_tree.list_nodes(tenant_uuid)
+        return self._tenant_tree.list_visible_tenants(tenant_uuid)
 
     def new(self, **kwargs):
         address_id = self._dao.address.new(**kwargs['address'])
