@@ -3,7 +3,6 @@
 
 import logging
 import os
-import threading
 
 from jinja2 import BaseLoader, Environment, TemplateNotFound
 
@@ -91,21 +90,3 @@ class TenantTree:
     def list_nodes(self, scoping_tenant_uuid):
         visible_tenants = self._tenant_dao.list_visible_tenants(scoping_tenant_uuid)
         return [tenant.uuid for tenant in visible_tenants]
-
-
-class CachedTenantTree(TenantTree):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._tree_lock = threading.Lock()
-        self._top = None
-
-    def _build_tree(self, tenants):
-        with self._tree_lock:
-            if self._top is None:
-                self._top = super()._build_tree(tenants)
-
-            return self._top
-
-    def invalidate(self):
-        with self._tree_lock:
-            self._top = None
