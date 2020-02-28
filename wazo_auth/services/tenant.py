@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo_bus.resources.auth import events
@@ -40,7 +40,6 @@ class TenantService(BaseService):
 
         event = events.TenantDeletedEvent(uuid)
         self._bus_publisher.publish(event)
-        self._tenant_tree.invalidate()
         return result
 
     def find_top_tenant(self):
@@ -71,7 +70,7 @@ class TenantService(BaseService):
         return self._dao.user.list_(tenant_uuid=tenant_uuid, **kwargs)
 
     def list_sub_tenants(self, tenant_uuid):
-        return self._tenant_tree.list_nodes(tenant_uuid)
+        return self._tenant_tree.list_visible_tenants(tenant_uuid)
 
     def new(self, **kwargs):
         address_id = self._dao.address.new(**kwargs['address'])
@@ -79,7 +78,6 @@ class TenantService(BaseService):
         result = self._get(uuid)
 
         event = events.TenantCreatedEvent(uuid, kwargs.get('name'))
-        self._tenant_tree.invalidate()
         self._bus_publisher.publish(event)
 
         return result

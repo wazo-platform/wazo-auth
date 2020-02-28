@@ -20,5 +20,4 @@ psycopg2-binary
 stevedore==1.29.0
 unidecode==1.0.23
 marshmallow==3.0.0b14
-anytree==2.4.3
 python-consul==0.7.1

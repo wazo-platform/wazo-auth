@@ -102,7 +102,7 @@ def get_database_uri_from_config():
 def create_initial_user(db_uri, username, password, purpose, policy_name):
     init_db(db_uri)
     dao = queries.DAO.from_defaults()
-    tenant_tree = services.helpers.CachedTenantTree(dao.tenant)
+    tenant_tree = services.helpers.TenantTree(dao.tenant)
     policy_service = services.PolicyService(dao, tenant_tree)
     user_service = services.UserService(dao, tenant_tree)
     if user_service.verify_password(username, password):

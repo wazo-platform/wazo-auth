@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_auth.services.helpers import BaseService
@@ -26,7 +26,7 @@ class SessionService(BaseService):
         return self._dao.session.list_(**kwargs)
 
     def delete(self, scoping_tenant_uuid, session_uuid):
-        tenant_uuids = self._tenant_tree.list_nodes(scoping_tenant_uuid)
+        tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
         session, token = self._dao.session.delete(session_uuid, tenant_uuids)
         if not token:
             return

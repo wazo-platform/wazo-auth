@@ -113,6 +113,10 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             .scalar()
         )
 
+    def list_visible_tenants(self, scoping_tenant_uuid=None):
+        query = self._tenant_query(scoping_tenant_uuid)
+        return query.all()
+
     def list_(self, **kwargs):
         schema = schemas.TenantSchema()
         filter_ = text('true')
@@ -157,3 +161,30 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 if constraint == 'auth_tenant_contact_uuid_fkey':
                     raise exceptions.UnknownUserException(kwargs['contact_uuid'])
             raise
+
+    def _tenant_query(self, scoping_tenant_uuid):
+        top_tenant_uuid = self.find_top_tenant()
+        if scoping_tenant_uuid is None:
+            scoping_tenant_uuid = top_tenant_uuid
+
+        if scoping_tenant_uuid == top_tenant_uuid:
+            return self.session.query(Tenant)
+
+        included_tenants = (
+            self.session.query(Tenant.uuid, Tenant.parent_uuid)
+            .filter(Tenant.uuid == str(scoping_tenant_uuid))
+            .cte(recursive=True)
+        )
+        included_tenants = included_tenants.union_all(
+            self.session.query(Tenant.uuid, Tenant.parent_uuid).filter(
+                and_(
+                    Tenant.parent_uuid == included_tenants.c.uuid,
+                    Tenant.uuid != Tenant.parent_uuid,
+                )
+            )
+        )
+        return (
+            self.session.query(Tenant)
+            .select_from(included_tenants)
+            .join(Tenant, Tenant.uuid == included_tenants.c.uuid)
+        )
