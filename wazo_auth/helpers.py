@@ -8,6 +8,8 @@ from functools import partial
 from jinja2 import StrictUndefined, Template
 from jinja2.exceptions import UndefinedError
 
+from wazo_auth.database.helpers import commit_or_rollback
+
 logger = logging.getLogger(__name__)
 
 
@@ -60,6 +62,8 @@ class LocalTokenRenewer:
         self._threshold = 30
 
     def get_token(self):
+        # get_token MUST be called before any DB operations during the HTTP request
+        # otherwise previous changes will be commited event if an error occurs later
         if self._need_new_token():
             if not self._user_exists(self._username):
                 logger.info(
@@ -76,6 +80,7 @@ class LocalTokenRenewer:
                     'remote_addr': '127.0.0.1',
                 }
             )
+            commit_or_rollback()
 
         return self._token.token
 
