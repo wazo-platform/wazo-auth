@@ -15,7 +15,9 @@ logger = logging.getLogger(__name__)
 
 class MobileSchema(schemas.BaseSchema):
     token = fields.String(min=1, max=512, missing=None)
-    apns_token = fields.String(allow_none=True, max=512, missing=None)
+    apns_token = fields.String(allow_none=True, max=512, missing=None)  # deprecated
+    apns_voip_token = fields.String(allow_none=True, max=512, missing=None)
+    apns_notification_token = fields.String(allow_none=True, max=512, missing=None)
 
 
 class MobileAuthSenderID(http.AuthResource):

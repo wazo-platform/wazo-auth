@@ -6,6 +6,24 @@
 
   * HEAD `0.1/status`
 
+* The following new fields
+
+  * `apns_voip_token`
+  * `apns_notification_token`
+
+  have been added in the following routes:
+
+  * `GET /users/{user_uuid}/external/mobile`
+  * `POST /users/{user_uuid}/external/mobile`
+
+
+* The field `apns_token` has been deprecated in the following routes:
+
+  * `GET /users/{user_uuid}/external/mobile`
+  * `POST /users/{user_uuid}/external/mobile`
+
+  This field will be removed in a later version.
+
 ## 19.16
 
 * wazo-auth-bootstrap setup is a noop
@@ -15,14 +33,12 @@
 * The refresh tokens list now shows if a mobile session created that refresh token
 * A new resource as been added to list refresh tokens for the whole system
 
-
 ## 19.14
 
 * A new resource has been added to manage refresh tokens
 
   * GET `0.1/users/<user_uuid>/tokens`
   * DELETE `0.1/users/<user_uuid>/tokens/<client_id>`
-
 
 ## 19.13
 
@@ -31,7 +47,6 @@
   * `client_id`
   * `refresh_token`
   * `access_type`
-
 
 ## 19.10
 

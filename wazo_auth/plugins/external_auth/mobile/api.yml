@@ -91,7 +91,13 @@ definitions:
         description: FCM token
       apns_token:
         type: string
-        description: APNs VoIP device token. Used for retrocompatibility with older iOS applications.
+        description: APNs VoIP device token. This field is deprecated and will be removed in a later version.
+      apns_notification_token:
+        type: string
+        description: APNs text alert notification device token.
+      apns_voip_token:
+        type: string
+        description: APNs VoIP device token.
   PostMobileResult:
     type: object
     properties:

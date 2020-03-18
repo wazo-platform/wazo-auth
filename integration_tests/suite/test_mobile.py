@@ -61,11 +61,32 @@ class TestExternalAuthMobile(base.WazoAuthTestCase):
         response = self.client.external.create(
             self.EXTERNAL_AUTH_TYPE,
             user['uuid'],
-            {'token': 'TOKEN', 'apns_token': 'APNS'},
+            {
+                'token': 'TOKEN',
+                'apns_token': 'APNS_VOIP_TOKEN',
+                'apns_voip_token': 'APNS_VOIP_TOKEN',
+                'apns_notification_token': 'APNS_NOTIFICATION_TOKEN',
+            },
         )
-        assert_that(response, has_entries(token='TOKEN', apns_token='APNS'))
+        assert_that(
+            response,
+            has_entries(
+                token='TOKEN',
+                apns_token='APNS_VOIP_TOKEN',
+                apns_voip_token='APNS_VOIP_TOKEN',
+                apns_notification_token='APNS_NOTIFICATION_TOKEN',
+            ),
+        )
         response = self.client.external.get(self.EXTERNAL_AUTH_TYPE, user['uuid'])
-        assert_that(response, has_entries(token='TOKEN', apns_token='APNS'))
+        assert_that(
+            response,
+            has_entries(
+                token='TOKEN',
+                apns_token='APNS_VOIP_TOKEN',
+                apns_voip_token='APNS_VOIP_TOKEN',
+                apns_notification_token='APNS_NOTIFICATION_TOKEN',
+            ),
+        )
 
         response = self.get_sender_id(user)
         assert_that(response, has_entry('sender_id', 'fcm_sender_id'))
