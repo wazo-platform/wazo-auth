@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class MobileSchema(schemas.BaseSchema):
     token = fields.String(min=1, max=512, missing=None)
-    apns_token = fields.String(allow_none=True, missing=None)
+    apns_token = fields.String(allow_none=True, max=512, missing=None)
 
 
 class MobileAuthSenderID(http.AuthResource):
