@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from setuptools import find_packages
@@ -36,21 +36,22 @@ setup(
             'backends = wazo_auth.plugins.http.backends.plugin:Plugin',
             'email_confirm = wazo_auth.plugins.http.email_confirm.plugin:Plugin',
             'external = wazo_auth.plugins.http.external.plugin:Plugin',
-            'groups = wazo_auth.plugins.http.groups.plugin:Plugin',
             'group_policy = wazo_auth.plugins.http.group_policy.plugin:Plugin',
+            'groups = wazo_auth.plugins.http.groups.plugin:Plugin',
             'password_reset = wazo_auth.plugins.http.password_reset.plugin:Plugin',
             'policies = wazo_auth.plugins.http.policies.plugin:Plugin',
             'sessions = wazo_auth.plugins.http.sessions.plugin:Plugin',
-            'tenants = wazo_auth.plugins.http.tenants.plugin:Plugin',
-            'tenant_user = wazo_auth.plugins.http.tenant_user.plugin:Plugin',
+            'status = wazo_auth.plugins.http.status.plugin:Plugin',
             'tenant_policy = wazo_auth.plugins.http.tenant_policy.plugin:Plugin',
+            'tenant_user = wazo_auth.plugins.http.tenant_user.plugin:Plugin',
+            'tenants = wazo_auth.plugins.http.tenants.plugin:Plugin',
             'tokens = wazo_auth.plugins.http.tokens.plugin:Plugin',
-            'users = wazo_auth.plugins.http.users.plugin:Plugin',
             'user_email = wazo_auth.plugins.http.user_email.plugin:Plugin',
-            'user_registration = wazo_auth.plugins.http.user_registration.plugin:Plugin',
             'user_group = wazo_auth.plugins.http.user_group.plugin:Plugin',
             'user_policy = wazo_auth.plugins.http.user_policy.plugin:Plugin',
+            'user_registration = wazo_auth.plugins.http.user_registration.plugin:Plugin',
             'user_session = wazo_auth.plugins.http.user_session.plugin:Plugin',
+            'users = wazo_auth.plugins.http.users.plugin:Plugin',
         ],
         'wazo_auth.external_auth': [
             'google = wazo_auth.plugins.external_auth.google.plugin:GooglePlugin',

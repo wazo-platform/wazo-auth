@@ -9,6 +9,7 @@ from functools import partial
 
 from xivo import plugin_helpers
 from xivo.consul_helpers import ServiceCatalogRegistration
+from xivo.status import StatusAggregator
 
 from . import bus, services, token
 from .database import queries
@@ -48,6 +49,7 @@ class Controller:
             partial(self_check, config),
         ]
 
+        self.status_aggregator = StatusAggregator()
         template_formatter = services.helpers.TemplateFormatter(config)
         self._bus_publisher = bus.BusPublisher(config)
         dao = queries.DAO.from_defaults()
@@ -114,6 +116,7 @@ class Controller:
         self._config['loaded_plugins'] = self._loaded_plugins_names(self._backends)
         dependencies = {
             'api': api,
+            'status_aggregator': self.status_aggregator,
             'authentication_service': authentication_service,
             'backends': self._backends,
             'config': config,

@@ -1,0 +1,12 @@
+paths:
+  /status:
+    head:
+      summary: Check if wazo-auth is OK
+      description: This endpoint is not authenticated
+      tags:
+        - status
+      responses:
+        '200':
+          description: wazo-auth is OK
+        '503':
+          description: wazo-auth is missing a requirement

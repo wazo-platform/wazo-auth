@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import argparse
@@ -36,15 +36,16 @@ _DEFAULT_CONFIG = {
     'enabled_http_plugins': {
         'api': True,
         'backends': True,
-        'external': True,
         'email_confirm': True,
+        'external': True,
         'group_policy': True,
         'groups': True,
         'password_reset': True,
         'policies': True,
         'sessions': True,
-        'tenant_user': True,
+        'status': True,
         'tenant_policy': True,
+        'tenant_user': True,
         'tenants': True,
         'tokens': True,
         'user_email': True,
