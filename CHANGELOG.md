@@ -1,5 +1,11 @@
 # Changelog
 
+## 20.05
+
+* A new resource has been added to check the service status
+
+  * HEAD `0.1/status`
+
 ## 19.16
 
 * wazo-auth-bootstrap setup is a noop
