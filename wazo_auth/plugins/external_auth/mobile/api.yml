@@ -5,7 +5,7 @@ paths:
         - application/json
       produces:
         - application/json
-      summary: Get your Mobile token
+      summary: Get device tokens for push notifications
       description: "**Required ACL**: `auth.users.{user_uuid}.external.mobile.read`"
       tags:
         - users
@@ -24,7 +24,7 @@ paths:
         - application/json
       produces:
         - application/json
-      summary: Add push mobile token device
+      summary: Configure device tokens for push notifications
       description: "**Required ACL**: `auth.users.{user_uuid}.external.mobile.create`"
       tags:
         - users
@@ -50,7 +50,7 @@ paths:
         - application/json
       produces:
         - application/json
-      summary: Delete a Mobile token
+      summary: Delete device tokens for push notifications
       description: "**Required ACL**: `auth.users.{user_uuid}.external.mobile.delete`"
       tags:
         - users
@@ -88,6 +88,16 @@ definitions:
     properties:
       token:
         type: string
+        description: FCM token
+      apns_token:
+        type: string
+        description: APNs VoIP device token. This field is deprecated and will be removed in a later version.
+      apns_notification_token:
+        type: string
+        description: APNs text alert notification device token.
+      apns_voip_token:
+        type: string
+        description: APNs VoIP device token.
   PostMobileResult:
     type: object
     properties:
