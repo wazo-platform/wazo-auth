@@ -37,7 +37,7 @@ def _check_required_config_for_other_threads(config):
 
 class Controller:
     def __init__(self, config):
-        init_db(config['db_uri'])
+        init_db(config['db_uri'], max_connections=config['rest_api']['max_threads'])
         self._config = config
         _check_required_config_for_other_threads(config)
         self._service_discovery_args = [
