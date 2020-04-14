@@ -38,12 +38,6 @@ case "$1" in
             fi
         fi
 
-        # The HOME directory was not created before Wazo 18.01
-        if dpkg --compare-versions "$2" lt '18.01'; then
-            mkdir -p "${HOME}"
-            chown -R "${USER}:${GROUP}" "${HOME}"
-        fi
-
         db_get wazo-auth/db-skip
         db_skip="$RET"
         if [ "$db_skip" = "false" ] ; then
