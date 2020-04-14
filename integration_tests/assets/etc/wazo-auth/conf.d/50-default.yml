@@ -1,0 +1,12 @@
+debug: true
+foreground: true
+rest_api:
+  listen: 0.0.0.0
+db_uri: postgresql://asterisk:proformatique@postgres:5432
+confd_db_uri: postgresql://asterisk:proformatique@postgres:5432
+amqp:
+  uri: amqp://guest:guest@rabbitmq:5672/
+smtp:
+  hostname: smtp
+service_discovery:
+  enabled: false
