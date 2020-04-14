@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -81,9 +81,7 @@ class TestPolicies(WazoAuthTestCase):
             [None],
         ]
 
-        url = 'https://localhost:{}/0.1/policies'.format(
-            self.service_port(9497, 'auth')
-        )
+        url = 'http://localhost:{}/0.1/policies'.format(self.service_port(9497, 'auth'))
         headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -91,9 +89,7 @@ class TestPolicies(WazoAuthTestCase):
         }
 
         for body in bodies:
-            response = requests.post(
-                url, headers=headers, data=json.dumps(body), verify=False
-            )
+            response = requests.post(url, headers=headers, data=json.dumps(body))
             assert_that(response.status_code, equal_to(400))
             assert_that(
                 response.json(),

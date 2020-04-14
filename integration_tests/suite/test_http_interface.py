@@ -60,7 +60,7 @@ class TestCore(WazoAuthTestCase):
         assert_that(self._is_valid('abcdef'), is_(False))
 
     def test_backends(self):
-        url = 'https://{}:{}/0.1/backends'.format(self.auth_host, self.auth_port)
+        url = 'http://{}:{}/0.1/backends'.format(self.auth_host, self.auth_port)
         response = requests.get(url, verify=False)
         backends = ['broken_init', 'broken_verify_password', 'wazo_user']
         assert_that(response.json()['data'], contains_inanyorder(*backends))
@@ -121,7 +121,7 @@ class TestCore(WazoAuthTestCase):
         )
 
     def test_that_no_type_returns_400(self):
-        url = 'https://{}:{}/0.1/token'.format(self.auth_host, self.auth_port)
+        url = 'http://{}:{}/0.1/token'.format(self.auth_host, self.auth_port)
         s = requests.Session()
         s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         s.auth = requests.auth.HTTPBasicAuth('foo', 'bar')
