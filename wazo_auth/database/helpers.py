@@ -6,9 +6,13 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 
 Session = scoped_session(sessionmaker())
 
+DEFAULT_POOL_SIZE = 5
 
-def init_db(db_uri):
-    engine = create_engine(db_uri, pool_pre_ping=True)
+
+def init_db(db_uri, max_connections=15):
+    max_overflow = max_connections - DEFAULT_POOL_SIZE
+    max_overflow = 10 if max_overflow < 10 else max_overflow
+    engine = create_engine(db_uri, max_overflow=max_overflow, pool_pre_ping=True)
     Session.configure(bind=engine)
 
 
