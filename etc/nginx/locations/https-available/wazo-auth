@@ -1,5 +1,5 @@
 location ^~ /api/auth/ {
-    proxy_pass https://127.0.0.1:9497/;
+    proxy_pass http://127.0.0.1:9497/;
 
     proxy_set_header    Host                $http_host;
     proxy_set_header    X-Script-Name       /api/auth;

@@ -1,9 +1,0 @@
-version: '3'
-services:
-  sync:
-    depends_on:
-      - auth
-
-  auth:
-    volumes:
-      - "./etc/wazo-auth/conf.d/asset.no_ssl_certificate.yml:/etc/wazo-auth/conf.d/asset.no_ssl_certificate.yml"

@@ -13,7 +13,6 @@ from hamcrest import (
     assert_that,
     calling,
     contains_inanyorder,
-    contains_string,
     equal_to,
     has_entries,
     has_key,
@@ -26,7 +25,7 @@ from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from wazo_auth.database import helpers
 from wazo_auth.database import models
-from .helpers.base import AuthLaunchingTestCase, WazoAuthTestCase
+from .helpers.base import WazoAuthTestCase
 from .helpers import fixtures
 
 requests.packages.urllib3.disable_warnings()
@@ -260,29 +259,3 @@ class TestCore(WazoAuthTestCase):
             s.query(models.Session).filter(models.Session.uuid == session_uuid).first()
         )
         return True if result else False
-
-
-class TestNoSSLCertificate(AuthLaunchingTestCase):
-
-    asset = 'no_ssl_certificate'
-
-    def test_that_wazo_auth_stops_if_not_readable_ssl_certificate(self):
-        self._assert_that_wazo_auth_is_stopping()
-
-        log = self.service_logs('auth')
-        assert_that(
-            log, contains_string("No such file or directory: '/missing_server.crt'")
-        )
-
-
-class TestNoSSLKey(AuthLaunchingTestCase):
-
-    asset = 'no_ssl_key'
-
-    def test_that_wazo_auth_stops_if_not_readable_ssl_key(self):
-        self._assert_that_wazo_auth_is_stopping()
-
-        log = self.service_logs('auth')
-        assert_that(
-            log, contains_string("No such file or directory: '/missing_server.key'")
-        )

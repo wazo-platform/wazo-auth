@@ -219,7 +219,7 @@ class BaseTestCase(AuthLaunchingTestCase):
 
     @classmethod
     def new_auth_client(cls, username=None, password=None):
-        kwargs = {'port': cls.auth_port, 'verify_certificate': False}
+        kwargs = {'port': cls.auth_port, 'prefix': '', 'https': False}
 
         if username and password:
             kwargs['username'] = username
