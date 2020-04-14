@@ -13,7 +13,6 @@ from hamcrest import (
     assert_that,
     calling,
     contains_inanyorder,
-    contains_string,
     equal_to,
     has_entries,
     has_key,
@@ -26,7 +25,7 @@ from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from wazo_auth.database import helpers
 from wazo_auth.database import models
-from .helpers.base import AuthLaunchingTestCase, WazoAuthTestCase
+from .helpers.base import WazoAuthTestCase
 from .helpers import fixtures
 
 requests.packages.urllib3.disable_warnings()
@@ -61,7 +60,7 @@ class TestCore(WazoAuthTestCase):
         assert_that(self._is_valid('abcdef'), is_(False))
 
     def test_backends(self):
-        url = 'https://{}:{}/0.1/backends'.format(self.auth_host, self.auth_port)
+        url = 'http://{}:{}/0.1/backends'.format(self.auth_host, self.auth_port)
         response = requests.get(url, verify=False)
         backends = ['broken_init', 'broken_verify_password', 'wazo_user']
         assert_that(response.json()['data'], contains_inanyorder(*backends))
@@ -122,7 +121,7 @@ class TestCore(WazoAuthTestCase):
         )
 
     def test_that_no_type_returns_400(self):
-        url = 'https://{}:{}/0.1/token'.format(self.auth_host, self.auth_port)
+        url = 'http://{}:{}/0.1/token'.format(self.auth_host, self.auth_port)
         s = requests.Session()
         s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         s.auth = requests.auth.HTTPBasicAuth('foo', 'bar')
@@ -260,29 +259,3 @@ class TestCore(WazoAuthTestCase):
             s.query(models.Session).filter(models.Session.uuid == session_uuid).first()
         )
         return True if result else False
-
-
-class TestNoSSLCertificate(AuthLaunchingTestCase):
-
-    asset = 'no_ssl_certificate'
-
-    def test_that_wazo_auth_stops_if_not_readable_ssl_certificate(self):
-        self._assert_that_wazo_auth_is_stopping()
-
-        log = self.service_logs('auth')
-        assert_that(
-            log, contains_string("No such file or directory: '/missing_server.crt'")
-        )
-
-
-class TestNoSSLKey(AuthLaunchingTestCase):
-
-    asset = 'no_ssl_key'
-
-    def test_that_wazo_auth_stops_if_not_readable_ssl_key(self):
-        self._assert_that_wazo_auth_is_stopping()
-
-        log = self.service_logs('auth')
-        assert_that(
-            log, contains_string("No such file or directory: '/missing_server.key'")
-        )

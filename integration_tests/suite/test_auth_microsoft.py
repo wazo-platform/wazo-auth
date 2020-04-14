@@ -52,7 +52,8 @@ class BaseTestCase(_BaseTestCase):
         cls.client = Client(
             'localhost',
             port=port,
-            verify_certificate=False,
+            prefix=None,
+            https=False,
             username=cls.username,
             password=cls.password,
         )

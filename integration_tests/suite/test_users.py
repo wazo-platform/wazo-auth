@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -76,7 +76,7 @@ class TestUsers(WazoAuthTestCase):
             'password': 's3cr37',
         }
 
-        url = 'https://{}:{}/0.1/users'.format(self.auth_host, self.auth_port)
+        url = 'http://{}:{}/0.1/users'.format(self.auth_host, self.auth_port)
         result = requests.post(
             url,
             headers={'Content-Type': 'application/json'},
@@ -318,7 +318,8 @@ class TestUsers(WazoAuthTestCase):
 
             last_email = self.get_emails()[-1]
             url = [l for l in last_email.split('\n') if l.startswith('https://')][0]
-            requests.get(url, verify=False)
+            url = url.replace('https', 'http')
+            requests.get(url)
 
             updated_user = self.client.users.get(user['uuid'])
             assert_that(

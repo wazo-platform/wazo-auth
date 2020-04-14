@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -37,11 +37,11 @@ class TestEmailConfirmation(WazoAuthTestCase):
     def test_email_confirmation_get(self, user):
         email_uuid = user['emails'][0]['uuid']
 
-        url = 'https://{}:{}/0.1/emails/{}/confirm'.format(
+        url = 'http://{}:{}/0.1/emails/{}/confirm'.format(
             self.auth_host, self.auth_port, email_uuid
         )
         token = self.client._token_id
-        response = requests.get(url, params={'token': token}, verify=False)
+        response = requests.get(url, params={'token': token})
         assert_that(response.status_code, equal_to(200))
 
         updated_user = self.client.users.get(user['uuid'])
@@ -62,7 +62,8 @@ class TestEmailConfirmation(WazoAuthTestCase):
 
         last_email = self.get_emails()[-1]
         url = [l for l in last_email.split('\n') if l.startswith('https://')][0]
-        result = requests.get(url, verify=False)
+        url = url.replace('https', 'http')
+        result = requests.get(url)
         assert_that(
             result,
             has_properties(

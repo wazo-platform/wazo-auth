@@ -1,5 +1,9 @@
 # Changelog
 
+## 20.06
+
+* Deprecate SSL configuration
+
 ## 20.05
 
 * A new resource has been added to check the service status
