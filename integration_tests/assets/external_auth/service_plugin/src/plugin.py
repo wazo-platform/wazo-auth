@@ -53,7 +53,7 @@ class FooService(http.AuthResource):
     def create_first_token(self, user_uuid, msg):
         logger.debug('received the oauth2 callback %s %s', user_uuid, msg)
         data = self.external_auth_service.get(user_uuid, self.auth_type)
-        data['access_token'] = msg['access_token'][0]
+        data['access_token'] = msg['access_token']
         self.external_auth_service.update(user_uuid, self.auth_type, data)
         logger.debug('callback done')
 
