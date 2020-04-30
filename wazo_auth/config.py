@@ -100,12 +100,7 @@ _DEFAULT_CONFIG = {
         'retry_interval': 2,
         'extra_tags': [],
     },
-    'confd': {
-        'host': 'localhost',
-        'port': 9486,
-        'verify_certificate': '/usr/share/xivo-certs/server.crt',
-        'https': True,
-    },
+    'confd': {'host': 'localhost', 'port': 9486, 'prefix': None, 'https': False},
     'amqp': {
         'uri': 'amqp://guest:guest@localhost:5672/',
         'exchange_name': 'xivo',
