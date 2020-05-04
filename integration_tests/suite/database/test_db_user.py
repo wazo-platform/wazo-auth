@@ -409,9 +409,15 @@ class TestUserDAO(base.DAOTestCase):
             ),
         )
 
-    @fixtures.db.user(username='foo', email_address='foo@example.com')
-    @fixtures.db.user(username='bar', email_address='bar@example.com')
-    @fixtures.db.user(username='baz', email_address='baz@example.com')
+    @fixtures.db.user(
+        firstname='foo', lastname='foo', username='foo', email_address='foo@example.com'
+    )
+    @fixtures.db.user(
+        firstname='bar', lastname='bar', username='bar', email_address='bar@example.com'
+    )
+    @fixtures.db.user(
+        firstname='baz', lastname='baz', username='baz', email_address='baz@example.com'
+    )
     def test_user_list_with_search_term(self, baz, bar, foo):
         result = self._user_dao.list_(search='@example.')
 
@@ -467,9 +473,15 @@ class TestUserDAO(base.DAOTestCase):
             ),
         )
 
-    @fixtures.db.user(username='foo', email_address='foo@example.com')
-    @fixtures.db.user(username='bar', email_address='bar@example.com')
-    @fixtures.db.user(username='baz', email_address='baz@example.com')
+    @fixtures.db.user(
+        firstname='foo', lastname='foo', username='foo', email_address='foo@example.com'
+    )
+    @fixtures.db.user(
+        firstname='bar', lastname='bar', username='bar', email_address='bar@example.com'
+    )
+    @fixtures.db.user(
+        firstname='baz', lastname='baz', username='baz', email_address='baz@example.com'
+    )
     def test_user_list_with_strict_filters(self, baz, bar, foo):
         result = self._user_dao.list_(username='foo')
 
@@ -504,9 +516,15 @@ class TestUserDAO(base.DAOTestCase):
             ),
         )
 
-    @fixtures.db.user(username='foo', email_address='foo@example.com')
-    @fixtures.db.user(username='bar', email_address='bar@example.com')
-    @fixtures.db.user(username='baz', email_address='baz@example.com')
+    @fixtures.db.user(
+        firstname='foo', lastname='foo', username='foo', email_address='foo@example.com'
+    )
+    @fixtures.db.user(
+        firstname='bar', lastname='bar', username='bar', email_address='bar@example.com'
+    )
+    @fixtures.db.user(
+        firstname='baz', lastname='baz', username='baz', email_address='baz@example.com'
+    )
     def test_user_list_with_strict_filters_and_search(self, baz, bar, foo):
         result = self._user_dao.list_(username='foo', search='baz')
         assert_that(result, empty())
