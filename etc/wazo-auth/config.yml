@@ -100,9 +100,9 @@ backend_policies:
 # Confd connection information
 confd:
   host: 'localhost'
-  https: true
   port: 9486
-  verify_certificate: /usr/share/xivo-certs/server.crt
+  prefix: null
+  https: false
 
 # Database connection informations.
 db_uri: postgresql://asterisk:proformatique@localhost/asterisk?application_name=wazo-auth
