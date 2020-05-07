@@ -8,7 +8,6 @@ extra_config_files: /etc/wazo-auth/conf.d/
 
 log_filename: /var/log/wazo-auth.log
 pid_filename: /run/wazo-auth/wazo-auth.pid
-foreground: False
 debug: False
 
 # The lifetime of tokens in seconds

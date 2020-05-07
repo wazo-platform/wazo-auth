@@ -120,9 +120,6 @@ def _parse_cli_args(argv):
     parser.add_argument('-u', '--user', help='User to run the daemon')
     parser.add_argument('-d', '--debug', action='store_true', help='Log debug messages')
     parser.add_argument(
-        '-f', '--foreground', action='store_true', help="Foreground, don't daemonize"
-    )
-    parser.add_argument(
         '-l',
         '--log-level',
         action='store',
@@ -138,8 +135,6 @@ def _parse_cli_args(argv):
         result['user'] = parsed_args.user
     if parsed_args.debug:
         result['debug'] = parsed_args.debug
-    if parsed_args.foreground:
-        result['foreground'] = parsed_args.foreground
     if parsed_args.log_level:
         result['log_level'] = parsed_args.log_level
 

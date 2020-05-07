@@ -19,4 +19,4 @@ RUN apt-get update \
 
 EXPOSE 9497
 
-CMD ["wazo-auth", "-fd"]
+CMD ["wazo-auth", "-d"]
