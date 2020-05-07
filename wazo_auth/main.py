@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import sys
@@ -16,6 +16,8 @@ SPAMMY_LOGGERS = ['urllib3', 'Flask-Cors', 'amqp', 'kombu']
 
 logger = logging.getLogger(__name__)
 
+FOREGROUND = True  # Always in foreground systemd takes care of daemonizing
+
 
 def main():
     xivo_logging.silence_loggers(SPAMMY_LOGGERS, logging.WARNING)
@@ -23,10 +25,7 @@ def main():
     config = get_config(sys.argv[1:])
 
     xivo_logging.setup_logging(
-        config['log_filename'],
-        config['foreground'],
-        config['debug'],
-        config['log_level'],
+        config['log_filename'], FOREGROUND, config['debug'], config['log_level'],
     )
 
     user = config.get('user')
@@ -40,7 +39,7 @@ def main():
             raise
 
     controller = Controller(config)
-    with pidfile_context(config['pid_filename'], config['foreground']):
+    with pidfile_context(config['pid_filename'], FOREGROUND):
         try:
             controller.run()
         except KeyboardInterrupt:
