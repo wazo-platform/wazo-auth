@@ -150,6 +150,13 @@ class BaseTestCase(AuthLaunchingTestCase):
         bus_client = BusClient.from_connection_fields(port=port, **self.bus_config)
         return bus_client.accumulator(routing_key)
 
+    def get_last_email_url(self):
+        last_email = self.get_emails()[-1]
+        email_urls = [
+            line for line in last_email.split('\n') if line.startswith('https://')
+        ]
+        return email_urls[-1]
+
     def get_emails(self):
         return [self._email_body(f) for f in self._get_email_filenames()]
 

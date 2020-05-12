@@ -316,8 +316,7 @@ class TestUsers(WazoAuthTestCase):
                 ),
             )
 
-            last_email = self.get_emails()[-1]
-            url = [l for l in last_email.split('\n') if l.startswith('https://')][0]
+            url = self.get_last_email_url()
             url = url.replace('https', 'http')
             requests.get(url)
 
