@@ -61,8 +61,8 @@ class TestEmailConfirmation(WazoAuthTestCase):
         self.client.users.request_confirmation_email(user['uuid'], email_uuid)
 
         last_email = self.get_emails()[-1]
-        url = [l for l in last_email.split('\n') if l.startswith('https://')][0]
-        url = url.replace('https', 'http')
+        urls = [line for line in last_email.split('\n') if line.startswith('https://')]
+        url = urls[0].replace('https://', 'http://')
         result = requests.get(url)
         assert_that(
             result,
