@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import pytest
@@ -257,8 +257,12 @@ class TestTokens(WazoAuthTestCase):
         until.assert_(bus_received_msg, tries=10, interval=0.25)
 
     @fixtures.http.user(username='foo', password='bar')
-    @fixtures.http.token(username='foo', password='bar', access_type='offline')
-    @fixtures.http.token(username='foo', password='bar', access_type='offline')
+    @fixtures.http.token(
+        username='foo', password='bar', access_type='offline', client_id='client1'
+    )
+    @fixtures.http.token(
+        username='foo', password='bar', access_type='offline', client_id='client2'
+    )
     @fixtures.http.token(
         username='foo',
         password='bar',
@@ -399,8 +403,12 @@ class TestTokens(WazoAuthTestCase):
 
     @fixtures.http.tenant()
     @fixtures.http.user(username='foo', password='bar')
-    @fixtures.http.token(username='foo', password='bar', access_type='offline')
-    @fixtures.http.token(username='foo', password='bar', access_type='offline')
+    @fixtures.http.token(
+        username='foo', password='bar', access_type='offline', client_id='client1'
+    )
+    @fixtures.http.token(
+        username='foo', password='bar', access_type='offline', client_id='client2'
+    )
     @fixtures.http.token(
         username='foo',
         password='bar',
