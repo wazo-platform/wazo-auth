@@ -1,22 +1,35 @@
-FROM python:3.7-buster
-MAINTAINER Wazo Maintainers <dev@wazo.community>
+FROM python:3.7-slim-buster AS compile-image
+LABEL maintainer="Wazo Maintainers <dev@wazo.community>"
 
-ADD . /usr/src/wazo-auth
+RUN python -m venv /opt/venv
+# Activate virtual env
+ENV PATH="/opt/venv/bin:$PATH"
+
+RUN apt-get -q update
+RUN apt-get -yq install --no-install-recommends gcc libldap2-dev libsasl2-dev
+
+COPY . /usr/src/wazo-auth
 WORKDIR /usr/src/wazo-auth
+RUN pip install -r requirements.txt
+RUN python setup.py install
 
-RUN apt-get update \
-    && apt-get -yq install libldap2-dev libsasl2-dev \
-    && pip install -r requirements.txt \
-    && python setup.py install \
-    && touch /var/log/wazo-auth.log \
-    && mkdir -p /etc/wazo-auth/conf.d \
-    && cp /usr/src/wazo-auth/etc/wazo-auth/*.yml /etc/wazo-auth/ \
+FROM python:3.7-slim-buster AS build-image
+COPY --from=compile-image /opt/venv /opt/venv
+
+COPY ./etc/wazo-auth /etc/wazo-auth
+COPY ./templates /var/lib/wazo-auth/templates
+RUN true \
     && adduser --quiet --system --group --home /var/lib/wazo-auth wazo-auth \
+    && apt-get -q update \
+    && apt-get -yq install --no-install-recommends libldap2-dev libsasl2-dev \
+    && mkdir -p /etc/wazo-auth/conf.d \
+    && mkdir -p /etc/wazo-auth/templates.d \
+    && install -o wazo-auth -g wazo-auth /dev/null /var/log/wazo-auth.log \
     && install -d -o wazo-auth -g wazo-auth /run/wazo-auth/ \
-    && mkdir -p /var/lib/wazo-auth/templates \
-    && cp /usr/src/wazo-auth/templates/*.jinja /var/lib/wazo-auth/templates/ \
-    && true
+    && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 9497
 
+# Activate virtual env
+ENV PATH="/opt/venv/bin:$PATH"
 CMD ["wazo-auth", "-d"]

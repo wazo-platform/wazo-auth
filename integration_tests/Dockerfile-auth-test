@@ -1,13 +1,11 @@
 FROM wazopbx/wazo-auth
 
-ADD integration_tests/assets/external_auth/service_plugin /usr/src/service_plugin
-ADD . /usr/src/wazo-auth
-
 ENV PYTHONDONTWRITEBYTECODE='true'
 
-RUN true \
-    && cd /usr/src/service_plugin \
-    && python setup.py install \
-    && cd /usr/src/wazo-auth \
-    && python setup.py develop \
-    && true
+COPY integration_tests/assets/external_auth/service_plugin /usr/src/service_plugin
+WORKDIR /usr/src/service_plugin
+RUN python setup.py install
+
+COPY . /usr/src/wazo-auth
+WORKDIR /usr/src/wazo-auth
+RUN python setup.py develop

@@ -1,4 +1,4 @@
-FROM python:3.7.3-slim-stretch
+FROM python:3.7-slim-buster
 
 COPY . /usr/src/oauth2_synchronization_service
 WORKDIR /usr/src/oauth2_synchronization_service
