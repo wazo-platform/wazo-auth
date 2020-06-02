@@ -14,7 +14,7 @@ x-xivo-port: 9497
 x-xivo-name: auth
 basePath: /0.1
 schemes:
-- https
+- http
 consumes:
 - application/json
 produces:
