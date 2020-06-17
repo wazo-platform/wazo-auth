@@ -14,13 +14,13 @@ Launching wazo-auth
 Getting a token
 
 ```sh
-curl -k -i -X POST -H 'Content-Type: application/json' -u "alice:alice" "https://localhost:9497/0.1/token" -d '{"backend": "xivo_user"}'
+curl -k -i -X POST -H 'Content-Type: application/json' -u "alice:alice" "http://localhost:9497/0.1/token" -d '{"backend": "wazo_user"}'
 ```
 
 Retrieving token data
 
 ```sh
-curl -k -i -X GET -H 'Content-Type: application/json' "https://localhost:9497/0.1/token/${TOKEN}"
+curl -k -i -X GET -H 'Content-Type: application/json' "http://localhost:9497/0.1/token/${TOKEN}"
 ```
 
 ## Boostraping wazo-auth
@@ -82,7 +82,7 @@ Running unit tests
 ```
 apt-get install libldap2-dev libpq-dev python-dev libffi-dev libyaml-dev libsasl2-dev
 pip install tox
-tox --recreate -e py27
+tox --recreate -e py37
 ```
 
 
@@ -121,7 +121,7 @@ with the following content in '/tmp/body.json'
 ```
 
 ```sh
-ab -n1000 -c25 -A 'alice:alice' -p /tmp/body.json -T 'application/json' "https://localhost:9497/0.1/token"
+ab -n1000 -c25 -A 'alice:alice' -p /tmp/body.json -T 'application/json' "http://localhost:9497/0.1/token"
 ```
 
 This line will start 25 process creating 1000 tokens with the username and password alice alice
