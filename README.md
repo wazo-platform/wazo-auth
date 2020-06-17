@@ -14,13 +14,13 @@ Launching wazo-auth
 Getting a token
 
 ```sh
-curl -k -i -X POST -H 'Content-Type: application/json' -u "alice:alice" "https://localhost:9497/0.1/token" -d '{"backend": "xivo_user"}'
+curl -k -i -X POST -H 'Content-Type: application/json' -u "alice:alice" "http://localhost:9497/0.1/token" -d '{"backend": "wazo_user"}'
 ```
 
 Retrieving token data
 
 ```sh
-curl -k -i -X GET -H 'Content-Type: application/json' "https://localhost:9497/0.1/token/${TOKEN}"
+curl -k -i -X GET -H 'Content-Type: application/json' "http://localhost:9497/0.1/token/${TOKEN}"
 ```
 
 ## Boostraping wazo-auth
