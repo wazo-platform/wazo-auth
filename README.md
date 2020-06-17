@@ -82,7 +82,7 @@ Running unit tests
 ```
 apt-get install libldap2-dev libpq-dev python-dev libffi-dev libyaml-dev libsasl2-dev
 pip install tox
-tox --recreate -e py27
+tox --recreate -e py37
 ```
 
 
@@ -121,7 +121,7 @@ with the following content in '/tmp/body.json'
 ```
 
 ```sh
-ab -n1000 -c25 -A 'alice:alice' -p /tmp/body.json -T 'application/json' "https://localhost:9497/0.1/token"
+ab -n1000 -c25 -A 'alice:alice' -p /tmp/body.json -T 'application/json' "http://localhost:9497/0.1/token"
 ```
 
 This line will start 25 process creating 1000 tokens with the username and password alice alice
