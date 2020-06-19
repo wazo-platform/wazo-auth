@@ -29,7 +29,7 @@ _DEFAULT_CONFIG = {
     'email_confirmation_subject_template': '/var/lib/wazo-auth/templates/email_confirmation_subject.jinja',  # noqa
     'email_confirmation_from_name': 'wazo-auth',
     'email_confirmation_from_address': 'noreply@wazo.community',
-    'email_confirmation_get_reponse_body_template': '/var/lib/wazo-auth/templates/email_confirmation_get_body.jinja',  # noqa
+    'email_confirmation_get_response_body_template': '/var/lib/wazo-auth/templates/email_confirmation_get_body.jinja',  # noqa
     'email_confirmation_get_mimetype': 'text/html',
     'oauth2_synchronization_ws_url_template': 'wss://oauth.wazo.io/ws/{state}',
     'oauth2_synchronization_redirect_url_template': 'https://oauth.wazo.io/{auth_type}/authorize',
