@@ -6,6 +6,7 @@ Before=monit.service
 [Service]
 ExecStartPre=/usr/bin/install -d -o wazo-auth -g wazo-auth /run/wazo-auth
 ExecStart=/usr/bin/wazo-auth
+ExecStartPost=/usr/bin/wazo-auth-wait
 PIDFile=/run/wazo-auth/wazo-auth.pid
 
 [Install]
