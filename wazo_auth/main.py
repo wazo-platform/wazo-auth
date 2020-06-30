@@ -36,7 +36,4 @@ def main():
             raise
 
     controller = Controller(config)
-    try:
-        controller.run()
-    except KeyboardInterrupt:
-        pass
+    controller.run()
