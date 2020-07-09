@@ -96,15 +96,11 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         )
 
     def delete(self, uuid):
-        nb_deleted = (
-            self.session.query(Tenant).filter(Tenant.uuid == str(uuid)).delete()
-        )
+        tenant = self.session.query(Tenant).get(uuid)
+        if not tenant:
+            raise exceptions.UnknownTenantException(uuid)
+        self.session.delete(tenant)
         self.session.flush()
-        if not nb_deleted:
-            if not self.list_(uuid=uuid):
-                raise exceptions.UnknownTenantException(uuid)
-            else:
-                raise exceptions.UnknownUserException(uuid)
 
     def get_address_id(self, tenant_uuid):
         return (

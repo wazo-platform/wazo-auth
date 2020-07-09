@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import (
@@ -133,6 +133,14 @@ class Tenant(Base):
     address_id = Column(Integer, ForeignKey('auth_address.id', ondelete='SET NULL'))
     contact_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='SET NULL'))
     parent_uuid = Column(String(38), ForeignKey('auth_tenant.uuid'), nullable=False)
+
+    # FIXME(fblackburn): we cannot rely on delete CASCADE if one sub-relation is not CASCADED by
+    # the database itself
+    users = relationship(
+        'User',
+        foreign_keys='User.tenant_uuid',
+        cascade='all, delete-orphan'
+    )
 
 
 class Token(Base):
