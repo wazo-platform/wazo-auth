@@ -1,6 +1,8 @@
 # Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import pytest
+
 from uuid import uuid4
 
 from hamcrest import (
@@ -204,7 +206,8 @@ class TestTenantDAO(base.DAOTestCase):
     @fixtures.db.tenant(uuid=TENANT_UUID, address_id=ADDRESS_ID)
     @fixtures.db.user(uuid=USER_UUID, tenant_uuid=TENANT_UUID, email_address='foo@bar.io')
     @fixtures.db.external_auth_config(tenant_uuid=TENANT_UUID)
-    def test_delete_sub_objects(self, _, user_uuid, tenant_uuid, address_id):
+    @fixtures.db.policy(tenant_uuid=TENANT_UUID)
+    def test_delete_sub_objects(self, policy_uuid, _, user_uuid, tenant_uuid, address_id):
         email_uuid = self._user_dao.get_emails(user_uuid)[0]['uuid']
         external_auth_config = (
             self.session.query(models.ExternalAuthConfig)
@@ -227,6 +230,8 @@ class TestTenantDAO(base.DAOTestCase):
         )
         assert_that(result, equal_to(None))
         result = self.session.query(models.ExternalAuthData).get(data_uuid)
+        assert_that(result, equal_to(None))
+        result = self.session.query(models.Policy).get(policy_uuid)
         assert_that(result, equal_to(None))
 
     def _assert_tenant_matches(self, uuid, name, parent_uuid=ANY_UUID):
