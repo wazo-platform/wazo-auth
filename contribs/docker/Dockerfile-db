@@ -1,4 +1,4 @@
-FROM wazopbx/postgres-test
+FROM wazopbx/wazo-confd-db-test
 MAINTAINER Wazo Maintainers <dev@wazo.community>
 USER root
 
