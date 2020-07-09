@@ -23,6 +23,7 @@ from ..helpers import fixtures, base, constants
 
 TENANT_UUID = '00000000-0000-4000-9000-000000000000'
 USER_UUID = '00000000-0000-4000-9000-111111111111'
+ADDRESS_ID = 42
 
 
 class TestTenantDAO(base.DAOTestCase):
@@ -199,9 +200,10 @@ class TestTenantDAO(base.DAOTestCase):
             raises(exceptions.UnknownTenantException),
         )
 
-    @fixtures.db.tenant(uuid=TENANT_UUID)
+    @fixtures.db.address(id_=ADDRESS_ID)
+    @fixtures.db.tenant(uuid=TENANT_UUID, address_id=ADDRESS_ID)
     @fixtures.db.user(uuid=USER_UUID, tenant_uuid=TENANT_UUID, email_address='foo@bar.io')
-    def test_delete_sub_object(self, user_uuid, tenant_uuid):
+    def test_delete_sub_object(self, user_uuid, tenant_uuid, address_id):
         email_uuid = self._user_dao.get_emails(user_uuid)[0]['uuid']
 
         self._tenant_dao.delete(tenant_uuid)
@@ -209,6 +211,8 @@ class TestTenantDAO(base.DAOTestCase):
         result = self.session.query(models.User).get(user_uuid)
         assert_that(result, equal_to(None))
         result = self.session.query(models.Email).get(email_uuid)
+        assert_that(result, equal_to(None))
+        result = self.session.query(models.Address).get(address_id)
         assert_that(result, equal_to(None))
 
     def _assert_tenant_matches(self, uuid, name, parent_uuid=ANY_UUID):

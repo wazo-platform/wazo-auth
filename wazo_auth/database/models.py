@@ -134,8 +134,9 @@ class Tenant(Base):
     contact_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='SET NULL'))
     parent_uuid = Column(String(38), ForeignKey('auth_tenant.uuid'), nullable=False)
 
-    # FIXME(fblackburn): we cannot rely on delete CASCADE if one sub-relation is not CASCADED by
+    # FIXME(fblackburn): we cannot rely on delete CASCADE if one sub-relation is not deleted by
     # the database itself
+    address = relationship('Address', cascade='all, delete-orphan', single_parent=True)
     users = relationship(
         'User',
         foreign_keys='User.tenant_uuid',

@@ -17,6 +17,22 @@ def _random_string(length):
     return ''.join(random.choice(string.ascii_lowercase) for _ in range(length))
 
 
+def address(**address_args):
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            address_id = self._address_dao.new(**address_args)
+            self.session.begin_nested()
+            try:
+                return decorated(self, address_id, *args, **kwargs)
+            finally:
+                self.session.rollback()
+
+        return wrapper
+
+    return decorator
+
+
 def email(**email_args):
     email_args.setdefault(
         'address', '{}@{}'.format(_random_string(5), _random_string(5))
