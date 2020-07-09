@@ -317,6 +317,7 @@ class UserPolicy(Base):
     )
 
 
+# FIXME(fblackburn): remove unused ACLTemplate
 class ACLTemplate(Base):
 
     __tablename__ = 'auth_acl_template'
