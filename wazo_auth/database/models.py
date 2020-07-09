@@ -73,6 +73,11 @@ class ExternalAuthConfig(Base):
         ForeignKey('auth_external_auth_type.uuid', ondelete='CASCADE'),
         primary_key=True,
     )
+    external_auth_data = relationship(
+        'ExternalAuthData',
+        cascade='all, delete-orphan',
+        single_parent=True,
+    )
 
 
 class ExternalAuthType(Base):
@@ -134,9 +139,9 @@ class Tenant(Base):
     contact_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='SET NULL'))
     parent_uuid = Column(String(38), ForeignKey('auth_tenant.uuid'), nullable=False)
 
-    # FIXME(fblackburn): we cannot rely on delete CASCADE if one sub-relation is not deleted by
-    # the database itself
+    # FIXME(fblackburn): delete CASCADE is not enough for all sub-relation
     address = relationship('Address', cascade='all, delete-orphan', single_parent=True)
+    external_auth_config = relationship('ExternalAuthConfig', cascade='all, delete-orphan')
     users = relationship(
         'User',
         foreign_keys='User.tenant_uuid',

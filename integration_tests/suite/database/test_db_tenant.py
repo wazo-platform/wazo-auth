@@ -203,8 +203,16 @@ class TestTenantDAO(base.DAOTestCase):
     @fixtures.db.address(id_=ADDRESS_ID)
     @fixtures.db.tenant(uuid=TENANT_UUID, address_id=ADDRESS_ID)
     @fixtures.db.user(uuid=USER_UUID, tenant_uuid=TENANT_UUID, email_address='foo@bar.io')
-    def test_delete_sub_object(self, user_uuid, tenant_uuid, address_id):
+    @fixtures.db.external_auth_config(tenant_uuid=TENANT_UUID)
+    def test_delete_sub_objects(self, _, user_uuid, tenant_uuid, address_id):
         email_uuid = self._user_dao.get_emails(user_uuid)[0]['uuid']
+        external_auth_config = (
+            self.session.query(models.ExternalAuthConfig)
+            .filter(models.ExternalAuthConfig.tenant_uuid == tenant_uuid)
+            .first()
+        )
+        type_uuid = external_auth_config.type_uuid
+        data_uuid = external_auth_config.data_uuid
 
         self._tenant_dao.delete(tenant_uuid)
 
@@ -213,6 +221,12 @@ class TestTenantDAO(base.DAOTestCase):
         result = self.session.query(models.Email).get(email_uuid)
         assert_that(result, equal_to(None))
         result = self.session.query(models.Address).get(address_id)
+        assert_that(result, equal_to(None))
+        result = self.session.query(models.ExternalAuthConfig).get(
+            (tenant_uuid, type_uuid)
+        )
+        assert_that(result, equal_to(None))
+        result = self.session.query(models.ExternalAuthData).get(data_uuid)
         assert_that(result, equal_to(None))
 
     def _assert_tenant_matches(self, uuid, name, parent_uuid=ANY_UUID):
