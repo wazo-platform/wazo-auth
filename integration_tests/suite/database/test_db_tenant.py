@@ -249,7 +249,7 @@ class TestTenantDAO(base.DAOTestCase):
         assert_that(result, equal_to(None))
 
     @pytest.mark.skip(reason="find a way to delete unused ACLTemplate")
-    @fixtures.db.tenant(uuid=TENANT_UUID, address_id=ADDRESS_ID)
+    @fixtures.db.tenant(uuid=TENANT_UUID)
     @fixtures.db.policy(tenant_uuid=TENANT_UUID, acl_templates=['foo'])
     def test_delete_acl_template(self, policy_uuid, tenant_uuid):
         acl_template_policy = (
