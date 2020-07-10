@@ -206,8 +206,9 @@ class TestTenantDAO(base.DAOTestCase):
     @fixtures.db.tenant(uuid=TENANT_UUID, address_id=ADDRESS_ID)
     @fixtures.db.user(uuid=USER_UUID, tenant_uuid=TENANT_UUID, email_address='foo@bar.io')
     @fixtures.db.external_auth_config(tenant_uuid=TENANT_UUID)
+    @fixtures.db.user_external_auth(user_uuid=USER_UUID)
     @fixtures.db.policy(tenant_uuid=TENANT_UUID)
-    def test_delete_sub_objects(self, policy_uuid, _, user_uuid, tenant_uuid, address_id):
+    def test_delete_sub_objects(self, policy_uuid, _, __, user_uuid, tenant_uuid, address_id):
         email_uuid = self._user_dao.get_emails(user_uuid)[0]['uuid']
         external_auth_config = (
             self.session.query(models.ExternalAuthConfig)
@@ -216,6 +217,13 @@ class TestTenantDAO(base.DAOTestCase):
         )
         type_uuid = external_auth_config.type_uuid
         data_uuid = external_auth_config.data_uuid
+        user_external_auth = (
+            self.session.query(models.UserExternalAuth)
+            .filter(models.UserExternalAuth.user_uuid == user_uuid)
+            .first()
+        )
+        user_type_uuid = user_external_auth.external_auth_type_uuid
+        user_data_uuid = user_external_auth.external_auth_data_uuid
 
         self._tenant_dao.delete(tenant_uuid)
 
@@ -230,6 +238,12 @@ class TestTenantDAO(base.DAOTestCase):
         )
         assert_that(result, equal_to(None))
         result = self.session.query(models.ExternalAuthData).get(data_uuid)
+        assert_that(result, equal_to(None))
+        result = self.session.query(models.UserExternalAuth).get(
+            (user_uuid, user_type_uuid, user_data_uuid)
+        )
+        assert_that(result, equal_to(None))
+        result = self.session.query(models.ExternalAuthData).get(user_data_uuid)
         assert_that(result, equal_to(None))
         result = self.session.query(models.Policy).get(policy_uuid)
         assert_that(result, equal_to(None))

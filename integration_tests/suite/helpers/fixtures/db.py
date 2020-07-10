@@ -87,6 +87,24 @@ def external_auth_config(**auth_config):
     return decorator
 
 
+def user_external_auth(**user_auth):
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            user_auth.setdefault('auth_type', 'auto-generated')
+            user_auth.setdefault('data', 'random-data')
+            data = self._external_auth_dao.create(**user_auth)
+            self.session.begin_nested()
+            try:
+                return decorated(self, data, *args, **kwargs)
+            finally:
+                self.session.rollback()
+
+        return wrapper
+
+    return decorator
+
+
 def token(**token_args):
     def decorator(decorated):
         @wraps(decorated)

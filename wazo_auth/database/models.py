@@ -252,10 +252,12 @@ class User(Base):
         nullable=False,
     )
     enabled = Column(Boolean)
+
     tenant_uuid = Column(
         String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False
     )
     emails = relationship('UserEmail', cascade='all, delete-orphan')
+    user_external_auth = relationship('UserExternalAuth', cascade='all, delete-orphan')
 
 
 class UserEmail(Base):
@@ -290,6 +292,12 @@ class UserExternalAuth(Base):
         String(38),
         ForeignKey('auth_external_auth_data.uuid', ondelete='CASCADE'),
         primary_key=True,
+    )
+
+    external_auth_data = relationship(
+        'ExternalAuthData',
+        cascade='all, delete-orphan',
+        single_parent=True,
     )
 
 
