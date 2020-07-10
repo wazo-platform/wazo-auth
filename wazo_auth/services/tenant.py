@@ -73,8 +73,8 @@ class TenantService(BaseService):
         return self._tenant_tree.list_visible_tenants(tenant_uuid)
 
     def new(self, **kwargs):
-        address_id = self._dao.address.new(**kwargs['address'])
-        uuid = self._dao.tenant.create(address_id=address_id, **kwargs)
+        uuid = self._dao.tenant.create(**kwargs)
+        self._dao.address.new(tenant_uuid=uuid, **kwargs['address'])
         result = self._get(uuid)
 
         event = events.TenantCreatedEvent(uuid, kwargs.get('name'))
@@ -89,11 +89,11 @@ class TenantService(BaseService):
 
         address_id = self._dao.tenant.get_address_id(tenant_uuid)
         if not address_id:
-            address_id = self._dao.address.new(**kwargs['address'])
+            address_id = self._dao.address.new(tenant_uuid=tenant_uuid, **kwargs['address'])
         else:
             address_id, self._dao.address.update(address_id, **kwargs['address'])
 
-        self._dao.tenant.update(tenant_uuid, address_id=address_id, **kwargs)
+        self._dao.tenant.update(tenant_uuid, **kwargs)
 
         result = self._get(tenant_uuid)
         event = events.TenantUpdatedEvent(tenant_uuid, result.get('name'))

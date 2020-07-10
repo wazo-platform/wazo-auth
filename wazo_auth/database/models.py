@@ -39,6 +39,11 @@ class Address(Base):
     __tablename__ = 'auth_address'
 
     id_ = Column(Integer, name='id', primary_key=True)
+    tenant_uuid = Column(
+        String(38),
+        ForeignKey('auth_tenant.uuid', ondelete='CASCADE'),
+        nullable=False,
+    )
     line_1 = Column(Text)
     line_2 = Column(Text)
     city = Column(Text)
@@ -135,12 +140,10 @@ class Tenant(Base):
     )
     name = Column(Text)
     phone = Column(Text)
-    address_id = Column(Integer, ForeignKey('auth_address.id', ondelete='SET NULL'))
     contact_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='SET NULL'))
     parent_uuid = Column(String(38), ForeignKey('auth_tenant.uuid'), nullable=False)
 
     # FIXME(fblackburn): delete CASCADE is not enough for all sub-relation
-    address = relationship('Address', cascade='all, delete-orphan', single_parent=True)
     external_auth_config = relationship('ExternalAuthConfig', cascade='all, delete-orphan')
     users = relationship(
         'User',

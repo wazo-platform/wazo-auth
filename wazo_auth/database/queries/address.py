@@ -25,11 +25,11 @@ class AddressDAO(BaseDAO):
 
         raise exceptions.UnknownAddressException(address_id)
 
-    def new(self, **kwargs):
+    def new(self, tenant_uuid=None, **kwargs):
         if self._address_is_empty(**kwargs):
             return None
 
-        address = Address(**kwargs)
+        address = Address(tenant_uuid=tenant_uuid, **kwargs)
         self.session.add(address)
         self.session.flush()
         return address.id_

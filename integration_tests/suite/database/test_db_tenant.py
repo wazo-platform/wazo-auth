@@ -202,13 +202,13 @@ class TestTenantDAO(base.DAOTestCase):
             raises(exceptions.UnknownTenantException),
         )
 
-    @fixtures.db.address(id_=ADDRESS_ID)
-    @fixtures.db.tenant(uuid=TENANT_UUID, address_id=ADDRESS_ID)
+    @fixtures.db.tenant(uuid=TENANT_UUID)
+    @fixtures.db.address(id_=ADDRESS_ID, tenant_uuid=TENANT_UUID)
     @fixtures.db.user(uuid=USER_UUID, tenant_uuid=TENANT_UUID, email_address='foo@bar.io')
     @fixtures.db.external_auth_config(tenant_uuid=TENANT_UUID)
     @fixtures.db.user_external_auth(user_uuid=USER_UUID)
     @fixtures.db.policy(tenant_uuid=TENANT_UUID)
-    def test_delete_sub_objects(self, policy_uuid, _, __, user_uuid, tenant_uuid, address_id):
+    def test_delete_sub_objects(self, policy_uuid, _, __, user_uuid, address_id, tenant_uuid):
         email_uuid = self._user_dao.get_emails(user_uuid)[0]['uuid']
         external_auth_config = (
             self.session.query(models.ExternalAuthConfig)
@@ -279,7 +279,6 @@ class TestTenantDAO(base.DAOTestCase):
         kwargs.setdefault('name', None)
         kwargs.setdefault('phone', None)
         kwargs.setdefault('contact_uuid', None)
-        kwargs.setdefault('address_id', None)
         return self._tenant_dao.create(**kwargs)
 
     def _top_tenant_uuid(self):

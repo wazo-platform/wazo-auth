@@ -21,6 +21,7 @@ def address(**address_args):
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
+            address_args.setdefault('tenant_uuid', self.top_tenant_uuid)
             address_id = self._address_dao.new(**address_args)
             self.session.begin_nested()
             try:
@@ -184,7 +185,6 @@ def tenant(**tenant_args):
             tenant_args.setdefault('name', None)
             tenant_args.setdefault('phone', None)
             tenant_args.setdefault('contact_uuid', None)
-            tenant_args.setdefault('address_id', None)
             tenant_args.setdefault('parent_uuid', self.top_tenant_uuid)
 
             tenant_uuid = self._tenant_dao.create(**tenant_args)
