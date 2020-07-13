@@ -96,8 +96,8 @@ def merge_external_auth_data_with_external_auth_config():
     op.execute(external_auth_config_tbl.update().values(data=sub_query))
     op.execute(
         external_auth_config_tbl.delete().where(
-            external_auth_config_tbl.c.data == None
-        )  # noqa
+            external_auth_config_tbl.c.data == None  # noqa
+        )
     )
     op.alter_column('auth_external_auth_config', 'data', nullable=False)
     op.drop_column('auth_external_auth_config', 'data_uuid')
@@ -114,8 +114,8 @@ def merge_external_auth_data_with_user_external_auth():
     op.execute(user_external_auth_tbl.update().values(data=sub_query))
     op.execute(
         user_external_auth_tbl.delete().where(
-            user_external_auth_tbl.c.data == None
-        )  # noqa
+            user_external_auth_tbl.c.data == None  # noqa
+        )
     )
     op.alter_column('auth_user_external_auth', 'data', nullable=False)
     op.drop_column('auth_user_external_auth', 'external_auth_data_uuid')
