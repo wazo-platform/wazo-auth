@@ -7,7 +7,6 @@ from .base import BaseDAO, PaginatorMixin
 from . import filters
 from ..models import (
     ExternalAuthConfig,
-    ExternalAuthData,
     ExternalAuthType,
     Tenant,
     User,
@@ -38,13 +37,10 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def create(self, user_uuid, auth_type, data):
         serialized_data = json.dumps(data)
         external_type = self._find_or_create_type(auth_type)
-        external_data = ExternalAuthData(data=serialized_data)
-        self.session.add(external_data)
-        self.session.flush()
         user_external_auth = UserExternalAuth(
             user_uuid=str(user_uuid),
             external_auth_type_uuid=external_type.uuid,
-            external_auth_data_uuid=external_data.uuid,
+            data=serialized_data
         )
         self.session.add(user_external_auth)
         try:
@@ -63,16 +59,13 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return data
 
     def create_config(self, auth_type, data, tenant_uuid):
+        self._assert_tenant_exists(tenant_uuid)
         data = json.dumps(data)
         external_type = self._find_or_create_type(auth_type)
-        external_data = ExternalAuthData(data=data)
-        self._assert_tenant_exists(tenant_uuid)
-        self.session.add(external_data)
-        self.session.flush()
         external_auth_config = ExternalAuthConfig(
-            data_uuid=external_data.uuid,
             tenant_uuid=tenant_uuid,
             type_uuid=external_type.uuid,
+            data=data,
         )
         self.session.add(external_auth_config)
         try:
@@ -142,8 +135,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         )
 
         data = (
-            self.session.query(ExternalAuthData.data)
-            .join(UserExternalAuth)
+            self.session.query(UserExternalAuth.data)
             .join(ExternalAuthType)
             .filter(filter_)
             .first()
@@ -163,8 +155,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             raise exceptions.ExternalAuthConfigNotFound(auth_type)
 
         result = (
-            self.session.query(ExternalAuthData.data)
-            .join(ExternalAuthConfig)
+            self.session.query(ExternalAuthConfig.data)
             .join(ExternalAuthType)
             .filter(
                 ExternalAuthType.name == external_auth_type.name,
@@ -192,10 +183,9 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         filter_ = and_(filter_, UserExternalAuth.user_uuid == str(user_uuid))
         query = (
-            self.session.query(ExternalAuthType.name, ExternalAuthData.data)
+            self.session.query(ExternalAuthType.name, UserExternalAuth.data)
             .select_from(UserExternalAuth)
             .join(ExternalAuthType)
-            .join(ExternalAuthData)
             .filter(filter_)
         )
         for type_, data in query.all():

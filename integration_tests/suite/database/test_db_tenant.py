@@ -216,14 +216,12 @@ class TestTenantDAO(base.DAOTestCase):
             .first()
         )
         type_uuid = external_auth_config.type_uuid
-        data_uuid = external_auth_config.data_uuid
         user_external_auth = (
             self.session.query(models.UserExternalAuth)
             .filter(models.UserExternalAuth.user_uuid == user_uuid)
             .first()
         )
         user_type_uuid = user_external_auth.external_auth_type_uuid
-        user_data_uuid = user_external_auth.external_auth_data_uuid
 
         self._tenant_dao.delete(tenant_uuid)
 
@@ -237,13 +235,9 @@ class TestTenantDAO(base.DAOTestCase):
             (tenant_uuid, type_uuid)
         )
         assert_that(result, equal_to(None))
-        result = self.session.query(models.ExternalAuthData).get(data_uuid)
-        assert_that(result, equal_to(None))
         result = self.session.query(models.UserExternalAuth).get(
-            (user_uuid, user_type_uuid, user_data_uuid)
+            (user_uuid, user_type_uuid)
         )
-        assert_that(result, equal_to(None))
-        result = self.session.query(models.ExternalAuthData).get(user_data_uuid)
         assert_that(result, equal_to(None))
         result = self.session.query(models.Policy).get(policy_uuid)
         assert_that(result, equal_to(None))

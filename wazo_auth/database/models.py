@@ -73,9 +73,6 @@ class ExternalAuthConfig(Base):
 
     __tablename__ = 'auth_external_auth_config'
 
-    data_uuid = Column(
-        String(36), ForeignKey('auth_external_auth_data.uuid', ondelete='CASCADE')
-    )
     tenant_uuid = Column(
         String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), primary_key=True
     )
@@ -84,11 +81,7 @@ class ExternalAuthConfig(Base):
         ForeignKey('auth_external_auth_type.uuid', ondelete='CASCADE'),
         primary_key=True,
     )
-    external_auth_data = relationship(
-        'ExternalAuthData',
-        cascade='all, delete-orphan',
-        single_parent=True,
-    )
+    data = Column(Text, nullable=False)
 
 
 class ExternalAuthType(Base):
@@ -100,16 +93,6 @@ class ExternalAuthType(Base):
     )
     name = Column(Text, unique=True, nullable=False)
     enabled = Column(Boolean, server_default='false')
-
-
-class ExternalAuthData(Base):
-
-    __tablename__ = 'auth_external_auth_data'
-
-    uuid = Column(
-        String(38), server_default=text('uuid_generate_v4()'), primary_key=True
-    )
-    data = Column(Text, nullable=False)
 
 
 class Group(Base):
@@ -282,17 +265,7 @@ class UserExternalAuth(Base):
         ForeignKey('auth_external_auth_type.uuid', ondelete='CASCADE'),
         primary_key=True,
     )
-    external_auth_data_uuid = Column(
-        String(38),
-        ForeignKey('auth_external_auth_data.uuid', ondelete='CASCADE'),
-        primary_key=True,
-    )
-
-    external_auth_data = relationship(
-        'ExternalAuthData',
-        cascade='all, delete-orphan',
-        single_parent=True,
-    )
+    data = Column(Text, nullable=False)
 
 
 class UserGroup(Base):
