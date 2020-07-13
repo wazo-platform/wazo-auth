@@ -89,7 +89,9 @@ class TenantService(BaseService):
 
         address_id = self._dao.tenant.get_address_id(tenant_uuid)
         if not address_id:
-            address_id = self._dao.address.new(tenant_uuid=tenant_uuid, **kwargs['address'])
+            address_id = self._dao.address.new(
+                tenant_uuid=tenant_uuid, **kwargs['address']
+            )
         else:
             address_id, self._dao.address.update(address_id, **kwargs['address'])
 

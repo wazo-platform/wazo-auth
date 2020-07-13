@@ -40,9 +40,7 @@ class Address(Base):
 
     id_ = Column(Integer, name='id', primary_key=True)
     tenant_uuid = Column(
-        String(38),
-        ForeignKey('auth_tenant.uuid', ondelete='CASCADE'),
-        nullable=False,
+        String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False,
     )
     line_1 = Column(Text)
     line_2 = Column(Text)
@@ -63,9 +61,7 @@ class Email(Base):
     confirmed = Column(Boolean, nullable=False, default=False)
     main = Column(Boolean, nullable=False, default=False)
     user_uuid = Column(
-        String(38),
-        ForeignKey('auth_user.uuid', ondelete='CASCADE'),
-        nullable=False,
+        String(38), ForeignKey('auth_user.uuid', ondelete='CASCADE'), nullable=False,
     )
 
 

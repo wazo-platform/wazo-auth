@@ -45,7 +45,7 @@ class TestAddressDAO(base.DAOTestCase):
         city=None,
         state=None,
         country=None,
-        zip_code=None
+        zip_code=None,
     ):
         return {
             'line_1': line_1,

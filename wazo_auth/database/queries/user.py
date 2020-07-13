@@ -86,12 +86,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             search_filter = self.new_search_filter(**kwargs)
             filter_ = and_(filter_, strict_filter, search_filter)
 
-        return (
-            self.session.query(User.uuid)
-            .outerjoin(Email)
-            .filter(filter_)
-            .count()
-        )
+        return self.session.query(User.uuid).outerjoin(Email).filter(filter_).count()
 
     def count_groups(self, user_uuid, **kwargs):
         filtered = kwargs.get('filtered')
@@ -158,7 +153,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     address=email_address,
                     confirmed=email_confirmed,
                     main=True,
-                    user_uuid=user.uuid
+                    user_uuid=user.uuid,
                 )
                 self.session.add(email)
 
@@ -173,12 +168,14 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         emails = []
         if email_address:
-            emails.append({
-                'uuid': email.uuid,
-                'address': email_address,
-                'confirmed': email_confirmed,
-                'main': True,
-            })
+            emails.append(
+                {
+                    'uuid': email.uuid,
+                    'address': email_address,
+                    'confirmed': email_confirmed,
+                    'main': True,
+                }
+            )
 
         return {
             'uuid': user.uuid,

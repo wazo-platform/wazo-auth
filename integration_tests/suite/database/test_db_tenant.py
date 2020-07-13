@@ -204,11 +204,15 @@ class TestTenantDAO(base.DAOTestCase):
 
     @fixtures.db.tenant(uuid=TENANT_UUID)
     @fixtures.db.address(id_=ADDRESS_ID, tenant_uuid=TENANT_UUID)
-    @fixtures.db.user(uuid=USER_UUID, tenant_uuid=TENANT_UUID, email_address='foo@bar.io')
+    @fixtures.db.user(
+        uuid=USER_UUID, tenant_uuid=TENANT_UUID, email_address='foo@bar.io'
+    )
     @fixtures.db.external_auth_config(tenant_uuid=TENANT_UUID)
     @fixtures.db.user_external_auth(user_uuid=USER_UUID)
     @fixtures.db.policy(tenant_uuid=TENANT_UUID)
-    def test_delete_sub_objects(self, policy_uuid, _, __, user_uuid, address_id, tenant_uuid):
+    def test_delete_sub_objects(
+        self, policy_uuid, _, __, user_uuid, address_id, tenant_uuid
+    ):
         email_uuid = self._user_dao.get_emails(user_uuid)[0]['uuid']
         external_auth_config = (
             self.session.query(models.ExternalAuthConfig)

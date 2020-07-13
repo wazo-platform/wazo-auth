@@ -40,7 +40,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         user_external_auth = UserExternalAuth(
             user_uuid=str(user_uuid),
             external_auth_type_uuid=external_type.uuid,
-            data=serialized_data
+            data=serialized_data,
         )
         self.session.add(user_external_auth)
         try:
@@ -63,9 +63,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         data = json.dumps(data)
         external_type = self._find_or_create_type(auth_type)
         external_auth_config = ExternalAuthConfig(
-            tenant_uuid=tenant_uuid,
-            type_uuid=external_type.uuid,
-            data=data,
+            tenant_uuid=tenant_uuid, type_uuid=external_type.uuid, data=data,
         )
         self.session.add(external_auth_config)
         try:
