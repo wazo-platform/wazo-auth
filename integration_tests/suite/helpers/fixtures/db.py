@@ -9,6 +9,8 @@ import uuid
 
 from functools import wraps
 
+from wazo_auth.database import models
+
 
 A_SALT = os.urandom(64)
 
@@ -53,7 +55,10 @@ def email(**email_args):
 
             email_args.setdefault('user_uuid', create_user())
 
-            email_uuid = self._email_dao.create(**email_args)
+            email = models.Email(**email_args)
+            self.session.add(email)
+            self.session.flush()
+            email_uuid = email.uuid
             self.session.begin_nested()
             try:
                 return decorated(self, email_uuid, *args, **kwargs)
