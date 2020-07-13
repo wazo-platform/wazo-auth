@@ -61,6 +61,12 @@ class Email(Base):
     )
     address = Column(Text, unique=True, nullable=False)
     confirmed = Column(Boolean, nullable=False, default=False)
+    main = Column(Boolean, nullable=False, default=False)
+    user_uuid = Column(
+        String(38),
+        ForeignKey('auth_user.uuid', ondelete='CASCADE'),
+        nullable=False,
+    )
 
 
 class ExternalAuthConfig(Base):
@@ -259,23 +265,8 @@ class User(Base):
     tenant_uuid = Column(
         String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False
     )
-    emails = relationship('UserEmail', cascade='all, delete-orphan')
+    emails = relationship('Email', viewonly=True)
     user_external_auth = relationship('UserExternalAuth', cascade='all, delete-orphan')
-
-
-class UserEmail(Base):
-
-    __tablename__ = 'auth_user_email'
-    __table_args__ = (schema.UniqueConstraint('user_uuid', 'main'),)
-
-    user_uuid = Column(
-        String(38), ForeignKey('auth_user.uuid', ondelete='CASCADE'), primary_key=True
-    )
-    email_uuid = Column(
-        String(38), ForeignKey('auth_email.uuid', ondelete='CASCADE'), primary_key=True
-    )
-    main = Column(Boolean, nullable=False, default=False)
-    email = relationship('Email', cascade='all, delete-orphan', single_parent=True)
 
 
 class UserExternalAuth(Base):

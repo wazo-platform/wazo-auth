@@ -3,7 +3,7 @@
 
 from sqlalchemy import and_, exc, text
 from .base import BaseDAO, PaginatorMixin
-from ..models import Email, Group, GroupPolicy, Policy, User, UserEmail, UserGroup
+from ..models import Email, Group, GroupPolicy, Policy, User, UserGroup
 from . import filters
 from ... import exceptions
 
@@ -95,7 +95,6 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return (
             self.session.query(UserGroup)
             .join(User)
-            .outerjoin(UserEmail)
             .outerjoin(Email)
             .filter(filter_)
             .count()

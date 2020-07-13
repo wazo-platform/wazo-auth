@@ -8,8 +8,8 @@ from ..models import Email
 
 
 class EmailDAO(BaseDAO):
-    def create(self, address, confirmed=False):
-        email = Email(address=address, confirmed=confirmed)
+    def create(self, user_uuid, address, confirmed=False):
+        email = Email(user_uuid=user_uuid, address=address, confirmed=confirmed)
         self.session.add(email)
         self.session.flush()
         return email.uuid

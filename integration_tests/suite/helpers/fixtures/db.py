@@ -35,13 +35,24 @@ def address(**address_args):
 
 
 def email(**email_args):
-    email_args.setdefault(
-        'address', '{}@{}'.format(_random_string(5), _random_string(5))
-    )
-
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
+            email_args.setdefault(
+                'address', '{}@{}'.format(_random_string(5), _random_string(5))
+            )
+
+            def create_user():
+                user_args = {
+                    'username': _random_string(5),
+                    'purpose': 'user',
+                    'tenant_uuid': self.top_tenant_uuid,
+                }
+                user = self._user_dao.create(**user_args)
+                return user['uuid']
+
+            email_args.setdefault('user_uuid', create_user())
+
             email_uuid = self._email_dao.create(**email_args)
             self.session.begin_nested()
             try:

@@ -11,7 +11,6 @@ from ..models import (
     Session,
     Token,
     User,
-    UserEmail,
     UserGroup,
     UserPolicy,
 )
@@ -89,8 +88,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         return (
             self.session.query(User.uuid)
-            .outerjoin(UserEmail, UserEmail.user_uuid == User.uuid)
-            .outerjoin(Email, Email.uuid == UserEmail.email_uuid)
+            .outerjoin(Email)
             .filter(filter_)
             .count()
         )
@@ -151,23 +149,20 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         email_confirmed = kwargs.get('email_confirmed', False)
         email_address = kwargs.get('email_address', None)
         try:
-            if email_address:
-                email_args = {
-                    'address': email_address,
-                    'confirmed': email_confirmed,
-                }
-                email = Email(**email_args)
-                self.session.add(email)
-
             user = User(**user_args)
             self.session.add(user)
             self.session.flush()
+
             if email_address:
-                user_email = UserEmail(
-                    user_uuid=user.uuid, email_uuid=email.uuid, main=True
+                email = Email(
+                    address=email_address,
+                    confirmed=email_confirmed,
+                    main=True,
+                    user_uuid=user.uuid
                 )
-                self.session.add(user_email)
-                self.session.flush()
+                self.session.add(email)
+
+            self.session.flush()
         except exc.IntegrityError as e:
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
@@ -176,16 +171,14 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     raise exceptions.ConflictException('users', column, value)
             raise
 
+        emails = []
         if email_address:
-            email = {
+            emails.append({
                 'uuid': email.uuid,
                 'address': email_address,
                 'confirmed': email_confirmed,
                 'main': True,
-            }
-            emails = [email]
-        else:
-            emails = []
+            })
 
         return {
             'uuid': user.uuid,
@@ -228,13 +221,13 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if not user:
             raise exceptions.UnknownUserException(user_uuid)
 
-        for item in user.emails:
+        for email in user.emails:
             result.append(
                 {
-                    'uuid': item.email.uuid,
-                    'address': item.email.address,
-                    'main': item.main,
-                    'confirmed': item.email.confirmed,
+                    'uuid': email.uuid,
+                    'address': email.address,
+                    'main': email.main,
+                    'confirmed': email.confirmed,
                 }
             )
 
@@ -256,7 +249,6 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         users = []
         query = (
             self.session.query(User)
-            .outerjoin(UserEmail)
             .outerjoin(Email)
             .outerjoin(UserGroup)
             .filter(filter_)
@@ -265,13 +257,13 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         for user in query.all():
             emails = []
-            for item in user.emails:
+            for email in user.emails:
                 emails.append(
                     {
-                        'uuid': item.email.uuid,
-                        'address': item.email.address,
-                        'main': item.main,
-                        'confirmed': item.email.confirmed,
+                        'uuid': email.uuid,
+                        'address': email.address,
+                        'main': email.main,
+                        'confirmed': email.confirmed,
                     }
                 )
 
@@ -311,11 +303,13 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def _add_user_email(self, user_uuid, args):
         args.setdefault('confirmed', False)
-        email = Email(address=args['address'])
-        email.confirmed = args['confirmed']
-        uuid = args.get('uuid')
-        if uuid:
-            email.uuid = uuid
+        email = Email(
+            uuid=args.get('uuid'),
+            address=args['address'],
+            confirmed=args['confirmed'],
+            main=args['main'],
+            user_uuid=user_uuid,
+        )
         self.session.add(email)
 
         try:
@@ -328,21 +322,10 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     raise exceptions.ConflictException('users', column, value)
             raise
 
-        self.session.add(
-            UserEmail(email_uuid=email.uuid, user_uuid=user_uuid, main=args['main'])
-        )
-        self.session.flush()
         args['uuid'] = email.uuid
 
     def _delete_all_emails(self, user_uuid):
-        filter_ = UserEmail.user_uuid == str(user_uuid)
-
-        query = self.session.query(UserEmail.email_uuid).filter(filter_)
-        email_uuids = [row.email_uuid for row in query.all()]
-        if email_uuids:
-            self.session.query(Email).filter(Email.uuid.in_(email_uuids)).delete(
-                synchronize_session=False
-            )
+        self.session.query(Email).filter(Email.user_uuid == str(user_uuid)).delete()
         self.session.flush()
 
     @staticmethod
