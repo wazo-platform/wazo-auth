@@ -93,7 +93,13 @@ def remove_middle_table_between_user_email():
         .delete()
         .where(email_tbl.c.user_uuid == None)  # noqa
     )
+    op.execute(
+        email_tbl
+        .delete()
+        .where(email_tbl.c.main == None)  # noqa
+    )
     op.alter_column('auth_email', 'user_uuid', nullable=False)
+    op.alter_column('auth_email', 'main', nullable=False)
     op.drop_table('auth_user_email')
 
 
