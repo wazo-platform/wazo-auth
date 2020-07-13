@@ -100,6 +100,8 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             raise exceptions.UnknownTenantException(uuid)
         self.session.delete(tenant)
         self.session.flush()
+        # NOTE: A lot of resources have been delete by cascade
+        self.session.expire_all()
 
     def get_address_id(self, tenant_uuid):
         return (

@@ -132,14 +132,6 @@ class Tenant(Base):
     contact_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='SET NULL'))
     parent_uuid = Column(String(38), ForeignKey('auth_tenant.uuid'), nullable=False)
 
-    # FIXME(fblackburn): delete CASCADE is not enough for all sub-relation
-    external_auth_config = relationship('ExternalAuthConfig', cascade='all, delete-orphan')
-    users = relationship(
-        'User',
-        foreign_keys='User.tenant_uuid',
-        cascade='all, delete-orphan'
-    )
-
 
 class Token(Base):
 
@@ -244,12 +236,11 @@ class User(Base):
         nullable=False,
     )
     enabled = Column(Boolean)
-
     tenant_uuid = Column(
         String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False
     )
+
     emails = relationship('Email', viewonly=True)
-    user_external_auth = relationship('UserExternalAuth', cascade='all, delete-orphan')
 
 
 class UserExternalAuth(Base):
