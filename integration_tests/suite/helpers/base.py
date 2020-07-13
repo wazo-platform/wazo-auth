@@ -1,6 +1,7 @@
 # Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import logging
 import os
 import random
 import requests
@@ -37,6 +38,8 @@ from wazo_auth.database.queries import (
 
 from .constants import DB_URI
 from .database import Database
+
+logging.getLogger('wazo_auth').setLevel(logging.WARNING)
 
 HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
 SUB_TENANT_UUID = '76502c2b-cce5-409c-ab8f-d1fe41141a2d'
