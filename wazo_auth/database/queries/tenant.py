@@ -65,7 +65,6 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             name=kwargs['name'],
             phone=kwargs['phone'],
             contact_uuid=kwargs['contact_uuid'],
-            address_id=kwargs['address_id'],
             parent_uuid=str(kwargs['parent_uuid']),
         )
         if uuid_:
@@ -96,20 +95,18 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         )
 
     def delete(self, uuid):
-        nb_deleted = (
-            self.session.query(Tenant).filter(Tenant.uuid == str(uuid)).delete()
-        )
+        tenant = self.session.query(Tenant).get(uuid)
+        if not tenant:
+            raise exceptions.UnknownTenantException(uuid)
+        self.session.delete(tenant)
         self.session.flush()
-        if not nb_deleted:
-            if not self.list_(uuid=uuid):
-                raise exceptions.UnknownTenantException(uuid)
-            else:
-                raise exceptions.UnknownUserException(uuid)
+        # NOTE: A lot of resources have been delete by cascade
+        self.session.expire_all()
 
     def get_address_id(self, tenant_uuid):
         return (
-            self.session.query(Tenant.address_id)
-            .filter(Tenant.uuid == str(tenant_uuid))
+            self.session.query(Address.id_)
+            .filter(Address.tenant_uuid == str(tenant_uuid))
             .scalar()
         )
 
@@ -149,7 +146,6 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             'name': kwargs.get('name'),
             'contact_uuid': kwargs.get('contact_uuid'),
             'phone': kwargs.get('phone'),
-            'address_id': kwargs.get('address_id'),
         }
 
         try:

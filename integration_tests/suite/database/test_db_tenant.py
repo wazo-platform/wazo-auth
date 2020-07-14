@@ -1,6 +1,8 @@
 # Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import pytest
+
 from uuid import uuid4
 
 from hamcrest import (
@@ -20,6 +22,10 @@ from wazo_auth import exceptions
 from wazo_auth.database import models
 
 from ..helpers import fixtures, base, constants
+
+TENANT_UUID = '00000000-0000-4000-9000-000000000000'
+USER_UUID = '00000000-0000-4000-9000-111111111111'
+ADDRESS_ID = 42
 
 
 class TestTenantDAO(base.DAOTestCase):
@@ -196,6 +202,66 @@ class TestTenantDAO(base.DAOTestCase):
             raises(exceptions.UnknownTenantException),
         )
 
+    @fixtures.db.tenant(uuid=TENANT_UUID)
+    @fixtures.db.address(id_=ADDRESS_ID, tenant_uuid=TENANT_UUID)
+    @fixtures.db.user(
+        uuid=USER_UUID, tenant_uuid=TENANT_UUID, email_address='foo@bar.io'
+    )
+    @fixtures.db.external_auth_config(tenant_uuid=TENANT_UUID)
+    @fixtures.db.user_external_auth(user_uuid=USER_UUID)
+    @fixtures.db.policy(tenant_uuid=TENANT_UUID)
+    def test_delete_sub_objects(
+        self, policy_uuid, _, __, user_uuid, address_id, tenant_uuid
+    ):
+        email_uuid = self._user_dao.get_emails(user_uuid)[0]['uuid']
+        external_auth_config = (
+            self.session.query(models.ExternalAuthConfig)
+            .filter(models.ExternalAuthConfig.tenant_uuid == tenant_uuid)
+            .first()
+        )
+        type_uuid = external_auth_config.type_uuid
+        user_external_auth = (
+            self.session.query(models.UserExternalAuth)
+            .filter(models.UserExternalAuth.user_uuid == user_uuid)
+            .first()
+        )
+        user_type_uuid = user_external_auth.external_auth_type_uuid
+
+        self._tenant_dao.delete(tenant_uuid)
+
+        result = self.session.query(models.User).get(user_uuid)
+        assert_that(result, equal_to(None))
+        result = self.session.query(models.Email).get(email_uuid)
+        assert_that(result, equal_to(None))
+        result = self.session.query(models.Address).get(address_id)
+        assert_that(result, equal_to(None))
+        result = self.session.query(models.ExternalAuthConfig).get(
+            (tenant_uuid, type_uuid)
+        )
+        assert_that(result, equal_to(None))
+        result = self.session.query(models.UserExternalAuth).get(
+            (user_uuid, user_type_uuid)
+        )
+        assert_that(result, equal_to(None))
+        result = self.session.query(models.Policy).get(policy_uuid)
+        assert_that(result, equal_to(None))
+
+    @pytest.mark.skip(reason="find a way to delete unused ACLTemplate")
+    @fixtures.db.tenant(uuid=TENANT_UUID)
+    @fixtures.db.policy(tenant_uuid=TENANT_UUID, acl_templates=['foo'])
+    def test_delete_acl_template(self, policy_uuid, tenant_uuid):
+        acl_template_policy = (
+            self.session.query(models.ACLTemplatePolicy)
+            .filter(models.ACLTemplatePolicy.policy_uuid == policy_uuid)
+            .first()
+        )
+        acl_template_id = acl_template_policy.template_id
+
+        self._tenant_dao.delete(tenant_uuid)
+
+        result = self.session.query(models.ACLTemplate).get(acl_template_id)
+        assert_that(result, equal_to(None))
+
     def _assert_tenant_matches(self, uuid, name, parent_uuid=ANY_UUID):
         assert_that(uuid, equal_to(ANY_UUID))
         s = self._tenant_dao.session
@@ -211,7 +277,6 @@ class TestTenantDAO(base.DAOTestCase):
         kwargs.setdefault('name', None)
         kwargs.setdefault('phone', None)
         kwargs.setdefault('contact_uuid', None)
-        kwargs.setdefault('address_id', None)
         return self._tenant_dao.create(**kwargs)
 
     def _top_tenant_uuid(self):

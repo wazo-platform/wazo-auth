@@ -9,6 +9,8 @@ import uuid
 
 from functools import wraps
 
+from wazo_auth.database import models
+
 
 A_SALT = os.urandom(64)
 
@@ -17,15 +19,46 @@ def _random_string(length):
     return ''.join(random.choice(string.ascii_lowercase) for _ in range(length))
 
 
-def email(**email_args):
-    email_args.setdefault(
-        'address', '{}@{}'.format(_random_string(5), _random_string(5))
-    )
-
+def address(**address_args):
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
-            email_uuid = self._email_dao.create(**email_args)
+            address_args.setdefault('tenant_uuid', self.top_tenant_uuid)
+            address_id = self._address_dao.new(**address_args)
+            self.session.begin_nested()
+            try:
+                return decorated(self, address_id, *args, **kwargs)
+            finally:
+                self.session.rollback()
+
+        return wrapper
+
+    return decorator
+
+
+def email(**email_args):
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            email_args.setdefault(
+                'address', '{}@{}'.format(_random_string(5), _random_string(5))
+            )
+
+            def create_user():
+                user_args = {
+                    'username': _random_string(5),
+                    'purpose': 'user',
+                    'tenant_uuid': self.top_tenant_uuid,
+                }
+                user = self._user_dao.create(**user_args)
+                return user['uuid']
+
+            email_args.setdefault('user_uuid', create_user())
+
+            email = models.Email(**email_args)
+            self.session.add(email)
+            self.session.flush()
+            email_uuid = email.uuid
             self.session.begin_nested()
             try:
                 return decorated(self, email_uuid, *args, **kwargs)
@@ -45,6 +78,42 @@ def external_auth(*auth_types):
             self.session.begin_nested()
             try:
                 return decorated(self, auth_types, *args, **kwargs)
+            finally:
+                self.session.rollback()
+
+        return wrapper
+
+    return decorator
+
+
+def external_auth_config(**auth_config):
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            auth_config.setdefault('auth_type', 'auto-generated')
+            auth_config.setdefault('data', 'random-data')
+            data = self._external_auth_dao.create_config(**auth_config)
+            self.session.begin_nested()
+            try:
+                return decorated(self, data, *args, **kwargs)
+            finally:
+                self.session.rollback()
+
+        return wrapper
+
+    return decorator
+
+
+def user_external_auth(**user_auth):
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            user_auth.setdefault('auth_type', 'auto-generated')
+            user_auth.setdefault('data', 'random-data')
+            data = self._external_auth_dao.create(**user_auth)
+            self.session.begin_nested()
+            try:
+                return decorated(self, data, *args, **kwargs)
             finally:
                 self.session.rollback()
 
@@ -132,7 +201,6 @@ def tenant(**tenant_args):
             tenant_args.setdefault('name', None)
             tenant_args.setdefault('phone', None)
             tenant_args.setdefault('contact_uuid', None)
-            tenant_args.setdefault('address_id', None)
             tenant_args.setdefault('parent_uuid', self.top_tenant_uuid)
 
             tenant_uuid = self._tenant_dao.create(**tenant_args)

@@ -1,7 +1,6 @@
 # Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import uuid
 import os
 
 from hamcrest import (
@@ -28,7 +27,7 @@ from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from ..helpers import fixtures, base
 from ..helpers.constants import UNKNOWN_UUID
 
-USER_UUID = str(uuid.uuid4())
+USER_UUID = '00000000-0000-4000-9000-111111111111'
 
 
 class TestUserDAO(base.DAOTestCase):
@@ -584,6 +583,22 @@ class TestUserDAO(base.DAOTestCase):
         )
 
         assert_that(self._email_exists('foobar@example.com'), equal_to(False))
+
+    @fixtures.db.user(uuid=USER_UUID)
+    @fixtures.db.user_external_auth(user_uuid=USER_UUID)
+    def test_delete_external_auth(self, _, user_uuid):
+        user_external_auth = (
+            self.session.query(models.UserExternalAuth)
+            .filter(models.UserExternalAuth.user_uuid == user_uuid)
+            .first()
+        )
+        type_uuid = user_external_auth.external_auth_type_uuid
+
+        self._user_dao.delete(user_uuid)
+
+        self.session.expire_all()
+        result = self.session.query(models.UserExternalAuth).get((user_uuid, type_uuid))
+        assert_that(result, equal_to(None))
 
     @fixtures.db.user(username='foobar')
     @fixtures.db.user(username='foobaz', enabled=False)

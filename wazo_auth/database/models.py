@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import (
@@ -39,6 +39,9 @@ class Address(Base):
     __tablename__ = 'auth_address'
 
     id_ = Column(Integer, name='id', primary_key=True)
+    tenant_uuid = Column(
+        String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False,
+    )
     line_1 = Column(Text)
     line_2 = Column(Text)
     city = Column(Text)
@@ -56,15 +59,16 @@ class Email(Base):
     )
     address = Column(Text, unique=True, nullable=False)
     confirmed = Column(Boolean, nullable=False, default=False)
+    main = Column(Boolean, nullable=False, default=False)
+    user_uuid = Column(
+        String(38), ForeignKey('auth_user.uuid', ondelete='CASCADE'), nullable=False,
+    )
 
 
 class ExternalAuthConfig(Base):
 
     __tablename__ = 'auth_external_auth_config'
 
-    data_uuid = Column(
-        String(36), ForeignKey('auth_external_auth_data.uuid', ondelete='CASCADE')
-    )
     tenant_uuid = Column(
         String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), primary_key=True
     )
@@ -73,6 +77,7 @@ class ExternalAuthConfig(Base):
         ForeignKey('auth_external_auth_type.uuid', ondelete='CASCADE'),
         primary_key=True,
     )
+    data = Column(Text, nullable=False)
 
 
 class ExternalAuthType(Base):
@@ -84,16 +89,6 @@ class ExternalAuthType(Base):
     )
     name = Column(Text, unique=True, nullable=False)
     enabled = Column(Boolean, server_default='false')
-
-
-class ExternalAuthData(Base):
-
-    __tablename__ = 'auth_external_auth_data'
-
-    uuid = Column(
-        String(38), server_default=text('uuid_generate_v4()'), primary_key=True
-    )
-    data = Column(Text, nullable=False)
 
 
 class Group(Base):
@@ -130,7 +125,6 @@ class Tenant(Base):
     )
     name = Column(Text)
     phone = Column(Text)
-    address_id = Column(Integer, ForeignKey('auth_address.id', ondelete='SET NULL'))
     contact_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='SET NULL'))
     parent_uuid = Column(String(38), ForeignKey('auth_tenant.uuid'), nullable=False)
 
@@ -241,22 +235,8 @@ class User(Base):
     tenant_uuid = Column(
         String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False
     )
-    emails = relationship('UserEmail', cascade='all, delete-orphan')
 
-
-class UserEmail(Base):
-
-    __tablename__ = 'auth_user_email'
-    __table_args__ = (schema.UniqueConstraint('user_uuid', 'main'),)
-
-    user_uuid = Column(
-        String(38), ForeignKey('auth_user.uuid', ondelete='CASCADE'), primary_key=True
-    )
-    email_uuid = Column(
-        String(38), ForeignKey('auth_email.uuid', ondelete='CASCADE'), primary_key=True
-    )
-    main = Column(Boolean, nullable=False, default=False)
-    email = relationship('Email', cascade='all, delete-orphan', single_parent=True)
+    emails = relationship('Email', viewonly=True)
 
 
 class UserExternalAuth(Base):
@@ -272,11 +252,7 @@ class UserExternalAuth(Base):
         ForeignKey('auth_external_auth_type.uuid', ondelete='CASCADE'),
         primary_key=True,
     )
-    external_auth_data_uuid = Column(
-        String(38),
-        ForeignKey('auth_external_auth_data.uuid', ondelete='CASCADE'),
-        primary_key=True,
-    )
+    data = Column(Text, nullable=False)
 
 
 class UserGroup(Base):
@@ -303,6 +279,7 @@ class UserPolicy(Base):
     )
 
 
+# FIXME(fblackburn): remove unused ACLTemplate
 class ACLTemplate(Base):
 
     __tablename__ = 'auth_acl_template'
