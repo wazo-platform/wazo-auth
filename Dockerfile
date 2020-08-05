@@ -25,7 +25,6 @@ RUN true \
     && mkdir -p /etc/wazo-auth/conf.d \
     && mkdir -p /etc/wazo-auth/templates.d \
     && install -o wazo-auth -g wazo-auth /dev/null /var/log/wazo-auth.log \
-    && install -d -o wazo-auth -g wazo-auth /run/wazo-auth/ \
     && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 9497
