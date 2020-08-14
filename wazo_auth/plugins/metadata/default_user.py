@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -81,7 +81,7 @@ class DefaultUser(BaseMetadata):
             if endpoint_custom:
                 custom.append(endpoint_custom['id'])
             elif endpoint_sip:
-                sip.append(endpoint_sip['id'])
+                sip.append(endpoint_sip['uuid'])
             elif endpoint_sccp:
                 sccp.append(endpoint_sccp['id'])
             for extension in line['extensions']:
