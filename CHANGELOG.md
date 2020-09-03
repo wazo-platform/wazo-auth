@@ -1,5 +1,9 @@
 # Changelog
 
+## 20.13
+
+* An ACL template can now begin with the character `!` to remove rights explicitely.
+
 ## 20.06
 
 * Deprecate SSL configuration
@@ -19,7 +23,6 @@
 
   * `GET /users/{user_uuid}/external/mobile`
   * `POST /users/{user_uuid}/external/mobile`
-
 
 * The field `apns_token` has been deprecated in the following routes:
 
