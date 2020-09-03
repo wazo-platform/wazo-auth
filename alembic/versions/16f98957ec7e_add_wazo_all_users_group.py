@@ -29,26 +29,34 @@ user_table = sa.sql.table(
 )
 
 
-def all_tenant_uuids():
-    query = sa.sql.select([tenant_table.c.uuid])
-    for row in op.get_bind().execute(query):
-        yield row.uuid
-
-
-def create_wazo_all_users_group(tenant_uuid):
+def create_wazo_all_users_group():
+    group_query = sa.sql.select(
+        [
+            sa.sql.functions.concat('wazo-all-users-tenant-', tenant_table.c.uuid),
+            tenant_table.c.uuid,
+        ]
+    ).select_from(tenant_table)
     query = (
         group_table.insert()
         .returning(group_table.c.uuid)
-        .values(name=f'wazo-all-users-tenant-{tenant_uuid}', tenant_uuid=tenant_uuid)
+        .from_select([group_table.c.name, group_table.c.tenant_uuid], group_query)
     )
-    group_uuid = op.get_bind().execute(query).scalar()
+    group_uuids = op.get_bind().execute(query)
 
-    return group_uuid
+    return [row.uuid for row in group_uuids]
 
 
-def delete_wazo_all_users_group(tenant_uuid):
+def delete_wazo_all_users_group():
     query = group_table.delete().where(
-        group_table.c.name == f'wazo-all-users-tenant-{tenant_uuid}'
+        group_table.c.name.in_(
+            sa.sql.select(
+                [
+                    sa.sql.functions.concat(
+                        'wazo-all-users-tenant-', tenant_table.c.uuid
+                    ),
+                ]
+            ).select_from(tenant_table)
+        )
     )
     op.execute(query)
 
@@ -71,12 +79,9 @@ def add_all_users_in_group(group_uuids):
 
 
 def upgrade():
-    group_uuids = set()
-    for tenant_uuid in all_tenant_uuids():
-        group_uuids.add(create_wazo_all_users_group(tenant_uuid))
+    group_uuids = create_wazo_all_users_group()
     add_all_users_in_group(group_uuids)
 
 
 def downgrade():
-    for tenant_uuid in all_tenant_uuids():
-        delete_wazo_all_users_group(tenant_uuid)
+    delete_wazo_all_users_group()
