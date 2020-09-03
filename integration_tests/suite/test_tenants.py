@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from functools import partial
@@ -58,6 +58,27 @@ class TestTenants(WazoAuthTestCase):
                 phone=PHONE_1,
                 parent_uuid=self.top_tenant_uuid,
                 address=has_entries(**ADDRESS_1),
+            ),
+        )
+
+        wazo_all_users_groups = self.client.groups.list(
+            search='wazo-all-users', recurse=True
+        )
+        assert_that(
+            wazo_all_users_groups['items'],
+            contains_inanyorder(
+                has_entries(
+                    name=f'wazo-all-users-tenant-{foobar["uuid"]}',
+                    tenant_uuid=foobar['uuid'],
+                ),
+                has_entries(
+                    name=f'wazo-all-users-tenant-{foobaz["uuid"]}',
+                    tenant_uuid=foobaz['uuid'],
+                ),
+                has_entries(
+                    name=f'wazo-all-users-tenant-{other["uuid"]}',
+                    tenant_uuid=other['uuid'],
+                ),
             ),
         )
 

@@ -7,9 +7,10 @@ from wazo_auth.services.helpers import BaseService
 
 
 class TenantService(BaseService):
-    def __init__(self, dao, tenant_tree, bus_publisher=None):
+    def __init__(self, dao, tenant_tree, group_service, bus_publisher=None):
         super().__init__(dao, tenant_tree)
         self._bus_publisher = bus_publisher
+        self._group_service = group_service
 
     def assert_tenant_under(self, scoping_tenant_uuid, tenant_uuid):
         visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
@@ -79,6 +80,10 @@ class TenantService(BaseService):
 
         event = events.TenantCreatedEvent(uuid, kwargs.get('name'))
         self._bus_publisher.publish(event)
+
+        self._group_service.create(
+            name=f'wazo-all-users-tenant-{uuid}', tenant_uuid=uuid
+        )
 
         return result
 
