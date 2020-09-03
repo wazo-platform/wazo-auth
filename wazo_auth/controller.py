@@ -79,7 +79,7 @@ class Controller:
         session_service = services.SessionService(
             dao, self._tenant_tree, self._bus_publisher
         )
-        self._user_service = services.UserService(dao, self._tenant_tree)
+        self._user_service = services.UserService(dao, self._tenant_tree, group_service)
         self._tenant_service = services.TenantService(
             dao, self._tenant_tree, group_service, self._bus_publisher
         )

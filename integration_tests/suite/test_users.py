@@ -12,6 +12,7 @@ from hamcrest import (
     equal_to,
     is_not,
     has_entries,
+    has_item,
     has_items,
     has_key,
     has_properties,
@@ -134,6 +135,18 @@ class TestUsers(WazoAuthTestCase):
                 tenants['items'], has_items(has_entries(uuid=self.top_tenant_uuid))
             )
 
+            wazo_all_users_group = self.client.groups.list(
+                name=f'wazo-all-users-tenant-{self.top_tenant_uuid}',
+                tenant_uuid=self.top_tenant_uuid,
+            )['items'][0]
+            wazo_all_users_group_members = self.client.groups.get_users(
+                wazo_all_users_group['uuid']
+            )['items']
+            assert_that(
+                wazo_all_users_group_members,
+                has_item(has_entries({'uuid': user['uuid']})),
+            )
+
         # User created in subtenant
         with self.user(self.client, tenant_uuid=isolated['uuid'], **args) as user:
             assert_that(
@@ -247,7 +260,7 @@ class TestUsers(WazoAuthTestCase):
                 client.users.edit,
                 user['uuid'],
                 tenant_uuid=self.top_tenant_uuid,
-                **body
+                **body,
             )
             assert_no_error(self.client.users.edit, bob['uuid'], **body)
 
