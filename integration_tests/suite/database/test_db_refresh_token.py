@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import datetime
@@ -120,7 +120,10 @@ class TestRefreshTokenDAO(base.DAOTestCase):
         )
         assert_that(result, contains_inanyorder(has_entries(uuid=token_2)))
 
-        result = self._refresh_token_dao.list_(user_uuid=ALICE_UUID, mobile=True,)
+        result = self._refresh_token_dao.list_(
+            user_uuid=ALICE_UUID,
+            mobile=True,
+        )
         assert_that(result, contains_inanyorder(has_entries(uuid=token_1)))
 
         result = self._refresh_token_dao.list_(user_uuid=ALICE_UUID, search='foo')

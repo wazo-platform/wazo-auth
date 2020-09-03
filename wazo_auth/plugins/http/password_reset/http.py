@@ -43,7 +43,10 @@ class PasswordReset(http.ErrorCatchingResource):
             if email_address:
                 connection_params = extract_connection_params(request.headers)
                 self.email_service.send_reset_email(
-                    user['uuid'], user['username'], email_address, connection_params,
+                    user['uuid'],
+                    user['username'],
+                    email_address,
+                    connection_params,
                 )
             else:
                 logger.debug('No confirmed email %s', args)

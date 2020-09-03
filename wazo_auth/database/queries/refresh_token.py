@@ -50,7 +50,8 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 if constraint == 'auth_refresh_token_client_id_user_uuid':
                     self.session.rollback()
                     raise exceptions.DuplicatedRefreshTokenException(
-                        body['user_uuid'], body['client_id'],
+                        body['user_uuid'],
+                        body['client_id'],
                     )
             raise
 

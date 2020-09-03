@@ -41,7 +41,9 @@ class TokenService(BaseService):
     def delete_refresh_token(self, scoping_tenant_uuid, user_uuid, client_id):
         tenant_uuids = self._get_scoped_tenant_uuids(scoping_tenant_uuid, True)
         refresh_token = self._dao.refresh_token.get_by_user(
-            tenant_uuids=tenant_uuids, user_uuid=user_uuid, client_id=client_id,
+            tenant_uuids=tenant_uuids,
+            user_uuid=user_uuid,
+            client_id=client_id,
         )
 
         event = RefreshTokenDeletedEvent(
@@ -109,7 +111,8 @@ class TokenService(BaseService):
                 refresh_token = self._dao.refresh_token.create(body)
             except DuplicatedRefreshTokenException:
                 refresh_token = self._dao.refresh_token.get_existing_refresh_token(
-                    args['client_id'], metadata['uuid'],
+                    args['client_id'],
+                    metadata['uuid'],
                 )
             else:
                 event = RefreshTokenCreatedEvent(
