@@ -68,6 +68,10 @@ class TestTenants(WazoAuthTestCase):
             wazo_all_users_groups['items'],
             contains_inanyorder(
                 has_entries(
+                    name=f'wazo-all-users-tenant-{self.top_tenant_uuid}',
+                    tenant_uuid=self.top_tenant_uuid,
+                ),
+                has_entries(
                     name=f'wazo-all-users-tenant-{foobar["uuid"]}',
                     tenant_uuid=foobar['uuid'],
                 ),
