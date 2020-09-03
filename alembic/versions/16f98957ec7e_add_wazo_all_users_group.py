@@ -29,6 +29,23 @@ user_table = sa.sql.table(
 )
 
 
+def rename_groups_already_present():
+    group_name_query = sa.sql.select(
+        [sa.sql.functions.concat('wazo-all-users-tenant-', tenant_table.c.uuid)]
+    ).select_from(tenant_table)
+    group_uuid_query = sa.sql.select([group_table.c.uuid]).where(
+        group_table.c.name.in_(group_name_query)
+    )
+    update_query = (
+        group_table.update()
+        .values(
+            {group_table.c.name: sa.sql.functions.concat(group_table.c.name, '-old')}
+        )
+        .where(group_table.c.uuid.in_(group_uuid_query))
+    )
+    op.get_bind().execute(update_query)
+
+
 def create_wazo_all_users_group():
     group_query = sa.sql.select(
         [
@@ -79,6 +96,7 @@ def add_all_users_in_group(group_uuids):
 
 
 def upgrade():
+    rename_groups_already_present()
     group_uuids = create_wazo_all_users_group()
     add_all_users_in_group(group_uuids)
 
