@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that, contains, calling, equal_to, has_entries, not_, raises
@@ -235,8 +235,12 @@ class TestUserService(BaseServiceTestCase):
     def setUp(self):
         super().setUp()
         self.tenant_tree = Mock()
+        self.group_service = Mock()
         self.service = services.UserService(
-            self.dao, self.tenant_tree, encrypter=self.encrypter
+            self.dao,
+            self.tenant_tree,
+            self.group_service,
+            encrypter=self.encrypter,
         )
 
     def test_change_password(self):
@@ -335,6 +339,7 @@ class TestUserService(BaseServiceTestCase):
             'tenant_uuid': s.tenant_uuid,
         }
         self.user_dao.create.return_value = {'uuid': s.user_uuid}
+        self.group_service.get_all_users_group.return_value = {'uuid': ''}
 
         result = self.service.new_user(**params)
 
