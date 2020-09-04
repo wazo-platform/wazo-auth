@@ -5,12 +5,12 @@ Revises: 91e8de642bee
 
 """
 
+from alembic import op
+import sqlalchemy as sa
+
 # revision identifiers, used by Alembic.
 revision = '16f98957ec7e'
 down_revision = '91e8de642bee'
-
-from alembic import op
-import sqlalchemy as sa
 
 group_table = sa.sql.table(
     'auth_group', sa.Column('uuid'), sa.Column('tenant_uuid'), sa.Column('name')
