@@ -100,12 +100,17 @@ class DAOTestCase(unittest.TestCase):
         self._session_dao = session.SessionDAO()
 
         self.top_tenant_uuid = self._tenant_dao.find_top_tenant()
+        self._remove_unrelated_default_autocreate_objects()
 
         self.session.begin_nested()
 
     def tearDown(self):
         self.session.rollback()
         helpers.Session.remove()
+
+    def _remove_unrelated_default_autocreate_objects(self):
+        for item in self._group_dao.list_():
+            self._group_dao.delete(item['uuid'])
 
     @contextmanager
     def auto_rollback(self):

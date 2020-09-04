@@ -46,6 +46,17 @@ class GroupService(BaseService):
 
         raise exceptions.UnknownGroupException(group_uuid)
 
+    def get_all_users_group(self, tenant_uuid):
+        args = {
+            'name': f'wazo-all-users-tenant-{tenant_uuid}',
+            'limit': 1,
+            'tenant_uuids': [tenant_uuid],
+        }
+
+        matching_groups = self._dao.group.list_(**args)
+        for group in matching_groups:
+            return group
+
     def get_acl_templates(self, username):
         users = self._dao.user.list_(username=username, limit=1)
         acl_templates = []
