@@ -21,7 +21,10 @@ user_email_tbl = sa.sql.table(
     sa.Column('main'),
 )
 email_tbl = sa.sql.table(
-    'auth_email', sa.Column('uuid'), sa.Column('user_uuid'), sa.Column('main'),
+    'auth_email',
+    sa.Column('uuid'),
+    sa.Column('user_uuid'),
+    sa.Column('main'),
 )
 external_auth_config_tbl = sa.sql.table(
     'auth_external_auth_config',
@@ -38,7 +41,9 @@ user_external_auth_tbl = sa.sql.table(
     sa.Column('data'),
 )
 external_auth_data_tbl = sa.sql.table(
-    'auth_external_auth_data', sa.Column('uuid'), sa.Column('data'),
+    'auth_external_auth_data',
+    sa.Column('uuid'),
+    sa.Column('data'),
 )
 
 
@@ -88,7 +93,8 @@ def remove_middle_table_between_user_email():
 
 def merge_external_auth_data_with_external_auth_config():
     op.add_column(
-        'auth_external_auth_config', sa.Column('data', sa.Text, nullable=True),
+        'auth_external_auth_config',
+        sa.Column('data', sa.Text, nullable=True),
     )
     sub_query = sa.sql.select([external_auth_data_tbl.c.data]).where(
         external_auth_config_tbl.c.data_uuid == external_auth_data_tbl.c.uuid
@@ -105,7 +111,8 @@ def merge_external_auth_data_with_external_auth_config():
 
 def merge_external_auth_data_with_user_external_auth():
     op.add_column(
-        'auth_user_external_auth', sa.Column('data', sa.Text, nullable=True),
+        'auth_user_external_auth',
+        sa.Column('data', sa.Text, nullable=True),
     )
     sub_query = sa.sql.select([external_auth_data_tbl.c.data]).where(
         user_external_auth_tbl.c.external_auth_data_uuid
@@ -168,7 +175,9 @@ def add_middle_table_between_user_email():
     for email in emails:
         op.execute(
             user_email_tbl.insert().values(
-                user_uuid=email.user_uuid, email_uuid=email.uuid, main=email.main,
+                user_uuid=email.user_uuid,
+                email_uuid=email.uuid,
+                main=email.main,
             )
         )
 

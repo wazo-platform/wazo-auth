@@ -233,7 +233,8 @@ class TestTokens(WazoAuthTestCase):
     def test_refresh_token_deleted_event(self, token, user):
         client_id = 'foobar'
         routing_key = 'auth.users.{user_uuid}.tokens.{client_id}.deleted'.format(
-            user_uuid=user['uuid'], client_id=client_id,
+            user_uuid=user['uuid'],
+            client_id=client_id,
         )
         msg_accumulator = self.new_message_accumulator(routing_key)
 

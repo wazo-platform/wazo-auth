@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -116,7 +116,8 @@ class RefreshTokens(_BaseRefreshTokens):
         scoping_tenant = Tenant.autodetect()
 
         search_params = self._build_search_params(
-            user_uuid=None, scoping_tenant_uuid=scoping_tenant.uuid,
+            user_uuid=None,
+            scoping_tenant_uuid=scoping_tenant.uuid,
         )
 
         refresh_tokens = self._token_service.list_refresh_tokens(**search_params)

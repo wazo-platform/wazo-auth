@@ -22,7 +22,9 @@ def main():
     config = get_config(sys.argv[1:])
 
     xivo_logging.setup_logging(
-        config['log_filename'], debug=config['debug'], log_level=config['log_level'],
+        config['log_filename'],
+        debug=config['debug'],
+        log_level=config['log_level'],
     )
 
     user = config.get('user')

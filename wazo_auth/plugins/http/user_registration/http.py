@@ -35,7 +35,10 @@ class Register(http.ErrorCatchingResource):
                     continue
                 connection_params = extract_connection_params(request.headers)
                 self.email_service.send_confirmation_email(
-                    result['username'], e['uuid'], address, connection_params,
+                    result['username'],
+                    e['uuid'],
+                    address,
+                    connection_params,
                 )
         except Exception:
             self.user_service.delete_user(tenant['uuid'], result['uuid'])
