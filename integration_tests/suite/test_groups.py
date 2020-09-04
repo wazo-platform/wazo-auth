@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from functools import partial
@@ -14,7 +14,7 @@ from hamcrest import (
 )
 from mock import ANY
 from .helpers import base, fixtures
-from .helpers.constants import UNKNOWN_UUID
+from .helpers.constants import UNKNOWN_UUID, NB_DEFAULT_GROUPS
 
 
 class TestGroups(base.WazoAuthTestCase):
@@ -96,7 +96,11 @@ class TestGroups(base.WazoAuthTestCase):
         response = action(tenant_uuid=self.top_tenant_uuid)
         assert_that(
             response,
-            has_entries(total=0, filtered=0, items=not_(has_items(one, two, three))),
+            has_entries(
+                total=0 + NB_DEFAULT_GROUPS,
+                filtered=0 + NB_DEFAULT_GROUPS,
+                items=not_(has_items(one, two, three)),
+            ),
         )
 
         # Different tenant with recurse
@@ -105,15 +109,24 @@ class TestGroups(base.WazoAuthTestCase):
 
         # Same tenant
         response = action(tenant_uuid=base.SUB_TENANT_UUID)
-        assert_that(response, has_entries(total=3, items=has_items(one, two, three)))
+        assert_that(
+            response,
+            has_entries(total=3 + NB_DEFAULT_GROUPS, items=has_items(one, two, three)),
+        )
 
         with self.client_in_subtenant() as (client, _, sub_tenant):
             four = client.groups.new(name='four')
 
             response = action(tenant_uuid=sub_tenant['uuid'])
             assert_that(
-                response, has_entries(total=1, filtered=1, items=contains(four))
+                response,
+                has_entries(
+                    total=1 + NB_DEFAULT_GROUPS,
+                    filtered=1 + NB_DEFAULT_GROUPS,
+                    items=has_items(four),
+                ),
             )
+            assert_that(response, has_entries(items=not_(has_items(one, two, three))))
 
     @fixtures.http.tenant(uuid=base.SUB_TENANT_UUID)
     @fixtures.http.group(name='one', tenant_uuid=base.SUB_TENANT_UUID)
@@ -125,31 +138,63 @@ class TestGroups(base.WazoAuthTestCase):
         )
 
         response = action(limit=1)
-        assert_that(response, has_entries(total=3, filtered=3, items=contains(one)))
+        assert_that(
+            response,
+            has_entries(
+                total=3 + NB_DEFAULT_GROUPS,
+                filtered=3 + NB_DEFAULT_GROUPS,
+                items=has_items(one),
+            ),
+        )
+        assert_that(response, has_entries(items=not_(has_items(two, three))))
 
         response = action(offset=1)
         assert_that(
-            response, has_entries(total=3, filtered=3, items=contains(three, two))
+            response,
+            has_entries(
+                total=3 + NB_DEFAULT_GROUPS,
+                filtered=3 + NB_DEFAULT_GROUPS,
+                items=has_items(three, two),
+            ),
         )
+        assert_that(response, has_entries(items=not_(has_items(one))))
 
     @fixtures.http.tenant(uuid=base.SUB_TENANT_UUID)
-    @fixtures.http.group(name='one', tenant_uuid=base.SUB_TENANT_UUID)
-    @fixtures.http.group(name='two', tenant_uuid=base.SUB_TENANT_UUID)
+    @fixtures.http.group(name='one-12', tenant_uuid=base.SUB_TENANT_UUID)
+    @fixtures.http.group(name='two-12', tenant_uuid=base.SUB_TENANT_UUID)
     @fixtures.http.group(name='three', tenant_uuid=base.SUB_TENANT_UUID)
     def test_list_searching(self, three, two, one, _):
         action = partial(self.client.groups.list, tenant_uuid=base.SUB_TENANT_UUID)
 
-        response = action(search='one')
-        assert_that(response, has_entries(total=3, filtered=1, items=contains(one)))
-
-        response = action(search='o')
+        response = action(search='one-12')
         assert_that(
             response,
-            has_entries(total=3, filtered=2, items=contains_inanyorder(one, two)),
+            has_entries(
+                total=3 + NB_DEFAULT_GROUPS,
+                filtered=1,
+                items=contains(one),
+            ),
+        )
+
+        response = action(search='12')
+        assert_that(
+            response,
+            has_entries(
+                total=3 + NB_DEFAULT_GROUPS,
+                filtered=2,
+                items=contains_inanyorder(one, two),
+            ),
         )
 
         response = action(name='three')
-        assert_that(response, has_entries(total=3, filtered=1, items=contains(three)))
+        assert_that(
+            response,
+            has_entries(
+                total=3 + NB_DEFAULT_GROUPS,
+                filtered=1,
+                items=contains(three),
+            ),
+        )
 
     @fixtures.http.tenant(uuid=base.SUB_TENANT_UUID)
     @fixtures.http.group(name='one', tenant_uuid=base.SUB_TENANT_UUID)
@@ -157,5 +202,9 @@ class TestGroups(base.WazoAuthTestCase):
     @fixtures.http.group(name='three', tenant_uuid=base.SUB_TENANT_UUID)
     def test_list_sorting(self, three, two, one, _):
         action = partial(self.client.groups.list, tenant_uuid=base.SUB_TENANT_UUID)
-        expected = [one, three, two]
+        autocreated_group = self.client.groups.list(
+            name='wazo-all-users-tenant-{}'.format(base.SUB_TENANT_UUID),
+            tenant_uuid=base.SUB_TENANT_UUID,
+        )['items'][0]
+        expected = [one, three, two, autocreated_group]
         base.assert_sorted(action, order='name', expected=expected)

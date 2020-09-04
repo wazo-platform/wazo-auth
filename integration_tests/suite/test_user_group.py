@@ -1,11 +1,18 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from functools import partial
-from hamcrest import assert_that, contains, contains_inanyorder, has_entries, has_items
+from hamcrest import (
+    assert_that,
+    contains,
+    contains_inanyorder,
+    has_entries,
+    has_items,
+    not_,
+)
 from .helpers import base, fixtures
 from .helpers.base import assert_http_error, assert_no_error, assert_sorted
-from .helpers.constants import UNKNOWN_UUID
+from .helpers.constants import UNKNOWN_UUID, NB_DEFAULT_GROUPS
 
 
 class TestGroupUserList(base.WazoAuthTestCase):
@@ -59,6 +66,7 @@ class TestUserGroupList(base.WazoAuthTestCase):
         self.foo = self.client.groups.new(name='foo')
         self.bar = self.client.groups.new(name='bar')
         self.baz = self.client.groups.new(name='baz')
+        self.total = 3 + NB_DEFAULT_GROUPS
         self.ignored = self.client.groups.new(name='ignored')
         self.user = self.client.users.new(username='alice')
         for group in (self.foo, self.bar, self.baz):
@@ -73,33 +81,50 @@ class TestUserGroupList(base.WazoAuthTestCase):
 
     def test_list(self):
         result = self.action()
-        expected = contains_inanyorder(self.foo, self.bar, self.baz)
-        assert_that(result, has_entries(total=3, filtered=3, items=expected))
+        expected = has_items(self.foo, self.bar, self.baz)
+        assert_that(
+            result,
+            has_entries(total=self.total, filtered=self.total, items=expected),
+        )
 
         result = self.action(search='ba')
         expected = contains_inanyorder(self.bar, self.baz)
-        assert_that(result, has_entries(total=3, filtered=2, items=expected))
+        assert_that(result, has_entries(total=self.total, filtered=2, items=expected))
 
         result = self.action(name='foo')
         expected = contains_inanyorder(self.foo)
-        assert_that(result, has_entries(total=3, filtered=1, items=expected))
+        assert_that(result, has_entries(total=self.total, filtered=1, items=expected))
 
         # user not in a visible tenant
         with self.client_in_subtenant() as (client, _, __):
             assert_http_error(404, client.users.get_groups, self.user['uuid'])
 
     def test_sorting(self):
-        expected = [self.bar, self.baz, self.foo]
+        default = self.client.groups.list(search='wazo-all-users')['items'][0]
+        expected = [self.bar, self.baz, self.foo, default]
         assert_sorted(self.action, order='name', expected=expected)
 
     def test_pagination(self):
         result = self.action(order='name', offset=1)
-        expected = contains(self.baz, self.foo)
-        assert_that(result, has_entries(total=3, filtered=3, items=expected))
+        assert_that(
+            result,
+            has_entries(
+                total=self.total,
+                filtered=self.total,
+                items=has_items(self.baz, self.foo),
+            ),
+        )
+        assert_that(result, has_entries(items=has_items(not_(self.bar))))
 
         result = self.action(order='name', limit=2)
-        expected = contains(self.bar, self.baz)
-        assert_that(result, has_entries(total=3, filtered=3, items=expected))
+        assert_that(
+            result,
+            has_entries(
+                total=self.total,
+                filtered=self.total,
+                items=contains(self.bar, self.baz),
+            ),
+        )
 
 
 class TestUserGroupAssociation(base.WazoAuthTestCase):
