@@ -63,9 +63,9 @@ class TestGroupUserList(base.WazoAuthTestCase):
 class TestUserGroupList(base.WazoAuthTestCase):
     def setUp(self):
         super().setUp()
-        self.foo = self.client.groups.new(name='foo')
-        self.bar = self.client.groups.new(name='bar')
-        self.baz = self.client.groups.new(name='baz')
+        self.foo = self.client.groups.new(name='group-foo')
+        self.bar = self.client.groups.new(name='group-bar')
+        self.baz = self.client.groups.new(name='group-baz')
         self.total = 3 + NB_DEFAULT_GROUPS
         self.ignored = self.client.groups.new(name='ignored')
         self.user = self.client.users.new(username='alice')
@@ -87,11 +87,11 @@ class TestUserGroupList(base.WazoAuthTestCase):
             has_entries(total=self.total, filtered=self.total, items=expected),
         )
 
-        result = self.action(search='ba')
+        result = self.action(search='group-ba')
         expected = contains_inanyorder(self.bar, self.baz)
         assert_that(result, has_entries(total=self.total, filtered=2, items=expected))
 
-        result = self.action(name='foo')
+        result = self.action(name='group-foo')
         expected = contains_inanyorder(self.foo)
         assert_that(result, has_entries(total=self.total, filtered=1, items=expected))
 
