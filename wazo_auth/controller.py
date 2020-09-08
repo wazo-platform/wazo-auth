@@ -88,6 +88,12 @@ class Controller:
             config['all_users_policies'],
             self._bus_publisher,
         )
+        self._all_users_service = services.AllUsersService(
+            group_service,
+            policy_service,
+            self._tenant_service,
+            config['all_users_policies'],
+        )
 
         self._metadata_plugins = plugin_helpers.load(
             namespace='wazo_auth.metadata',
@@ -166,6 +172,7 @@ class Controller:
 
         with bus.publisher_thread(self._bus_publisher):
             with ServiceCatalogRegistration(*self._service_discovery_args):
+                self._all_users_service.update_policies()
                 self._expired_token_remover.start()
                 local_token_renewer = self._get_local_token_renewer()
                 self._config['local_token_renewer'] = local_token_renewer

@@ -8,7 +8,6 @@ from hamcrest import (
     contains_inanyorder,
     equal_to,
     has_entries,
-    has_items,
     has_item,
 )
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
@@ -105,7 +104,17 @@ class TestTenants(WazoAuthTestCase):
         ]
         assert_that(
             wazo_all_users_policies,
-            has_items(
+            contains_inanyorder(
+                has_entries(
+                    group=has_entries(tenant_uuid=self.top_tenant_uuid),
+                    policies=contains(
+                        has_entries(
+                            name=f'wazo-all-users-policy',
+                            tenant_uuid=self.top_tenant_uuid,
+                            acl_templates=has_item('integration_tests.acl'),
+                        )
+                    ),
+                ),
                 has_entries(
                     group=has_entries(tenant_uuid=foobar['uuid']),
                     policies=contains(

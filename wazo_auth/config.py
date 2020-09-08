@@ -107,6 +107,7 @@ _DEFAULT_CONFIG = {
     'smtp': {'hostname': 'localhost', 'port': 25},
     'db_uri': 'postgresql://asterisk:proformatique@localhost/asterisk',
     'confd_db_uri': 'postgresql://asterisk:proformatique@localhost/asterisk',
+    'all_users_policies': {},
 }
 
 
