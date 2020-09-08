@@ -2,7 +2,15 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from functools import partial
-from hamcrest import assert_that, contains, contains_inanyorder, equal_to, has_entries
+from hamcrest import (
+    assert_that,
+    contains,
+    contains_inanyorder,
+    equal_to,
+    has_entries,
+    has_items,
+    has_item,
+)
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers import fixtures
 from .helpers.base import (
@@ -63,9 +71,9 @@ class TestTenants(WazoAuthTestCase):
 
         wazo_all_users_groups = self.client.groups.list(
             search='wazo-all-users', recurse=True
-        )
+        )['items']
         assert_that(
-            wazo_all_users_groups['items'],
+            wazo_all_users_groups,
             contains_inanyorder(
                 has_entries(
                     name=f'wazo-all-users-tenant-{self.top_tenant_uuid}',
@@ -82,6 +90,51 @@ class TestTenants(WazoAuthTestCase):
                 has_entries(
                     name=f'wazo-all-users-tenant-{other["uuid"]}',
                     tenant_uuid=other['uuid'],
+                ),
+            ),
+        )
+
+        wazo_all_users_policies = [
+            {
+                'group': wazo_all_users_group,
+                'policies': self.client.groups.get_policies(
+                    wazo_all_users_group['uuid'], recurse=True
+                )['items'],
+            }
+            for wazo_all_users_group in wazo_all_users_groups
+        ]
+        assert_that(
+            wazo_all_users_policies,
+            has_items(
+                has_entries(
+                    group=has_entries(tenant_uuid=foobar['uuid']),
+                    policies=contains(
+                        has_entries(
+                            name=f'wazo-all-users-policy',
+                            tenant_uuid=foobar['uuid'],
+                            acl_templates=has_item('integration_tests.acl'),
+                        )
+                    ),
+                ),
+                has_entries(
+                    group=has_entries(tenant_uuid=foobaz['uuid']),
+                    policies=contains(
+                        has_entries(
+                            name=f'wazo-all-users-policy',
+                            tenant_uuid=foobaz['uuid'],
+                            acl_templates=has_item('integration_tests.acl'),
+                        )
+                    ),
+                ),
+                has_entries(
+                    group=has_entries(tenant_uuid=other['uuid']),
+                    policies=contains(
+                        has_entries(
+                            name=f'wazo-all-users-policy',
+                            tenant_uuid=other['uuid'],
+                            acl_templates=has_item('integration_tests.acl'),
+                        )
+                    ),
                 ),
             ),
         )

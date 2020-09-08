@@ -81,7 +81,12 @@ class Controller:
             config, dao, self._tenant_tree, self._bus_publisher, self._user_service
         )
         self._tenant_service = services.TenantService(
-            dao, self._tenant_tree, group_service, self._bus_publisher
+            dao,
+            self._tenant_tree,
+            group_service,
+            policy_service,
+            config['all_users_policies'],
+            self._bus_publisher,
         )
 
         self._metadata_plugins = plugin_helpers.load(
