@@ -237,8 +237,9 @@ class BaseTestCase(AuthLaunchingTestCase):
         return client.token.check_scopes(token, scopes, tenant)['scopes']
 
     @classmethod
-    def new_auth_client(cls, username=None, password=None):
-        kwargs = {'port': cls.auth_port, 'prefix': '', 'https': False}
+    def new_auth_client(cls, username=None, password=None, port=None):
+        port = port or cls.auth_port
+        kwargs = {'port': port, 'prefix': '', 'https': False}
 
         if username and password:
             kwargs['username'] = username

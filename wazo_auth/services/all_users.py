@@ -33,17 +33,52 @@ class AllUsersService:
 
     def update_policies_for_tenant(self, tenant_uuid):
         all_users_group = self._group_service.get_all_users_group(tenant_uuid)
+        existing_policies = self._policy_service.list()
+        existing_policy_names = {
+            policy['name']: policy['uuid'] for policy in existing_policies
+        }
+        associated_policies = self._group_service.list_policies(all_users_group['uuid'])
+        associated_policy_names = {
+            policy['name']: policy['uuid'] for policy in associated_policies
+        }
         for name, policy in self._all_users_policies.items():
-            policy_uuid = self._create_policy(
-                tenant_uuid, name, policy, all_users_group
-            )
-            self._associate_policy(tenant_uuid, policy_uuid, all_users_group)
+            if name in associated_policy_names:
+                associated_policy_uuid = associated_policy_names[name]
+                self._update_policy(
+                    tenant_uuid, associated_policy_uuid, name, policy, all_users_group
+                )
+            elif name in existing_policy_names:
+                existing_policy_uuid = existing_policy_names[name]
+                self._update_policy(
+                    tenant_uuid, existing_policy_uuid, name, policy, all_users_group
+                )
+                self._associate_policy(
+                    tenant_uuid, existing_policy_uuid, policy, all_users_group
+                )
+            else:
+                policy_uuid = self._create_policy(
+                    tenant_uuid, name, policy, all_users_group
+                )
+                self._associate_policy(tenant_uuid, policy_uuid, all_users_group)
 
     def _create_policy(self, tenant_uuid, name, policy, all_users_group):
         logger.debug('all_users: tenant %s: creating policy %s', tenant_uuid, name)
         return self._policy_service.create(
             name=name,
             tenant_uuid=tenant_uuid,
+            description='Automatically created to be applied to all users',
+            **policy,
+        )
+
+    def _update_policy(
+        self, tenant_uuid, policy_uuid, policy_name, policy, all_users_group
+    ):
+        logger.debug(
+            'all_users: tenant %s: updating policy %s', tenant_uuid, policy_uuid
+        )
+        self._policy_service.update(
+            policy_uuid,
+            name=policy_name,
             description='Automatically created to be applied to all users',
             **policy,
         )

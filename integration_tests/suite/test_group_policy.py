@@ -1,8 +1,16 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from functools import partial
-from hamcrest import assert_that, contains, contains_inanyorder, has_entries, has_items
+from hamcrest import (
+    assert_that,
+    contains,
+    contains_inanyorder,
+    has_entries,
+    has_items,
+    has_item,
+)
+from xivo_test_helpers import until
 from .helpers import base, fixtures
 from .helpers.constants import UNKNOWN_UUID
 
@@ -174,3 +182,22 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         expected_acls = ['user.{}.*'.format(user['uuid']) for user in users]
         token_data = user_client.token.new('wazo_user', expiration=5)
         assert_that(token_data, has_entries('acls', has_items(*expected_acls)))
+
+    def test_all_users_policies_are_updated_at_startup(self):
+        policy = self.client.policies.list(name='wazo-all-users-policy')['items'][0]
+        policy_without_acl = dict(policy)
+        policy_without_acl['acl_templates'] = []
+        self.client.policies.edit(policy['uuid'], **policy_without_acl)
+
+        self.restart_service('auth')
+
+        auth_port = self.service_port(9497, service_name='auth')
+        auth_client = self.new_auth_client(self.username, self.password, auth_port)
+        until.return_(auth_client.status.check, timeout=30)
+        token_data = auth_client.token.new(backend='wazo_user', expiration=7200)
+        auth_client.set_token(token_data['token'])
+
+        policy = auth_client.policies.get(policy['uuid'])
+        assert_that(
+            policy, has_entries(acl_templates=has_item('integration_tests.acl'))
+        )
