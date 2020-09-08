@@ -160,13 +160,13 @@ class TestGroups(base.WazoAuthTestCase):
         assert_that(response, has_entries(items=not_(has_items(one))))
 
     @fixtures.http.tenant(uuid=base.SUB_TENANT_UUID)
-    @fixtures.http.group(name='one-12', tenant_uuid=base.SUB_TENANT_UUID)
-    @fixtures.http.group(name='two-12', tenant_uuid=base.SUB_TENANT_UUID)
+    @fixtures.http.group(name='group-12-one', tenant_uuid=base.SUB_TENANT_UUID)
+    @fixtures.http.group(name='group-12-two', tenant_uuid=base.SUB_TENANT_UUID)
     @fixtures.http.group(name='three', tenant_uuid=base.SUB_TENANT_UUID)
     def test_list_searching(self, three, two, one, _):
         action = partial(self.client.groups.list, tenant_uuid=base.SUB_TENANT_UUID)
 
-        response = action(search='one-12')
+        response = action(search='group-12-one')
         assert_that(
             response,
             has_entries(
@@ -176,7 +176,7 @@ class TestGroups(base.WazoAuthTestCase):
             ),
         )
 
-        response = action(search='12')
+        response = action(search='group-12')
         assert_that(
             response,
             has_entries(
