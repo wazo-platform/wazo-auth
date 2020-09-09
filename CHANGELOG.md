@@ -2,7 +2,7 @@
 
 ## 20.13
 
-* An ACL template can now begin with the character `!` to remove rights explicitely.
+* An ACL template can now begin with the character `!` to remove permissions explicitly.
 
 ## 20.06
 
