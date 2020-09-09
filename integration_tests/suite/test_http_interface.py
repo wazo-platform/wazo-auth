@@ -13,6 +13,7 @@ from hamcrest import (
     assert_that,
     calling,
     contains_inanyorder,
+    empty,
     equal_to,
     has_entries,
     has_key,
@@ -239,6 +240,67 @@ class TestCore(WazoAuthTestCase):
         token = self._post_token('foo', 'bar')['token']
 
         self._get_token(token, acls='foo')  # no exception
+
+    def test_that_scope_check_with_an_invalid_token_returns_404(self):
+        assert_that(
+            calling(self._check_scopes).with_args('abcdef', []),
+            raises(requests.HTTPError, pattern='404'),
+        )
+
+    def test_that_unauthorized_acls_on_scope_check_return_all_false(self):
+        token = self._post_token('foo', 'bar')['token']
+        assert_that(
+            self._check_scopes(token, ['confd', 'foo', 'bar']),
+            has_entries(confd=False, foo=False, bar=False),
+        )
+
+    def test_that_unauthorized_tenants_on_scope_check_return_403(self):
+        token = self._post_token('foo', 'bar')['token']
+
+        assert_that(
+            calling(self._check_scopes).with_args(
+                token, ['foo'], tenant='55ee61f3-c4a5-427c-9f40-9d5c33466240'
+            ),
+            raises(requests.HTTPError, pattern='403'),
+        )
+
+        assert_that(
+            calling(self._check_scopes).with_args(
+                token, ['foo'], tenant=self.top_tenant_uuid
+            ),
+            not_(raises(Exception)),
+        )
+
+        with self.client_in_subtenant() as (_, __, sub_tenant):
+            assert_that(
+                calling(self._check_scopes).with_args(
+                    token, ['foo'], tenant=sub_tenant['uuid']
+                ),
+                not_(raises(Exception)),
+            )
+
+    @fixtures.http.policy(name='fooer', acl_templates=['foo'])
+    def test_that_authorized_acls_on_scope_check_returns_only_valid_acls(self, policy):
+        self.client.users.add_policy(self.user['uuid'], policy['uuid'])
+
+        token = self._post_token('foo', 'bar')['token']
+
+        assert_that(
+            self._check_scopes(token, ['foo', 'bar']), has_entries(foo=True, bar=False)
+        )
+
+    def test_that_no_acls_on_scope_check_returns_empty_result(self):
+        token = self._post_token('foo', 'bar')['token']
+
+        assert_that(self._check_scopes(token, []), is_(empty()))
+
+    def test_that_wrong_type_acls_on_scope_check_raises_400(self):
+        token = self._post_token('foo', 'bar')['token']
+
+        assert_that(
+            calling(self._check_scopes).with_args(token, [True]),
+            raises(requests.HTTPError, pattern='400'),
+        )
 
     def test_query_after_database_restart(self):
         token = self._post_token('foo', 'bar')['token']

@@ -166,6 +166,26 @@ class TokenService(BaseService):
 
         return token
 
+    def check_scopes(self, token_uuid, scopes):
+        token_data = self._dao.token.get(token_uuid)
+        if not token_data:
+            raise UnknownTokenException()
+
+        id_ = token_data.pop('uuid')
+        token = Token(id_, **token_data)
+
+        if token.is_expired():
+            raise UnknownTokenException()
+
+        scope_statuses = dict()
+
+        for scope in scopes:
+            if scope in scope_statuses:
+                continue
+            scope_statuses[scope] = token.matches_required_acl(scope)
+
+        return token, scope_statuses
+
     def _get_acl_templates(self, backend_name):
         policy_name = self._backend_policies.get(backend_name)
         if not policy_name:
