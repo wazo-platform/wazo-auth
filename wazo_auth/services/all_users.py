@@ -22,18 +22,18 @@ class AllUsersService:
         tenants = self._tenant_service.list_(top_tenant_uuid)
         tenant_uuids = [tenant['uuid'] for tenant in tenants]
         logger.debug(
-            'all_users: found %s policies to apply to all users of all tenants',
+            'all_users: found %s policies to apply to all users of %s tenants',
             len(self._all_users_policies),
+            len(tenants),
         )
         for tenant_uuid in tenant_uuids:
-            logger.debug('all_users: tenant %s: updating policies', tenant_uuid)
             self.update_policies_for_tenant(tenant_uuid)
 
         commit_or_rollback()
 
     def update_policies_for_tenant(self, tenant_uuid):
         all_users_group = self._group_service.get_all_users_group(tenant_uuid)
-        existing_policies = self._policy_service.list()
+        existing_policies = self._policy_service.list(scoping_tenant_uuid=tenant_uuid)
         existing_policy_names = {
             policy['name']: policy['uuid'] for policy in existing_policies
         }
@@ -53,7 +53,7 @@ class AllUsersService:
                     tenant_uuid, existing_policy_uuid, name, policy, all_users_group
                 )
                 self._associate_policy(
-                    tenant_uuid, existing_policy_uuid, policy, all_users_group
+                    tenant_uuid, existing_policy_uuid, all_users_group
                 )
             else:
                 policy_uuid = self._create_policy(

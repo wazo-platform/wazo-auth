@@ -259,6 +259,16 @@ class BaseTestCase(AuthLaunchingTestCase):
         helpers.deinit_db()
         helpers.init_db(database.uri)
 
+    @classmethod
+    def restart_auth(cls):
+        cls.restart_service('auth')
+
+        cls.auth_port = cls.service_port(9497, service_name='auth')
+        cls.client = cls.new_auth_client(cls.username, cls.password)
+        until.return_(cls.client.status.check, timeout=30)
+        token_data = cls.client.token.new(backend='wazo_user', expiration=7200)
+        cls.client.set_token(token_data['token'])
+
 
 class WazoAuthTestCase(BaseTestCase):
 

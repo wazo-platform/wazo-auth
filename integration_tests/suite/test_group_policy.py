@@ -189,15 +189,32 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         policy_without_acl['acl_templates'] = []
         self.client.policies.edit(policy['uuid'], **policy_without_acl)
 
-        self.restart_service('auth')
+        self.restart_auth()
 
-        auth_port = self.service_port(9497, service_name='auth')
-        auth_client = self.new_auth_client(self.username, self.password, auth_port)
-        until.return_(auth_client.status.check, timeout=30)
-        token_data = auth_client.token.new(backend='wazo_user', expiration=7200)
-        auth_client.set_token(token_data['token'])
-
-        policy = auth_client.policies.get(policy['uuid'])
+        policy = self.client.policies.get(policy['uuid'])
         assert_that(
             policy, has_entries(acl_templates=has_item('integration_tests.acl'))
+        )
+
+    def test_all_users_policies_are_associated_at_startup(self):
+        group = self.client.groups.list(
+            name=f'wazo-all-users-tenant-{self.top_tenant_uuid}'
+        )['items'][0]
+        policy = self.client.policies.list(name='wazo-all-users-policy')['items'][0]
+        policy_without_acl = dict(policy)
+        policy_without_acl['acl_templates'] = []
+        self.client.policies.edit(policy['uuid'], **policy_without_acl)
+        self.client.groups.remove_policy(group['uuid'], policy['uuid'])
+
+        self.restart_auth()
+
+        group_policies = self.client.groups.get_policies(group['uuid'])['items']
+        assert_that(
+            group_policies,
+            has_item(
+                has_entries(
+                    name='wazo-all-users-policy',
+                    acl_templates=has_item('integration_tests.acl'),
+                )
+            ),
         )
