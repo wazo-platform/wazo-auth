@@ -104,9 +104,23 @@ class Token:
         if required_acl is None:
             return True
 
+        positive_user_acls = set()
+        negative_user_acls = set()
+
         for user_acl in self.acls:
-            user_acl_regex = self._transform_acl_to_regex(user_acl)
-            if re.match(user_acl_regex, required_acl):
+            if user_acl.startswith('!'):
+                negative_user_acls.add(user_acl[1:])
+            else:
+                positive_user_acls.add(user_acl)
+
+        for negative_acl in negative_user_acls:
+            negative_acl_regex = self._transform_acl_to_regex(negative_acl)
+            if re.match(negative_acl_regex, required_acl):
+                return False
+
+        for positive_acl in positive_user_acls:
+            positive_acl_regex = self._transform_acl_to_regex(positive_acl)
+            if re.match(positive_acl_regex, required_acl):
                 return True
         return False
 
