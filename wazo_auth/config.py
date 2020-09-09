@@ -105,6 +105,7 @@ _DEFAULT_CONFIG = {
         'exchange_type': 'topic',
     },
     'smtp': {'hostname': 'localhost', 'port': 25},
+    'db_connect_retry_timeout_seconds': 300,
     'db_uri': 'postgresql://asterisk:proformatique@localhost/asterisk',
     'confd_db_uri': 'postgresql://asterisk:proformatique@localhost/asterisk',
     'all_users_policies': {},

@@ -13,7 +13,7 @@ from xivo.status import StatusAggregator
 
 from . import bus, services, token
 from .database import queries
-from .database.helpers import init_db
+from .database.helpers import db_ready, init_db
 from .flask_helpers import Tenant
 from .helpers import LocalTokenRenewer
 from .http_server import api, CoreRestApi
@@ -170,9 +170,11 @@ class Controller:
     def run(self):
         signal.signal(signal.SIGTERM, partial(_sigterm_handler, self))
 
+        with db_ready(timeout=self._config['db_connect_retry_timeout_seconds']):
+            self._all_users_service.update_policies()
+
         with bus.publisher_thread(self._bus_publisher):
             with ServiceCatalogRegistration(*self._service_discovery_args):
-                self._all_users_service.update_policies()
                 self._expired_token_remover.start()
                 local_token_renewer = self._get_local_token_renewer()
                 self._config['local_token_renewer'] = local_token_renewer
