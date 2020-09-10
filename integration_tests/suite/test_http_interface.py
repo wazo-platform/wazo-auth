@@ -240,6 +240,16 @@ class TestCore(WazoAuthTestCase):
 
         self._get_token(token, acls='foo')  # no exception
 
+    def test_that_expired_tokens_on_scope_check_returns_404(self):
+        token = self._post_token('foo', 'bar', expiration=1)['token']
+
+        time.sleep(2)
+
+        assert_that(
+            calling(self._check_scopes).with_args(token, ['foo']),
+            raises(requests.HTTPError, pattern='404'),
+        )
+
     def test_that_scope_check_with_an_invalid_token_returns_404(self):
         assert_that(
             calling(self._check_scopes).with_args('abcdef', []),
