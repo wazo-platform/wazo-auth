@@ -27,6 +27,7 @@ from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from wazo_auth.database import helpers
 from wazo_auth.database import models
 from .helpers.base import WazoAuthTestCase
+from .helpers.constants import UNKNOWN_TENANT
 from .helpers import fixtures
 
 requests.packages.urllib3.disable_warnings()
@@ -193,7 +194,7 @@ class TestCore(WazoAuthTestCase):
         token = self._post_token('foo', 'bar')['token']
 
         assert_that(
-            self._is_valid(token, tenant='55ee61f3-c4a5-427c-9f40-9d5c33466240'),
+            self._is_valid(token, tenant=UNKNOWN_TENANT),
             is_(False),
         )
 
@@ -210,7 +211,7 @@ class TestCore(WazoAuthTestCase):
         token = self._post_token('foo', 'bar')['token']
 
         self._get_token_with_expected_exception(
-            token, tenant='55ee61f3-c4a5-427c-9f40-9d5c33466240', status_code=403
+            token, tenant=UNKNOWN_TENANT, status_code=403
         )
 
         assert_that(
@@ -259,7 +260,7 @@ class TestCore(WazoAuthTestCase):
 
         assert_that(
             calling(self._check_scopes).with_args(
-                token, ['foo'], tenant='55ee61f3-c4a5-427c-9f40-9d5c33466240'
+                token, ['foo'], tenant=UNKNOWN_TENANT
             ),
             raises(requests.HTTPError, pattern='403'),
         )
