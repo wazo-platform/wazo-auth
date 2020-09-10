@@ -198,8 +198,12 @@ class TestCore(WazoAuthTestCase):
 
         assert_that(self._is_valid(token, tenant=self.top_tenant_uuid), is_(True))
 
-        with self.client_in_subtenant() as (_, __, sub_tenant):
+        with self.client_in_subtenant() as (sub_client, __, sub_tenant):
             assert_that(self._is_valid(token, tenant=sub_tenant['uuid']), is_(True))
+            assert_that(
+                self._is_valid(sub_client._token_id, tenant=self.top_tenant_uuid),
+                is_(False),
+            )
 
     def test_that_unauthorized_acls_on_GET_return_403(self):
         token = self._post_token('foo', 'bar')['token']
