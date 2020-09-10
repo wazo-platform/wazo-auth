@@ -177,12 +177,9 @@ class TokenService(BaseService):
         if token.is_expired():
             raise UnknownTokenException()
 
-        scope_statuses = dict()
-
-        for scope in scopes:
-            if scope in scope_statuses:
-                continue
-            scope_statuses[scope] = token.matches_required_acl(scope)
+        scope_statuses = {
+            scope: token.matches_required_acl(scope) for scope in set(scopes)
+        }
 
         return token, scope_statuses
 
