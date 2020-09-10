@@ -395,6 +395,7 @@ definitions:
         description: the scopes and their check result
         items:
           type: object
+          description: 'JSON object with scopes as keys and boolean values whether the token is valid for the given scope, e.g. `{"confd.groups.create": true}`'
 parameters:
   scope:
     name: scope
