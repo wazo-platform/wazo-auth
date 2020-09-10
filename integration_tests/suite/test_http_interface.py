@@ -280,12 +280,18 @@ class TestCore(WazoAuthTestCase):
             not_(raises(Exception)),
         )
 
-        with self.client_in_subtenant() as (_, __, sub_tenant):
+        with self.client_in_subtenant() as (sub_client, __, sub_tenant):
             assert_that(
                 calling(self._check_scopes).with_args(
                     token, ['foo'], tenant=sub_tenant['uuid']
                 ),
                 not_(raises(Exception)),
+            )
+            assert_that(
+                calling(self._check_scopes).with_args(
+                    sub_client._token_id, ['foo'], tenant=self.top_tenant_uuid
+                ),
+                raises(requests.HTTPError, pattern='403'),
             )
 
     @fixtures.http.policy(name='fooer', acl_templates=['foo'])
