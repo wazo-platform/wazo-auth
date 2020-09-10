@@ -26,14 +26,12 @@ from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from wazo_auth.database import helpers
 from wazo_auth.database import models
-from .helpers.base import WazoAuthTestCase
-from .helpers.constants import UNKNOWN_TENANT
 from .helpers import fixtures
+from .helpers.base import WazoAuthTestCase
+from .helpers.constants import UNKNOWN_TENANT, ISO_DATETIME
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)
-
-ISO_DATETIME = '%Y-%m-%dT%H:%M:%S.%f'
 
 
 def _new_token_id():
