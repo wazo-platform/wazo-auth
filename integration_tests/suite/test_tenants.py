@@ -280,7 +280,8 @@ class TestTenantPolicyAssociation(WazoAuthTestCase):
 
         result = action(search='ba')
         expected = contains_inanyorder(
-            has_entries(name='bar'), has_entries(name='baz'),
+            has_entries(name='bar'),
+            has_entries(name='baz'),
         )
         assert_that(
             result,
@@ -330,7 +331,10 @@ class TestTenantPolicyAssociation(WazoAuthTestCase):
         )
 
         result = action(limit=2)
-        expected = contains(has_entries(name='bar'), has_entries(name='baz'),)
+        expected = contains(
+            has_entries(name='bar'),
+            has_entries(name='baz'),
+        )
         assert_that(
             result,
             has_entries(

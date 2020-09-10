@@ -139,7 +139,8 @@ class TestPolicies(WazoAuthTestCase):
     def test_list_sorting(self, three, two, one, _):
         action = partial(self.client.policies.list, tenant_uuid=SUB_TENANT_UUID)
         autocreated_policy = self.client.policies.list(
-            name=DEFAULT_POLICY_NAME, tenant_uuid=SUB_TENANT_UUID,
+            name=DEFAULT_POLICY_NAME,
+            tenant_uuid=SUB_TENANT_UUID,
         )['items'][0]
         expected = [one, three, two, autocreated_policy]
         assert_sorted(action, order='name', expected=expected)
@@ -164,7 +165,8 @@ class TestPolicies(WazoAuthTestCase):
         assert_that(
             response,
             has_entries(
-                total=3 + NB_DEFAULT_POLICIES, items=has_items(one, two, three),
+                total=3 + NB_DEFAULT_POLICIES,
+                items=has_items(one, two, three),
             ),
         )
 
