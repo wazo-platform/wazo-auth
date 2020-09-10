@@ -12,7 +12,7 @@ from hamcrest import (
 )
 from xivo_test_helpers import until
 from .helpers import base, fixtures
-from .helpers.constants import UNKNOWN_UUID
+from .helpers.constants import UNKNOWN_UUID, DEFAULT_POLICY_NAME
 
 
 class TestGroupPolicyAssociation(base.WazoAuthTestCase):
@@ -184,7 +184,7 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         assert_that(token_data, has_entries('acls', has_items(*expected_acls)))
 
     def test_all_users_policies_are_updated_at_startup(self):
-        policy = self.client.policies.list(name='wazo-all-users-policy')['items'][0]
+        policy = self.client.policies.list(name=DEFAULT_POLICY_NAME)['items'][0]
         policy_without_acl = dict(policy)
         policy_without_acl['acl_templates'] = []
         self.client.policies.edit(policy['uuid'], **policy_without_acl)
@@ -200,7 +200,7 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         group = self.client.groups.list(
             name=f'wazo-all-users-tenant-{self.top_tenant_uuid}'
         )['items'][0]
-        policy = self.client.policies.list(name='wazo-all-users-policy')['items'][0]
+        policy = self.client.policies.list(name=DEFAULT_POLICY_NAME)['items'][0]
         policy_without_acl = dict(policy)
         policy_without_acl['acl_templates'] = []
         self.client.policies.edit(policy['uuid'], **policy_without_acl)

@@ -20,7 +20,7 @@ from .helpers.base import (
     WazoAuthTestCase,
     SUB_TENANT_UUID,
 )
-from .helpers.constants import UNKNOWN_UUID
+from .helpers.constants import UNKNOWN_UUID, NB_DEFAULT_POLICIES, DEFAULT_POLICY_NAME
 
 ADDRESS_1 = {
     'line_1': 'Here',
@@ -109,7 +109,7 @@ class TestTenants(WazoAuthTestCase):
                     group=has_entries(tenant_uuid=self.top_tenant_uuid),
                     policies=contains(
                         has_entries(
-                            name=f'wazo-all-users-policy',
+                            name=DEFAULT_POLICY_NAME,
                             tenant_uuid=self.top_tenant_uuid,
                             acl_templates=has_item('integration_tests.acl'),
                         )
@@ -119,7 +119,7 @@ class TestTenants(WazoAuthTestCase):
                     group=has_entries(tenant_uuid=foobar['uuid']),
                     policies=contains(
                         has_entries(
-                            name=f'wazo-all-users-policy',
+                            name=DEFAULT_POLICY_NAME,
                             tenant_uuid=foobar['uuid'],
                             acl_templates=has_item('integration_tests.acl'),
                         )
@@ -129,7 +129,7 @@ class TestTenants(WazoAuthTestCase):
                     group=has_entries(tenant_uuid=foobaz['uuid']),
                     policies=contains(
                         has_entries(
-                            name=f'wazo-all-users-policy',
+                            name=DEFAULT_POLICY_NAME,
                             tenant_uuid=foobaz['uuid'],
                             acl_templates=has_item('integration_tests.acl'),
                         )
@@ -139,7 +139,7 @@ class TestTenants(WazoAuthTestCase):
                     group=has_entries(tenant_uuid=other['uuid']),
                     policies=contains(
                         has_entries(
-                            name=f'wazo-all-users-policy',
+                            name=DEFAULT_POLICY_NAME,
                             tenant_uuid=other['uuid'],
                             acl_templates=has_item('integration_tests.acl'),
                         )
@@ -267,13 +267,25 @@ class TestTenantPolicyAssociation(WazoAuthTestCase):
 
         result = action()
         expected = contains_inanyorder(
-            *[has_entries(name=n) for n in ('foo', 'bar', 'baz')]
+            *[has_entries(name=n) for n in ('foo', 'bar', 'baz', DEFAULT_POLICY_NAME)]
         )
-        assert_that(result, has_entries(total=3, filtered=3, items=expected))
+        assert_that(
+            result,
+            has_entries(
+                total=3 + NB_DEFAULT_POLICIES,
+                filtered=3 + NB_DEFAULT_POLICIES,
+                items=expected,
+            ),
+        )
 
         result = action(search='ba')
-        expected = contains_inanyorder(has_entries(name='bar'), has_entries(name='baz'))
-        assert_that(result, has_entries(total=3, filtered=2, items=expected))
+        expected = contains_inanyorder(
+            has_entries(name='bar'), has_entries(name='baz'),
+        )
+        assert_that(
+            result,
+            has_entries(total=3 + NB_DEFAULT_POLICIES, filtered=2, items=expected),
+        )
 
     @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='foo', tenant_uuid=SUB_TENANT_UUID)
@@ -286,6 +298,7 @@ class TestTenantPolicyAssociation(WazoAuthTestCase):
             has_entries(name='bar'),
             has_entries(name='baz'),
             has_entries(name='foo'),
+            has_entries(name=DEFAULT_POLICY_NAME),
         ]
         assert_sorted(action, order='name', expected=expected)
 
@@ -302,9 +315,27 @@ class TestTenantPolicyAssociation(WazoAuthTestCase):
         )
 
         result = action(offset=1)
-        expected = contains(has_entries(name='baz'), has_entries(name='foo'))
-        assert_that(result, has_entries(total=3, filtered=3, items=expected))
+        expected = contains(
+            has_entries(name='baz'),
+            has_entries(name='foo'),
+            has_entries(name=DEFAULT_POLICY_NAME),
+        )
+        assert_that(
+            result,
+            has_entries(
+                total=3 + NB_DEFAULT_POLICIES,
+                filtered=3 + NB_DEFAULT_POLICIES,
+                items=expected,
+            ),
+        )
 
         result = action(limit=2)
-        expected = contains(has_entries(name='bar'), has_entries(name='baz'))
-        assert_that(result, has_entries(total=3, filtered=3, items=expected))
+        expected = contains(has_entries(name='bar'), has_entries(name='baz'),)
+        assert_that(
+            result,
+            has_entries(
+                total=3 + NB_DEFAULT_POLICIES,
+                filtered=3 + NB_DEFAULT_POLICIES,
+                items=expected,
+            ),
+        )
