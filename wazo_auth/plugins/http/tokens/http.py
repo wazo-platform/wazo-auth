@@ -20,25 +20,6 @@ class BaseResource(http.ErrorCatchingResource):
         self._authentication_service = authentication_service
 
 
-class TenantCheckMixin:
-    def _assert_token_has_tenant_permission(self, token, tenant):
-        if not tenant:
-            return
-
-        # TODO: when the ldap_user gets remove all tokens will have a UUID
-        user_uuid = token['metadata'].get('uuid')
-        if not user_uuid:
-            # Fallback on the token data since this is not a user token
-            visible_tenants = set(t['uuid'] for t in token['metadata']['tenants'])
-            if tenant not in visible_tenants:
-                raise exceptions.MissingTenantTokenException(tenant)
-            else:
-                return
-
-        if not self._user_service.user_has_sub_tenant(user_uuid, tenant):
-            raise exceptions.MissingTenantTokenException(tenant)
-
-
 class _BaseRefreshTokens(http.AuthResource):
     def __init__(self, token_service, user_service, authentication_service):
         self._token_service = token_service
@@ -186,7 +167,7 @@ class Tokens(BaseResource):
         return {'data': token.to_dict()}, 200
 
 
-class Token(BaseResource, TenantCheckMixin):
+class Token(BaseResource):
     def delete(self, token_uuid):
         self._token_service.remove_token(token_uuid)
 
@@ -197,7 +178,7 @@ class Token(BaseResource, TenantCheckMixin):
         tenant = request.args.get('tenant')
 
         token = self._token_service.get(token_uuid, scope).to_dict()
-        self._assert_token_has_tenant_permission(token, tenant)
+        self._token_service.assert_has_tenant_permission(token, tenant)
 
         return {'data': token}
 
@@ -206,12 +187,12 @@ class Token(BaseResource, TenantCheckMixin):
         tenant = request.args.get('tenant')
 
         token = self._token_service.get(token_uuid, scope).to_dict()
-        self._assert_token_has_tenant_permission(token, tenant)
+        self._token_service.assert_has_tenant_permission(token, tenant)
 
         return '', 204
 
 
-class TokenScopesCheck(BaseResource, TenantCheckMixin):
+class TokenScopesCheck(BaseResource):
     def post(self, token_uuid):
         try:
             args = schemas.TokenScopesRequestSchema().load(request.get_json(force=True))
@@ -221,5 +202,7 @@ class TokenScopesCheck(BaseResource, TenantCheckMixin):
         token, scopes_statuses = self._token_service.check_scopes(
             token_uuid, args['scopes']
         )
-        self._assert_token_has_tenant_permission(token.to_dict(), args['tenant_uuid'])
+        self._token_service.assert_has_tenant_permission(
+            token.to_dict(), args['tenant_uuid']
+        )
         return {'scopes': scopes_statuses}, 200
