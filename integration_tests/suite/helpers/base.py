@@ -234,7 +234,7 @@ class BaseTestCase(AuthLaunchingTestCase):
 
     def _check_scopes(self, token, scopes, tenant=None):
         client = self.new_auth_client()
-        return client.token.check_scopes(token, scopes, tenant)
+        return client.token.check_scopes(token, scopes, tenant)['scopes']
 
     @classmethod
     def new_auth_client(cls, username=None, password=None):
