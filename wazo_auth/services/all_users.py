@@ -61,12 +61,22 @@ class AllUsersService:
                 )
                 self._associate_policy(tenant_uuid, policy_uuid, all_users_group)
 
+        policies_to_remove = [
+            policy
+            for policy in existing_policies
+            if policy['config_managed']
+            and policy['name'] not in self._all_users_policies
+        ]
+        for policy in policies_to_remove:
+            self._delete_policy(tenant_uuid, policy['uuid'])
+
     def _create_policy(self, tenant_uuid, name, policy, all_users_group):
         logger.debug('all_users: tenant %s: creating policy %s', tenant_uuid, name)
         return self._policy_service.create(
             name=name,
             tenant_uuid=tenant_uuid,
             description='Automatically created to be applied to all users',
+            config_managed=True,
             **policy,
         )
 
@@ -80,6 +90,7 @@ class AllUsersService:
             policy_uuid,
             name=policy_name,
             description='Automatically created to be applied to all users',
+            config_managed=True,
             **policy,
         )
 
@@ -91,3 +102,9 @@ class AllUsersService:
             all_users_group['uuid'],
         )
         self._group_service.add_policy(all_users_group['uuid'], policy_uuid)
+
+    def _delete_policy(self, tenant_uuid, policy_uuid):
+        logger.debug(
+            'all_users: tenant %s: deleting policy %s', tenant_uuid, policy_uuid,
+        )
+        self._policy_service.delete(policy_uuid, tenant_uuid)

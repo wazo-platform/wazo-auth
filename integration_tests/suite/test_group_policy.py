@@ -9,6 +9,7 @@ from hamcrest import (
     has_entries,
     has_items,
     has_item,
+    not_,
 )
 from .helpers import base, fixtures
 from .helpers.constants import UNKNOWN_UUID, DEFAULT_POLICY_NAME
@@ -217,3 +218,23 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
                 )
             ),
         )
+
+    @fixtures.http.policy(
+        name='to-be-removed',
+        acl_templates=['integration_test.removed'],
+        config_managed=True,
+    )
+    def test_all_users_policies_are_deleted_at_startup(self, policy):
+        group = self.client.groups.list(
+            name=f'wazo-all-users-tenant-{self.top_tenant_uuid}'
+        )['items'][0]
+        self.client.groups.add_policy(group['uuid'], policy['uuid'])
+
+        self.restart_auth()
+
+        group_policies = self.client.groups.get_policies(group['uuid'])['items']
+        assert_that(
+            group_policies, not_(has_item(has_entries(uuid=policy['uuid'],))),
+        )
+
+        base.assert_http_error(404, self.client.policies.get, policy['uuid'])

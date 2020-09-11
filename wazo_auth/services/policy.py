@@ -18,6 +18,7 @@ class PolicyService(BaseService):
             raise exceptions.UnknownPolicyException(uuid)
 
     def create(self, **kwargs):
+        kwargs.setdefault('config_managed', False)
         return self._dao.policy.create(**kwargs)
 
     def count(self, scoping_tenant_uuid=None, **kwargs):
@@ -81,6 +82,7 @@ class PolicyService(BaseService):
 
     def update(self, policy_uuid, scoping_tenant_uuid=None, **body):
         args = dict(body)
+        args.setdefault('config_managed', False)
         if scoping_tenant_uuid:
             args['tenant_uuids'] = self._tenant_tree.list_visible_tenants(
                 scoping_tenant_uuid

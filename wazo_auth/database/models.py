@@ -215,6 +215,9 @@ class Policy(Base):
     tenant_uuid = Column(
         String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False
     )
+    config_managed = Column(
+        Boolean, default=False, server_default='false', nullable=True,
+    )
     tenant = relationship('Tenant', cascade='all, delete-orphan', single_parent=True)
 
 

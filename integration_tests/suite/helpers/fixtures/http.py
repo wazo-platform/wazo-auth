@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import random
@@ -154,10 +154,21 @@ def policy(**policy_args):
     policy_args.setdefault('name', _random_string(20))
     policy_args['acl_templates'] = policy_args.get('acl_templates') or []
 
+    def set_policy_config_managed(db_client, policy_uuid):
+        with db_client.connect() as connection:
+            connection.execute(
+                (
+                    f"UPDATE auth_policy set config_managed=true WHERE uuid = '{policy_uuid}'"
+                )
+            )
+
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
             policy = self.client.policies.new(**policy_args)
+            if policy_args['config_managed']:
+                db_client = self.new_db_client()
+                set_policy_config_managed(db_client, policy['uuid'])
             try:
                 result = decorated(self, policy, *args, **kwargs)
             finally:
