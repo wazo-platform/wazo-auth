@@ -164,7 +164,7 @@ def policy(**policy_args):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
             policy = self.client.policies.new(**policy_args)
-            if policy_args['config_managed']:
+            if policy_args.get('config_managed'):
                 db_client = self.new_db_client()
                 set_policy_config_managed(db_client, policy['uuid'])
             try:
