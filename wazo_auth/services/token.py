@@ -17,6 +17,7 @@ from wazo_auth.services.helpers import BaseService
 from ..exceptions import (
     DuplicatedRefreshTokenException,
     MissingACLTokenException,
+    MissingTenantTokenException,
     UnknownTokenException,
 )
 
@@ -24,11 +25,12 @@ logger = logging.getLogger(__name__)
 
 
 class TokenService(BaseService):
-    def __init__(self, config, dao, tenant_tree, bus_publisher):
+    def __init__(self, config, dao, tenant_tree, bus_publisher, user_service):
         super().__init__(dao, tenant_tree)
         self._backend_policies = config.get('backend_policies', {})
         self._default_expiration = config['default_token_lifetime']
         self._bus_publisher = bus_publisher
+        self._user_service = user_service
 
     def count_refresh_tokens(
         self, scoping_tenant_uuid=None, recurse=False, **search_params
@@ -166,6 +168,23 @@ class TokenService(BaseService):
 
         return token
 
+    def check_scopes(self, token_uuid, scopes):
+        token_data = self._dao.token.get(token_uuid)
+        if not token_data:
+            raise UnknownTokenException()
+
+        id_ = token_data.pop('uuid')
+        token = Token(id_, **token_data)
+
+        if token.is_expired():
+            raise UnknownTokenException()
+
+        scope_statuses = {
+            scope: token.matches_required_acl(scope) for scope in set(scopes)
+        }
+
+        return token, scope_statuses
+
     def _get_acl_templates(self, backend_name):
         policy_name = self._backend_policies.get(backend_name)
         if not policy_name:
@@ -181,3 +200,20 @@ class TokenService(BaseService):
             backend_name,
         )
         return []
+
+    def assert_has_tenant_permission(self, token, tenant):
+        if not tenant:
+            return
+
+        # TODO: when the ldap_user gets remove all tokens will have a UUID
+        user_uuid = token['metadata'].get('uuid')
+        if not user_uuid:
+            # Fallback on the token data since this is not a user token
+            visible_tenants = set(t['uuid'] for t in token['metadata']['tenants'])
+            if tenant not in visible_tenants:
+                raise MissingTenantTokenException(tenant)
+            else:
+                return
+
+        if not self._user_service.user_has_sub_tenant(user_uuid, tenant):
+            raise MissingTenantTokenException(tenant)

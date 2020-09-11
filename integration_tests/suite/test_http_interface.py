@@ -13,6 +13,7 @@ from hamcrest import (
     assert_that,
     calling,
     contains_inanyorder,
+    empty,
     equal_to,
     has_entries,
     has_key,
@@ -25,13 +26,12 @@ from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from wazo_auth.database import helpers
 from wazo_auth.database import models
-from .helpers.base import WazoAuthTestCase
 from .helpers import fixtures
+from .helpers.base import WazoAuthTestCase
+from .helpers.constants import UNKNOWN_TENANT, ISO_DATETIME
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)
-
-ISO_DATETIME = '%Y-%m-%dT%H:%M:%S.%f'
 
 
 def _new_token_id():
@@ -192,14 +192,18 @@ class TestCore(WazoAuthTestCase):
         token = self._post_token('foo', 'bar')['token']
 
         assert_that(
-            self._is_valid(token, tenant='55ee61f3-c4a5-427c-9f40-9d5c33466240'),
+            self._is_valid(token, tenant=UNKNOWN_TENANT),
             is_(False),
         )
 
         assert_that(self._is_valid(token, tenant=self.top_tenant_uuid), is_(True))
 
-        with self.client_in_subtenant() as (_, __, sub_tenant):
+        with self.client_in_subtenant() as (sub_client, __, sub_tenant):
             assert_that(self._is_valid(token, tenant=sub_tenant['uuid']), is_(True))
+            assert_that(
+                self._is_valid(sub_client._token_id, tenant=self.top_tenant_uuid),
+                is_(False),
+            )
 
     def test_that_unauthorized_acls_on_GET_return_403(self):
         token = self._post_token('foo', 'bar')['token']
@@ -209,7 +213,7 @@ class TestCore(WazoAuthTestCase):
         token = self._post_token('foo', 'bar')['token']
 
         self._get_token_with_expected_exception(
-            token, tenant='55ee61f3-c4a5-427c-9f40-9d5c33466240', status_code=403
+            token, tenant=UNKNOWN_TENANT, status_code=403
         )
 
         assert_that(
@@ -239,6 +243,83 @@ class TestCore(WazoAuthTestCase):
         token = self._post_token('foo', 'bar')['token']
 
         self._get_token(token, acls='foo')  # no exception
+
+    def test_that_expired_tokens_on_scope_check_returns_404(self):
+        token = self._post_token('foo', 'bar', expiration=1)['token']
+
+        time.sleep(2)
+
+        assert_that(
+            calling(self._check_scopes).with_args(token, ['foo']),
+            raises(requests.HTTPError, pattern='404'),
+        )
+
+    def test_that_scope_check_with_an_invalid_token_returns_404(self):
+        assert_that(
+            calling(self._check_scopes).with_args('abcdef', []),
+            raises(requests.HTTPError, pattern='404'),
+        )
+
+    def test_that_unauthorized_acls_on_scope_check_return_all_false(self):
+        token = self._post_token('foo', 'bar')['token']
+        assert_that(
+            self._check_scopes(token, ['confd', 'foo', 'bar']),
+            has_entries(confd=False, foo=False, bar=False),
+        )
+
+    def test_that_unauthorized_tenants_on_scope_check_return_403(self):
+        token = self._post_token('foo', 'bar')['token']
+
+        assert_that(
+            calling(self._check_scopes).with_args(
+                token, ['foo'], tenant=UNKNOWN_TENANT
+            ),
+            raises(requests.HTTPError, pattern='403'),
+        )
+
+        assert_that(
+            calling(self._check_scopes).with_args(
+                token, ['foo'], tenant=self.top_tenant_uuid
+            ),
+            not_(raises(Exception)),
+        )
+
+        with self.client_in_subtenant() as (sub_client, __, sub_tenant):
+            assert_that(
+                calling(self._check_scopes).with_args(
+                    token, ['foo'], tenant=sub_tenant['uuid']
+                ),
+                not_(raises(Exception)),
+            )
+            assert_that(
+                calling(self._check_scopes).with_args(
+                    sub_client._token_id, ['foo'], tenant=self.top_tenant_uuid
+                ),
+                raises(requests.HTTPError, pattern='403'),
+            )
+
+    @fixtures.http.policy(name='fooer', acl_templates=['foo'])
+    def test_that_authorized_acls_on_scope_check_returns_only_valid_acls(self, policy):
+        self.client.users.add_policy(self.user['uuid'], policy['uuid'])
+
+        token = self._post_token('foo', 'bar')['token']
+
+        assert_that(
+            self._check_scopes(token, ['foo', 'bar']), has_entries(foo=True, bar=False)
+        )
+
+    def test_that_no_acls_on_scope_check_returns_empty_result(self):
+        token = self._post_token('foo', 'bar')['token']
+
+        assert_that(self._check_scopes(token, []), is_(empty()))
+
+    def test_that_wrong_type_acls_on_scope_check_raises_400(self):
+        token = self._post_token('foo', 'bar')['token']
+
+        assert_that(
+            calling(self._check_scopes).with_args(token, [True]),
+            raises(requests.HTTPError, pattern='400'),
+        )
 
     def test_query_after_database_restart(self):
         token = self._post_token('foo', 'bar')['token']

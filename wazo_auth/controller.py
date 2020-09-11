@@ -54,9 +54,6 @@ class Controller:
         self._bus_publisher = bus.BusPublisher(config)
         dao = queries.DAO.from_defaults()
         self._tenant_tree = services.helpers.TenantTree(dao.tenant)
-        self._token_service = services.TokenService(
-            config, dao, self._tenant_tree, self._bus_publisher
-        )
         self._backends = BackendsProxy()
         authentication_service = services.AuthenticationService(dao, self._backends)
         email_service = services.EmailService(
@@ -80,6 +77,9 @@ class Controller:
             dao, self._tenant_tree, self._bus_publisher
         )
         self._user_service = services.UserService(dao, self._tenant_tree, group_service)
+        self._token_service = services.TokenService(
+            config, dao, self._tenant_tree, self._bus_publisher, self._user_service
+        )
         self._tenant_service = services.TenantService(
             dao, self._tenant_tree, group_service, self._bus_publisher
         )

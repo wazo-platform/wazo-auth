@@ -88,7 +88,7 @@ paths:
       parameters:
         - $ref: '#/parameters/token'
         - $ref: '#/parameters/scope'
-        - $ref: '#/parameters/tenantuuid'
+        - $ref: '#/parameters/tenant'
       responses:
         '200':
           description: "The token's data"
@@ -116,7 +116,7 @@ paths:
       parameters:
         - $ref: '#/parameters/token'
         - $ref: '#/parameters/scope'
-        - $ref: '#/parameters/tenantuuid'
+        - $ref: '#/parameters/tenant'
       responses:
         '204':
           description: No data
@@ -143,6 +143,44 @@ paths:
       responses:
         '200':
           description: Success message
+        '500':
+          description: System related token error
+          schema:
+            $ref: '#/definitions/Error'
+
+  /token/{token}/scopes/check:
+    post:
+      summary: Check a token against scopes
+      description: Checks if a token is valid for given scopes.
+      tags:
+      - token
+      security:
+      - {}
+      parameters:
+        - $ref: '#/parameters/token'
+        - name: body
+          in: body
+          description: The token scopes check parameters
+          required: true
+          schema:
+            $ref: '#/definitions/ScopeCheckRequest'
+      responses:
+        '200':
+          description: "Provided scope list checked against the token"
+          schema:
+            $ref: '#/definitions/ScopeList'
+        '400':
+          description: The provided scope list is invalid
+          schema:
+            $ref: '#/definitions/Error'
+        '403':
+          description: This token is not valid for the provided tenant
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Token not found
+          schema:
+            $ref: '#/definitions/Error'
         '500':
           description: System related token error
           schema:
@@ -295,6 +333,20 @@ definitions:
         items:
           $ref: '#/definitions/RefreshToken'
         description: A paginated list of refresh tokens
+  ScopeCheckRequest:
+    type: object
+    properties:
+      tenant_uuid:
+        type: string
+        format: uuid
+        description: If provided, also checks the token against this tenant
+      scopes:
+        type: array
+        description: Scopes to check against
+        items:
+          type: string
+    required:
+      - scopes
   Token:
     type: object
     properties:
@@ -334,6 +386,16 @@ definitions:
             description: The list of allowed ACLs for this token
           session_uuid:
             type: string
+
+  ScopeList:
+    type: object
+    properties:
+      scopes:
+        type: array
+        description: the scopes and their check result
+        items:
+          type: object
+          description: 'JSON object with scopes as keys and boolean values whether the token is valid for the given scope, e.g. `{"confd.groups.create": true}`'
 parameters:
   scope:
     name: scope
