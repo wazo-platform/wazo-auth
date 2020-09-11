@@ -157,9 +157,7 @@ def policy(**policy_args):
     def set_policy_config_managed(db_client, policy_uuid):
         with db_client.connect() as connection:
             connection.execute(
-                (
-                    f"UPDATE auth_policy set config_managed=true WHERE uuid = '{policy_uuid}'"
-                )
+                f"UPDATE auth_policy set config_managed=true WHERE uuid = '{policy_uuid}'"
             )
 
     def decorator(decorated):
