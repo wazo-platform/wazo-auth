@@ -105,6 +105,8 @@ class AllUsersService:
 
     def _delete_policy(self, tenant_uuid, policy_uuid):
         logger.debug(
-            'all_users: tenant %s: deleting policy %s', tenant_uuid, policy_uuid,
+            'all_users: tenant %s: deleting policy %s',
+            tenant_uuid,
+            policy_uuid,
         )
         self._policy_service.delete(policy_uuid, tenant_uuid)
