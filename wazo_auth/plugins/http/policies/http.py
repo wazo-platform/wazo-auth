@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
@@ -6,7 +6,7 @@ import marshmallow
 
 from wazo_auth import exceptions, http, schemas
 from wazo_auth.flask_helpers import Tenant
-from .schemas import PolicySchema
+from .schemas import policy_schema
 
 
 class _BasePolicyRessource(http.AuthResource):
@@ -17,9 +17,8 @@ class _BasePolicyRessource(http.AuthResource):
 class Policies(_BasePolicyRessource):
     @http.required_acl('auth.policies.create')
     def post(self):
-        schema = PolicySchema()
         try:
-            body = schema.load(request.get_json(force=True))
+            body = policy_schema.load(request.get_json(force=True))
         except marshmallow.ValidationError as e:
             for field in e.messages:
                 raise exceptions.InvalidInputException(field)
@@ -27,7 +26,7 @@ class Policies(_BasePolicyRessource):
         body['tenant_uuid'] = Tenant.autodetect().uuid
         body['uuid'] = self.policy_service.create(**body)
 
-        return body, 200
+        return policy_schema.dump(body), 200
 
     @http.required_acl('auth.policies.read')
     def get(self):
@@ -41,7 +40,7 @@ class Policies(_BasePolicyRessource):
 
         policies = self.policy_service.list(**list_params)
         total = self.policy_service.count(**list_params)
-        return {'items': policies, 'total': total}, 200
+        return {'items': policy_schema.dump(policies, many=True), 'total': total}, 200
 
 
 class Policy(_BasePolicyRessource):
@@ -49,7 +48,7 @@ class Policy(_BasePolicyRessource):
     def get(self, policy_uuid):
         scoping_tenant = Tenant.autodetect()
         policy = self.policy_service.get(policy_uuid, scoping_tenant.uuid)
-        return policy, 200
+        return policy_schema.dump(policy), 200
 
     @http.required_acl('auth.policies.{policy_uuid}.delete')
     def delete(self, policy_uuid):
@@ -61,14 +60,14 @@ class Policy(_BasePolicyRessource):
     def put(self, policy_uuid):
         scoping_tenant = Tenant.autodetect()
         try:
-            body = PolicySchema().load(request.get_json(force=True))
+            body = policy_schema.load(request.get_json(force=True))
         except marshmallow.ValidationError as e:
             for field in e.messages:
                 raise exceptions.InvalidInputException(field)
 
         body['scoping_tenant_uuid'] = scoping_tenant.uuid
         policy = self.policy_service.update(policy_uuid, **body)
-        return policy, 200
+        return policy_schema.dump(policy), 200
 
 
 class PolicyTemplate(_BasePolicyRessource):

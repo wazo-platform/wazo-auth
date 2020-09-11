@@ -12,6 +12,7 @@ from hamcrest import (
     empty,
     equal_to,
     has_entries,
+    has_key,
     has_item,
     has_items,
     none,
