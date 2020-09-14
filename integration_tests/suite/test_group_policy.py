@@ -234,7 +234,14 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
 
         group_policies = self.client.groups.get_policies(group['uuid'])['items']
         assert_that(
-            group_policies, not_(has_item(has_entries(uuid=policy['uuid'],))),
+            group_policies,
+            not_(
+                has_item(
+                    has_entries(
+                        uuid=policy['uuid'],
+                    )
+                )
+            ),
         )
 
         base.assert_http_error(404, self.client.policies.get, policy['uuid'])

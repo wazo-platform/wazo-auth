@@ -256,7 +256,9 @@ class TestPolicyDAO(base.DAOTestCase):
 
     def test_update(self):
         assert_that(
-            calling(self._policy_dao.update).with_args(UNKNOWN_UUID, 'foo', '', [], False),
+            calling(self._policy_dao.update).with_args(
+                UNKNOWN_UUID, 'foo', '', [], False
+            ),
             raises(exceptions.UnknownPolicyException),
         )
 
@@ -300,7 +302,9 @@ class TestPolicyDAO(base.DAOTestCase):
     def _new_policy(self, name, description, acl_templates=None, tenant_uuid=None):
         tenant_uuid = tenant_uuid or self.top_tenant_uuid
         acl_templates = acl_templates or []
-        uuid_ = self._policy_dao.create(name, description, acl_templates, False, tenant_uuid)
+        uuid_ = self._policy_dao.create(
+            name, description, acl_templates, False, tenant_uuid
+        )
         try:
             yield uuid_
         finally:
