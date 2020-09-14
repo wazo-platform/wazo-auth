@@ -13,7 +13,7 @@ from xivo.status import StatusAggregator
 
 from . import bus, services, token
 from .database import queries
-from .database.helpers import init_db
+from .database.helpers import db_ready, init_db
 from .flask_helpers import Tenant
 from .helpers import LocalTokenRenewer
 from .http_server import api, CoreRestApi
@@ -81,7 +81,18 @@ class Controller:
             config, dao, self._tenant_tree, self._bus_publisher, self._user_service
         )
         self._tenant_service = services.TenantService(
-            dao, self._tenant_tree, group_service, self._bus_publisher
+            dao,
+            self._tenant_tree,
+            group_service,
+            policy_service,
+            config['all_users_policies'],
+            self._bus_publisher,
+        )
+        self._all_users_service = services.AllUsersService(
+            group_service,
+            policy_service,
+            self._tenant_service,
+            config['all_users_policies'],
         )
 
         self._metadata_plugins = plugin_helpers.load(
@@ -158,6 +169,9 @@ class Controller:
 
     def run(self):
         signal.signal(signal.SIGTERM, partial(_sigterm_handler, self))
+
+        with db_ready(timeout=self._config['db_connect_retry_timeout_seconds']):
+            self._all_users_service.update_policies()
 
         with bus.publisher_thread(self._bus_publisher):
             with ServiceCatalogRegistration(*self._service_discovery_args):

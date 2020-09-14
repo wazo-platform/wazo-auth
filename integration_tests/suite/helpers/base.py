@@ -237,8 +237,9 @@ class BaseTestCase(AuthLaunchingTestCase):
         return client.token.check_scopes(token, scopes, tenant)['scopes']
 
     @classmethod
-    def new_auth_client(cls, username=None, password=None):
-        kwargs = {'port': cls.auth_port, 'prefix': '', 'https': False}
+    def new_auth_client(cls, username=None, password=None, port=None):
+        port = port or cls.auth_port
+        kwargs = {'port': port, 'prefix': '', 'https': False}
 
         if username and password:
             kwargs['username'] = username
@@ -257,6 +258,16 @@ class BaseTestCase(AuthLaunchingTestCase):
         until.true(database.is_up, timeout=5, message='Postgres did not come back up')
         helpers.deinit_db()
         helpers.init_db(database.uri)
+
+    @classmethod
+    def restart_auth(cls):
+        cls.restart_service('auth')
+
+        cls.auth_port = cls.service_port(9497, service_name='auth')
+        cls.client = cls.new_auth_client(cls.username, cls.password)
+        until.return_(cls.client.status.check, timeout=30)
+        token_data = cls.client.token.new(backend='wazo_user', expiration=7200)
+        cls.client.set_token(token_data['token'])
 
 
 class WazoAuthTestCase(BaseTestCase):

@@ -80,8 +80,13 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         return self.session.query(Policy).filter(filter_).count()
 
-    def create(self, name, description, acl_templates, tenant_uuid):
-        policy = Policy(name=name, description=description, tenant_uuid=tenant_uuid)
+    def create(self, name, description, acl_templates, config_managed, tenant_uuid):
+        policy = Policy(
+            name=name,
+            description=description,
+            config_managed=config_managed,
+            tenant_uuid=tenant_uuid,
+        )
         self.session.add(policy)
         try:
             self.session.flush()
@@ -121,6 +126,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 Policy.uuid,
                 Policy.name,
                 Policy.description,
+                Policy.config_managed,
                 Policy.tenant_uuid,
                 func.array_agg(distinct(ACLTemplate.template)).label('acl_templates'),
             )
@@ -146,6 +152,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 'description': policy.description,
                 'acl_templates': acl_templates,
                 'tenant_uuid': policy.tenant_uuid,
+                'config_managed': policy.config_managed,
             }
             policies.append(body)
 
@@ -168,12 +175,24 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             for policy in query.all()
         ]
 
-    def update(self, policy_uuid, name, description, acl_templates, tenant_uuids=None):
+    def update(
+        self,
+        policy_uuid,
+        name,
+        description,
+        acl_templates,
+        config_managed,
+        tenant_uuids=None,
+    ):
         filter_ = Policy.uuid == policy_uuid
         if tenant_uuids is not None:
             filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
 
-        body = {'name': name, 'description': description}
+        body = {
+            'name': name,
+            'description': description,
+            'config_managed': config_managed,
+        }
         affected_rows = (
             self.session.query(Policy)
             .filter(filter_)

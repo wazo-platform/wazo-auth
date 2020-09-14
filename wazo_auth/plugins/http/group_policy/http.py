@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -8,6 +8,7 @@ import marshmallow
 
 from wazo_auth import exceptions, http, schemas
 from wazo_auth.flask_helpers import Tenant
+from wazo_auth.plugins.http.policies.schemas import policy_schema
 
 logger = logging.getLogger(__name__)
 
@@ -53,9 +54,10 @@ class GroupPolicies(_BaseResource):
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 
+        policies = self.group_service.list_policies(group_uuid, **list_params)
         return (
             {
-                'items': self.group_service.list_policies(group_uuid, **list_params),
+                'items': policy_schema.dump(policies, many=True),
                 'total': self.group_service.count_policies(
                     group_uuid, filtered=False, **list_params
                 ),

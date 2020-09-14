@@ -5,12 +5,14 @@ import json
 import requests
 from functools import partial
 from hamcrest import (
+    all_of,
     assert_that,
     contains,
     contains_inanyorder,
     empty,
     equal_to,
     has_entries,
+    has_item,
     has_items,
     none,
     not_,
@@ -25,7 +27,7 @@ from .helpers.base import (
     WazoAuthTestCase,
 )
 from .helpers import fixtures
-from .helpers.constants import UNKNOWN_UUID
+from .helpers.constants import UNKNOWN_UUID, NB_DEFAULT_POLICIES, DEFAULT_POLICY_NAME
 
 
 class TestPolicies(WazoAuthTestCase):
@@ -136,7 +138,11 @@ class TestPolicies(WazoAuthTestCase):
     @fixtures.http.policy(name='three', tenant_uuid=SUB_TENANT_UUID)
     def test_list_sorting(self, three, two, one, _):
         action = partial(self.client.policies.list, tenant_uuid=SUB_TENANT_UUID)
-        expected = [one, three, two]
+        autocreated_policy = self.client.policies.list(
+            name=DEFAULT_POLICY_NAME,
+            tenant_uuid=SUB_TENANT_UUID,
+        )['items'][0]
+        expected = [one, three, two, autocreated_policy]
         assert_sorted(action, order='name', expected=expected)
 
     @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
@@ -157,7 +163,11 @@ class TestPolicies(WazoAuthTestCase):
         # Same tenant
         response = self.client.policies.list(tenant_uuid=SUB_TENANT_UUID)
         assert_that(
-            response, has_entries(total=3, items=contains_inanyorder(one, two, three))
+            response,
+            has_entries(
+                total=3 + NB_DEFAULT_POLICIES,
+                items=has_items(one, two, three),
+            ),
         )
 
     @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
@@ -176,13 +186,19 @@ class TestPolicies(WazoAuthTestCase):
         response = self.client.policies.list(
             tenant_uuid=SUB_TENANT_UUID, order='name', limit=1
         )
-        assert_that(response, has_entries(total=3, items=contains(one)))
+        assert_that(
+            response, has_entries(total=3 + NB_DEFAULT_POLICIES, items=contains(one))
+        )
 
         response = self.client.policies.list(
             tenant_uuid=SUB_TENANT_UUID, order='name', offset=1
         )
         assert_that(
-            response, has_entries(total=3, items=contains_inanyorder(two, three))
+            response,
+            has_entries(
+                total=3 + NB_DEFAULT_POLICIES,
+                items=all_of(has_items(two, three), not_(has_item(one))),
+            ),
         )
 
     @fixtures.http.policy(

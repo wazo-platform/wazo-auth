@@ -1,10 +1,18 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from functools import partial
-from hamcrest import assert_that, contains, contains_inanyorder, has_entries, has_items
+from hamcrest import (
+    assert_that,
+    contains,
+    contains_inanyorder,
+    has_entries,
+    has_items,
+    has_item,
+    not_,
+)
 from .helpers import base, fixtures
-from .helpers.constants import UNKNOWN_UUID
+from .helpers.constants import UNKNOWN_UUID, DEFAULT_POLICY_NAME
 
 
 class TestGroupPolicyAssociation(base.WazoAuthTestCase):
@@ -174,3 +182,66 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         expected_acls = ['user.{}.*'.format(user['uuid']) for user in users]
         token_data = user_client.token.new('wazo_user', expiration=5)
         assert_that(token_data, has_entries('acls', has_items(*expected_acls)))
+
+    def test_all_users_policies_are_updated_at_startup(self):
+        policy = self.client.policies.list(name=DEFAULT_POLICY_NAME)['items'][0]
+        policy_without_acl = dict(policy)
+        policy_without_acl['acl_templates'] = []
+        self.client.policies.edit(policy['uuid'], **policy_without_acl)
+
+        self.restart_auth()
+
+        policy = self.client.policies.get(policy['uuid'])
+        assert_that(
+            policy, has_entries(acl_templates=has_item('integration_tests.acl'))
+        )
+
+    def test_all_users_policies_are_associated_at_startup(self):
+        group = self.client.groups.list(
+            name=f'wazo-all-users-tenant-{self.top_tenant_uuid}'
+        )['items'][0]
+        policy = self.client.policies.list(name=DEFAULT_POLICY_NAME)['items'][0]
+        policy_without_acl = dict(policy)
+        policy_without_acl['acl_templates'] = []
+        self.client.policies.edit(policy['uuid'], **policy_without_acl)
+        self.client.groups.remove_policy(group['uuid'], policy['uuid'])
+
+        self.restart_auth()
+
+        group_policies = self.client.groups.get_policies(group['uuid'])['items']
+        assert_that(
+            group_policies,
+            has_item(
+                has_entries(
+                    name='wazo-all-users-policy',
+                    acl_templates=has_item('integration_tests.acl'),
+                )
+            ),
+        )
+
+    @fixtures.http.policy(
+        name='to-be-removed',
+        acl_templates=['integration_test.removed'],
+        config_managed=True,
+    )
+    def test_all_users_policies_are_deleted_at_startup(self, policy):
+        group = self.client.groups.list(
+            name=f'wazo-all-users-tenant-{self.top_tenant_uuid}'
+        )['items'][0]
+        self.client.groups.add_policy(group['uuid'], policy['uuid'])
+
+        self.restart_auth()
+
+        group_policies = self.client.groups.get_policies(group['uuid'])['items']
+        assert_that(
+            group_policies,
+            not_(
+                has_item(
+                    has_entries(
+                        uuid=policy['uuid'],
+                    )
+                )
+            ),
+        )
+
+        base.assert_http_error(404, self.client.policies.get, policy['uuid'])

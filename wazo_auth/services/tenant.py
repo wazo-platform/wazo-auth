@@ -7,10 +7,20 @@ from wazo_auth.services.helpers import BaseService
 
 
 class TenantService(BaseService):
-    def __init__(self, dao, tenant_tree, group_service, bus_publisher=None):
+    def __init__(
+        self,
+        dao,
+        tenant_tree,
+        group_service,
+        policy_service,
+        all_users_policies,
+        bus_publisher=None,
+    ):
         super().__init__(dao, tenant_tree)
         self._bus_publisher = bus_publisher
         self._group_service = group_service
+        self._policy_service = policy_service
+        self._all_users_policies = all_users_policies
 
     def assert_tenant_under(self, scoping_tenant_uuid, tenant_uuid):
         visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
@@ -81,9 +91,20 @@ class TenantService(BaseService):
         event = events.TenantCreatedEvent(uuid, kwargs.get('name'))
         self._bus_publisher.publish(event)
 
-        self._group_service.create(
+        all_users_group = self._group_service.create(
             name=f'wazo-all-users-tenant-{uuid}', tenant_uuid=uuid
         )
+
+        for name, policy in self._all_users_policies.items():
+            all_users_policy_uuid = self._policy_service.create(
+                name=name,
+                tenant_uuid=uuid,
+                description='Automatically created to be applied to all users',
+                **policy,
+            )
+            self._group_service.add_policy(
+                all_users_group['uuid'], all_users_policy_uuid
+            )
 
         return result
 
