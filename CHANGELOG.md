@@ -3,6 +3,9 @@
 ## 20.13
 
 * An ACL template can now begin with the character `!` to remove permissions explicitly.
+* A new resource has been added to check multiple permissions:
+
+  * POST `/0.1/token/{token_uuid}/scopes/check`
 
 ## 20.06
 
