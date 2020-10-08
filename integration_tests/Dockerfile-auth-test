@@ -1,4 +1,4 @@
-FROM wazopbx/wazo-auth
+FROM wazoplatform/wazo-auth
 
 ENV PYTHONDONTWRITEBYTECODE='true'
 
