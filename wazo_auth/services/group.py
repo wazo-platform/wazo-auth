@@ -26,6 +26,7 @@ class GroupService(BaseService):
         return self._dao.group.count_users(group_uuid, **kwargs)
 
     def create(self, **kwargs):
+        kwargs.setdefault('system_managed', False)
         uuid = self._dao.group.create(**kwargs)
         return dict(uuid=uuid, **kwargs)
 

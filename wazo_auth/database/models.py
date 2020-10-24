@@ -106,6 +106,9 @@ class Group(Base):
     tenant_uuid = Column(
         String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False
     )
+    system_managed = Column(
+        Boolean, nullable=False, default=False, server_default='false'
+    )
 
 
 class GroupPolicy(Base):

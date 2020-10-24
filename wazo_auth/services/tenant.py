@@ -92,7 +92,7 @@ class TenantService(BaseService):
         self._bus_publisher.publish(event)
 
         all_users_group = self._group_service.create(
-            name=f'wazo-all-users-tenant-{uuid}', tenant_uuid=uuid
+            name=f'wazo-all-users-tenant-{uuid}', tenant_uuid=uuid, system_managed=True
         )
 
         for name, policy in self._all_users_policies.items():

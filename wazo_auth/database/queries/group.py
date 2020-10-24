@@ -100,8 +100,8 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             .count()
         )
 
-    def create(self, name, tenant_uuid, **ignored):
-        group = Group(name=name, tenant_uuid=tenant_uuid)
+    def create(self, name, tenant_uuid, system_managed, **ignored):
+        group = Group(name=name, tenant_uuid=tenant_uuid, system_managed=system_managed)
         self.session.add(group)
         try:
             self.session.flush()

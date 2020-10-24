@@ -190,7 +190,10 @@ definitions:
         type: string
       tenant_uuid:
         type: string
+      system_managed:
+        type: boolean
     required:
     - uuid
     - name
+    - system_managed
     - tenant_uuid
