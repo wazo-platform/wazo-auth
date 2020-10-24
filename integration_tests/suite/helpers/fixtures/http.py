@@ -184,13 +184,31 @@ def policy(**policy_args):
 def group(**group_args):
     group_args.setdefault('name', _random_string(20))
 
+    def set_group_system_managed(db_client, group_uuid):
+        with db_client.connect() as connection:
+            connection.execute(
+                f"UPDATE auth_group set system_managed=true WHERE uuid = '{group_uuid}'"
+            )
+
+    def unset_group_system_managed(db_client, group_uuid):
+        with db_client.connect() as connection:
+            connection.execute(
+                f"UPDATE auth_group set system_managed=false WHERE uuid = '{group_uuid}'"
+            )
+
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
             group = self.client.groups.new(**group_args)
+            if group_args.get('system_managed'):
+                db_client = self.new_db_client()
+                set_group_system_managed(db_client, group['uuid'])
             try:
                 result = decorated(self, group, *args, **kwargs)
             finally:
+                if group_args.get('system_managed'):
+                    db_client = self.new_db_client()
+                    unset_group_system_managed(db_client, group['uuid'])
                 try:
                     self.client.groups.delete(group['uuid'])
                 except requests.HTTPError:

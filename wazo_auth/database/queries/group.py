@@ -193,3 +193,18 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         result = self.session.query(UserGroup).filter(filter_).delete()
         self.session.flush()
         return result
+
+    def is_system_managed(self, uuid, tenant_uuids=None):
+        filter_ = Group.uuid == str(uuid)
+        if tenant_uuids is not None:
+            if not tenant_uuids:
+                raise exceptions.UnknownGroupException(uuid)
+
+            filter_ = and_(filter_, Group.tenant_uuid.in_(tenant_uuids))
+
+        result = self.session.query(Group).filter(filter_).first()
+
+        if not result:
+            raise exceptions.UnknownGroupException(uuid)
+
+        return result.system_managed
