@@ -10,6 +10,12 @@ class GroupService(BaseService):
         return self._dao.group.add_policy(group_uuid, policy_uuid)
 
     def add_user(self, group_uuid, user_uuid):
+        if self._dao.group.is_system_managed(group_uuid):
+            raise exceptions.SystemGroupForbidden(group_uuid)
+
+        return self._dao.group.add_user(group_uuid, user_uuid)
+
+    def add_user_from_system(self, group_uuid, user_uuid):
         return self._dao.group.add_user(group_uuid, user_uuid)
 
     def count(self, scoping_tenant_uuid, recurse=False, **kwargs):
@@ -97,6 +103,9 @@ class GroupService(BaseService):
             raise exceptions.UnknownPolicyException(policy_uuid)
 
     def remove_user(self, group_uuid, user_uuid):
+        if self._dao.group.is_system_managed(group_uuid):
+            raise exceptions.SystemGroupForbidden(group_uuid)
+
         nb_deleted = self._dao.group.remove_user(group_uuid, user_uuid)
         if nb_deleted:
             return

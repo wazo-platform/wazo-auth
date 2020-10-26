@@ -131,7 +131,8 @@ class TestUserGroupAssociation(base.WazoAuthTestCase):
     @fixtures.http.user_register()
     @fixtures.http.user_register()
     @fixtures.http.group()
-    def test_delete(self, group, user1, user2):
+    @fixtures.http.group(name='all-users-group', system_managed=True)
+    def test_delete(self, all_users_group, group, user1, user2):
         action = self.client.groups.remove_user
 
         self.client.groups.add_user(group['uuid'], user1['uuid'])
@@ -141,6 +142,10 @@ class TestUserGroupAssociation(base.WazoAuthTestCase):
         assert_http_error(404, action, group['uuid'], UNKNOWN_UUID)
         assert_no_error(action, group['uuid'], user2['uuid'])
         assert_no_error(action, group['uuid'], user2['uuid'])  # Twice
+
+        assert_http_error(
+            403, action, all_users_group['uuid'], user2['uuid'],
+        )
 
         result = self.client.groups.get_users(group['uuid'])
         assert_that(result, has_entries('items', contains_inanyorder(user1)))
@@ -161,13 +166,18 @@ class TestUserGroupAssociation(base.WazoAuthTestCase):
     @fixtures.http.user_register()
     @fixtures.http.user_register()
     @fixtures.http.group()
-    def test_put(self, group, user1, user2):
+    @fixtures.http.group(name='all-users-group', system_managed=True)
+    def test_put(self, all_users_group, group, user1, user2):
         action = self.client.groups.add_user
 
         assert_http_error(404, action, UNKNOWN_UUID, user1['uuid'])
         assert_http_error(404, action, group['uuid'], UNKNOWN_UUID)
         assert_no_error(action, group['uuid'], user1['uuid'])
         assert_no_error(action, group['uuid'], user1['uuid'])  # Twice
+
+        assert_http_error(
+            403, action, all_users_group['uuid'], user2['uuid'],
+        )
 
         result = self.client.groups.get_users(group['uuid'])
         assert_that(result, has_entries('items', contains_inanyorder(user1)))

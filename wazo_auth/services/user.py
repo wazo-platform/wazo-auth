@@ -120,7 +120,9 @@ class UserService(BaseService):
         wazo_all_users_group = self._group_service.get_all_users_group(
             kwargs['tenant_uuid']
         )
-        self._group_service.add_user(wazo_all_users_group['uuid'], user['uuid'])
+        self._group_service.add_user_from_system(
+            wazo_all_users_group['uuid'], user['uuid']
+        )
 
         return user
 
