@@ -144,7 +144,10 @@ class TestUserGroupAssociation(base.WazoAuthTestCase):
         assert_no_error(action, group['uuid'], user2['uuid'])  # Twice
 
         assert_http_error(
-            403, action, all_users_group['uuid'], user2['uuid'],
+            403,
+            action,
+            all_users_group['uuid'],
+            user2['uuid'],
         )
 
         result = self.client.groups.get_users(group['uuid'])
@@ -176,7 +179,10 @@ class TestUserGroupAssociation(base.WazoAuthTestCase):
         assert_no_error(action, group['uuid'], user1['uuid'])  # Twice
 
         assert_http_error(
-            403, action, all_users_group['uuid'], user2['uuid'],
+            403,
+            action,
+            all_users_group['uuid'],
+            user2['uuid'],
         )
 
         result = self.client.groups.get_users(group['uuid'])

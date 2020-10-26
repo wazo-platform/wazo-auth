@@ -90,7 +90,10 @@ class TestGroups(base.WazoAuthTestCase):
         assert_that(result, has_entries('uuid', group['uuid'], 'name', 'foobaz'))
 
         base.assert_http_error(
-            403, self.client.groups.edit, all_users_group['uuid'], name='another name',
+            403,
+            self.client.groups.edit,
+            all_users_group['uuid'],
+            name='another name',
         )
 
     @fixtures.http.tenant(uuid=base.SUB_TENANT_UUID)

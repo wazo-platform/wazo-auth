@@ -13,7 +13,9 @@ revision = '31000c80366b'
 down_revision = '67ac1f04b6cb'
 
 group_table = sa.sql.table(
-    'auth_group', sa.Column('name'), sa.Column('system_managed'),
+    'auth_group',
+    sa.Column('name'),
+    sa.Column('system_managed'),
 )
 
 
