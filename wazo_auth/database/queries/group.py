@@ -152,7 +152,12 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         query = self._paginator.update_query(query, **kwargs)
 
         return [
-            {'uuid': group.uuid, 'name': group.name, 'tenant_uuid': group.tenant_uuid}
+            {
+                'uuid': group.uuid,
+                'name': group.name,
+                'tenant_uuid': group.tenant_uuid,
+                'system_managed': group.system_managed,
+            }
             for group in query.all()
         ]
 
