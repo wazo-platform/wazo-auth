@@ -207,6 +207,17 @@ class TestGroups(base.WazoAuthTestCase):
             ),
         )
 
+        # default group should be excluded
+        response = action(system_managed=False)
+        assert_that(
+            response,
+            has_entries(
+                total=3 + NB_DEFAULT_GROUPS,
+                filtered=3,
+                items=contains_inanyorder(one, two, three),
+            ),
+        )
+
     @fixtures.http.tenant(uuid=base.SUB_TENANT_UUID)
     @fixtures.http.group(name='one', tenant_uuid=base.SUB_TENANT_UUID)
     @fixtures.http.group(name='two', tenant_uuid=base.SUB_TENANT_UUID)
