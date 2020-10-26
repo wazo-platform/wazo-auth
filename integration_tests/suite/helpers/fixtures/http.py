@@ -6,6 +6,7 @@ import string
 
 import requests
 
+from contextlib import contextmanager
 from functools import wraps
 
 
@@ -150,25 +151,28 @@ def user_register(**user_args):
     return decorator
 
 
-def policy(**policy_args):
-    policy_args.setdefault('name', _random_string(20))
-    policy_args['acl_templates'] = policy_args.get('acl_templates') or []
-
-    def set_policy_config_managed(db_client, policy_uuid):
+@contextmanager
+def config_managed_policy(db_client, policy, policy_args):
+    if policy_args.get('config_managed'):
+        policy_uuid = policy['uuid']
         with db_client.connect() as connection:
             connection.execute(
                 f"UPDATE auth_policy set config_managed=true WHERE uuid = '{policy_uuid}'"
             )
+    yield
+
+
+def policy(**policy_args):
+    policy_args.setdefault('name', _random_string(20))
+    policy_args['acl_templates'] = policy_args.get('acl_templates') or []
 
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
             policy = self.client.policies.new(**policy_args)
-            if policy_args.get('config_managed'):
-                db_client = self.new_db_client()
-                set_policy_config_managed(db_client, policy['uuid'])
             try:
-                result = decorated(self, policy, *args, **kwargs)
+                with config_managed_policy(self.new_db_client(), policy, policy_args):
+                    result = decorated(self, policy, *args, **kwargs)
             finally:
                 try:
                     self.client.policies.delete(policy['uuid'])
@@ -181,34 +185,37 @@ def policy(**policy_args):
     return decorator
 
 
-def group(**group_args):
-    group_args.setdefault('name', _random_string(20))
-
-    def set_group_system_managed(db_client, group_uuid):
+@contextmanager
+def system_managed_group(db_client, group_uuid, group_args):
+    if not group_args.get('system_managed'):
+        yield
+    else:
         with db_client.connect() as connection:
             connection.execute(
                 f"UPDATE auth_group set system_managed=true WHERE uuid = '{group_uuid}'"
             )
+        try:
+            yield
+        finally:
+            with db_client.connect() as connection:
+                connection.execute(
+                    f"UPDATE auth_group set system_managed=false WHERE uuid = '{group_uuid}'"
+                )
 
-    def unset_group_system_managed(db_client, group_uuid):
-        with db_client.connect() as connection:
-            connection.execute(
-                f"UPDATE auth_group set system_managed=false WHERE uuid = '{group_uuid}'"
-            )
+
+def group(**group_args):
+    group_args.setdefault('name', _random_string(20))
 
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
             group = self.client.groups.new(**group_args)
-            if group_args.get('system_managed'):
-                db_client = self.new_db_client()
-                set_group_system_managed(db_client, group['uuid'])
             try:
-                result = decorated(self, group, *args, **kwargs)
+                with system_managed_group(
+                    self.new_db_client(), group['uuid'], group_args
+                ):
+                    result = decorated(self, group, *args, **kwargs)
             finally:
-                if group_args.get('system_managed'):
-                    db_client = self.new_db_client()
-                    unset_group_system_managed(db_client, group['uuid'])
                 try:
                     self.client.groups.delete(group['uuid'])
                 except requests.HTTPError:
