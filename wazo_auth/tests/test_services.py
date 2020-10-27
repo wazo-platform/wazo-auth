@@ -164,9 +164,10 @@ class TestGroupService(BaseServiceTestCase):
         )
 
     def test_remove_user(self):
-        def when(nb_deleted, group_exists=True, user_exists=True):
+        def when(nb_deleted, group_exists=True, user_exists=True, system_managed=False):
             self.group_dao.remove_user.return_value = nb_deleted
             self.group_dao.exists.return_value = group_exists
+            self.group_dao.is_system_managed.return_value = system_managed
             self.user_dao.exists.return_value = user_exists
 
         when(nb_deleted=0, group_exists=False)
@@ -179,6 +180,12 @@ class TestGroupService(BaseServiceTestCase):
         assert_that(
             calling(self.service.remove_user).with_args(s.group_uuid, s.user_uuid),
             raises(exceptions.UnknownUserException),
+        )
+
+        when(nb_deleted=0, system_managed=True)
+        assert_that(
+            calling(self.service.remove_user).with_args(s.group_uuid, s.user_uuid),
+            raises(exceptions.SystemGroupForbidden),
         )
 
         when(nb_deleted=0)

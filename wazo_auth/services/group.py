@@ -10,6 +10,12 @@ class GroupService(BaseService):
         return self._dao.group.add_policy(group_uuid, policy_uuid)
 
     def add_user(self, group_uuid, user_uuid):
+        if self._dao.group.is_system_managed(group_uuid):
+            raise exceptions.SystemGroupForbidden(group_uuid)
+
+        return self._dao.group.add_user(group_uuid, user_uuid)
+
+    def add_user_from_system(self, group_uuid, user_uuid):
         return self._dao.group.add_user(group_uuid, user_uuid)
 
     def count(self, scoping_tenant_uuid, recurse=False, **kwargs):
@@ -26,11 +32,14 @@ class GroupService(BaseService):
         return self._dao.group.count_users(group_uuid, **kwargs)
 
     def create(self, **kwargs):
+        kwargs.setdefault('system_managed', False)
         uuid = self._dao.group.create(**kwargs)
         return dict(uuid=uuid, **kwargs)
 
     def delete(self, group_uuid, scoping_tenant_uuid):
         tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
+        if self._dao.group.is_system_managed(group_uuid, tenant_uuids):
+            raise exceptions.SystemGroupForbidden(group_uuid)
         return self._dao.group.delete(group_uuid, tenant_uuids=tenant_uuids)
 
     def get(self, group_uuid, scoping_tenant_uuid):
@@ -94,6 +103,9 @@ class GroupService(BaseService):
             raise exceptions.UnknownPolicyException(policy_uuid)
 
     def remove_user(self, group_uuid, user_uuid):
+        if self._dao.group.is_system_managed(group_uuid):
+            raise exceptions.SystemGroupForbidden(group_uuid)
+
         nb_deleted = self._dao.group.remove_user(group_uuid, user_uuid)
         if nb_deleted:
             return
@@ -105,6 +117,8 @@ class GroupService(BaseService):
             raise exceptions.UnknownUserException(user_uuid)
 
     def update(self, group_uuid, **kwargs):
+        if self._dao.group.is_system_managed(group_uuid):
+            raise exceptions.SystemGroupForbidden(group_uuid)
         return self._dao.group.update(group_uuid, **kwargs)
 
     def assert_group_in_subtenant(self, scoping_tenant_uuid, uuid):

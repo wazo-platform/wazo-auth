@@ -22,13 +22,16 @@ class TestGroups(base.WazoAuthTestCase):
     invalid_bodies = [{}, {'name': None}, {'name': 42}, {'not name': 'foobar'}]
 
     @fixtures.http.group(name='foobar')
-    def test_delete(self, foobar):
+    @fixtures.http.group(name='all-users-group', system_managed=True)
+    def test_delete(self, all_users_group, foobar):
         base.assert_http_error(404, self.client.groups.delete, UNKNOWN_UUID)
 
         with self.client_in_subtenant() as (client, _, __):
             base.assert_http_error(404, client.groups.delete, foobar['uuid'])
 
         base.assert_no_error(self.client.groups.delete, foobar['uuid'])
+
+        base.assert_http_error(403, self.client.groups.delete, all_users_group['uuid'])
 
     @fixtures.http.group(name='foobar')
     def test_get(self, foobar):
@@ -59,7 +62,8 @@ class TestGroups(base.WazoAuthTestCase):
 
     @fixtures.http.group(name='foobar')
     @fixtures.http.group(name='duplicate')
-    def test_put(self, duplicate, group):
+    @fixtures.http.group(name='all-users-group', system_managed=True)
+    def test_put(self, all_users_group, duplicate, group):
         base.assert_http_error(
             404, self.client.groups.edit, UNKNOWN_UUID, name='foobaz'
         )
@@ -84,6 +88,13 @@ class TestGroups(base.WazoAuthTestCase):
 
         result = self.client.groups.get(group['uuid'])
         assert_that(result, has_entries('uuid', group['uuid'], 'name', 'foobaz'))
+
+        base.assert_http_error(
+            403,
+            self.client.groups.edit,
+            all_users_group['uuid'],
+            name='another name',
+        )
 
     @fixtures.http.tenant(uuid=base.SUB_TENANT_UUID)
     @fixtures.http.group(name='one', tenant_uuid=base.SUB_TENANT_UUID)
@@ -193,6 +204,17 @@ class TestGroups(base.WazoAuthTestCase):
                 total=3 + NB_DEFAULT_GROUPS,
                 filtered=1,
                 items=contains(three),
+            ),
+        )
+
+        # default group should be excluded
+        response = action(system_managed=False)
+        assert_that(
+            response,
+            has_entries(
+                total=3 + NB_DEFAULT_GROUPS,
+                filtered=3,
+                items=contains_inanyorder(one, two, three),
             ),
         )
 

@@ -104,7 +104,9 @@ class TestGroupDAO(base.DAOTestCase):
         assert_that(group, has_properties(name=name, tenant_uuid=tenant_uuid))
 
         assert_that(
-            calling(self._group_dao.create).with_args(name, tenant_uuid),
+            calling(self._group_dao.create).with_args(
+                name, tenant_uuid, system_managed=False
+            ),
             raises(exceptions.ConflictException).matching(
                 has_properties(
                     'status_code', 409, 'resource', 'groups', 'details', has_key('name')

@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unidecode import unidecode
@@ -114,6 +114,13 @@ class UnknownGroupException(APIException):
         msg = 'No such group: "{}"'.format(group_uuid)
         details = {'uuid': str(group_uuid)}
         super().__init__(404, msg, 'unknown-group', details, 'groups')
+
+
+class SystemGroupForbidden(APIException):
+    def __init__(self, group_uuid):
+        msg = 'Forbidden group modification: "{}"'.format(group_uuid)
+        details = {'uuid': str(group_uuid)}
+        super().__init__(403, msg, 'forbidden-group', details, 'groups')
 
 
 class UnknownTenantException(APIException):

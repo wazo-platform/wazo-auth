@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import Schema, fields, pre_load, post_dump, EXCLUDE
@@ -81,9 +81,10 @@ class ExternalListSchema(BaseListSchema):
 
 
 class GroupListSchema(BaseListSchema):
-    sort_columns = ['name', 'uuid']
+    system_managed = fields.Boolean()
+    sort_columns = ['name', 'uuid', 'system_managed']
     default_sort_column = 'name'
-    searchable_columns = ['uuid', 'name', 'user_uuid']
+    searchable_columns = ['uuid', 'name', 'user_uuid', 'system_managed']
 
 
 class UserGroupListSchema(BaseListSchema):
