@@ -14,7 +14,7 @@ https://github.com/wazo-platform/wazo-confd-client/archive/master.zip
 https://github.com/wazo-platform/xivo-test-helpers/archive/master.zip
 https://github.com/wazo-platform/xivo-lib-python/archive/master.zip
 https://github.com/wazo-platform/xivo-bus/archive/master.zip
-sqlalchemy==1.2.18
+sqlalchemy==1.3.0
 jinja2==2.10
 psycopg2-binary
 stevedore==1.29.0
