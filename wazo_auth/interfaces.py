@@ -5,9 +5,6 @@ import abc
 import os
 import logging
 
-from requests.exceptions import HTTPError
-
-from wazo_confd_client import Client
 from wazo_auth.helpers import LazyTemplateRenderer
 
 DEFAULT_XIVO_UUID = os.getenv('XIVO_UUID')
@@ -73,65 +70,6 @@ class ACLRenderingBackend:
     def render_acl(self, acl_templates, get_data_fn, *args, **kwargs):
         renderer = LazyTemplateRenderer(acl_templates, get_data_fn, *args, **kwargs)
         return renderer.render()
-
-
-class UserAuthenticationBackend(
-    BaseAuthenticationBackend, ACLRenderingBackend, metaclass=abc.ABCMeta
-):
-    def load(self, dependencies):
-        super().load(dependencies)
-        self._config = dependencies['config']
-        self._confd_config = self._config['confd']
-
-    @abc.abstractmethod
-    def verify_password(self, login, passwd, args):
-        super().verify_password(login, passwd, args)
-
-    def get_user_data(self, **kwargs):
-        local_token_renewer = self._config.get('local_token_renewer')
-        if not local_token_renewer:
-            logger.info('no local token manager')
-            return {}
-
-        token = local_token_renewer.get_token()
-        confd_client = Client(token=token, **self._confd_config)
-        user_uuid = kwargs.get('uuid')
-        if not user_uuid:
-            return {}
-
-        try:
-            user = confd_client.users.get(user_uuid)
-        except HTTPError:
-            return {}
-
-        voicemail = user.get('voicemail')
-        voicemails = [voicemail['id']] if voicemail else []
-        lines, sip, sccp, custom, extensions = [], [], [], [], []
-        for line in user['lines']:
-            lines.append(line['id'])
-            endpoint_custom = line.get('endpoint_custom')
-            endpoint_sip = line.get('endpoint_sip')
-            endpoint_sccp = line.get('endpoint_sccp')
-            if endpoint_custom:
-                custom.append(endpoint_custom['id'])
-            elif endpoint_sip:
-                sip.append(endpoint_sip['uuid'])
-            elif endpoint_sccp:
-                sccp.append(endpoint_sccp['id'])
-            for extension in line['extensions']:
-                extensions.append(extension['id'])
-        return {
-            'id': user['id'],
-            'uuid': user['uuid'],
-            'tenant_uuid': user['tenant_uuid'],
-            'voicemails': voicemails,
-            'lines': lines,
-            'extensions': extensions,
-            'endpoint_sip': sip,
-            'endpoint_sccp': sccp,
-            'endpoint_custom': custom,
-            'agent': user['agent'],
-        }
 
 
 class BaseMetadata(metaclass=abc.ABCMeta):

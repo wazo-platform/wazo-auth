@@ -4,8 +4,6 @@
 import logging
 
 from wazo_auth import BaseMetadata
-from requests.exceptions import HTTPError
-from wazo_confd_client import Client as ConfdClient
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +15,6 @@ class DefaultUser(BaseMetadata):
         self._group_service = dependencies['group_service']
         self._tenant_service = dependencies['tenant_service']
         self._config = dependencies['config']
-        self._confd_config = self._config['confd']
 
     def get_token_metadata(self, login, args):
         user_uuid = self._get_user_uuid(login)
@@ -50,54 +47,7 @@ class DefaultUser(BaseMetadata):
         return metadata
 
     def get_acl_metadata(self, **kwargs):
-        local_token_renewer = self._config.get('local_token_renewer')
-        if not local_token_renewer:
-            logger.info('no local token renewer')
-            return {}
-
-        token = local_token_renewer.get_token()
-        if not token:
-            logger.info('cannot create local token')
-            return {}
-
-        confd_client = ConfdClient(token=token, **self._confd_config)
-        user_uuid = kwargs.get('uuid')
-        if not user_uuid:
-            return {}
-
-        try:
-            user = confd_client.users.get(user_uuid)
-        except HTTPError:
-            return {}
-
-        voicemail = user.get('voicemail')
-        voicemails = [voicemail['id']] if voicemail else []
-        lines, sip, sccp, custom, extensions = [], [], [], [], []
-        for line in user['lines']:
-            lines.append(line['id'])
-            endpoint_custom = line.get('endpoint_custom')
-            endpoint_sip = line.get('endpoint_sip')
-            endpoint_sccp = line.get('endpoint_sccp')
-            if endpoint_custom:
-                custom.append(endpoint_custom['id'])
-            elif endpoint_sip:
-                sip.append(endpoint_sip['uuid'])
-            elif endpoint_sccp:
-                sccp.append(endpoint_sccp['id'])
-            for extension in line['extensions']:
-                extensions.append(extension['id'])
-        return {
-            'id': user['id'],
-            'uuid': user['uuid'],
-            'tenant_uuid': user['tenant_uuid'],
-            'voicemails': voicemails,
-            'lines': lines,
-            'extensions': extensions,
-            'endpoint_sip': sip,
-            'endpoint_sccp': sccp,
-            'endpoint_custom': custom,
-            'agent': user['agent'],
-        }
+        return {}
 
     def _get_user_uuid(self, username):
         matching_users = self._user_service.list_users(username=username)

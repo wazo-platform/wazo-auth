@@ -1,6 +1,4 @@
-https://github.com/wazo-platform/wazo-confd-client/archive/master.zip
 https://github.com/wazo-platform/xivo-bus/archive/master.zip
-https://github.com/wazo-platform/wazo-lib-rest-client/archive/master.zip
 https://github.com/wazo-platform/xivo-dao/archive/master.zip
 https://github.com/wazo-platform/xivo-lib-python/archive/master.zip
 cheroot==6.5.4
