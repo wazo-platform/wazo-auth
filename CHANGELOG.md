@@ -1,5 +1,24 @@
 # Changelog
 
+## 20.16
+
+* Template feature for an access (acl) has been removed
+* A new resources have been added to manage policy an access
+
+  * `DELETE /policies/{policy_uuid}/acl/{access}`
+  * `PUT /policies/{policy_uuid}/acl/{access}`
+
+* The following resources have been deprecated
+
+  * `DELETE /policies/{policy_uuid}/acl_templates/{template}`
+  * `PUT /policies/{policy_uuid}/acl_templates/{template}`
+
+* The field `acl_templates` has been deprecated in the following routes:
+
+  * `GET /policies`
+  * `GET /policies/{policy_uuid}`
+  * `GET /groups/{group_uuid}/policies`
+
 ## 20.13
 
 * An ACL template can now begin with the character `!` to remove permissions explicitly.
