@@ -519,10 +519,8 @@ class TestUsers(WazoAuthTestCase):
         )
 
     @fixtures.http.user_register(username='foo', password='bar')
-    @fixtures.http.policy(
-        name='two', acl_templates=['acl.one.{{ username }}', 'acl.two']
-    )
-    @fixtures.http.policy(name='one', acl_templates=['this.is.a.test.acl'])
+    @fixtures.http.policy(name='two', acl_templates=['acl.one', 'acl.two'])
+    @fixtures.http.policy(name='one', acl_templates=['this.is.a.test.access'])
     def test_user_policy(self, policy_1, policy_2, user):
         assert_no_error(self.client.users.remove_policy, user['uuid'], policy_1['uuid'])
 
@@ -535,16 +533,6 @@ class TestUsers(WazoAuthTestCase):
 
         self.client.users.add_policy(user['uuid'], policy_1['uuid'])
         self.client.users.add_policy(user['uuid'], policy_2['uuid'])
-
-        user_client = self.new_auth_client('foo', 'bar')
-        token_data = user_client.token.new('wazo_user', expiration=5)
-        assert_that(
-            token_data,
-            has_entries(
-                'acls', has_items('acl.one.foo', 'this.is.a.test.acl', 'acl.two')
-            ),
-            'generated acl',
-        )
 
         self.client.users.remove_policy(user['uuid'], policy_2['uuid'])
 

@@ -199,29 +199,3 @@ class TestUserGroupAssociation(base.WazoAuthTestCase):
                 assert_http_error(404, action, visible_group['uuid'], user1['uuid'])
 
                 assert_no_error(action, visible_group['uuid'], user3['uuid'])
-
-    @fixtures.http.user_register(username='foo', password='bar')
-    @fixtures.http.group(name='two')
-    @fixtures.http.group(name='one')
-    @fixtures.http.policy(
-        name='main',
-        acl_templates=[
-            '{% for group in groups %}main.{{ group.name }}.*:{% endfor %}',
-            '{% for group in groups %}main.{{ group.uuid }}:{% endfor %}',
-        ],
-    )
-    def test_generated_acl(self, policy, group_1, group_2, user):
-        self.client.groups.add_user(group_1['uuid'], user['uuid'])
-        self.client.groups.add_user(group_2['uuid'], user['uuid'])
-        self.client.users.add_policy(user['uuid'], policy['uuid'])
-
-        user_client = self.new_auth_client('foo', 'bar')
-
-        expected_acls = [
-            'main.one.*',
-            'main.two.*',
-            'main.{}'.format(group_1['uuid']),
-            'main.{}'.format(group_2['uuid']),
-        ]
-        token_data = user_client.token.new('wazo_user', expiration=5)
-        assert_that(token_data, has_entries('acls', has_items(*expected_acls)))

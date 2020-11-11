@@ -5,8 +5,6 @@ import abc
 import os
 import logging
 
-from wazo_auth.helpers import LazyTemplateRenderer
-
 DEFAULT_XIVO_UUID = os.getenv('XIVO_UUID')
 logger = logging.getLogger(__name__)
 
@@ -66,12 +64,6 @@ class BaseAuthenticationBackend(metaclass=abc.ABCMeta):
         return True
 
 
-class ACLRenderingBackend:
-    def render_acl(self, acl_templates, get_data_fn, *args, **kwargs):
-        renderer = LazyTemplateRenderer(acl_templates, get_data_fn, *args, **kwargs)
-        return renderer.render()
-
-
 class BaseMetadata(metaclass=abc.ABCMeta):
     def __init__(self):
         """Initialize this plugin instance from the given configuration"""
@@ -94,13 +86,6 @@ class BaseMetadata(metaclass=abc.ABCMeta):
             'pbx_user_uuid': None,
         }
         return metadata
-
-    def get_acl_metadata(self, *args, **kwargs):
-        """return acl related data
-
-        These data are used for ACL rendering
-        """
-        return {}
 
     def get_xivo_uuid(self, _args):
         """returns the xivo-uuid for this given backend

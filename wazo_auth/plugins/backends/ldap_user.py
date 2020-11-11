@@ -7,7 +7,7 @@ import xivo_dao
 
 from ldap.filter import escape_filter_chars
 from ldap.dn import escape_dn_chars
-from wazo_auth import BaseAuthenticationBackend, ACLRenderingBackend
+from wazo_auth import BaseAuthenticationBackend
 
 from xivo_dao.resources.user.dao import find_by
 from xivo_dao.helpers.db_utils import session_scope
@@ -15,7 +15,7 @@ from xivo_dao.helpers.db_utils import session_scope
 logger = logging.getLogger(__name__)
 
 
-class LDAPUser(BaseAuthenticationBackend, ACLRenderingBackend):
+class LDAPUser(BaseAuthenticationBackend):
     def load(self, dependencies):
         super().load(dependencies)
         config = dependencies['config']
@@ -31,8 +31,7 @@ class LDAPUser(BaseAuthenticationBackend, ACLRenderingBackend):
 
     def get_acls(self, login, args):
         acl_templates = args.get('acl_templates', [])
-        pbx_user_uuid = args.get('pbx_user_uuid')
-        return self.render_acl(acl_templates, lambda: {'uuid': pbx_user_uuid})
+        return acl_templates
 
     def get_metadata(self, username, args):
         metadata = super().get_metadata(username, args)

@@ -1,44 +1,12 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import unittest
 
-from hamcrest import assert_that, contains_inanyorder, empty, equal_to
+from hamcrest import assert_that, equal_to
 from mock import Mock
 
-from ..helpers import LazyTemplateRenderer, LocalTokenRenewer
-
-
-class TestLazyTemplateRenderer(unittest.TestCase):
-    def test_render_no_templates(self):
-        renderer = LazyTemplateRenderer([], None)
-
-        acls = renderer.render()
-
-        assert_that(acls, empty())
-
-    def test_render_no_substitution(self):
-        expected = ['confd.user.#', 'dird.me.#']
-        renderer = LazyTemplateRenderer(expected, None)
-
-        acls = renderer.render()
-
-        assert_that(acls, contains_inanyorder(*expected))
-
-    def test_multi_line_template(self):
-        def get():
-            return {'lines': [1, 42]}
-
-        templates = [
-            'dird.me.#',
-            '{% for line in lines %}confd.lines.{{ line }}.#:{% endfor %}',
-        ]
-        renderer = LazyTemplateRenderer(templates, get)
-
-        acls = renderer.render()
-
-        expected = ['confd.lines.1.#', 'confd.lines.42.#', 'dird.me.#']
-        assert_that(acls, contains_inanyorder(*expected))
+from ..helpers import LocalTokenRenewer
 
 
 class TestLocalTokenRenewer(unittest.TestCase):

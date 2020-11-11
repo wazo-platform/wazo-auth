@@ -46,9 +46,6 @@ class DefaultUser(BaseMetadata):
         }
         return metadata
 
-    def get_acl_metadata(self, **kwargs):
-        return {}
-
     def _get_user_uuid(self, username):
         matching_users = self._user_service.list_users(username=username)
         return matching_users[0]['uuid']

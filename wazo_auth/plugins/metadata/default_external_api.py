@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_auth import BaseMetadata
@@ -17,9 +17,6 @@ class DefaultExternalAPI(BaseMetadata):
         metadata['uuid'] = metadata['auth_id']
         metadata['tenant_uuid'] = user['tenant_uuid']
         return metadata
-
-    def get_acl_metadata(self, **kwargs):
-        return {}
 
     def _get_user_uuid(self, username):
         matching_users = self._user_service.list_users(username=username)
