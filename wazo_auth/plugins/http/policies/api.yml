@@ -158,8 +158,9 @@ paths:
         - wazo_auth_token: []
       operationId: deletePolicyACLTemplate
       tags:
-        - policies
+        - deprecated
       description: '**Required ACL:** `auth.policies.{policy_uuid}.edit`'
+      deprecated: true
       summary: Dissociate an ACL template from a policy
       parameters:
       - $ref: '#/parameters/policy_uuid'
@@ -177,12 +178,52 @@ paths:
         - wazo_auth_token: []
       operationId: addPolicyACLTemplate
       tags:
-        - policies
+        - deprecated
       description: '**Required ACL:** `auth.policies.{policy_uuid}.edit`'
+      deprecated: true
       summary: Associate an ACL template to a policy
       parameters:
       - $ref: '#/parameters/policy_uuid'
       - $ref: '#/parameters/acl_template'
+      - $ref: '#/parameters/tenantuuid'
+      responses:
+        '204':
+          description: The policy has been modified
+        '404':
+          description: Policy not found
+          schema:
+            $ref: '#/definitions/Error'
+  /policies/{policy_uuid}/acl/{access}:
+    delete:
+      security:
+        - wazo_auth_token: []
+      operationId: deletePolicyAccess
+      tags:
+        - policies
+      description: '**Required ACL:** `auth.policies.{policy_uuid}.edit`'
+      summary: Dissociate an access from a policy
+      parameters:
+      - $ref: '#/parameters/policy_uuid'
+      - $ref: '#/parameters/access'
+      - $ref: '#/parameters/tenantuuid'
+      responses:
+        '204':
+          description: The policy has been modified
+        '404':
+          description: Policy or access not found
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      security:
+        - wazo_auth_token: []
+      operationId: addPolicyAccess
+      tags:
+        - policies
+      description: '**Required ACL:** `auth.policies.{policy_uuid}.edit`'
+      summary: Associate an access to a policy
+      parameters:
+      - $ref: '#/parameters/policy_uuid'
+      - $ref: '#/parameters/access'
       - $ref: '#/parameters/tenantuuid'
       responses:
         '204':
@@ -203,6 +244,12 @@ parameters:
     in: path
     type: string
     description: The ACL template to add
+    required: true
+  access:
+    name: access
+    in: path
+    type: string
+    description: The access to add
     required: true
 definitions:
   Policy:
