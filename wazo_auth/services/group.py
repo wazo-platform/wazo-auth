@@ -66,16 +66,16 @@ class GroupService(BaseService):
         for group in matching_groups:
             return group
 
-    def get_acl_templates(self, username):
+    def get_acl(self, username):
         users = self._dao.user.list_(username=username, limit=1)
-        acl_templates = []
+        acl = []
         for user in users:
             groups = self._dao.group.list_(user_uuid=user['uuid'])
             for group in groups:
                 policies = self.list_policies(group['uuid'])
                 for policy in policies:
-                    acl_templates.extend(policy['acl_templates'])
-        return acl_templates
+                    acl.extend(policy['acl'])
+        return acl
 
     def list_(self, scoping_tenant_uuid=None, recurse=False, **kwargs):
         if scoping_tenant_uuid:

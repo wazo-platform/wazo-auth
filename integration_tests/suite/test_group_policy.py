@@ -168,7 +168,7 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
 
         policy = self.client.policies.get(policy['uuid'])
         assert_that(
-            policy, has_entries(acl_templates=has_item('integration_tests.acl'))
+            policy, has_entries(acl_templates=has_item('integration_tests.access'))
         )
 
     def test_all_users_policies_are_associated_at_startup(self):
@@ -189,7 +189,7 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
             has_item(
                 has_entries(
                     name='wazo-all-users-policy',
-                    acl_templates=has_item('integration_tests.acl'),
+                    acl_templates=has_item('integration_tests.access'),
                 )
             ),
         )

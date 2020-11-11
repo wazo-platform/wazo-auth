@@ -31,41 +31,35 @@ class TestPolicyDAO(base.DAOTestCase):
         self._default_admin_policy_uuid = default_admin_policy['uuid']
 
     @fixtures.db.policy(name='testé', description='déscription')
-    def test_template_association(self, uuid):
-        self._policy_dao.associate_policy_template(uuid, '#')
-        assert_that(
-            self.get_policy(uuid), has_entries(acl_templates=contains_inanyorder('#'))
-        )
+    def test_access_association(self, uuid):
+        self._policy_dao.associate_policy_access(uuid, '#')
+        assert_that(self.get_policy(uuid), has_entries(acl=contains_inanyorder('#')))
 
         with self.auto_rollback():
             assert_that(
-                calling(self._policy_dao.associate_policy_template).with_args(
-                    uuid, '#'
-                ),
+                calling(self._policy_dao.associate_policy_access).with_args(uuid, '#'),
                 raises(exceptions.DuplicateTemplateException),
             )
 
-        self._policy_dao.dissociate_policy_template(uuid, '#')
-        assert_that(self.get_policy(uuid), has_entries(acl_templates=empty()))
+        self._policy_dao.dissociate_policy_access(uuid, '#')
+        assert_that(self.get_policy(uuid), has_entries(acl=empty()))
 
         with self.auto_rollback():
             assert_that(
-                calling(self._policy_dao.associate_policy_template).with_args(
+                calling(self._policy_dao.associate_policy_access).with_args(
                     'unknown', '#'
                 ),
                 raises(exceptions.UnknownPolicyException),
             )
 
         assert_that(
-            self._policy_dao.dissociate_policy_template('unknown', '#'), equal_to(0)
+            self._policy_dao.dissociate_policy_access('unknown', '#'), equal_to(0)
         )
 
     @fixtures.db.tenant()
     def test_create(self, tenant_uuid):
-        acl_templates = ['dird.#', 'confd.line.42.*']
-        with self._new_policy(
-            'testé', 'descriptioñ', acl_templates, tenant_uuid
-        ) as uuid_:
+        acl = ['dird.#', 'confd.line.42.*']
+        with self._new_policy('testé', 'descriptioñ', acl, tenant_uuid) as uuid_:
             policy = self.get_policy(uuid_)
 
             assert_that(
@@ -74,7 +68,7 @@ class TestPolicyDAO(base.DAOTestCase):
                     uuid=uuid_,
                     name='testé',
                     description='descriptioñ',
-                    acl_templates=contains_inanyorder(*acl_templates),
+                    acl=contains_inanyorder(*acl),
                     tenant_uuid=tenant_uuid,
                 ),
             )
@@ -109,9 +103,7 @@ class TestPolicyDAO(base.DAOTestCase):
         policy = self.get_policy(uuid_)
         assert_that(
             policy,
-            has_entries(
-                uuid=uuid_, name='foobar', description='', acl_templates=empty()
-            ),
+            has_entries(uuid=uuid_, name='foobar', description='', acl=empty()),
         )
 
         result = self._policy_dao.get(uuid=UNKNOWN_UUID)
@@ -280,7 +272,7 @@ class TestPolicyDAO(base.DAOTestCase):
                 uuid=uuid_,
                 name='foobaz',
                 description='A new description',
-                acl_templates=contains_inanyorder(
+                acl=contains_inanyorder(
                     'confd.line.{{ line_id }}', 'dird.#', 'ctid-ng.#'
                 ),
             ),
@@ -299,12 +291,10 @@ class TestPolicyDAO(base.DAOTestCase):
         return [policy['uuid'] for policy in policies]
 
     @contextmanager
-    def _new_policy(self, name, description, acl_templates=None, tenant_uuid=None):
+    def _new_policy(self, name, description, acl=None, tenant_uuid=None):
         tenant_uuid = tenant_uuid or self.top_tenant_uuid
-        acl_templates = acl_templates or []
-        uuid_ = self._policy_dao.create(
-            name, description, acl_templates, False, tenant_uuid
-        )
+        acl = acl or []
+        uuid_ = self._policy_dao.create(name, description, acl, False, tenant_uuid)
         try:
             yield uuid_
         finally:

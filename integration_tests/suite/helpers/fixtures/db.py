@@ -177,7 +177,7 @@ def group(**group_args):
 def policy(**policy_args):
     policy_args.setdefault('name', _random_string(20))
     policy_args.setdefault('config_managed', False)
-    policy_args['acl_templates'] = policy_args.get('acl_templates') or []
+    policy_args['acl'] = policy_args.get('acl') or []
     policy_args['description'] = policy_args.get('description', '')
 
     def decorator(decorated):

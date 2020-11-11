@@ -12,7 +12,7 @@ class PolicySchema(BaseSchema):
     tenant_uuid = fields.String(dump_only=True)
     name = fields.String(validate=validate.Length(min=1, max=80), required=True)
     description = fields.String(allow_none=True, missing=None)
-    acl_templates = fields.List(fields.String(), missing=[])
+    acl_templates = fields.List(fields.String(), missing=[], attribute='acl')
 
 
 policy_schema = PolicySchema()

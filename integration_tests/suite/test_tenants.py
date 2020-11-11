@@ -111,7 +111,7 @@ class TestTenants(WazoAuthTestCase):
                         has_entries(
                             name=DEFAULT_POLICY_NAME,
                             tenant_uuid=self.top_tenant_uuid,
-                            acl_templates=has_item('integration_tests.acl'),
+                            acl_templates=has_item('integration_tests.access'),
                         )
                     ),
                 ),
@@ -121,7 +121,7 @@ class TestTenants(WazoAuthTestCase):
                         has_entries(
                             name=DEFAULT_POLICY_NAME,
                             tenant_uuid=foobar['uuid'],
-                            acl_templates=has_item('integration_tests.acl'),
+                            acl_templates=has_item('integration_tests.access'),
                         )
                     ),
                 ),
@@ -131,7 +131,7 @@ class TestTenants(WazoAuthTestCase):
                         has_entries(
                             name=DEFAULT_POLICY_NAME,
                             tenant_uuid=foobaz['uuid'],
-                            acl_templates=has_item('integration_tests.acl'),
+                            acl_templates=has_item('integration_tests.access'),
                         )
                     ),
                 ),
@@ -141,7 +141,7 @@ class TestTenants(WazoAuthTestCase):
                         has_entries(
                             name=DEFAULT_POLICY_NAME,
                             tenant_uuid=other['uuid'],
-                            acl_templates=has_item('integration_tests.acl'),
+                            acl_templates=has_item('integration_tests.access'),
                         )
                     ),
                 ),

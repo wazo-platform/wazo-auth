@@ -25,37 +25,37 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         'uuid': Policy.uuid,
     }
 
-    def associate_policy_template(self, policy_uuid, acl_template):
-        self._associate_acl_templates(policy_uuid, [acl_template])
+    def associate_policy_access(self, policy_uuid, access):
+        self._associate_acl(policy_uuid, [access])
         try:
             self.session.flush()
         except exc.IntegrityError as e:
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                raise exceptions.DuplicateTemplateException(acl_template)
+                raise exceptions.DuplicateTemplateException(access)
             if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
                 constraint = e.orig.diag.constraint_name
                 if constraint == 'auth_policy_template_policy_uuid_fkey':
                     raise exceptions.UnknownPolicyException(policy_uuid)
             raise
 
-    def dissociate_policy_template(self, policy_uuid, acl_template):
+    def dissociate_policy_access(self, policy_uuid, access):
         filter_ = and_(
-            ACLTemplate.template == acl_template,
+            ACLTemplate.template == access,
             ACLTemplatePolicy.policy_uuid == policy_uuid,
         )
 
-        template_id = (
+        access_id = (
             self.session.query(ACLTemplate.id_)
             .join(ACLTemplatePolicy)
             .filter(filter_)
             .first()
         )
-        if not template_id:
+        if not access_id:
             return 0
 
         filter_ = and_(
             ACLTemplatePolicy.policy_uuid == policy_uuid,
-            ACLTemplatePolicy.template_id == template_id,
+            ACLTemplatePolicy.template_id == access_id,
         )
         result = self.session.query(ACLTemplatePolicy).filter(filter_).delete()
         self.session.flush()
@@ -80,7 +80,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         return self.session.query(Policy).filter(filter_).count()
 
-    def create(self, name, description, acl_templates, config_managed, tenant_uuid):
+    def create(self, name, description, acl, config_managed, tenant_uuid):
         policy = Policy(
             name=name,
             description=description,
@@ -94,7 +94,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 raise exceptions.DuplicatePolicyException(name)
             raise
-        self._associate_acl_templates(policy.uuid, acl_templates)
+        self._associate_acl(policy.uuid, acl)
         self.session.flush()
         return policy.uuid
 
@@ -128,7 +128,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 Policy.description,
                 Policy.config_managed,
                 Policy.tenant_uuid,
-                func.array_agg(distinct(ACLTemplate.template)).label('acl_templates'),
+                func.array_agg(distinct(ACLTemplate.template)).label('acl'),
             )
             .outerjoin(ACLTemplatePolicy)
             .outerjoin(ACLTemplate)
@@ -141,16 +141,16 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         policies = []
         for policy in query.all():
-            if policy.acl_templates == [None]:
-                acl_templates = []
+            if policy.acl == [None]:
+                acl = []
             else:
-                acl_templates = policy.acl_templates
+                acl = policy.acl
 
             body = {
                 'uuid': policy.uuid,
                 'name': policy.name,
                 'description': policy.description,
-                'acl_templates': acl_templates,
+                'acl': acl,
                 'tenant_uuid': policy.tenant_uuid,
                 'config_managed': policy.config_managed,
             }
@@ -180,7 +180,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         policy_uuid,
         name,
         description,
-        acl_templates,
+        acl,
         config_managed,
         tenant_uuids=None,
     ):
@@ -208,43 +208,41 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 raise exceptions.DuplicatePolicyException(name)
             raise
 
-        self._dissociate_all_acl_templates(policy_uuid)
-        self._associate_acl_templates(policy_uuid, acl_templates)
+        self._dissociate_all_acl(policy_uuid)
+        self._associate_acl(policy_uuid, acl)
         self.session.flush()
 
-    def _associate_acl_templates(self, policy_uuid, acl_templates):
-        ids = self._create_or_find_acl_templates(acl_templates)
-        template_policies = [
+    def _associate_acl(self, policy_uuid, acl):
+        ids = self._create_or_find_acl(acl)
+        access_policies = [
             ACLTemplatePolicy(policy_uuid=policy_uuid, template_id=id_) for id_ in ids
         ]
-        self.session.add_all(template_policies)
+        self.session.add_all(access_policies)
 
-    def _create_or_find_acl_templates(self, acl_templates):
-        if not acl_templates:
+    def _create_or_find_acl(self, acl):
+        if not acl:
             return []
 
         tpl = (
-            self.session.query(ACLTemplate)
-            .filter(ACLTemplate.template.in_(acl_templates))
-            .all()
+            self.session.query(ACLTemplate).filter(ACLTemplate.template.in_(acl)).all()
         )
         existing = {t.template: t.id_ for t in tpl}
-        for template in acl_templates:
-            if template in existing:
+        for access in acl:
+            if access in existing:
                 continue
-            id_ = self._insert_acl_template(template)
-            existing[template] = id_
+            id_ = self._insert_access(access)
+            existing[access] = id_
         result = existing.values()
         self.session.flush()
         return result
 
-    def _dissociate_all_acl_templates(self, policy_uuid):
+    def _dissociate_all_acl(self, policy_uuid):
         filter_ = ACLTemplatePolicy.policy_uuid == policy_uuid
         self.session.query(ACLTemplatePolicy).filter(filter_).delete()
         self.session.flush()
 
-    def _insert_acl_template(self, template):
-        tpl = ACLTemplate(template=template)
+    def _insert_access(self, access):
+        tpl = ACLTemplate(template=access)
         self.session.add(tpl)
         self.session.flush()
         return tpl.id_

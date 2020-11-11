@@ -248,18 +248,18 @@ class TestTenantDAO(base.DAOTestCase):
 
     @pytest.mark.skip(reason="find a way to delete unused ACLTemplate")
     @fixtures.db.tenant(uuid=TENANT_UUID)
-    @fixtures.db.policy(tenant_uuid=TENANT_UUID, acl_templates=['foo'])
-    def test_delete_acl_template(self, policy_uuid, tenant_uuid):
-        acl_template_policy = (
+    @fixtures.db.policy(tenant_uuid=TENANT_UUID, acl=['foo'])
+    def test_delete_access(self, policy_uuid, tenant_uuid):
+        access_policy = (
             self.session.query(models.ACLTemplatePolicy)
             .filter(models.ACLTemplatePolicy.policy_uuid == policy_uuid)
             .first()
         )
-        acl_template_id = acl_template_policy.template_id
+        access_id = access_policy.template_id
 
         self._tenant_dao.delete(tenant_uuid)
 
-        result = self.session.query(models.ACLTemplate).get(acl_template_id)
+        result = self.session.query(models.ACLTemplate).get(access_id)
         assert_that(result, equal_to(None))
 
     def _assert_tenant_matches(self, uuid, name, parent_uuid=ANY_UUID):

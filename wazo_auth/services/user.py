@@ -66,14 +66,14 @@ class UserService(BaseService):
         self.assert_user_in_subtenant(scoping_tenant_uuid, user_uuid)
         self._dao.user.delete(user_uuid)
 
-    def get_acl_templates(self, username):
+    def get_acl(self, username):
         users = self._dao.user.list_(username=username, limit=1)
-        acl_templates = []
+        acl = []
         for user in users:
             policies = self.list_policies(user['uuid'])
             for policy in policies:
-                acl_templates.extend(policy['acl_templates'])
-        return acl_templates
+                acl.extend(policy['acl'])
+        return acl
 
     def get_user(self, user_uuid, scoping_tenant_uuid=None):
         if scoping_tenant_uuid:

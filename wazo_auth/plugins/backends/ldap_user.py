@@ -30,8 +30,8 @@ class LDAPUser(BaseAuthenticationBackend):
         self.user_email_attribute = self.config.get('user_email_attribute', 'mail')
 
     def get_acls(self, login, args):
-        acl_templates = args.get('acl_templates', [])
-        return acl_templates
+        acl = args.get('acl', [])
+        return acl
 
     def get_metadata(self, username, args):
         metadata = super().get_metadata(username, args)

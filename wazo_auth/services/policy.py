@@ -6,10 +6,10 @@ from wazo_auth.services.helpers import BaseService
 
 
 class PolicyService(BaseService):
-    def add_acl_template(self, policy_uuid, acl_template, scoping_tenant_uuid):
+    def add_access(self, policy_uuid, access, scoping_tenant_uuid):
         self._assert_in_tenant_subtree(policy_uuid, scoping_tenant_uuid)
 
-        return self._dao.policy.associate_policy_template(policy_uuid, acl_template)
+        return self._dao.policy.associate_policy_access(policy_uuid, access)
 
     def assert_policy_in_subtenant(self, scoping_tenant_uuid, uuid):
         tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
@@ -45,12 +45,10 @@ class PolicyService(BaseService):
 
         return self._dao.policy.delete(policy_uuid, **args)
 
-    def delete_acl_template(self, policy_uuid, acl_template, scoping_tenant_uuid):
+    def delete_access(self, policy_uuid, access, scoping_tenant_uuid):
         self._assert_in_tenant_subtree(policy_uuid, scoping_tenant_uuid)
 
-        nb_deleted = self._dao.policy.dissociate_policy_template(
-            policy_uuid, acl_template
-        )
+        nb_deleted = self._dao.policy.dissociate_policy_access(policy_uuid, access)
         if nb_deleted:
             return
 

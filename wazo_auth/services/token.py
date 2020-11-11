@@ -74,7 +74,7 @@ class TokenService(BaseService):
         pbx_user_uuid = metadata.get('pbx_user_uuid')
         xivo_uuid = metadata['xivo_uuid']
 
-        args['acl_templates'] = self._get_acl_templates(args['backend'])
+        args['acl'] = self._get_acl(args['backend'])
         args['metadata'] = metadata
 
         acls = backend.get_acls(login, args)
@@ -185,14 +185,14 @@ class TokenService(BaseService):
 
         return token, scope_statuses
 
-    def _get_acl_templates(self, backend_name):
+    def _get_acl(self, backend_name):
         policy_name = self._backend_policies.get(backend_name)
         if not policy_name:
             return []
 
         matching_policies = self._dao.policy.get(name=policy_name, limit=1)
         for policy in matching_policies:
-            return policy['acl_templates']
+            return policy['acl']
 
         logger.info(
             'Unknown policy name "%s" configured for backend "%s"',
