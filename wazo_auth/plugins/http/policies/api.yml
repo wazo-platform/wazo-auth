@@ -263,6 +263,11 @@ definitions:
         type: array
         items:
           type: string
+          description: Deprecated. Please use `acl` key.
+      acl:
+        type: array
+        items:
+          type: string
     required:
       - name
   PolicyResult:
@@ -278,11 +283,11 @@ definitions:
         type: array
         items:
           type: string
-    required:
-    - uuid
-    - name
-    - description
-    - acl_templates
+          description: Deprecated. Please use `acl` key.
+      acl:
+        type: array
+        items:
+          type: string
   GetPoliciesResult:
     type: object
     properties:

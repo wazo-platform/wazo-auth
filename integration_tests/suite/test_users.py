@@ -372,7 +372,7 @@ class TestUsers(WazoAuthTestCase):
     @fixtures.http.user_register(
         username='foo', password='foobar', email_address='foo@example.com'
     )
-    @fixtures.http.policy(acl_templates=['auth.users.{{ uuid }}.password.edit'])
+    @fixtures.http.policy(acl=['auth.users.{{ uuid }}.password.edit'])
     def test_put_password(self, policy, user):
         self.client.users.add_policy(user['uuid'], policy['uuid'])
         new_password = 'foobaz'
@@ -519,8 +519,8 @@ class TestUsers(WazoAuthTestCase):
         )
 
     @fixtures.http.user_register(username='foo', password='bar')
-    @fixtures.http.policy(name='two', acl_templates=['acl.one', 'acl.two'])
-    @fixtures.http.policy(name='one', acl_templates=['this.is.a.test.access'])
+    @fixtures.http.policy(name='two', acl=['acl.one', 'acl.two'])
+    @fixtures.http.policy(name='one', acl=['this.is.a.test.access'])
     def test_user_policy(self, policy_1, policy_2, user):
         assert_no_error(self.client.users.remove_policy, user['uuid'], policy_1['uuid'])
 
