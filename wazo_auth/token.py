@@ -88,6 +88,7 @@ class Token:
             'utc_issued_at': self._format_utc_time(self.issued_t),
             'utc_expires_at': self._format_utc_time(self.expire_t),
             'acls': self.acl,
+            'acl': self.acl,
             'metadata': self.metadata,
             'session_uuid': self.session_uuid,
             'remote_addr': self.remote_addr,

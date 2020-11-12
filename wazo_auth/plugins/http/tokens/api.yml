@@ -383,7 +383,12 @@ definitions:
             type: array
             items:
               type: string
-            description: The list of allowed ACLs for this token
+            description: Deprecated. Please use `acl` field
+          acl:
+            type: array
+            items:
+              type: string
+            description: The list of allowed accesses for this token
           session_uuid:
             type: string
 

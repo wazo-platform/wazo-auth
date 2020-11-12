@@ -156,7 +156,7 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
 
         user_client = self.new_auth_client('foo', 'bar')
         token_data = user_client.token.new('wazo_user', expiration=5)
-        assert_that(token_data, has_entries('acls', has_items('foobar')))
+        assert_that(token_data, has_entries('acl', has_items('foobar')))
 
     def test_all_users_policies_are_updated_at_startup(self):
         policy = self.client.policies.list(name=DEFAULT_POLICY_NAME)['items'][0]

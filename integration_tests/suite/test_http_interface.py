@@ -106,7 +106,10 @@ class TestCore(WazoAuthTestCase):
         assert_that(
             response,
             has_entries(
-                token=uuid_(), metadata=has_entries(uuid=self.user['uuid']), acls=ANY
+                token=uuid_(),
+                metadata=has_entries(uuid=self.user['uuid']),
+                acls=ANY,  # DEPRECATED
+                acl=ANY,
             ),
         )
 
@@ -180,13 +183,13 @@ class TestCore(WazoAuthTestCase):
 
         assert_that(self._is_valid(token), equal_to(False))
 
-    def test_that_invalid_unicode_acl_returns_403(self):
+    def test_that_invalid_unicode_access_returns_403(self):
         token = self._post_token('foo', 'bar')['token']
-        assert_that(self._is_valid(token, acls='éric'), is_(False))
+        assert_that(self._is_valid(token, access='éric'), is_(False))
 
-    def test_that_unauthorized_acls_on_HEAD_return_403(self):
+    def test_that_unauthorized_access_on_HEAD_return_403(self):
         token = self._post_token('foo', 'bar')['token']
-        assert_that(self._is_valid(token, acls='confd'), is_(False))
+        assert_that(self._is_valid(token, access='confd'), is_(False))
 
     def test_that_unauthorized_tenants_on_HEAD_return_403(self):
         token = self._post_token('foo', 'bar')['token']
@@ -205,9 +208,9 @@ class TestCore(WazoAuthTestCase):
                 is_(False),
             )
 
-    def test_that_unauthorized_acls_on_GET_return_403(self):
+    def test_that_unauthorized_access_on_GET_return_403(self):
         token = self._post_token('foo', 'bar')['token']
-        self._get_token_with_expected_exception(token, acls='confd', status_code=403)
+        self._get_token_with_expected_exception(token, access='confd', status_code=403)
 
     def test_that_unauthorized_tenants_on_GET_return_403(self):
         token = self._post_token('foo', 'bar')['token']
@@ -229,20 +232,20 @@ class TestCore(WazoAuthTestCase):
             )
 
     @fixtures.http.policy(name='fooer', acl=['foo'])
-    def test_that_authorized_acls_on_HEAD_return_204(self, policy):
+    def test_that_authorized_access_on_HEAD_return_204(self, policy):
         self.client.users.add_policy(self.user['uuid'], policy['uuid'])
 
         token = self._post_token('foo', 'bar')['token']
 
-        assert_that(self._is_valid(token, acls='foo'))
+        assert_that(self._is_valid(token, access='foo'))
 
     @fixtures.http.policy(name='fooer', acl=['foo'])
-    def test_that_authorized_acls_on_GET_return_200(self, policy):
+    def test_that_authorized_access_on_GET_return_200(self, policy):
         self.client.users.add_policy(self.user['uuid'], policy['uuid'])
 
         token = self._post_token('foo', 'bar')['token']
 
-        self._get_token(token, acls='foo')  # no exception
+        self._get_token(token, access='foo')  # no exception
 
     def test_that_expired_tokens_on_scope_check_returns_404(self):
         token = self._post_token('foo', 'bar', expiration=1)['token']
@@ -260,7 +263,7 @@ class TestCore(WazoAuthTestCase):
             raises(requests.HTTPError, pattern='404'),
         )
 
-    def test_that_unauthorized_acls_on_scope_check_return_all_false(self):
+    def test_that_unauthorized_acl_on_scope_check_return_all_false(self):
         token = self._post_token('foo', 'bar')['token']
         assert_that(
             self._check_scopes(token, ['confd', 'foo', 'bar']),
@@ -299,7 +302,9 @@ class TestCore(WazoAuthTestCase):
             )
 
     @fixtures.http.policy(name='fooer', acl=['foo'])
-    def test_that_authorized_acls_on_scope_check_returns_only_valid_acls(self, policy):
+    def test_that_authorized_acl_on_scope_check_returns_only_valid_accesses(
+        self, policy
+    ):
         self.client.users.add_policy(self.user['uuid'], policy['uuid'])
 
         token = self._post_token('foo', 'bar')['token']
@@ -308,12 +313,12 @@ class TestCore(WazoAuthTestCase):
             self._check_scopes(token, ['foo', 'bar']), has_entries(foo=True, bar=False)
         )
 
-    def test_that_no_acls_on_scope_check_returns_empty_result(self):
+    def test_that_no_acl_on_scope_check_returns_empty_result(self):
         token = self._post_token('foo', 'bar')['token']
 
         assert_that(self._check_scopes(token, []), is_(empty()))
 
-    def test_that_wrong_type_acls_on_scope_check_raises_400(self):
+    def test_that_wrong_type_acl_on_scope_check_raises_400(self):
         token = self._post_token('foo', 'bar')['token']
 
         assert_that(
