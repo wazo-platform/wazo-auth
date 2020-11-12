@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -7,7 +7,7 @@ import xivo_dao
 
 from ldap.filter import escape_filter_chars
 from ldap.dn import escape_dn_chars
-from wazo_auth import UserAuthenticationBackend
+from wazo_auth import BaseAuthenticationBackend, ACLRenderingBackend
 
 from xivo_dao.resources.user.dao import find_by
 from xivo_dao.helpers.db_utils import session_scope
@@ -15,7 +15,7 @@ from xivo_dao.helpers.db_utils import session_scope
 logger = logging.getLogger(__name__)
 
 
-class LDAPUser(UserAuthenticationBackend):
+class LDAPUser(BaseAuthenticationBackend, ACLRenderingBackend):
     def load(self, dependencies):
         super().load(dependencies)
         config = dependencies['config']
@@ -32,7 +32,7 @@ class LDAPUser(UserAuthenticationBackend):
     def get_acls(self, login, args):
         acl_templates = args.get('acl_templates', [])
         pbx_user_uuid = args.get('pbx_user_uuid')
-        return self.render_acl(acl_templates, self.get_user_data, uuid=pbx_user_uuid)
+        return self.render_acl(acl_templates, lambda: {'uuid': pbx_user_uuid})
 
     def get_metadata(self, username, args):
         metadata = super().get_metadata(username, args)

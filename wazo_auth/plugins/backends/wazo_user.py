@@ -1,14 +1,14 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
-from wazo_auth import UserAuthenticationBackend
+from wazo_auth import BaseAuthenticationBackend, ACLRenderingBackend
 
 logger = logging.getLogger(__name__)
 
 
-class WazoUser(UserAuthenticationBackend):
+class WazoUser(BaseAuthenticationBackend, ACLRenderingBackend):
     def load(self, dependencies):
         super().load(dependencies)
         self._user_service = dependencies['user_service']
@@ -23,9 +23,7 @@ class WazoUser(UserAuthenticationBackend):
 
         acl_templates = backend_acl_templates + group_acl_templates + user_acl_templates
 
-        return self.render_acl(
-            acl_templates, self.get_user_data, username=login, metadata=metadata
-        )
+        return self.render_acl(acl_templates, self.get_user_data, metadata=metadata)
 
     def verify_password(self, username, password, args):
         return self._user_service.verify_password(username, password)
