@@ -22,6 +22,7 @@ class Plugin:
         api.add_resource(
             http.PolicyAccess,
             '/policies/<string:policy_uuid>/acl_templates/<access>',
+            endpoint='policyacltemplate',
             resource_class_args=args,
         )
         api.add_resource(
