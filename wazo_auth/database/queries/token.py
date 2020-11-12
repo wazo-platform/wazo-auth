@@ -5,7 +5,7 @@ import json
 import time
 
 from .base import BaseDAO
-from ..models import ACL, Session, Tenant, Token as TokenModel
+from ..models import Session, Tenant, Token as TokenModel
 from ... import exceptions
 
 
@@ -21,10 +21,8 @@ class TokenDAO(BaseDAO):
             user_agent=body['user_agent'],
             remote_addr=body['remote_addr'],
             metadata_=serialized_metadata,
+            acl=body.get('acl') or [],
         )
-        token.acl = [
-            ACL(token_uuid=token.uuid, value=access) for access in body.get('acl') or []
-        ]
 
         if not session_body.get('tenant_uuid'):
             session_body['tenant_uuid'] = self._get_default_tenant_uuid()
@@ -48,7 +46,7 @@ class TokenDAO(BaseDAO):
                 'xivo_uuid': token.xivo_uuid,
                 'issued_t': token.issued_t,
                 'expire_t': token.expire_t,
-                'acl': [acl.value for acl in token.acl],
+                'acl': token.acl,
                 'metadata': json.loads(token.metadata_) if token.metadata_ else {},
                 'session_uuid': token.session_uuid,
                 'remote_addr': token.remote_addr,

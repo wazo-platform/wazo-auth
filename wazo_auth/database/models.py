@@ -18,20 +18,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
 
 Base = declarative_base()
-
-
-class ACL(Base):
-
-    __tablename__ = 'auth_acl'
-
-    id_ = Column(Integer, name='id', primary_key=True)
-    value = Column(Text, nullable=False)
-    token_uuid = Column(
-        String(38), ForeignKey('auth_token.uuid', ondelete='CASCADE'), nullable=False
-    )
 
 
 class Address(Base):
@@ -154,8 +144,8 @@ class Token(Base):
     metadata_ = Column(Text, name='metadata')
     user_agent = Column(Text)
     remote_addr = Column(Text)
+    acl = Column(ARRAY(Text), nullable=False, server_default='{}')
 
-    acl = relationship('ACL')
     session = relationship('Session')
 
 
