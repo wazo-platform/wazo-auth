@@ -15,7 +15,7 @@ class WazoUser(BaseAuthenticationBackend):
         self._group_service = dependencies['group_service']
         self._purposes = dependencies['purposes']
 
-    def get_acls(self, login, args):
+    def get_acl(self, login, args):
         backend_acl = args.get('acl', [])
         group_acl = self._group_service.get_acl(login)
         user_acl = self._user_service.get_acl(login)

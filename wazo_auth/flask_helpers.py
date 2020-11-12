@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -81,7 +81,7 @@ class Tenant:
 
     @classmethod
     def _get_token_data(cls, token_uuid):
-        return cls.token_service.get(token_uuid, required_acl=None)
+        return cls.token_service.get(token_uuid, required_access=None)
 
     @classmethod
     def _get_user_tenant(cls, user_uuid):

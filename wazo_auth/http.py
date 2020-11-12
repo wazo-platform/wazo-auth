@@ -1,4 +1,4 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import functools
@@ -28,20 +28,20 @@ def _error(code, msg):
 
 class AuthClientFacade:
     class TokenCommand:
-        def is_valid(self, token_id, required_acl):
+        def is_valid(self, token_id, required_access):
             try:
-                current_app.config['token_service'].get(token_id, required_acl)
+                current_app.config['token_service'].get(token_id, required_access)
                 return True
             except exceptions.UnknownTokenException:
                 return False
-            except exceptions.MissingACLTokenException:
+            except exceptions.MissingAccessTokenException:
                 return False
 
-        def get(self, token_id, required_acl=None):
+        def get(self, token_id, required_access=None):
             try:
                 return (
                     current_app.config['token_service']
-                    .get(token_id, required_acl)
+                    .get(token_id, required_access)
                     .to_dict()
                 )
             except exceptions.UnknownTokenException:

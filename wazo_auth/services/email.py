@@ -90,7 +90,7 @@ class EmailService(BaseService):
         acl = 'auth.users.password.reset.{}.create'.format(user_uuid)
         return self._new_generic_token(self._reset_token_expiration, acl)
 
-    def _new_generic_token(self, expiration, *acls):
+    def _new_generic_token(self, expiration, *acl):
         t = time.time()
         token_payload = {
             'auth_id': 'wazo-auth',
@@ -98,7 +98,7 @@ class EmailService(BaseService):
             'xivo_uuid': None,
             'expire_t': t + expiration,
             'issued_t': t,
-            'acls': acls,
+            'acl': acl,
             'user_agent': 'wazo-auth-email-reset',
             'remote_addr': '',
         }

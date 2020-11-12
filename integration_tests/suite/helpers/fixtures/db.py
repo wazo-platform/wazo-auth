@@ -133,7 +133,7 @@ def token(**token_args):
                 'xivo_uuid': str(uuid.uuid4()),
                 'issued_t': now,
                 'expire_t': now + token_args.get('expiration', 120),
-                'acls': token_args.get('acls', []),
+                'acl': token_args.get('acl', []),
                 'metadata': token_args.get('metadata', {}),
                 'user_agent': token_args.get('user_agent', ''),
                 'remote_addr': token_args.get('remote_addr', ''),
