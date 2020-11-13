@@ -13,69 +13,66 @@ revision = ${repr(up_revision)}
 down_revision = ${repr(down_revision)}
 
 POLICY_NAME = ''
-ACL_TEMPLATES = [
-]
+ACL = []
 
-policy_table = sa.sql.table(
-    'auth_policy', sa.Column('uuid', sa.String(38)), sa.Column('name', sa.String(80))
+policy_tbl = sa.sql.table(
+    'auth_policy',
+    sa.Column('uuid'),
+    sa.Column('name'),
 )
-acl_template_table = sa.sql.table(
-    'auth_acl_template', sa.Column('id', sa.Integer), sa.Column('template', sa.Text)
+access_tbl = sa.sql.table(
+    'auth_access',
+    sa.Column('id'),
+    sa.Column('access'),
 )
-policy_template = sa.sql.table(
-    'auth_policy_template',
-    sa.Column('policy_uuid', sa.String(38)),
-    sa.Column('template_id', sa.Integer),
+policy_access_tbl = sa.sql.table(
+    'auth_policy_access',
+    sa.Column('policy_uuid'),
+    sa.Column('access_id'),
 )
 
 
-def _find_acl_template(conn, acl_template):
+def _find_access(conn, access):
     query = (
-        sa.sql.select([acl_template_table.c.id])
-        .where(acl_template_table.c.template == acl_template)
-        .limit(1)
+        sa.sql.select([access_tbl.c.id]).where(access_tbl.c.access == access).limit(1)
     )
     return conn.execute(query).scalar()
 
 
-def _find_acl_templates(conn, acl_templates):
-    acl_template_ids = []
-    for acl_template in acl_templates:
-        acl_template_id = _find_acl_template(conn, acl_template)
-        if acl_template_id:
-            acl_template_ids.append(acl_template_id)
-    return acl_template_ids
+def _find_accesses(conn, accesses):
+    access_ids = []
+    for access in accesses:
+        access_id = _find_access(conn, access)
+        if access_id:
+            access_ids.append(access_id)
+    return access_ids
 
 
 def _get_policy_uuid(conn, policy_name):
-    policy_query = sa.sql.select([policy_table.c.uuid]).where(
-        policy_table.c.name == policy_name
+    policy_query = sa.sql.select([policy_tbl.c.uuid]).where(
+        policy_tbl.c.name == policy_name
     )
 
     for policy in conn.execute(policy_query).fetchall():
         return policy[0]
 
 
-def _insert_acl_template(conn, acl_templates):
-    acl_template_ids = []
-    for acl_template in acl_templates:
-        acl_template_id = _find_acl_template(conn, acl_template)
-        if not acl_template_id:
-            query = (
-                acl_template_table.insert()
-                .returning(acl_template_table.c.id)
-                .values(template=acl_template)
-            )
-            acl_template_id = conn.execute(query).scalar()
-        acl_template_ids.append(acl_template_id)
-    return acl_template_ids
+def _insert_accesses(conn, accesses):
+    access_ids = []
+    for access in accesses:
+        access_id = _find_access(conn, access)
+        if not access_id:
+            query = access_tbl.insert().returning(access_tbl.c.id).values(access=access)
+            access_id = conn.execute(query).scalar()
+        access_ids.append(access_id)
+    return access_ids
 
 
-def _get_acl_template_ids(conn, policy_uuid):
-    query = sa.sql.select([policy_template.c.template_id]).where(
-        policy_template.c.policy_uuid == policy_uuid
+def _get_access_ids(conn, policy_uuid):
+    query = sa.sql.select([policy_access_tbl.c.access_id]).where(
+        policy_access_tbl.c.policy_uuid == policy_uuid
     )
-    return [acl_template_id for (acl_template_id,) in conn.execute(query).fetchall()]
+    return [access_id for (access_id,) in conn.execute(query).fetchall()]
 
 
 def upgrade():
@@ -84,29 +81,29 @@ def upgrade():
     if not policy_uuid:
         return
 
-    acl_template_ids = _insert_acl_template(conn, ACL_TEMPLATES)
-    acl_template_ids_already_associated = _get_acl_template_ids(conn, policy_uuid)
-    for template_id in set(acl_template_ids) - set(acl_template_ids_already_associated):
-        query = policy_template.insert().values(
-            policy_uuid=policy_uuid, template_id=template_id
+    access_ids = _insert_accesses(conn, ACL)
+    access_ids_already_associated = _get_access_ids(conn, policy_uuid)
+    for access_id in set(access_ids) - set(access_ids_already_associated):
+        query = policy_access_tbl.insert().values(
+            policy_uuid=policy_uuid, access_id=access_id
         )
         conn.execute(query)
 
 
 def downgrade():
     conn = op.get_bind()
-    acl_template_ids = _find_acl_templates(conn, ACL_TEMPLATES)
-    if not acl_template_ids:
+    access_ids = _find_accesses(conn, ACL)
+    if not access_ids:
         return
 
     policy_uuid = _get_policy_uuid(conn, POLICY_NAME)
     if not policy_uuid:
         return
 
-    delete_query = policy_template.delete().where(
+    delete_query = policy_access_tbl.delete().where(
         sa.sql.and_(
-            policy_template.c.policy_uuid == policy_uuid,
-            policy_template.c.template_id.in_(acl_template_ids),
+            policy_access_tbl.c.policy_uuid == policy_uuid,
+            policy_access_tbl.c.access_id.in_(access_ids),
         )
     )
     op.execute(delete_query)
