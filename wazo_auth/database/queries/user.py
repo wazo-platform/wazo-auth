@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, text
+from sqlalchemy.orm import joinedload
 from .base import BaseDAO, PaginatorMixin
 from . import filters
 from ..models import (
@@ -248,6 +249,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             self.session.query(User)
             .outerjoin(Email)
             .outerjoin(UserGroup)
+            .options(joinedload('emails'))
             .filter(filter_)
         )
         query = self._paginator.update_query(query, **kwargs)
