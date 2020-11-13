@@ -282,25 +282,24 @@ class UserPolicy(Base):
     )
 
 
-# FIXME(fblackburn): remove unused ACLTemplate
-class ACLTemplate(Base):
+class Access(Base):
 
-    __tablename__ = 'auth_acl_template'
-    __table_args__ = (UniqueConstraint('template'),)
+    __tablename__ = 'auth_access'
+    __table_args__ = (UniqueConstraint('access'),)
 
     id_ = Column(Integer, name='id', primary_key=True)
-    template = Column(Text, nullable=False)
+    access = Column(Text, nullable=False)
 
 
-class ACLTemplatePolicy(Base):
+class PolicyAccess(Base):
 
-    __tablename__ = 'auth_policy_template'
+    __tablename__ = 'auth_policy_access'
 
     policy_uuid = Column(
         String(38), ForeignKey('auth_policy.uuid', ondelete='CASCADE'), primary_key=True
     )
-    template_id = Column(
+    access_id = Column(
         Integer,
-        ForeignKey('auth_acl_template.id', ondelete='CASCADE'),
+        ForeignKey('auth_access.id', ondelete='CASCADE'),
         primary_key=True,
     )

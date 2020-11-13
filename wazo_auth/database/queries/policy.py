@@ -5,8 +5,8 @@ from sqlalchemy import and_, distinct, exc, func, text
 from .base import BaseDAO, PaginatorMixin
 from . import filters
 from ..models import (
-    ACLTemplate,
-    ACLTemplatePolicy,
+    Access,
+    PolicyAccess,
     GroupPolicy,
     Policy,
     Tenant,
@@ -34,30 +34,27 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 raise exceptions.DuplicateTemplateException(access)
             if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
                 constraint = e.orig.diag.constraint_name
-                if constraint == 'auth_policy_template_policy_uuid_fkey':
+                if constraint == 'auth_policy_access_policy_uuid_fkey':
                     raise exceptions.UnknownPolicyException(policy_uuid)
             raise
 
     def dissociate_policy_access(self, policy_uuid, access):
         filter_ = and_(
-            ACLTemplate.template == access,
-            ACLTemplatePolicy.policy_uuid == policy_uuid,
+            Access.access == access,
+            PolicyAccess.policy_uuid == policy_uuid,
         )
 
         access_id = (
-            self.session.query(ACLTemplate.id_)
-            .join(ACLTemplatePolicy)
-            .filter(filter_)
-            .first()
+            self.session.query(Access.id_).join(PolicyAccess).filter(filter_).first()
         )
         if not access_id:
             return 0
 
         filter_ = and_(
-            ACLTemplatePolicy.policy_uuid == policy_uuid,
-            ACLTemplatePolicy.template_id == access_id,
+            PolicyAccess.policy_uuid == policy_uuid,
+            PolicyAccess.access_id == access_id,
         )
-        result = self.session.query(ACLTemplatePolicy).filter(filter_).delete()
+        result = self.session.query(PolicyAccess).filter(filter_).delete()
         self.session.flush()
         return result
 
@@ -128,10 +125,10 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 Policy.description,
                 Policy.config_managed,
                 Policy.tenant_uuid,
-                func.array_agg(distinct(ACLTemplate.template)).label('acl'),
+                func.array_agg(distinct(Access.access)).label('acl'),
             )
-            .outerjoin(ACLTemplatePolicy)
-            .outerjoin(ACLTemplate)
+            .outerjoin(PolicyAccess)
+            .outerjoin(Access)
             .outerjoin(UserPolicy)
             .outerjoin(GroupPolicy)
             .filter(filter_)
@@ -215,7 +212,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def _associate_acl(self, policy_uuid, acl):
         ids = self._create_or_find_acl(acl)
         access_policies = [
-            ACLTemplatePolicy(policy_uuid=policy_uuid, template_id=id_) for id_ in ids
+            PolicyAccess(policy_uuid=policy_uuid, access_id=id_) for id_ in ids
         ]
         self.session.add_all(access_policies)
 
@@ -223,10 +220,8 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if not acl:
             return []
 
-        tpl = (
-            self.session.query(ACLTemplate).filter(ACLTemplate.template.in_(acl)).all()
-        )
-        existing = {t.template: t.id_ for t in tpl}
+        accesses = self.session.query(Access).filter(Access.access.in_(acl)).all()
+        existing = {access.access: access.id_ for access in accesses}
         for access in acl:
             if access in existing:
                 continue
@@ -237,12 +232,12 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return result
 
     def _dissociate_all_acl(self, policy_uuid):
-        filter_ = ACLTemplatePolicy.policy_uuid == policy_uuid
-        self.session.query(ACLTemplatePolicy).filter(filter_).delete()
+        filter_ = PolicyAccess.policy_uuid == policy_uuid
+        self.session.query(PolicyAccess).filter(filter_).delete()
         self.session.flush()
 
     def _insert_access(self, access):
-        tpl = ACLTemplate(template=access)
+        tpl = Access(access=access)
         self.session.add(tpl)
         self.session.flush()
         return tpl.id_
