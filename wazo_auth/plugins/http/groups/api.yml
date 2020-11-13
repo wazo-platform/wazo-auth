@@ -18,6 +18,10 @@ paths:
       - $ref: '#/parameters/limit'
       - $ref: '#/parameters/offset'
       - $ref: '#/parameters/search'
+      - $ref: '#/parameters/search_uuid'
+      - $ref: '#/parameters/search_name'
+      - $ref: '#/parameters/search_user_uuid'
+      - $ref: '#/parameters/search_system_managed'
       responses:
         '200':
           description: A list of group
@@ -155,6 +159,30 @@ parameters:
     type: string
     description: The UUID of the group
     required: true
+  search_uuid:
+    name: uuid
+    in: query
+    type: string
+    description: The UUID of the group
+    required: false
+  search_name:
+    name: name
+    in: query
+    type: string
+    description: The name of the group
+    required: false
+  search_user_uuid:
+    name: user_uuid
+    in: query
+    type: string
+    description: The UUID of the user
+    required: false
+  search_system_managed:
+    name: system_managed
+    in: query
+    type: string
+    description: Is the group managed by the system?
+    required: false
 definitions:
   GetGroupsResult:
     type: object
