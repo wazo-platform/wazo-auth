@@ -31,7 +31,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             self.session.flush()
         except exc.IntegrityError as e:
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                raise exceptions.DuplicateTemplateException(access)
+                raise exceptions.DuplicateAccessException(access)
             if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
                 constraint = e.orig.diag.constraint_name
                 if constraint == 'auth_policy_access_policy_uuid_fkey':
