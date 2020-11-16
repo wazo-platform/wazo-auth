@@ -203,6 +203,8 @@ class ExpiredTokenRemover:
                 exc_info=self._debug,
             )
             return
+        finally:
+            Session.close()
 
         self._publish_event(tokens, sessions, SessionExpireSoonEvent)
 
