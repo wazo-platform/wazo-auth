@@ -27,7 +27,7 @@ class Token:
         xivo_uuid,
         issued_t,
         expire_t,
-        acls,
+        acl,
         metadata,
         session_uuid,
         user_agent,
@@ -40,7 +40,7 @@ class Token:
         self.xivo_uuid = xivo_uuid
         self.issued_t = issued_t
         self.expire_t = expire_t
-        self.acls = acls
+        self.acl = acl
         self.metadata = metadata
         self.session_uuid = session_uuid
         self.user_agent = user_agent
@@ -55,7 +55,7 @@ class Token:
             and self.xivo_uuid == other.xivo_uuid
             and self.issued_t == other.issued_t
             and self.expire_t == other.expire_t
-            and self.acls == other.acls
+            and self.acl == other.acl
             and self.metadata == other.metadata
             and self.session_uuid == other.session_uuid
             and self.user_agent == other.user_agent
@@ -87,7 +87,8 @@ class Token:
             'expires_at': self._format_local_time(self.expire_t),
             'utc_issued_at': self._format_utc_time(self.issued_t),
             'utc_expires_at': self._format_utc_time(self.expire_t),
-            'acls': self.acls,
+            'acls': self.acl,
+            'acl': self.acl,
             'metadata': self.metadata,
             'session_uuid': self.session_uuid,
             'remote_addr': self.remote_addr,
@@ -100,44 +101,46 @@ class Token:
     def is_expired(self):
         return self.expire_t and time.time() > self.expire_t
 
-    def matches_required_acl(self, required_acl):
-        if required_acl is None:
+    def matches_required_access(self, required_access):
+        if required_access is None:
             return True
 
-        positive_user_acls = set()
-        negative_user_acls = set()
+        positive_user_acl = set()
+        negative_user_acl = set()
 
-        for user_acl in self.acls:
-            if user_acl.startswith('!'):
-                negative_user_acls.add(user_acl[1:])
+        for user_access in self.acl:
+            if user_access.startswith('!'):
+                negative_user_acl.add(user_access[1:])
             else:
-                positive_user_acls.add(user_acl)
+                positive_user_acl.add(user_access)
 
-        for negative_acl in negative_user_acls:
-            negative_acl_regex = self._transform_acl_to_regex(negative_acl)
-            if re.match(negative_acl_regex, required_acl):
+        for negative_access in negative_user_acl:
+            negative_access_regex = self._transform_access_to_regex(negative_access)
+            if re.match(negative_access_regex, required_access):
                 return False
 
-        for positive_acl in positive_user_acls:
-            positive_acl_regex = self._transform_acl_to_regex(positive_acl)
-            if re.match(positive_acl_regex, required_acl):
+        for positive_access in positive_user_acl:
+            positive_access_regex = self._transform_access_to_regex(positive_access)
+            if re.match(positive_access_regex, required_access):
                 return True
         return False
 
-    def _transform_acl_to_regex(self, acl):
-        acl_regex = re.escape(acl).replace('\\*', '[^.]*?').replace('\\#', '.*?')
-        acl_regex = self._transform_acl_me_to_uuid_or_me(acl_regex)
-        return re.compile('^{}$'.format(acl_regex))
+    def _transform_access_to_regex(self, access):
+        access_regex = re.escape(access)
+        access_regex = access_regex.replace('\\*', '[^.]*?').replace('\\#', '.*?')
+        access_regex = self._transform_access_me_to_uuid_or_me(access_regex)
+        return re.compile('^{}$'.format(access_regex))
 
-    def _transform_acl_me_to_uuid_or_me(self, acl_regex):
-        acl_regex = acl_regex.replace(
+    def _transform_access_me_to_uuid_or_me(self, access_regex):
+        access_regex = access_regex.replace(
             '\\.me\\.', '\\.(me|{auth_id})\\.'.format(auth_id=self.auth_id)
         )
-        if acl_regex.endswith('\\.me'):
-            acl_regex = '{acl_start}\\.(me|{auth_id})'.format(
-                acl_start=acl_regex[:-4], auth_id=self.auth_id
+        if access_regex.endswith('\\.me'):
+            access_regex = '{access_start}\\.(me|{auth_id})'.format(
+                access_start=access_regex[:-4],
+                auth_id=self.auth_id,
             )
-        return acl_regex
+        return access_regex
 
 
 class ExpiredTokenRemover:

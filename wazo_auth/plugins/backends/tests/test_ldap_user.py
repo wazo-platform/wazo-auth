@@ -26,8 +26,8 @@ class TestGetACLS(unittest.TestCase):
         self.backend = LDAPUser()
         self.backend.load({'config': config})
 
-    def test_get_acls(self, find_by):
-        result = self.backend.get_acls('alice', self.args)
+    def test_get_acl(self, find_by):
+        result = self.backend.get_acl('alice', self.args)
         assert_that(result, empty())
 
 

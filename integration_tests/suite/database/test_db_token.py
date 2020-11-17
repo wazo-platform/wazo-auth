@@ -30,7 +30,7 @@ class TestTokenDAO(base.DAOTestCase):
             'xivo_uuid': str(uuid.uuid4),
             'issued_t': now,
             'expire_t': now + 120,
-            'acls': ['first', 'second'],
+            'acl': ['first', 'second'],
             'metadata': {
                 'uuid': '08b213da-9963-4d25-96a3-f02d717e82f2',
                 'id': 42,

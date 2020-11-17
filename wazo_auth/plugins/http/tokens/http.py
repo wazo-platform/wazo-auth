@@ -61,7 +61,7 @@ class _BaseRefreshTokens(http.AuthResource):
 
     def _find_user_uuid(self):
         token = request.headers.get('X-Auth-Token') or request.args.get('token')
-        token_data = self._token_service.get(token, required_acl=None)
+        token_data = self._token_service.get(token, required_access=None)
         return token_data.metadata.get('uuid')
 
     def _build_search_params(

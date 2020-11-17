@@ -19,6 +19,8 @@
   * `GET /policies/{policy_uuid}`
   * `GET /groups/{group_uuid}/policies`
 
+* The field `acls` has been deprecated in favor of the new `acl` field for token resource:
+
 ## 20.13
 
 * An ACL template can now begin with the character `!` to remove permissions explicitly.

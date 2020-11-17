@@ -155,7 +155,7 @@ class Token(Base):
     user_agent = Column(Text)
     remote_addr = Column(Text)
 
-    acls = relationship('ACL')
+    acl = relationship('ACL')
     session = relationship('Session')
 
 

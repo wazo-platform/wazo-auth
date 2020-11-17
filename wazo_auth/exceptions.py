@@ -321,16 +321,16 @@ class UnknownTokenException(TokenServiceException):
         return 'No such token'
 
 
-class MissingACLTokenException(TokenServiceException):
+class MissingAccessTokenException(TokenServiceException):
 
     code = 403
 
-    def __init__(self, required_acl):
+    def __init__(self, required_access):
         super().__init__()
-        self._required_acl = required_acl
+        self._required_access = required_access
 
     def __str__(self):
-        return 'Unauthorized for {}'.format(unidecode(self._required_acl))
+        return 'Unauthorized for {}'.format(unidecode(self._required_access))
 
 
 class MissingTenantTokenException(TokenServiceException):

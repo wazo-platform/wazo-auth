@@ -198,21 +198,21 @@ class BaseTestCase(AuthLaunchingTestCase):
         else:
             self.fail('Should have raised an exception')
 
-    def _get_token(self, token, acls=None, tenant=None):
+    def _get_token(self, token, access=None, tenant=None):
         client = self.new_auth_client()
         args = {}
-        if acls:
-            args['required_acl'] = acls
+        if access:
+            args['required_acl'] = access
         if tenant:
             args['tenant'] = tenant
 
         return client.token.get(token, **args)
 
     def _get_token_with_expected_exception(
-        self, token, acls=None, tenant=None, status_code=None, msg=None
+        self, token, access=None, tenant=None, status_code=None, msg=None
     ):
         try:
-            self._get_token(token, acls, tenant)
+            self._get_token(token, access, tenant)
         except requests.HTTPError as e:
             if status_code:
                 assert_that(e.response.status_code, equal_to(status_code))
@@ -225,11 +225,11 @@ class BaseTestCase(AuthLaunchingTestCase):
         client = self.new_auth_client()
         return client.token.revoke(token)
 
-    def _is_valid(self, token, acls=None, tenant=None):
+    def _is_valid(self, token, access=None, tenant=None):
         client = self.new_auth_client()
         args = {}
-        if acls:
-            args['required_acl'] = acls
+        if access:
+            args['required_acl'] = access
         return client.token.is_valid(token, tenant=tenant, **args)
 
     def _check_scopes(self, token, scopes, tenant=None):

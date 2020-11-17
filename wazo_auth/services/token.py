@@ -16,7 +16,7 @@ from wazo_auth.services.helpers import BaseService
 
 from ..exceptions import (
     DuplicatedRefreshTokenException,
-    MissingACLTokenException,
+    MissingAccessTokenException,
     MissingTenantTokenException,
     UnknownTokenException,
 )
@@ -77,7 +77,7 @@ class TokenService(BaseService):
         args['acl'] = self._get_acl(args['backend'])
         args['metadata'] = metadata
 
-        acls = backend.get_acls(login, args)
+        acl = backend.get_acls(login, args)
         expiration = args.get('expiration', self._default_expiration)
         current_time = time.time()
 
@@ -93,7 +93,7 @@ class TokenService(BaseService):
             'xivo_uuid': xivo_uuid,
             'expire_t': current_time + expiration,
             'issued_t': current_time,
-            'acls': acls or [],
+            'acl': acl or [],
             'metadata': metadata,
             'user_agent': args['user_agent'],
             'remote_addr': args['remote_addr'],
@@ -152,7 +152,7 @@ class TokenService(BaseService):
         )
         self._bus_publisher.publish(event)
 
-    def get(self, token_uuid, required_acl):
+    def get(self, token_uuid, required_access):
         token_data = self._dao.token.get(token_uuid)
         if not token_data:
             raise UnknownTokenException()
@@ -163,8 +163,8 @@ class TokenService(BaseService):
         if token.is_expired():
             raise UnknownTokenException()
 
-        if not token.matches_required_acl(required_acl):
-            raise MissingACLTokenException(required_acl)
+        if not token.matches_required_access(required_access):
+            raise MissingAccessTokenException(required_access)
 
         return token
 
@@ -180,7 +180,7 @@ class TokenService(BaseService):
             raise UnknownTokenException()
 
         scope_statuses = {
-            scope: token.matches_required_acl(scope) for scope in set(scopes)
+            scope: token.matches_required_access(scope) for scope in set(scopes)
         }
 
         return token, scope_statuses

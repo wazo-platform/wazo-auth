@@ -22,8 +22,8 @@ class TokenDAO(BaseDAO):
             remote_addr=body['remote_addr'],
             metadata_=serialized_metadata,
         )
-        token.acls = [
-            ACL(token_uuid=token.uuid, value=acl) for acl in body.get('acls') or []
+        token.acl = [
+            ACL(token_uuid=token.uuid, value=access) for access in body.get('acl') or []
         ]
 
         if not session_body.get('tenant_uuid'):
@@ -48,7 +48,7 @@ class TokenDAO(BaseDAO):
                 'xivo_uuid': token.xivo_uuid,
                 'issued_t': token.issued_t,
                 'expire_t': token.expire_t,
-                'acls': [acl.value for acl in token.acls],
+                'acl': [acl.value for acl in token.acl],
                 'metadata': json.loads(token.metadata_) if token.metadata_ else {},
                 'session_uuid': token.session_uuid,
                 'remote_addr': token.remote_addr,

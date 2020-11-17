@@ -18,7 +18,11 @@ class BaseAuthenticationBackend(metaclass=abc.ABCMeta):
         pass
 
     def get_acls(self, login, args):
-        """returns a list of acls"""
+        """Deprecated"""
+        return self.get_acl(login, args)
+
+    def get_acl(self, login, args):
+        """returns an acl"""
         return []
 
     def get_xivo_uuid(self, _args):
