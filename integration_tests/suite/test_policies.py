@@ -47,7 +47,7 @@ class TestPolicies(WazoAuthTestCase):
                 uuid=uuid_(),
                 name='foobaz',
                 description=none(),
-                acl_templates=empty(),
+                acl=empty(),
                 tenant_uuid=self.top_tenant_uuid,
             ),
         )
@@ -55,7 +55,7 @@ class TestPolicies(WazoAuthTestCase):
         policy_args = {
             'name': 'foobar',
             'description': 'a test policy',
-            'acl_templates': ['dird.me.#', 'ctid-ng.#'],
+            'acl': ['dird.me.#', 'ctid-ng.#'],
             'tenant_uuid': tenant['uuid'],
         }
         # Specify the tenant_uuid
@@ -68,6 +68,18 @@ class TestPolicies(WazoAuthTestCase):
 
         # Invalid body
         assert_http_error(400, self.client.policies.new, '')
+
+        # Deprecated acl_templates key
+        policy_args['acl_templates'] = policy_args.pop('acl')
+        with self.policy(self.client, **policy_args) as policy:
+            assert_that(
+                policy,
+                has_entries(
+                    uuid=uuid_(),
+                    acl_templates=policy_args['acl_templates'],
+                    acl=policy_args['acl_templates'],
+                ),
+            )
 
     def test_post_errors(self):
         bodies = [
@@ -204,7 +216,7 @@ class TestPolicies(WazoAuthTestCase):
     @fixtures.http.policy(
         name='foobar',
         description='a test policy',
-        acl_templates=['dird.me.#', 'ctid-ng.#'],
+        acl=['dird.me.#', 'ctid-ng.#'],
     )
     @fixtures.http.user()
     @fixtures.http.user()
@@ -217,7 +229,7 @@ class TestPolicies(WazoAuthTestCase):
             has_entries(
                 name='foobar',
                 description='a test policy',
-                acl_templates=contains_inanyorder('dird.me.#', 'ctid-ng.#'),
+                acl=contains_inanyorder('dird.me.#', 'ctid-ng.#'),
             ),
         )
 
@@ -229,7 +241,7 @@ class TestPolicies(WazoAuthTestCase):
         self.client.groups.add_policy(group2['uuid'], policy['uuid'])
 
         assert_that(
-            self.client.policies.get(policy['uuid'])['acl_templates'],
+            self.client.policies.get(policy['uuid'])['acl'],
             contains_inanyorder('dird.me.#', 'ctid-ng.#'),
         )
 
@@ -255,7 +267,7 @@ class TestPolicies(WazoAuthTestCase):
     @fixtures.http.policy(
         name='foobar',
         description='a test policy',
-        acl_templates=['dird.me.#', 'ctid-ng.#'],
+        acl=['dird.me.#', 'ctid-ng.#'],
     )
     def test_put(self, policy):
         assert_http_error(404, self.client.policies.edit, UNKNOWN_UUID, 'foobaz')
@@ -277,63 +289,51 @@ class TestPolicies(WazoAuthTestCase):
                     'uuid': equal_to(policy['uuid']),
                     'name': equal_to('foobaz'),
                     'description': none(),
-                    'acl_templates': empty(),
+                    'acl': empty(),
                 }
             ),
         )
 
-    @fixtures.http.policy(acl_templates=['dird.me.#', 'ctid-ng.#'])
-    def test_add_acl_template(self, policy):
-        assert_http_error(404, self.client.policies.add_acl_template, UNKNOWN_UUID, '#')
+    @fixtures.http.policy(acl=['dird.me.#', 'ctid-ng.#'])
+    def test_add_access(self, policy):
+        assert_http_error(404, self.client.policies.add_access, UNKNOWN_UUID, '#')
         with self.client_in_subtenant() as (client, _, __):
-            assert_http_error(
-                404, client.policies.add_acl_template, policy['uuid'], '#'
-            )
+            assert_http_error(404, client.policies.add_access, policy['uuid'], '#')
 
             policy_in_subtenant = client.policies.new(name='in sub-tenant')
-            self.client.policies.add_acl_template(policy_in_subtenant['uuid'], '#')
+            self.client.policies.add_access(policy_in_subtenant['uuid'], '#')
             assert_that(
                 client.policies.get(policy_in_subtenant['uuid']),
-                has_entries(
-                    uuid=policy_in_subtenant['uuid'], acl_templates=contains('#')
-                ),
+                has_entries(uuid=policy_in_subtenant['uuid'], acl=contains('#')),
             )
 
-        self.client.policies.add_acl_template(policy['uuid'], 'new.acl.template.#')
+        self.client.policies.add_access(policy['uuid'], 'new.access.#')
 
-        expected_acl_templates = ['dird.me.#', 'ctid-ng.#'] + ['new.acl.template.#']
+        expected_acl = ['dird.me.#', 'ctid-ng.#'] + ['new.access.#']
         response = self.client.policies.get(policy['uuid'])
         assert_that(
             response,
             has_entries(
                 uuid=policy['uuid'],
-                acl_templates=contains_inanyorder(*expected_acl_templates),
+                acl=contains_inanyorder(*expected_acl),
             ),
         )
 
-    @fixtures.http.policy(acl_templates=['dird.me.#', 'ctid-ng.#'])
-    def test_remove_acl_template(self, policy):
-        assert_http_error(
-            404, self.client.policies.remove_acl_template, UNKNOWN_UUID, '#'
-        )
+    @fixtures.http.policy(acl=['dird.me.#', 'ctid-ng.#'])
+    def test_remove_access(self, policy):
+        assert_http_error(404, self.client.policies.remove_access, UNKNOWN_UUID, '#')
 
         with self.client_in_subtenant() as (client, _, __):
-            assert_http_error(
-                404, client.policies.remove_acl_template, policy['uuid'], '#'
-            )
+            assert_http_error(404, client.policies.remove_access, policy['uuid'], '#')
 
-            policy_in_subtenant = client.policies.new(
-                name='in sub-tenant', acl_templates=['#']
-            )
-            self.client.policies.remove_acl_template(policy_in_subtenant['uuid'], '#')
+            policy_in_subtenant = client.policies.new(name='in sub-tenant', acl=['#'])
+            self.client.policies.remove_access(policy_in_subtenant['uuid'], '#')
             assert_that(
                 client.policies.get(policy_in_subtenant['uuid']),
-                has_entries(uuid=policy_in_subtenant['uuid'], acl_templates=empty()),
+                has_entries(uuid=policy_in_subtenant['uuid'], acl=empty()),
             )
 
-        self.client.policies.remove_acl_template(policy['uuid'], 'ctid-ng.#')
+        self.client.policies.remove_access(policy['uuid'], 'ctid-ng.#')
 
         response = self.client.policies.get(policy['uuid'])
-        assert_that(
-            response, has_entries(acl_templates=contains_inanyorder('dird.me.#'))
-        )
+        assert_that(response, has_entries(acl=contains_inanyorder('dird.me.#')))

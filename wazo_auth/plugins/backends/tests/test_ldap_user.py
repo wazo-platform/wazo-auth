@@ -1,11 +1,11 @@
-# Copyright 2015-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import unittest
 import ldap
 
 from mock import patch, Mock, call
-from hamcrest import assert_that, equal_to, has_entries
+from hamcrest import assert_that, empty, equal_to, has_entries
 
 from wazo_auth.plugins.backends.ldap_user import LDAPUser, _XivoLDAP
 
@@ -27,9 +27,8 @@ class TestGetACLS(unittest.TestCase):
         self.backend.load({'config': config})
 
     def test_get_acls(self, find_by):
-        with patch.object(self.backend, 'render_acl') as render_acl:
-            result = self.backend.get_acls('alice', self.args)
-            assert_that(result, equal_to(render_acl.return_value))
+        result = self.backend.get_acls('alice', self.args)
+        assert_that(result, empty())
 
 
 @patch('wazo_auth.plugins.backends.ldap_user.find_by')

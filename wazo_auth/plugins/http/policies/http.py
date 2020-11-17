@@ -70,17 +70,15 @@ class Policy(_BasePolicyRessource):
         return policy_schema.dump(policy), 200
 
 
-class PolicyTemplate(_BasePolicyRessource):
+class PolicyAccess(_BasePolicyRessource):
     @http.required_acl('auth.policies.{policy_uuid}.edit')
-    def delete(self, policy_uuid, template):
+    def delete(self, policy_uuid, access):
         scoping_tenant = Tenant.autodetect()
-        self.policy_service.delete_acl_template(
-            policy_uuid, template, scoping_tenant.uuid
-        )
+        self.policy_service.delete_access(policy_uuid, access, scoping_tenant.uuid)
         return '', 204
 
     @http.required_acl('auth.policies.{policy_uuid}.edit')
-    def put(self, policy_uuid, template):
+    def put(self, policy_uuid, access):
         scoping_tenant = Tenant.autodetect()
-        self.policy_service.add_acl_template(policy_uuid, template, scoping_tenant.uuid)
+        self.policy_service.add_access(policy_uuid, access, scoping_tenant.uuid)
         return '', 204

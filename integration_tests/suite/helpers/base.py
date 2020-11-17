@@ -320,9 +320,7 @@ class WazoAuthTestCase(BaseTestCase):
         user = self.client.users.new(
             username=username, password=password, tenant_uuid=tenant['uuid']
         )
-        policy = self.client.policies.new(
-            name=random_string(5), acl_templates=['auth.#']
-        )
+        policy = self.client.policies.new(name=random_string(5), acl=['auth.#'])
         self.client.users.add_policy(user['uuid'], policy['uuid'])
         client = self.new_auth_client(username, password)
         token = client.token.new(backend='wazo_user', expiration=3600)['token']

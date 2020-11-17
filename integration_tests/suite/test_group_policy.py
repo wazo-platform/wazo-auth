@@ -149,7 +149,7 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
 
     @fixtures.http.user_register(username='foo', password='bar')
     @fixtures.http.group(name='one')
-    @fixtures.http.policy(name='main', acl_templates=['foobar'])
+    @fixtures.http.policy(name='main', acl=['foobar'])
     def test_generated_acl(self, policy, group, user):
         self.client.groups.add_user(group['uuid'], user['uuid'])
         self.client.groups.add_policy(group['uuid'], policy['uuid'])
@@ -158,43 +158,16 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         token_data = user_client.token.new('wazo_user', expiration=5)
         assert_that(token_data, has_entries('acls', has_items('foobar')))
 
-    @fixtures.http.user_register()
-    @fixtures.http.user_register()
-    @fixtures.http.user_register(username='foo', password='bar')
-    @fixtures.http.group(name='one')
-    @fixtures.http.policy(
-        name='main',
-        acl_templates=[
-            '{% for group in groups %}'
-            '{% for user in group.users %}'
-            'user.{{ user.uuid }}.*:'
-            '{% endfor %}'
-            '{% endfor %}'
-        ],
-    )
-    def test_generated_acl_with_group_data(self, policy, group, *users):
-        for user in users:
-            self.client.groups.add_user(group['uuid'], user['uuid'])
-
-        self.client.groups.add_policy(group['uuid'], policy['uuid'])
-
-        user_client = self.new_auth_client('foo', 'bar')
-        expected_acls = ['user.{}.*'.format(user['uuid']) for user in users]
-        token_data = user_client.token.new('wazo_user', expiration=5)
-        assert_that(token_data, has_entries('acls', has_items(*expected_acls)))
-
     def test_all_users_policies_are_updated_at_startup(self):
         policy = self.client.policies.list(name=DEFAULT_POLICY_NAME)['items'][0]
         policy_without_acl = dict(policy)
-        policy_without_acl['acl_templates'] = []
+        policy_without_acl['acl'] = []
         self.client.policies.edit(policy['uuid'], **policy_without_acl)
 
         self.restart_auth()
 
         policy = self.client.policies.get(policy['uuid'])
-        assert_that(
-            policy, has_entries(acl_templates=has_item('integration_tests.acl'))
-        )
+        assert_that(policy, has_entries(acl=has_item('integration_tests.access')))
 
     def test_all_users_policies_are_associated_at_startup(self):
         group = self.client.groups.list(
@@ -202,7 +175,7 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         )['items'][0]
         policy = self.client.policies.list(name=DEFAULT_POLICY_NAME)['items'][0]
         policy_without_acl = dict(policy)
-        policy_without_acl['acl_templates'] = []
+        policy_without_acl['acl'] = []
         self.client.policies.edit(policy['uuid'], **policy_without_acl)
         self.client.groups.remove_policy(group['uuid'], policy['uuid'])
 
@@ -214,14 +187,14 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
             has_item(
                 has_entries(
                     name='wazo-all-users-policy',
-                    acl_templates=has_item('integration_tests.acl'),
+                    acl=has_item('integration_tests.access'),
                 )
             ),
         )
 
     @fixtures.http.policy(
         name='to-be-removed',
-        acl_templates=['integration_test.removed'],
+        acl=['integration_test.removed'],
         config_managed=True,
     )
     def test_all_users_policies_are_deleted_at_startup(self, policy):

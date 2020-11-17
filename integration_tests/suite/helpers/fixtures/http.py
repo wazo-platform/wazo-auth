@@ -22,7 +22,7 @@ def admin_client(**decorator_args):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
             creator = self.client.users.new(username='creator', password='opensesame')
-            policy = self.client.policies.new('tmp', acl_templates=['auth.#'])
+            policy = self.client.policies.new('tmp', acl=['auth.#'])
             self.client.users.add_policy(creator['uuid'], policy['uuid'])
 
             creator_client = self.new_auth_client(
@@ -164,7 +164,7 @@ def config_managed_policy(db_client, policy, policy_args):
 
 def policy(**policy_args):
     policy_args.setdefault('name', _random_string(20))
-    policy_args['acl_templates'] = policy_args.get('acl_templates') or []
+    policy_args['acl'] = policy_args.get('acl') or []
 
     def decorator(decorated):
         @wraps(decorated)
