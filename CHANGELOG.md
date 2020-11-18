@@ -2,6 +2,13 @@
 
 ## 20.16
 
+* The following token metadata for `wazo_default_user` backend plugin has been removed:
+
+  * `username`
+  * `groups`
+  * `visible_tenants`
+  * `xivo_user_uuid`
+
 * Template feature for an access (acl) has been removed
 * A new resources have been added to manage policy an access
 
