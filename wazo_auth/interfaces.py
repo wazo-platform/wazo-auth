@@ -79,15 +79,15 @@ class BaseMetadata(metaclass=abc.ABCMeta):
     def get_token_metadata(self, login, args):
         """return user related data
 
-        These data are used in the body of the GET and POST of the /token and
-        also used for ACL rendering
+        These data are used in the body of the GET and POST of the /token
         """
-        auth_uuid = self._user_service.list_users(username=login)[0]['uuid']
+        user = self._user_service.list_users(username=login)[0]
         metadata = {
-            'auth_id': auth_uuid,
-            'username': login,
-            'xivo_uuid': self.get_xivo_uuid(args),
+            'uuid': user['uuid'],
+            'tenant_uuid': user['tenant_uuid'],
+            'auth_id': user['uuid'],
             'pbx_user_uuid': None,
+            'xivo_uuid': self.get_xivo_uuid(args),
         }
         return metadata
 

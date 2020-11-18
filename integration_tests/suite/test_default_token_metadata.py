@@ -1,7 +1,7 @@
 # Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from hamcrest import assert_that, has_entries, has_items
+from hamcrest import assert_that, has_entries
 from .helpers import fixtures
 from .helpers.base import WazoAuthTestCase
 
@@ -23,11 +23,9 @@ class TestDefaultTokenMetadata(WazoAuthTestCase):
             has_entries(
                 uuid=user['uuid'],
                 tenant_uuid=self.tenant_uuid,
-                groups=has_items(has_entries(uuid=group['uuid'])),
                 auth_id=user['uuid'],
-                username=user['username'],
-                xivo_uuid='the-predefined-xivo-uuid',
                 pbx_user_uuid=user['uuid'],
+                xivo_uuid='the-predefined-xivo-uuid',
             ),
         )
 
@@ -41,9 +39,8 @@ class TestDefaultTokenMetadata(WazoAuthTestCase):
                 uuid=user['uuid'],
                 tenant_uuid=self.tenant_uuid,
                 auth_id=user['uuid'],
-                username=user['username'],
-                xivo_uuid='the-predefined-xivo-uuid',
                 pbx_user_uuid=None,
+                xivo_uuid='the-predefined-xivo-uuid',
             ),
         )
 
@@ -57,8 +54,7 @@ class TestDefaultTokenMetadata(WazoAuthTestCase):
                 uuid=user['uuid'],
                 tenant_uuid=self.tenant_uuid,
                 auth_id=user['uuid'],
-                username=user['username'],
-                xivo_uuid='the-predefined-xivo-uuid',
                 pbx_user_uuid=None,
+                xivo_uuid='the-predefined-xivo-uuid',
             ),
         )
