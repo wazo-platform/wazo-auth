@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -9,7 +9,7 @@ from kombu import Connection
 from kombu import Exchange
 from kombu import Producer
 from xivo_bus import Marshaler
-from xivo_bus import Publisher
+from xivo_bus import LongLivedPublisher
 from xivo_bus import PublishingQueue
 
 logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ class BusPublisher:
             bus_connection, exchange=bus_exchange, auto_declare=True
         )
         bus_marshaler = Marshaler(self._uuid)
-        return Publisher(bus_producer, bus_marshaler)
+        return LongLivedPublisher(bus_producer, bus_marshaler)
 
     def publish(self, event, headers=None):
         logger.debug('Publishing event "%s": %s', event.name, event.marshal())
