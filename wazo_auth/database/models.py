@@ -18,20 +18,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
 
 Base = declarative_base()
-
-
-class ACL(Base):
-
-    __tablename__ = 'auth_acl'
-
-    id_ = Column(Integer, name='id', primary_key=True)
-    value = Column(Text, nullable=False)
-    token_uuid = Column(
-        String(38), ForeignKey('auth_token.uuid', ondelete='CASCADE'), nullable=False
-    )
 
 
 class Address(Base):
@@ -154,8 +144,8 @@ class Token(Base):
     metadata_ = Column(Text, name='metadata')
     user_agent = Column(Text)
     remote_addr = Column(Text)
+    acl = Column(ARRAY(Text), nullable=False, server_default='{}')
 
-    acl = relationship('ACL')
     session = relationship('Session')
 
 
@@ -292,25 +282,24 @@ class UserPolicy(Base):
     )
 
 
-# FIXME(fblackburn): remove unused ACLTemplate
-class ACLTemplate(Base):
+class Access(Base):
 
-    __tablename__ = 'auth_acl_template'
-    __table_args__ = (UniqueConstraint('template'),)
+    __tablename__ = 'auth_access'
+    __table_args__ = (UniqueConstraint('access'),)
 
     id_ = Column(Integer, name='id', primary_key=True)
-    template = Column(Text, nullable=False)
+    access = Column(Text, nullable=False)
 
 
-class ACLTemplatePolicy(Base):
+class PolicyAccess(Base):
 
-    __tablename__ = 'auth_policy_template'
+    __tablename__ = 'auth_policy_access'
 
     policy_uuid = Column(
         String(38), ForeignKey('auth_policy.uuid', ondelete='CASCADE'), primary_key=True
     )
-    template_id = Column(
+    access_id = Column(
         Integer,
-        ForeignKey('auth_acl_template.id', ondelete='CASCADE'),
+        ForeignKey('auth_access.id', ondelete='CASCADE'),
         primary_key=True,
     )

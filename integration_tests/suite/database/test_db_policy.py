@@ -38,7 +38,7 @@ class TestPolicyDAO(base.DAOTestCase):
         with self.auto_rollback():
             assert_that(
                 calling(self._policy_dao.associate_policy_access).with_args(uuid, '#'),
-                raises(exceptions.DuplicateTemplateException),
+                raises(exceptions.DuplicateAccessException),
             )
 
         self._policy_dao.dissociate_policy_access(uuid, '#')

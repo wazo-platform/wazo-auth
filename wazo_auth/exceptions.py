@@ -290,16 +290,16 @@ class DuplicatedRefreshTokenException(Exception):
         )
 
 
-class DuplicateTemplateException(TokenServiceException):
+class DuplicateAccessException(TokenServiceException):
 
     code = 409
 
-    def __init__(self, template):
+    def __init__(self, access):
         super().__init__()
-        self._template = template
+        self._access = access
 
     def __str__(self):
-        return 'Policy already associated to {}'.format(self._template)
+        return 'Policy already associated to {}'.format(self._access)
 
 
 class UnknownPolicyException(TokenServiceException):
