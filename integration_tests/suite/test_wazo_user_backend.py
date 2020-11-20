@@ -37,13 +37,11 @@ class TestWazoUserBackend(WazoAuthTestCase):
             401, self._post_token, 'not-foobar', 's3cr37', backend='wazo_user'
         )
 
-    @fixtures.http.group()
     @fixtures.http.tenant()
     # extra tenant: "master" tenant
     @fixtures.http.user(password='s3cr37')
-    def test_token_metadata(self, user, tenant, group):
+    def test_token_metadata(self, user, tenant):
         top_tenant = self.get_top_tenant()
-        self.client.groups.add_user(group['uuid'], user['uuid'])
 
         token_data = self._post_token(user['username'], 's3cr37', backend='wazo_user')
 
@@ -53,7 +51,6 @@ class TestWazoUserBackend(WazoAuthTestCase):
                 xivo_uuid='the-predefined-xivo-uuid',
                 uuid=user['uuid'],
                 tenant_uuid=top_tenant['uuid'],
-                groups=has_items(has_entries(uuid=group['uuid'])),
             ),
         )
 
