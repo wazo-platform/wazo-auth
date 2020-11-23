@@ -1,7 +1,7 @@
 """rename_acl_template_table_to_access
 
 Revision ID: 40d8f37d7096
-Revises: 17ce2e46c43e
+Revises: d779d0640bd7
 
 """
 
@@ -9,7 +9,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = '40d8f37d7096'
-down_revision = '17ce2e46c43e'
+down_revision = 'd779d0640bd7'
 
 
 def upgrade():
