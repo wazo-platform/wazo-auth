@@ -13,10 +13,7 @@ revision = 'd779d0640bd7'
 down_revision = '17ce2e46c43e'
 
 acl_template_tbl = sa.sql.table(
-    'auth_acl_template',
-    sa.Column('id'),
-    sa.Column('template'),
-    sa.Column('count'),
+    'auth_acl_template', sa.Column('id'), sa.Column('template')
 )
 
 
@@ -35,6 +32,7 @@ def remove_duplicate_template(template_name):
 
 
 def upgrade():
+    op.drop_constraint('auth_acl_template_template', 'auth_acl_template')
     count_query = (
         sa.sql.select(
             [
@@ -53,6 +51,9 @@ def upgrade():
     templates = op.get_bind().execute(query)
     for template in templates:
         remove_duplicate_template(template.template)
+    op.create_unique_constraint(
+        'auth_acl_template_template', 'auth_acl_template', ['template']
+    )
 
 
 def downgrade():
