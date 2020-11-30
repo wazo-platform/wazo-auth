@@ -112,15 +112,18 @@ class TestAuthMicrosoft(BaseTestCase):
     def test_when_create_twice_with_authorize_then_does_not_raise(self):
         result = self.client.external.create(MICROSOFT, self.admin_user_uuid, {})
         self._simulate_user_authentication(result['state'])
+        old_result = self.client.external.get(MICROSOFT, self.admin_user_uuid)
         result = self.client.external.create(MICROSOFT, self.admin_user_uuid, {})
         self._simulate_user_authentication(result['state'])
 
-        assert_that(
-            calling(self.client.external.get).with_args(
-                MICROSOFT, self.admin_user_uuid
-            ),
-            not_(raises(requests.HTTPError)),
-        )
+        def _token_is_updated():
+            try:
+                result = self.client.external.get(MICROSOFT, self.admin_user_uuid)
+            except requests.HTTPError:
+                return False
+            return result['token_expiration'] != old_result['token_expiration']
+
+        until.true(_token_is_updated, timeout=15, interval=1)
 
     def test_when_get_then_token_returned(self):
         result = self.client.external.create(MICROSOFT, self.admin_user_uuid, {})

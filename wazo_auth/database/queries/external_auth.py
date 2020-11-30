@@ -46,6 +46,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         try:
             self.session.flush()
         except exc.IntegrityError as e:
+            self.session.rollback()
             if e.orig.pgcode in (
                 self._UNIQUE_CONSTRAINT_CODE,
                 self._FKEY_CONSTRAINT_CODE,
