@@ -112,13 +112,6 @@ class DAOTestCase(unittest.TestCase):
         for item in self._group_dao.list_():
             self._group_dao.delete(item['uuid'])
 
-    @contextmanager
-    def auto_rollback(self):
-        try:
-            yield
-        finally:
-            self.session.rollback()
-
     @property
     def session(self):
         return helpers.get_db_session()

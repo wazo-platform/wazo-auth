@@ -45,6 +45,7 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         try:
             self.session.flush()
         except exc.IntegrityError as e:
+            self.session.rollback()
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 constraint = e.orig.diag.constraint_name
                 if constraint == 'auth_refresh_token_client_id_user_uuid':

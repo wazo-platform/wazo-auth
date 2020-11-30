@@ -106,6 +106,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         try:
             self.session.flush()
         except exc.IntegrityError as e:
+            self.session.rollback()
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
                 value = locals().get(column)
@@ -170,6 +171,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
             self.session.flush()
         except exc.IntegrityError as e:
+            self.session.rollback()
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
                 value = body.get(column)
