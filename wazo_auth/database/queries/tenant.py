@@ -74,6 +74,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         try:
             self.session.flush()
         except exc.IntegrityError as e:
+            self.session.rollback()
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
                 value = locals().get(column)
@@ -152,6 +153,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             self.session.query(Tenant).filter(filter_).update(values)
             self.session.flush()
         except exc.IntegrityError as e:
+            self.session.rollback()
             if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
                 constraint = e.orig.diag.constraint_name
                 if constraint == 'auth_tenant_contact_uuid_fkey':

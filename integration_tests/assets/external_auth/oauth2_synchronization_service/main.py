@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 sockets = Sockets(app)
 
+counter = 1
 active_ws = {}
 
 
@@ -40,9 +41,11 @@ def authorize(service, state):
 
 @app.route('/<service>/token', methods=['GET', 'POST'])
 def get_microsoft_token(service):
+    global counter
+    counter = counter + 1
     body = {
         'access_token': 'access_token',
-        'expires_in': 42,
+        'expires_in': counter,
         'refresh_token': 'refresh_token',
         'scope': 'scope',
     }

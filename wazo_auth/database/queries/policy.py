@@ -30,6 +30,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         try:
             self.session.flush()
         except exc.IntegrityError as e:
+            self.session.rollback()
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 raise exceptions.DuplicateAccessException(access)
             if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
@@ -88,6 +89,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         try:
             self.session.flush()
         except exc.IntegrityError as e:
+            self.session.rollback()
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 raise exceptions.DuplicatePolicyException(name)
             raise
@@ -201,6 +203,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         try:
             self.session.flush()
         except exc.IntegrityError as e:
+            self.session.rollback()
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 raise exceptions.DuplicatePolicyException(name)
             raise
