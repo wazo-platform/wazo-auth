@@ -1,6 +1,7 @@
 # Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from datetime import datetime
 import json
 import requests
 from hamcrest import (
@@ -8,6 +9,7 @@ from hamcrest import (
     calling,
     contains,
     contains_inanyorder,
+    contains_string,
     empty,
     equal_to,
     is_not,
@@ -218,6 +220,20 @@ class TestUsers(WazoAuthTestCase):
                 user = client.users.new(username='foo', tenant_uuid=subtenant['uuid'])
                 assert_that(user, has_entries(tenant_uuid=subtenant['uuid']))
 
+    def test_post_does_not_log_password(self):
+        args = {
+            'username': 'foobar',
+            'firstname': 'Denver',
+            'email_address': 'foobar@example.com',
+            'password': 's3cr37',
+        }
+
+        time_start = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        with self.user(self.client, **args):
+            pass
+        logs = self.service_logs('auth', since=time_start)
+        assert_that(logs, not_(contains_string(args['password'])))
+
     @fixtures.http.user(
         username='foobar', firstname='foo', lastname='bar', purpose='user'
     )
@@ -310,6 +326,20 @@ class TestUsers(WazoAuthTestCase):
                 tenants, has_entries('items', contains(has_entries('uuid', uuid_())))
             )
 
+    def test_register_post_does_not_log_password(self):
+        args = {
+            'username': 'foobar',
+            'lastname': 'Denver',
+            'email_address': 'foobar@example.com',
+            'password': 's3cr37',
+        }
+
+        time_start = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        with self.user(self.client, register=True, **args):
+            pass
+        logs = self.service_logs('auth', since=time_start)
+        assert_that(logs, not_(contains_string(args['password'])))
+
     def test_register_error_then_no_user_created(self):
         args = {
             'username': 'foobar',
@@ -384,6 +414,20 @@ class TestUsers(WazoAuthTestCase):
 
         user_client = self.new_auth_client('foo', 'secret')
         assert_no_error(user_client.token.new, 'wazo_user', expiration=5)
+
+    @fixtures.http.user_register(password='secret')
+    def test_put_password_does_not_log_password(self, user):
+        time_start = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        old_password = 'secret'
+        new_password = 'NewPass'
+        self.client.users.change_password(
+            user['uuid'],
+            old_password=old_password,
+            new_password=new_password,
+        )
+        logs = self.service_logs('auth', since=time_start)
+        assert_that(logs, not_(contains_string(old_password)))
+        assert_that(logs, not_(contains_string(new_password)))
 
     def test_list(self):
         def check_list_result(result, total, filtered, item_matcher, *usernames):

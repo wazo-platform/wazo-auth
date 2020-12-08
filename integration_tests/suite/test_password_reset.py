@@ -1,8 +1,14 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from datetime import datetime
 import yaml
-from hamcrest import assert_that, contains_inanyorder, contains_string
+from hamcrest import (
+    assert_that,
+    contains_inanyorder,
+    contains_string,
+    not_,
+)
 
 from .helpers import fixtures
 from .helpers.base import assert_http_error, assert_no_error, WazoAuthTestCase
@@ -56,3 +62,13 @@ class TestResetPassword(WazoAuthTestCase):
 
         user_client = self.new_auth_client(user['username'], new_password)
         assert_http_error(401, user_client.token.new, 'wazo_user', expiration=1)
+
+    @fixtures.http.user()
+    def test_set_password_does_not_log_password(self, user):
+        new_password = '5ecr37'
+
+        time_start = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        self.client.users.set_password(user['uuid'], new_password)
+
+        logs = self.service_logs('auth', since=time_start)
+        assert_that(logs, not_(contains_string(new_password)))
