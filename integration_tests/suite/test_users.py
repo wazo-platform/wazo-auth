@@ -101,29 +101,18 @@ class TestUsers(WazoAuthTestCase):
             assert_that(
                 user,
                 has_entries(
-                    'uuid',
-                    uuid_(),
-                    'username',
-                    'foobar',
-                    'firstname',
-                    'Alice',
-                    'lastname',
-                    None,
-                    'enabled',
-                    True,
-                    'tenant_uuid',
-                    self.top_tenant_uuid,
-                    'emails',
-                    contains_inanyorder(
+                    uuid=uuid_(),
+                    username='foobar',
+                    firstname='Alice',
+                    lastname=None,
+                    enabled=True,
+                    tenant_uuid=self.top_tenant_uuid,
+                    emails=contains_inanyorder(
                         has_entries(
-                            'uuid',
-                            uuid_(),
-                            'address',
-                            'foobar@example.com',
-                            'main',
-                            True,
-                            'confirmed',
-                            True,
+                            uuid=uuid_(),
+                            address='foobar@example.com',
+                            main=True,
+                            confirmed=True,
                         )
                     ),
                 ),
@@ -144,7 +133,7 @@ class TestUsers(WazoAuthTestCase):
             )['items']
             assert_that(
                 wazo_all_users_group_members,
-                has_item(has_entries({'uuid': user['uuid']})),
+                has_item(has_entries(uuid=user['uuid'])),
             )
 
         # User created in subtenant
@@ -152,29 +141,18 @@ class TestUsers(WazoAuthTestCase):
             assert_that(
                 user,
                 has_entries(
-                    'uuid',
-                    uuid_(),
-                    'username',
-                    'foobar',
-                    'firstname',
-                    'Alice',
-                    'lastname',
-                    None,
-                    'enabled',
-                    True,
-                    'tenant_uuid',
-                    isolated['uuid'],
-                    'emails',
-                    contains_inanyorder(
+                    uuid=uuid_(),
+                    username='foobar',
+                    firstname='Alice',
+                    lastname=None,
+                    enabled=True,
+                    tenant_uuid=isolated['uuid'],
+                    emails=contains_inanyorder(
                         has_entries(
-                            'uuid',
-                            uuid_(),
-                            'address',
-                            'foobar@example.com',
-                            'main',
-                            True,
-                            'confirmed',
-                            True,
+                            uuid=uuid_(),
+                            address='foobar@example.com',
+                            main=True,
+                            confirmed=True,
                         )
                     ),
                 ),
@@ -293,29 +271,18 @@ class TestUsers(WazoAuthTestCase):
             assert_that(
                 user,
                 has_entries(
-                    'uuid',
-                    uuid_(),
-                    'username',
-                    'foobar',
-                    'firstname',
-                    None,
-                    'lastname',
-                    'Denver',
-                    'enabled',
-                    True,
-                    'tenant_uuid',
-                    uuid_(),
-                    'emails',
-                    contains_inanyorder(
+                    uuid=uuid_(),
+                    username='foobar',
+                    firstname=None,
+                    lastname='Denver',
+                    enabled=True,
+                    tenant_uuid=uuid_(),
+                    emails=contains_inanyorder(
                         has_entries(
-                            'uuid',
-                            uuid_(),
-                            'address',
-                            'foobar@example.com',
-                            'main',
-                            True,
-                            'confirmed',
-                            False,
+                            uuid=uuid_(),
+                            address='foobar@example.com',
+                            main=True,
+                            confirmed=False,
                         )
                     ),
                 ),
@@ -422,11 +389,11 @@ class TestUsers(WazoAuthTestCase):
         def check_list_result(result, total, filtered, item_matcher, *usernames):
             items = item_matcher(
                 *[
-                    has_entries('username', username, 'enabled', True)
+                    has_entries(username=username, enabled=True)
                     for username in usernames
                 ]
             )
-            expected = has_entries('total', total, 'filtered', filtered, 'items', items)
+            expected = has_entries(total=total, filtered=filtered, items=items)
             assert_that(result, expected)
 
         with self.client_in_subtenant(username='foo') as (top_client, _, top):
@@ -503,16 +470,14 @@ class TestUsers(WazoAuthTestCase):
         assert_that(
             result,
             has_entries(
-                'uuid',
-                user['uuid'],
-                'username',
-                'foo',
-                'enabled',
-                True,
-                'emails',
-                contains_inanyorder(
+                uuid=user['uuid'],
+                username='foo',
+                enabled=True,
+                emails=contains_inanyorder(
                     has_entries(
-                        'address', 'foo@example.com', 'confirmed', False, 'main', True
+                        address='foo@example.com',
+                        confirmed=False,
+                        main=True,
                     )
                 ),
             ),
@@ -527,7 +492,7 @@ class TestUsers(WazoAuthTestCase):
         result = self.client.users.get_policies(user['uuid'])
         assert_that(
             result,
-            has_entries('total', 0, 'items', empty(), 'filtered', 0),
+            has_entries(total=0, items=empty(), filtered=0),
             'not associated',
         )
 
@@ -559,16 +524,14 @@ class TestUsers(WazoAuthTestCase):
         result = self.client.users.get_policies(user['uuid'])
         assert_that(
             result,
-            has_entries(
-                'total', 1, 'items', contains(has_entries('name', 'one')), 'filtered', 1
-            ),
+            has_entries(total=1, items=contains(has_entries(name='one')), filtered=1),
             'not associated',
         )
 
         result = self.client.users.get_policies(user['uuid'], search='two')
         assert_that(
             result,
-            has_entries('total', 1, 'items', empty(), 'filtered', 0),
+            has_entries(total=1, items=empty(), filtered=0),
             'not associated',
         )
 
