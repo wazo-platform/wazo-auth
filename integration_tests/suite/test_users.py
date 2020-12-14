@@ -1,6 +1,7 @@
 # Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from datetime import datetime
 import json
 import requests
 from hamcrest import (
@@ -8,6 +9,7 @@ from hamcrest import (
     calling,
     contains,
     contains_inanyorder,
+    contains_string,
     empty,
     equal_to,
     is_not,
@@ -101,29 +103,18 @@ class TestUsers(WazoAuthTestCase):
             assert_that(
                 user,
                 has_entries(
-                    'uuid',
-                    uuid_(),
-                    'username',
-                    'foobar',
-                    'firstname',
-                    'Alice',
-                    'lastname',
-                    None,
-                    'enabled',
-                    True,
-                    'tenant_uuid',
-                    self.top_tenant_uuid,
-                    'emails',
-                    contains_inanyorder(
+                    uuid=uuid_(),
+                    username='foobar',
+                    firstname='Alice',
+                    lastname=None,
+                    enabled=True,
+                    tenant_uuid=self.top_tenant_uuid,
+                    emails=contains_inanyorder(
                         has_entries(
-                            'uuid',
-                            uuid_(),
-                            'address',
-                            'foobar@example.com',
-                            'main',
-                            True,
-                            'confirmed',
-                            True,
+                            uuid=uuid_(),
+                            address='foobar@example.com',
+                            main=True,
+                            confirmed=True,
                         )
                     ),
                 ),
@@ -144,7 +135,7 @@ class TestUsers(WazoAuthTestCase):
             )['items']
             assert_that(
                 wazo_all_users_group_members,
-                has_item(has_entries({'uuid': user['uuid']})),
+                has_item(has_entries(uuid=user['uuid'])),
             )
 
         # User created in subtenant
@@ -152,29 +143,18 @@ class TestUsers(WazoAuthTestCase):
             assert_that(
                 user,
                 has_entries(
-                    'uuid',
-                    uuid_(),
-                    'username',
-                    'foobar',
-                    'firstname',
-                    'Alice',
-                    'lastname',
-                    None,
-                    'enabled',
-                    True,
-                    'tenant_uuid',
-                    isolated['uuid'],
-                    'emails',
-                    contains_inanyorder(
+                    uuid=uuid_(),
+                    username='foobar',
+                    firstname='Alice',
+                    lastname=None,
+                    enabled=True,
+                    tenant_uuid=isolated['uuid'],
+                    emails=contains_inanyorder(
                         has_entries(
-                            'uuid',
-                            uuid_(),
-                            'address',
-                            'foobar@example.com',
-                            'main',
-                            True,
-                            'confirmed',
-                            True,
+                            uuid=uuid_(),
+                            address='foobar@example.com',
+                            main=True,
+                            confirmed=True,
                         )
                     ),
                 ),
@@ -240,6 +220,20 @@ class TestUsers(WazoAuthTestCase):
                 user = client.users.new(username='foo', tenant_uuid=subtenant['uuid'])
                 assert_that(user, has_entries(tenant_uuid=subtenant['uuid']))
 
+    def test_post_does_not_log_password(self):
+        args = {
+            'username': 'foobar',
+            'firstname': 'Denver',
+            'email_address': 'foobar@example.com',
+            'password': 's3cr37',
+        }
+
+        time_start = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        with self.user(self.client, **args):
+            pass
+        logs = self.service_logs('auth', since=time_start)
+        assert_that(logs, not_(contains_string(args['password'])))
+
     @fixtures.http.user(
         username='foobar', firstname='foo', lastname='bar', purpose='user'
     )
@@ -293,29 +287,18 @@ class TestUsers(WazoAuthTestCase):
             assert_that(
                 user,
                 has_entries(
-                    'uuid',
-                    uuid_(),
-                    'username',
-                    'foobar',
-                    'firstname',
-                    None,
-                    'lastname',
-                    'Denver',
-                    'enabled',
-                    True,
-                    'tenant_uuid',
-                    uuid_(),
-                    'emails',
-                    contains_inanyorder(
+                    uuid=uuid_(),
+                    username='foobar',
+                    firstname=None,
+                    lastname='Denver',
+                    enabled=True,
+                    tenant_uuid=uuid_(),
+                    emails=contains_inanyorder(
                         has_entries(
-                            'uuid',
-                            uuid_(),
-                            'address',
-                            'foobar@example.com',
-                            'main',
-                            True,
-                            'confirmed',
-                            False,
+                            uuid=uuid_(),
+                            address='foobar@example.com',
+                            main=True,
+                            confirmed=False,
                         )
                     ),
                 ),
@@ -342,6 +325,20 @@ class TestUsers(WazoAuthTestCase):
             assert_that(
                 tenants, has_entries('items', contains(has_entries('uuid', uuid_())))
             )
+
+    def test_register_post_does_not_log_password(self):
+        args = {
+            'username': 'foobar',
+            'lastname': 'Denver',
+            'email_address': 'foobar@example.com',
+            'password': 's3cr37',
+        }
+
+        time_start = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        with self.user(self.client, register=True, **args):
+            pass
+        logs = self.service_logs('auth', since=time_start)
+        assert_that(logs, not_(contains_string(args['password'])))
 
     def test_register_error_then_no_user_created(self):
         args = {
@@ -418,15 +415,29 @@ class TestUsers(WazoAuthTestCase):
         user_client = self.new_auth_client('foo', 'secret')
         assert_no_error(user_client.token.new, 'wazo_user', expiration=5)
 
+    @fixtures.http.user_register(password='secret')
+    def test_put_password_does_not_log_password(self, user):
+        time_start = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        old_password = 'secret'
+        new_password = 'NewPass'
+        self.client.users.change_password(
+            user['uuid'],
+            old_password=old_password,
+            new_password=new_password,
+        )
+        logs = self.service_logs('auth', since=time_start)
+        assert_that(logs, not_(contains_string(old_password)))
+        assert_that(logs, not_(contains_string(new_password)))
+
     def test_list(self):
         def check_list_result(result, total, filtered, item_matcher, *usernames):
             items = item_matcher(
                 *[
-                    has_entries('username', username, 'enabled', True)
+                    has_entries(username=username, enabled=True)
                     for username in usernames
                 ]
             )
-            expected = has_entries('total', total, 'filtered', filtered, 'items', items)
+            expected = has_entries(total=total, filtered=filtered, items=items)
             assert_that(result, expected)
 
         with self.client_in_subtenant(username='foo') as (top_client, _, top):
@@ -503,16 +514,14 @@ class TestUsers(WazoAuthTestCase):
         assert_that(
             result,
             has_entries(
-                'uuid',
-                user['uuid'],
-                'username',
-                'foo',
-                'enabled',
-                True,
-                'emails',
-                contains_inanyorder(
+                uuid=user['uuid'],
+                username='foo',
+                enabled=True,
+                emails=contains_inanyorder(
                     has_entries(
-                        'address', 'foo@example.com', 'confirmed', False, 'main', True
+                        address='foo@example.com',
+                        confirmed=False,
+                        main=True,
                     )
                 ),
             ),
@@ -527,7 +536,7 @@ class TestUsers(WazoAuthTestCase):
         result = self.client.users.get_policies(user['uuid'])
         assert_that(
             result,
-            has_entries('total', 0, 'items', empty(), 'filtered', 0),
+            has_entries(total=0, items=empty(), filtered=0),
             'not associated',
         )
 
@@ -559,16 +568,14 @@ class TestUsers(WazoAuthTestCase):
         result = self.client.users.get_policies(user['uuid'])
         assert_that(
             result,
-            has_entries(
-                'total', 1, 'items', contains(has_entries('name', 'one')), 'filtered', 1
-            ),
+            has_entries(total=1, items=contains(has_entries(name='one')), filtered=1),
             'not associated',
         )
 
         result = self.client.users.get_policies(user['uuid'], search='two')
         assert_that(
             result,
-            has_entries('total', 1, 'items', empty(), 'filtered', 0),
+            has_entries(total=1, items=empty(), filtered=0),
             'not associated',
         )
 

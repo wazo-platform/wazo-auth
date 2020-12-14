@@ -43,7 +43,15 @@ class CoreRestApi:
         self.config = global_config['rest_api']
         http_helpers.add_logger(app, logger)
         app.before_request(
-            partial(http_helpers.log_before_request, hidden_fields=['refresh_token'])
+            partial(
+                http_helpers.log_before_request,
+                hidden_fields=[
+                    'refresh_token',
+                    'password',
+                    'old_password',
+                    'new_password',
+                ],
+            )
         )
         app.after_request(http_helpers.log_request)
         app.teardown_appcontext(teardown_appcontext)
