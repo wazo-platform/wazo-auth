@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
+import uuid
 import time
 
 from functools import partial
@@ -56,3 +57,12 @@ class LocalTokenRenewer:
 
     def _need_new_token(self):
         return not self._token or time.time() > self._renew_time
+
+
+def is_uuid(value):
+    try:
+        uuid_obj = uuid.UUID(value, version=4)
+    except ValueError:
+        return False
+
+    return str(uuid_obj) == value

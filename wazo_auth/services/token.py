@@ -20,6 +20,7 @@ from ..exceptions import (
     MissingTenantTokenException,
     UnknownTokenException,
 )
+from ..helpers import is_uuid
 
 logger = logging.getLogger(__name__)
 
@@ -128,7 +129,10 @@ class TokenService(BaseService):
         )
         token = Token(token_uuid, session_uuid=session_uuid, **token_payload)
 
-        event = SessionCreatedEvent(session_uuid, user_uuid=auth_id, **session_payload)
+        user_uuid = auth_id if is_uuid(auth_id) else None
+        event = SessionCreatedEvent(
+            session_uuid, user_uuid=user_uuid, **session_payload
+        )
         self._bus_publisher.publish(event)
 
         return token

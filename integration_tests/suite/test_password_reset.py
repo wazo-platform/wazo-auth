@@ -7,6 +7,8 @@ from hamcrest import (
     assert_that,
     contains_inanyorder,
     contains_string,
+    has_entries,
+    has_items,
     not_,
 )
 
@@ -72,3 +74,10 @@ class TestResetPassword(WazoAuthTestCase):
 
         logs = self.service_logs('auth', since=time_start)
         assert_that(logs, not_(contains_string(new_password)))
+
+    @fixtures.http.user(username='foo', email_address='foo@example.com')
+    def test_password_reset_do_not_create_session_with_invalid_user_uuid(self, foo):
+        self.client.users.reset_password(username='foo')
+
+        response = self.client.sessions.list()
+        assert_that(response['items'], has_items(has_entries(user_uuid=None)))
