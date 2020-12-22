@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -10,13 +10,13 @@ logger = logging.getLogger(__name__)
 class Database:
     @classmethod
     def build(cls, user, password, host, port, db):
-        tpl = "postgresql://{user}:{password}@{host}:{port}"
-        uri = tpl.format(user=user, password=password, host=host, port=port)
+        uri = f"postgresql://{user}:{password}@{host}:{port}"
         return cls(uri, db)
 
     def __init__(self, uri, db):
         self.uri = uri
         self.db = db
+        self._engine = self.create_engine()
 
     def is_up(self):
         try:
@@ -34,19 +34,18 @@ class Database:
         return sa.create_engine(uri)
 
     def connect(self, db=None):
-        db = db or self.db
-        return self.create_engine(db).connect()
+        return self._engine.connect()
 
     def recreate(self):
         engine = self.create_engine("postgres", isolate=True)
         connection = engine.connect()
         connection.execute(
             """
-                           SELECT pg_terminate_backend(pg_stat_activity.pid)
-                           FROM pg_stat_activity
-                           WHERE pg_stat_activity.datname = '{db}'
-                           AND pid <> pg_backend_pid()
-                           """.format(
+            SELECT pg_terminate_backend(pg_stat_activity.pid)
+            FROM pg_stat_activity
+            WHERE pg_stat_activity.datname = '{db}'
+            AND pid <> pg_backend_pid()
+            """.format(
                 db=self.db
             )
         )
