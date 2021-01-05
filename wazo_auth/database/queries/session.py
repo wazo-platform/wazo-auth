@@ -5,6 +5,7 @@ from sqlalchemy import text, and_
 
 from .base import BaseDAO, PaginatorMixin
 from ..models import Session, Token
+from ...helpers import is_uuid
 
 
 class SessionDAO(PaginatorMixin, BaseDAO):
@@ -27,12 +28,12 @@ class SessionDAO(PaginatorMixin, BaseDAO):
 
         return [
             {
-                'uuid': result.Session.uuid,
-                'mobile': result.Session.mobile,
-                'tenant_uuid': result.Session.tenant_uuid,
-                'user_uuid': result.Token.auth_id,
+                'uuid': r.Session.uuid,
+                'mobile': r.Session.mobile,
+                'tenant_uuid': r.Session.tenant_uuid,
+                'user_uuid': r.Token.auth_id if is_uuid(r.Token.auth_id) else None,
             }
-            for result in query.all()
+            for r in query.all()
         ]
 
     def count(self, tenant_uuids=None, **kwargs):

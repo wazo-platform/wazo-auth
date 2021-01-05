@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -10,6 +10,7 @@ from hamcrest import (
     equal_to,
     empty,
     has_entries,
+    has_items,
 )
 from ..helpers import base, fixtures
 
@@ -61,6 +62,17 @@ class TestSessionDAO(base.DAOTestCase):
 
         result = self._session_dao.list_(user_uuid=token_1['auth_id'])
         assert_that(result, contains(has_entries(uuid=token_1['session_uuid'])))
+
+    @fixtures.db.token(auth_id='not-uuid-id', session_uuid=SESSION_UUID_1)
+    @fixtures.db.token(auth_id='', session_uuid=SESSION_UUID_1)
+    def test_list_whith_no_uuid_auth_id(self, token_1, token_2):
+        session_uuid = token_1['session_uuid']
+        result = self._session_dao.list_()
+        assert_that(result, has_items(has_entries(uuid=session_uuid, user_uuid=None)))
+
+        session_uuid = token_2['session_uuid']
+        result = self._session_dao.list_()
+        assert_that(result, has_items(has_entries(uuid=session_uuid, user_uuid=None)))
 
     @fixtures.db.tenant(uuid=TENANT_UUID_1)
     @fixtures.db.token(session_uuid=SESSION_UUID_2)
