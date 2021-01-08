@@ -83,6 +83,9 @@ class UserService(BaseService):
             return user
         raise exceptions.UnknownUserException(user_uuid)
 
+    def get_username_by_login(self, login):
+        return self._dao.user.get_username_by_login(login)
+
     def list_groups(self, user_uuid, **kwargs):
         return self._dao.group.list_(user_uuid=user_uuid, **kwargs)
 
@@ -143,18 +146,24 @@ class UserService(BaseService):
         visible_tenants = self._tenant_tree.list_visible_tenants(user['tenant_uuid'])
         return tenant_uuid in visible_tenants
 
-    def verify_password(self, username, password, reset=False):
+    def verify_password(self, login, password, reset=False):
         if reset:
             return True
 
         try:
+            username = self._dao.user.get_username_by_login(login)
             hash_, salt = self._dao.user.get_credentials(username)
-        except exceptions.UnknownUsernameException:
+        except (
+            exceptions.UnknownUsernameException,
+            exceptions.UnknownLoginException,
+        ):
             return False
 
         if not hash_ or not salt:
             return False
 
+        # TODO(pcm): A computation should happen even if the user does not exists to avoid
+        # an exploit to discover existing usernames
         return hash_ == self._encrypter.compute_password_hash(password, salt)
 
     def assert_user_in_subtenant(self, scoping_tenant_uuid, user_uuid):

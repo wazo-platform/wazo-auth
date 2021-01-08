@@ -159,6 +159,12 @@ class UnknownUsernameException(Exception):
         super().__init__(msg)
 
 
+class UnknownLoginException(Exception):
+    def __init__(self, login):
+        msg = 'No such user: "{}"'.format(login)
+        super().__init__(msg)
+
+
 class _BaseParamException(APIException):
     def __init__(self, message, details=None):
         super().__init__(400, message, 'invalid-data', details, self.resource)

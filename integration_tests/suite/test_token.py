@@ -20,6 +20,7 @@ from hamcrest import (
 from requests.exceptions import HTTPError
 from xivo_test_helpers.hamcrest.raises import raises
 from xivo_test_helpers import until
+from wazo_auth_client import Client
 
 from .helpers import fixtures, base
 from .helpers.base import assert_http_error
@@ -28,6 +29,19 @@ from .helpers.constants import UNKNOWN_UUID
 
 @base.use_asset('base')
 class TestTokens(base.APIIntegrationTest):
+    @fixtures.http.user(username='u1', email_address='u1@example.com', password='bar')
+    def test_that_the_email_can_be_used_to_get_a_token(self, u1):
+        client = Client(
+            'localhost',
+            port=self.auth_port,
+            prefix=None,
+            https=False,
+            username='u1@example.com',
+            password='bar',
+        )
+        token_data = client.token.new(backend='wazo_user', expiration=1)
+        assert_that(token_data, has_entries(token=not_(None)))
+
     @fixtures.http.user(username='foo', password='bar')
     @fixtures.http.token(
         username='foo',
