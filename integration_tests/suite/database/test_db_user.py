@@ -1,4 +1,4 @@
-# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -572,6 +572,20 @@ class TestUserDAO(base.DAOTestCase):
         assert_that(
             result, contains_inanyorder(has_entries(uuid=b), has_entries(uuid=c))
         )
+
+    @fixtures.db.user(username='a', firstname='a', lastname='a')
+    @fixtures.db.user(username='b', firstname='b', lastname='b')
+    def test_sort(self, b, a):
+        self._check_sort('username', a, b)
+        self._check_sort('firstname', a, b)
+        self._check_sort('lastname', a, b)
+
+    def _check_sort(self, column, a, b):
+        result = self._user_dao.list_(order=column, direction='asc')
+        assert_that(result, contains(has_entries(uuid=a), has_entries(uuid=b)))
+
+        result = self._user_dao.list_(order=column, direction='desc')
+        assert_that(result, contains(has_entries(uuid=b), has_entries(uuid=a)))
 
     @fixtures.db.user(email_address='foo@example.com')
     def test_delete(self, user_uuid):

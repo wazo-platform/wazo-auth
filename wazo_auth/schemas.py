@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import Schema, fields, pre_load, post_dump, EXCLUDE
@@ -138,7 +138,7 @@ class UserTenantListSchema(BaseListSchema):
 
 
 class UserListSchema(BaseListSchema):
-    sort_columns = ['username']
+    sort_columns = ['username', 'firstname', 'lastname']
     default_sort_column = 'username'
     searchable_columns = [
         'uuid',
