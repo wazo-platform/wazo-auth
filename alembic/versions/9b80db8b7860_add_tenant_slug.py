@@ -1,0 +1,61 @@
+"""add tenant slug
+
+Revision ID: 9b80db8b7860
+Revises: 67013e93544f
+
+"""
+
+import random
+import string
+
+from alembic import op
+import sqlalchemy as sa
+
+# revision identifiers, used by Alembic.
+revision = '9b80db8b7860'
+down_revision = '67013e93544f'
+
+SLUG_LEN = 10
+
+tenant_tbl = sa.sql.table(
+    'auth_tenant',
+    sa.Column('uuid'),
+    sa.Column('name'),
+    sa.Column('slug'),
+)
+
+
+def upgrade():
+    op.add_column('auth_tenant', sa.Column('slug', sa.String(SLUG_LEN), unique=True))
+
+    slugs = set()
+    query = sa.sql.select([tenant_tbl.c.uuid, tenant_tbl.c.name])
+    for tenant in op.get_bind().execute(query):
+        # The name is used if short enough and unique, otherwise it's auto-generated
+        slug = None
+        if tenant.name and len(tenant.name) <= SLUG_LEN:
+            slug = tenant.name.replace(' ', '_').replace('-', '_')
+            if slug in slugs:
+                slug = None
+
+        if not slug:
+            while True:
+                slug = _generate_random_name(SLUG_LEN)
+                if slug not in slugs:
+                    break
+
+        op.execute(
+            tenant_tbl.update()
+            .values(slug=slug)
+            .where(tenant_tbl.c.uuid == tenant.uuid)
+        )
+
+    op.alter_column('auth_tenant', 'slug', nullable=False)
+
+
+def downgrade():
+    op.drop_column('auth_tenant', 'slug')
+
+
+def _generate_random_name(length):
+    return ''.join(random.choice(string.ascii_lowercase) for _ in range(length))

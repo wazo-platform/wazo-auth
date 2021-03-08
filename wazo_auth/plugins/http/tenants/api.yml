@@ -180,6 +180,9 @@ definitions:
       name:
         type: string
         description: "The tenant's name"
+      slug:
+        type: string
+        description: "A unique, human readeable identifier for this tenant. This field cannot be modified."
       contact:
         type: string
         description: "The contact user's UUID"

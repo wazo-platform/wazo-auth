@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, text
@@ -11,7 +11,10 @@ from ... import exceptions
 
 class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
-    constraint_to_column_map = {'auth_tenant_name_key': 'name'}
+    constraint_to_column_map = {
+        'auth_tenant_name_key': 'name',
+        'auth_tenant_slug_key': 'slug',
+    }
     search_filter = filters.tenant_search_filter
     strict_filter = filters.tenant_strict_filter
     column_map = {'name': Tenant.name}
@@ -63,6 +66,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         tenant = Tenant(
             name=kwargs['name'],
+            slug=kwargs['slug'],
             phone=kwargs['phone'],
             contact_uuid=kwargs['contact_uuid'],
             parent_uuid=str(kwargs['parent_uuid']),
@@ -116,7 +120,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return query.all()
 
     def list_(self, **kwargs):
-        schema = schemas.TenantSchema()
+        schema = schemas.TenantFullSchema()
         filter_ = text('true')
 
         tenant_uuids = kwargs.get('tenant_uuids')

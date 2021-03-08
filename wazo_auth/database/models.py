@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import (
@@ -30,9 +30,7 @@ class Address(Base):
 
     id_ = Column(Integer, name='id', primary_key=True)
     tenant_uuid = Column(
-        String(38),
-        ForeignKey('auth_tenant.uuid', ondelete='CASCADE'),
-        nullable=False,
+        String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False,
     )
     line_1 = Column(Text)
     line_2 = Column(Text)
@@ -53,9 +51,7 @@ class Email(Base):
     confirmed = Column(Boolean, nullable=False, default=False)
     main = Column(Boolean, nullable=False, default=False)
     user_uuid = Column(
-        String(38),
-        ForeignKey('auth_user.uuid', ondelete='CASCADE'),
-        nullable=False,
+        String(38), ForeignKey('auth_user.uuid', ondelete='CASCADE'), nullable=False,
     )
 
 
@@ -121,6 +117,7 @@ class Tenant(Base):
         String(38), server_default=text('uuid_generate_v4()'), primary_key=True
     )
     name = Column(Text)
+    slug = Column(String(16), nullable=False, unique=True)
     phone = Column(Text)
     contact_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='SET NULL'))
     parent_uuid = Column(String(38), ForeignKey('auth_tenant.uuid'), nullable=False)
@@ -209,10 +206,7 @@ class Policy(Base):
         String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False
     )
     config_managed = Column(
-        Boolean,
-        default=False,
-        server_default='false',
-        nullable=True,
+        Boolean, default=False, server_default='false', nullable=True,
     )
     tenant = relationship('Tenant', cascade='all, delete-orphan', single_parent=True)
 
@@ -299,7 +293,6 @@ class PolicyAccess(Base):
         String(38), ForeignKey('auth_policy.uuid', ondelete='CASCADE'), primary_key=True
     )
     access_id = Column(
-        Integer,
-        ForeignKey('auth_access.id', ondelete='CASCADE'),
-        primary_key=True,
+        Integer, ForeignKey('auth_access.id', ondelete='CASCADE'), primary_key=True,
     )
+

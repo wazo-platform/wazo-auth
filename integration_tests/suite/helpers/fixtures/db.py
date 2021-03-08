@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -197,6 +197,8 @@ def policy(**policy_args):
 
 
 def tenant(**tenant_args):
+    tenant_args.setdefault('slug', _random_string(10))
+
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):

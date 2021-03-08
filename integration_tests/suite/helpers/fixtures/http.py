@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import random
@@ -16,6 +16,7 @@ def _random_string(length):
 
 def admin_client(**decorator_args):
     decorator_args.setdefault('tenant_name', _random_string(9))
+    decorator_args.setdefault('tenant_slug', _random_string(10))
     decorator_args.setdefault('username', _random_string(5))
 
     def decorator(decorated):
@@ -31,7 +32,9 @@ def admin_client(**decorator_args):
             creator_token = creator_client.token.new()
             creator_client.set_token(creator_token['token'])
 
-            tenant = creator_client.tenants.new(name=decorator_args['tenant_name'])
+            tenant = creator_client.tenants.new(
+                name=decorator_args['tenant_name'], slug=decorator_args['tenant_slug']
+            )
 
             username, password = decorator_args['username'], 'secret'
             created_user = creator_client.users.new(
@@ -58,6 +61,8 @@ def admin_client(**decorator_args):
 
 
 def tenant(**tenant_args):
+    tenant_args.setdefault('slug', _random_string(10))
+
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):

@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -18,20 +18,21 @@ class _Address:
 
 
 class _Tenant:
-    def __init__(self, contact=None, uuid=None, name=None, address=None):
+    def __init__(self, contact=None, uuid=None, name=None, address=None, slug=None):
         self.uuid = uuid
         self.name = name
         self.address = address
         self.contact_uuid = contact
+        self.slug = slug
 
 
-class TenantSchema(TestCase):
+class TestTenantSchema(TestCase):
     def setUp(self):
-        self.schema = schemas.TenantSchema()
+        self.schema = schemas.TenantFullSchema()
 
     def test_that_an_empty_address_returns_a_body(self):
         uuid = '9b644581-5799-4d36-9306-50483a4d4f28'
-        tenant = _Tenant(uuid=uuid)
+        tenant = _Tenant(uuid=uuid, slug='slug')
 
         result = self.schema.dump(tenant)
 
@@ -41,6 +42,7 @@ class TenantSchema(TestCase):
                 {
                     'uuid': uuid,
                     'name': None,
+                    'slug': 'slug',
                     'contact': None,
                     'phone': None,
                     'address': {
@@ -58,7 +60,7 @@ class TenantSchema(TestCase):
     def test_with_an_address(self):
         uuid = 'e04f397c-0d52-4a83-aa8e-7ee374e9eed3'
         address = _Address(line_1='here', country='Canada')
-        tenant = _Tenant(uuid=uuid, address=address)
+        tenant = _Tenant(uuid=uuid, address=address, slug='address')
 
         result = self.schema.dump(tenant)
 
@@ -67,6 +69,7 @@ class TenantSchema(TestCase):
             has_entries(
                 uuid=uuid,
                 name=None,
+                slug='address',
                 address={
                     'line_1': 'here',
                     'line_2': None,
@@ -79,7 +82,7 @@ class TenantSchema(TestCase):
         )
 
     def test_that_a_null_contact_is_accepted(self):
-        body = {'contact': None}
+        body = {'contact': None, 'slug': 'nocontact'}
 
         result = self.schema.load(body)
 
@@ -87,14 +90,14 @@ class TenantSchema(TestCase):
 
     def test_contact_uuid_fields_when_serializing(self):
         contact = 'e04f397c-0d52-4a83-aa8e-7ee374e9eed3'
-        tenant = _Tenant(contact=contact)
+        tenant = _Tenant(contact=contact, slug='slug')
 
         result = self.schema.dump(tenant)
 
         assert_that(result, has_entries(contact=contact))
 
     def test_uuid(self):
-        body = {'name': 'foobar'}
+        body = {'name': 'foobar', 'slug': 'slug'}
 
         result = self.schema.load(body)
 

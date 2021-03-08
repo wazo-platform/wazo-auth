@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -37,7 +37,7 @@ class Tenant(BaseResource):
     def put(self, tenant_uuid):
         scoping_tenant = TenantDetector.autodetect()
         try:
-            args = schemas.TenantSchema().load(request.get_json())
+            args = schemas.TenantPUTSchema().load(request.get_json())
         except ValidationError as e:
             raise exceptions.TenantParamException.from_errors(e.messages)
 
@@ -75,7 +75,7 @@ class Tenants(BaseResource):
             request.get_json(force=True),
         )
         try:
-            args = schemas.TenantSchema().load(request.get_json())
+            args = schemas.TenantFullSchema().load(request.get_json())
         except ValidationError as e:
             raise exceptions.TenantParamException.from_errors(e.messages)
 

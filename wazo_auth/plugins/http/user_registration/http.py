@@ -1,11 +1,11 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
 import marshmallow
 
 from wazo_auth import exceptions, http
-from wazo_auth.schemas import TenantSchema
+from wazo_auth.schemas import TenantFullSchema
 from wazo_auth.plugin_helpers.flask import extract_connection_params
 from .schemas import UserRegisterPostSchema
 
@@ -22,7 +22,7 @@ class Register(http.ErrorCatchingResource):
         except marshmallow.ValidationError as e:
             raise exceptions.UserParamException.from_errors(e.messages)
 
-        tenant_body = TenantSchema().load({'name': args['username']})
+        tenant_body = TenantFullSchema().load({'name': args['username']})
         tenant = self.tenant_service.new(**tenant_body)
         result = self.user_service.new_user(
             enabled=True, tenant_uuid=tenant['uuid'], **args

@@ -1,7 +1,9 @@
-# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import pytest
+import random
+import string
 
 from uuid import uuid4
 
@@ -26,6 +28,10 @@ from ..helpers import fixtures, base, constants
 TENANT_UUID = '00000000-0000-4000-9000-000000000000'
 USER_UUID = '00000000-0000-4000-9000-111111111111'
 ADDRESS_ID = 42
+
+
+def _random_string(length):
+    return ''.join(random.choice(string.ascii_lowercase) for _ in range(length))
 
 
 class TestTenantDAO(base.DAOTestCase):
@@ -277,6 +283,7 @@ class TestTenantDAO(base.DAOTestCase):
         kwargs.setdefault('name', None)
         kwargs.setdefault('phone', None)
         kwargs.setdefault('contact_uuid', None)
+        kwargs.setdefault('slug', _random_string(10))
         return self._tenant_dao.create(**kwargs)
 
     def _top_tenant_uuid(self):
