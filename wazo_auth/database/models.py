@@ -30,7 +30,9 @@ class Address(Base):
 
     id_ = Column(Integer, name='id', primary_key=True)
     tenant_uuid = Column(
-        String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False,
+        String(38),
+        ForeignKey('auth_tenant.uuid', ondelete='CASCADE'),
+        nullable=False,
     )
     line_1 = Column(Text)
     line_2 = Column(Text)
@@ -51,7 +53,9 @@ class Email(Base):
     confirmed = Column(Boolean, nullable=False, default=False)
     main = Column(Boolean, nullable=False, default=False)
     user_uuid = Column(
-        String(38), ForeignKey('auth_user.uuid', ondelete='CASCADE'), nullable=False,
+        String(38),
+        ForeignKey('auth_user.uuid', ondelete='CASCADE'),
+        nullable=False,
     )
 
 
@@ -206,7 +210,10 @@ class Policy(Base):
         String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False
     )
     config_managed = Column(
-        Boolean, default=False, server_default='false', nullable=True,
+        Boolean,
+        default=False,
+        server_default='false',
+        nullable=True,
     )
     tenant = relationship('Tenant', cascade='all, delete-orphan', single_parent=True)
 
@@ -293,6 +300,7 @@ class PolicyAccess(Base):
         String(38), ForeignKey('auth_policy.uuid', ondelete='CASCADE'), primary_key=True
     )
     access_id = Column(
-        Integer, ForeignKey('auth_access.id', ondelete='CASCADE'), primary_key=True,
+        Integer,
+        ForeignKey('auth_access.id', ondelete='CASCADE'),
+        primary_key=True,
     )
-
