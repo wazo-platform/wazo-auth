@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, or_, text
@@ -88,6 +88,7 @@ tenant_strict_filter = StrictFilter(
     ('uuid', Tenant.uuid, str),
     ('uuids', Tenant.uuid, list),
     ('name', Tenant.name, None),
+    ('slug', Tenant.slug, None),
 )
 user_strict_filter = StrictFilter(
     ('uuid', User.uuid, str),
@@ -102,7 +103,7 @@ user_strict_filter = StrictFilter(
 external_auth_search_filter = SearchFilter(ExternalAuthType.name)
 group_search_filter = SearchFilter(Group.name)
 policy_search_filter = SearchFilter(Policy.name, Policy.description)
-tenant_search_filter = SearchFilter(Tenant.name)
+tenant_search_filter = SearchFilter(Tenant.name, Tenant.slug)
 user_search_filter = SearchFilter(
     User.firstname, User.lastname, User.username, Email.address
 )

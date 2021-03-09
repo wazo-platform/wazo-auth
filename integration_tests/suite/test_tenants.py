@@ -186,9 +186,9 @@ class TestTenants(WazoAuthTestCase):
 
         assert_http_error(404, self.client.tenants.get, UNKNOWN_UUID)
 
-    @fixtures.http.tenant(name='foobar')
-    @fixtures.http.tenant(name='foobaz')
-    @fixtures.http.tenant(name='foobarbaz')
+    @fixtures.http.tenant(name='foobar', slug='aaa')
+    @fixtures.http.tenant(name='foobaz', slug='bbb')
+    @fixtures.http.tenant(name='foobarbaz', slug='ccc')
     # extra tenant: "master" tenant
     def test_list(self, foobarbaz, foobaz, foobar):
         top_tenant = self.get_top_tenant()
@@ -206,12 +206,24 @@ class TestTenants(WazoAuthTestCase):
         matcher = contains_inanyorder(foobaz)
         then(result, filtered=1, item_matcher=matcher)
 
+        result = self.client.tenants.list(slug='ccc')
+        matcher = contains_inanyorder(foobarbaz)
+        then(result, filtered=1, item_matcher=matcher)
+
         result = self.client.tenants.list(search='bar')
         matcher = contains_inanyorder(foobar, foobarbaz)
         then(result, filtered=2, item_matcher=matcher)
 
+        result = self.client.tenants.list(search='bbb')
+        matcher = contains_inanyorder(foobaz)
+        then(result, filtered=1, item_matcher=matcher)
+
         result = self.client.tenants.list(limit=1, offset=1, order='name')
         matcher = contains(foobarbaz)
+        then(result, item_matcher=matcher)
+
+        result = self.client.tenants.list(order='slug')
+        matcher = contains(foobar, foobaz, foobarbaz, has_entries(slug='master'))
         then(result, item_matcher=matcher)
 
         result = self.client.tenants.list(order='name', direction='desc')
