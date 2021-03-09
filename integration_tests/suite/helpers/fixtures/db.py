@@ -197,12 +197,11 @@ def policy(**policy_args):
 
 
 def tenant(**tenant_args):
-    tenant_args.setdefault('slug', _random_string(10))
-
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
             tenant_args.setdefault('name', None)
+            tenant_args.setdefault('slug', None)
             tenant_args.setdefault('phone', None)
             tenant_args.setdefault('contact_uuid', None)
             tenant_args.setdefault('parent_uuid', self.top_tenant_uuid)

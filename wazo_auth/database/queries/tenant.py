@@ -1,12 +1,17 @@
 # Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import random
+import string
+
 from sqlalchemy import and_, exc, text
 from wazo_auth import schemas
 from .base import BaseDAO, PaginatorMixin
 from ..models import Address, Policy, Tenant, User
 from . import filters
 from ... import exceptions
+
+SLUG_LEN = 10
 
 
 class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
@@ -64,9 +69,13 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if not parent_uuid:
             kwargs['parent_uuid'] = self.find_top_tenant()
 
+        slug = kwargs['slug']
+        if not slug:
+            slug = self._generate_slug()
+
         tenant = Tenant(
             name=kwargs['name'],
-            slug=kwargs['slug'],
+            slug=slug,
             phone=kwargs['phone'],
             contact_uuid=kwargs['contact_uuid'],
             parent_uuid=str(kwargs['parent_uuid']),
@@ -190,3 +199,13 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             .select_from(included_tenants)
             .join(Tenant, Tenant.uuid == included_tenants.c.uuid)
         )
+
+    def _generate_slug(self):
+        while True:
+            slug = _generate_random_name(SLUG_LEN)
+            if self.session.query(Tenant.slug).filter(Tenant.slug == slug).count() == 0:
+                return slug
+
+
+def _generate_random_name(length):
+    return ''.join(random.choice(string.ascii_lowercase) for _ in range(length))

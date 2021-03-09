@@ -16,7 +16,6 @@ def _random_string(length):
 
 def admin_client(**decorator_args):
     decorator_args.setdefault('tenant_name', _random_string(9))
-    decorator_args.setdefault('tenant_slug', _random_string(10))
     decorator_args.setdefault('username', _random_string(5))
 
     def decorator(decorated):
@@ -61,8 +60,6 @@ def admin_client(**decorator_args):
 
 
 def tenant(**tenant_args):
-    tenant_args.setdefault('slug', _random_string(10))
-
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):

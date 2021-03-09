@@ -79,7 +79,7 @@ class TenantFullSchema(BaseSchema):
     )
     slug = xfields.String(
         validate=[validate.Length(min=1, max=10), validate.Regexp(r'^[a-zA-Z0-9_]+$')],
-        required=True,
+        missing=None,
     )
     contact_uuid = xfields.UUID(data_key='contact', missing=None, default=None)
     phone = xfields.String(

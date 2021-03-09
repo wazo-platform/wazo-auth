@@ -2,8 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import pytest
-import random
-import string
 
 from uuid import uuid4
 
@@ -18,6 +16,7 @@ from hamcrest import (
     has_properties,
     raises,
 )
+from mock import ANY
 
 from xivo_test_helpers.mock import ANY_UUID
 from wazo_auth import exceptions
@@ -30,8 +29,12 @@ USER_UUID = '00000000-0000-4000-9000-111111111111'
 ADDRESS_ID = 42
 
 
-def _random_string(length):
-    return ''.join(random.choice(string.ascii_lowercase) for _ in range(length))
+class ValidSlug:
+    def __eq__(self, other):
+        return other is not None and (0 < len(other) < 11)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 
 class TestTenantDAO(base.DAOTestCase):
@@ -199,6 +202,14 @@ class TestTenantDAO(base.DAOTestCase):
             raises(exceptions.MasterTenantConflictException),
         )
 
+    def test_tenant_creation_auto_generates_slug(self):
+        tenant_uuid = self._create_tenant(name='t', slug=None)
+
+        try:
+            self._assert_tenant_matches(tenant_uuid, 't', slug=ValidSlug())
+        finally:
+            self._tenant_dao.delete(tenant_uuid)
+
     @fixtures.db.tenant()
     def test_delete(self, tenant_uuid):
         self._tenant_dao.delete(tenant_uuid)
@@ -268,22 +279,24 @@ class TestTenantDAO(base.DAOTestCase):
         result = self.session.query(models.PolicyAccess).get(access_id)
         assert_that(result, equal_to(None))
 
-    def _assert_tenant_matches(self, uuid, name, parent_uuid=ANY_UUID):
+    def _assert_tenant_matches(self, uuid, name, parent_uuid=ANY_UUID, slug=ANY):
         assert_that(uuid, equal_to(ANY_UUID))
         s = self._tenant_dao.session
         tenant = (
-            s.query(models.Tenant.name, models.Tenant.parent_uuid)
+            s.query(models.Tenant.name, models.Tenant.parent_uuid, models.Tenant.slug)
             .filter(models.Tenant.uuid == uuid)
             .first()
         )
 
-        assert_that(tenant, has_properties(name=name, parent_uuid=parent_uuid))
+        assert_that(
+            tenant, has_properties(name=name, parent_uuid=parent_uuid, slug=slug)
+        )
 
     def _create_tenant(self, **kwargs):
         kwargs.setdefault('name', None)
         kwargs.setdefault('phone', None)
+        kwargs.setdefault('slug', None)
         kwargs.setdefault('contact_uuid', None)
-        kwargs.setdefault('slug', _random_string(10))
         return self._tenant_dao.create(**kwargs)
 
     def _top_tenant_uuid(self):

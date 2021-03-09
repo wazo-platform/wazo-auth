@@ -350,7 +350,6 @@ class WazoAuthTestCase(BaseTestCase):
     @staticmethod
     @contextmanager
     def tenant(client, *args, **kwargs):
-        kwargs.setdefault('slug', _random_string(10))
         create = client.tenants.new
         delete = client.tenants.delete
 
@@ -393,7 +392,3 @@ def _resource(create, delete, *args, **kwargs):
             delete(resource['uuid'])
         except Exception:
             pass
-
-
-def _random_string(length):
-    return ''.join(random.choice(string.ascii_lowercase) for _ in range(length))
