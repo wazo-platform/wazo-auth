@@ -115,9 +115,9 @@ class TestTenantDAO(base.DAOTestCase):
             ),
         )
 
-    @fixtures.db.tenant(name='c')
-    @fixtures.db.tenant(name='b')
-    @fixtures.db.tenant(name='a')
+    @fixtures.db.tenant(name='c', slug='xxx')
+    @fixtures.db.tenant(name='b', slug='yyy')
+    @fixtures.db.tenant(name='a', slug='zzz')
     def test_count(self, *tenants):
         top_tenant_uuid = self._top_tenant_uuid()
         visible_tenants = tenants + (top_tenant_uuid,)
