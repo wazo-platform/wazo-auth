@@ -24,7 +24,6 @@ class TestTenantPost(HTTPAppTestCase):
         invalid_datas = [
             ('name', {'name': 42, 'slug': 'abc'}),
             ('name', {'name': 100 * 'foobar', 'slug': 'abc'}),
-            ('slug', {'slug': None}),
             ('slug', {'slug': 'a-b'}),
             ('slug', {'slug': 'a b'}),
             ('slug', {'slug': False}),
