@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -306,7 +306,7 @@ class WazoAuthTestCase(BaseTestCase):
 
         username = username or random_string(8)
         password = 'secre7'
-        tenant_args = {'name': 'mytenant'}
+        tenant_args = {'name': 'mytenant', 'slug': random_string(10)}
         if parent_uuid:
             tenant_args['parent_uuid'] = parent_uuid
         tenant = self.client.tenants.new(**tenant_args)

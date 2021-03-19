@@ -46,12 +46,16 @@ class TenantAddress(BaseSchema):
 empty_tenant_address = TenantAddress().dump({})
 
 
-class TenantSchema(BaseSchema):
+class TenantFullSchema(BaseSchema):
 
     uuid = xfields.UUID(missing=None)
     parent_uuid = xfields.UUID(dump_only=True)
     name = xfields.String(
         validate=validate.Length(min=1, max=128), default=None, missing=None
+    )
+    slug = xfields.String(
+        validate=[validate.Length(min=1, max=10), validate.Regexp(r'^[a-zA-Z0-9_]+$')],
+        missing=None,
     )
     contact_uuid = xfields.UUID(data_key='contact', missing=None, default=None)
     phone = xfields.String(
@@ -68,6 +72,11 @@ class TenantSchema(BaseSchema):
     def add_empty_address(self, data):
         data['address'] = data['address'] or empty_tenant_address
         return data
+
+
+class TenantPUTSchema(TenantFullSchema):
+
+    slug = xfields.String(dump_only=True)
 
 
 class BaseListSchema(mallow.ListSchema):
@@ -126,9 +135,9 @@ class UserSessionListSchema(BaseListSchema):
 
 
 class TenantListSchema(BaseListSchema):
-    sort_columns = ['name']
+    sort_columns = ['name', 'slug']
     default_sort_column = 'name'
-    searchable_columns = ['uuid', 'uuids', 'name']
+    searchable_columns = ['uuid', 'uuids', 'name', 'slug']
 
 
 class UserTenantListSchema(BaseListSchema):

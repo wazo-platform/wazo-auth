@@ -1,5 +1,9 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+
+import random
+import string
+import re
 
 from sqlalchemy import and_, exc, text
 from wazo_auth import schemas
@@ -8,13 +12,19 @@ from ..models import Address, Policy, Tenant, User
 from . import filters
 from ... import exceptions
 
+MAX_SLUG_LEN = 10
+SLUG_LEN = 3
+
 
 class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
-    constraint_to_column_map = {'auth_tenant_name_key': 'name'}
+    constraint_to_column_map = {
+        'auth_tenant_name_key': 'name',
+        'auth_tenant_slug_key': 'slug',
+    }
     search_filter = filters.tenant_search_filter
     strict_filter = filters.tenant_strict_filter
-    column_map = {'name': Tenant.name}
+    column_map = {'name': Tenant.name, 'slug': Tenant.slug}
 
     def exists(self, tenant_uuid):
         return self.count([str(tenant_uuid)]) > 0
@@ -61,8 +71,13 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if not parent_uuid:
             kwargs['parent_uuid'] = self.find_top_tenant()
 
+        slug = kwargs['slug']
+        if not slug:
+            slug = self._generate_slug(kwargs['name'])
+
         tenant = Tenant(
             name=kwargs['name'],
+            slug=slug,
             phone=kwargs['phone'],
             contact_uuid=kwargs['contact_uuid'],
             parent_uuid=str(kwargs['parent_uuid']),
@@ -116,7 +131,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return query.all()
 
     def list_(self, **kwargs):
-        schema = schemas.TenantSchema()
+        schema = schemas.TenantFullSchema()
         filter_ = text('true')
 
         tenant_uuids = kwargs.get('tenant_uuids')
@@ -186,3 +201,27 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             .select_from(included_tenants)
             .join(Tenant, Tenant.uuid == included_tenants.c.uuid)
         )
+
+    def _generate_slug(self, name):
+        if name:
+            slug = _slug_from_name(name)
+            if not self._slug_exist(slug):
+                return slug
+
+        while True:
+            slug = _generate_random_name(SLUG_LEN)
+            if not self._slug_exist(slug):
+                return slug
+
+    def _slug_exist(self, slug):
+        return self.session.query(Tenant.slug).filter(Tenant.slug == slug).count() > 0
+
+
+def _slug_from_name(name):
+    return re.sub(r'[^a-zA-Z0-9_]', '', name)[:MAX_SLUG_LEN]
+
+
+def _generate_random_name(length):
+    return ''.join(
+        random.choice(string.ascii_letters + string.digits) for _ in range(length)
+    )

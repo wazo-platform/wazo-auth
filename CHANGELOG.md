@@ -1,5 +1,10 @@
 # Changelog
 
+## 21.04
+
+* The `tenants` resource now has a `slug` field
+
+
 ## 20.16
 
 * The following token metadata for `wazo_default_user` backend plugin has been removed:

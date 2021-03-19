@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import random
@@ -31,7 +31,9 @@ def admin_client(**decorator_args):
             creator_token = creator_client.token.new()
             creator_client.set_token(creator_token['token'])
 
-            tenant = creator_client.tenants.new(name=decorator_args['tenant_name'])
+            tenant = creator_client.tenants.new(
+                name=decorator_args['tenant_name'], slug=decorator_args['tenant_slug']
+            )
 
             username, password = decorator_args['username'], 'secret'
             created_user = creator_client.users.new(

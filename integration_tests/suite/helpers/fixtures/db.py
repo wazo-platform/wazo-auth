@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -201,6 +201,7 @@ def tenant(**tenant_args):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
             tenant_args.setdefault('name', None)
+            tenant_args.setdefault('slug', None)
             tenant_args.setdefault('phone', None)
             tenant_args.setdefault('contact_uuid', None)
             tenant_args.setdefault('parent_uuid', self.top_tenant_uuid)

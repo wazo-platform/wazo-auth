@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from functools import partial
@@ -33,15 +33,18 @@ PHONE_1 = '555-555-5555'
 
 
 class TestTenants(WazoAuthTestCase):
-    @fixtures.http.tenant(name='foobar', address=ADDRESS_1, phone=PHONE_1)
-    @fixtures.http.tenant(uuid='6668ca15-6d9e-4000-b2ec-731bc7316767', name='foobaz')
-    @fixtures.http.tenant()
+    @fixtures.http.tenant(name='foobar', address=ADDRESS_1, phone=PHONE_1, slug='slug1')
+    @fixtures.http.tenant(
+        uuid='6668ca15-6d9e-4000-b2ec-731bc7316767', name='foobaz', slug='slug2'
+    )
+    @fixtures.http.tenant(slug='slug3')
     def test_post(self, other, foobaz, foobar):
         assert_that(
             other,
             has_entries(
                 uuid=uuid_(),
                 name=None,
+                slug='slug3',
                 parent_uuid=self.top_tenant_uuid,
                 address=has_entries(**ADDRESS_NULL),
             ),
@@ -52,6 +55,7 @@ class TestTenants(WazoAuthTestCase):
             has_entries(
                 uuid='6668ca15-6d9e-4000-b2ec-731bc7316767',
                 name='foobaz',
+                slug='slug2',
                 parent_uuid=self.top_tenant_uuid,
                 address=has_entries(**ADDRESS_NULL),
             ),
@@ -62,6 +66,7 @@ class TestTenants(WazoAuthTestCase):
             has_entries(
                 uuid=uuid_(),
                 name='foobar',
+                slug='slug1',
                 phone=PHONE_1,
                 parent_uuid=self.top_tenant_uuid,
                 address=has_entries(**ADDRESS_1),
@@ -156,6 +161,10 @@ class TestTenants(WazoAuthTestCase):
                 has_entries(uuid=uuid_(), name='subtenant', parent_uuid=foobar['uuid']),
             )
 
+    @fixtures.http.tenant(slug='dup')
+    def test_post_duplicate_slug(self, a):
+        assert_http_error(409, self.client.tenants.new, slug='dup')
+
     @fixtures.http.tenant()
     def test_delete(self, tenant):
         with self.client_in_subtenant() as (client, user, sub_tenant):
@@ -177,9 +186,9 @@ class TestTenants(WazoAuthTestCase):
 
         assert_http_error(404, self.client.tenants.get, UNKNOWN_UUID)
 
-    @fixtures.http.tenant(name='foobar')
-    @fixtures.http.tenant(name='foobaz')
-    @fixtures.http.tenant(name='foobarbaz')
+    @fixtures.http.tenant(name='foobar', slug='aaa')
+    @fixtures.http.tenant(name='foobaz', slug='bbb')
+    @fixtures.http.tenant(name='foobarbaz', slug='ccc')
     # extra tenant: "master" tenant
     def test_list(self, foobarbaz, foobaz, foobar):
         top_tenant = self.get_top_tenant()
@@ -197,12 +206,24 @@ class TestTenants(WazoAuthTestCase):
         matcher = contains_inanyorder(foobaz)
         then(result, filtered=1, item_matcher=matcher)
 
+        result = self.client.tenants.list(slug='ccc')
+        matcher = contains_inanyorder(foobarbaz)
+        then(result, filtered=1, item_matcher=matcher)
+
         result = self.client.tenants.list(search='bar')
         matcher = contains_inanyorder(foobar, foobarbaz)
         then(result, filtered=2, item_matcher=matcher)
 
+        result = self.client.tenants.list(search='bbb')
+        matcher = contains_inanyorder(foobaz)
+        then(result, filtered=1, item_matcher=matcher)
+
         result = self.client.tenants.list(limit=1, offset=1, order='name')
         matcher = contains(foobarbaz)
+        then(result, item_matcher=matcher)
+
+        result = self.client.tenants.list(order='slug')
+        matcher = contains(foobar, foobaz, foobarbaz, has_entries(slug='master'))
         then(result, item_matcher=matcher)
 
         result = self.client.tenants.list(order='name', direction='desc')
@@ -247,6 +268,15 @@ class TestTenants(WazoAuthTestCase):
                 address=has_entries(**ADDRESS_1),
             ),
         )
+
+    @fixtures.http.tenant(slug='ABC')
+    def test_put_slug_is_read_only(self, tenant):
+        new_body = dict(tenant)
+        new_body['slug'] = 'DEF'
+
+        result = self.client.tenants.edit(tenant['uuid'], **new_body)
+
+        assert_that(result, has_entries(**tenant))
 
 
 class TestTenantPolicyAssociation(WazoAuthTestCase):
