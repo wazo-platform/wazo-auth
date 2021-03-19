@@ -171,6 +171,17 @@ definitions:
         type: string
       name:
         type: string
+      slug:
+        type: string
+        description: "A unique, human readeable identifier for this tenant"
+      contact:
+        type: string
+        description: "The contact user's UUID"
+      phone:
+        type: string
+        description: "The tenant's contact phone number"
+      address:
+        $ref: '#/definitions/TenantAddress'
   TenantCreate:
     type: object
     properties:
