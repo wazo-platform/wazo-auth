@@ -7,6 +7,7 @@ Revises: 67013e93544f
 
 import random
 import string
+import re
 
 from alembic import op
 import sqlalchemy as sa
@@ -15,7 +16,8 @@ import sqlalchemy as sa
 revision = '9b80db8b7860'
 down_revision = '67013e93544f'
 
-SLUG_LEN = 10
+MAX_SLUG_LEN = 10
+SLUG_LEN = 3
 
 tenant_tbl = sa.sql.table(
     'auth_tenant',
@@ -25,18 +27,23 @@ tenant_tbl = sa.sql.table(
 )
 
 
+def slug_from_name(name):
+    if not name:
+        return
+    return re.sub(r'[^a-zA-Z0-9_]', '', name)[:MAX_SLUG_LEN]
+
+
 def upgrade():
-    op.add_column('auth_tenant', sa.Column('slug', sa.String(SLUG_LEN), unique=True))
+    op.add_column(
+        'auth_tenant', sa.Column('slug', sa.String(MAX_SLUG_LEN), unique=True)
+    )
 
     slugs = set()
     query = sa.sql.select([tenant_tbl.c.uuid, tenant_tbl.c.name])
     for tenant in op.get_bind().execute(query):
-        # The name is used if short enough and unique, otherwise it's auto-generated
-        slug = None
-        if tenant.name and len(tenant.name) <= SLUG_LEN:
-            slug = tenant.name.replace(' ', '_').replace('-', '_')
-            if slug in slugs:
-                slug = None
+        slug = slug_from_name(tenant.name)
+        if slug in slugs:
+            slug = None
 
         if not slug:
             while True:
@@ -58,4 +65,6 @@ def downgrade():
 
 
 def _generate_random_name(length):
-    return ''.join(random.choice(string.ascii_lowercase) for _ in range(length))
+    return ''.join(
+        random.choice(string.ascii_letters + string.digits) for _ in range(length)
+    )

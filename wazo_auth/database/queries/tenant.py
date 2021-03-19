@@ -3,6 +3,7 @@
 
 import random
 import string
+import re
 
 from sqlalchemy import and_, exc, text
 from wazo_auth import schemas
@@ -11,7 +12,8 @@ from ..models import Address, Policy, Tenant, User
 from . import filters
 from ... import exceptions
 
-SLUG_LEN = 10
+MAX_SLUG_LEN = 10
+SLUG_LEN = 3
 
 
 class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
@@ -71,7 +73,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         slug = kwargs['slug']
         if not slug:
-            slug = self._generate_slug()
+            slug = self._generate_slug(kwargs['name'])
 
         tenant = Tenant(
             name=kwargs['name'],
@@ -200,12 +202,26 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             .join(Tenant, Tenant.uuid == included_tenants.c.uuid)
         )
 
-    def _generate_slug(self):
+    def _generate_slug(self, name):
+        if name:
+            slug = _slug_from_name(name)
+            if not self._slug_exist(slug):
+                return slug
+
         while True:
             slug = _generate_random_name(SLUG_LEN)
-            if self.session.query(Tenant.slug).filter(Tenant.slug == slug).count() == 0:
+            if not self._slug_exist(slug):
                 return slug
+
+    def _slug_exist(self, slug):
+        return self.session.query(Tenant.slug).filter(Tenant.slug == slug).count() > 0
+
+
+def _slug_from_name(name):
+    return re.sub(r'[^a-zA-Z0-9_]', '', name)[:MAX_SLUG_LEN]
 
 
 def _generate_random_name(length):
-    return ''.join(random.choice(string.ascii_lowercase) for _ in range(length))
+    return ''.join(
+        random.choice(string.ascii_letters + string.digits) for _ in range(length)
+    )
