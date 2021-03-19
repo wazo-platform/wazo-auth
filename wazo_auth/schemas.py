@@ -46,30 +46,6 @@ class TenantAddress(BaseSchema):
 empty_tenant_address = TenantAddress().dump({})
 
 
-class TenantPUTSchema(BaseSchema):
-
-    uuid = xfields.UUID(missing=None)
-    parent_uuid = xfields.UUID(dump_only=True)
-    name = xfields.String(
-        validate=validate.Length(min=1, max=128), default=None, missing=None
-    )
-    contact_uuid = xfields.UUID(data_key='contact', missing=None, default=None)
-    phone = xfields.String(
-        validate=validate.Length(min=1, max=32), default=None, missing=None
-    )
-    address = xfields.Nested(
-        TenantAddress,
-        missing=empty_tenant_address,
-        default=empty_tenant_address,
-        allow_none=False,
-    )
-
-    @post_dump
-    def add_empty_address(self, data):
-        data['address'] = data['address'] or empty_tenant_address
-        return data
-
-
 class TenantFullSchema(BaseSchema):
 
     uuid = xfields.UUID(missing=None)
@@ -96,6 +72,11 @@ class TenantFullSchema(BaseSchema):
     def add_empty_address(self, data):
         data['address'] = data['address'] or empty_tenant_address
         return data
+
+
+class TenantPUTSchema(TenantFullSchema):
+
+    slug = xfields.String(dump_only=True)
 
 
 class BaseListSchema(mallow.ListSchema):
