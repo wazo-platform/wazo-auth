@@ -182,7 +182,7 @@ definitions:
         description: "The tenant's name"
       slug:
         type: string
-        description: "A unique, human readeable identifier for this tenant. This field cannot be modified."
+        description: "A unique, human readeable identifier for this tenant. This field cannot be modified and will be auto-generated if missing."
       contact:
         type: string
         description: "The contact user's UUID"
