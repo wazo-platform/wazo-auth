@@ -51,6 +51,7 @@ def upgrade():
                 if slug not in slugs:
                     break
 
+        slugs.add(slug)
         op.execute(
             tenant_tbl.update()
             .values(slug=slug)
