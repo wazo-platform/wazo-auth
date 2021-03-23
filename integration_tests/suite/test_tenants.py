@@ -10,6 +10,7 @@ from hamcrest import (
     has_entries,
     has_item,
 )
+from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers import fixtures
 from .helpers.base import (
@@ -160,6 +161,29 @@ class TestTenants(WazoAuthTestCase):
                 subtenant,
                 has_entries(uuid=uuid_(), name='subtenant', parent_uuid=foobar['uuid']),
             )
+
+    def test_tenant_created_event(self):
+        routing_key = 'auth.tenants.*.created'
+        msg_accumulator = self.new_message_accumulator(routing_key)
+        name = 'My tenant'
+        slug = 'my_tenant'
+
+        def bus_received_msg():
+            assert_that(
+                msg_accumulator.accumulate(),
+                contains(
+                    has_entries(
+                        name='auth_tenant_added',
+                        data=has_entries(name=name, slug=slug),
+                    )
+                ),
+            )
+
+        tenant = self.client.tenants.new(name=name, slug=slug)
+        try:
+            until.assert_(bus_received_msg, tries=10, interval=0.25)
+        finally:
+            self.client.tenants.delete(tenant['uuid'])
 
     @fixtures.http.tenant(slug='dup')
     def test_post_duplicate_slug(self, a):

@@ -1,4 +1,4 @@
-# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo_bus.resources.auth import events
@@ -88,7 +88,11 @@ class TenantService(BaseService):
         self._dao.address.new(tenant_uuid=uuid, **kwargs['address'])
         result = self._get(uuid)
 
-        event = events.TenantCreatedEvent(uuid, kwargs.get('name'))
+        event = events.TenantCreatedEvent(
+            uuid=uuid,
+            name=result['name'],
+            slug=result['slug'],
+        )
         self._bus_publisher.publish(event)
 
         all_users_group = self._group_service.create(
