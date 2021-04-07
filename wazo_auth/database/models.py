@@ -123,7 +123,7 @@ class Tenant(Base):
         String(38), server_default=text('uuid_generate_v4()'), primary_key=True
     )
     name = Column(Text)
-    slug = Column(String(16), nullable=False, unique=True)
+    slug = Column(String(10), nullable=False, unique=True)
     phone = Column(Text)
     contact_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='SET NULL'))
     parent_uuid = Column(String(38), ForeignKey('auth_tenant.uuid'), nullable=False)
