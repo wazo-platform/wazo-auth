@@ -155,11 +155,10 @@ def token(**token_args):
 
 
 def group(**group_args):
-    group_args.setdefault('name', _random_string(20))
-
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
+            group_args.setdefault('name', _random_string(20))
             group_args.setdefault('tenant_uuid', self.top_tenant_uuid)
             group_args.setdefault('system_managed', False)
             group_uuid = self._group_dao.create(**group_args)
@@ -175,14 +174,13 @@ def group(**group_args):
 
 
 def policy(**policy_args):
-    policy_args.setdefault('name', _random_string(20))
-    policy_args.setdefault('config_managed', False)
-    policy_args['acl'] = policy_args.get('acl') or []
-    policy_args['description'] = policy_args.get('description', '')
-
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
+            policy_args.setdefault('name', _random_string(20))
+            policy_args.setdefault('config_managed', False)
+            policy_args['acl'] = policy_args.get('acl') or []
+            policy_args['description'] = policy_args.get('description', '')
             policy_args.setdefault('tenant_uuid', self.top_tenant_uuid)
             policy_uuid = self._policy_dao.create(**policy_args)
             self.session.begin_nested()
@@ -219,18 +217,17 @@ def tenant(**tenant_args):
 
 
 def user(**user_args):
-    user_args.setdefault('username', _random_string(20))
-    user_args.setdefault('email_address', '{}@example.com'.format(_random_string(50)))
-    user_args.setdefault('hash_', _random_string(64))
-    user_args.setdefault('salt', A_SALT)
-    user_args.setdefault('firstname', _random_string(20))
-    user_args.setdefault('lastname', _random_string(20))
-    user_args.setdefault('purpose', 'user')
-    user_args.setdefault('enabled', True)
-
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
+            user_args.setdefault('username', _random_string(20))
+            user_args.setdefault('email_address', '{}@example.com'.format(_random_string(50)))
+            user_args.setdefault('hash_', _random_string(64))
+            user_args.setdefault('salt', A_SALT)
+            user_args.setdefault('firstname', _random_string(20))
+            user_args.setdefault('lastname', _random_string(20))
+            user_args.setdefault('purpose', 'user')
+            user_args.setdefault('enabled', True)
             user_args.setdefault('tenant_uuid', self.top_tenant_uuid)
             user_uuid = self._user_dao.create(**user_args)['uuid']
             self.session.begin_nested()
