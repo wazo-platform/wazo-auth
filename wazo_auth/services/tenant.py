@@ -99,9 +99,10 @@ class TenantService(BaseService):
             name=f'wazo-all-users-tenant-{uuid}', tenant_uuid=uuid, system_managed=True
         )
 
-        for name, policy in self._all_users_policies.items():
+        for slug, policy in self._all_users_policies.items():
             all_users_policy_uuid = self._policy_service.create(
-                name=name,
+                name=slug,
+                slug=slug,
                 tenant_uuid=uuid,
                 description='Automatically created to be applied to all users',
                 **policy,

@@ -1,6 +1,9 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import random
+import re
+import string
 from sqlalchemy import and_, distinct, exc, func, text
 from .base import BaseDAO, PaginatorMixin
 from . import filters
@@ -13,6 +16,9 @@ from ..models import (
     UserPolicy,
 )
 from ... import exceptions
+
+MAX_SLUG_LEN = 80
+SLUG_LEN = 3
 
 
 class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
@@ -78,9 +84,14 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         return self.session.query(Policy).filter(filter_).count()
 
-    def create(self, name, description, acl, config_managed, tenant_uuid):
+    def create(self, name, slug, description, acl, config_managed, tenant_uuid):
+
+        if not slug:
+            slug = self._generate_slug(name)
+
         policy = Policy(
             name=name,
+            slug=slug,
             description=description,
             config_managed=config_managed,
             tenant_uuid=tenant_uuid,
@@ -124,6 +135,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             self.session.query(
                 Policy.uuid,
                 Policy.name,
+                Policy.slug,
                 Policy.description,
                 Policy.config_managed,
                 Policy.tenant_uuid,
@@ -148,6 +160,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             body = {
                 'uuid': policy.uuid,
                 'name': policy.name,
+                'slug': policy.slug,
                 'description': policy.description,
                 'acl': acl,
                 'tenant_uuid': policy.tenant_uuid,
@@ -169,6 +182,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             {
                 'uuid': policy.uuid,
                 'name': policy.name,
+                'slug': policy.slug,
                 'tenant_uuid': policy.tenant_uuid,
             }
             for policy in query.all()
@@ -257,3 +271,26 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         result = self.session.query(Policy).filter(filter_).count() > 0
         self.session.flush()
         return result
+
+    def _generate_slug(self, name):
+        if name:
+            slug = _slug_from_name(name)
+            if not self._slug_exist(slug):
+                return slug
+
+        while True:
+            slug = _generate_random_name(SLUG_LEN)
+            if not self._slug_exist(slug):
+                return slug
+
+    def _slug_exist(self, slug):
+        return self.session.query(Policy.slug).filter(Policy.slug == slug).count() > 0
+
+
+def _slug_from_name(name):
+    return re.sub(r'[^a-zA-Z0-9_-]', '', name)[:MAX_SLUG_LEN]
+
+
+def _generate_random_name(length):
+    choices = string.ascii_lowercase + string.digits
+    return ''.join(random.choice(choices) for _ in range(length))

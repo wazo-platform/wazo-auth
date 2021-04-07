@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -46,6 +46,7 @@ class TestPolicies(WazoAuthTestCase):
             has_entries(
                 uuid=uuid_(),
                 name='foobaz',
+                slug='foobaz',
                 description=none(),
                 acl=empty(),
                 tenant_uuid=self.top_tenant_uuid,
@@ -54,6 +55,7 @@ class TestPolicies(WazoAuthTestCase):
 
         policy_args = {
             'name': 'foobar',
+            'slug': 'slug1',
             'description': 'a test policy',
             'acl': ['dird.me.#', 'ctid-ng.#'],
             'tenant_uuid': tenant['uuid'],
@@ -143,6 +145,10 @@ class TestPolicies(WazoAuthTestCase):
                     status_code=400,
                 ),
             )
+
+    @fixtures.http.tenant(slug='dup')
+    def test_post_duplicate_slug(self, a):
+        assert_http_error(409, self.client.policies.new, slug='dup')
 
     @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='one', tenant_uuid=SUB_TENANT_UUID)
@@ -285,14 +291,22 @@ class TestPolicies(WazoAuthTestCase):
         assert_that(
             response,
             has_entries(
-                {
-                    'uuid': equal_to(policy['uuid']),
-                    'name': equal_to('foobaz'),
-                    'description': none(),
-                    'acl': empty(),
-                }
+                uuid=equal_to(policy['uuid']),
+                name=equal_to('foobaz'),
+                slug=equal_to('foobar'),
+                description=none(),
+                acl=empty(),
             ),
         )
+
+    @fixtures.http.policy(slug='ABC')
+    def test_put_slug_is_read_only(self, policy):
+        new_body = dict(policy)
+        new_body['slug'] = 'DEF'
+
+        result = self.client.policies.edit(policy['uuid'], **new_body)
+
+        assert_that(result, has_entries(**policy))
 
     @fixtures.http.policy(acl=['dird.me.#', 'ctid-ng.#'])
     def test_add_access(self, policy):

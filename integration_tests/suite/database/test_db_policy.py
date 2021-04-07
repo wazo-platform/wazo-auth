@@ -94,6 +94,48 @@ class TestPolicyDAO(base.DAOTestCase):
             raises(exceptions.DuplicatePolicyException),
         )
 
+    @fixtures.db.tenant()
+    @fixtures.db.policy(slug='foobar')
+    def test_that_two_policies_cannot_have_the_same_slug_and_tenant(
+        self, policy_uuid, tenant_uuid
+    ):
+        # Same slug different tenants no exception
+        assert_that(
+            calling(self.create_and_delete_policy).with_args(
+                'foobar', slug='foobar', tenant_uuid=tenant_uuid
+            ),
+            not_(raises(exceptions.DuplicatePolicyException)),
+        )
+
+        # Same tenant different slug no exception
+        assert_that(
+            calling(self.create_and_delete_policy).with_args(
+                'foobaz', slug='foobaz'
+            ),
+            not_(raises(exceptions.DuplicatePolicyException)),
+        )
+
+        # Same name same tenant
+        assert_that(
+            calling(self.create_and_delete_policy).with_args(
+                'foobar', slug='foobar'
+            ),
+            raises(exceptions.DuplicatePolicyException),
+        )
+
+        # Same name case insensitive same tenant
+        assert_that(
+            calling(self.create_and_delete_policy).with_args(
+                'fooBAR', slug='fooBAR'
+            ),
+            raises(exceptions.DuplicatePolicyException),
+        )
+
+    def test_tenant_creation_auto_generates_slug(self):
+        name = 'policy-name'
+        with self._new_policy(name=name, slug=None) as policy:
+            assert_that(policy, has_entries(slug=name))
+
     @fixtures.db.policy(name='foobar')
     def test_get(self, uuid_):
         policy = self.get_policy(uuid_)
@@ -287,10 +329,11 @@ class TestPolicyDAO(base.DAOTestCase):
         return [policy['uuid'] for policy in policies]
 
     @contextmanager
-    def _new_policy(self, name, description=None, acl=None, tenant_uuid=None):
+    def _new_policy(self, name, slug=None, description=None, acl=None, tenant_uuid=None):
         tenant_uuid = tenant_uuid or self.top_tenant_uuid
         acl = acl or []
-        uuid_ = self._policy_dao.create(name, description, acl, False, tenant_uuid)
+        slug = slug or name
+        uuid_ = self._policy_dao.create(name, slug, description, acl, False, tenant_uuid)
         try:
             yield uuid_
         finally:

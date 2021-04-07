@@ -7,11 +7,13 @@ from sqlalchemy import (
     Column,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     LargeBinary,
     String,
     Text,
     UniqueConstraint,
+    func,
     schema,
     sql,
     text,
@@ -199,12 +201,16 @@ class Session(Base):
 class Policy(Base):
 
     __tablename__ = 'auth_policy'
-    __table_args__ = (UniqueConstraint('name', 'tenant_uuid'),)
+    __table_args__ = (
+        UniqueConstraint('name', 'tenant_uuid'),
+        Index('auth_policy__idx__slug', func.lower('slug'), 'tenant_uuid', unique=True),
+    )
 
     uuid = Column(
         String(38), server_default=text('uuid_generate_v4()'), primary_key=True
     )
     name = Column(String(80), nullable=False)
+    slug = Column(String(80), nullable=False)
     description = Column(Text)
     tenant_uuid = Column(
         String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False

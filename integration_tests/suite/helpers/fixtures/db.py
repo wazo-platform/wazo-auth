@@ -178,6 +178,7 @@ def policy(**policy_args):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
             policy_args.setdefault('name', _random_string(20))
+            policy_args.setdefault('slug', _random_string(10))
             policy_args.setdefault('config_managed', False)
             policy_args['acl'] = policy_args.get('acl') or []
             policy_args['description'] = policy_args.get('description', '')

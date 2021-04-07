@@ -1,4 +1,4 @@
-# Copyright 2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -74,6 +74,7 @@ class AllUsersService:
         logger.debug('all_users: tenant %s: creating policy %s', tenant_uuid, name)
         return self._policy_service.create(
             name=name,
+            slug=name,
             tenant_uuid=tenant_uuid,
             description='Automatically created to be applied to all users',
             config_managed=True,
