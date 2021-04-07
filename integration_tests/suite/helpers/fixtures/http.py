@@ -15,12 +15,12 @@ def _random_string(length):
 
 
 def admin_client(**decorator_args):
-    decorator_args.setdefault('tenant_name', _random_string(9))
-    decorator_args.setdefault('username', _random_string(5))
-
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
+            decorator_args.setdefault('tenant_name', _random_string(9))
+            decorator_args.setdefault('username', _random_string(5))
+
             creator = self.client.users.new(username='creator', password='opensesame')
             policy = self.client.policies.new('tmp', acl=['auth.#'])
             self.client.users.add_policy(creator['uuid'], policy['uuid'])
@@ -107,12 +107,11 @@ def token(**token_args):
 
 
 def user(**user_args):
-    user_args.setdefault('username', _random_string(20))
-    user_args.setdefault('password', _random_string(20))
-
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
+            user_args.setdefault('username', _random_string(20))
+            user_args.setdefault('password', _random_string(20))
             user = self.client.users.new(**user_args)
             try:
                 result = decorated(self, user, *args, **kwargs)
@@ -129,15 +128,13 @@ def user(**user_args):
 
 
 def user_register(**user_args):
-    user_args.setdefault('username', _random_string(20))
-    user_args.setdefault('password', _random_string(20))
-    user_args.setdefault(
-        'email_address', '{}@example.com'.format(user_args['username'])
-    )
-
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
+            user_args.setdefault('username', _random_string(20))
+            user_args.setdefault('password', _random_string(20))
+            username = user_args['username']
+            user_args.setdefault('email_address', f'{username}@example.com')
             user = self.client.users.register(**user_args)
             try:
                 result = decorated(self, user, *args, **kwargs)
@@ -165,12 +162,11 @@ def config_managed_policy(db_client, policy, policy_args):
 
 
 def policy(**policy_args):
-    policy_args.setdefault('name', _random_string(20))
-    policy_args['acl'] = policy_args.get('acl') or []
-
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
+            policy_args.setdefault('name', _random_string(20))
+            policy_args['acl'] = policy_args.get('acl') or []
             policy = self.client.policies.new(**policy_args)
             try:
                 with config_managed_policy(self.new_db_client(), policy, policy_args):
@@ -206,11 +202,10 @@ def system_managed_group(db_client, group_uuid, group_args):
 
 
 def group(**group_args):
-    group_args.setdefault('name', _random_string(20))
-
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
+            group_args.setdefault('name', _random_string(20))
             group = self.client.groups.new(**group_args)
             try:
                 with system_managed_group(
@@ -230,14 +225,15 @@ def group(**group_args):
 
 
 def session(**session_args):
-    user_args = {'username': _random_string(20), 'password': 'pass'}
-    if 'tenant_uuid' in session_args:
-        user_args['tenant_uuid'] = session_args['tenant_uuid']
-    token_args = {'session_type': 'mobile' if session_args.get('mobile') else None}
-
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
+            user_args = {'username': _random_string(20), 'password': 'pass'}
+            if 'tenant_uuid' in session_args:
+                user_args['tenant_uuid'] = session_args['tenant_uuid']
+            mobile = session_args.get('mobile')
+            token_args = {'session_type': 'mobile' if mobile else None}
+
             user = self.client.users.new(**user_args)
             client = self.new_auth_client(user_args['username'], user_args['password'])
             token = client.token.new(**token_args)
