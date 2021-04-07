@@ -1,4 +1,4 @@
-# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from contextlib import contextmanager
@@ -77,20 +77,20 @@ class TestPolicyDAO(base.DAOTestCase):
         # Same name different tenants no exception
         assert_that(
             calling(self.create_and_delete_policy).with_args(
-                'foobar', '', tenant_uuid=tenant_uuid
+                'foobar', tenant_uuid=tenant_uuid
             ),
             not_(raises(exceptions.DuplicatePolicyException)),
         )
 
         # Same tenant different names no exception
         assert_that(
-            calling(self.create_and_delete_policy).with_args('foobaz', ''),
+            calling(self.create_and_delete_policy).with_args('foobaz'),
             not_(raises(exceptions.DuplicatePolicyException)),
         )
 
         # Same name same tenant
         assert_that(
-            calling(self.create_and_delete_policy).with_args('foobar', ''),
+            calling(self.create_and_delete_policy).with_args('foobar'),
             raises(exceptions.DuplicatePolicyException),
         )
 
@@ -287,7 +287,7 @@ class TestPolicyDAO(base.DAOTestCase):
         return [policy['uuid'] for policy in policies]
 
     @contextmanager
-    def _new_policy(self, name, description, acl=None, tenant_uuid=None):
+    def _new_policy(self, name, description=None, acl=None, tenant_uuid=None):
         tenant_uuid = tenant_uuid or self.top_tenant_uuid
         acl = acl or []
         uuid_ = self._policy_dao.create(name, description, acl, False, tenant_uuid)
