@@ -109,25 +109,19 @@ class TestPolicyDAO(base.DAOTestCase):
 
         # Same tenant different slug no exception
         assert_that(
-            calling(self.create_and_delete_policy).with_args(
-                'foobaz', slug='foobaz'
-            ),
+            calling(self.create_and_delete_policy).with_args('foobaz', slug='foobaz'),
             not_(raises(exceptions.DuplicatePolicyException)),
         )
 
         # Same name same tenant
         assert_that(
-            calling(self.create_and_delete_policy).with_args(
-                'foobar', slug='foobar'
-            ),
+            calling(self.create_and_delete_policy).with_args('foobar', slug='foobar'),
             raises(exceptions.DuplicatePolicyException),
         )
 
         # Same name case insensitive same tenant
         assert_that(
-            calling(self.create_and_delete_policy).with_args(
-                'fooBAR', slug='fooBAR'
-            ),
+            calling(self.create_and_delete_policy).with_args('fooBAR', slug='fooBAR'),
             raises(exceptions.DuplicatePolicyException),
         )
 
@@ -329,11 +323,15 @@ class TestPolicyDAO(base.DAOTestCase):
         return [policy['uuid'] for policy in policies]
 
     @contextmanager
-    def _new_policy(self, name, slug=None, description=None, acl=None, tenant_uuid=None):
+    def _new_policy(
+        self, name, slug=None, description=None, acl=None, tenant_uuid=None
+    ):
         tenant_uuid = tenant_uuid or self.top_tenant_uuid
         acl = acl or []
         slug = slug or name
-        uuid_ = self._policy_dao.create(name, slug, description, acl, False, tenant_uuid)
+        uuid_ = self._policy_dao.create(
+            name, slug, description, acl, False, tenant_uuid
+        )
         try:
             yield uuid_
         finally:

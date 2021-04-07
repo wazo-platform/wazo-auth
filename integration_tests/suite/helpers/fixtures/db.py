@@ -222,7 +222,9 @@ def user(**user_args):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
             user_args.setdefault('username', _random_string(20))
-            user_args.setdefault('email_address', '{}@example.com'.format(_random_string(50)))
+            user_args.setdefault(
+                'email_address', '{}@example.com'.format(_random_string(50))
+            )
             user_args.setdefault('hash_', _random_string(64))
             user_args.setdefault('salt', A_SALT)
             user_args.setdefault('firstname', _random_string(20))
