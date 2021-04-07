@@ -24,9 +24,9 @@ class Policies(_BasePolicyRessource):
                 raise exceptions.InvalidInputException(field)
 
         body['tenant_uuid'] = Tenant.autodetect().uuid
-        body['uuid'] = self.policy_service.create(**body)
+        policy = self.policy_service.create(**body)
 
-        return policy_full_schema.dump(body), 200
+        return policy_full_schema.dump(policy), 200
 
     @http.required_acl('auth.policies.read')
     def get(self):

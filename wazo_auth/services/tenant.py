@@ -100,7 +100,7 @@ class TenantService(BaseService):
         )
 
         for slug, policy in self._all_users_policies.items():
-            all_users_policy_uuid = self._policy_service.create(
+            all_users_policy = self._policy_service.create(
                 name=slug,
                 slug=slug,
                 tenant_uuid=uuid,
@@ -108,7 +108,7 @@ class TenantService(BaseService):
                 **policy,
             )
             self._group_service.add_policy(
-                all_users_group['uuid'], all_users_policy_uuid
+                all_users_group['uuid'], all_users_policy['uuid']
             )
 
         return result

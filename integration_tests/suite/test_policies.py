@@ -62,9 +62,9 @@ class TestPolicies(WazoAuthTestCase):
         }
         # Specify the tenant_uuid
         with self.policy(self.client, **policy_args) as policy:
-            assert_that(policy, has_entries(uuid=uuid_(), **policy_args))
+            assert_that(policy, has_entries(uuid=uuid_(), name='foobar'))
 
-        # Specify the a tenant uuid in another sub-tenant tree
+        # Specify the tenant uuid in another sub-tenant tree
         with self.client_in_subtenant() as (client, _, __):
             assert_http_error(401, client.policies.new, **policy_args)
 
@@ -78,8 +78,8 @@ class TestPolicies(WazoAuthTestCase):
                 policy,
                 has_entries(
                     uuid=uuid_(),
-                    acl_templates=policy_args['acl_templates'],
-                    acl=policy_args['acl_templates'],
+                    acl_templates=contains_inanyorder(*policy_args['acl_templates']),
+                    acl=contains_inanyorder(*policy_args['acl_templates']),
                 ),
             )
 
@@ -146,9 +146,9 @@ class TestPolicies(WazoAuthTestCase):
                 ),
             )
 
-    @fixtures.http.tenant(slug='dup')
+    @fixtures.http.policy(slug='dup')
     def test_post_duplicate_slug(self, a):
-        assert_http_error(409, self.client.policies.new, slug='dup')
+        assert_http_error(409, self.client.policies.new, name='dup', slug='dup')
 
     @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='one', tenant_uuid=SUB_TENANT_UUID)

@@ -56,10 +56,10 @@ class AllUsersService:
                     tenant_uuid, existing_policy_uuid, all_users_group
                 )
             else:
-                policy_uuid = self._create_policy(
+                policy = self._create_policy(
                     tenant_uuid, name, policy, all_users_group
                 )
-                self._associate_policy(tenant_uuid, policy_uuid, all_users_group)
+                self._associate_policy(tenant_uuid, policy['uuid'], all_users_group)
 
         policies_to_remove = [
             policy
