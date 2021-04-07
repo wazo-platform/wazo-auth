@@ -1,9 +1,9 @@
-test-setup: test-image egg-info test-db build-oauth2-sync
+test-setup: test-image egg-info db build-oauth2-sync
 
 build-oauth2-sync:
 	docker build --no-cache -t oauth2-synchronization-service -f assets/external_auth/oauth2_synchronization_service/Dockerfile assets/external_auth/oauth2_synchronization_service
 
-test-db:
+db:
 	docker build -f ../contribs/docker/Dockerfile-db -t wazoplatform/wazo-auth-db ..
 
 test-image:
@@ -16,4 +16,4 @@ egg-info:
 test:
 	pytest -x
 
-.PHONY: test-setup test test-image test-db
+.PHONY: test-setup test test-image db
