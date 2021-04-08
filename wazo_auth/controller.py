@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -92,6 +92,13 @@ class Controller:
             group_service,
             policy_service,
             self._tenant_service,
+            config['default_policies'],
+            config['all_users_policies'],
+        )
+        self._default_policy_service = services.DefaultPolicyService(
+            policy_service,
+            self._tenant_service,
+            config['default_policies'],
             config['all_users_policies'],
         )
 
@@ -172,6 +179,7 @@ class Controller:
 
         with db_ready(timeout=self._config['db_connect_retry_timeout_seconds']):
             self._all_users_service.update_policies()
+            self._default_policy_service.update_policies()
 
         with bus.publisher_thread(self._bus_publisher):
             with ServiceCatalogRegistration(*self._service_discovery_args):
