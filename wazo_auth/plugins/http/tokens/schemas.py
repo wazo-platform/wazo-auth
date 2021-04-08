@@ -1,16 +1,16 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from marshmallow import Schema, fields, validates_schema
-from marshmallow.validate import Length, Range, OneOf
+from marshmallow import validates_schema
 from marshmallow.exceptions import ValidationError
 
-from xivo.mallow import fields as xfields
+from xivo.mallow import fields
+from xivo.mallow.validate import Length, Range, OneOf
 
 from wazo_auth.schemas import BaseListSchema, BaseSchema
 
 
-class TokenRequestSchema(Schema):
+class TokenRequestSchema(BaseSchema):
     backend = fields.String(missing='wazo_user')
     expiration = fields.Integer(validate=Range(min=1))
     access_type = fields.String(validate=OneOf(['online', 'offline']))
@@ -56,13 +56,13 @@ class RefreshTokenListSchema(BaseListSchema):
 
 class RefreshTokenSchema(BaseSchema):
 
-    client_id = xfields.String(min=1, max=1024)
-    created_at = xfields.DateTime()
-    mobile = xfields.Boolean()
-    user_uuid = xfields.String()
-    tenant_uuid = xfields.String()
+    client_id = fields.String(min=1, max=1024)
+    created_at = fields.DateTime()
+    mobile = fields.Boolean()
+    user_uuid = fields.String()
+    tenant_uuid = fields.String()
 
 
 class TokenScopesRequestSchema(BaseSchema):
-    scopes = xfields.List(xfields.String())
-    tenant_uuid = xfields.String(missing=None)
+    scopes = fields.List(fields.String())
+    tenant_uuid = fields.String(missing=None)
