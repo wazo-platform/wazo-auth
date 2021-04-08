@@ -75,6 +75,7 @@ group_strict_filter = StrictFilter(
 policy_strict_filter = StrictFilter(
     ('uuid', Policy.uuid, str),
     ('name', Policy.name, None),
+    ('slug', Policy.slug, None),
     ('user_uuid', UserPolicy.user_uuid, str),
     ('group_uuid', GroupPolicy.group_uuid, str),
     ('tenant_uuid', Policy.tenant_uuid, str),

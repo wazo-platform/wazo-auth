@@ -27,6 +27,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     strict_filter = filters.policy_strict_filter
     column_map = {
         'name': Policy.name,
+        'slug': Policy.slug,
         'description': Policy.description,
         'uuid': Policy.uuid,
     }
