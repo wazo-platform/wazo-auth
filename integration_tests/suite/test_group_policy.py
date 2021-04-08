@@ -12,7 +12,7 @@ from hamcrest import (
     not_,
 )
 from .helpers import base, fixtures
-from .helpers.constants import UNKNOWN_UUID, DEFAULT_POLICY_NAME
+from .helpers.constants import UNKNOWN_UUID, DEFAULT_POLICY_SLUG
 
 
 class TestGroupPolicyAssociation(base.WazoAuthTestCase):
@@ -159,7 +159,7 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         assert_that(token_data, has_entries('acl', has_items('foobar')))
 
     def test_all_users_policies_are_updated_at_startup(self):
-        policy = self.client.policies.list(name=DEFAULT_POLICY_NAME)['items'][0]
+        policy = self.client.policies.list(slug=DEFAULT_POLICY_SLUG)['items'][0]
         policy_without_acl = dict(policy)
         policy_without_acl['acl'] = []
         self.client.policies.edit(policy['uuid'], **policy_without_acl)
@@ -173,7 +173,7 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         group = self.client.groups.list(
             name=f'wazo-all-users-tenant-{self.top_tenant_uuid}'
         )['items'][0]
-        policy = self.client.policies.list(name=DEFAULT_POLICY_NAME)['items'][0]
+        policy = self.client.policies.list(slug=DEFAULT_POLICY_SLUG)['items'][0]
         policy_without_acl = dict(policy)
         policy_without_acl['acl'] = []
         self.client.policies.edit(policy['uuid'], **policy_without_acl)

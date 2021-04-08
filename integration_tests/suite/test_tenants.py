@@ -21,7 +21,7 @@ from .helpers.base import (
     WazoAuthTestCase,
     SUB_TENANT_UUID,
 )
-from .helpers.constants import UNKNOWN_UUID, NB_DEFAULT_POLICIES, DEFAULT_POLICY_NAME
+from .helpers.constants import UNKNOWN_UUID, NB_DEFAULT_POLICIES, DEFAULT_POLICY_SLUG
 
 ADDRESS_1 = {
     'line_1': 'Here',
@@ -115,7 +115,7 @@ class TestTenants(WazoAuthTestCase):
                     group=has_entries(tenant_uuid=self.top_tenant_uuid),
                     policies=contains(
                         has_entries(
-                            name=DEFAULT_POLICY_NAME,
+                            slug=DEFAULT_POLICY_SLUG,
                             tenant_uuid=self.top_tenant_uuid,
                             acl=has_item('integration_tests.access'),
                         )
@@ -125,7 +125,7 @@ class TestTenants(WazoAuthTestCase):
                     group=has_entries(tenant_uuid=foobar['uuid']),
                     policies=contains(
                         has_entries(
-                            name=DEFAULT_POLICY_NAME,
+                            slug=DEFAULT_POLICY_SLUG,
                             tenant_uuid=foobar['uuid'],
                             acl=has_item('integration_tests.access'),
                         )
@@ -135,7 +135,7 @@ class TestTenants(WazoAuthTestCase):
                     group=has_entries(tenant_uuid=foobaz['uuid']),
                     policies=contains(
                         has_entries(
-                            name=DEFAULT_POLICY_NAME,
+                            slug=DEFAULT_POLICY_SLUG,
                             tenant_uuid=foobaz['uuid'],
                             acl=has_item('integration_tests.access'),
                         )
@@ -145,7 +145,7 @@ class TestTenants(WazoAuthTestCase):
                     group=has_entries(tenant_uuid=other['uuid']),
                     policies=contains(
                         has_entries(
-                            name=DEFAULT_POLICY_NAME,
+                            slug=DEFAULT_POLICY_SLUG,
                             tenant_uuid=other['uuid'],
                             acl=has_item('integration_tests.access'),
                         )
@@ -321,7 +321,7 @@ class TestTenantPolicyAssociation(WazoAuthTestCase):
 
         result = action()
         expected = contains_inanyorder(
-            *[has_entries(name=n) for n in ('foo', 'bar', 'baz', DEFAULT_POLICY_NAME)]
+            *[has_entries(name=n) for n in ('foo', 'bar', 'baz', DEFAULT_POLICY_SLUG)]
         )
         assert_that(
             result,
@@ -353,7 +353,7 @@ class TestTenantPolicyAssociation(WazoAuthTestCase):
             has_entries(name='bar'),
             has_entries(name='baz'),
             has_entries(name='foo'),
-            has_entries(name=DEFAULT_POLICY_NAME),
+            has_entries(name=DEFAULT_POLICY_SLUG),
         ]
         assert_sorted(action, order='name', expected=expected)
 
@@ -373,7 +373,7 @@ class TestTenantPolicyAssociation(WazoAuthTestCase):
         expected = contains(
             has_entries(name='baz'),
             has_entries(name='foo'),
-            has_entries(name=DEFAULT_POLICY_NAME),
+            has_entries(name=DEFAULT_POLICY_SLUG),
         )
         assert_that(
             result,

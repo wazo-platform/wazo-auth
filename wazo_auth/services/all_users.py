@@ -34,45 +34,51 @@ class AllUsersService:
     def update_policies_for_tenant(self, tenant_uuid):
         all_users_group = self._group_service.get_all_users_group(tenant_uuid)
         existing_policies = self._policy_service.list(scoping_tenant_uuid=tenant_uuid)
-        existing_policy_names = {
-            policy['name']: policy['uuid'] for policy in existing_policies
-        }
+        existing_policy_slugs = {p['slug']: p['uuid'] for p in existing_policies}
         associated_policies = self._group_service.list_policies(all_users_group['uuid'])
-        associated_policy_names = {
-            policy['name']: policy['uuid'] for policy in associated_policies
-        }
-        for name, policy in self._all_users_policies.items():
-            if name in associated_policy_names:
-                associated_policy_uuid = associated_policy_names[name]
+        associated_policy_slugs = {p['slug']: p['uuid'] for p in associated_policies}
+        for slug, policy in self._all_users_policies.items():
+            if slug in associated_policy_slugs:
+                associated_policy_uuid = associated_policy_slugs[slug]
                 self._update_policy(
-                    tenant_uuid, associated_policy_uuid, name, policy, all_users_group
+                    tenant_uuid,
+                    associated_policy_uuid,
+                    slug,
+                    policy,
+                    all_users_group,
                 )
-            elif name in existing_policy_names:
-                existing_policy_uuid = existing_policy_names[name]
+            elif slug in existing_policy_slugs:
+                existing_policy_uuid = existing_policy_slugs[slug]
                 self._update_policy(
-                    tenant_uuid, existing_policy_uuid, name, policy, all_users_group
+                    tenant_uuid,
+                    existing_policy_uuid,
+                    slug,
+                    policy,
+                    all_users_group,
                 )
                 self._associate_policy(
-                    tenant_uuid, existing_policy_uuid, all_users_group
+                    tenant_uuid,
+                    existing_policy_uuid,
+                    all_users_group,
                 )
             else:
-                policy = self._create_policy(tenant_uuid, name, policy, all_users_group)
+                policy = self._create_policy(tenant_uuid, slug, policy, all_users_group)
                 self._associate_policy(tenant_uuid, policy['uuid'], all_users_group)
 
         policies_to_remove = [
             policy
             for policy in existing_policies
             if policy['config_managed']
-            and policy['name'] not in self._all_users_policies
+            and policy['slug'] not in self._all_users_policies
         ]
         for policy in policies_to_remove:
             self._delete_policy(tenant_uuid, policy['uuid'])
 
-    def _create_policy(self, tenant_uuid, name, policy, all_users_group):
-        logger.debug('all_users: tenant %s: creating policy %s', tenant_uuid, name)
+    def _create_policy(self, tenant_uuid, slug, policy, all_users_group):
+        logger.debug('all_users: tenant %s: creating policy %s', tenant_uuid, slug)
         return self._policy_service.create(
-            name=name,
-            slug=name,
+            name=slug,
+            slug=slug,
             tenant_uuid=tenant_uuid,
             description='Automatically created to be applied to all users',
             config_managed=True,
@@ -80,14 +86,14 @@ class AllUsersService:
         )
 
     def _update_policy(
-        self, tenant_uuid, policy_uuid, policy_name, policy, all_users_group
+        self, tenant_uuid, policy_uuid, policy_slug, policy, all_users_group
     ):
         logger.debug(
             'all_users: tenant %s: updating policy %s', tenant_uuid, policy_uuid
         )
         self._policy_service.update(
             policy_uuid,
-            name=policy_name,
+            name=policy_slug,
             description='Automatically created to be applied to all users',
             config_managed=True,
             **policy,
