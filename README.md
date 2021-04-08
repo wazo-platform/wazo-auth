@@ -127,22 +127,5 @@ ab -n1000 -c25 -A 'alice:alice' -p /tmp/body.json -T 'application/json' "http://
 This line will start 25 process creating 1000 tokens with the username and password alice alice
 
 
-Adding a new database migration
--------------------------------
-
-To add a new migration script for the database use the following command from the root of the project:
-
-   % ./alembic_revision.sh "<description of the revision>"
-
-To add a new ACL migration script use the following command from the root of the project:
-
-   % ./alembic_revision.sh -a "<description of the revision>"
-
-Available ACL policies are:
-
-* `wazo_default_admin_policy`
-* `wazo_default_user_policy`
-
-
 ## License
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fwazo-platform%2Fwazo-auth.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fwazo-platform%2Fwazo-auth?ref=badge_large)
