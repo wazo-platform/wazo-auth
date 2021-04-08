@@ -56,7 +56,7 @@ class RefreshTokenListSchema(BaseListSchema):
 
 class RefreshTokenSchema(BaseSchema):
 
-    client_id = fields.String(min=1, max=1024)
+    client_id = fields.String(validate=Length(min=1, max=1024))
     created_at = fields.DateTime()
     mobile = fields.Boolean()
     user_uuid = fields.String()
