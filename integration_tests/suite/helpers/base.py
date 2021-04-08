@@ -279,7 +279,7 @@ class WazoAuthTestCase(BaseTestCase):
             cls.username,
             cls.password,
             bootstrap.PURPOSE,
-            bootstrap.DEFAULT_POLICY_NAME,
+            bootstrap.DEFAULT_POLICY_SLUG,
         )
 
         cls.client = cls.new_auth_client(cls.username, cls.password)
