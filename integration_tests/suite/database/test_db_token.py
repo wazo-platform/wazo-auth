@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -65,9 +65,9 @@ class TestTokenDAO(base.DAOTestCase):
         )
         self._token_dao.delete(token['uuid'])  # No error on delete unknown
 
-    @fixtures.db.token(expiration=0)
-    @fixtures.db.token(expiration=0)
     @fixtures.db.token()
+    @fixtures.db.token(expiration=0)
+    @fixtures.db.token(expiration=0)
     def test_delete_expired_tokens_and_sessions(self, token_1, token_2, token_3):
         (
             expired_tokens,

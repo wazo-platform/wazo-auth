@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
@@ -24,8 +24,8 @@ TENANT_UUID = 'a26c4ed8-767f-463e-a10a-42c4f220d375'
 
 
 class TestGroupDAO(base.DAOTestCase):
-    @fixtures.db.policy()
     @fixtures.db.group()
+    @fixtures.db.policy()
     def test_add_policy(self, group_uuid, policy_uuid):
         assert_that(self._policy_dao.get(group_uuid=group_uuid), empty())
 
@@ -51,8 +51,8 @@ class TestGroupDAO(base.DAOTestCase):
             'unknown policy',
         )
 
-    @fixtures.db.user()
     @fixtures.db.group()
+    @fixtures.db.user()
     def test_add_user(self, group_uuid, user_uuid):
         assert_that(self._user_dao.list_(group_uuid=group_uuid), empty())
 
@@ -95,7 +95,7 @@ class TestGroupDAO(base.DAOTestCase):
 
     @fixtures.db.tenant(uuid=TENANT_UUID)
     @fixtures.db.group(name='foobar', tenant_uuid=TENANT_UUID)
-    def test_create(self, group_uuid, tenant_uuid):
+    def test_create(self, tenant_uuid, group_uuid):
         name = 'foobar'
 
         assert_that(group_uuid, equal_to(ANY_UUID))
@@ -123,11 +123,11 @@ class TestGroupDAO(base.DAOTestCase):
             raises(exceptions.UnknownGroupException),
         )
 
+    @fixtures.db.user()
+    @fixtures.db.user()
     @fixtures.db.group(name='foo')
     @fixtures.db.group(name='bar')
     @fixtures.db.group(name='baz')
-    @fixtures.db.user()
-    @fixtures.db.user()
     def test_list(self, user1_uuid, user2_uuid, *group_uuids):
         def build_list_matcher(*names):
             return [has_entries('name', name) for name in names]
@@ -166,7 +166,7 @@ class TestGroupDAO(base.DAOTestCase):
 
     @fixtures.db.group()
     @fixtures.db.policy()
-    def test_remove_policy(self, policy_uuid, group_uuid):
+    def test_remove_policy(self, group_uuid, policy_uuid):
         nb_deleted = self._group_dao.remove_policy(group_uuid, policy_uuid)
         assert_that(nb_deleted, equal_to(0))
 
@@ -181,8 +181,8 @@ class TestGroupDAO(base.DAOTestCase):
         nb_deleted = self._group_dao.remove_policy(group_uuid, policy_uuid)
         assert_that(nb_deleted, equal_to(1))
 
-    @fixtures.db.group()
     @fixtures.db.user()
+    @fixtures.db.group()
     def test_remove_user(self, user_uuid, group_uuid):
         nb_deleted = self._group_dao.remove_user(group_uuid, user_uuid)
         assert_that(nb_deleted, equal_to(0))

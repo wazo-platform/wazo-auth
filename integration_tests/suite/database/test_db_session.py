@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -21,9 +21,9 @@ SESSION_UUID_2 = str(uuid.uuid4())
 
 class TestSessionDAO(base.DAOTestCase):
     @fixtures.db.tenant(uuid=TENANT_UUID_1)
-    @fixtures.db.token(session={'mobile': False})
     @fixtures.db.token(session={'tenant_uuid': TENANT_UUID_1, 'mobile': True})
-    def test_list(self, token_1, token_2, tenant_uuid):
+    @fixtures.db.token(session={'mobile': False})
+    def test_list(self, tenant_uuid, token_1, token_2):
         result = self._session_dao.list_()
         assert_that(
             result,
@@ -63,8 +63,8 @@ class TestSessionDAO(base.DAOTestCase):
         result = self._session_dao.list_(user_uuid=token_1['auth_id'])
         assert_that(result, contains(has_entries(uuid=token_1['session_uuid'])))
 
-    @fixtures.db.token(auth_id='not-uuid-id', session_uuid=SESSION_UUID_1)
     @fixtures.db.token(auth_id='', session_uuid=SESSION_UUID_1)
+    @fixtures.db.token(auth_id='not-uuid-id', session_uuid=SESSION_UUID_1)
     def test_list_whith_no_uuid_auth_id(self, token_1, token_2):
         session_uuid = token_1['session_uuid']
         result = self._session_dao.list_()

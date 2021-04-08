@@ -26,8 +26,9 @@ def address(**address_args):
             address_args.setdefault('tenant_uuid', self.top_tenant_uuid)
             address_id = self._address_dao.new(**address_args)
             self.session.begin_nested()
+            args = list(args) + [address_id]
             try:
-                return decorated(self, address_id, *args, **kwargs)
+                return decorated(self, *args, **kwargs)
             finally:
                 self.session.rollback()
 
@@ -60,8 +61,9 @@ def email(**email_args):
             self.session.flush()
             email_uuid = email.uuid
             self.session.begin_nested()
+            args = list(args) + [email_uuid]
             try:
-                return decorated(self, email_uuid, *args, **kwargs)
+                return decorated(self, *args, **kwargs)
             finally:
                 self.session.rollback()
 
@@ -76,8 +78,9 @@ def external_auth(*auth_types):
         def wrapper(self, *args, **kwargs):
             self._external_auth_dao.enable_all(auth_types)
             self.session.begin_nested()
+            args = list(args) + [auth_types]
             try:
-                return decorated(self, auth_types, *args, **kwargs)
+                return decorated(self, *args, **kwargs)
             finally:
                 self.session.rollback()
 
@@ -94,8 +97,9 @@ def external_auth_config(**auth_config):
             auth_config.setdefault('data', 'random-data')
             data = self._external_auth_dao.create_config(**auth_config)
             self.session.begin_nested()
+            args = list(args) + [data]
             try:
-                return decorated(self, data, *args, **kwargs)
+                return decorated(self, *args, **kwargs)
             finally:
                 self.session.rollback()
 
@@ -112,8 +116,9 @@ def user_external_auth(**user_auth):
             user_auth.setdefault('data', 'random-data')
             data = self._external_auth_dao.create(**user_auth)
             self.session.begin_nested()
+            args = list(args) + [data]
             try:
-                return decorated(self, data, *args, **kwargs)
+                return decorated(self, *args, **kwargs)
             finally:
                 self.session.rollback()
 
@@ -144,8 +149,9 @@ def token(**token_args):
             token['uuid'] = token_uuid
             token['session_uuid'] = session_uuid
             self.session.begin_nested()
+            args = list(args) + [token]
             try:
-                return decorated(self, token, *args, **kwargs)
+                return decorated(self, *args, **kwargs)
             finally:
                 self.session.rollback()
 
@@ -163,8 +169,9 @@ def group(**group_args):
             group_args.setdefault('system_managed', False)
             group_uuid = self._group_dao.create(**group_args)
             self.session.begin_nested()
+            args = list(args) + [group_uuid]
             try:
-                return decorated(self, group_uuid, *args, **kwargs)
+                return decorated(self, *args, **kwargs)
             finally:
                 self.session.rollback()
 
@@ -185,8 +192,9 @@ def policy(**policy_args):
             policy_args.setdefault('tenant_uuid', self.top_tenant_uuid)
             policy_uuid = self._policy_dao.create(**policy_args)
             self.session.begin_nested()
+            args = list(args) + [policy_uuid]
             try:
-                return decorated(self, policy_uuid, *args, **kwargs)
+                return decorated(self, *args, **kwargs)
             finally:
                 self.session.rollback()
 
@@ -207,8 +215,9 @@ def tenant(**tenant_args):
 
             tenant_uuid = self._tenant_dao.create(**tenant_args)
             self.session.begin_nested()
+            args = list(args) + [tenant_uuid]
             try:
-                return decorated(self, tenant_uuid, *args, **kwargs)
+                return decorated(self, *args, **kwargs)
             finally:
                 self.session.rollback()
 
@@ -234,8 +243,9 @@ def user(**user_args):
             user_args.setdefault('tenant_uuid', self.top_tenant_uuid)
             user_uuid = self._user_dao.create(**user_args)['uuid']
             self.session.begin_nested()
+            args = list(args) + [user_uuid]
             try:
-                return decorated(self, user_uuid, *args, **kwargs)
+                return decorated(self, *args, **kwargs)
             finally:
                 self.session.rollback()
 
@@ -250,8 +260,9 @@ def refresh_token(**refresh_token_args):
         def wrapper(self, *args, **kwargs):
             refresh_token = self._refresh_token_dao.create(refresh_token_args)
             self.session.begin_nested()
+            args = list(args) + [refresh_token]
             try:
-                return decorated(self, refresh_token, *args, **kwargs)
+                return decorated(self, *args, **kwargs)
             finally:
                 self.session.rollback()
 
