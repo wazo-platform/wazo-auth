@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from functools import partial
@@ -23,7 +23,7 @@ class TestGroups(base.WazoAuthTestCase):
 
     @fixtures.http.group(name='foobar')
     @fixtures.http.group(name='all-users-group', system_managed=True)
-    def test_delete(self, all_users_group, foobar):
+    def test_delete(self, foobar, all_users_group):
         base.assert_http_error(404, self.client.groups.delete, UNKNOWN_UUID)
 
         with self.client_in_subtenant() as (client, _, __):
@@ -48,7 +48,7 @@ class TestGroups(base.WazoAuthTestCase):
     @fixtures.http.tenant(uuid=base.SUB_TENANT_UUID)
     @fixtures.http.group(name='foobar')
     @fixtures.http.group(name='foobaz', tenant_uuid=base.SUB_TENANT_UUID)
-    def test_post(self, foobaz, foobar, _):
+    def test_post(self, _, foobar, foobaz):
         assert_that(
             foobar,
             has_entries(uuid=ANY, name='foobar', tenant_uuid=self.top_tenant_uuid),
@@ -63,7 +63,7 @@ class TestGroups(base.WazoAuthTestCase):
     @fixtures.http.group(name='foobar')
     @fixtures.http.group(name='duplicate')
     @fixtures.http.group(name='all-users-group', system_managed=True)
-    def test_put(self, all_users_group, duplicate, group):
+    def test_put(self, group, duplicate, all_users_group):
         base.assert_http_error(
             404, self.client.groups.edit, UNKNOWN_UUID, name='foobaz'
         )
@@ -100,7 +100,7 @@ class TestGroups(base.WazoAuthTestCase):
     @fixtures.http.group(name='one', tenant_uuid=base.SUB_TENANT_UUID)
     @fixtures.http.group(name='two', tenant_uuid=base.SUB_TENANT_UUID)
     @fixtures.http.group(name='three', tenant_uuid=base.SUB_TENANT_UUID)
-    def test_list_tenant_filtering(self, three, two, one, _):
+    def test_list_tenant_filtering(self, _, one, two, three):
         action = self.client.groups.list
 
         # Different tenant
@@ -143,7 +143,7 @@ class TestGroups(base.WazoAuthTestCase):
     @fixtures.http.group(name='one', tenant_uuid=base.SUB_TENANT_UUID)
     @fixtures.http.group(name='two', tenant_uuid=base.SUB_TENANT_UUID)
     @fixtures.http.group(name='three', tenant_uuid=base.SUB_TENANT_UUID)
-    def test_list_paginating(self, three, two, one, _):
+    def test_list_paginating(self, _, one, two, three):
         action = partial(
             self.client.groups.list, tenant_uuid=base.SUB_TENANT_UUID, order='name'
         )
@@ -174,7 +174,7 @@ class TestGroups(base.WazoAuthTestCase):
     @fixtures.http.group(name='group-12-one', tenant_uuid=base.SUB_TENANT_UUID)
     @fixtures.http.group(name='group-12-two', tenant_uuid=base.SUB_TENANT_UUID)
     @fixtures.http.group(name='three', tenant_uuid=base.SUB_TENANT_UUID)
-    def test_list_searching(self, three, two, one, _):
+    def test_list_searching(self, _, one, two, three):
         action = partial(self.client.groups.list, tenant_uuid=base.SUB_TENANT_UUID)
 
         response = action(search='group-12-one')
@@ -222,7 +222,7 @@ class TestGroups(base.WazoAuthTestCase):
     @fixtures.http.group(name='one', tenant_uuid=base.SUB_TENANT_UUID)
     @fixtures.http.group(name='two', tenant_uuid=base.SUB_TENANT_UUID)
     @fixtures.http.group(name='three', tenant_uuid=base.SUB_TENANT_UUID)
-    def test_list_sorting(self, three, two, one, _):
+    def test_list_sorting(self, _, one, two, three):
         action = partial(self.client.groups.list, tenant_uuid=base.SUB_TENANT_UUID)
         autocreated_group = self.client.groups.list(
             name='wazo-all-users-tenant-{}'.format(base.SUB_TENANT_UUID),

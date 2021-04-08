@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that, has_entries
@@ -11,8 +11,8 @@ class TestDefaultTokenMetadata(WazoAuthTestCase):
         super().setUp()
         self.tenant_uuid = self.get_top_tenant()['uuid']
 
-    @fixtures.http.group()
     @fixtures.http.user(password='s3cr37', purpose='user')
+    @fixtures.http.group()
     def test_token_metadata(self, user, group):
         self.client.groups.add_user(group['uuid'], user['uuid'])
 

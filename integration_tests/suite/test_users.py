@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from datetime import datetime
@@ -51,7 +51,7 @@ class TestUsers(WazoAuthTestCase):
     @fixtures.http.user(
         username='foobaz', password='foobaz', email_address='foobaz@example.com'
     )
-    def test_password_reset_does_not_disable_old_password(self, foobaz, foobar):
+    def test_password_reset_does_not_disable_old_password(self, foobar, foobaz):
         assert_no_error(self.client.users.reset_password, username='unknown')
         assert_no_error(self.client.users.reset_password, email='unknown@example.com')
         assert_http_error(
@@ -370,7 +370,7 @@ class TestUsers(WazoAuthTestCase):
         username='foo', password='foobar', email_address='foo@example.com'
     )
     @fixtures.http.policy(acl=['auth.users.{{ uuid }}.password.edit'])
-    def test_put_password(self, policy, user):
+    def test_put_password(self, user, policy):
         self.client.users.add_policy(user['uuid'], policy['uuid'])
         new_password = 'foobaz'
 
@@ -528,9 +528,9 @@ class TestUsers(WazoAuthTestCase):
         )
 
     @fixtures.http.user_register(username='foo', password='bar')
-    @fixtures.http.policy(name='two', acl=['acl.one', 'acl.two'])
     @fixtures.http.policy(name='one', acl=['this.is.a.test.access'])
-    def test_user_policy(self, policy_1, policy_2, user):
+    @fixtures.http.policy(name='two', acl=['acl.one', 'acl.two'])
+    def test_user_policy(self, user, policy_1, policy_2):
         assert_no_error(self.client.users.remove_policy, user['uuid'], policy_1['uuid'])
 
         result = self.client.users.get_policies(user['uuid'])

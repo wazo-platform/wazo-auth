@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that, has_entries, has_items
@@ -40,7 +40,7 @@ class TestWazoUserBackend(WazoAuthTestCase):
     @fixtures.http.tenant()
     # extra tenant: "master" tenant
     @fixtures.http.user(password='s3cr37')
-    def test_token_metadata(self, user, tenant):
+    def test_token_metadata(self, tenant, user):
         top_tenant = self.get_top_tenant()
 
         token_data = self._post_token(user['username'], 's3cr37', backend='wazo_user')
