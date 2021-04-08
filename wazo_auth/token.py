@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -87,7 +87,6 @@ class Token:
             'expires_at': self._format_local_time(self.expire_t),
             'utc_issued_at': self._format_utc_time(self.issued_t),
             'utc_expires_at': self._format_utc_time(self.expire_t),
-            'acls': self.acl,
             'acl': self.acl,
             'metadata': self.metadata,
             'session_uuid': self.session_uuid,

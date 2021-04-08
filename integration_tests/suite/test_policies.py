@@ -71,18 +71,6 @@ class TestPolicies(WazoAuthTestCase):
         # Invalid body
         assert_http_error(400, self.client.policies.new, '')
 
-        # Deprecated acl_templates key
-        policy_args['acl_templates'] = policy_args.pop('acl')
-        with self.policy(self.client, **policy_args) as policy:
-            assert_that(
-                policy,
-                has_entries(
-                    uuid=uuid_(),
-                    acl_templates=contains_inanyorder(*policy_args['acl_templates']),
-                    acl=contains_inanyorder(*policy_args['acl_templates']),
-                ),
-            )
-
     def test_post_errors(self):
         bodies = [
             {'foo': 'bar'},

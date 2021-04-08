@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -108,7 +108,6 @@ class TestCore(WazoAuthTestCase):
             has_entries(
                 token=uuid_(),
                 metadata=has_entries(uuid=self.user['uuid']),
-                acls=ANY,  # DEPRECATED
                 acl=ANY,
             ),
         )

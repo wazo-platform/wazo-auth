@@ -379,11 +379,6 @@ definitions:
               metadata field is the prefered method to access this information.
           xivo_uuid:
             type: string
-          acls:
-            type: array
-            items:
-              type: string
-            description: Deprecated. Please use `acl` field
           acl:
             type: array
             items:
