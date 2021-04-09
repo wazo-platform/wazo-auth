@@ -1,5 +1,9 @@
 # Changelog
 
+## 21.05
+
+* The `policies` resource now has a `slug` field
+
 ## 21.04
 
 * The `tenants` resource now has a `slug` field

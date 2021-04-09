@@ -103,9 +103,16 @@ class UserGroupListSchema(BaseListSchema):
 
 
 class PolicyListSchema(BaseListSchema):
-    sort_columns = ['name', 'description', 'uuid']
+    sort_columns = ['name', 'slug', 'description', 'uuid']
     default_sort_column = 'name'
-    searchable_columns = ['uuid', 'name', 'user_uuid', 'group_uuid', 'tenant_uuid']
+    searchable_columns = [
+        'uuid',
+        'name',
+        'slug',
+        'user_uuid',
+        'group_uuid',
+        'tenant_uuid',
+    ]
 
 
 class GroupPolicyListSchema(BaseListSchema):

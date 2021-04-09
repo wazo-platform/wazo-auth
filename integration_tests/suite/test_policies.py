@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -27,7 +27,7 @@ from .helpers.base import (
     WazoAuthTestCase,
 )
 from .helpers import fixtures
-from .helpers.constants import UNKNOWN_UUID, NB_DEFAULT_POLICIES, DEFAULT_POLICY_NAME
+from .helpers.constants import UNKNOWN_UUID, NB_DEFAULT_POLICIES, DEFAULT_POLICY_SLUG
 
 
 class TestPolicies(WazoAuthTestCase):
@@ -46,6 +46,7 @@ class TestPolicies(WazoAuthTestCase):
             has_entries(
                 uuid=uuid_(),
                 name='foobaz',
+                slug='foobaz',
                 description=none(),
                 acl=empty(),
                 tenant_uuid=self.top_tenant_uuid,
@@ -54,15 +55,16 @@ class TestPolicies(WazoAuthTestCase):
 
         policy_args = {
             'name': 'foobar',
+            'slug': 'slug1',
             'description': 'a test policy',
             'acl': ['dird.me.#', 'ctid-ng.#'],
             'tenant_uuid': tenant['uuid'],
         }
         # Specify the tenant_uuid
         with self.policy(self.client, **policy_args) as policy:
-            assert_that(policy, has_entries(uuid=uuid_(), **policy_args))
+            assert_that(policy, has_entries(uuid=uuid_(), name='foobar'))
 
-        # Specify the a tenant uuid in another sub-tenant tree
+        # Specify the tenant uuid in another sub-tenant tree
         with self.client_in_subtenant() as (client, _, __):
             assert_http_error(401, client.policies.new, **policy_args)
 
@@ -76,8 +78,8 @@ class TestPolicies(WazoAuthTestCase):
                 policy,
                 has_entries(
                     uuid=uuid_(),
-                    acl_templates=policy_args['acl_templates'],
-                    acl=policy_args['acl_templates'],
+                    acl_templates=contains_inanyorder(*policy_args['acl_templates']),
+                    acl=contains_inanyorder(*policy_args['acl_templates']),
                 ),
             )
 
@@ -144,6 +146,10 @@ class TestPolicies(WazoAuthTestCase):
                 ),
             )
 
+    @fixtures.http.policy(slug='dup')
+    def test_post_duplicate_slug(self, a):
+        assert_http_error(409, self.client.policies.new, name='dup', slug='dup')
+
     @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='one', tenant_uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='two', tenant_uuid=SUB_TENANT_UUID)
@@ -151,7 +157,7 @@ class TestPolicies(WazoAuthTestCase):
     def test_list_sorting(self, three, two, one, _):
         action = partial(self.client.policies.list, tenant_uuid=SUB_TENANT_UUID)
         autocreated_policy = self.client.policies.list(
-            name=DEFAULT_POLICY_NAME,
+            slug=DEFAULT_POLICY_SLUG,
             tenant_uuid=SUB_TENANT_UUID,
         )['items'][0]
         expected = [one, three, two, autocreated_policy]
@@ -285,14 +291,22 @@ class TestPolicies(WazoAuthTestCase):
         assert_that(
             response,
             has_entries(
-                {
-                    'uuid': equal_to(policy['uuid']),
-                    'name': equal_to('foobaz'),
-                    'description': none(),
-                    'acl': empty(),
-                }
+                uuid=equal_to(policy['uuid']),
+                name=equal_to('foobaz'),
+                slug=equal_to('foobar'),
+                description=none(),
+                acl=empty(),
             ),
         )
+
+    @fixtures.http.policy(slug='ABC')
+    def test_put_slug_is_read_only(self, policy):
+        new_body = dict(policy)
+        new_body['slug'] = 'DEF'
+
+        result = self.client.policies.edit(policy['uuid'], **new_body)
+
+        assert_that(result, has_entries(**policy))
 
     @fixtures.http.policy(acl=['dird.me.#', 'ctid-ng.#'])
     def test_add_access(self, policy):

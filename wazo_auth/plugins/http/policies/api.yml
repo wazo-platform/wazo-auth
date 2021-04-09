@@ -257,6 +257,9 @@ definitions:
     properties:
       name:
         type: string
+      slug:
+        type: string
+        description: "A unique, human readable identifier for this policy"
       description:
         type: string
       acl_templates:
@@ -272,21 +275,10 @@ definitions:
       - name
   PolicyResult:
     type: object
-    properties:
-      uuid:
-        type: string
-      name:
-        type: string
-      description:
-        type: string
-      acl_templates:
-        type: array
-        items:
-          type: string
-          description: Deprecated. Please use `acl` key.
-      acl:
-        type: array
-        items:
+    allOf:
+    - $ref: '#/definitions/Policy'
+    - properties:
+        uuid:
           type: string
   GetPoliciesResult:
     type: object

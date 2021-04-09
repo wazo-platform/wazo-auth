@@ -1,4 +1,4 @@
-# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_auth import exceptions
@@ -19,7 +19,8 @@ class PolicyService(BaseService):
 
     def create(self, **kwargs):
         kwargs.setdefault('config_managed', False)
-        return self._dao.policy.create(**kwargs)
+        policy_uuid = self._dao.policy.create(**kwargs)
+        return self._dao.policy.get(uuid=policy_uuid, limit=1)[0]
 
     def count(self, scoping_tenant_uuid=None, **kwargs):
         if scoping_tenant_uuid:
@@ -87,7 +88,7 @@ class PolicyService(BaseService):
             )
 
         self._dao.policy.update(policy_uuid, **args)
-        return dict(uuid=policy_uuid, **body)
+        return self._dao.policy.get(uuid=policy_uuid, limit=1)[0]
 
     def _assert_in_tenant_subtree(self, policy_uuid, scoping_tenant_uuid):
         if not scoping_tenant_uuid:

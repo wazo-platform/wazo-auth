@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -9,4 +9,4 @@ DB_URI = os.getenv('DB_URI', 'postgresql://asterisk:proformatique@localhost:{por
 ISO_DATETIME = '%Y-%m-%dT%H:%M:%S.%f'
 NB_DEFAULT_GROUPS = 1
 NB_DEFAULT_POLICIES = 1
-DEFAULT_POLICY_NAME = 'wazo-all-users-policy'
+DEFAULT_POLICY_SLUG = 'wazo-all-users-policy'

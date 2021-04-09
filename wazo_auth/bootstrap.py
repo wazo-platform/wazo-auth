@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import argparse
@@ -31,7 +31,7 @@ VALID_CHARS = string.digits + string.ascii_lowercase + string.ascii_uppercase
 USER = 'wazo-auth'
 USERNAME = 'wazo-auth-cli'
 PURPOSE = 'internal'
-DEFAULT_POLICY_NAME = 'wazo_default_master_user_policy'
+DEFAULT_POLICY_SLUG = 'wazo_default_master_user_policy'
 
 ERROR_MSG = '''\
 Failed to bootstrap wazo-auth. Error is logged at {log_file}.
@@ -67,8 +67,8 @@ def main():
         "--purpose", default=os.getenv("WAZO_AUTH_BOOTSTRAP_PURPOSE", PURPOSE)
     )
     initial_user_parser.add_argument(
-        "--policy-name",
-        default=os.getenv("WAZO_AUTH_BOOTSTRAP_POLICY_NAME", DEFAULT_POLICY_NAME),
+        "--policy-slug",
+        default=os.getenv("WAZO_AUTH_BOOTSTRAP_POLICY_SLUG", DEFAULT_POLICY_SLUG),
     )
 
     args = parser.parse_args()
@@ -84,7 +84,11 @@ def main():
         uri = args.uri or get_database_uri_from_config()
         try:
             create_initial_user(
-                uri, args.username, args.password, args.purpose, args.policy_name
+                uri,
+                args.username,
+                args.password,
+                args.purpose,
+                args.policy_slug,
             )
         except Exception:
             save_exception_and_exit()
@@ -99,7 +103,7 @@ def get_database_uri_from_config():
     return wazo_auth_config["db_uri"]
 
 
-def create_initial_user(db_uri, username, password, purpose, policy_name):
+def create_initial_user(db_uri, username, password, purpose, policy_slug):
     init_db(db_uri)
     dao = queries.DAO.from_defaults()
     tenant_tree = services.helpers.TenantTree(dao.tenant)
@@ -119,7 +123,7 @@ def create_initial_user(db_uri, username, password, purpose, policy_name):
             user = user_service.new_user(
                 enabled=True, username=username, password=password, purpose=purpose
             )
-            policy_uuid = policy_service.list(name=policy_name)[0]['uuid']
+            policy_uuid = policy_service.list(slug=policy_slug)[0]['uuid']
             user_service.add_policy(user['uuid'], policy_uuid)
     commit_or_rollback()
 
@@ -135,12 +139,16 @@ def complete():
             wazo_auth_cli_config["auth"]["username"],
             wazo_auth_cli_config["auth"]["password"],
             PURPOSE,
-            DEFAULT_POLICY_NAME,
+            DEFAULT_POLICY_SLUG,
         )
     else:
         password = random_string(28)
         create_initial_user(
-            database_uri, USERNAME, password, PURPOSE, DEFAULT_POLICY_NAME
+            database_uri,
+            USERNAME,
+            password,
+            PURPOSE,
+            DEFAULT_POLICY_SLUG,
         )
 
         try:
