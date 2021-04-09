@@ -9,3 +9,10 @@ smtp:
   hostname: smtp
 service_discovery:
   enabled: false
+default_policies:
+  wazo_default_user_policy:
+    acl:
+      - 'default.user.policy'
+  wazo_default_admin_policy:
+    acl:
+      - 'default.admin.policy'
