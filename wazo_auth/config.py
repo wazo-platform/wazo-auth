@@ -66,10 +66,7 @@ _DEFAULT_CONFIG = {
         'microsoft': True,
         'mobile': True,
     },
-    'backend_policies': {
-        'ldap_user': 'wazo_default_user_policy',
-        'wazo_user': 'wazo_default_user_policy',
-    },
+    'backend_policies': {},
     'rest_api': {
         'max_threads': 25,
         'listen': '127.0.0.1',

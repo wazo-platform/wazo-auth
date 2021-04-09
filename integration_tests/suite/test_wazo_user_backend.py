@@ -1,7 +1,7 @@
 # Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from hamcrest import assert_that, has_entries, has_items
+from hamcrest import assert_that, has_entries, has_item
 from .helpers import fixtures
 from .helpers.base import assert_http_error, WazoAuthTestCase
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
@@ -19,7 +19,7 @@ class TestWazoUserBackend(WazoAuthTestCase):
                 token=uuid_(),
                 auth_id=user['uuid'],
                 xivo_user_uuid=user['uuid'],  # For API compatibility reason
-                acl=has_items('confd.#', 'plugind.#'),
+                acl=has_item('default.user.policy'),
                 session_uuid=uuid_(),
                 metadata=has_entries(pbx_user_uuid=user['uuid']),
             ),
