@@ -1,9 +1,9 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that, contains, calling, equal_to, has_entries, not_, raises
 from ..schemas import BaseSchema
-from marshmallow import fields
+from xivo.mallow import fields
 from mock import Mock, patch, sentinel as s
 from unittest import TestCase
 

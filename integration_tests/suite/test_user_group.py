@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from functools import partial
@@ -132,7 +132,7 @@ class TestUserGroupAssociation(base.WazoAuthTestCase):
     @fixtures.http.user_register()
     @fixtures.http.group()
     @fixtures.http.group(name='all-users-group', system_managed=True)
-    def test_delete(self, all_users_group, group, user1, user2):
+    def test_delete(self, user1, user2, group, all_users_group):
         action = self.client.groups.remove_user
 
         self.client.groups.add_user(group['uuid'], user1['uuid'])
@@ -170,7 +170,7 @@ class TestUserGroupAssociation(base.WazoAuthTestCase):
     @fixtures.http.user_register()
     @fixtures.http.group()
     @fixtures.http.group(name='all-users-group', system_managed=True)
-    def test_put(self, all_users_group, group, user1, user2):
+    def test_put(self, user1, user2, group, all_users_group):
         action = self.client.groups.add_user
 
         assert_http_error(404, action, UNKNOWN_UUID, user1['uuid'])

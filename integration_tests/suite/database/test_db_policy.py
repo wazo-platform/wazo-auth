@@ -79,7 +79,7 @@ class TestPolicyDAO(base.DAOTestCase):
     @fixtures.db.tenant()
     @fixtures.db.policy(name='foobar')
     def test_that_two_policies_cannot_have_the_same_name_and_tenant(
-        self, policy_uuid, tenant_uuid
+        self, tenant_uuid, policy_uuid
     ):
         # Same name different tenants no exception
         assert_that(
@@ -104,7 +104,7 @@ class TestPolicyDAO(base.DAOTestCase):
     @fixtures.db.tenant()
     @fixtures.db.policy(slug='foobar')
     def test_that_two_policies_cannot_have_the_same_slug_and_tenant(
-        self, policy_uuid, tenant_uuid
+        self, tenant_uuid, policy_uuid
     ):
         # Same slug different tenants no exception
         assert_that(
@@ -152,7 +152,7 @@ class TestPolicyDAO(base.DAOTestCase):
     @fixtures.db.policy(name='a', description='z')
     @fixtures.db.policy(name='b', description='y')
     @fixtures.db.policy(name='c', description='x')
-    def test_get_sort_and_pagination(self, c, b, a):
+    def test_get_sort_and_pagination(self, a, b, c):
         result = self.list_policy(order='name', direction='asc')
         assert_that(
             result,
@@ -250,10 +250,10 @@ class TestPolicyDAO(base.DAOTestCase):
                 limit,
             )
 
-    @fixtures.db.policy(name='c', description='The third foobar')
-    @fixtures.db.policy(name='b', description='The second foobar')
-    @fixtures.db.policy(name='a')
     @fixtures.db.user()
+    @fixtures.db.policy(name='a')
+    @fixtures.db.policy(name='b', description='The second foobar')
+    @fixtures.db.policy(name='c', description='The third foobar')
     def test_user_list_policies(self, user_uuid, policy_a, policy_b, policy_c):
         result = self._policy_dao.get(user_uuid=user_uuid)
         assert_that(result, empty(), 'empty')

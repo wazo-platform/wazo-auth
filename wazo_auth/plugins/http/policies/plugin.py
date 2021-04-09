@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from . import http
@@ -17,12 +17,6 @@ class Plugin:
         api.add_resource(
             http.Policy,
             '/policies/<string:policy_uuid>',
-            resource_class_args=args,
-        )
-        api.add_resource(
-            http.PolicyAccess,
-            '/policies/<string:policy_uuid>/acl_templates/<access>',
-            endpoint='policyacltemplate',
             resource_class_args=args,
         )
         api.add_resource(

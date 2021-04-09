@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import pytest
@@ -38,7 +38,7 @@ class TestTokens(WazoAuthTestCase):
     @fixtures.http.token(
         username='foo', password='bar', client_id='foobaz', access_type='offline'
     )
-    def test_that_a_token_has_a_mobile_field(self, _, __, user):
+    def test_that_a_token_has_a_mobile_field(self, user, *_):
         result = self.client.token.list(user_uuid=user['uuid'])
 
         assert_that(
@@ -188,7 +188,7 @@ class TestTokens(WazoAuthTestCase):
     @fixtures.http.token(
         username='foo', password='bar', client_id='foobar', access_type='offline'
     )
-    def test_refresh_token_delete(self, token, user):
+    def test_refresh_token_delete(self, user, token):
         client_id = 'foobar'
 
         with pytest.raises(HTTPError) as excinfo:
@@ -230,7 +230,7 @@ class TestTokens(WazoAuthTestCase):
         access_type='offline',
         session_type='mobile',
     )
-    def test_refresh_token_deleted_event(self, token, user):
+    def test_refresh_token_deleted_event(self, user, token):
         client_id = 'foobar'
         routing_key = 'auth.users.{user_uuid}.tokens.{client_id}.deleted'.format(
             user_uuid=user['uuid'],
@@ -259,10 +259,16 @@ class TestTokens(WazoAuthTestCase):
 
     @fixtures.http.user(username='foo', password='bar')
     @fixtures.http.token(
-        username='foo', password='bar', access_type='offline', client_id='client1'
+        username='foo',
+        password='bar',
+        access_type='offline',
+        client_id='client1',
     )
     @fixtures.http.token(
-        username='foo', password='bar', access_type='offline', client_id='client2'
+        username='foo',
+        password='bar',
+        access_type='offline',
+        client_id='client2',
     )
     @fixtures.http.token(
         username='foo',
@@ -271,7 +277,7 @@ class TestTokens(WazoAuthTestCase):
         client_id='foobaz',
         session_type='mobile',
     )
-    def test_refresh_token_list(self, token_1, token_2, token_3, user):
+    def test_refresh_token_list(self, user, token_1, token_2, token_3):
         result = self.client.token.list(user_uuid=user['uuid'])
         assert_that(
             result,
@@ -298,7 +304,7 @@ class TestTokens(WazoAuthTestCase):
         assert_that(
             result,
             has_entries(
-                items=contains_inanyorder(has_entries(client_id=token_1['client_id'])),
+                items=contains_inanyorder(has_entries(client_id=token_3['client_id'])),
                 filtered=1,
                 total=3,
             ),
@@ -308,7 +314,7 @@ class TestTokens(WazoAuthTestCase):
         assert_that(
             result,
             has_entries(
-                items=contains_inanyorder(has_entries(client_id=token_1['client_id'])),
+                items=contains_inanyorder(has_entries(client_id=token_3['client_id'])),
                 filtered=1,
                 total=3,
             ),
@@ -317,7 +323,7 @@ class TestTokens(WazoAuthTestCase):
         result = self.client.token.list(
             user_uuid=user['uuid'], order='mobile', direction='desc'
         )
-        assert_that(result['items'][0], has_entries(client_id=token_1['client_id']))
+        assert_that(result['items'][0], has_entries(client_id=token_3['client_id']))
 
         result = self.client.token.list(
             user_uuid=user['uuid'], order='created_at', direction='asc'
@@ -326,9 +332,9 @@ class TestTokens(WazoAuthTestCase):
             result,
             has_entries(
                 items=contains(
-                    has_entries(client_id=token_3['client_id']),
-                    has_entries(client_id=token_2['client_id']),
                     has_entries(client_id=token_1['client_id']),
+                    has_entries(client_id=token_2['client_id']),
+                    has_entries(client_id=token_3['client_id']),
                 )
             ),
         )
@@ -340,9 +346,9 @@ class TestTokens(WazoAuthTestCase):
             result,
             has_entries(
                 items=contains(
-                    has_entries(client_id=token_1['client_id']),
-                    has_entries(client_id=token_2['client_id']),
                     has_entries(client_id=token_3['client_id']),
+                    has_entries(client_id=token_2['client_id']),
+                    has_entries(client_id=token_1['client_id']),
                 )
             ),
         )
@@ -354,7 +360,7 @@ class TestTokens(WazoAuthTestCase):
             result,
             has_entries(
                 items=contains(
-                    has_entries(client_id=token_3['client_id']),
+                    has_entries(client_id=token_1['client_id']),
                     has_entries(client_id=token_2['client_id']),
                 )
             ),
@@ -368,18 +374,18 @@ class TestTokens(WazoAuthTestCase):
             has_entries(
                 items=contains(
                     has_entries(client_id=token_2['client_id']),
-                    has_entries(client_id=token_1['client_id']),
+                    has_entries(client_id=token_3['client_id']),
                 )
             ),
         )
 
     @fixtures.http.user(username='foo', password='bar')
-    @fixtures.http.token(username='foo', password='bar', access_type='offline')
-    @fixtures.http.token(username='foo', password='bar', access_type='offline')
     @fixtures.http.token(
         username='foo', password='bar', access_type='offline', client_id='foobaz'
     )
-    def test_refresh_token_list_from_user(self, token_1, token_2, token_3, user):
+    @fixtures.http.token(username='foo', password='bar', access_type='offline')
+    @fixtures.http.token(username='foo', password='bar', access_type='offline')
+    def test_refresh_token_list_from_user(self, user, token_1, token_2, token_3):
         client = self.new_auth_client('foo', 'bar')
         assert_http_error(401, client.token.list, user_uuid='me')
 
@@ -393,7 +399,7 @@ class TestTokens(WazoAuthTestCase):
     @fixtures.http.token(
         username='foo', password='bar', client_id='foobar', access_type='offline'
     )
-    def test_refresh_token_delete_from_user(self, token, user):
+    def test_refresh_token_delete_from_user(self, user, token):
         client = self.new_auth_client('foo', 'bar')
         assert_http_error(401, client.token.delete, 'me', 'foobar')
 
@@ -417,7 +423,7 @@ class TestTokens(WazoAuthTestCase):
         client_id='foobaz',
         session_type='Mobile',
     )
-    def test_list_all_refresh_tokens(self, token_3, token_2, token_1, user, sub_tenant):
+    def test_list_all_refresh_tokens(self, sub_tenant, user, token_1, token_2, token_3):
         result = self.client.refresh_tokens.list()
 
         assert_that(

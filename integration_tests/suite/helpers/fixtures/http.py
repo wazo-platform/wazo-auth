@@ -64,8 +64,9 @@ def tenant(**tenant_args):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
             tenant = self.client.tenants.new(**tenant_args)
+            args = list(args) + [tenant]
             try:
-                result = decorated(self, tenant, *args, **kwargs)
+                result = decorated(self, *args, **kwargs)
             finally:
                 try:
                     self.client.tenants.delete(tenant['uuid'])
@@ -92,8 +93,9 @@ def token(**token_args):
             token = client.token.new(**token_args)
             if 'client_id' in token_args:
                 token['client_id'] = token_args['client_id']
+            args = list(args) + [token]
             try:
-                result = decorated(self, token, *args, **kwargs)
+                result = decorated(self, *args, **kwargs)
             finally:
                 try:
                     self.client.token.revoke(token['token'])
@@ -113,8 +115,9 @@ def user(**user_args):
             user_args.setdefault('username', _random_string(20))
             user_args.setdefault('password', _random_string(20))
             user = self.client.users.new(**user_args)
+            args = list(args) + [user]
             try:
-                result = decorated(self, user, *args, **kwargs)
+                result = decorated(self, *args, **kwargs)
             finally:
                 try:
                     self.client.users.delete(user['uuid'])
@@ -136,8 +139,9 @@ def user_register(**user_args):
             username = user_args['username']
             user_args.setdefault('email_address', f'{username}@example.com')
             user = self.client.users.register(**user_args)
+            args = list(args) + [user]
             try:
-                result = decorated(self, user, *args, **kwargs)
+                result = decorated(self, *args, **kwargs)
             finally:
                 try:
                     self.client.users.delete(user['uuid'])
@@ -168,9 +172,10 @@ def policy(**policy_args):
             policy_args.setdefault('name', _random_string(20))
             policy_args['acl'] = policy_args.get('acl') or []
             policy = self.client.policies.new(**policy_args)
+            args = list(args) + [policy]
             try:
                 with config_managed_policy(self.new_db_client(), policy, policy_args):
-                    result = decorated(self, policy, *args, **kwargs)
+                    result = decorated(self, *args, **kwargs)
             finally:
                 try:
                     self.client.policies.delete(policy['uuid'])
@@ -207,11 +212,12 @@ def group(**group_args):
         def wrapper(self, *args, **kwargs):
             group_args.setdefault('name', _random_string(20))
             group = self.client.groups.new(**group_args)
+            args = list(args) + [group]
             try:
                 with system_managed_group(
                     self.new_db_client(), group['uuid'], group_args
                 ):
-                    result = decorated(self, group, *args, **kwargs)
+                    result = decorated(self, *args, **kwargs)
             finally:
                 try:
                     self.client.groups.delete(group['uuid'])
@@ -238,8 +244,9 @@ def session(**session_args):
             client = self.new_auth_client(user_args['username'], user_args['password'])
             token = client.token.new(**token_args)
             session = self.client.users.get_sessions(user['uuid'])['items'][0]
+            args = list(args) + [session]
             try:
-                result = decorated(self, session, *args, **kwargs)
+                result = decorated(self, *args, **kwargs)
             finally:
                 try:
                     self.client.users.delete(user['uuid'])

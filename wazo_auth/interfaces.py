@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import abc
@@ -16,10 +16,6 @@ class BaseAuthenticationBackend(metaclass=abc.ABCMeta):
 
     def load(self, dependencies):
         pass
-
-    def get_acls(self, login, args):
-        """Deprecated"""
-        return self.get_acl(login, args)
 
     def get_acl(self, login, args):
         """returns an acl"""

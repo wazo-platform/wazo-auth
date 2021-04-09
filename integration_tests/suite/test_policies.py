@@ -38,8 +38,8 @@ class TestPolicies(WazoAuthTestCase):
         'name', 'wazo_default_master_user_policy'
     )
 
-    @fixtures.http.policy(name='foobaz')
     @fixtures.http.tenant()
+    @fixtures.http.policy(name='foobaz')
     def test_post(self, tenant, foobaz):
         assert_that(
             foobaz,
@@ -70,18 +70,6 @@ class TestPolicies(WazoAuthTestCase):
 
         # Invalid body
         assert_http_error(400, self.client.policies.new, '')
-
-        # Deprecated acl_templates key
-        policy_args['acl_templates'] = policy_args.pop('acl')
-        with self.policy(self.client, **policy_args) as policy:
-            assert_that(
-                policy,
-                has_entries(
-                    uuid=uuid_(),
-                    acl_templates=contains_inanyorder(*policy_args['acl_templates']),
-                    acl=contains_inanyorder(*policy_args['acl_templates']),
-                ),
-            )
 
     def test_post_errors(self):
         bodies = [
@@ -154,7 +142,7 @@ class TestPolicies(WazoAuthTestCase):
     @fixtures.http.policy(name='one', tenant_uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='two', tenant_uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='three', tenant_uuid=SUB_TENANT_UUID)
-    def test_list_sorting(self, three, two, one, _):
+    def test_list_sorting(self, _, one, two, three):
         action = partial(self.client.policies.list, tenant_uuid=SUB_TENANT_UUID)
         autocreated_policy = self.client.policies.list(
             slug=DEFAULT_POLICY_SLUG,
@@ -167,7 +155,7 @@ class TestPolicies(WazoAuthTestCase):
     @fixtures.http.policy(name='one', tenant_uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='two', tenant_uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='three', tenant_uuid=SUB_TENANT_UUID)
-    def test_list_tenant_filtering(self, three, two, one, _):
+    def test_list_tenant_filtering(self, _, one, two, three):
         # Different tenant
         response = self.client.policies.list(tenant_uuid=self.top_tenant_uuid)
         assert_that(response, has_entries(items=not_(has_items(one, two, three))))
@@ -192,7 +180,7 @@ class TestPolicies(WazoAuthTestCase):
     @fixtures.http.policy(name='one', tenant_uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='two', tenant_uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='three', tenant_uuid=SUB_TENANT_UUID)
-    def test_list_searching(self, three, two, one, _):
+    def test_list_searching(self, _, one, two, three):
         response = self.client.policies.list(tenant_uuid=SUB_TENANT_UUID, search='one')
         assert_that(response, has_entries(total=1, items=contains(one)))
 
@@ -200,7 +188,7 @@ class TestPolicies(WazoAuthTestCase):
     @fixtures.http.policy(name='one', tenant_uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='two', tenant_uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='three', tenant_uuid=SUB_TENANT_UUID)
-    def test_list_paginating(self, three, two, one, _):
+    def test_list_paginating(self, _, one, two, three):
         response = self.client.policies.list(
             tenant_uuid=SUB_TENANT_UUID, order='name', limit=1
         )
@@ -219,15 +207,15 @@ class TestPolicies(WazoAuthTestCase):
             ),
         )
 
+    @fixtures.http.group()
+    @fixtures.http.group()
+    @fixtures.http.user()
+    @fixtures.http.user()
     @fixtures.http.policy(
         name='foobar',
         description='a test policy',
         acl=['dird.me.#', 'ctid-ng.#'],
     )
-    @fixtures.http.user()
-    @fixtures.http.user()
-    @fixtures.http.group()
-    @fixtures.http.group()
     def test_get(self, group1, group2, user1, user2, policy):
         response = self.client.policies.get(policy['uuid'])
         assert_that(

@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -23,7 +23,7 @@ TENANT_UUID_2 = str(uuid.uuid4())
 class TestSessions(base.WazoAuthTestCase):
     @fixtures.http.session(mobile=False)
     @fixtures.http.session(mobile=True)
-    def test_list(self, session_2, session_1, *_):
+    def test_list(self, session_1, session_2):
         response = self.client.sessions.list()
         assert_that(
             response,
@@ -39,7 +39,7 @@ class TestSessions(base.WazoAuthTestCase):
     @fixtures.http.tenant(uuid=TENANT_UUID_2)
     @fixtures.http.session(tenant_uuid=TENANT_UUID_1)
     @fixtures.http.session(tenant_uuid=TENANT_UUID_2)
-    def test_list_tenant_filtering(self, session_2, session_1, *_):
+    def test_list_tenant_filtering(self, _, __, session_1, session_2):
         # Different tenant
         response = self.client.sessions.list(tenant_uuid=self.top_tenant_uuid)
         assert_that(
@@ -87,7 +87,7 @@ class TestSessions(base.WazoAuthTestCase):
 
     @fixtures.http.session()
     @fixtures.http.session()
-    def test_list_paginating(self, session_2, session_1, *_):
+    def test_list_paginating(self, session_1, session_2):
         response = self.client.sessions.list(limit=1)
         assert_that(
             response,

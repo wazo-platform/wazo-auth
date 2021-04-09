@@ -3,6 +3,19 @@
 ## 21.05
 
 * The `policies` resource now has a `slug` field
+* The following deprecated resources have been removed
+
+  * `DELETE /policies/{policy_uuid}/acl_templates/{template}`
+  * `PUT /policies/{policy_uuid}/acl_templates/{template}`
+
+* The deprecated field `acl_templates` has been removed in the following routes:
+
+  * `GET /policies`
+  * `GET /policies/{policy_uuid}`
+  * `GET /groups/{group_uuid}/policies`
+
+* The deprecated field `acls` has been removed for token resource
+* The deprecated method `get_acls` for backend has been removed
 
 ## 21.04
 
@@ -35,7 +48,7 @@
   * `GET /policies/{policy_uuid}`
   * `GET /groups/{group_uuid}/policies`
 
-* The field `acls` has been deprecated in favor of the new `acl` field for token resource:
+* The field `acls` has been deprecated in favor of the new `acl` field for token resource
 
 ## 20.13
 

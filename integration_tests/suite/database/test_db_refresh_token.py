@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import datetime
@@ -16,10 +16,10 @@ class TestRefreshTokenDAO(base.DAOTestCase):
     @fixtures.db.tenant(uuid=TENANT_UUID)
     @fixtures.db.user(uuid=ALICE_UUID, username='alice', tenant_uuid=TENANT_UUID)
     @fixtures.db.user(username='bob', tenant_uuid=TENANT_UUID)
-    @fixtures.db.refresh_token(user_uuid=ALICE_UUID, client_id='foobar')
-    @fixtures.db.refresh_token(user_uuid=ALICE_UUID, created_at=CREATED_AT)
     @fixtures.db.refresh_token(user_uuid=ALICE_UUID)
-    def test_count(self, token_1, token_2, token_3, bob_uuid, alice_uuid, tenant):
+    @fixtures.db.refresh_token(user_uuid=ALICE_UUID, created_at=CREATED_AT)
+    @fixtures.db.refresh_token(user_uuid=ALICE_UUID, client_id='foobar')
+    def test_count(self, tenant, alice_uuid, bob_uuid, token_1, token_2, token_3):
         result = self._refresh_token_dao.count(user_uuid=ALICE_UUID)
         assert_that(result, equal_to(3))
 
@@ -80,10 +80,10 @@ class TestRefreshTokenDAO(base.DAOTestCase):
     @fixtures.db.tenant(uuid=TENANT_UUID)
     @fixtures.db.user(uuid=ALICE_UUID, username='alice', tenant_uuid=TENANT_UUID)
     @fixtures.db.user(username='bob', tenant_uuid=TENANT_UUID)
-    @fixtures.db.refresh_token(user_uuid=ALICE_UUID, client_id='foobar')
-    @fixtures.db.refresh_token(user_uuid=ALICE_UUID, created_at=CREATED_AT)
     @fixtures.db.refresh_token(user_uuid=ALICE_UUID, mobile=True)
-    def test_list(self, token_1, token_2, token_3, bob_uuid, alice_uuid, tenant):
+    @fixtures.db.refresh_token(user_uuid=ALICE_UUID, created_at=CREATED_AT)
+    @fixtures.db.refresh_token(user_uuid=ALICE_UUID, client_id='foobar')
+    def test_list(self, tenant, alice_uuid, bob_uuid, token_1, token_2, token_3):
         all_refresh_tokens = contains_inanyorder(
             has_entries(uuid=token_1),
             has_entries(uuid=token_2),

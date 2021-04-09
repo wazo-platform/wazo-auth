@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -30,9 +30,9 @@ class TestExternalAuthDAO(base.DAOTestCase):
         'dict_value': {'a': 'dict', 'of': 'values'},
     }
 
+    @fixtures.db.user()
+    @fixtures.db.user()
     @fixtures.db.external_auth('one', 'two')
-    @fixtures.db.user()
-    @fixtures.db.user()
     def test_count(self, user_1_uuid, user_2_uuid, external_auth_types):
         self._external_auth_dao.create(user_2_uuid, self.auth_type, self.data)
 
@@ -95,9 +95,9 @@ class TestExternalAuthDAO(base.DAOTestCase):
             ),
         )
 
+    @fixtures.db.user()
+    @fixtures.db.user()
     @fixtures.db.external_auth('foobarcrm')
-    @fixtures.db.user()
-    @fixtures.db.user()
     def test_delete(self, user_1_uuid, user_2_uuid, _):
         assert_that(
             calling(self._external_auth_dao.delete).with_args(
@@ -172,9 +172,9 @@ class TestExternalAuthDAO(base.DAOTestCase):
         self._external_auth_dao.enable_all(auth_types)
         assert_enabled(auth_types)
 
+    @fixtures.db.user()
+    @fixtures.db.user()
     @fixtures.db.external_auth('foobarcrm')
-    @fixtures.db.user()
-    @fixtures.db.user()
     def test_get(self, user_1_uuid, user_2_uuid, _):
         assert_that(
             calling(self._external_auth_dao.get).with_args(
@@ -213,9 +213,9 @@ class TestExternalAuthDAO(base.DAOTestCase):
             ),
         )
 
+    @fixtures.db.user()
+    @fixtures.db.user()
     @fixtures.db.external_auth('one', 'two', 'unused')
-    @fixtures.db.user()
-    @fixtures.db.user()
     def test_list(self, user_1_uuid, user_2_uuid, auth_types):
         self._external_auth_dao.create(user_2_uuid, self.auth_type, self.data)
 
@@ -264,8 +264,8 @@ class TestExternalAuthDAO(base.DAOTestCase):
         expected = [{'type': 'one', 'data': data_one, 'enabled': True}]
         assert_that(result, contains(*expected))
 
-    @fixtures.db.external_auth('foobarcrm')
     @fixtures.db.user()
+    @fixtures.db.external_auth('foobarcrm')
     def test_update(self, user_uuid, _):
         new_data = {'foo': 'bar'}
 

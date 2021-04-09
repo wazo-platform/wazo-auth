@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that, contains_inanyorder, empty, has_entries
@@ -65,8 +65,8 @@ class TestEmails(WazoAuthTestCase):
         result = self.client.users.update_emails(foobar['uuid'], [])
         assert_that(result, empty())
 
-    @fixtures.http.user(username='bar', email_address='bar@example.com')
     @fixtures.http.user(username='foo', email_address='foo@example.com')
+    @fixtures.http.user(username='bar', email_address='bar@example.com')
     def test_duplicate_email(self, foo, bar):
         duplicated_emails = [
             {'address': 'bar@example.com', 'main': True, 'confirmed': True}

@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from functools import partial
@@ -16,9 +16,9 @@ from .helpers.constants import UNKNOWN_UUID, DEFAULT_POLICY_SLUG
 
 
 class TestGroupPolicyAssociation(base.WazoAuthTestCase):
-    @fixtures.http.policy()
-    @fixtures.http.policy()
     @fixtures.http.group()
+    @fixtures.http.policy()
+    @fixtures.http.policy()
     def test_delete(self, group, policy1, policy2):
         self.client.groups.add_policy(group['uuid'], policy1['uuid'])
         self.client.groups.add_policy(group['uuid'], policy2['uuid'])
@@ -55,9 +55,9 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         result = self.client.groups.get_policies(group['uuid'])
         assert_that(result, has_entries('items', contains(policy1)))
 
-    @fixtures.http.policy()
-    @fixtures.http.policy()
     @fixtures.http.group()
+    @fixtures.http.policy()
+    @fixtures.http.policy()
     def test_put(self, group, policy1, policy2):
         with self.client_in_subtenant() as (client, _, __):
             visible_group = client.groups.new(name='group2')
@@ -92,11 +92,11 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         result = self.client.groups.get_policies(group['uuid'])
         assert_that(result, has_entries(items=contains(policy1)))
 
-    @fixtures.http.policy(name='ignored')
-    @fixtures.http.policy(name='baz')
-    @fixtures.http.policy(name='bar')
-    @fixtures.http.policy(name='foo')
     @fixtures.http.group()
+    @fixtures.http.policy(name='foo')
+    @fixtures.http.policy(name='bar')
+    @fixtures.http.policy(name='baz')
+    @fixtures.http.policy(name='ignored')
     def test_list_policies(self, group, foo, bar, baz, ignored):
         for policy in (foo, bar, baz):
             self.client.groups.add_policy(group['uuid'], policy['uuid'])
@@ -118,9 +118,9 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         expected = contains(foo)
         assert_that(result, has_entries(total=3, filtered=1, items=expected))
 
-    @fixtures.http.policy(name='bar')
-    @fixtures.http.policy(name='foo')
     @fixtures.http.group()
+    @fixtures.http.policy(name='foo')
+    @fixtures.http.policy(name='bar')
     def test_list_policies_sorting(self, group, foo, bar):
         for policy in (foo, bar):
             self.client.groups.add_policy(group['uuid'], policy['uuid'])
@@ -129,10 +129,10 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         expected = [bar, foo]
         base.assert_sorted(action, order='name', expected=expected)
 
-    @fixtures.http.policy(name='baz')
-    @fixtures.http.policy(name='bar')
-    @fixtures.http.policy(name='foo')
     @fixtures.http.group()
+    @fixtures.http.policy(name='foo')
+    @fixtures.http.policy(name='bar')
+    @fixtures.http.policy(name='baz')
     def test_list_policies_paginating(self, group, foo, bar, baz):
         for policy in (foo, bar, baz):
             self.client.groups.add_policy(group['uuid'], policy['uuid'])
@@ -147,10 +147,10 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         expected = contains_inanyorder(baz, foo)
         assert_that(result, has_entries(total=3, filtered=3, items=expected))
 
-    @fixtures.http.user_register(username='foo', password='bar')
     @fixtures.http.group(name='one')
     @fixtures.http.policy(name='main', acl=['foobar'])
-    def test_generated_acl(self, policy, group, user):
+    @fixtures.http.user_register(username='foo', password='bar')
+    def test_generated_acl(self, group, policy, user):
         self.client.groups.add_user(group['uuid'], user['uuid'])
         self.client.groups.add_policy(group['uuid'], policy['uuid'])
 

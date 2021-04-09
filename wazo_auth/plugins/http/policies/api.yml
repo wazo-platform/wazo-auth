@@ -152,47 +152,6 @@ paths:
           description: Duplicate Policy
           schema:
             $ref: '#/definitions/Error'
-  /policies/{policy_uuid}/acl_templates/{acl_template}:
-    delete:
-      security:
-        - wazo_auth_token: []
-      operationId: deletePolicyACLTemplate
-      tags:
-        - deprecated
-      description: '**Required ACL:** `auth.policies.{policy_uuid}.edit`'
-      deprecated: true
-      summary: Dissociate an ACL template from a policy
-      parameters:
-      - $ref: '#/parameters/policy_uuid'
-      - $ref: '#/parameters/acl_template'
-      - $ref: '#/parameters/tenantuuid'
-      responses:
-        '204':
-          description: The policy has been modified
-        '404':
-          description: Policy or ACL template not found
-          schema:
-            $ref: '#/definitions/Error'
-    put:
-      security:
-        - wazo_auth_token: []
-      operationId: addPolicyACLTemplate
-      tags:
-        - deprecated
-      description: '**Required ACL:** `auth.policies.{policy_uuid}.edit`'
-      deprecated: true
-      summary: Associate an ACL template to a policy
-      parameters:
-      - $ref: '#/parameters/policy_uuid'
-      - $ref: '#/parameters/acl_template'
-      - $ref: '#/parameters/tenantuuid'
-      responses:
-        '204':
-          description: The policy has been modified
-        '404':
-          description: Policy not found
-          schema:
-            $ref: '#/definitions/Error'
   /policies/{policy_uuid}/acl/{access}:
     delete:
       security:
@@ -239,12 +198,6 @@ parameters:
     type: string
     description: The UUID of the policy
     required: true
-  acl_template:
-    name: acl_template
-    in: path
-    type: string
-    description: The ACL template to add
-    required: true
   access:
     name: access
     in: path
@@ -262,11 +215,6 @@ definitions:
         description: "A unique, human readable identifier for this policy"
       description:
         type: string
-      acl_templates:
-        type: array
-        items:
-          type: string
-          description: Deprecated. Please use `acl` key.
       acl:
         type: array
         items:

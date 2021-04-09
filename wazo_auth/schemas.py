@@ -1,44 +1,36 @@
 # Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from marshmallow import Schema, fields, pre_load, post_dump, EXCLUDE
-from xivo.mallow import fields as xfields
-from xivo.mallow import validate
+from marshmallow import post_dump
+from xivo.mallow import fields, validate
 from xivo import mallow_helpers as mallow
 
-
-class BaseSchema(Schema):
-    class Meta:
-        unknown = EXCLUDE
-
-    @pre_load
-    def ensure_dict(self, data):
-        return data or {}
+BaseSchema = mallow.Schema
 
 
 class GroupRequestSchema(BaseSchema):
 
-    name = xfields.String(validate=validate.Length(min=1, max=128), required=True)
+    name = fields.String(validate=validate.Length(min=1, max=128), required=True)
 
 
 class TenantAddress(BaseSchema):
 
-    line_1 = xfields.String(
+    line_1 = fields.String(
         validate=validate.Length(min=1, max=256), missing=None, default=None
     )
-    line_2 = xfields.String(
+    line_2 = fields.String(
         validate=validate.Length(min=1, max=256), missing=None, default=None
     )
-    city = xfields.String(
+    city = fields.String(
         validate=validate.Length(min=1, max=128), missing=None, default=None
     )
-    state = xfields.String(
+    state = fields.String(
         validate=validate.Length(min=1, max=128), missing=None, default=None
     )
-    country = xfields.String(
+    country = fields.String(
         validate=validate.Length(min=1, max=128), missing=None, default=None
     )
-    zip_code = xfields.String(
+    zip_code = fields.String(
         validate=validate.Length(min=1, max=16), missing=None, default=None
     )
 
@@ -48,20 +40,20 @@ empty_tenant_address = TenantAddress().dump({})
 
 class TenantFullSchema(BaseSchema):
 
-    uuid = xfields.UUID(missing=None)
-    parent_uuid = xfields.UUID(dump_only=True)
-    name = xfields.String(
+    uuid = fields.UUID(missing=None)
+    parent_uuid = fields.UUID(dump_only=True)
+    name = fields.String(
         validate=validate.Length(min=1, max=128), default=None, missing=None
     )
-    slug = xfields.String(
+    slug = fields.String(
         validate=[validate.Length(min=1, max=10), validate.Regexp(r'^[a-zA-Z0-9_]+$')],
         missing=None,
     )
-    contact_uuid = xfields.UUID(data_key='contact', missing=None, default=None)
-    phone = xfields.String(
+    contact_uuid = fields.UUID(data_key='contact', missing=None, default=None)
+    phone = fields.String(
         validate=validate.Length(min=1, max=32), default=None, missing=None
     )
-    address = xfields.Nested(
+    address = fields.Nested(
         TenantAddress,
         missing=empty_tenant_address,
         default=empty_tenant_address,
@@ -76,7 +68,7 @@ class TenantFullSchema(BaseSchema):
 
 class TenantPUTSchema(TenantFullSchema):
 
-    slug = xfields.String(dump_only=True)
+    slug = fields.String(dump_only=True)
 
 
 class BaseListSchema(mallow.ListSchema):

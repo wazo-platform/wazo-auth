@@ -119,8 +119,8 @@ class TestUserDAO(base.DAOTestCase):
         )
         assert_that(self._user_dao.get_emails(user_uuid), contains_inanyorder(*result))
 
-    @fixtures.db.policy()
     @fixtures.db.user()
+    @fixtures.db.policy()
     def test_user_policy_association(self, user_uuid, policy_uuid):
         self._user_dao.add_policy(user_uuid, policy_uuid)
         count = (
@@ -154,8 +154,8 @@ class TestUserDAO(base.DAOTestCase):
             'unknown policy',
         )
 
-    @fixtures.db.policy()
     @fixtures.db.user()
+    @fixtures.db.policy()
     def test_user_remove_policy(self, user_uuid, policy_uuid):
         nb_deleted = self._user_dao.remove_policy(user_uuid, policy_uuid)
         assert_that(nb_deleted, equal_to(0))
@@ -171,10 +171,10 @@ class TestUserDAO(base.DAOTestCase):
         nb_deleted = self._user_dao.remove_policy(user_uuid, policy_uuid)
         assert_that(nb_deleted, equal_to(1))
 
-    @fixtures.db.policy(name='c', description='The third foobar')
-    @fixtures.db.policy(name='b', description='The second foobar')
-    @fixtures.db.policy(name='a')
     @fixtures.db.user()
+    @fixtures.db.policy(name='a')
+    @fixtures.db.policy(name='b', description='The second foobar')
+    @fixtures.db.policy(name='c', description='The third foobar')
     def test_user_count_policies(self, user_uuid, policy_a, policy_b, policy_c):
         result = self._user_dao.count_policies(user_uuid)
         assert_that(result, equal_to(0), 'none associated')
@@ -335,9 +335,9 @@ class TestUserDAO(base.DAOTestCase):
         result = self._user_dao.count()
         assert_that(result, equal_to(3))
 
-    @fixtures.db.user(username='foo')
-    @fixtures.db.user(email_address='foobar@example.com')
     @fixtures.db.user(username='bar', email_address='bar@example.com')
+    @fixtures.db.user(email_address='foobar@example.com')
+    @fixtures.db.user(username='foo')
     def test_user_count_no_search_term_strict_filter(self, a, b, c):
         result = self._user_dao.count(username='foo')
         assert_that(result, equal_to(1))
@@ -348,23 +348,23 @@ class TestUserDAO(base.DAOTestCase):
         result = self._user_dao.count(uuid=c)
         assert_that(result, equal_to(1))
 
-    @fixtures.db.user(username='foo123')
-    @fixtures.db.user(email_address='foobar123@example.com')
     @fixtures.db.user(username='bar456', email_address='bar456@example.com')
+    @fixtures.db.user(email_address='foobar123@example.com')
+    @fixtures.db.user(username='foo123')
     def test_user_count_search_term(self, a, b, c):
         result = self._user_dao.count(search='123')
         assert_that(result, equal_to(2))
 
-    @fixtures.db.user(username='foo')
-    @fixtures.db.user(email_address='foobar@example.com')
     @fixtures.db.user(username='bar', email_address='bar@example.com')
+    @fixtures.db.user(email_address='foobar@example.com')
+    @fixtures.db.user(username='foo')
     def test_user_count_mixed_strict_and_search(self, a, b, c):
         result = self._user_dao.count(search='foo', uuid=a)
         assert_that(result, equal_to(0))
 
-    @fixtures.db.user(username='foo')
-    @fixtures.db.user(email_address='foobar@example.com')
     @fixtures.db.user(username='bar', email_address='bar@example.com')
+    @fixtures.db.user(email_address='foobar@example.com')
+    @fixtures.db.user(username='foo')
     def test_user_count_unfiltered(self, a, b, c):
         result = self._user_dao.count(search='foo', filtered=False)
         assert_that(result, equal_to(3))
@@ -375,7 +375,7 @@ class TestUserDAO(base.DAOTestCase):
     @fixtures.db.user(username='a', email_address='a@example.com')
     @fixtures.db.user(username='b', email_address='b@example.com')
     @fixtures.db.user(username='c', email_address='c@example.com')
-    def test_user_list_no_search_term_no_strict_filter(self, c, b, a):
+    def test_user_list_no_search_term_no_strict_filter(self, a, b, c):
         result = self._user_dao.list_()
 
         assert_that(
@@ -417,7 +417,7 @@ class TestUserDAO(base.DAOTestCase):
     @fixtures.db.user(
         firstname='baz', lastname='baz', username='baz', email_address='baz@example.com'
     )
-    def test_user_list_with_search_term(self, baz, bar, foo):
+    def test_user_list_with_search_term(self, foo, bar, baz):
         result = self._user_dao.list_(search='@example.')
 
         assert_that(
@@ -481,7 +481,7 @@ class TestUserDAO(base.DAOTestCase):
     @fixtures.db.user(
         firstname='baz', lastname='baz', username='baz', email_address='baz@example.com'
     )
-    def test_user_list_with_strict_filters(self, baz, bar, foo):
+    def test_user_list_with_strict_filters(self, foo, bar, baz):
         result = self._user_dao.list_(username='foo')
 
         assert_that(
@@ -524,7 +524,7 @@ class TestUserDAO(base.DAOTestCase):
     @fixtures.db.user(
         firstname='baz', lastname='baz', username='baz', email_address='baz@example.com'
     )
-    def test_user_list_with_strict_filters_and_search(self, baz, bar, foo):
+    def test_user_list_with_strict_filters_and_search(self, foo, bar, baz):
         result = self._user_dao.list_(username='foo', search='baz')
         assert_that(result, empty())
 
@@ -553,7 +553,7 @@ class TestUserDAO(base.DAOTestCase):
     @fixtures.db.user(username='g')
     @fixtures.db.user(username='h')
     @fixtures.db.user(username='i')
-    def test_pagination(self, i, h, g, f, e, d, c, b, a):
+    def test_pagination(self, a, b, c, d, e, f, g, h, i):
         result = self._user_dao.list_(
             order='username', direction='desc', limit=1, offset=0
         )
@@ -575,7 +575,7 @@ class TestUserDAO(base.DAOTestCase):
 
     @fixtures.db.user(username='a', firstname='a', lastname='a')
     @fixtures.db.user(username='b', firstname='b', lastname='b')
-    def test_sort(self, b, a):
+    def test_sort(self, a, b):
         self._check_sort('username', a, b)
         self._check_sort('firstname', a, b)
         self._check_sort('lastname', a, b)
@@ -600,7 +600,7 @@ class TestUserDAO(base.DAOTestCase):
 
     @fixtures.db.user(uuid=USER_UUID)
     @fixtures.db.user_external_auth(user_uuid=USER_UUID)
-    def test_delete_external_auth(self, _, user_uuid):
+    def test_delete_external_auth(self, user_uuid, _):
         user_external_auth = (
             self.session.query(models.UserExternalAuth)
             .filter(models.UserExternalAuth.user_uuid == user_uuid)

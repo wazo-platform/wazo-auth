@@ -1,4 +1,4 @@
-# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -78,7 +78,7 @@ class TokenService(BaseService):
         args['acl'] = self._get_acl(args['backend'])
         args['metadata'] = metadata
 
-        acl = backend.get_acls(login, args)
+        acl = backend.get_acl(login, args)
         expiration = args.get('expiration', self._default_expiration)
         current_time = time.time()
 

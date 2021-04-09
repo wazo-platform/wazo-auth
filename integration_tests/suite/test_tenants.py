@@ -39,7 +39,7 @@ class TestTenants(WazoAuthTestCase):
         uuid='6668ca15-6d9e-4000-b2ec-731bc7316767', name='foobaz', slug='slug2'
     )
     @fixtures.http.tenant(slug='slug3')
-    def test_post(self, other, foobaz, foobar):
+    def test_post(self, foobar, foobaz, other):
         assert_that(
             other,
             has_entries(
@@ -214,7 +214,7 @@ class TestTenants(WazoAuthTestCase):
     @fixtures.http.tenant(name='foobaz', slug='bbb')
     @fixtures.http.tenant(name='foobarbaz', slug='ccc')
     # extra tenant: "master" tenant
-    def test_list(self, foobarbaz, foobaz, foobar):
+    def test_list(self, foobar, foobaz, foobarbaz):
         top_tenant = self.get_top_tenant()
 
         def then(result, total=4, filtered=4, item_matcher=contains(top_tenant)):
@@ -265,7 +265,7 @@ class TestTenants(WazoAuthTestCase):
 
     @fixtures.http.tenant()
     @fixtures.http.user()
-    def test_put(self, user, tenant):
+    def test_put(self, tenant, user):
         name = 'foobar'
         body = {'name': name, 'address': ADDRESS_1, 'contact': user['uuid']}
         body_with_unknown_contact = dict(body)
@@ -308,7 +308,7 @@ class TestTenantPolicyAssociation(WazoAuthTestCase):
     @fixtures.http.policy(name='foo', tenant_uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='bar', tenant_uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='baz', tenant_uuid=SUB_TENANT_UUID)
-    def test_policy_list(self, baz, bar, foo, _):
+    def test_policy_list(self, _, foo, bar, baz):
         assert_http_error(404, self.client.tenants.get_policies, UNKNOWN_UUID)
         with self.client_in_subtenant(parent_uuid=SUB_TENANT_UUID) as (
             client,
@@ -346,7 +346,7 @@ class TestTenantPolicyAssociation(WazoAuthTestCase):
     @fixtures.http.policy(name='foo', tenant_uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='bar', tenant_uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='baz', tenant_uuid=SUB_TENANT_UUID)
-    def test_policy_list_sorting(self, baz, bar, foo, _):
+    def test_policy_list_sorting(self, _, foo, bar, baz):
         action = partial(self.client.tenants.get_policies, SUB_TENANT_UUID)
 
         expected = [
@@ -361,7 +361,7 @@ class TestTenantPolicyAssociation(WazoAuthTestCase):
     @fixtures.http.policy(name='foo', tenant_uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='bar', tenant_uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='baz', tenant_uuid=SUB_TENANT_UUID)
-    def test_list_paginating(self, baz, bar, foo, _):
+    def test_list_paginating(self, _, foo, bar, baz):
         action = partial(
             self.client.tenants.get_policies,
             SUB_TENANT_UUID,

@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -38,7 +38,7 @@ class TestExternalAuthMobile(base.WazoAuthTestCase):
     @fixtures.http.tenant(uuid=TENANT_UUID)
     @fixtures.http.user(username='one', password='pass', tenant_uuid=TENANT_UUID)
     @fixtures.http.token(username='one', password='pass', expiration=30)
-    def test_mobile_workflow(self, token, user, tenant):
+    def test_mobile_workflow(self, tenant, user, token):
         self.client.set_tenant(tenant['uuid'])
         self.client.external.create_config(
             auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET
