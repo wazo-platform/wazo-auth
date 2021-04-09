@@ -70,6 +70,11 @@ policy_template = sa.sql.table(
 def upgrade():
     op.execute(policy_table.delete().where(policy_table.c.name == POLICY_NAME))
 
+    if True:
+        # NOTE(fblackburn): Since 21.05 default policies are not managed by the database anymore
+        # But we don't want to keep this historic for new DB
+        return
+
     conn = op.get_bind()
     query = (
         policy_table.insert()
