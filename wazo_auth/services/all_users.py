@@ -10,11 +10,17 @@ logger = logging.getLogger(__name__)
 
 class AllUsersService:
     def __init__(
-        self, group_service, policy_service, tenant_service, all_users_policies
+        self,
+        group_service,
+        policy_service,
+        tenant_service,
+        default_policies,
+        all_users_policies,
     ):
         self._group_service = group_service
         self._policy_service = policy_service
         self._tenant_service = tenant_service
+        self._default_policies = default_policies
         self._all_users_policies = all_users_policies
 
     def update_policies(self):
@@ -65,11 +71,11 @@ class AllUsersService:
                 policy = self._create_policy(tenant_uuid, slug, policy, all_users_group)
                 self._associate_policy(tenant_uuid, policy['uuid'], all_users_group)
 
+        managed_policies = {**self._default_policies, **self._all_users_policies}
         policies_to_remove = [
             policy
             for policy in existing_policies
-            if policy['config_managed']
-            and policy['slug'] not in self._all_users_policies
+            if policy['config_managed'] and policy['slug'] not in managed_policies
         ]
         for policy in policies_to_remove:
             self._delete_policy(tenant_uuid, policy['uuid'])
