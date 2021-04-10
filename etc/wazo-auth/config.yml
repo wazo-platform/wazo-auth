@@ -90,10 +90,6 @@ consul:
   port: 8500
   token: 'the_one_ring'
 
-backend_policies:
-  ldap_user: wazo_default_user_policy
-  wazo_user: wazo_default_user_policy
-
 # Database connection informations.
 db_uri: postgresql://asterisk:proformatique@localhost/asterisk?application_name=wazo-auth
 confd_db_uri: postgresql://asterisk:proformatique@localhost/asterisk?application_name=wazo-auth

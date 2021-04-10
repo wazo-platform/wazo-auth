@@ -31,13 +31,6 @@ from .helpers.constants import UNKNOWN_UUID, NB_DEFAULT_POLICIES, DEFAULT_POLICY
 
 
 class TestPolicies(WazoAuthTestCase):
-
-    wazo_default_admin_policy = has_entries('name', 'wazo_default_admin_policy')
-    wazo_default_user_policy = has_entries('name', 'wazo_default_user_policy')
-    wazo_default_master_user_policy = has_entries(
-        'name', 'wazo_default_master_user_policy'
-    )
-
     @fixtures.http.tenant()
     @fixtures.http.policy(name='foobaz')
     def test_post(self, tenant, foobaz):

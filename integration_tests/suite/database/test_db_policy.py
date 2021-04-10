@@ -21,14 +21,8 @@ from ..helpers.constants import UNKNOWN_UUID
 class TestPolicyDAO(base.DAOTestCase):
     def setUp(self):
         super().setUp()
-        default_master_user_policy = self._policy_dao.get(
-            name='wazo_default_master_user_policy'
-        )[0]
-        default_user_policy = self._policy_dao.get(name='wazo_default_user_policy')[0]
-        default_admin_policy = self._policy_dao.get(name='wazo_default_admin_policy')[0]
-        self._default_master_user_policy_uuid = default_master_user_policy['uuid']
-        self._default_user_policy_uuid = default_user_policy['uuid']
-        self._default_admin_policy_uuid = default_admin_policy['uuid']
+        master_policy = self._policy_dao.get(name='wazo_default_master_user_policy')[0]
+        self._default_master_user_policy_uuid = master_policy['uuid']
 
     @fixtures.db.policy(name='testé', description='déscription')
     def test_access_association(self, uuid):
@@ -160,9 +154,7 @@ class TestPolicyDAO(base.DAOTestCase):
                 a,
                 b,
                 c,
-                self._default_admin_policy_uuid,
                 self._default_master_user_policy_uuid,
-                self._default_user_policy_uuid,
             ),
         )
 
@@ -170,9 +162,7 @@ class TestPolicyDAO(base.DAOTestCase):
         assert_that(
             result,
             contains(
-                self._default_user_policy_uuid,
                 self._default_master_user_policy_uuid,
-                self._default_admin_policy_uuid,
                 c,
                 b,
                 a,
@@ -183,9 +173,7 @@ class TestPolicyDAO(base.DAOTestCase):
         assert_that(
             result,
             contains(
-                self._default_admin_policy_uuid,
                 self._default_master_user_policy_uuid,
-                self._default_user_policy_uuid,
                 c,
                 b,
                 a,
@@ -199,9 +187,7 @@ class TestPolicyDAO(base.DAOTestCase):
                 a,
                 b,
                 c,
-                self._default_user_policy_uuid,
                 self._default_master_user_policy_uuid,
-                self._default_admin_policy_uuid,
             ),
         )
 
@@ -224,9 +210,7 @@ class TestPolicyDAO(base.DAOTestCase):
             contains(
                 b,
                 c,
-                self._default_admin_policy_uuid,
                 self._default_master_user_policy_uuid,
-                self._default_user_policy_uuid,
             ),
         )
 

@@ -74,6 +74,9 @@ def _insert_acl_template(conn, acl_templates):
 def upgrade():
     conn = op.get_bind()
     policy_uuid = _get_policy_uuid(conn, POLICY_NAME)
+    if not policy_uuid:
+        return
+
     acl_template_ids = _insert_acl_template(conn, ACL_TEMPLATES)
     op.bulk_insert(
         policy_template,

@@ -9,3 +9,17 @@ smtp:
   hostname: smtp
 service_discovery:
   enabled: false
+
+default_policies:
+  wazo_default_user_policy:
+    acl:
+      - 'default.user.policy'
+      - 'auth.users.me.external.#'
+      - 'auth.users.me.tokens.#'
+      - 'auth.users.me.password.#'
+  wazo_default_admin_policy:
+    acl:
+      - 'default.admin.policy'
+backend_policies:
+  ldap_user: wazo_default_user_policy
+  wazo_user: wazo_default_user_policy
