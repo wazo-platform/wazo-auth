@@ -124,6 +124,14 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def exists(self, uuid, tenant_uuids=None):
         return self._policy_exists(uuid, tenant_uuids)
 
+    def is_associated_user(self, uuid):
+        query = self.session.query(Policy).join(UserPolicy).filter(Policy.uuid == uuid)
+        return query.count() > 0
+
+    def is_associated_group(self, uuid):
+        query = self.session.query(Policy).join(GroupPolicy).filter(Policy.uuid == uuid)
+        return query.count() > 0
+
     def get(self, tenant_uuids=None, **kwargs):
         strict_filter = self.new_strict_filter(**kwargs)
         search_filter = self.new_search_filter(**kwargs)

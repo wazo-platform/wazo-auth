@@ -79,6 +79,11 @@ class PolicyService(BaseService):
     def list_tenants(self, policy_uuid, **kwargs):
         return self._dao.tenant.list_(policy_uuid=policy_uuid, **kwargs)
 
+    def is_associated(self, policy_uuid):
+        return self._dao.policy.is_associated_user(
+            policy_uuid
+        ) or self._dao.policy.is_associated_group(policy_uuid)
+
     def update(self, policy_uuid, scoping_tenant_uuid=None, **body):
         args = dict(body)
         args.setdefault('config_managed', False)

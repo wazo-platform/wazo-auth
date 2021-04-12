@@ -78,6 +78,7 @@ class AllUsersService:
             if policy['config_managed'] and policy['slug'] not in managed_policies
         ]
         for policy in policies_to_remove:
+            self._group_service.remove_policy(all_users_group['uuid'], policy['uuid'])
             self._delete_policy(tenant_uuid, policy['uuid'])
 
     def _create_policy(self, tenant_uuid, slug, policy, all_users_group):
@@ -115,6 +116,14 @@ class AllUsersService:
         self._group_service.add_policy(all_users_group['uuid'], policy_uuid)
 
     def _delete_policy(self, tenant_uuid, policy_uuid):
+        if self._policy_service.is_associated(policy_uuid):
+            logger.warning(
+                'all_users: tenant %s: deleting policy %s (SKIPPED: associated)',
+                tenant_uuid,
+                policy_uuid,
+            )
+            return
+
         logger.debug(
             'all_users: tenant %s: deleting policy %s',
             tenant_uuid,

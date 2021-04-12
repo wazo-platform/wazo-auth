@@ -67,5 +67,12 @@ class DefaultPolicyService:
         )
 
     def _delete_policy(self, policy_uuid):
+        if self._policy_service.is_associated(policy_uuid):
+            logger.warning(
+                'default_policies: deleting policy %s (SKIPPED: associated)',
+                policy_uuid,
+            )
+            return
+
         logger.debug('default_policies: deleting policy %s', policy_uuid)
         self._policy_service.delete(policy_uuid, scoping_tenant_uuid=None)
