@@ -99,14 +99,14 @@ class TenantService(BaseService):
             name=f'wazo-all-users-tenant-{uuid}', tenant_uuid=uuid, system_managed=True
         )
 
-        for slug, policy in self._all_users_policies.items():
-            all_users_policy = self._policy_service.create(
-                name=slug,
+        for slug, enabled in self._all_users_policies.items():
+            if not enabled:
+                continue
+
+            all_users_policy = self._policy_service.list(
                 slug=slug,
-                tenant_uuid=uuid,
-                description='Automatically created to be applied to all users',
-                **policy,
-            )
+                scoping_tenant_uuid=None
+            )[0]
             self._group_service.add_policy(
                 all_users_group['uuid'], all_users_policy['uuid']
             )

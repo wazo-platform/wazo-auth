@@ -88,17 +88,15 @@ class Controller:
             config['all_users_policies'],
             self._bus_publisher,
         )
-        self._all_users_service = services.AllUsersService(
-            group_service,
-            policy_service,
-            self._tenant_service,
-            config['default_policies'],
-            config['all_users_policies'],
-        )
         self._default_policy_service = services.DefaultPolicyService(
             policy_service,
             self._tenant_service,
             config['default_policies'],
+        )
+        self._all_users_service = services.AllUsersService(
+            group_service,
+            policy_service,
+            self._tenant_service,
             config['all_users_policies'],
         )
 
@@ -178,8 +176,9 @@ class Controller:
         signal.signal(signal.SIGTERM, partial(_sigterm_handler, self))
 
         with db_ready(timeout=self._config['db_connect_retry_timeout_seconds']):
-            self._all_users_service.update_policies()
             self._default_policy_service.update_policies()
+            self._all_users_service.update_policies()
+            self._default_policy_service.delete_orphan_policies()
 
         with bus.publisher_thread(self._bus_publisher):
             with ServiceCatalogRegistration(*self._service_discovery_args):
