@@ -23,7 +23,13 @@ policy_tbl = sa.sql.table(
     'auth_policy',
     sa.Column('uuid'),
     sa.Column('name'),
+    sa.Column('tenant_uuid'),
     sa.Column('slug'),
+)
+
+tenant_tbl = sa.sql.table(
+    'auth_tenant',
+    sa.Column('uuid'),
 )
 
 
@@ -43,25 +49,29 @@ def upgrade():
     columns = '((lower(slug)), tenant_uuid)'
     op.execute(f'CREATE UNIQUE INDEX {IDX_NAME} ON auth_policy {columns};')
 
-    slugs = set()
-    query = sa.sql.select([policy_tbl.c.uuid, policy_tbl.c.name])
-    for policy in op.get_bind().execute(query):
-        slug = _slug_from_name(policy.name)
-        if slug.lower() in slugs:
-            slug = None
-
-        if not slug:
-            while True:
-                slug = _generate_random_slug()
-                if slug not in slugs:
-                    break
-
-        slugs.add(slug.lower())
-        op.execute(
-            policy_tbl.update()
-            .values(slug=slug)
-            .where(policy_tbl.c.uuid == policy.uuid)
+    query = sa.sql.select([tenant_tbl.c.uuid])
+    for tenant in op.get_bind().execute(query):
+        slugs = set()
+        query = sa.sql.select([policy_tbl.c.uuid, policy_tbl.c.name]).where(
+            policy_tbl.c.tenant_uuid == tenant.uuid
         )
+        for policy in op.get_bind().execute(query):
+            slug = _slug_from_name(policy.name)
+            if slug.lower() in slugs:
+                slug = None
+
+            if not slug:
+                while True:
+                    slug = _generate_random_slug()
+                    if slug not in slugs:
+                        break
+
+            slugs.add(slug.lower())
+            op.execute(
+                policy_tbl.update()
+                .values(slug=slug)
+                .where(policy_tbl.c.uuid == policy.uuid)
+            )
 
     op.alter_column('auth_policy', 'slug', nullable=False)
 
