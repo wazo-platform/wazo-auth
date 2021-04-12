@@ -304,6 +304,26 @@ class TestPolicyDAO(base.DAOTestCase):
             ),
         )
 
+    @fixtures.db.user()
+    @fixtures.db.policy()
+    def test_is_associated_user(self, user_uuid, policy_uuid):
+        result = self._policy_dao.is_associated_user(policy_uuid)
+        assert_that(result, equal_to(False))
+
+        self._user_dao.add_policy(user_uuid, policy_uuid)
+        result = self._policy_dao.is_associated_user(policy_uuid)
+        assert_that(result, equal_to(True))
+
+    @fixtures.db.group()
+    @fixtures.db.policy()
+    def test_is_associated_group(self, group_uuid, policy_uuid):
+        result = self._policy_dao.is_associated_group(policy_uuid)
+        assert_that(result, equal_to(False))
+
+        self._group_dao.add_policy(group_uuid, policy_uuid)
+        result = self._policy_dao.is_associated_group(policy_uuid)
+        assert_that(result, equal_to(True))
+
     def get_policy(self, policy_uuid):
         policies = self._policy_dao.get(
             uuid=policy_uuid,

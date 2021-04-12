@@ -203,3 +203,16 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         assert_that(policies, not_(has_item(has_entries(uuid=policy['uuid']))))
 
         base.assert_http_error(404, self.client.policies.get, policy['uuid'])
+
+    @fixtures.http.group()
+    @fixtures.http.policy(name='kept', acl=['kept'], config_managed=True)
+    def test_policies_are_not_deleted_if_associated_at_startup(self, group, policy):
+        self.client.groups.add_policy(group['uuid'], policy['uuid'])
+
+        self.restart_auth()
+
+        policies = self.client.groups.get_policies(group['uuid'])['items']
+        assert_that(policies, has_item(has_entries(uuid=policy['uuid'])))
+
+        policy = self.client.policies.get(policy['uuid'])
+        assert_that(policy, has_entries(uuid=policy['uuid']))
