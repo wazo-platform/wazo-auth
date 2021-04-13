@@ -46,6 +46,7 @@ class Token:
         self.user_agent = user_agent
         self.remote_addr = remote_addr
         self.refresh_token = refresh_token
+        self._access_check = AccessCheck(self.auth_id, self.acl)
 
     def __eq__(self, other):
         return (
@@ -101,8 +102,7 @@ class Token:
         return self.expire_t and time.time() > self.expire_t
 
     def matches_required_access(self, required_access):
-        access_check = AccessCheck(self.auth_id, self.acl)
-        return access_check.matches_required_access(required_access)
+        return self._access_check.matches_required_access(required_access)
 
 
 class ExpiredTokenRemover:
