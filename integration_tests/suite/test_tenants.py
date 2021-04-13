@@ -353,7 +353,10 @@ class TestTenantPolicyAssociation(WazoAuthTestCase):
 
         result = action()
         expected = contains_inanyorder(
-            *[has_entries(name=n) for n in ('foo', 'bar', 'baz', *DEFAULT_POLICIES_SLUG)]
+            *[
+                has_entries(name=n)
+                for n in ('foo', 'bar', 'baz', *DEFAULT_POLICIES_SLUG)
+            ]
         )
         assert_that(
             result,

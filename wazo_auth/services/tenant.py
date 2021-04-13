@@ -104,8 +104,7 @@ class TenantService(BaseService):
                 continue
 
             all_users_policy = self._policy_service.list(
-                slug=slug,
-                scoping_tenant_uuid=None
+                slug=slug, scoping_tenant_uuid=None
             )[0]
             self._group_service.add_policy(
                 all_users_group['uuid'], all_users_policy['uuid']

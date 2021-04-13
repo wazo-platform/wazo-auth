@@ -10,7 +10,11 @@ logger = logging.getLogger(__name__)
 
 class AllUsersService:
     def __init__(
-        self, group_service, policy_service, tenant_service, all_users_policies,
+        self,
+        group_service,
+        policy_service,
+        tenant_service,
+        all_users_policies,
     ):
         self._group_service = group_service
         self._policy_service = policy_service
@@ -63,10 +67,7 @@ class AllUsersService:
             self._dissociate_policy(tenant_uuid, policy['uuid'], all_users_group)
 
     def _find_policy(self, slug):
-        policies = self._policy_service.list(
-            slug=slug,
-            scoping_tenant_uuid=None
-        )
+        policies = self._policy_service.list(slug=slug, scoping_tenant_uuid=None)
         for policy in policies:
             return policy
 

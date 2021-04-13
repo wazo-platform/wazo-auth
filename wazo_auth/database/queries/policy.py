@@ -93,7 +93,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 or_(
                     Policy.tenant_uuid.in_(tenant_uuids),
                     Policy.config_managed.is_(True),
-                )
+                ),
             )
 
         return self.session.query(Policy).filter(filter_).count()
@@ -156,7 +156,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 or_(
                     Policy.tenant_uuid.in_(tenant_uuids),
                     Policy.config_managed.is_(True),
-                )
+                ),
             )
 
         query = (
