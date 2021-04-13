@@ -3,12 +3,12 @@
 
 import logging
 import os
-import re
 import time
 import threading
 
 from datetime import datetime
 
+from xivo.auth_verifier import AccessCheck
 from xivo_bus.resources.auth.events import SessionDeletedEvent, SessionExpireSoonEvent
 
 from wazo_auth.database.helpers import Session
@@ -101,45 +101,8 @@ class Token:
         return self.expire_t and time.time() > self.expire_t
 
     def matches_required_access(self, required_access):
-        if required_access is None:
-            return True
-
-        positive_user_acl = set()
-        negative_user_acl = set()
-
-        for user_access in self.acl:
-            if user_access.startswith('!'):
-                negative_user_acl.add(user_access[1:])
-            else:
-                positive_user_acl.add(user_access)
-
-        for negative_access in negative_user_acl:
-            negative_access_regex = self._transform_access_to_regex(negative_access)
-            if re.match(negative_access_regex, required_access):
-                return False
-
-        for positive_access in positive_user_acl:
-            positive_access_regex = self._transform_access_to_regex(positive_access)
-            if re.match(positive_access_regex, required_access):
-                return True
-        return False
-
-    def _transform_access_to_regex(self, access):
-        access_regex = re.escape(access)
-        access_regex = access_regex.replace('\\*', '[^.]*?').replace('\\#', '.*?')
-        access_regex = self._transform_access_me_to_uuid_or_me(access_regex)
-        return re.compile('^{}$'.format(access_regex))
-
-    def _transform_access_me_to_uuid_or_me(self, access_regex):
-        access_regex = access_regex.replace(
-            '\\.me\\.', '\\.(me|{auth_id})\\.'.format(auth_id=self.auth_id)
-        )
-        if access_regex.endswith('\\.me'):
-            access_regex = '{access_start}\\.(me|{auth_id})'.format(
-                access_start=access_regex[:-4],
-                auth_id=self.auth_id,
-            )
-        return access_regex
+        access_check = AccessCheck(self.auth_id, self.acl)
+        return access_check.matches_required_access(required_access)
 
 
 class ExpiredTokenRemover:
