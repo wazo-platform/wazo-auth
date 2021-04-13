@@ -104,6 +104,7 @@ class PolicyListSchema(BaseListSchema):
         'user_uuid',
         'group_uuid',
         'tenant_uuid',
+        'system_managed',
     ]
 
 

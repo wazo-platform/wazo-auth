@@ -27,7 +27,11 @@ from .helpers.base import (
     WazoAuthTestCase,
 )
 from .helpers import fixtures
-from .helpers.constants import UNKNOWN_UUID, NB_DEFAULT_POLICIES, DEFAULT_POLICY_SLUG
+from .helpers.constants import (
+    UNKNOWN_UUID,
+    NB_DEFAULT_POLICIES,
+    ALL_USERS_POLICY_SLUG,
+)
 
 
 class TestPolicies(WazoAuthTestCase):
@@ -138,10 +142,11 @@ class TestPolicies(WazoAuthTestCase):
     def test_list_sorting(self, _, one, two, three):
         action = partial(self.client.policies.list, tenant_uuid=SUB_TENANT_UUID)
         autocreated_policy = self.client.policies.list(
-            slug=DEFAULT_POLICY_SLUG,
+            system_managed=True,
             tenant_uuid=SUB_TENANT_UUID,
-        )['items'][0]
-        expected = [one, three, two, autocreated_policy]
+            order='name',
+        )['items']
+        expected = [one, three, two, *autocreated_policy]
         assert_sorted(action, order='name', expected=expected)
 
     @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
@@ -157,15 +162,26 @@ class TestPolicies(WazoAuthTestCase):
         response = self.client.policies.list(
             recurse=True, tenant_uuid=self.top_tenant_uuid
         )
-        assert_that(response, has_entries(items=has_items(one, two, three)))
+        expected_default = has_entries(
+            slug=ALL_USERS_POLICY_SLUG,
+            tenant_uuid=self.top_tenant_uuid,
+        )
+        assert_that(
+            response,
+            has_entries(items=has_items(one, two, three, expected_default)),
+        )
 
         # Same tenant
         response = self.client.policies.list(tenant_uuid=SUB_TENANT_UUID)
+        expected_default = has_entries(
+            slug=ALL_USERS_POLICY_SLUG,
+            tenant_uuid=SUB_TENANT_UUID,
+        )
         assert_that(
             response,
             has_entries(
                 total=3 + NB_DEFAULT_POLICIES,
-                items=has_items(one, two, three),
+                items=has_items(one, two, three, expected_default),
             ),
         )
 

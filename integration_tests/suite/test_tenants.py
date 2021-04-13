@@ -21,7 +21,13 @@ from .helpers.base import (
     WazoAuthTestCase,
     SUB_TENANT_UUID,
 )
-from .helpers.constants import UNKNOWN_UUID, NB_DEFAULT_POLICIES, DEFAULT_POLICY_SLUG
+from .helpers.constants import (
+    ALL_USERS_POLICY_SLUG,
+    DEFAULT_POLICIES_SLUG,
+    NB_DEFAULT_POLICIES,
+    UNKNOWN_UUID,
+)
+
 
 ADDRESS_1 = {
     'line_1': 'Here',
@@ -99,6 +105,16 @@ class TestTenants(WazoAuthTestCase):
             ),
         )
 
+        def expected_policies(tenant_uuid):
+            return contains(
+                has_entries(
+                    slug=ALL_USERS_POLICY_SLUG,
+                    tenant_uuid=tenant_uuid,
+                    acl=has_item('integration_tests.access'),
+                )
+            )
+
+        # Assert default policies from admin point of view (recurse=True)
         wazo_all_users_policies = [
             {
                 'group': wazo_all_users_group,
@@ -108,59 +124,75 @@ class TestTenants(WazoAuthTestCase):
             }
             for wazo_all_users_group in wazo_all_users_groups
         ]
+
         assert_that(
             wazo_all_users_policies,
             contains_inanyorder(
                 has_entries(
                     group=has_entries(tenant_uuid=self.top_tenant_uuid),
-                    policies=contains(
-                        has_entries(
-                            slug=DEFAULT_POLICY_SLUG,
-                            tenant_uuid=self.top_tenant_uuid,
-                            acl=has_item('integration_tests.access'),
-                        )
-                    ),
+                    policies=expected_policies(self.top_tenant_uuid),
                 ),
                 has_entries(
                     group=has_entries(tenant_uuid=foobar['uuid']),
-                    policies=contains(
-                        has_entries(
-                            slug=DEFAULT_POLICY_SLUG,
-                            tenant_uuid=foobar['uuid'],
-                            acl=has_item('integration_tests.access'),
-                        )
-                    ),
+                    policies=expected_policies(self.top_tenant_uuid),
                 ),
                 has_entries(
                     group=has_entries(tenant_uuid=foobaz['uuid']),
-                    policies=contains(
-                        has_entries(
-                            slug=DEFAULT_POLICY_SLUG,
-                            tenant_uuid=foobaz['uuid'],
-                            acl=has_item('integration_tests.access'),
-                        )
-                    ),
+                    policies=expected_policies(self.top_tenant_uuid),
                 ),
                 has_entries(
                     group=has_entries(tenant_uuid=other['uuid']),
-                    policies=contains(
-                        has_entries(
-                            slug=DEFAULT_POLICY_SLUG,
-                            tenant_uuid=other['uuid'],
-                            acl=has_item('integration_tests.access'),
-                        )
-                    ),
+                    policies=expected_policies(self.top_tenant_uuid),
                 ),
             ),
         )
 
-        with self.tenant(
-            self.client, name='subtenant', parent_uuid=foobar['uuid']
-        ) as subtenant:
+        # Assert default policies from tenant point of view
+        result = []
+        for group in wazo_all_users_groups:
+            self.client.set_tenant(group['tenant_uuid'])
+            policies = self.client.groups.get_policies(group['uuid'])['items']
+            self.client.set_tenant(None)
+            result.append({'group': group, 'policies': policies})
+
+        assert_that(
+            result,
+            contains_inanyorder(
+                has_entries(
+                    group=has_entries(tenant_uuid=self.top_tenant_uuid),
+                    policies=expected_policies(self.top_tenant_uuid),
+                ),
+                has_entries(
+                    group=has_entries(tenant_uuid=foobar['uuid']),
+                    policies=expected_policies(foobar['uuid']),
+                ),
+                has_entries(
+                    group=has_entries(tenant_uuid=foobaz['uuid']),
+                    policies=expected_policies(foobaz['uuid']),
+                ),
+                has_entries(
+                    group=has_entries(tenant_uuid=other['uuid']),
+                    policies=expected_policies(other['uuid']),
+                ),
+            ),
+        )
+
+        tenant_uuids = [
+            self.top_tenant_uuid,
+            foobar['uuid'],
+            foobaz['uuid'],
+            other['uuid'],
+        ]
+        slug = ALL_USERS_POLICY_SLUG
+        for tenant_uuid in tenant_uuids:
             assert_that(
-                subtenant,
-                has_entries(uuid=uuid_(), name='subtenant', parent_uuid=foobar['uuid']),
+                self.client.tenants.get_policies(tenant_uuid)['items'],
+                has_item(has_entries(slug=slug, tenant_uuid=tenant_uuid)),
             )
+
+        params = {'name': 'subtenant', 'parent_uuid': foobar['uuid']}
+        with self.tenant(self.client, **params) as subtenant:
+            assert_that(subtenant, has_entries(uuid=uuid_(), **params))
 
     def test_tenant_created_event(self):
         routing_key = 'auth.tenants.*.created'
@@ -321,7 +353,7 @@ class TestTenantPolicyAssociation(WazoAuthTestCase):
 
         result = action()
         expected = contains_inanyorder(
-            *[has_entries(name=n) for n in ('foo', 'bar', 'baz', DEFAULT_POLICY_SLUG)]
+            *[has_entries(name=n) for n in ('foo', 'bar', 'baz', *DEFAULT_POLICIES_SLUG)]
         )
         assert_that(
             result,
@@ -353,7 +385,10 @@ class TestTenantPolicyAssociation(WazoAuthTestCase):
             has_entries(name='bar'),
             has_entries(name='baz'),
             has_entries(name='foo'),
-            has_entries(name=DEFAULT_POLICY_SLUG),
+            # default_policies
+            has_entries(name='wazo-all-users-policy'),
+            has_entries(name='wazo_default_admin_policy'),
+            has_entries(name='wazo_default_user_policy'),
         ]
         assert_sorted(action, order='name', expected=expected)
 
@@ -373,7 +408,10 @@ class TestTenantPolicyAssociation(WazoAuthTestCase):
         expected = contains(
             has_entries(name='baz'),
             has_entries(name='foo'),
-            has_entries(name=DEFAULT_POLICY_SLUG),
+            # default_policies
+            has_entries(name='wazo-all-users-policy'),
+            has_entries(name='wazo_default_admin_policy'),
+            has_entries(name='wazo_default_user_policy'),
         )
         assert_that(
             result,

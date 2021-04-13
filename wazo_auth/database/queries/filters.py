@@ -79,6 +79,7 @@ policy_strict_filter = StrictFilter(
     ('user_uuid', UserPolicy.user_uuid, str),
     ('group_uuid', GroupPolicy.group_uuid, str),
     ('tenant_uuid', Policy.tenant_uuid, str),
+    ('system_managed', Policy.config_managed, bool),
 )
 refresh_token_strict_filter = StrictFilter(
     ('client_id', RefreshToken.client_id, None),

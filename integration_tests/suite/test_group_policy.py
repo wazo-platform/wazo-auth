@@ -12,7 +12,7 @@ from hamcrest import (
     not_,
 )
 from .helpers import base, fixtures
-from .helpers.constants import UNKNOWN_UUID, DEFAULT_POLICY_SLUG
+from .helpers.constants import UNKNOWN_UUID, ALL_USERS_POLICY_SLUG
 
 
 class TestGroupPolicyAssociation(base.WazoAuthTestCase):
@@ -159,7 +159,7 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         assert_that(token_data, has_entries('acl', has_items('foobar')))
 
     def test_default_policies_are_updated_at_startup(self):
-        policy = self.client.policies.list(slug=DEFAULT_POLICY_SLUG)['items'][0]
+        policy = self.client.policies.list(slug=ALL_USERS_POLICY_SLUG)['items'][0]
         policy_without_acl = dict(policy)
         policy_without_acl['acl'] = []
         self.client.policies.edit(policy['uuid'], **policy_without_acl)
@@ -200,7 +200,7 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
     def test_policies_are_created_and_associated_at_startup(self):
         group_name = f'wazo-all-users-tenant-{self.top_tenant_uuid}'
         group = self.client.groups.list(name=group_name)['items'][0]
-        policy = self.client.policies.list(slug=DEFAULT_POLICY_SLUG)['items'][0]
+        policy = self.client.policies.list(slug=ALL_USERS_POLICY_SLUG)['items'][0]
         policy_without_acl = dict(policy)
         policy_without_acl['acl'] = []
         self.client.policies.edit(policy['uuid'], **policy_without_acl)

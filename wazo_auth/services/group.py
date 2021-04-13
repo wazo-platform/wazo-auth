@@ -1,4 +1,4 @@
-# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_auth import exceptions
@@ -126,3 +126,6 @@ class GroupService(BaseService):
         exists = self._dao.group.exists(uuid, tenant_uuids=tenant_uuids)
         if not exists:
             raise exceptions.UnknownGroupException(uuid)
+
+    def build_tenant_list(self, tenant_uuid):
+        return self._tenant_tree.list_visible_tenants(tenant_uuid)
