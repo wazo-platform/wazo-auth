@@ -5,7 +5,7 @@ import random
 import string
 import re
 
-from sqlalchemy import and_, exc, text
+from sqlalchemy import and_, exc, text, or_
 from wazo_auth import schemas
 from .base import BaseDAO, PaginatorMixin
 from ..models import Address, Policy, Tenant, User
@@ -41,7 +41,10 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return self.session.query(Tenant).filter(filter_).count()
 
     def count_policies(self, tenant_uuid, filtered=False, **kwargs):
-        filter_ = Policy.tenant_uuid == str(tenant_uuid)
+        filter_ = or_(
+            Policy.tenant_uuid == str(tenant_uuid),
+            Policy.config_managed.is_(True),
+        )
 
         if filtered is not False:
             strict_filter = filters.policy_strict_filter.new_filter(**kwargs)

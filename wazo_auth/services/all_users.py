@@ -14,13 +14,11 @@ class AllUsersService:
         group_service,
         policy_service,
         tenant_service,
-        default_policies,
         all_users_policies,
     ):
         self._group_service = group_service
         self._policy_service = policy_service
         self._tenant_service = tenant_service
-        self._default_policies = default_policies
         self._all_users_policies = all_users_policies
 
     def update_policies(self):
@@ -32,79 +30,46 @@ class AllUsersService:
             len(self._all_users_policies),
             len(tenants),
         )
+        policies = self.find_policies()
         for tenant_uuid in tenant_uuids:
-            self.update_policies_for_tenant(tenant_uuid)
+            self.associate_policies_for_tenant(tenant_uuid, policies)
 
         commit_or_rollback()
 
-    def update_policies_for_tenant(self, tenant_uuid):
-        all_users_group = self._group_service.get_all_users_group(tenant_uuid)
-        existing_policies = self._policy_service.list(scoping_tenant_uuid=tenant_uuid)
-        existing_policy_slugs = {p['slug']: p['uuid'] for p in existing_policies}
-        associated_policies = self._group_service.list_policies(all_users_group['uuid'])
-        associated_policy_slugs = {p['slug']: p['uuid'] for p in associated_policies}
-        for slug, policy in self._all_users_policies.items():
-            if slug in associated_policy_slugs:
-                associated_policy_uuid = associated_policy_slugs[slug]
-                self._update_policy(
-                    tenant_uuid,
-                    associated_policy_uuid,
-                    slug,
-                    policy,
-                    all_users_group,
-                )
-            elif slug in existing_policy_slugs:
-                existing_policy_uuid = existing_policy_slugs[slug]
-                self._update_policy(
-                    tenant_uuid,
-                    existing_policy_uuid,
-                    slug,
-                    policy,
-                    all_users_group,
-                )
-                self._associate_policy(
-                    tenant_uuid,
-                    existing_policy_uuid,
-                    all_users_group,
-                )
-            else:
-                policy = self._create_policy(tenant_uuid, slug, policy, all_users_group)
-                self._associate_policy(tenant_uuid, policy['uuid'], all_users_group)
+    def find_policies(self):
+        policies = []
+        for slug, enabled in self._all_users_policies.items():
+            if not enabled:
+                logger.debug('all_users: policy disabled: %s', slug)
+                continue
 
-        managed_policies = {**self._default_policies, **self._all_users_policies}
-        policies_to_remove = [
+            policy = self._find_policy(slug)
+            if not policy:
+                logger.error('all_users: Unable to found policy: %s', slug)
+                continue
+            policies.append(policy)
+
+        return policies
+
+    def associate_policies_for_tenant(self, tenant_uuid, policies):
+        all_users_group = self._group_service.get_all_users_group(tenant_uuid)
+        for policy in policies:
+            self._associate_policy(tenant_uuid, policy['uuid'], all_users_group)
+
+        existing_policies = self._policy_service.list(scoping_tenant_uuid=tenant_uuid)
+        policies_to_dissociate = [
             policy
             for policy in existing_policies
-            if policy['config_managed'] and policy['slug'] not in managed_policies
+            if policy['config_managed']
+            and policy['slug'] not in self._all_users_policies
         ]
-        for policy in policies_to_remove:
-            self._group_service.remove_policy(all_users_group['uuid'], policy['uuid'])
-            self._delete_policy(tenant_uuid, policy['uuid'])
+        for policy in policies_to_dissociate:
+            self._dissociate_policy(tenant_uuid, policy['uuid'], all_users_group)
 
-    def _create_policy(self, tenant_uuid, slug, policy, all_users_group):
-        logger.debug('all_users: tenant %s: creating policy %s', tenant_uuid, slug)
-        return self._policy_service.create(
-            name=slug,
-            slug=slug,
-            tenant_uuid=tenant_uuid,
-            description='Automatically created to be applied to all users',
-            config_managed=True,
-            **policy,
-        )
-
-    def _update_policy(
-        self, tenant_uuid, policy_uuid, policy_slug, policy, all_users_group
-    ):
-        logger.debug(
-            'all_users: tenant %s: updating policy %s', tenant_uuid, policy_uuid
-        )
-        self._policy_service.update(
-            policy_uuid,
-            name=policy_slug,
-            description='Automatically created to be applied to all users',
-            config_managed=True,
-            **policy,
-        )
+    def _find_policy(self, slug):
+        policies = self._policy_service.list(slug=slug, scoping_tenant_uuid=None)
+        for policy in policies:
+            return policy
 
     def _associate_policy(self, tenant_uuid, policy_uuid, all_users_group):
         logger.debug(
@@ -115,18 +80,11 @@ class AllUsersService:
         )
         self._group_service.add_policy(all_users_group['uuid'], policy_uuid)
 
-    def _delete_policy(self, tenant_uuid, policy_uuid):
-        if self._policy_service.is_associated(policy_uuid):
-            logger.warning(
-                'all_users: tenant %s: deleting policy %s (SKIPPED: associated)',
-                tenant_uuid,
-                policy_uuid,
-            )
-            return
-
+    def _dissociate_policy(self, tenant_uuid, policy_uuid, all_users_group):
         logger.debug(
-            'all_users: tenant %s: deleting policy %s',
+            'all_users: tenant %s: dissociating policy %s from group %s',
             tenant_uuid,
             policy_uuid,
+            all_users_group['uuid'],
         )
-        self._policy_service.delete(policy_uuid, tenant_uuid)
+        self._group_service.remove_policy(all_users_group['uuid'], policy_uuid)

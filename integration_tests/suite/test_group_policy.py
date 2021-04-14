@@ -12,7 +12,7 @@ from hamcrest import (
     not_,
 )
 from .helpers import base, fixtures
-from .helpers.constants import UNKNOWN_UUID, DEFAULT_POLICY_SLUG
+from .helpers.constants import UNKNOWN_UUID, ALL_USERS_POLICY_SLUG
 
 
 class TestGroupPolicyAssociation(base.WazoAuthTestCase):
@@ -158,8 +158,8 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         token_data = user_client.token.new('wazo_user', expiration=5)
         assert_that(token_data, has_entries('acl', has_items('foobar')))
 
-    def test_all_users_policies_are_updated_at_startup(self):
-        policy = self.client.policies.list(slug=DEFAULT_POLICY_SLUG)['items'][0]
+    def test_default_policies_are_updated_at_startup(self):
+        policy = self.client.policies.list(slug=ALL_USERS_POLICY_SLUG)['items'][0]
         policy_without_acl = dict(policy)
         policy_without_acl['acl'] = []
         self.client.policies.edit(policy['uuid'], **policy_without_acl)
@@ -169,10 +169,38 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         policy = self.client.policies.get(policy['uuid'])
         assert_that(policy, has_entries(acl=has_item('integration_tests.access')))
 
-    def test_all_users_policies_are_associated_at_startup(self):
-        policy_name = f'wazo-all-users-tenant-{self.top_tenant_uuid}'
-        group = self.client.groups.list(name=policy_name)['items'][0]
-        policy = self.client.policies.list(slug=DEFAULT_POLICY_SLUG)['items'][0]
+    @fixtures.http.group()
+    @fixtures.http.policy(name='kept', acl=['kept'], config_managed=True)
+    def test_default_policies_are_not_deleted_when_associated(self, group, policy):
+        self.client.groups.add_policy(group['uuid'], policy['uuid'])
+
+        self.restart_auth()
+
+        policies = self.client.groups.get_policies(group['uuid'])['items']
+        assert_that(policies, has_item(has_entries(uuid=policy['uuid'])))
+
+        policy = self.client.policies.get(policy['uuid'])
+        assert_that(policy, has_entries(uuid=policy['uuid']))
+
+    @fixtures.http.policy(name='to-be-removed', acl=['removed'], config_managed=True)
+    def test_policies_are_deleted_at_startup(self, policy):
+        group_name = f'wazo-all-users-tenant-{self.top_tenant_uuid}'
+        group = self.client.groups.list(name=group_name)['items'][0]
+        self.client.groups.add_policy(group['uuid'], policy['uuid'])
+
+        self.restart_auth()
+
+        # all_users_policies are dissociated
+        policies = self.client.groups.get_policies(group['uuid'])['items']
+        assert_that(policies, not_(has_item(has_entries(uuid=policy['uuid']))))
+
+        # default_policies are removed
+        base.assert_http_error(404, self.client.policies.get, policy['uuid'])
+
+    def test_policies_are_created_and_associated_at_startup(self):
+        group_name = f'wazo-all-users-tenant-{self.top_tenant_uuid}'
+        group = self.client.groups.list(name=group_name)['items'][0]
+        policy = self.client.policies.list(slug=ALL_USERS_POLICY_SLUG)['items'][0]
         policy_without_acl = dict(policy)
         policy_without_acl['acl'] = []
         self.client.policies.edit(policy['uuid'], **policy_without_acl)
@@ -180,6 +208,11 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
 
         self.restart_auth()
 
+        # default_policies are created
+        policy = self.client.policies.get(policy['uuid'])
+        assert_that(policy, has_entries(uuid=policy['uuid']))
+
+        # all_users_policies are associated
         group_policies = self.client.groups.get_policies(group['uuid'])['items']
         assert_that(
             group_policies,
@@ -190,29 +223,3 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
                 )
             ),
         )
-
-    @fixtures.http.policy(name='to-be-removed', acl=['removed'], config_managed=True)
-    def test_all_users_policies_are_deleted_at_startup(self, policy):
-        policy_name = f'wazo-all-users-tenant-{self.top_tenant_uuid}'
-        group = self.client.groups.list(name=policy_name)['items'][0]
-        self.client.groups.add_policy(group['uuid'], policy['uuid'])
-
-        self.restart_auth()
-
-        policies = self.client.groups.get_policies(group['uuid'])['items']
-        assert_that(policies, not_(has_item(has_entries(uuid=policy['uuid']))))
-
-        base.assert_http_error(404, self.client.policies.get, policy['uuid'])
-
-    @fixtures.http.group()
-    @fixtures.http.policy(name='kept', acl=['kept'], config_managed=True)
-    def test_policies_are_not_deleted_if_associated_at_startup(self, group, policy):
-        self.client.groups.add_policy(group['uuid'], policy['uuid'])
-
-        self.restart_auth()
-
-        policies = self.client.groups.get_policies(group['uuid'])['items']
-        assert_that(policies, has_item(has_entries(uuid=policy['uuid'])))
-
-        policy = self.client.policies.get(policy['uuid'])
-        assert_that(policy, has_entries(uuid=policy['uuid']))

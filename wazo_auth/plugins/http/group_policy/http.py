@@ -54,16 +54,27 @@ class GroupPolicies(_BaseResource):
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 
-        policies = self.group_service.list_policies(group_uuid, **list_params)
+        tenant_uuids = self.group_service.build_tenant_list(scoping_tenant.uuid)
+        policies = self.group_service.list_policies(
+            group_uuid,
+            tenant_uuids=tenant_uuids,
+            **list_params,
+        )
+        total = self.group_service.count_policies(
+            group_uuid,
+            filtered=False,
+            **list_params,
+        )
+        filtered = self.group_service.count_policies(
+            group_uuid,
+            filtered=True,
+            **list_params,
+        )
         return (
             {
                 'items': policy_full_schema.dump(policies, many=True),
-                'total': self.group_service.count_policies(
-                    group_uuid, filtered=False, **list_params
-                ),
-                'filtered': self.group_service.count_policies(
-                    group_uuid, filtered=True, **list_params
-                ),
+                'total': total,
+                'filtered': filtered,
             },
             200,
         )

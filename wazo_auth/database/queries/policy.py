@@ -4,7 +4,14 @@
 import random
 import re
 import string
-from sqlalchemy import and_, distinct, exc, func, text
+from sqlalchemy import (
+    and_,
+    distinct,
+    exc,
+    func,
+    or_,
+    text,
+)
 from .base import BaseDAO, PaginatorMixin
 from . import filters
 from ..models import (
@@ -81,7 +88,13 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         filter_ = self.new_search_filter(search=search)
 
         if tenant_uuids is not None:
-            filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
+            filter_ = and_(
+                filter_,
+                or_(
+                    Policy.tenant_uuid.in_(tenant_uuids),
+                    Policy.config_managed.is_(True),
+                ),
+            )
 
         return self.session.query(Policy).filter(filter_).count()
 
@@ -138,7 +151,13 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         filter_ = and_(strict_filter, search_filter)
 
         if tenant_uuids is not None:
-            filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
+            filter_ = and_(
+                filter_,
+                or_(
+                    Policy.tenant_uuid.in_(tenant_uuids),
+                    Policy.config_managed.is_(True),
+                ),
+            )
 
         query = (
             self.session.query(
@@ -161,6 +180,11 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         policies = []
         for policy in query.all():
+            tenant_uuid = policy.tenant_uuid
+            if policy.config_managed:
+                if tenant_uuids and tenant_uuid not in tenant_uuids:
+                    tenant_uuid = tenant_uuids[0]
+
             if policy.acl == [None]:
                 acl = []
             else:
@@ -172,7 +196,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 'slug': policy.slug,
                 'description': policy.description,
                 'acl': acl,
-                'tenant_uuid': policy.tenant_uuid,
+                'tenant_uuid': tenant_uuid,
                 'config_managed': policy.config_managed,
             }
             policies.append(body)
@@ -180,9 +204,17 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return policies
 
     def list_(self, **kwargs):
+        tenant_uuid = kwargs.pop('tenant_uuid', None)
+        if tenant_uuid:
+            tenant_uuid = str(tenant_uuid)
+            tenant_filter = or_(
+                Policy.tenant_uuid == tenant_uuid,
+                Policy.config_managed.is_(True),
+            )
+
         search_filter = self.new_search_filter(**kwargs)
         strict_filter = self.new_strict_filter(**kwargs)
-        filter_ = and_(strict_filter, search_filter)
+        filter_ = and_(tenant_filter, strict_filter, search_filter)
 
         query = self.session.query(Policy).filter(filter_).group_by(Policy)
         query = self._paginator.update_query(query, **kwargs)
@@ -192,7 +224,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 'uuid': policy.uuid,
                 'name': policy.name,
                 'slug': policy.slug,
-                'tenant_uuid': policy.tenant_uuid,
+                'tenant_uuid': tenant_uuid or policy.tenant_uuid,
             }
             for policy in query.all()
         ]

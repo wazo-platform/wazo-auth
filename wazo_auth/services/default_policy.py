@@ -9,13 +9,10 @@ logger = logging.getLogger(__name__)
 
 
 class DefaultPolicyService:
-    def __init__(
-        self, policy_service, tenant_service, default_policies, all_users_policies
-    ):
+    def __init__(self, policy_service, tenant_service, default_policies):
         self._policy_service = policy_service
         self._tenant_service = tenant_service
         self._default_policies = default_policies
-        self._all_users_policies = all_users_policies
 
     def update_policies(self):
         top_tenant_uuid = self._tenant_service.find_top_tenant()
@@ -36,14 +33,18 @@ class DefaultPolicyService:
             else:
                 self._create_policy(tenant_uuid, slug, policy)
 
-        managed_policies = {**self._default_policies, **self._all_users_policies}
-        policies_to_remove = [
-            policy
-            for policy in existing_policies
-            if policy['config_managed'] and policy['slug'] not in managed_policies
-        ]
-        for policy in policies_to_remove:
-            self._delete_policy(policy['uuid'])
+    def delete_orphan_policies(self):
+        top_tenant_uuid = self._tenant_service.find_top_tenant()
+        self.delete_orphan_policies_for_tenant(top_tenant_uuid)
+        commit_or_rollback()
+
+    def delete_orphan_policies_for_tenant(self, tenant_uuid):
+        existing_policies = self._policy_service.list(scoping_tenant_uuid=tenant_uuid)
+        for policy in existing_policies:
+            if not policy['config_managed']:
+                continue
+            if policy['slug'] not in self._default_policies:
+                self._delete_policy(tenant_uuid, policy['uuid'])
 
     def _create_policy(self, tenant_uuid, slug, policy):
         logger.debug('default_policies: creating policy %s', slug)
@@ -66,7 +67,7 @@ class DefaultPolicyService:
             **policy,
         )
 
-    def _delete_policy(self, policy_uuid):
+    def _delete_policy(self, tenant_uuid, policy_uuid):
         if self._policy_service.is_associated(policy_uuid):
             logger.warning(
                 'default_policies: deleting policy %s (SKIPPED: associated)',
@@ -75,4 +76,4 @@ class DefaultPolicyService:
             return
 
         logger.debug('default_policies: deleting policy %s', policy_uuid)
-        self._policy_service.delete(policy_uuid, scoping_tenant_uuid=None)
+        self._policy_service.delete(policy_uuid, tenant_uuid)
