@@ -5,12 +5,10 @@
       - debian-packaging-template
     check:
       jobs:
-        - auth-tox-integration:
-            nodeset: debian10-vm
+        - auth-tox-integration
     gate:
       jobs:
-        - auth-tox-integration:
-            nodeset: debian10-vm
+        - auth-tox-integration
 
 - job:
     name: auth-tox-integration
