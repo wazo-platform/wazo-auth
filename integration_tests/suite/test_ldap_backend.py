@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import ldap
@@ -73,7 +73,7 @@ class _BaseLDAPTestCase(BaseTestCase):
     def setUpClass(cls):
         super().setUpClass()
         port = cls.service_port(389, 'slapd')
-        ldap_uri = 'ldap://localhost:{port}'.format(port=port)
+        ldap_uri = 'ldap://127.0.0.1:{port}'.format(port=port)
 
         try:
             add_contacts(cls.CONTACTS, ldap_uri)

@@ -82,7 +82,7 @@ class TestPolicies(WazoAuthTestCase):
             [None],
         ]
 
-        url = 'http://localhost:{}/0.1/policies'.format(self.service_port(9497, 'auth'))
+        url = 'http://127.0.0.1:{}/0.1/policies'.format(self.service_port(9497, 'auth'))
         headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',

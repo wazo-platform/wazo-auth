@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -213,7 +213,7 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
 
     def authorize_oauth2(self, auth_type, state, token):
         port = self.service_port(80, 'oauth2sync')
-        url = 'http://localhost:{}/{}/authorize/{}'.format(port, auth_type, state)
+        url = 'http://127.0.0.1:{}/{}/authorize/{}'.format(port, auth_type, state)
         result = requests.get(url, params={'access_token': token})
         result.raise_for_status()
 

@@ -41,7 +41,7 @@ from .database import Database
 
 logging.getLogger('wazo_auth').setLevel(logging.WARNING)
 
-HOST = os.getenv('WAZO_AUTH_TEST_HOST', 'localhost')
+HOST = os.getenv('WAZO_AUTH_TEST_HOST', '127.0.0.1')
 SUB_TENANT_UUID = '76502c2b-cce5-409c-ab8f-d1fe41141a2d'
 ADDRESS_NULL = {
     'line_1': None,
@@ -138,7 +138,7 @@ class AuthLaunchingTestCase(AssetLaunchingTestCase):
 
 class BaseTestCase(AuthLaunchingTestCase):
 
-    bus_config = {'user': 'guest', 'password': 'guest', 'host': 'localhost'}
+    bus_config = {'user': 'guest', 'password': 'guest', 'host': '127.0.0.1'}
     email_dir = '/var/mail'
 
     @classmethod
