@@ -26,7 +26,7 @@ from .helpers.base import BaseTestCase
 
 
 GOOGLE = 'google'
-AUTHORIZE_URL = 'http://localhost:{port}/google/authorize/{state}'
+AUTHORIZE_URL = 'http://127.0.0.1:{port}/google/authorize/{state}'
 
 
 class BaseGoogleTestCase(BaseTestCase):
@@ -49,7 +49,7 @@ class BaseGoogleTestCase(BaseTestCase):
 
         port = cls.service_port(9497, 'auth')
         cls.client = Client(
-            'localhost',
+            '127.0.0.1',
             port=port,
             prefix=None,
             https=False,

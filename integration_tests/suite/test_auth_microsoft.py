@@ -26,7 +26,7 @@ from wazo_auth.database import helpers
 from .helpers.base import BaseTestCase as _BaseTestCase
 
 MICROSOFT = 'microsoft'
-AUTHORIZE_URL = 'http://localhost:{port}/microsoft/authorize/{state}'
+AUTHORIZE_URL = 'http://127.0.0.1:{port}/microsoft/authorize/{state}'
 
 
 class BaseTestCase(_BaseTestCase):
@@ -50,7 +50,7 @@ class BaseTestCase(_BaseTestCase):
 
         port = cls.service_port(9497, 'auth')
         cls.client = Client(
-            'localhost',
+            '127.0.0.1',
             port=port,
             prefix=None,
             https=False,
