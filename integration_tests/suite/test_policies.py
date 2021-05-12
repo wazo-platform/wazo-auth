@@ -142,7 +142,7 @@ class TestPolicies(WazoAuthTestCase):
     def test_list_sorting(self, _, one, two, three):
         action = partial(self.client.policies.list, tenant_uuid=SUB_TENANT_UUID)
         autocreated_policy = self.client.policies.list(
-            system_managed=True,
+            read_only=True,
             tenant_uuid=SUB_TENANT_UUID,
             order='name',
         )['items']
