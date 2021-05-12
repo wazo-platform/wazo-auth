@@ -34,7 +34,7 @@ class GroupService(BaseService):
     def create(self, **kwargs):
         kwargs.setdefault('system_managed', False)
         uuid = self._dao.group.create(**kwargs)
-        return dict(uuid=uuid, read_only=kwargs['system_managed'], **kwargs)
+        return {'uuid': uuid, 'read_only': kwargs['system_managed'], **kwargs}
 
     def delete(self, group_uuid, scoping_tenant_uuid):
         tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)

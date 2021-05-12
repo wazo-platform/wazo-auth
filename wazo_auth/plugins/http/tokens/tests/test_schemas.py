@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -47,12 +47,12 @@ class TestTokenRequestSchema(TestCase):
         assert_that(calling(self.schema.load).with_args(body), not_(raises(Exception)))
 
         assert_that(
-            calling(self.schema.load).with_args(dict(access_type='online', **body)),
+            calling(self.schema.load).with_args({'access_type': 'online', **body}),
             not_(raises(Exception)),
         )
 
         assert_that(
-            calling(self.schema.load).with_args(dict(access_type='offline', **body)),
+            calling(self.schema.load).with_args({'access_type': 'offline', **body}),
             raises(ValidationError).matching(
                 has_properties(field_names=has_item('_schema'))
             ),
@@ -62,7 +62,7 @@ class TestTokenRequestSchema(TestCase):
         body = {'refresh_token': 'the-token'}
 
         assert_that(
-            calling(self.schema.load).with_args(dict(client_id='x', **body)),
+            calling(self.schema.load).with_args({'client_id': 'x', **body}),
             not_(raises(Exception)),
         )
 

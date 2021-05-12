@@ -27,7 +27,7 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
 
     asset = 'external_auth'
     safe_data = {'scope': ['one', 'two', 'three']}
-    original_data = dict(secret=str(uuid4()), **safe_data)
+    original_data = {'secret': str(uuid4()), **safe_data}
 
     @fixtures.http.user_register()
     def test_create(self, user):
@@ -42,7 +42,7 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
                 msg_accumulator.accumulate(),
                 contains(
                     has_entries(
-                        data=dict(user_uuid=user['uuid'], external_auth_name='foo')
+                        data={'user_uuid': user['uuid'], 'external_auth_name': 'foo'}
                     )
                 ),
             )
@@ -75,7 +75,7 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
                 msg_accumulator.accumulate(),
                 contains(
                     has_entries(
-                        data=dict(user_uuid=user['uuid'], external_auth_name='foo')
+                        data={'user_uuid': user['uuid'], 'external_auth_name': 'foo'}
                     )
                 ),
             )
@@ -204,7 +204,7 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
                 msg_accumulator.accumulate(),
                 contains(
                     has_entries(
-                        data=dict(user_uuid=user['uuid'], external_auth_name='foo')
+                        data={'user_uuid': user['uuid'], 'external_auth_name': 'foo'}
                     )
                 ),
             )

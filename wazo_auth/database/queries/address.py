@@ -1,4 +1,4 @@
-# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_auth import exceptions
@@ -14,14 +14,14 @@ class AddressDAO(BaseDAO):
 
     def get(self, address_id):
         for row in self.session.query(Address).filter(Address.id_ == address_id).all():
-            return dict(
-                line_1=row.line_1,
-                line_2=row.line_2,
-                city=row.city,
-                state=row.state,
-                country=row.country,
-                zip_code=row.zip_code,
-            )
+            return {
+                'line_1': row.line_1,
+                'line_2': row.line_2,
+                'city': row.city,
+                'state': row.state,
+                'country': row.country,
+                'zip_code': row.zip_code,
+            }
 
         raise exceptions.UnknownAddressException(address_id)
 

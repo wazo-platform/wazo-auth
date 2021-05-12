@@ -180,7 +180,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     raise exceptions.ConflictException('groups', column, value)
             raise
 
-        return dict(uuid=str(group_uuid), **body)
+        return {'uuid': str(group_uuid), **body}
 
     def remove_policy(self, group_uuid, policy_uuid):
         filter_ = and_(
