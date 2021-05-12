@@ -193,6 +193,17 @@ class TestPolicies(WazoAuthTestCase):
         response = self.client.policies.list(tenant_uuid=SUB_TENANT_UUID, search='one')
         assert_that(response, has_entries(total=1, items=contains(one)))
 
+        response = self.client.policies.list(
+            tenant_uuid=SUB_TENANT_UUID, read_only=False
+        )
+        assert_that(
+            response,
+            has_entries(
+                total=3 + NB_DEFAULT_POLICIES,
+                items=contains_inanyorder(one, two, three),
+            ),
+        )
+
     @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='one', tenant_uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='two', tenant_uuid=SUB_TENANT_UUID)
@@ -223,7 +234,7 @@ class TestPolicies(WazoAuthTestCase):
     @fixtures.http.policy(
         name='foobar',
         description='a test policy',
-        acl=['dird.me.#', 'ctid-ng.#'],
+        acl=['service1.me.#', 'service2.#'],
     )
     def test_get(self, group1, group2, user1, user2, policy):
         response = self.client.policies.get(policy['uuid'])
@@ -232,7 +243,8 @@ class TestPolicies(WazoAuthTestCase):
             has_entries(
                 name='foobar',
                 description='a test policy',
-                acl=contains_inanyorder('dird.me.#', 'ctid-ng.#'),
+                acl=contains_inanyorder('service1.me.#', 'service2.#'),
+                read_only=False,
             ),
         )
 
@@ -245,7 +257,7 @@ class TestPolicies(WazoAuthTestCase):
 
         assert_that(
             self.client.policies.get(policy['uuid'])['acl'],
-            contains_inanyorder('dird.me.#', 'ctid-ng.#'),
+            contains_inanyorder('service1.me.#', 'service2.#'),
         )
 
         with self.client_in_subtenant() as (client, _, __):

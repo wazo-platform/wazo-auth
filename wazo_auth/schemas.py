@@ -95,7 +95,8 @@ class UserGroupListSchema(BaseListSchema):
 
 
 class PolicyListSchema(BaseListSchema):
-    sort_columns = ['name', 'slug', 'description', 'uuid']
+    read_only = fields.Boolean()
+    sort_columns = ['name', 'slug', 'description', 'uuid', 'read_only']
     default_sort_column = 'name'
     searchable_columns = [
         'uuid',

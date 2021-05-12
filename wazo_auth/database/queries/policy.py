@@ -151,13 +151,17 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         filter_ = and_(strict_filter, search_filter)
 
         if tenant_uuids is not None:
-            filter_ = and_(
-                filter_,
-                or_(
+            read_only = kwargs.get('read_only')
+            if read_only is True:
+                managed_filter = Policy.config_managed.is_(True)
+            elif read_only is False:
+                managed_filter = Policy.tenant_uuid.in_(tenant_uuids)
+            else:
+                managed_filter = or_(
                     Policy.tenant_uuid.in_(tenant_uuids),
                     Policy.config_managed.is_(True),
-                ),
-            )
+                )
+            filter_ = and_(filter_, managed_filter)
 
         query = (
             self.session.query(
