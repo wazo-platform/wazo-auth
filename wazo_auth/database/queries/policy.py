@@ -121,8 +121,18 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if not nb_deleted:
             raise exceptions.UnknownPolicyException(policy_uuid)
 
-    def exists(self, uuid, tenant_uuids=None):
-        return self._policy_exists(uuid, tenant_uuids)
+    def exists(self, policy_uuid, tenant_uuids=None):
+        filter_ = Policy.uuid == str(policy_uuid)
+
+        if tenant_uuids is not None:
+            if not tenant_uuids:
+                return False
+
+            filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
+
+        result = self.session.query(Policy).filter(filter_).count() > 0
+        self.session.flush()
+        return result
 
     def is_associated_user(self, uuid):
         query = self.session.query(Policy).join(UserPolicy).filter(Policy.uuid == uuid)
@@ -290,19 +300,6 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         self.session.add(tpl)
         self.session.flush()
         return tpl.id_
-
-    def _policy_exists(self, policy_uuid, tenant_uuids=None):
-        filter_ = Policy.uuid == str(policy_uuid)
-
-        if tenant_uuids is not None:
-            if not tenant_uuids:
-                return False
-
-            filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
-
-        result = self.session.query(Policy).filter(filter_).count() > 0
-        self.session.flush()
-        return result
 
     def _generate_slug(self, name):
         if name:
