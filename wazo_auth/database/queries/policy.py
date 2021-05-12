@@ -39,7 +39,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         'uuid': Policy.uuid,
     }
 
-    def associate_policy_access(self, policy_uuid, access):
+    def associate_access(self, policy_uuid, access):
         self._associate_acl(policy_uuid, [access])
         try:
             self.session.flush()
@@ -53,7 +53,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     raise exceptions.UnknownPolicyException(policy_uuid)
             raise
 
-    def dissociate_policy_access(self, policy_uuid, access):
+    def dissociate_access(self, policy_uuid, access):
         filter_ = and_(
             Access.access == access,
             PolicyAccess.policy_uuid == policy_uuid,

@@ -26,24 +26,24 @@ class TestPolicyDAO(base.DAOTestCase):
 
     @fixtures.db.policy(name='testé', description='déscription')
     def test_access_association(self, uuid):
-        self._policy_dao.associate_policy_access(uuid, '#')
+        self._policy_dao.associate_access(uuid, '#')
         assert_that(self.get_policy(uuid), has_entries(acl=contains_inanyorder('#')))
 
         assert_that(
-            calling(self._policy_dao.associate_policy_access).with_args(uuid, '#'),
+            calling(self._policy_dao.associate_access).with_args(uuid, '#'),
             raises(exceptions.DuplicateAccessException),
         )
 
-        self._policy_dao.dissociate_policy_access(uuid, '#')
+        self._policy_dao.dissociate_access(uuid, '#')
         assert_that(self.get_policy(uuid), has_entries(acl=empty()))
 
         assert_that(
-            calling(self._policy_dao.associate_policy_access).with_args('unknown', '#'),
+            calling(self._policy_dao.associate_access).with_args('unknown', '#'),
             raises(exceptions.UnknownPolicyException),
         )
 
         assert_that(
-            self._policy_dao.dissociate_policy_access('unknown', '#'), equal_to(0)
+            self._policy_dao.dissociate_access('unknown', '#'), equal_to(0)
         )
 
     @fixtures.db.tenant()

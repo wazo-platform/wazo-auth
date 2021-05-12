@@ -209,7 +209,7 @@ class TestPolicyService(BaseServiceTestCase):
 
     def test_delete_access(self):
         def when(nb_deleted, policy_exists=True):
-            self.policy_dao.dissociate_policy_access.return_value = nb_deleted
+            self.policy_dao.dissociate_access.return_value = nb_deleted
             self.policy_dao.exists.return_value = policy_exists
 
         with patch.object(self.service, '_assert_in_tenant_subtree', return_value=None):
