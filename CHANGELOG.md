@@ -1,5 +1,9 @@
 # Changelog
 
+## 21.07
+
+* The `policies` resource now has a `read_only` field
+
 ## 21.05
 
 * The `policies` resource now has a `slug` field
