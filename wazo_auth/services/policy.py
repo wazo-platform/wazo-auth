@@ -34,9 +34,6 @@ class PolicyService(BaseService):
 
         return self._dao.policy.count(**kwargs)
 
-    def count_tenants(self, policy_uuid, **kwargs):
-        return self._dao.policy.count_tenants(policy_uuid, **kwargs)
-
     def delete(self, policy_uuid, scoping_tenant_uuid):
         args = {}
         if scoping_tenant_uuid:

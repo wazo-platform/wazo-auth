@@ -10,7 +10,6 @@ from sqlalchemy import (
     exc,
     func,
     or_,
-    text,
 )
 from .base import BaseDAO, PaginatorMixin
 from . import filters
@@ -19,7 +18,6 @@ from ..models import (
     PolicyAccess,
     GroupPolicy,
     Policy,
-    Tenant,
     UserPolicy,
 )
 from ... import exceptions
@@ -72,17 +70,6 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         result = self.session.query(PolicyAccess).filter(filter_).delete()
         self.session.flush()
         return result
-
-    def count_tenants(self, policy_uuid, **kwargs):
-        filtered = kwargs.get('filtered')
-        if filtered is not False:
-            strict_filter = filters.tenant_strict_filter.new_filter(**kwargs)
-            search_filter = filters.tenant_search_filter.new_filter(**kwargs)
-            filter_ = and_(strict_filter, search_filter)
-        else:
-            filter_ = text('true')
-
-        return self.session.query(Tenant).filter(filter_).count()
 
     def count(self, search, tenant_uuids=None, **ignored):
         filter_ = self.new_search_filter(search=search)
