@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unidecode import unidecode
@@ -311,6 +311,17 @@ class UnknownPolicyException(TokenServiceException):
 
     def __str__(self):
         return 'No such policy {}'.format(self._policy_uuid)
+
+
+class ReadOnlyPolicyException(TokenServiceException):
+
+    code = 403
+
+    def __init__(self, policy_uuid):
+        self._policy_uuid = policy_uuid
+
+    def __str__(self):
+        return f'Forbidden policy deletion: "{self._policy_uuid}"'
 
 
 class UnknownTokenException(TokenServiceException):

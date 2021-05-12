@@ -160,9 +160,9 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
 
     def test_default_policies_are_updated_at_startup(self):
         policy = self.client.policies.list(slug=ALL_USERS_POLICY_SLUG)['items'][0]
-        policy_without_acl = dict(policy)
-        policy_without_acl['acl'] = []
-        self.client.policies.edit(policy['uuid'], **policy_without_acl)
+        self._remove_policy_acl(policy['uuid'])
+        policy = self.client.policies.get(policy['uuid'])
+        assert_that(policy, has_entries(acl=[]))
 
         self.restart_auth()
 
@@ -201,9 +201,7 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         group_name = f'wazo-all-users-tenant-{self.top_tenant_uuid}'
         group = self.client.groups.list(name=group_name)['items'][0]
         policy = self.client.policies.list(slug=ALL_USERS_POLICY_SLUG)['items'][0]
-        policy_without_acl = dict(policy)
-        policy_without_acl['acl'] = []
-        self.client.policies.edit(policy['uuid'], **policy_without_acl)
+        self._remove_policy_acl(policy['uuid'])
         self.client.groups.remove_policy(group['uuid'], policy['uuid'])
 
         self.restart_auth()
@@ -223,3 +221,9 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
                 )
             ),
         )
+
+    def _remove_policy_acl(self, policy_uuid):
+        with self.new_db_client().connect() as connection:
+            connection.execute(
+                f"DELETE FROM auth_policy_access WHERE policy_uuid = '{policy_uuid}'"
+            )

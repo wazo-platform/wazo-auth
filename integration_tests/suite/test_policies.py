@@ -279,6 +279,10 @@ class TestPolicies(WazoAuthTestCase):
         assert_no_error(self.client.policies.delete, policy['uuid'])
         assert_http_error(404, self.client.policies.delete, policy['uuid'])
 
+    def test_delete_default_policy(self):
+        policy = self.client.policies.list(slug=ALL_USERS_POLICY_SLUG)['items'][0]
+        assert_http_error(403, self.client.policies.delete, policy['uuid'])
+
     @fixtures.http.policy(
         name='foobar',
         description='a test policy',
@@ -316,6 +320,10 @@ class TestPolicies(WazoAuthTestCase):
         result = self.client.policies.edit(policy['uuid'], **new_body)
 
         assert_that(result, has_entries(**policy))
+
+    def test_put_default_policy(self):
+        policy = self.client.policies.list(slug=ALL_USERS_POLICY_SLUG)['items'][0]
+        assert_http_error(403, self.client.policies.edit, policy['uuid'], 'name')
 
     @fixtures.http.policy(acl=['dird.me.#', 'ctid-ng.#'])
     def test_add_access(self, policy):
