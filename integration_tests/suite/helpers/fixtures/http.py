@@ -190,7 +190,7 @@ def policy(**policy_args):
 
 @contextmanager
 def system_managed_group(db_client, group_uuid, group_args):
-    if not group_args.get('system_managed'):
+    if not group_args.get('read_only'):
         yield
     else:
         with db_client.connect() as connection:

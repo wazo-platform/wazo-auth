@@ -22,7 +22,7 @@ class TestGroups(base.WazoAuthTestCase):
     invalid_bodies = [{}, {'name': None}, {'name': 42}, {'not name': 'foobar'}]
 
     @fixtures.http.group(name='foobar')
-    @fixtures.http.group(name='all-users-group', system_managed=True)
+    @fixtures.http.group(name='all-users-group', read_only=True)
     def test_delete(self, foobar, all_users_group):
         base.assert_http_error(404, self.client.groups.delete, UNKNOWN_UUID)
 
@@ -62,7 +62,7 @@ class TestGroups(base.WazoAuthTestCase):
 
     @fixtures.http.group(name='foobar')
     @fixtures.http.group(name='duplicate')
-    @fixtures.http.group(name='all-users-group', system_managed=True)
+    @fixtures.http.group(name='all-users-group', read_only=True)
     def test_put(self, group, duplicate, all_users_group):
         base.assert_http_error(
             404, self.client.groups.edit, UNKNOWN_UUID, name='foobaz'
@@ -208,7 +208,7 @@ class TestGroups(base.WazoAuthTestCase):
         )
 
         # default group should be excluded
-        response = action(system_managed=False)
+        response = action(read_only=False)
         assert_that(
             response,
             has_entries(

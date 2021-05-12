@@ -70,7 +70,7 @@ group_strict_filter = StrictFilter(
     ('uuid', Group.uuid, str),
     ('name', Group.name, None),
     ('user_uuid', UserGroup.user_uuid, str),
-    ('system_managed', Group.system_managed, bool),
+    ('read_only', Group.system_managed, bool),
 )
 policy_strict_filter = StrictFilter(
     ('uuid', Policy.uuid, str),

@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, text
@@ -158,6 +158,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 'name': group.name,
                 'tenant_uuid': group.tenant_uuid,
                 'system_managed': group.system_managed,
+                'read_only': group.system_managed,
             }
             for group in query.all()
         ]

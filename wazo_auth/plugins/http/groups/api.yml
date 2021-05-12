@@ -21,7 +21,7 @@ paths:
       - $ref: '#/parameters/search_uuid'
       - $ref: '#/parameters/search_name'
       - $ref: '#/parameters/search_user_uuid'
-      - $ref: '#/parameters/search_system_managed'
+      - $ref: '#/parameters/search_read_only'
       responses:
         '200':
           description: A list of group
@@ -177,8 +177,8 @@ parameters:
     type: string
     description: The UUID of the user
     required: false
-  search_system_managed:
-    name: system_managed
+  search_read_only:
+    name: read_only
     in: query
     type: string
     description: Is the group managed by the system?
@@ -220,8 +220,11 @@ definitions:
         type: string
       system_managed:
         type: boolean
+        description: '*Deprecated* Please use `read_only`'
+      read_only:
+        type: boolean
     required:
     - uuid
     - name
-    - system_managed
+    - read_only
     - tenant_uuid

@@ -131,7 +131,7 @@ class TestUserGroupAssociation(base.WazoAuthTestCase):
     @fixtures.http.user_register()
     @fixtures.http.user_register()
     @fixtures.http.group()
-    @fixtures.http.group(name='all-users-group', system_managed=True)
+    @fixtures.http.group(name='all-users-group', read_only=True)
     def test_delete(self, user1, user2, group, all_users_group):
         action = self.client.groups.remove_user
 
@@ -169,7 +169,7 @@ class TestUserGroupAssociation(base.WazoAuthTestCase):
     @fixtures.http.user_register()
     @fixtures.http.user_register()
     @fixtures.http.group()
-    @fixtures.http.group(name='all-users-group', system_managed=True)
+    @fixtures.http.group(name='all-users-group', read_only=True)
     def test_put(self, user1, user2, group, all_users_group):
         action = self.client.groups.add_user
 
