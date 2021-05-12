@@ -86,7 +86,7 @@ class GroupService(BaseService):
         return self._dao.group.list_(**kwargs)
 
     def list_policies(self, group_uuid, **kwargs):
-        return self._dao.policy.get(group_uuid=group_uuid, **kwargs)
+        return self._dao.policy.list_(group_uuid=group_uuid, **kwargs)
 
     def list_users(self, group_uuid, **kwargs):
         return self._dao.user.list_(group_uuid=group_uuid, **kwargs)

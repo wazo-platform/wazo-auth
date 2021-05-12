@@ -20,7 +20,7 @@ class PolicyService(BaseService):
     def create(self, **kwargs):
         kwargs.setdefault('config_managed', False)
         policy_uuid = self._dao.policy.create(**kwargs)
-        return self._dao.policy.get(uuid=policy_uuid, limit=1)[0]
+        return self._dao.policy.list_(uuid=policy_uuid, limit=1)[0]
 
     def count(self, scoping_tenant_uuid=None, **kwargs):
         if scoping_tenant_uuid:
@@ -41,7 +41,7 @@ class PolicyService(BaseService):
                 scoping_tenant_uuid
             )
 
-        policies = self._dao.policy.get(tenant_uuids=None, uuid=policy_uuid, limit=1)
+        policies = self._dao.policy.list_(tenant_uuids=None, uuid=policy_uuid, limit=1)
         if policies and policies[0]['config_managed']:
             raise exceptions.ReadOnlyPolicyException(policy_uuid)
 
@@ -66,7 +66,7 @@ class PolicyService(BaseService):
             'tenant_uuids': self._tenant_tree.list_visible_tenants(scoping_tenant_uuid),
         }
 
-        matching_policies = self._dao.policy.get(**args)
+        matching_policies = self._dao.policy.list_(**args)
         for policy in matching_policies:
             return policy
 
@@ -78,7 +78,7 @@ class PolicyService(BaseService):
                 scoping_tenant_uuid, recurse
             )
 
-        return self._dao.policy.get(**kwargs)
+        return self._dao.policy.list_(**kwargs)
 
     def list_tenants(self, policy_uuid, **kwargs):
         return self._dao.tenant.list_(policy_uuid=policy_uuid, **kwargs)
@@ -96,12 +96,12 @@ class PolicyService(BaseService):
                 scoping_tenant_uuid
             )
 
-        policies = self._dao.policy.get(tenant_uuids=None, uuid=policy_uuid, limit=1)
+        policies = self._dao.policy.list_(tenant_uuids=None, uuid=policy_uuid, limit=1)
         if not args['config_managed'] and policies and policies[0]['config_managed']:
             raise exceptions.ReadOnlyPolicyException(policy_uuid)
 
         self._dao.policy.update(policy_uuid, **args)
-        return self._dao.policy.get(uuid=policy_uuid, limit=1)[0]
+        return self._dao.policy.list_(uuid=policy_uuid, limit=1)[0]
 
     def _assert_in_tenant_subtree(self, policy_uuid, scoping_tenant_uuid):
         if not scoping_tenant_uuid:
@@ -110,7 +110,7 @@ class PolicyService(BaseService):
         visible_tenant_uuids = self._tenant_tree.list_visible_tenants(
             scoping_tenant_uuid
         )
-        matching_policies = self._dao.policy.get(
+        matching_policies = self._dao.policy.list_(
             uuid=policy_uuid, tenant_uuids=visible_tenant_uuids
         )
         if not matching_policies:

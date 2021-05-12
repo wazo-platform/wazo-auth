@@ -21,7 +21,7 @@ from ..helpers.constants import UNKNOWN_UUID
 class TestPolicyDAO(base.DAOTestCase):
     def setUp(self):
         super().setUp()
-        master_policy = self._policy_dao.get(name='wazo_default_master_user_policy')[0]
+        master_policy = self._policy_dao.list_(name='wazo_default_master_user_policy')[0]
         self._default_master_user_policy_uuid = master_policy['uuid']
 
     @fixtures.db.policy(name='testé', description='déscription')
@@ -133,20 +133,20 @@ class TestPolicyDAO(base.DAOTestCase):
             assert_that(policy, has_entries(slug=name))
 
     @fixtures.db.policy(name='foobar')
-    def test_get(self, uuid_):
+    def test_list(self, uuid_):
         policy = self.get_policy(uuid_)
         assert_that(
             policy,
             has_entries(uuid=uuid_, name='foobar', description='', acl=empty()),
         )
 
-        result = self._policy_dao.get(uuid=UNKNOWN_UUID)
+        result = self._policy_dao.list_(uuid=UNKNOWN_UUID)
         assert_that(result, empty())
 
     @fixtures.db.policy(name='a', description='z')
     @fixtures.db.policy(name='b', description='y')
     @fixtures.db.policy(name='c', description='x')
-    def test_get_sort_and_pagination(self, a, b, c):
+    def test_list_sort_and_pagination(self, a, b, c):
         result = self.list_policy(order='name', direction='asc')
         assert_that(
             result,
@@ -239,14 +239,14 @@ class TestPolicyDAO(base.DAOTestCase):
     @fixtures.db.policy(name='b', description='The second foobar')
     @fixtures.db.policy(name='c', description='The third foobar')
     def test_user_list_policies(self, user_uuid, policy_a, policy_b, policy_c):
-        result = self._policy_dao.get(user_uuid=user_uuid)
+        result = self._policy_dao.list_(user_uuid=user_uuid)
         assert_that(result, empty(), 'empty')
 
         self._user_dao.add_policy(user_uuid, policy_a)
         self._user_dao.add_policy(user_uuid, policy_b)
         self._user_dao.add_policy(user_uuid, policy_c)
 
-        result = self._policy_dao.get(user_uuid=user_uuid)
+        result = self._policy_dao.list_(user_uuid=user_uuid)
         assert_that(
             result,
             contains_inanyorder(
@@ -325,7 +325,7 @@ class TestPolicyDAO(base.DAOTestCase):
         assert_that(result, equal_to(True))
 
     def get_policy(self, policy_uuid):
-        policies = self._policy_dao.get(
+        policies = self._policy_dao.list_(
             uuid=policy_uuid,
             order='name',
             direction='asc',
@@ -334,7 +334,7 @@ class TestPolicyDAO(base.DAOTestCase):
             return policy
 
     def list_policy(self, order=None, direction=None, limit=None, offset=None):
-        policies = self._policy_dao.get(
+        policies = self._policy_dao.list_(
             order=order,
             direction=direction,
             limit=limit,

@@ -142,7 +142,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         query = self.session.query(Policy).join(GroupPolicy).filter(Policy.uuid == uuid)
         return query.count() > 0
 
-    def get(self, tenant_uuids=None, **kwargs):
+    def list_(self, tenant_uuids=None, **kwargs):
         strict_filter = self.new_strict_filter(**kwargs)
         search_filter = self.new_search_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)

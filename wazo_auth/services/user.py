@@ -1,4 +1,4 @@
-# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import binascii
@@ -91,7 +91,7 @@ class UserService(BaseService):
         return self._dao.session.list_(user_uuid=user_uuid, **kwargs)
 
     def list_policies(self, user_uuid, **kwargs):
-        return self._dao.policy.get(user_uuid=user_uuid, **kwargs)
+        return self._dao.policy.list_(user_uuid=user_uuid, **kwargs)
 
     def list_tenants(self, user_uuid, **kwargs):
         tenant_uuid = self.get_user(user_uuid)['tenant_uuid']

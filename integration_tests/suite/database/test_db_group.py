@@ -27,10 +27,10 @@ class TestGroupDAO(base.DAOTestCase):
     @fixtures.db.group()
     @fixtures.db.policy()
     def test_add_policy(self, group_uuid, policy_uuid):
-        assert_that(self._policy_dao.get(group_uuid=group_uuid), empty())
+        assert_that(self._policy_dao.list_(group_uuid=group_uuid), empty())
 
         self._group_dao.add_policy(group_uuid, policy_uuid)
-        result = self._policy_dao.get(group_uuid=group_uuid)
+        result = self._policy_dao.list_(group_uuid=group_uuid)
         assert_that(result, contains(has_entries(uuid=policy_uuid)))
 
         self._group_dao.add_policy(group_uuid, policy_uuid)  # twice
