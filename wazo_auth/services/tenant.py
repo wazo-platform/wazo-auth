@@ -75,7 +75,10 @@ class TenantService(BaseService):
 
     def list_policies(self, tenant_uuid, scoping_tenant_uuid, **kwargs):
         self.assert_tenant_under(scoping_tenant_uuid, tenant_uuid)
-        return self._dao.policy.list_(tenant_uuid=tenant_uuid, **kwargs)
+        return self._dao.policy.list_without_relations(
+            tenant_uuid=tenant_uuid,
+            **kwargs,
+        )
 
     def list_users(self, tenant_uuid, **kwargs):
         return self._dao.user.list_(tenant_uuid=tenant_uuid, **kwargs)

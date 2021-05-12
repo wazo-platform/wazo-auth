@@ -204,7 +204,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         return policies
 
-    def list_(self, **kwargs):
+    def list_without_relations(self, **kwargs):
         tenant_uuid = kwargs.pop('tenant_uuid', None)
         if tenant_uuid:
             tenant_uuid = str(tenant_uuid)
