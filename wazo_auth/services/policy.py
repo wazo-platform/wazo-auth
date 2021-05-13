@@ -50,6 +50,9 @@ class PolicyService(BaseService):
 
         return self._dao.policy.delete(policy_uuid, **args)
 
+    def delete_without_check(self, policy_uuid):
+        return self._dao.policy.delete(policy_uuid, tenant_uuids=None)
+
     def delete_access(self, policy_uuid, access, scoping_tenant_uuid):
         self._assert_in_tenant_subtree(policy_uuid, scoping_tenant_uuid)
 
