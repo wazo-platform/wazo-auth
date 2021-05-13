@@ -43,10 +43,7 @@ class TestPolicyDAO(base.DAOTestCase):
             calling(self._policy_dao.associate_access).with_args('unknown', '#'),
             raises(exceptions.UnknownPolicyException),
         )
-
-        assert_that(
-            self._policy_dao.dissociate_access('unknown', '#'), equal_to(0)
-        )
+        self._policy_dao.dissociate_access('unknown', '#')
 
     @fixtures.db.tenant()
     def test_create(self, tenant_uuid):

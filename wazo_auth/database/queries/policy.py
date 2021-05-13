@@ -55,19 +55,15 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             PolicyAccess.policy_uuid == policy_uuid,
         )
 
-        access_id = (
-            self.session.query(Access.id_).join(PolicyAccess).filter(filter_).first()
-        )
-        if not access_id:
-            return 0
+        query = self.session.query(Access.id_).join(PolicyAccess).filter(filter_)
+        access_id = query.first()
 
         filter_ = and_(
             PolicyAccess.policy_uuid == policy_uuid,
             PolicyAccess.access_id == access_id,
         )
-        result = self.session.query(PolicyAccess).filter(filter_).delete()
+        self.session.query(PolicyAccess).filter(filter_).delete()
         self.session.flush()
-        return result
 
     def count(self, search, tenant_uuids=None, **ignored):
         filter_ = self.new_search_filter(search=search)

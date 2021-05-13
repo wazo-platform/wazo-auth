@@ -8,8 +8,7 @@ from wazo_auth.services.helpers import BaseService
 class PolicyService(BaseService):
     def add_access(self, policy_uuid, access, scoping_tenant_uuid):
         self._assert_in_tenant_subtree(policy_uuid, scoping_tenant_uuid)
-
-        return self._dao.policy.associate_access(policy_uuid, access)
+        self._dao.policy.associate_access(policy_uuid, access)
 
     def assert_policy_in_subtenant(self, scoping_tenant_uuid, uuid):
         tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
@@ -52,13 +51,7 @@ class PolicyService(BaseService):
 
     def delete_access(self, policy_uuid, access, scoping_tenant_uuid):
         self._assert_in_tenant_subtree(policy_uuid, scoping_tenant_uuid)
-
-        nb_deleted = self._dao.policy.dissociate_access(policy_uuid, access)
-        if nb_deleted:
-            return
-
-        if not self._dao.policy.exists(policy_uuid):
-            raise exceptions.UnknownPolicyException(policy_uuid)
+        self._dao.policy.dissociate_access(policy_uuid, access)
 
     def get(self, policy_uuid, scoping_tenant_uuid):
         tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
