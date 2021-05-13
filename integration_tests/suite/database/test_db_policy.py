@@ -233,6 +233,31 @@ class TestPolicyDAO(base.DAOTestCase):
                 limit,
             )
 
+    @fixtures.db.policy(config_managed=True)
+    @fixtures.db.policy(config_managed=False)
+    def test_list_by_read_only(self, policy_1, policy_2):
+        result = self._policy_dao.list_(read_only=True)
+        assert_that(result, contains(has_properties(uuid=policy_1)))
+
+        result = self._policy_dao.list_(read_only=False)
+        assert_that(
+            result,
+            contains_inanyorder(
+                has_properties(uuid=policy_2),
+                has_properties(uuid=self._default_master_user_policy_uuid),
+            ),
+        )
+
+        result = self._policy_dao.list_()
+        assert_that(
+            result,
+            contains_inanyorder(
+                has_properties(uuid=policy_1),
+                has_properties(uuid=policy_2),
+                has_properties(uuid=self._default_master_user_policy_uuid),
+            ),
+        )
+
     @fixtures.db.user()
     @fixtures.db.policy(name='a')
     @fixtures.db.policy(name='b', description='The second foobar')
