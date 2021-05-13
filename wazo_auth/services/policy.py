@@ -61,16 +61,8 @@ class PolicyService(BaseService):
             raise exceptions.UnknownPolicyException(policy_uuid)
 
     def get(self, policy_uuid, scoping_tenant_uuid):
-        args = {
-            'uuid': policy_uuid,
-            'tenant_uuids': self._tenant_tree.list_visible_tenants(scoping_tenant_uuid),
-        }
-
-        matching_policies = self._dao.policy.list_(**args)
-        for policy in matching_policies:
-            return policy
-
-        raise exceptions.UnknownPolicyException(policy_uuid)
+        tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
+        return self._dao.policy.get(tenant_uuids, policy_uuid)
 
     def list(self, scoping_tenant_uuid=None, recurse=False, **kwargs):
         if scoping_tenant_uuid:
