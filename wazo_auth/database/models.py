@@ -223,6 +223,10 @@ class Policy(Base):
     )
     tenant = relationship('Tenant', cascade='all, delete-orphan', single_parent=True)
 
+    def __init__(self, tenant_uuid_exposed=None, *args, **kwargs):
+        self.tenant_uuid_exposed = tenant_uuid_exposed
+        super().__init__(*args, **kwargs)
+
 
 class User(Base):
 

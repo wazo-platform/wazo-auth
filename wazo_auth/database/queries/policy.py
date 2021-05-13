@@ -197,8 +197,9 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 'slug': policy.slug,
                 'description': policy.description,
                 'acl': acl,
-                'tenant_uuid': tenant_uuid,
+                'tenant_uuid': policy.tenant_uuid,
                 'config_managed': policy.config_managed,
+                'tenant_uuid_exposed': tenant_uuid,
             }
             policies.append(body)
 
@@ -219,16 +220,14 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         query = self.session.query(Policy).filter(filter_).group_by(Policy)
         query = self._paginator.update_query(query, **kwargs)
+        policies = query.all()
+        for policy in policies:
+            self._set_tenant_uuid_exposed(policy, tenant_uuid)
+        return policies
 
-        return [
-            {
-                'uuid': policy.uuid,
-                'name': policy.name,
-                'slug': policy.slug,
-                'tenant_uuid': tenant_uuid or policy.tenant_uuid,
-            }
-            for policy in query.all()
-        ]
+    def _set_tenant_uuid_exposed(self, policy, requested_tenant_uuid):
+        policy.tenant_uuid_exposed = requested_tenant_uuid or policy.tenant_uuid
+
 
     def update(
         self,
