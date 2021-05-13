@@ -98,12 +98,5 @@ class PolicyService(BaseService):
     def _assert_in_tenant_subtree(self, policy_uuid, scoping_tenant_uuid):
         if not scoping_tenant_uuid:
             return
-
-        visible_tenant_uuids = self._tenant_tree.list_visible_tenants(
-            scoping_tenant_uuid
-        )
-        matching_policies = self._dao.policy.list_(
-            uuid=policy_uuid, tenant_uuids=visible_tenant_uuids
-        )
-        if not matching_policies:
-            raise exceptions.UnknownPolicyException(policy_uuid)
+        tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
+        self._dao.policy.get(tenant_uuids, policy_uuid)
