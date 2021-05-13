@@ -79,8 +79,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         return self.session.query(Policy).filter(filter_).count()
 
-    def create(self, name, slug, description, acl, config_managed, tenant_uuid):
-
+    def create(self, name, slug, description, acl, tenant_uuid, config_managed=False):
         if not slug:
             slug = self._generate_slug(name)
 
@@ -128,13 +127,16 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         self.session.flush()
         return result
 
-    def is_associated_user(self, uuid):
+    def _is_associated_user(self, uuid):
         query = self.session.query(Policy).join(UserPolicy).filter(Policy.uuid == uuid)
         return query.count() > 0
 
-    def is_associated_group(self, uuid):
+    def _is_associated_group(self, uuid):
         query = self.session.query(Policy).join(GroupPolicy).filter(Policy.uuid == uuid)
         return query.count() > 0
+
+    def is_associated(self, uuid):
+        return self._is_associated_user(uuid) or self._is_associated_group(uuid)
 
     def list_(self, tenant_uuids=None, **kwargs):
         strict_filter = self.new_strict_filter(**kwargs)
@@ -228,7 +230,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         name,
         description,
         acl,
-        config_managed,
+        config_managed=None,
         tenant_uuids=None,
     ):
         filter_ = Policy.uuid == policy_uuid
@@ -238,8 +240,10 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         body = {
             'name': name,
             'description': description,
-            'config_managed': config_managed,
         }
+        if config_managed is not None:
+            body['config_managed'] = config_managed
+
         affected_rows = (
             self.session.query(Policy)
             .filter(filter_)

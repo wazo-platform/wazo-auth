@@ -306,21 +306,44 @@ class TestPolicyDAO(base.DAOTestCase):
     @fixtures.db.user()
     @fixtures.db.policy()
     def test_is_associated_user(self, user_uuid, policy_uuid):
-        result = self._policy_dao.is_associated_user(policy_uuid)
+        result = self._policy_dao._is_associated_user(policy_uuid)
         assert_that(result, equal_to(False))
 
         self._user_dao.add_policy(user_uuid, policy_uuid)
-        result = self._policy_dao.is_associated_user(policy_uuid)
+        result = self._policy_dao._is_associated_user(policy_uuid)
         assert_that(result, equal_to(True))
 
     @fixtures.db.group()
     @fixtures.db.policy()
     def test_is_associated_group(self, group_uuid, policy_uuid):
-        result = self._policy_dao.is_associated_group(policy_uuid)
+        result = self._policy_dao._is_associated_group(policy_uuid)
         assert_that(result, equal_to(False))
 
         self._group_dao.add_policy(group_uuid, policy_uuid)
-        result = self._policy_dao.is_associated_group(policy_uuid)
+        result = self._policy_dao._is_associated_group(policy_uuid)
+        assert_that(result, equal_to(True))
+
+    @fixtures.db.user()
+    @fixtures.db.group()
+    @fixtures.db.policy()
+    def test_is_associated(self, user_uuid, group_uuid, policy_uuid):
+        # without user, without group
+        result = self._policy_dao.is_associated(policy_uuid)
+        assert_that(result, equal_to(False))
+
+        # without user, with group
+        self._group_dao.add_policy(group_uuid, policy_uuid)
+        result = self._policy_dao.is_associated(policy_uuid)
+        assert_that(result, equal_to(True))
+
+        # with user, with group
+        self._user_dao.add_policy(user_uuid, policy_uuid)
+        result = self._policy_dao.is_associated(policy_uuid)
+        assert_that(result, equal_to(True))
+
+        # with user, without group
+        self._group_dao.remove_policy(group_uuid, policy_uuid)
+        result = self._policy_dao.is_associated(policy_uuid)
         assert_that(result, equal_to(True))
 
     def list_policy(self, order=None, direction=None, limit=None, offset=None):
@@ -340,12 +363,12 @@ class TestPolicyDAO(base.DAOTestCase):
         acl = acl or []
         slug = slug or name
         uuid_ = self._policy_dao.create(
-            name,
-            slug,
-            description,
-            acl,
-            False,
-            tenant_uuid,
+            name=name,
+            slug=slug,
+            description=description,
+            acl=acl,
+            tenant_uuid=tenant_uuid,
+            config_managed=False,
         )
         try:
             yield uuid_

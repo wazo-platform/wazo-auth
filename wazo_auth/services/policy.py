@@ -17,7 +17,6 @@ class PolicyService(BaseService):
             raise exceptions.UnknownPolicyException(uuid)
 
     def create(self, **kwargs):
-        kwargs.setdefault('config_managed', False)
         policy_uuid = self._dao.policy.create(**kwargs)
         return self._dao.policy.list_(uuid=policy_uuid, limit=1)[0]
 
@@ -46,9 +45,6 @@ class PolicyService(BaseService):
 
         return self._dao.policy.delete(policy_uuid, **args)
 
-    def delete_without_check(self, policy_uuid):
-        return self._dao.policy.delete(policy_uuid, tenant_uuids=None)
-
     def delete_access(self, policy_uuid, access, scoping_tenant_uuid):
         self._assert_in_tenant_subtree(policy_uuid, scoping_tenant_uuid)
         self._dao.policy.dissociate_access(policy_uuid, access)
@@ -68,21 +64,15 @@ class PolicyService(BaseService):
     def list_tenants(self, policy_uuid, **kwargs):
         return self._dao.tenant.list_(policy_uuid=policy_uuid, **kwargs)
 
-    def is_associated(self, policy_uuid):
-        return self._dao.policy.is_associated_user(
-            policy_uuid
-        ) or self._dao.policy.is_associated_group(policy_uuid)
-
     def update(self, policy_uuid, scoping_tenant_uuid=None, **body):
         args = dict(body)
-        args.setdefault('config_managed', False)
         if scoping_tenant_uuid:
             args['tenant_uuids'] = self._tenant_tree.list_visible_tenants(
                 scoping_tenant_uuid
             )
 
         policy = self._dao.policy.find_by(uuid=policy_uuid)
-        if not args['config_managed'] and policy and policy.config_managed:
+        if policy and policy.config_managed:
             raise exceptions.ReadOnlyPolicyException(policy_uuid)
 
         self._dao.policy.update(policy_uuid, **args)

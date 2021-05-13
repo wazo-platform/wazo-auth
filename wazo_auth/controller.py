@@ -89,8 +89,7 @@ class Controller:
             self._bus_publisher,
         )
         self._default_policy_service = services.DefaultPolicyService(
-            policy_service,
-            self._tenant_service,
+            dao,
             config['default_policies'],
         )
         self._all_users_service = services.AllUsersService(
