@@ -41,8 +41,8 @@ class PolicyService(BaseService):
                 scoping_tenant_uuid
             )
 
-        policies = self._dao.policy.list_(tenant_uuids=None, uuid=policy_uuid, limit=1)
-        if policies and policies[0].config_managed:
+        policy = self._dao.policy.find_by(uuid=policy_uuid)
+        if policy and policy.config_managed:
             raise exceptions.ReadOnlyPolicyException(policy_uuid)
 
         return self._dao.policy.delete(policy_uuid, **args)
@@ -88,8 +88,8 @@ class PolicyService(BaseService):
                 scoping_tenant_uuid
             )
 
-        policies = self._dao.policy.list_(tenant_uuids=None, uuid=policy_uuid, limit=1)
-        if not args['config_managed'] and policies and policies[0].config_managed:
+        policy = self._dao.policy.find_by(uuid=policy_uuid)
+        if not args['config_managed'] and policy and policy.config_managed:
             raise exceptions.ReadOnlyPolicyException(policy_uuid)
 
         self._dao.policy.update(policy_uuid, **args)

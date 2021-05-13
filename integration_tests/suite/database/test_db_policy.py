@@ -21,13 +21,13 @@ from ..helpers.constants import UNKNOWN_UUID
 class TestPolicyDAO(base.DAOTestCase):
     def setUp(self):
         super().setUp()
-        master_policy = self._policy_dao.list_(name='wazo_default_master_user_policy')[0]
+        master_policy = self._policy_dao.find_by(name='wazo_default_master_user_policy')
         self._default_master_user_policy_uuid = master_policy.uuid
 
     @fixtures.db.policy(name='testé', description='déscription')
     def test_access_association(self, uuid):
         self._policy_dao.associate_access(uuid, '#')
-        policy = self.get_policy(uuid)
+        policy = self._policy_dao.find_by(uuid=uuid)
         assert_that(policy, has_properties(acl=contains_inanyorder('#')))
 
         assert_that(
@@ -36,7 +36,8 @@ class TestPolicyDAO(base.DAOTestCase):
         )
 
         self._policy_dao.dissociate_access(uuid, '#')
-        assert_that(self.get_policy(uuid), has_properties(acl=empty()))
+        policy = self._policy_dao.find_by(uuid=uuid)
+        assert_that(policy, has_properties(acl=empty()))
 
         assert_that(
             calling(self._policy_dao.associate_access).with_args('unknown', '#'),
@@ -58,7 +59,7 @@ class TestPolicyDAO(base.DAOTestCase):
             'tenant_uuid': tenant_uuid,
         }
         with self._new_policy(**body) as uuid_:
-            policy = self.get_policy(uuid_)
+            policy = self._policy_dao.find_by(uuid=uuid_)
 
             assert_that(
                 policy,
@@ -130,12 +131,12 @@ class TestPolicyDAO(base.DAOTestCase):
     def test_tenant_creation_auto_generates_slug(self):
         name = 'policy-name'
         with self._new_policy(name=name, slug=None) as policy_uuid:
-            policy = self.get_policy(policy_uuid)
+            policy = self._policy_dao.find_by(uuid=policy_uuid)
             assert_that(policy, has_properties(slug=name))
 
     @fixtures.db.policy(name='foobar')
     def test_list(self, uuid_):
-        policy = self.get_policy(uuid_)
+        policy = self._policy_dao.find_by(uuid=uuid_)
         assert_that(
             policy,
             has_properties(uuid=uuid_, name='foobar', description='', acl=empty()),
@@ -293,17 +294,17 @@ class TestPolicyDAO(base.DAOTestCase):
                 ['dird.#', 'ctid-ng.#'],
                 False,
             )
-            policy = self.get_policy(uuid_)
+            policy = self._policy_dao.find_by(uuid=uuid_)
 
-        assert_that(
-            policy,
-            has_properties(
-                uuid=uuid_,
-                name='foobaz',
-                description='A new description',
-                acl=contains_inanyorder('dird.#', 'ctid-ng.#'),
-            ),
-        )
+            assert_that(
+                policy,
+                has_properties(
+                    uuid=uuid_,
+                    name='foobaz',
+                    description='A new description',
+                    acl=contains_inanyorder('dird.#', 'ctid-ng.#'),
+                ),
+            )
 
     @fixtures.db.user()
     @fixtures.db.policy()
@@ -324,15 +325,6 @@ class TestPolicyDAO(base.DAOTestCase):
         self._group_dao.add_policy(group_uuid, policy_uuid)
         result = self._policy_dao.is_associated_group(policy_uuid)
         assert_that(result, equal_to(True))
-
-    def get_policy(self, policy_uuid):
-        policies = self._policy_dao.list_(
-            uuid=policy_uuid,
-            order='name',
-            direction='asc',
-        )
-        for policy in policies:
-            return policy
 
     def list_policy(self, order=None, direction=None, limit=None, offset=None):
         policies = self._policy_dao.list_(

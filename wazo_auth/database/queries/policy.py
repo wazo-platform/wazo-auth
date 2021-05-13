@@ -6,9 +6,7 @@ import re
 import string
 from sqlalchemy import (
     and_,
-    distinct,
     exc,
-    func,
     or_,
 )
 from .base import BaseDAO, PaginatorMixin
@@ -161,29 +159,22 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             filter_ = and_(filter_, managed_filter)
 
         query = (
-            self.session.query(
-                Policy,
-                func.array_agg(distinct(Access.access)).label('acl'),
-            )
+            self.session.query(Policy)
             .outerjoin(PolicyAccess)
             .outerjoin(Access)
             .outerjoin(UserPolicy)
             .outerjoin(GroupPolicy)
             .filter(filter_)
-            .group_by(Policy.uuid, Policy.name, Policy.description)
         )
         query = self._paginator.update_query(query, **kwargs)
 
-        result = query.all()
-        policies = []
-        for policy, acl in result:
+        policies = query.all()
+        for policy in policies:
             tenant_uuid = policy.tenant_uuid
             if policy.config_managed:
                 if tenant_uuids and tenant_uuid not in tenant_uuids:
                     tenant_uuid = tenant_uuids[0]
             policy.tenant_uuid_exposed = tenant_uuid
-            policy.acl = acl if acl != [None] else []
-            policies.append(policy)
         return policies
 
     def list_without_relations(self, **kwargs):
@@ -225,6 +216,15 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             raise exceptions.UnknownPolicyException(policy_uuid)
         return policy
 
+    def find_by(self, **kwargs):
+        filter_ = self.new_strict_filter(**kwargs)
+        query = self.session.query(Policy).filter(filter_)
+        policy = query.first()
+        if policy:
+            # NOTE(fblackburn): di/association policy/access
+            # don't use relationship and object is not updated
+            self.session.expire(policy, ['accesses'])
+        return policy
 
     def update(
         self,

@@ -18,9 +18,9 @@ from sqlalchemy import (
     sql,
     text,
 )
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
 Base = declarative_base()
@@ -222,10 +222,14 @@ class Policy(Base):
         nullable=True,
     )
     tenant = relationship('Tenant', cascade='all, delete-orphan', single_parent=True)
+    accesses = relationship('Access', secondary='auth_policy_access', viewonly=True)
+
+    @property
+    def acl(self):
+        return [access.access for access in self.accesses]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.acl = None
         self.tenant_uuid_exposed = None
 
 
