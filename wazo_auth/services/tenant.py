@@ -110,7 +110,7 @@ class TenantService(BaseService):
                 slug=slug, scoping_tenant_uuid=None
             )[0]
             self._group_service.add_policy(
-                all_users_group['uuid'], all_users_policy['uuid']
+                all_users_group['uuid'], all_users_policy.uuid
             )
 
         return result

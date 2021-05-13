@@ -9,7 +9,7 @@ from hamcrest import (
     contains_inanyorder,
     empty,
     equal_to,
-    has_entries,
+    has_properties,
     not_,
 )
 from xivo_test_helpers.hamcrest.raises import raises
@@ -22,12 +22,13 @@ class TestPolicyDAO(base.DAOTestCase):
     def setUp(self):
         super().setUp()
         master_policy = self._policy_dao.list_(name='wazo_default_master_user_policy')[0]
-        self._default_master_user_policy_uuid = master_policy['uuid']
+        self._default_master_user_policy_uuid = master_policy.uuid
 
     @fixtures.db.policy(name='testé', description='déscription')
     def test_access_association(self, uuid):
         self._policy_dao.associate_access(uuid, '#')
-        assert_that(self.get_policy(uuid), has_entries(acl=contains_inanyorder('#')))
+        policy = self.get_policy(uuid)
+        assert_that(policy, has_properties(acl=contains_inanyorder('#')))
 
         assert_that(
             calling(self._policy_dao.associate_access).with_args(uuid, '#'),
@@ -35,7 +36,7 @@ class TestPolicyDAO(base.DAOTestCase):
         )
 
         self._policy_dao.dissociate_access(uuid, '#')
-        assert_that(self.get_policy(uuid), has_entries(acl=empty()))
+        assert_that(self.get_policy(uuid), has_properties(acl=empty()))
 
         assert_that(
             calling(self._policy_dao.associate_access).with_args('unknown', '#'),
@@ -61,7 +62,7 @@ class TestPolicyDAO(base.DAOTestCase):
 
             assert_that(
                 policy,
-                has_entries(
+                has_properties(
                     uuid=uuid_,
                     name='testé',
                     description='descriptioñ',
@@ -130,14 +131,14 @@ class TestPolicyDAO(base.DAOTestCase):
         name = 'policy-name'
         with self._new_policy(name=name, slug=None) as policy_uuid:
             policy = self.get_policy(policy_uuid)
-            assert_that(policy, has_entries(slug=name))
+            assert_that(policy, has_properties(slug=name))
 
     @fixtures.db.policy(name='foobar')
     def test_list(self, uuid_):
         policy = self.get_policy(uuid_)
         assert_that(
             policy,
-            has_entries(uuid=uuid_, name='foobar', description='', acl=empty()),
+            has_properties(uuid=uuid_, name='foobar', description='', acl=empty()),
         )
 
         result = self._policy_dao.list_(uuid=UNKNOWN_UUID)
@@ -250,9 +251,9 @@ class TestPolicyDAO(base.DAOTestCase):
         assert_that(
             result,
             contains_inanyorder(
-                has_entries('name', 'a'),
-                has_entries('name', 'b'),
-                has_entries('name', 'c'),
+                has_properties(name='a'),
+                has_properties(name='b'),
+                has_properties(name='c'),
             ),
         )
 
@@ -296,7 +297,7 @@ class TestPolicyDAO(base.DAOTestCase):
 
         assert_that(
             policy,
-            has_entries(
+            has_properties(
                 uuid=uuid_,
                 name='foobaz',
                 description='A new description',
@@ -340,7 +341,7 @@ class TestPolicyDAO(base.DAOTestCase):
             limit=limit,
             offset=offset,
         )
-        return [policy['uuid'] for policy in policies]
+        return [policy.uuid for policy in policies]
 
     @contextmanager
     def _new_policy(

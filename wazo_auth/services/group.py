@@ -74,7 +74,7 @@ class GroupService(BaseService):
             for group in groups:
                 policies = self.list_policies(group['uuid'])
                 for policy in policies:
-                    acl.extend(policy['acl'])
+                    acl.extend(policy.acl)
         return acl
 
     def list_(self, scoping_tenant_uuid=None, recurse=False, **kwargs):

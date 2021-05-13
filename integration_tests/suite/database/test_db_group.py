@@ -31,7 +31,7 @@ class TestGroupDAO(base.DAOTestCase):
 
         self._group_dao.add_policy(group_uuid, policy_uuid)
         result = self._policy_dao.list_(group_uuid=group_uuid)
-        assert_that(result, contains(has_entries(uuid=policy_uuid)))
+        assert_that(result, contains(has_properties(uuid=policy_uuid)))
 
         self._group_dao.add_policy(group_uuid, policy_uuid)  # twice
 

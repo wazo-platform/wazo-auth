@@ -72,7 +72,7 @@ class UserService(BaseService):
         for user in users:
             policies = self.list_policies(user['uuid'])
             for policy in policies:
-                acl.extend(policy['acl'])
+                acl.extend(policy.acl)
         return acl
 
     def get_user(self, user_uuid, scoping_tenant_uuid=None):

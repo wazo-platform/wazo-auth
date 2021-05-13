@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -7,6 +7,7 @@ from flask import request
 import marshmallow
 
 from wazo_auth import http, schemas, exceptions
+from wazo_auth.plugins.http.policies.schemas import policy_full_schema
 
 logger = logging.getLogger(__name__)
 
@@ -25,18 +26,15 @@ class UserPolicies(_BaseUserPolicyResource):
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 
-        return (
-            {
-                'items': self.user_service.list_policies(user_uuid, **list_params),
-                'total': self.user_service.count_policies(
-                    user_uuid, filtered=False, **list_params
-                ),
-                'filtered': self.user_service.count_policies(
-                    user_uuid, filtered=True, **list_params
-                ),
-            },
-            200,
+        policies = self.user_service.list_policies(user_uuid, **list_params)
+        items = policy_full_schema.dump(policies, many=True)
+        total = self.user_service.count_policies(
+            user_uuid, filtered=False, **list_params
         )
+        filtered = self.user_service.count_policies(
+            user_uuid, filtered=True, **list_params
+        )
+        return {'items': items, 'total': total, 'filtered': filtered}, 200
 
 
 class UserPolicy(_BaseUserPolicyResource):

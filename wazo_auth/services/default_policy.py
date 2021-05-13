@@ -25,7 +25,7 @@ class DefaultPolicyService:
 
     def update_policies_for_tenant(self, tenant_uuid):
         existing_policies = self._policy_service.list(scoping_tenant_uuid=tenant_uuid)
-        existing_policy_slugs = {p['slug']: p['uuid'] for p in existing_policies}
+        existing_policy_slugs = {p.slug: p.uuid for p in existing_policies}
         for slug, policy in self._default_policies.items():
             if slug in existing_policy_slugs:
                 existing_policy_uuid = existing_policy_slugs[slug]
@@ -41,10 +41,10 @@ class DefaultPolicyService:
     def delete_orphan_policies_for_tenant(self, tenant_uuid):
         existing_policies = self._policy_service.list(scoping_tenant_uuid=tenant_uuid)
         for policy in existing_policies:
-            if not policy['config_managed']:
+            if not policy.config_managed:
                 continue
-            if policy['slug'] not in self._default_policies:
-                self._delete_policy(policy['uuid'])
+            if policy.slug not in self._default_policies:
+                self._delete_policy(policy.uuid)
 
     def _create_policy(self, tenant_uuid, slug, policy):
         logger.debug('default_policies: creating policy %s', slug)

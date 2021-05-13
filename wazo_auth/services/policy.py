@@ -42,7 +42,7 @@ class PolicyService(BaseService):
             )
 
         policies = self._dao.policy.list_(tenant_uuids=None, uuid=policy_uuid, limit=1)
-        if policies and policies[0]['config_managed']:
+        if policies and policies[0].config_managed:
             raise exceptions.ReadOnlyPolicyException(policy_uuid)
 
         return self._dao.policy.delete(policy_uuid, **args)
@@ -97,7 +97,7 @@ class PolicyService(BaseService):
             )
 
         policies = self._dao.policy.list_(tenant_uuids=None, uuid=policy_uuid, limit=1)
-        if not args['config_managed'] and policies and policies[0]['config_managed']:
+        if not args['config_managed'] and policies and policies[0].config_managed:
             raise exceptions.ReadOnlyPolicyException(policy_uuid)
 
         self._dao.policy.update(policy_uuid, **args)

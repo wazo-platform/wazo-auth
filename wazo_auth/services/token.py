@@ -196,7 +196,7 @@ class TokenService(BaseService):
 
         matching_policies = self._dao.policy.list_(name=policy_name, limit=1)
         for policy in matching_policies:
-            return policy['acl']
+            return policy.acl
 
         logger.info(
             'Unknown policy name "%s" configured for backend "%s"',

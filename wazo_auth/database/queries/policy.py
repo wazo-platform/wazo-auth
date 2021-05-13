@@ -162,12 +162,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         query = (
             self.session.query(
-                Policy.uuid,
-                Policy.name,
-                Policy.slug,
-                Policy.description,
-                Policy.config_managed,
-                Policy.tenant_uuid,
+                Policy,
                 func.array_agg(distinct(Access.access)).label('acl'),
             )
             .outerjoin(PolicyAccess)
@@ -179,30 +174,16 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         )
         query = self._paginator.update_query(query, **kwargs)
 
+        result = query.all()
         policies = []
-        for policy in query.all():
+        for policy, acl in result:
             tenant_uuid = policy.tenant_uuid
             if policy.config_managed:
                 if tenant_uuids and tenant_uuid not in tenant_uuids:
                     tenant_uuid = tenant_uuids[0]
-
-            if policy.acl == [None]:
-                acl = []
-            else:
-                acl = policy.acl
-
-            body = {
-                'uuid': policy.uuid,
-                'name': policy.name,
-                'slug': policy.slug,
-                'description': policy.description,
-                'acl': acl,
-                'tenant_uuid': policy.tenant_uuid,
-                'config_managed': policy.config_managed,
-                'tenant_uuid_exposed': tenant_uuid,
-            }
-            policies.append(body)
-
+            policy.tenant_uuid_exposed = tenant_uuid
+            policy.acl = acl if acl != [None] else []
+            policies.append(policy)
         return policies
 
     def list_without_relations(self, **kwargs):
