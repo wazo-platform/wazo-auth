@@ -44,7 +44,14 @@ class PolicyService(BaseService):
                 scoping_tenant_uuid
             )
 
+        policies = self._dao.policy.get(tenant_uuids=None, uuid=policy_uuid, limit=1)
+        if policies and policies[0]['config_managed']:
+            raise exceptions.ReadOnlyPolicyException(policy_uuid)
+
         return self._dao.policy.delete(policy_uuid, **args)
+
+    def delete_without_check(self, policy_uuid):
+        return self._dao.policy.delete(policy_uuid, tenant_uuids=None)
 
     def delete_access(self, policy_uuid, access, scoping_tenant_uuid):
         self._assert_in_tenant_subtree(policy_uuid, scoping_tenant_uuid)
@@ -91,6 +98,10 @@ class PolicyService(BaseService):
             args['tenant_uuids'] = self._tenant_tree.list_visible_tenants(
                 scoping_tenant_uuid
             )
+
+        policies = self._dao.policy.get(tenant_uuids=None, uuid=policy_uuid, limit=1)
+        if not args['config_managed'] and policies and policies[0]['config_managed']:
+            raise exceptions.ReadOnlyPolicyException(policy_uuid)
 
         self._dao.policy.update(policy_uuid, **args)
         return self._dao.policy.get(uuid=policy_uuid, limit=1)[0]

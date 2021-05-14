@@ -44,7 +44,7 @@ class DefaultPolicyService:
             if not policy['config_managed']:
                 continue
             if policy['slug'] not in self._default_policies:
-                self._delete_policy(tenant_uuid, policy['uuid'])
+                self._delete_policy(policy['uuid'])
 
     def _create_policy(self, tenant_uuid, slug, policy):
         logger.debug('default_policies: creating policy %s', slug)
@@ -67,7 +67,7 @@ class DefaultPolicyService:
             **policy,
         )
 
-    def _delete_policy(self, tenant_uuid, policy_uuid):
+    def _delete_policy(self, policy_uuid):
         if self._policy_service.is_associated(policy_uuid):
             logger.warning(
                 'default_policies: deleting policy %s (SKIPPED: associated)',
@@ -76,4 +76,4 @@ class DefaultPolicyService:
             return
 
         logger.debug('default_policies: deleting policy %s', policy_uuid)
-        self._policy_service.delete(policy_uuid, tenant_uuid)
+        self._policy_service.delete_without_check(policy_uuid)

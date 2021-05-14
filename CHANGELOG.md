@@ -1,5 +1,11 @@
 # Changelog
 
+## 21.07
+
+* The `policies` resource now has a `read_only` field
+* The `groups` resource now has a `read_only` field
+* The field `system_managed` has been deprecated in `groups` resources:
+
 ## 21.05
 
 * The `policies` resource now has a `slug` field

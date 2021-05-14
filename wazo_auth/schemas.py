@@ -82,10 +82,10 @@ class ExternalListSchema(BaseListSchema):
 
 
 class GroupListSchema(BaseListSchema):
-    system_managed = fields.Boolean()
-    sort_columns = ['name', 'uuid', 'system_managed']
+    read_only = fields.Boolean()
+    sort_columns = ['name', 'uuid', 'read_only']
     default_sort_column = 'name'
-    searchable_columns = ['uuid', 'name', 'user_uuid', 'system_managed']
+    searchable_columns = ['uuid', 'name', 'user_uuid', 'read_only']
 
 
 class UserGroupListSchema(BaseListSchema):
@@ -95,7 +95,8 @@ class UserGroupListSchema(BaseListSchema):
 
 
 class PolicyListSchema(BaseListSchema):
-    sort_columns = ['name', 'slug', 'description', 'uuid']
+    read_only = fields.Boolean()
+    sort_columns = ['name', 'slug', 'description', 'uuid', 'read_only']
     default_sort_column = 'name'
     searchable_columns = [
         'uuid',
@@ -104,7 +105,7 @@ class PolicyListSchema(BaseListSchema):
         'user_uuid',
         'group_uuid',
         'tenant_uuid',
-        'system_managed',
+        'read_only',
     ]
 
 

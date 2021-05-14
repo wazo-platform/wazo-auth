@@ -228,6 +228,8 @@ definitions:
     - properties:
         uuid:
           type: string
+        read_only:
+          type: boolean
   GetPoliciesResult:
     type: object
     properties:

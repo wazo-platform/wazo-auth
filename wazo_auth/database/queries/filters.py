@@ -70,7 +70,7 @@ group_strict_filter = StrictFilter(
     ('uuid', Group.uuid, str),
     ('name', Group.name, None),
     ('user_uuid', UserGroup.user_uuid, str),
-    ('system_managed', Group.system_managed, bool),
+    ('read_only', Group.system_managed, bool),
 )
 policy_strict_filter = StrictFilter(
     ('uuid', Policy.uuid, str),
@@ -79,7 +79,6 @@ policy_strict_filter = StrictFilter(
     ('user_uuid', UserPolicy.user_uuid, str),
     ('group_uuid', GroupPolicy.group_uuid, str),
     ('tenant_uuid', Policy.tenant_uuid, str),
-    ('system_managed', Policy.config_managed, bool),
 )
 refresh_token_strict_filter = StrictFilter(
     ('client_id', RefreshToken.client_id, None),
