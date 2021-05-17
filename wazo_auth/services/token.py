@@ -137,6 +137,27 @@ class TokenService(BaseService):
 
         return token
 
+    def new_token_internal(self, expiration=None, acl=None):
+        expiration = expiration if expiration is not None else self._default_expiration
+        acl = acl or []
+        current_time = time.time()
+        tenant_uuid = self._dao.tenant.find_top_tenant()
+        token_args = {
+            'auth_id': 'wazo-auth',
+            'pbx_user_uuid': None,
+            'xivo_uuid': None,
+            'expire_t': current_time + expiration,
+            'issued_t': current_time,
+            'acl': acl,
+            'metadata': {'tenant_uuid': tenant_uuid},
+            'user_agent': 'wazo-auth-internal',
+            'remote_addr': '127.0.0.1',
+        }
+        session_args = {}
+        token_uuid, session_uuid = self._dao.token.create(token_args, session_args)
+        token = Token(token_uuid, session_uuid=session_uuid, **token_args)
+        return token
+
     def _get_tenant_list(self, tenant_uuid):
         if not tenant_uuid:
             return []
