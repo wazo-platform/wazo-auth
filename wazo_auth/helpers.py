@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -12,6 +12,7 @@ from wazo_auth.database.helpers import commit_or_rollback
 logger = logging.getLogger(__name__)
 
 
+# NOTE(fblackburn): This helper is used by metadata plugin
 class LocalTokenRenewer:
     def __init__(self, backend, token_service, user_service, username='wazo-auth'):
         self._username = username
