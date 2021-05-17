@@ -15,7 +15,6 @@ from . import bus, services, token
 from .database import queries
 from .database.helpers import db_ready, init_db
 from .flask_helpers import Tenant
-from .helpers import LocalTokenRenewer
 from .http_server import api, CoreRestApi
 from .purpose import Purposes
 from .service_discovery import self_check
@@ -182,26 +181,12 @@ class Controller:
         with bus.publisher_thread(self._bus_publisher):
             with ServiceCatalogRegistration(*self._service_discovery_args):
                 self._expired_token_remover.start()
-                local_token_renewer = self._get_local_token_renewer()
-                self._config['local_token_renewer'] = local_token_renewer
                 self._rest_api.run()
-                local_token_renewer.revoke_token()
 
     def stop(self, reason):
         logger.warning('Stopping wazo-auth: %s', reason)
         self._expired_token_remover.stop()
         self._rest_api.stop()
-
-    def _get_local_token_renewer(self):
-        try:
-            backend = self._backends['wazo_user']
-        except KeyError:
-            logger.info(
-                'wazo_user disabled no internal token will be created for wazo-auth'
-            )
-            return
-
-        return LocalTokenRenewer(backend, self._token_service, self._user_service)
 
     def _loaded_plugins_names(self, backends):
         return [backend.name for backend in backends]
