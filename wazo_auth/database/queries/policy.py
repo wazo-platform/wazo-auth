@@ -6,11 +6,8 @@ import re
 import string
 from sqlalchemy import (
     and_,
-    distinct,
     exc,
-    func,
     or_,
-    text,
 )
 from .base import BaseDAO, PaginatorMixin
 from . import filters
@@ -19,7 +16,6 @@ from ..models import (
     PolicyAccess,
     GroupPolicy,
     Policy,
-    Tenant,
     UserPolicy,
 )
 from ... import exceptions
@@ -39,7 +35,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         'uuid': Policy.uuid,
     }
 
-    def associate_policy_access(self, policy_uuid, access):
+    def associate_access(self, policy_uuid, access):
         self._associate_acl(policy_uuid, [access])
         try:
             self.session.flush()
@@ -53,36 +49,21 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     raise exceptions.UnknownPolicyException(policy_uuid)
             raise
 
-    def dissociate_policy_access(self, policy_uuid, access):
+    def dissociate_access(self, policy_uuid, access):
         filter_ = and_(
             Access.access == access,
             PolicyAccess.policy_uuid == policy_uuid,
         )
 
-        access_id = (
-            self.session.query(Access.id_).join(PolicyAccess).filter(filter_).first()
-        )
-        if not access_id:
-            return 0
+        query = self.session.query(Access.id_).join(PolicyAccess).filter(filter_)
+        access_id = query.first()
 
         filter_ = and_(
             PolicyAccess.policy_uuid == policy_uuid,
             PolicyAccess.access_id == access_id,
         )
-        result = self.session.query(PolicyAccess).filter(filter_).delete()
+        self.session.query(PolicyAccess).filter(filter_).delete()
         self.session.flush()
-        return result
-
-    def count_tenants(self, policy_uuid, **kwargs):
-        filtered = kwargs.get('filtered')
-        if filtered is not False:
-            strict_filter = filters.tenant_strict_filter.new_filter(**kwargs)
-            search_filter = filters.tenant_search_filter.new_filter(**kwargs)
-            filter_ = and_(strict_filter, search_filter)
-        else:
-            filter_ = text('true')
-
-        return self.session.query(Tenant).filter(filter_).count()
 
     def count(self, search, tenant_uuids=None, **ignored):
         filter_ = self.new_search_filter(search=search)
@@ -98,8 +79,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         return self.session.query(Policy).filter(filter_).count()
 
-    def create(self, name, slug, description, acl, config_managed, tenant_uuid):
-
+    def create(self, name, slug, description, acl, tenant_uuid, config_managed=False):
         if not slug:
             slug = self._generate_slug(name)
 
@@ -134,80 +114,67 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if not nb_deleted:
             raise exceptions.UnknownPolicyException(policy_uuid)
 
-    def exists(self, uuid, tenant_uuids=None):
-        return self._policy_exists(uuid, tenant_uuids)
+    def exists(self, policy_uuid, tenant_uuids=None):
+        filter_ = Policy.uuid == str(policy_uuid)
 
-    def is_associated_user(self, uuid):
+        if tenant_uuids is not None:
+            if not tenant_uuids:
+                return False
+
+            filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
+
+        result = self.session.query(Policy).filter(filter_).count() > 0
+        self.session.flush()
+        return result
+
+    def _is_associated_user(self, uuid):
         query = self.session.query(Policy).join(UserPolicy).filter(Policy.uuid == uuid)
         return query.count() > 0
 
-    def is_associated_group(self, uuid):
+    def _is_associated_group(self, uuid):
         query = self.session.query(Policy).join(GroupPolicy).filter(Policy.uuid == uuid)
         return query.count() > 0
 
-    def get(self, tenant_uuids=None, **kwargs):
+    def is_associated(self, uuid):
+        return self._is_associated_user(uuid) or self._is_associated_group(uuid)
+
+    def list_(self, tenant_uuids=None, **kwargs):
         strict_filter = self.new_strict_filter(**kwargs)
         search_filter = self.new_search_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
 
         if tenant_uuids is not None:
             read_only = kwargs.get('read_only')
-            if read_only is True:
-                managed_filter = Policy.config_managed.is_(True)
-            elif read_only is False:
+            if read_only is False:
                 managed_filter = Policy.tenant_uuid.in_(tenant_uuids)
-            else:
+                filter_ = and_(filter_, managed_filter)
+            elif read_only is None:
                 managed_filter = or_(
                     Policy.tenant_uuid.in_(tenant_uuids),
                     Policy.config_managed.is_(True),
                 )
-            filter_ = and_(filter_, managed_filter)
+                filter_ = and_(filter_, managed_filter)
 
         query = (
-            self.session.query(
-                Policy.uuid,
-                Policy.name,
-                Policy.slug,
-                Policy.description,
-                Policy.config_managed,
-                Policy.tenant_uuid,
-                func.array_agg(distinct(Access.access)).label('acl'),
-            )
+            self.session.query(Policy)
             .outerjoin(PolicyAccess)
             .outerjoin(Access)
             .outerjoin(UserPolicy)
             .outerjoin(GroupPolicy)
             .filter(filter_)
-            .group_by(Policy.uuid, Policy.name, Policy.description)
         )
         query = self._paginator.update_query(query, **kwargs)
 
-        policies = []
-        for policy in query.all():
+        policies = query.all()
+        for policy in policies:
             tenant_uuid = policy.tenant_uuid
             if policy.config_managed:
                 if tenant_uuids and tenant_uuid not in tenant_uuids:
                     tenant_uuid = tenant_uuids[0]
-
-            if policy.acl == [None]:
-                acl = []
-            else:
-                acl = policy.acl
-
-            body = {
-                'uuid': policy.uuid,
-                'name': policy.name,
-                'slug': policy.slug,
-                'description': policy.description,
-                'acl': acl,
-                'tenant_uuid': tenant_uuid,
-                'config_managed': policy.config_managed,
-            }
-            policies.append(body)
-
+            policy.tenant_uuid_exposed = tenant_uuid
         return policies
 
-    def list_(self, **kwargs):
+    def list_without_relations(self, **kwargs):
         tenant_uuid = kwargs.pop('tenant_uuid', None)
         if tenant_uuid:
             tenant_uuid = str(tenant_uuid)
@@ -222,16 +189,39 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         query = self.session.query(Policy).filter(filter_).group_by(Policy)
         query = self._paginator.update_query(query, **kwargs)
+        policies = query.all()
+        for policy in policies:
+            self._set_tenant_uuid_exposed(policy, tenant_uuid)
+        return policies
 
-        return [
-            {
-                'uuid': policy.uuid,
-                'name': policy.name,
-                'slug': policy.slug,
-                'tenant_uuid': tenant_uuid or policy.tenant_uuid,
-            }
-            for policy in query.all()
-        ]
+    def _set_tenant_uuid_exposed(self, policy, requested_tenant_uuid):
+        policy.tenant_uuid_exposed = requested_tenant_uuid or policy.tenant_uuid
+
+    def get(self, tenant_uuids, policy_uuid):
+        query = (
+            self.session.query(Policy)
+            .filter(Policy.uuid == policy_uuid)
+            .filter(
+                or_(
+                    Policy.tenant_uuid.in_(tenant_uuids),
+                    Policy.config_managed.is_(True),
+                )
+            )
+        )
+        policy = query.first()
+        if not policy:
+            raise exceptions.UnknownPolicyException(policy_uuid)
+        return policy
+
+    def find_by(self, **kwargs):
+        filter_ = self.new_strict_filter(**kwargs)
+        query = self.session.query(Policy).filter(filter_)
+        policy = query.first()
+        if policy:
+            # NOTE(fblackburn): di/association policy/access
+            # don't use relationship and object is not updated
+            self.session.expire(policy, ['accesses'])
+        return policy
 
     def update(
         self,
@@ -239,7 +229,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         name,
         description,
         acl,
-        config_managed,
+        config_managed=None,
         tenant_uuids=None,
     ):
         filter_ = Policy.uuid == policy_uuid
@@ -249,8 +239,10 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         body = {
             'name': name,
             'description': description,
-            'config_managed': config_managed,
         }
+        if config_managed is not None:
+            body['config_managed'] = config_managed
+
         affected_rows = (
             self.session.query(Policy)
             .filter(filter_)
@@ -303,19 +295,6 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         self.session.add(tpl)
         self.session.flush()
         return tpl.id_
-
-    def _policy_exists(self, policy_uuid, tenant_uuids=None):
-        filter_ = Policy.uuid == str(policy_uuid)
-
-        if tenant_uuids is not None:
-            if not tenant_uuids:
-                return False
-
-            filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
-
-        result = self.session.query(Policy).filter(filter_).count() > 0
-        self.session.flush()
-        return result
 
     def _generate_slug(self, name):
         if name:

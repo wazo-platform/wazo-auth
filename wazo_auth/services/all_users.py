@@ -54,17 +54,16 @@ class AllUsersService:
     def associate_policies_for_tenant(self, tenant_uuid, policies):
         all_users_group = self._group_service.get_all_users_group(tenant_uuid)
         for policy in policies:
-            self._associate_policy(tenant_uuid, policy['uuid'], all_users_group)
+            self._associate_policy(tenant_uuid, policy.uuid, all_users_group)
 
         existing_policies = self._policy_service.list(scoping_tenant_uuid=tenant_uuid)
         policies_to_dissociate = [
             policy
             for policy in existing_policies
-            if policy['config_managed']
-            and policy['slug'] not in self._all_users_policies
+            if policy.config_managed and policy.slug not in self._all_users_policies
         ]
         for policy in policies_to_dissociate:
-            self._dissociate_policy(tenant_uuid, policy['uuid'], all_users_group)
+            self._dissociate_policy(tenant_uuid, policy.uuid, all_users_group)
 
     def _find_policy(self, slug):
         policies = self._policy_service.list(slug=slug, scoping_tenant_uuid=None)

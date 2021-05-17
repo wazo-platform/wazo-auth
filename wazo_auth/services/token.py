@@ -194,16 +194,15 @@ class TokenService(BaseService):
         if not policy_name:
             return []
 
-        matching_policies = self._dao.policy.get(name=policy_name, limit=1)
-        for policy in matching_policies:
-            return policy['acl']
-
-        logger.info(
-            'Unknown policy name "%s" configured for backend "%s"',
-            policy_name,
-            backend_name,
-        )
-        return []
+        policy = self._dao.policy.find_by(name=policy_name)
+        if not policy:
+            logger.info(
+                'Unknown policy name "%s" configured for backend "%s"',
+                policy_name,
+                backend_name,
+            )
+            return []
+        return policy.acl
 
     def assert_has_tenant_permission(self, token, tenant):
         if not tenant:

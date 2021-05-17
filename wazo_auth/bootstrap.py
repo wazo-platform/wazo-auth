@@ -123,7 +123,7 @@ def create_initial_user(db_uri, username, password, purpose, policy_slug):
             user = user_service.new_user(
                 enabled=True, username=username, password=password, purpose=purpose
             )
-            policy_uuid = policy_service.list(slug=policy_slug)[0]['uuid']
+            policy_uuid = policy_service.list(slug=policy_slug)[0].uuid
             user_service.add_policy(user['uuid'], policy_uuid)
     commit_or_rollback()
 

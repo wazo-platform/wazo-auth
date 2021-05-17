@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -8,9 +8,11 @@ import marshmallow
 
 from wazo_auth import exceptions, http, schemas
 from wazo_auth.flask_helpers import Tenant
-
+from wazo_auth.plugins.http.policies.schemas import PolicyFullSchema as PolicySchema
 
 logger = logging.getLogger(__name__)
+
+POLICY_FIELDS = ['uuid', 'name', 'slug', 'tenant_uuid']
 
 
 class TenantPolicies(http.AuthResource):
@@ -33,11 +35,6 @@ class TenantPolicies(http.AuthResource):
             tenant_uuid, filtered=True, **list_params
         )
 
-        return (
-            {
-                'items': self.tenant_service.list_policies(tenant_uuid, **list_params),
-                'total': total,
-                'filtered': filtered,
-            },
-            200,
-        )
+        policies = self.tenant_service.list_policies(tenant_uuid, **list_params)
+        result = PolicySchema(only=POLICY_FIELDS).dump(policies, many=True)
+        return {'items': result, 'total': total, 'filtered': filtered}

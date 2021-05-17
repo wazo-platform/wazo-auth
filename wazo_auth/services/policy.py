@@ -8,8 +8,7 @@ from wazo_auth.services.helpers import BaseService
 class PolicyService(BaseService):
     def add_access(self, policy_uuid, access, scoping_tenant_uuid):
         self._assert_in_tenant_subtree(policy_uuid, scoping_tenant_uuid)
-
-        return self._dao.policy.associate_policy_access(policy_uuid, access)
+        self._dao.policy.associate_access(policy_uuid, access)
 
     def assert_policy_in_subtenant(self, scoping_tenant_uuid, uuid):
         tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
@@ -18,9 +17,8 @@ class PolicyService(BaseService):
             raise exceptions.UnknownPolicyException(uuid)
 
     def create(self, **kwargs):
-        kwargs.setdefault('config_managed', False)
         policy_uuid = self._dao.policy.create(**kwargs)
-        return self._dao.policy.get(uuid=policy_uuid, limit=1)[0]
+        return self._dao.policy.list_(uuid=policy_uuid, limit=1)[0]
 
     def count(self, scoping_tenant_uuid=None, **kwargs):
         if scoping_tenant_uuid:
@@ -34,9 +32,6 @@ class PolicyService(BaseService):
 
         return self._dao.policy.count(**kwargs)
 
-    def count_tenants(self, policy_uuid, **kwargs):
-        return self._dao.policy.count_tenants(policy_uuid, **kwargs)
-
     def delete(self, policy_uuid, scoping_tenant_uuid):
         args = {}
         if scoping_tenant_uuid:
@@ -44,36 +39,19 @@ class PolicyService(BaseService):
                 scoping_tenant_uuid
             )
 
-        policies = self._dao.policy.get(tenant_uuids=None, uuid=policy_uuid, limit=1)
-        if policies and policies[0]['config_managed']:
+        policy = self._dao.policy.find_by(uuid=policy_uuid)
+        if policy and policy.config_managed:
             raise exceptions.ReadOnlyPolicyException(policy_uuid)
 
         return self._dao.policy.delete(policy_uuid, **args)
 
-    def delete_without_check(self, policy_uuid):
-        return self._dao.policy.delete(policy_uuid, tenant_uuids=None)
-
     def delete_access(self, policy_uuid, access, scoping_tenant_uuid):
         self._assert_in_tenant_subtree(policy_uuid, scoping_tenant_uuid)
-
-        nb_deleted = self._dao.policy.dissociate_policy_access(policy_uuid, access)
-        if nb_deleted:
-            return
-
-        if not self._dao.policy.exists(policy_uuid):
-            raise exceptions.UnknownPolicyException(policy_uuid)
+        self._dao.policy.dissociate_access(policy_uuid, access)
 
     def get(self, policy_uuid, scoping_tenant_uuid):
-        args = {
-            'uuid': policy_uuid,
-            'tenant_uuids': self._tenant_tree.list_visible_tenants(scoping_tenant_uuid),
-        }
-
-        matching_policies = self._dao.policy.get(**args)
-        for policy in matching_policies:
-            return policy
-
-        raise exceptions.UnknownPolicyException(policy_uuid)
+        tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
+        return self._dao.policy.get(tenant_uuids, policy_uuid)
 
     def list(self, scoping_tenant_uuid=None, recurse=False, **kwargs):
         if scoping_tenant_uuid:
@@ -81,40 +59,27 @@ class PolicyService(BaseService):
                 scoping_tenant_uuid, recurse
             )
 
-        return self._dao.policy.get(**kwargs)
+        return self._dao.policy.list_(**kwargs)
 
     def list_tenants(self, policy_uuid, **kwargs):
         return self._dao.tenant.list_(policy_uuid=policy_uuid, **kwargs)
 
-    def is_associated(self, policy_uuid):
-        return self._dao.policy.is_associated_user(
-            policy_uuid
-        ) or self._dao.policy.is_associated_group(policy_uuid)
-
     def update(self, policy_uuid, scoping_tenant_uuid=None, **body):
         args = dict(body)
-        args.setdefault('config_managed', False)
         if scoping_tenant_uuid:
             args['tenant_uuids'] = self._tenant_tree.list_visible_tenants(
                 scoping_tenant_uuid
             )
 
-        policies = self._dao.policy.get(tenant_uuids=None, uuid=policy_uuid, limit=1)
-        if not args['config_managed'] and policies and policies[0]['config_managed']:
+        policy = self._dao.policy.find_by(uuid=policy_uuid)
+        if policy and policy.config_managed:
             raise exceptions.ReadOnlyPolicyException(policy_uuid)
 
         self._dao.policy.update(policy_uuid, **args)
-        return self._dao.policy.get(uuid=policy_uuid, limit=1)[0]
+        return self._dao.policy.list_(uuid=policy_uuid, limit=1)[0]
 
     def _assert_in_tenant_subtree(self, policy_uuid, scoping_tenant_uuid):
         if not scoping_tenant_uuid:
             return
-
-        visible_tenant_uuids = self._tenant_tree.list_visible_tenants(
-            scoping_tenant_uuid
-        )
-        matching_policies = self._dao.policy.get(
-            uuid=policy_uuid, tenant_uuids=visible_tenant_uuids
-        )
-        if not matching_policies:
-            raise exceptions.UnknownPolicyException(policy_uuid)
+        tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
+        self._dao.policy.get(tenant_uuids, policy_uuid)
