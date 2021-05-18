@@ -32,8 +32,7 @@ class BaseAuthenticationBackend(metaclass=abc.ABCMeta):
     def get_metadata(self, login, args):
         """return user related data
 
-        these data are used in the body of the GET and POST of the /token and
-        also used for ACL rendering
+        these data are used in the body of the GET and POST of the /token
         """
         metadata = {
             'auth_id': None,
