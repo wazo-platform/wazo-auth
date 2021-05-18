@@ -75,7 +75,7 @@ class Controller:
         session_service = services.SessionService(
             dao, self._tenant_tree, self._bus_publisher
         )
-        self._user_service = services.UserService(dao, self._tenant_tree, group_service)
+        self._user_service = services.UserService(dao, self._tenant_tree)
         self._token_service = services.TokenService(
             config, dao, self._tenant_tree, self._bus_publisher, self._user_service
         )
@@ -92,9 +92,7 @@ class Controller:
             config['default_policies'],
         )
         self._all_users_service = services.AllUsersService(
-            group_service,
-            policy_service,
-            self._tenant_service,
+            dao,
             config['all_users_policies'],
         )
 

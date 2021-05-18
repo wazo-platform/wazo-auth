@@ -15,9 +15,6 @@ class GroupService(BaseService):
 
         return self._dao.group.add_user(group_uuid, user_uuid)
 
-    def add_user_from_system(self, group_uuid, user_uuid):
-        return self._dao.group.add_user(group_uuid, user_uuid)
-
     def count(self, scoping_tenant_uuid, recurse=False, **kwargs):
         if scoping_tenant_uuid:
             kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(
@@ -54,17 +51,6 @@ class GroupService(BaseService):
             return group
 
         raise exceptions.UnknownGroupException(group_uuid)
-
-    def get_all_users_group(self, tenant_uuid):
-        args = {
-            'name': f'wazo-all-users-tenant-{tenant_uuid}',
-            'limit': 1,
-            'tenant_uuids': [tenant_uuid],
-        }
-
-        matching_groups = self._dao.group.list_(**args)
-        for group in matching_groups:
-            return group
 
     def get_acl(self, username):
         users = self._dao.user.list_(username=username, limit=1)
