@@ -5,8 +5,6 @@ import logging
 import uuid
 import time
 
-from functools import partial
-
 from wazo_auth.database.helpers import commit_or_rollback
 
 logger = logging.getLogger(__name__)
@@ -14,11 +12,9 @@ logger = logging.getLogger(__name__)
 
 # NOTE(fblackburn): This helper is used by metadata plugin
 class LocalTokenRenewer:
-    def __init__(self, backend, token_service, user_service, username='wazo-auth'):
-        self._username = username
-        self._new_token = partial(token_service.new_token, backend.obj, self._username)
-        self._remove_token = token_service.remove_token
-        self._user_service = user_service
+    def __init__(self, token_service, acl=None):
+        self._acl = acl
+        self._token_service = token_service
         self._token = None
         self._renew_time = time.time() - 5
         self._delay = 3600
@@ -26,35 +22,20 @@ class LocalTokenRenewer:
 
     def get_token(self):
         # get_token MUST be called before any DB operations during the HTTP request
-        # otherwise previous changes will be commited event if an error occurs later
+        # otherwise previous changes will be committed event if an error occurs later
         if self._need_new_token():
-            if not self._user_exists(self._username):
-                logger.info(
-                    '%s user not found no local token will be created', self._username
-                )
-                return
-
             self._renew_time = time.time() + self._delay - self._threshold
-            self._token = self._new_token(
-                {
-                    'expiration': 3600,
-                    'backend': 'wazo_user',
-                    'user_agent': '',
-                    'remote_addr': '127.0.0.1',
-                }
+            self._token = self._token_service.new_token_internal(
+                expiration=self._delay,
+                acl=self._acl,
             )
             commit_or_rollback()
 
         return self._token.token
 
-    def _user_exists(self, username):
-        if self._user_service.list_users(username=username):
-            return True
-        return False
-
     def revoke_token(self):
         if self._token:
-            self._remove_token(self._token.token)
+            self._token_service.remove_token(self._token.token)
 
     def _need_new_token(self):
         return not self._token or time.time() > self._renew_time
