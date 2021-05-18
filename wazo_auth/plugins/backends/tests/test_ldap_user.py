@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import unittest
@@ -268,18 +268,6 @@ class TestVerifyPassword(unittest.TestCase):
         assert_that(result, equal_to(True))
         assert_that(args, equal_to({'pbx_user_uuid': 'alice-uuid'}))
         xivo_ldap.perform_bind.assert_called_once_with(self.expected_user_dn, 'bar')
-
-
-class TestShouldBeLoaded(unittest.TestCase):
-    def test_that_should_be_loaded_return_false_when_no_config(self):
-        config = {}
-        result = LDAPUser.should_be_loaded(config)
-        assert_that(result, equal_to(False))
-
-    def test_that_should_be_loaded_return_true(self):
-        config = {'ldap': {}}
-        result = LDAPUser.should_be_loaded(config)
-        assert_that(result, equal_to(False))
 
 
 class TestXivoLDAP(unittest.TestCase):

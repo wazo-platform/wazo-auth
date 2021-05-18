@@ -52,17 +52,6 @@ class BaseAuthenticationBackend(metaclass=abc.ABCMeta):
         will be passed to the other methods of the plugin.
         """
 
-    @staticmethod
-    def should_be_loaded(config):
-        """Checks if a plugin should be loaded
-
-        This method is called before plugins are loaded. This method is not called
-        if the plugin is not in enabled_backend_plugins.
-
-        Return True if the plugin should be loaded and False otherwise.
-        """
-        return True
-
 
 class BaseMetadata(metaclass=abc.ABCMeta):
     def __init__(self):

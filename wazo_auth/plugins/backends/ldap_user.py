@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -75,10 +75,6 @@ class LDAPUser(BaseAuthenticationBackend):
         args['pbx_user_uuid'] = pbx_user_uuid
 
         return True
-
-    @staticmethod
-    def should_be_loaded(config):
-        return bool(config.get('ldap', False))
 
     def _get_pbx_user_uuid_by_ldap_attribute(self, user_email):
         with session_scope():
