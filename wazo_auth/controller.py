@@ -82,8 +82,6 @@ class Controller:
         self._tenant_service = services.TenantService(
             dao,
             self._tenant_tree,
-            group_service,
-            policy_service,
             config['all_users_policies'],
             self._bus_publisher,
         )
