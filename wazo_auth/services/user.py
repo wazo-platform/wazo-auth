@@ -114,7 +114,7 @@ class UserService(BaseService):
         if password:
             kwargs['salt'], kwargs['hash_'] = self._encrypter.encrypt_password(password)
 
-        kwargs.setdefault('tenant_uuid', self._dao.tenant.find_top_tenant())
+        kwargs.setdefault('tenant_uuid', self.top_tenant_uuid)
         user = self._dao.user.create(**kwargs)
 
         wazo_all_users_group = self._group_service.get_all_users_group(

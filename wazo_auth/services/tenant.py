@@ -54,7 +54,7 @@ class TenantService(BaseService):
         return result
 
     def find_top_tenant(self):
-        return self._dao.tenant.find_top_tenant()
+        return self.top_tenant_uuid
 
     def get(self, scoping_tenant_uuid, uuid):
         visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)

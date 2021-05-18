@@ -141,7 +141,6 @@ class TokenService(BaseService):
         expiration = expiration if expiration is not None else self._default_expiration
         acl = acl or []
         current_time = time.time()
-        tenant_uuid = self._dao.tenant.find_top_tenant()
         token_args = {
             'auth_id': 'wazo-auth',
             'pbx_user_uuid': None,
@@ -149,7 +148,7 @@ class TokenService(BaseService):
             'expire_t': current_time + expiration,
             'issued_t': current_time,
             'acl': acl,
-            'metadata': {'tenant_uuid': tenant_uuid},
+            'metadata': {'tenant_uuid': self.top_tenant_uuid},
             'user_agent': 'wazo-auth-internal',
             'remote_addr': '127.0.0.1',
         }
