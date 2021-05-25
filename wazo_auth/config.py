@@ -35,6 +35,7 @@ _DEFAULT_CONFIG = {
     'enabled_http_plugins': {
         'api': True,
         'backends': True,
+        'config': True,
         'email_confirm': True,
         'external': True,
         'group_policy': True,
