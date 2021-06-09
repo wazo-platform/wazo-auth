@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -146,6 +146,7 @@ class Tokens(BaseResource):
         if request.authorization:
             args['login'] = request.authorization.username
             args['password'] = request.authorization.password
+            logger.info('Token creation request for login "%s"', args['login'])
 
         session_type = request.headers.get('Wazo-Session-Type', '').lower()
         args['mobile'] = True if session_type == 'mobile' else False
