@@ -51,7 +51,7 @@ class PolicyService(BaseService):
 
     def get(self, policy_uuid, scoping_tenant_uuid):
         tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
-        return self._dao.policy.get(tenant_uuids, policy_uuid)
+        return self._dao.policy.get(policy_uuid, tenant_uuids=tenant_uuids)
 
     def list(self, scoping_tenant_uuid=None, recurse=False, **kwargs):
         if scoping_tenant_uuid:
@@ -82,4 +82,4 @@ class PolicyService(BaseService):
         if not scoping_tenant_uuid:
             return
         tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
-        self._dao.policy.get(tenant_uuids, policy_uuid)
+        self._dao.policy.get(policy_uuid, tenant_uuids=tenant_uuids)

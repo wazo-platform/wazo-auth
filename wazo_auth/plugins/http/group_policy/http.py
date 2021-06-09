@@ -2,12 +2,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-
-from flask import request
 import marshmallow
 
+from flask import request
+from xivo.auth_verifier import AccessCheck, Unauthorized
+
 from wazo_auth import exceptions, http, schemas
-from wazo_auth.flask_helpers import Tenant
+from wazo_auth.flask_helpers import Tenant, Token
 from wazo_auth.plugins.http.policies.schemas import policy_full_schema
 
 logger = logging.getLogger(__name__)
@@ -32,12 +33,17 @@ class GroupPolicy(_BaseResource):
 
     @http.required_acl('auth.groups.{group_uuid}.policies.{policy_uuid}.create')
     def put(self, group_uuid, policy_uuid):
+        token = Token.from_headers()
         scoping_tenant = Tenant.autodetect()
 
-        self.policy_service.assert_policy_in_subtenant(scoping_tenant.uuid, policy_uuid)
         self.group_service.assert_group_in_subtenant(scoping_tenant.uuid, group_uuid)
 
-        logger.debug('associating group %s policy %s', group_uuid, policy_uuid)
+        access_check = AccessCheck(token.auth_id, token.session_uuid, token.acl)
+        policy = self.policy_service.get(policy_uuid, scoping_tenant.uuid)
+        for access in policy.acl:
+            if not access_check.matches_required_access(access):
+                raise Unauthorized(token.token, required_access=access)
+
         self.group_service.add_policy(group_uuid, policy_uuid)
         return '', 204
 

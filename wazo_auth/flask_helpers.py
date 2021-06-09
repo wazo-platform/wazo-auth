@@ -1,4 +1,4 @@
-# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -102,3 +102,17 @@ class Tenant:
         cls.token_service = token_service
         cls.user_service = user_service
         cls.tenant_service = tenant_service
+
+
+class Token:
+
+    token_service = None
+
+    @classmethod
+    def setup(cls, token_service):
+        cls.token_service = token_service
+
+    @classmethod
+    def from_headers(cls):
+        token_uuid = request.headers.get('X-Auth-Token')
+        return cls.token_service.get(token_uuid, required_access=None)
