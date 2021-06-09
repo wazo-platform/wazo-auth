@@ -20,7 +20,6 @@ class _BaseUserPolicyResource(http.AuthResource):
 class UserPolicies(_BaseUserPolicyResource):
     @http.required_acl('auth.users.{user_uuid}.policies.read')
     def get(self, user_uuid):
-        logger.debug('listing user %s policies', user_uuid)
         try:
             list_params = schemas.UserPolicyListSchema().load(request.args)
         except marshmallow.ValidationError as e:
@@ -40,12 +39,10 @@ class UserPolicies(_BaseUserPolicyResource):
 class UserPolicy(_BaseUserPolicyResource):
     @http.required_acl('auth.users.{user_uuid}.policies.{policy_uuid}.delete')
     def delete(self, user_uuid, policy_uuid):
-        logger.debug('disassociating user %s and policy %s', user_uuid, policy_uuid)
         self.user_service.remove_policy(user_uuid, policy_uuid)
         return '', 204
 
     @http.required_acl('auth.users.{user_uuid}.policies.{policy_uuid}.create')
     def put(self, user_uuid, policy_uuid):
-        logger.debug('associating user %s and policy %s', user_uuid, policy_uuid)
         self.user_service.add_policy(user_uuid, policy_uuid)
         return '', 204
