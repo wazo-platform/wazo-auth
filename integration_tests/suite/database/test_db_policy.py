@@ -262,7 +262,9 @@ class TestPolicyDAO(base.DAOTestCase):
     @fixtures.db.user()
     @fixtures.db.policy(name='name1', acl=['1', '2'])
     @fixtures.db.policy(name='name2', acl=['3', '4'])
-    def test_list_group_by_policy(self, user_1, user_2, policy_1, policy_2):
+    def test_list_policy_associated_to_multiple_users_appears_once(
+        self, user_1, user_2, policy_1, policy_2
+    ):
         self._user_dao.add_policy(user_1, policy_1)
         self._user_dao.add_policy(user_2, policy_1)
 
