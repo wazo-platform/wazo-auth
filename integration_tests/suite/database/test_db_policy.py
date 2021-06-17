@@ -259,6 +259,23 @@ class TestPolicyDAO(base.DAOTestCase):
         )
 
     @fixtures.db.user()
+    @fixtures.db.user()
+    @fixtures.db.policy(name='name1', acl=['1', '2'])
+    @fixtures.db.policy(name='name2', acl=['3', '4'])
+    def test_list_group_by_policy(self, user_1, user_2, policy_1, policy_2):
+        self._user_dao.add_policy(user_1, policy_1)
+        self._user_dao.add_policy(user_2, policy_1)
+
+        result = self._policy_dao.list_(search='name', limit=2)
+        assert_that(
+            result,
+            contains_inanyorder(
+                has_properties(uuid=policy_1),
+                has_properties(uuid=policy_2),
+            ),
+        )
+
+    @fixtures.db.user()
     @fixtures.db.policy(name='a')
     @fixtures.db.policy(name='b', description='The second foobar')
     @fixtures.db.policy(name='c', description='The third foobar')
