@@ -9,7 +9,7 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr: '10'))
   }
   stages {
-    stage('Build and deploy') {
+    stage('Debian build and deploy') {
       steps {
         build job: 'build-package-no-arch', parameters: [
           string(name: 'PACKAGE', value: "${JOB_NAME}"),
