@@ -378,6 +378,20 @@ class TestPolicies(WazoAuthTestCase):
             ),
         )
 
+    @fixtures.http.policy()
+    def test_add_access_when_policy_has_more_access_than_token(self, policy):
+        assert_http_error(
+            401,
+            self.client.policies.add_access,
+            policy['uuid'],
+            'restricted',
+        )
+
+        self.client.policies.add_access(policy['uuid'], 'auth.everyone')
+
+        policy = self.client.policies.get(policy['uuid'])
+        assert_that(policy, has_entries(acl=['auth.everyone']))
+
     @fixtures.http.policy(acl=['dird.me.#', 'ctid-ng.#'])
     def test_remove_access(self, policy):
         assert_http_error(404, self.client.policies.remove_access, UNKNOWN_UUID, '#')

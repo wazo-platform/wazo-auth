@@ -94,6 +94,12 @@ class PolicyAccess(_BasePolicyRessource):
 
     @http.required_acl('auth.policies.{policy_uuid}.edit')
     def put(self, policy_uuid, access):
+        token = Token.from_headers()
         scoping_tenant = Tenant.autodetect()
+
+        access_check = AccessCheck(token.auth_id, token.session_uuid, token.acl)
+        if not access_check.matches_required_access(access):
+            raise Unauthorized(token.token, required_access=access)
+
         self.policy_service.add_access(policy_uuid, access, scoping_tenant.uuid)
         return '', 204
