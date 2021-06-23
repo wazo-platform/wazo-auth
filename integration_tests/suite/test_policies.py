@@ -135,6 +135,22 @@ class TestPolicies(WazoAuthTestCase):
     def test_post_duplicate_slug(self, a):
         assert_http_error(409, self.client.policies.new, name='dup', slug='dup')
 
+    def test_post_when_policy_has_more_access_than_token(self):
+        policy_args = {
+            'name': 'not-authorized',
+            'acl': ['auth.everyone', 'restricted'],
+        }
+        assert_http_error(401, self.client.policies.new, **policy_args)
+
+        policy_args = {
+            'name': 'authorized',
+            'acl': ['auth.everyone'],
+        }
+        policy = self.client.policies.new(**policy_args)
+        assert_that(policy, has_entries(**policy_args))
+
+        self.client.policies.delete(policy['uuid'])
+
     @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='one', tenant_uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='two', tenant_uuid=SUB_TENANT_UUID)

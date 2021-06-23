@@ -2,10 +2,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
+from xivo.auth_verifier import AccessCheck, Unauthorized
 import marshmallow
 
 from wazo_auth import exceptions, http, schemas
-from wazo_auth.flask_helpers import Tenant
+from wazo_auth.flask_helpers import Tenant, Token
 from .schemas import policy_full_schema, policy_put_schema
 
 
@@ -17,6 +18,7 @@ class _BasePolicyRessource(http.AuthResource):
 class Policies(_BasePolicyRessource):
     @http.required_acl('auth.policies.create')
     def post(self):
+        token = Token.from_headers()
         try:
             body = policy_full_schema.load(request.get_json(force=True))
         except marshmallow.ValidationError as e:
@@ -24,6 +26,12 @@ class Policies(_BasePolicyRessource):
                 raise exceptions.InvalidInputException(field)
 
         body['tenant_uuid'] = Tenant.autodetect().uuid
+
+        access_check = AccessCheck(token.auth_id, token.session_uuid, token.acl)
+        for access in body['acl']:
+            if not access_check.matches_required_access(access):
+                raise Unauthorized(token.token, required_access=access)
+
         policy = self.policy_service.create(**body)
 
         return policy_full_schema.dump(policy), 200
