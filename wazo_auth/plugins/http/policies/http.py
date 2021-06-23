@@ -67,12 +67,18 @@ class Policy(_BasePolicyRessource):
 
     @http.required_acl('auth.policies.{policy_uuid}.edit')
     def put(self, policy_uuid):
+        token = Token.from_headers()
         scoping_tenant = Tenant.autodetect()
         try:
             body = policy_put_schema.load(request.get_json(force=True))
         except marshmallow.ValidationError as e:
             for field in e.messages:
                 raise exceptions.InvalidInputException(field)
+
+        access_check = AccessCheck(token.auth_id, token.session_uuid, token.acl)
+        for access in body['acl']:
+            if not access_check.matches_required_access(access):
+                raise Unauthorized(token.token, required_access=access)
 
         body['scoping_tenant_uuid'] = scoping_tenant.uuid
         policy = self.policy_service.update(policy_uuid, **body)

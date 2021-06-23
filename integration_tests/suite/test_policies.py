@@ -341,6 +341,18 @@ class TestPolicies(WazoAuthTestCase):
         policy = self.client.policies.list(slug=ALL_USERS_POLICY_SLUG)['items'][0]
         assert_http_error(403, self.client.policies.edit, policy['uuid'], 'name')
 
+    @fixtures.http.policy()
+    def test_put_when_policy_has_more_access_than_token(self, policy):
+        new_body = dict(policy)
+        new_body['acl'] = ['auth.everyone', 'restricted']
+        assert_http_error(401, self.client.policies.edit, policy['uuid'], **new_body)
+
+        new_body['acl'] = ['auth.everyone']
+        self.client.policies.edit(policy['uuid'], **new_body)
+
+        policy = self.client.policies.get(policy['uuid'])
+        assert_that(policy, has_entries(acl=new_body['acl']))
+
     @fixtures.http.policy(acl=['dird.me.#', 'ctid-ng.#'])
     def test_add_access(self, policy):
         assert_http_error(404, self.client.policies.add_access, UNKNOWN_UUID, '#')
