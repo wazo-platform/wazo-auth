@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import functools
@@ -12,14 +12,16 @@ from xivo.auth_verifier import (
     AuthVerifier,
     extract_token_id_from_query_or_header,
     required_acl as _required_acl,
+    required_tenant,
     Unauthorized,
 )
+from werkzeug.local import LocalProxy as Proxy
 
 from . import exceptions
 
-logger = logging.getLogger(__name__)
+from .http_server import app
 
-required_acl = _required_acl
+logger = logging.getLogger(__name__)
 
 
 def _error(code, msg):
@@ -90,5 +92,30 @@ class ErrorCatchingResource(Resource):
 class AuthResource(ErrorCatchingResource):
     auth_verifier = auth_verifier
     method_decorators = [
-        auth_verifier.verify_token
+        auth_verifier.verify_token,
+        auth_verifier.verify_tenant,
     ] + ErrorCatchingResource.method_decorators
+
+
+def init_top_tenant(dao):
+    top_tenant_uuid = dao.tenant.find_top_tenant()
+    app.config['top_tenant_uuid'] = top_tenant_uuid
+    logger.debug('Initiated top tenant UUID: %s', top_tenant_uuid)
+
+
+def get_top_tenant_uuid():
+    if not app:
+        raise Exception('Flask application not configured')
+
+    tenant_uuid = app.config.get('top_tenant_uuid')
+    if not tenant_uuid:
+        raise exceptions.TopTenantNotInitialized()
+    return tenant_uuid
+
+
+def required_top_tenant():
+    return required_tenant(top_tenant_uuid)
+
+
+required_acl = _required_acl
+top_tenant_uuid = Proxy(get_top_tenant_uuid)

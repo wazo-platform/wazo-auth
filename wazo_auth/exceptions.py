@@ -354,3 +354,9 @@ class MissingTenantTokenException(TokenServiceException):
 
     def __str__(self):
         return 'Unauthorized for tenant {}'.format(self._tenant_uuid)
+
+
+class TopTenantNotInitialized(APIException):
+    def __init__(self):
+        msg = 'wazo-auth top tenant is not initialized'
+        super().__init__(503, msg, 'top-tenant-not-initialized')

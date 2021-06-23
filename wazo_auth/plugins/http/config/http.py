@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
-from wazo_auth.http import AuthResource
+from wazo_auth.http import AuthResource, required_top_tenant
 from xivo.auth_verifier import required_acl
 from jsonpatch import JsonPatch
 
@@ -14,10 +14,12 @@ class ConfigResource(AuthResource):
         self._config_service = config_service
 
     @required_acl('auth.config.read')
+    @required_top_tenant()
     def get(self):
         return self._config_service.get_config(), 200
 
     @required_acl('auth.config.update')
+    @required_top_tenant()
     def patch(self):
         config_patch = config_patch_schema.load(request.get_json(), many=True)
         config = self._config_service.get_config()

@@ -8,7 +8,7 @@ from hamcrest import (
     has_entry,
 )
 
-from .helpers.base import WazoAuthTestCase
+from .helpers.base import assert_http_error, WazoAuthTestCase
 
 
 class TestConfig(WazoAuthTestCase):
@@ -45,3 +45,13 @@ class TestConfig(WazoAuthTestCase):
         debug_false_config = self.client.config.get()
         assert_that(debug_false_config, has_entry('debug', False))
         assert_that(debug_false_patched_config, equal_to(debug_false_config))
+
+    def test_restrict_only_top_tenant(self):
+        top_tenant_uuid = self.get_top_tenant()['uuid']
+        with self.client_in_subtenant(parent_uuid=top_tenant_uuid) as (
+            auth,
+            _,
+            __,
+        ):
+            assert_http_error(401, auth.config.get)
+            assert_http_error(401, auth.config.patch, {})

@@ -11,7 +11,7 @@ from xivo import plugin_helpers
 from xivo.consul_helpers import ServiceCatalogRegistration
 from xivo.status import StatusAggregator
 
-from . import bus, services, token
+from . import bus, http, services, token
 from .database import queries
 from .database.helpers import db_ready, init_db
 from .flask_helpers import Tenant, Token
@@ -166,6 +166,7 @@ class Controller:
         self._expired_token_remover = token.ExpiredTokenRemover(
             config, dao, self._bus_publisher
         )
+        http.init_top_tenant(dao)
 
     def run(self):
         signal.signal(signal.SIGTERM, partial(_sigterm_handler, self))
