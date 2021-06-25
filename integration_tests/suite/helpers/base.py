@@ -283,9 +283,18 @@ class WazoAuthTestCase(BaseTestCase):
         )
 
         cls.client = cls.new_auth_client(cls.username, cls.password)
+
+        token_data = cls.client.token.new(backend='wazo_user', expiration=7200)
+        cls.client.set_token(token_data['token'])
+        cls.admin_token = token_data['token']
+
+        policies = cls.client.policies.list(slug=bootstrap.DEFAULT_POLICY_SLUG)
+        policy = policies['items'][0]
+        new_acl = policy.pop('acl') + ['!restricted']
+        cls.client.policies.edit(policy['uuid'], acl=new_acl, **policy)
+
         token_data = cls.client.token.new(backend='wazo_user', expiration=7200)
         cls.admin_user_uuid = token_data['metadata']['uuid']
-        cls.admin_token = token_data['token']
         cls.client.set_token(token_data['token'])
 
         cls.top_tenant_uuid = cls.get_top_tenant()['uuid']
@@ -313,7 +322,7 @@ class WazoAuthTestCase(BaseTestCase):
         user = self.client.users.new(
             username=username, password=password, tenant_uuid=tenant['uuid']
         )
-        policy = self.client.policies.new(name=random_string(5), acl=['auth.#'])
+        policy = self.client.policies.new(name=random_string(5), acl=['#'])
         self.client.users.add_policy(user['uuid'], policy['uuid'])
         client = self.new_auth_client(username, password)
         token = client.token.new(backend='wazo_user', expiration=3600)['token']

@@ -22,7 +22,7 @@ def admin_client(**decorator_args):
             decorator_args.setdefault('username', _random_string(5))
 
             creator = self.client.users.new(username='creator', password='opensesame')
-            policy = self.client.policies.new('tmp', acl=['auth.#'])
+            policy = self.client.policies.new('tmp', acl=['#'])
             self.client.users.add_policy(creator['uuid'], policy['uuid'])
 
             creator_client = self.new_auth_client(
@@ -171,7 +171,10 @@ def policy(**policy_args):
         def wrapper(self, *args, **kwargs):
             policy_args.setdefault('name', _random_string(20))
             policy_args['acl'] = policy_args.get('acl') or []
+            old_token = self.client._token_id
+            self.client.set_token(self.admin_token)
             policy = self.client.policies.new(**policy_args)
+            self.client.set_token(old_token)
             args = list(args) + [policy]
             try:
                 with config_managed_policy(self.new_db_client(), policy, policy_args):

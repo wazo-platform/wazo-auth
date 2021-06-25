@@ -97,10 +97,15 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
     @fixtures.http.policy(acl=['auth.everyone', 'restricted'])
     def test_put_when_policy_has_more_access_than_token(self, group, policy1, policy2):
         base.assert_no_error(
-            self.client.groups.add_policy, group['uuid'], policy1['uuid']
+            self.client.groups.add_policy,
+            group['uuid'],
+            policy1['uuid'],
         )
         base.assert_http_error(
-            401, self.client.groups.add_policy, group['uuid'], policy2['uuid']
+            401,
+            self.client.groups.add_policy,
+            group['uuid'],
+            policy2['uuid'],
         )
 
         result = self.client.groups.get_policies(group['uuid'])
