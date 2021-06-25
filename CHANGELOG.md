@@ -1,5 +1,10 @@
 # Changelog
 
+## 21.09
+
+* Policies endpoints now check that token has enough permission to assign access. To follow this
+  change, the bootstrap user (i.e. wazo-auth-cli) has now all accesses (i.e. '#')
+
 ## 21.07
 
 * The `policies` resource now has a `read_only` field
