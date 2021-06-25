@@ -290,7 +290,7 @@ class WazoAuthTestCase(BaseTestCase):
 
         policies = cls.client.policies.list(slug=bootstrap.DEFAULT_POLICY_SLUG)
         policy = policies['items'][0]
-        new_acl = policy.pop('acl') + ['!restricted']
+        new_acl = policy.pop('acl') + ['!unauthorized']
         cls.client.policies.edit(policy['uuid'], acl=new_acl, **policy)
 
         token_data = cls.client.token.new(backend='wazo_user', expiration=7200)

@@ -138,13 +138,13 @@ class TestPolicies(WazoAuthTestCase):
     def test_post_when_policy_has_more_access_than_token(self):
         policy_args = {
             'name': 'not-authorized',
-            'acl': ['auth.everyone', 'restricted'],
+            'acl': ['authorized', 'unauthorized'],
         }
         assert_http_error(401, self.client.policies.new, **policy_args)
 
         policy_args = {
             'name': 'authorized',
-            'acl': ['auth.everyone'],
+            'acl': ['authorized'],
         }
         policy = self.client.policies.new(**policy_args)
         assert_that(policy, has_entries(**policy_args))
@@ -344,10 +344,10 @@ class TestPolicies(WazoAuthTestCase):
     @fixtures.http.policy()
     def test_put_when_policy_has_more_access_than_token(self, policy):
         new_body = dict(policy)
-        new_body['acl'] = ['auth.everyone', 'restricted']
+        new_body['acl'] = ['authorized', 'unauthorized']
         assert_http_error(401, self.client.policies.edit, policy['uuid'], **new_body)
 
-        new_body['acl'] = ['auth.everyone']
+        new_body['acl'] = ['authorized']
         self.client.policies.edit(policy['uuid'], **new_body)
 
         policy = self.client.policies.get(policy['uuid'])
@@ -384,13 +384,13 @@ class TestPolicies(WazoAuthTestCase):
             401,
             self.client.policies.add_access,
             policy['uuid'],
-            'restricted',
+            'unauthorized',
         )
 
-        self.client.policies.add_access(policy['uuid'], 'auth.everyone')
+        self.client.policies.add_access(policy['uuid'], 'authorized')
 
         policy = self.client.policies.get(policy['uuid'])
-        assert_that(policy, has_entries(acl=['auth.everyone']))
+        assert_that(policy, has_entries(acl=['authorized']))
 
     @fixtures.http.policy(acl=['dird.me.#', 'ctid-ng.#'])
     def test_remove_access(self, policy):
