@@ -32,7 +32,7 @@ process allows the administrator to create a first user with the necessary right
 other users.
 
 We create the initial credentials. The username and password can then be used
-to create a token with the `auth.#` acl. This can be done using the
+to create a token with the `#` acl. This can be done using the
 `wazo-auth-bootstrap` command.
 
 ```sh
