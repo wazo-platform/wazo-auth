@@ -50,31 +50,31 @@ def save_exception_and_exit():
 def main():
     parser = argparse.ArgumentParser(description='Initialize wazo-auth')
     subparser = parser.add_subparsers(help='The action to execute', dest='action')
-    subparser.add_parser('setup', help="deprecated")
+    subparser.add_parser('setup', help='deprecated')
     subparser.add_parser('complete')
     initial_user_parser = subparser.add_parser('initial-user')
     initial_user_parser.add_argument(
-        "--uri", default=os.getenv("WAZO_AUTH_BOOTSTRAP_URI")
+        '--uri', default=os.getenv('WAZO_AUTH_BOOTSTRAP_URI')
     )
     initial_user_parser.add_argument(
-        "--username", default=os.getenv("WAZO_AUTH_BOOTSTRAP_USERNAME", USERNAME)
+        '--username', default=os.getenv('WAZO_AUTH_BOOTSTRAP_USERNAME', USERNAME)
     )
     initial_user_parser.add_argument(
-        "--password",
-        default=os.getenv("WAZO_AUTH_BOOTSTRAP_PASSWORD", random_string(28)),
+        '--password',
+        default=os.getenv('WAZO_AUTH_BOOTSTRAP_PASSWORD', random_string(28)),
     )
     initial_user_parser.add_argument(
-        "--purpose", default=os.getenv("WAZO_AUTH_BOOTSTRAP_PURPOSE", PURPOSE)
+        '--purpose', default=os.getenv('WAZO_AUTH_BOOTSTRAP_PURPOSE', PURPOSE)
     )
     initial_user_parser.add_argument(
-        "--policy-slug",
-        default=os.getenv("WAZO_AUTH_BOOTSTRAP_POLICY_SLUG", DEFAULT_POLICY_SLUG),
+        '--policy-slug',
+        default=os.getenv('WAZO_AUTH_BOOTSTRAP_POLICY_SLUG', DEFAULT_POLICY_SLUG),
     )
 
     args = parser.parse_args()
 
     if args.action == 'setup':
-        print("`wazo-auth-initial_user setup` command is no longer needed")
+        print('`wazo-auth-initial_user setup` command is no longer needed')
     elif args.action == 'complete':
         try:
             complete()
@@ -100,7 +100,7 @@ def get_database_uri_from_config():
     wazo_auth_config = read_config_file_hierarchy(
         {'config_file': DEFAULT_WAZO_AUTH_CONFIG_FILE}
     )
-    return wazo_auth_config["db_uri"]
+    return wazo_auth_config['db_uri']
 
 
 def create_initial_user(db_uri, username, password, purpose, policy_slug):
@@ -108,23 +108,21 @@ def create_initial_user(db_uri, username, password, purpose, policy_slug):
     dao = queries.DAO.from_defaults()
     tenant_tree = services.helpers.TenantTree(dao.tenant)
     policy_service = services.PolicyService(dao, tenant_tree)
-    group_service = services.GroupService(dao, tenant_tree)
-    user_service = services.UserService(dao, tenant_tree, group_service)
+    user_service = services.UserService(dao, tenant_tree)
     if user_service.verify_password(username, password):
         # Already bootstrapped, just skip
         return
-    else:
-        users = user_service.list_users(username=username)
-        if users:
-            raise Exception(
-                "User {} already exists with different credential".format(username)
-            )
-        else:
-            user = user_service.new_user(
-                enabled=True, username=username, password=password, purpose=purpose
-            )
-            policy_uuid = policy_service.list(slug=policy_slug)[0].uuid
-            user_service.add_policy(user['uuid'], policy_uuid)
+
+    users = user_service.list_users(username=username)
+    if users:
+        raise Exception(f'User {username} already exists with different credential')
+
+    user = user_service.new_user(
+        enabled=True, username=username, password=password, purpose=purpose
+    )
+    policy_uuid = policy_service.list(slug=policy_slug)[0].uuid
+    user_service.add_policy(user['uuid'], policy_uuid)
+
     commit_or_rollback()
 
 
@@ -136,8 +134,8 @@ def complete():
         wazo_auth_cli_config = parse_config_file(CLI_CONFIG_FILENAME)
         create_initial_user(
             database_uri,
-            wazo_auth_cli_config["auth"]["username"],
-            wazo_auth_cli_config["auth"]["password"],
+            wazo_auth_cli_config['auth']['username'],
+            wazo_auth_cli_config['auth']['password'],
             PURPOSE,
             DEFAULT_POLICY_SLUG,
         )

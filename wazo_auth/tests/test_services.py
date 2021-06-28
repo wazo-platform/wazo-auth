@@ -205,11 +205,9 @@ class TestUserService(BaseServiceTestCase):
     def setUp(self):
         super().setUp()
         self.tenant_tree = Mock()
-        self.group_service = Mock()
         self.service = services.UserService(
             self.dao,
             self.tenant_tree,
-            self.group_service,
             encrypter=self.encrypter,
         )
 
@@ -309,7 +307,7 @@ class TestUserService(BaseServiceTestCase):
             'tenant_uuid': s.tenant_uuid,
         }
         self.user_dao.create.return_value = {'uuid': s.user_uuid}
-        self.group_service.get_all_users_group.return_value = {'uuid': ''}
+        self.group_dao.get_all_users_group.return_value = Mock(uuid='')
 
         result = self.service.new_user(**params)
 

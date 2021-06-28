@@ -399,6 +399,28 @@ class TestPolicyDAO(base.DAOTestCase):
         )
         return [policy.uuid for policy in policies]
 
+    @fixtures.db.tenant()
+    @fixtures.db.policy()
+    def test_get(self, tenant_uuid, policy_uuid):
+        policy = self._policy_dao.get(policy_uuid)
+        assert_that(policy.uuid, equal_to(policy_uuid))
+
+        assert_that(
+            calling(self._policy_dao.get).with_args(self.unknown_uuid),
+            raises(exceptions.UnknownPolicyException),
+        )
+
+        policy = self._policy_dao.get(policy_uuid, tenant_uuids=[self.top_tenant_uuid])
+        assert_that(policy.uuid, equal_to(policy_uuid))
+
+        assert_that(
+            calling(self._policy_dao.get).with_args(
+                policy_uuid,
+                tenant_uuids=[tenant_uuid],
+            ),
+            raises(exceptions.UnknownPolicyException),
+        )
+
     @contextmanager
     def _new_policy(
         self, name, slug=None, description=None, acl=None, tenant_uuid=None

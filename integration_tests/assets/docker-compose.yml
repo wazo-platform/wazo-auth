@@ -27,7 +27,7 @@ services:
       - "80"
 
   postgres:
-    image: wazoplatform/wazo-auth-db
+    image: wazoplatform/wazo-auth-db:local
     ports:
       - "5432"
 

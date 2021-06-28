@@ -14,7 +14,7 @@ from xivo.status import StatusAggregator
 from . import bus, services, token
 from .database import queries
 from .database.helpers import db_ready, init_db
-from .flask_helpers import Tenant
+from .flask_helpers import Tenant, Token
 from .http_server import api, CoreRestApi
 from .purpose import Purposes
 from .service_discovery import self_check
@@ -75,15 +75,13 @@ class Controller:
         session_service = services.SessionService(
             dao, self._tenant_tree, self._bus_publisher
         )
-        self._user_service = services.UserService(dao, self._tenant_tree, group_service)
+        self._user_service = services.UserService(dao, self._tenant_tree)
         self._token_service = services.TokenService(
             config, dao, self._tenant_tree, self._bus_publisher, self._user_service
         )
         self._tenant_service = services.TenantService(
             dao,
             self._tenant_tree,
-            group_service,
-            policy_service,
             config['all_users_policies'],
             self._bus_publisher,
         )
@@ -92,9 +90,7 @@ class Controller:
             config['default_policies'],
         )
         self._all_users_service = services.AllUsersService(
-            group_service,
-            policy_service,
-            self._tenant_service,
+            dao,
             config['all_users_policies'],
         )
 
@@ -146,6 +142,7 @@ class Controller:
             'template_formatter': template_formatter,
         }
         Tenant.setup(self._token_service, self._user_service, self._tenant_service)
+        Token.setup(self._token_service)
 
         plugin_helpers.load(
             namespace='wazo_auth.http',

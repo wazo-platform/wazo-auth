@@ -216,3 +216,12 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             raise exceptions.UnknownGroupException(uuid)
 
         return result.system_managed
+
+    def get_all_users_group(self, tenant_uuid):
+        name = f'wazo-all-users-tenant-{tenant_uuid}'
+        query = (
+            self.session.query(Group)
+            .filter(Group.name == name)
+            .filter(Group.tenant_uuid == tenant_uuid)
+        )
+        return query.first()

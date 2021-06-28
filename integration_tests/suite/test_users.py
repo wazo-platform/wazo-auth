@@ -580,3 +580,18 @@ class TestUsers(WazoAuthTestCase):
         )
 
         assert_no_error(self.client.users.remove_policy, user['uuid'], policy_1['uuid'])
+
+    @fixtures.http.user()
+    @fixtures.http.policy(acl=['authorized'])
+    @fixtures.http.policy(acl=['authorized', 'unauthorized'])
+    def test_put_when_policy_has_more_access_than_token(self, user, policy1, policy2):
+        assert_no_error(self.client.users.add_policy, user['uuid'], policy1['uuid'])
+        assert_http_error(
+            401,
+            self.client.users.add_policy,
+            user['uuid'],
+            policy2['uuid'],
+        )
+
+        result = self.client.users.get_policies(user['uuid'])
+        assert_that(result, has_entries(items=contains(policy1)))

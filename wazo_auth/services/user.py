@@ -13,10 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 class UserService(BaseService):
-    def __init__(self, dao, tenant_tree, group_service, encrypter=None):
+    def __init__(self, dao, tenant_tree, encrypter=None):
         super().__init__(dao, tenant_tree)
         self._encrypter = encrypter or PasswordEncrypter()
-        self._group_service = group_service
 
     def add_policy(self, user_uuid, policy_uuid):
         self._dao.user.add_policy(user_uuid, policy_uuid)
@@ -108,22 +107,16 @@ class UserService(BaseService):
 
     def new_user(self, **kwargs):
         password = kwargs.pop('password', None)
-        logger.info(
-            'creating a new user with params: %s', kwargs
-        )  # log after poping the password
+        kwargs.setdefault('tenant_uuid', self.top_tenant_uuid)
+        logger.info('creating a new user with params: %s', kwargs)
         if password:
             kwargs['salt'], kwargs['hash_'] = self._encrypter.encrypt_password(password)
 
-        kwargs.setdefault('tenant_uuid', self._dao.tenant.find_top_tenant())
         user = self._dao.user.create(**kwargs)
 
-        wazo_all_users_group = self._group_service.get_all_users_group(
-            kwargs['tenant_uuid']
-        )
-        self._group_service.add_user_from_system(
-            wazo_all_users_group['uuid'], user['uuid']
-        )
-
+        tenant_uuid = kwargs['tenant_uuid']
+        wazo_all_users_group = self._dao.group.get_all_users_group(tenant_uuid)
+        self._dao.group.add_user(wazo_all_users_group.uuid, user['uuid'])
         return user
 
     def remove_policy(self, user_uuid, policy_uuid):

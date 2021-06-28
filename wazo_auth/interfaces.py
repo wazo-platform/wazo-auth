@@ -32,8 +32,7 @@ class BaseAuthenticationBackend(metaclass=abc.ABCMeta):
     def get_metadata(self, login, args):
         """return user related data
 
-        these data are used in the body of the GET and POST of the /token and
-        also used for ACL rendering
+        these data are used in the body of the GET and POST of the /token
         """
         metadata = {
             'auth_id': None,
@@ -51,17 +50,6 @@ class BaseAuthenticationBackend(metaclass=abc.ABCMeta):
         It's possible to pass values through the args parameter. These values
         will be passed to the other methods of the plugin.
         """
-
-    @staticmethod
-    def should_be_loaded(config):
-        """Checks if a plugin should be loaded
-
-        This method is called before plugins are loaded. This method is not called
-        if the plugin is not in enabled_backend_plugins.
-
-        Return True if the plugin should be loaded and False otherwise.
-        """
-        return True
 
 
 class BaseMetadata(metaclass=abc.ABCMeta):

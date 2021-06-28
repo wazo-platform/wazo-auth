@@ -11,15 +11,11 @@ class TenantService(BaseService):
         self,
         dao,
         tenant_tree,
-        group_service,
-        policy_service,
         all_users_policies,
         bus_publisher=None,
     ):
         super().__init__(dao, tenant_tree)
         self._bus_publisher = bus_publisher
-        self._group_service = group_service
-        self._policy_service = policy_service
         self._all_users_policies = all_users_policies
 
     def assert_tenant_under(self, scoping_tenant_uuid, tenant_uuid):
@@ -54,7 +50,7 @@ class TenantService(BaseService):
         return result
 
     def find_top_tenant(self):
-        return self._dao.tenant.find_top_tenant()
+        return self.top_tenant_uuid
 
     def get(self, scoping_tenant_uuid, uuid):
         visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
@@ -98,20 +94,20 @@ class TenantService(BaseService):
         )
         self._bus_publisher.publish(event)
 
-        all_users_group = self._group_service.create(
-            name=f'wazo-all-users-tenant-{uuid}', tenant_uuid=uuid, system_managed=True
+        all_users_group_uuid = self._dao.group.create(
+            name=f'wazo-all-users-tenant-{uuid}',
+            tenant_uuid=uuid,
+            system_managed=True,
         )
 
         for slug, enabled in self._all_users_policies.items():
             if not enabled:
                 continue
 
-            all_users_policy = self._policy_service.list(
-                slug=slug, scoping_tenant_uuid=None
-            )[0]
-            self._group_service.add_policy(
-                all_users_group['uuid'], all_users_policy.uuid
-            )
+            all_users_policy = self._dao.policy.find_by(slug=slug)
+            if not all_users_policy:
+                raise Exception('All users policy %s not found')
+            self._dao.group.add_policy(all_users_group_uuid, all_users_policy.uuid)
 
         return result
 
