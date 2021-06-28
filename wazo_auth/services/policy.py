@@ -18,7 +18,7 @@ class PolicyService(BaseService):
 
     def create(self, **kwargs):
         policy_uuid = self._dao.policy.create(**kwargs)
-        return self._dao.policy.list_(uuid=policy_uuid, limit=1)[0]
+        return self._dao.policy.find_by(uuid=policy_uuid)
 
     def count(self, scoping_tenant_uuid=None, **kwargs):
         if scoping_tenant_uuid:
@@ -76,7 +76,7 @@ class PolicyService(BaseService):
             raise exceptions.ReadOnlyPolicyException(policy_uuid)
 
         self._dao.policy.update(policy_uuid, **args)
-        return self._dao.policy.list_(uuid=policy_uuid, limit=1)[0]
+        return self._dao.policy.find_by(uuid=policy_uuid)
 
     def _assert_in_tenant_subtree(self, policy_uuid, scoping_tenant_uuid):
         if not scoping_tenant_uuid:

@@ -215,6 +215,8 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         query = self.session.query(Policy).filter(filter_)
         policy = query.first()
         if policy:
+            policy.tenant_uuid_exposed = policy.tenant_uuid
+
             # NOTE(fblackburn): di/association policy/access
             # don't use relationship and object is not updated
             self.session.expire(policy, ['accesses'])
