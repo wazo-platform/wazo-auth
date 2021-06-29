@@ -20,16 +20,7 @@ class PolicyService(BaseService):
         policy_uuid = self._dao.policy.create(**kwargs)
         return self._dao.policy.find_by(uuid=policy_uuid)
 
-    def count(self, scoping_tenant_uuid=None, **kwargs):
-        if scoping_tenant_uuid:
-            recurse = kwargs.get('recurse')
-            if recurse:
-                kwargs['tenant_uuids'] = self._tenant_tree.list_visible_tenants(
-                    scoping_tenant_uuid
-                )
-            else:
-                kwargs['tenant_uuids'] = [scoping_tenant_uuid]
-
+    def count(self, **kwargs):
         return self._dao.policy.count(**kwargs)
 
     def delete(self, policy_uuid, tenant_uuids):
@@ -46,12 +37,7 @@ class PolicyService(BaseService):
     def get(self, policy_uuid, tenant_uuids):
         return self._dao.policy.get(policy_uuid, tenant_uuids=tenant_uuids)
 
-    def list(self, scoping_tenant_uuid=None, recurse=False, **kwargs):
-        if scoping_tenant_uuid:
-            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(
-                scoping_tenant_uuid, recurse
-            )
-
+    def list(self, **kwargs):
         return self._dao.policy.list_(**kwargs)
 
     def list_tenants(self, policy_uuid, **kwargs):

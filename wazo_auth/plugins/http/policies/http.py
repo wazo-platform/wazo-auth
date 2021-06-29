@@ -38,16 +38,15 @@ class Policies(_BasePolicyRessource):
 
     @http.required_acl('auth.policies.read')
     def get(self):
-        scoping_tenant = Tenant.autodetect()
         try:
             list_params = schemas.PolicyListSchema().load(request.args)
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 
-        list_params['scoping_tenant_uuid'] = scoping_tenant.uuid
-
-        policies = self.policy_service.list(**list_params)
-        total = self.policy_service.count(**list_params)
+        recurse = list_params.pop('recurse')
+        tenant_uuids = get_tenant_uuids(recurse=recurse)
+        policies = self.policy_service.list(tenant_uuids=tenant_uuids, **list_params)
+        total = self.policy_service.count(tenant_uuids=tenant_uuids, **list_params)
         items = policy_full_schema.dump(policies, many=True)
         return {'items': items, 'total': total}, 200
 
