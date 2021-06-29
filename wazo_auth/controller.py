@@ -51,12 +51,14 @@ class Controller:
         self.status_aggregator = StatusAggregator()
         template_formatter = services.helpers.TemplateFormatter(config)
         self._bus_publisher = bus.BusPublisher(config)
-        dao = queries.DAO.from_defaults()
-        self._tenant_tree = services.helpers.TenantTree(dao.tenant)
+        self.dao = queries.DAO.from_defaults()
+        self._tenant_tree = services.helpers.TenantTree(self.dao.tenant)
         self._backends = BackendsProxy()
-        authentication_service = services.AuthenticationService(dao, self._backends)
+        authentication_service = services.AuthenticationService(
+            self.dao, self._backends
+        )
         email_service = services.EmailService(
-            dao, self._tenant_tree, config, template_formatter
+            self.dao, self._tenant_tree, config, template_formatter
         )
         enabled_external_auth_plugins = [
             name
@@ -64,33 +66,36 @@ class Controller:
             if value is True
         ]
         external_auth_service = services.ExternalAuthService(
-            dao,
+            self.dao,
             self._tenant_tree,
             config,
             self._bus_publisher,
             enabled_external_auth_plugins,
         )
-        group_service = services.GroupService(dao, self._tenant_tree)
-        policy_service = services.PolicyService(dao, self._tenant_tree)
+        group_service = services.GroupService(self.dao, self._tenant_tree)
+        policy_service = services.PolicyService(self.dao, self._tenant_tree)
         session_service = services.SessionService(
-            dao, self._tenant_tree, self._bus_publisher
+            self.dao, self._tenant_tree, self._bus_publisher
         )
-        self._user_service = services.UserService(dao, self._tenant_tree)
+        self._user_service = services.UserService(
+            self.dao, self._tenant_tree, group_service
+        )
+        self._user_service = services.UserService(self.dao, self._tenant_tree)
         self._token_service = services.TokenService(
-            config, dao, self._tenant_tree, self._bus_publisher, self._user_service
+            config, self.dao, self._tenant_tree, self._bus_publisher, self._user_service
         )
         self._tenant_service = services.TenantService(
-            dao,
+            self.dao,
             self._tenant_tree,
             config['all_users_policies'],
             self._bus_publisher,
         )
         self._default_policy_service = services.DefaultPolicyService(
-            dao,
+            self.dao,
             config['default_policies'],
         )
         self._all_users_service = services.AllUsersService(
-            dao,
+            self.dao,
             config['all_users_policies'],
         )
 
@@ -164,9 +169,8 @@ class Controller:
         self._rest_api = CoreRestApi(config, self._token_service, self._user_service)
 
         self._expired_token_remover = token.ExpiredTokenRemover(
-            config, dao, self._bus_publisher
+            config, self.dao, self._bus_publisher
         )
-        http.init_top_tenant(dao)
 
     def run(self):
         signal.signal(signal.SIGTERM, partial(_sigterm_handler, self))
@@ -175,6 +179,7 @@ class Controller:
             self._default_policy_service.update_policies()
             self._all_users_service.update_policies()
             self._default_policy_service.delete_orphan_policies()
+            http.init_top_tenant(self.dao)
 
         with bus.publisher_thread(self._bus_publisher):
             with ServiceCatalogRegistration(*self._service_discovery_args):
