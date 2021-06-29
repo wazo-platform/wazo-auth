@@ -10,12 +10,6 @@ class PolicyService(BaseService):
         self._assert_in_tenant_subtree(policy_uuid, scoping_tenant_uuid)
         self._dao.policy.associate_access(policy_uuid, access)
 
-    def assert_policy_in_subtenant(self, scoping_tenant_uuid, uuid):
-        tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
-        exists = self._dao.policy.exists(uuid, tenant_uuids=tenant_uuids)
-        if not exists:
-            raise exceptions.UnknownPolicyException(uuid)
-
     def create(self, **kwargs):
         policy_uuid = self._dao.policy.create(**kwargs)
         return self._dao.policy.find_by(uuid=policy_uuid)
