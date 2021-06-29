@@ -6,7 +6,7 @@ from xivo.auth_verifier import AccessCheck, Unauthorized
 import marshmallow
 
 from wazo_auth import exceptions, http, schemas
-from wazo_auth.flask_helpers import Tenant, Token
+from wazo_auth.flask_helpers import Tenant, Token, get_tenant_uuids
 from .schemas import policy_full_schema, policy_put_schema
 
 
@@ -55,20 +55,20 @@ class Policies(_BasePolicyRessource):
 class Policy(_BasePolicyRessource):
     @http.required_acl('auth.policies.{policy_uuid}.read')
     def get(self, policy_uuid):
-        scoping_tenant = Tenant.autodetect()
-        policy = self.policy_service.get(policy_uuid, scoping_tenant.uuid)
+        tenant_uuids = get_tenant_uuids(recurse=True)
+        policy = self.policy_service.get(policy_uuid, tenant_uuids)
         return policy_full_schema.dump(policy), 200
 
     @http.required_acl('auth.policies.{policy_uuid}.delete')
     def delete(self, policy_uuid):
-        scoping_tenant = Tenant.autodetect()
-        self.policy_service.delete(policy_uuid, scoping_tenant.uuid)
+        tenant_uuids = get_tenant_uuids(recurse=True)
+        self.policy_service.delete(policy_uuid, tenant_uuids)
         return '', 204
 
     @http.required_acl('auth.policies.{policy_uuid}.edit')
     def put(self, policy_uuid):
         token = Token.from_headers()
-        scoping_tenant = Tenant.autodetect()
+        tenant_uuids = get_tenant_uuids(recurse=True)
         try:
             body = policy_put_schema.load(request.get_json(force=True))
         except marshmallow.ValidationError as e:
@@ -80,7 +80,7 @@ class Policy(_BasePolicyRessource):
             if not access_check.matches_required_access(access):
                 raise Unauthorized(token.token, required_access=access)
 
-        body['scoping_tenant_uuid'] = scoping_tenant.uuid
+        body['tenant_uuids'] = tenant_uuids
         policy = self.policy_service.update(policy_uuid, **body)
         return policy_full_schema.dump(policy), 200
 

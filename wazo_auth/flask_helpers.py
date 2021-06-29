@@ -68,6 +68,9 @@ class Tenant:
         cls.user_service = user_service
         cls.tenant_service = tenant_service
 
+    def visible_tenants(self):
+        return self.tenant_service.list_sub_tenants(self.uuid)
+
 
 class Token:
 
@@ -81,3 +84,10 @@ class Token:
     def from_headers(cls):
         token_uuid = request.headers.get('X-Auth-Token')
         return cls.token_service.get(token_uuid, required_access=None)
+
+
+def get_tenant_uuids(recurse=False):
+    tenant = Tenant.autodetect()
+    if not recurse:
+        return [tenant.uuid]
+    return tenant.visible_tenants()

@@ -8,7 +8,7 @@ from flask import request
 from xivo.auth_verifier import AccessCheck, Unauthorized
 
 from wazo_auth import exceptions, http, schemas
-from wazo_auth.flask_helpers import Tenant, Token
+from wazo_auth.flask_helpers import Tenant, Token, get_tenant_uuids
 from wazo_auth.plugins.http.policies.schemas import policy_full_schema
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,8 @@ class GroupPolicy(_BaseResource):
         self.group_service.assert_group_in_subtenant(scoping_tenant.uuid, group_uuid)
 
         access_check = AccessCheck(token.auth_id, token.session_uuid, token.acl)
-        policy = self.policy_service.get(policy_uuid, scoping_tenant.uuid)
+        tenant_uuids = get_tenant_uuids(recurse=True)
+        policy = self.policy_service.get(policy_uuid, tenant_uuids)
         for access in policy.acl:
             if not access_check.matches_required_access(access):
                 raise Unauthorized(token.token, required_access=access)
