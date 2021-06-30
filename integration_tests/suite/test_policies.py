@@ -29,6 +29,7 @@ from .helpers.base import (
 from .helpers import fixtures
 from .helpers.constants import (
     UNKNOWN_UUID,
+    UNKNOWN_SLUG,
     NB_DEFAULT_POLICIES,
     ALL_USERS_POLICY_SLUG,
 )
@@ -410,3 +411,69 @@ class TestPolicies(WazoAuthTestCase):
 
         response = self.client.policies.get(policy['uuid'])
         assert_that(response, has_entries(acl=contains_inanyorder('dird.me.#')))
+
+
+class TestPoliciesBySlug(WazoAuthTestCase):
+    @fixtures.http.policy(slug='my_policy')
+    def test_get(self, policy):
+        response = self.client.policies.get(policy['slug'])
+        assert_that(response, has_entries(slug='my_policy'))
+
+        assert_http_error(404, self.client.policies.get, UNKNOWN_SLUG)
+
+    @fixtures.http.policy()
+    def test_get_multi_tenant(self, policy):
+        with self.client_in_subtenant() as (client, _, __):
+            assert_http_error(404, client.policies.get, policy['slug'])
+
+            slug = 'slug_in_sub_tenant'
+            client.policies.new(name=slug, slug=slug)
+
+            assert_http_error(404, self.client.policies.get, slug)
+
+            response = client.policies.get(slug)
+            assert_that(response, has_entries(slug=slug))
+
+            client.policies.delete(slug)
+
+    @fixtures.http.policy()
+    def test_delete(self, policy):
+        assert_http_error(404, self.client.policies.delete, UNKNOWN_SLUG)
+        assert_no_error(self.client.policies.delete, policy['slug'])
+        assert_http_error(404, self.client.policies.delete, policy['slug'])
+
+    @fixtures.http.policy()
+    def test_delete_multi_tenant(self, policy):
+        with self.client_in_subtenant() as (client, _, __):
+            assert_http_error(404, client.policies.delete, policy['slug'])
+
+            slug = 'slug_in_sub_tenant'
+            client.policies.new(name=slug, slug=slug)
+
+            assert_http_error(404, self.client.policies.get, slug)
+
+            assert_no_error(client.policies.delete, slug)
+
+    @fixtures.http.policy(name='name')
+    def test_put(self, policy):
+        new_name = 'other-name'
+        assert_http_error(404, self.client.policies.edit, UNKNOWN_SLUG, new_name)
+
+        response = self.client.policies.edit(policy['slug'], new_name)
+        assert_that(response, has_entries(name=new_name, slug='name'))
+
+    @fixtures.http.policy(name='name')
+    def test_put_multi_tenant(self, policy):
+        new_name = 'other-name'
+        with self.client_in_subtenant() as (client, _, __):
+            assert_http_error(404, client.policies.edit, policy['slug'], new_name)
+
+            slug = 'slug_in_sub_tenant'
+            client.policies.new(name=slug, slug=slug)
+
+            assert_http_error(404, self.client.policies.edit, slug, new_name)
+
+            response = client.policies.edit(slug, new_name)
+            assert_that(response, has_entries(slug=slug, name=new_name))
+
+            client.policies.delete(slug)

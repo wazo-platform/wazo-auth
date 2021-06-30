@@ -15,12 +15,17 @@ class Plugin:
             resource_class_args=args,
         )
         api.add_resource(
-            http.Policy,
-            '/policies/<string:policy_uuid>',
+            http.PolicyUUID,
+            '/policies/<uuid:policy_uuid>',
             resource_class_args=args,
         )
         api.add_resource(
-            http.PolicyAccess,
-            '/policies/<string:policy_uuid>/acl/<access>',
+            http.PolicyUUIDAccess,
+            '/policies/<uuid:policy_uuid>/acl/<access>',
+            resource_class_args=args,
+        )
+        api.add_resource(
+            http.PolicySlug,
+            '/policies/<string:policy_slug>',
             resource_class_args=args,
         )

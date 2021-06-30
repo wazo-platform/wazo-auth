@@ -31,6 +31,9 @@ class PolicyService(BaseService):
     def get(self, policy_uuid, tenant_uuids):
         return self._dao.policy.get(policy_uuid, tenant_uuids=tenant_uuids)
 
+    def get_by_slug(self, policy_slug, tenant_uuids):
+        return self._dao.policy.get_by(slug=policy_slug, tenant_uuids=tenant_uuids)
+
     def list(self, **kwargs):
         return self._dao.policy.list_(**kwargs)
 

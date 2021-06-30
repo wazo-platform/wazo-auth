@@ -51,23 +51,17 @@ class Policies(_BasePolicyRessource):
         return {'items': items, 'total': total}, 200
 
 
-class Policy(_BasePolicyRessource):
-    @http.required_acl('auth.policies.{policy_uuid}.read')
-    def get(self, policy_uuid):
-        tenant_uuids = get_tenant_uuids(recurse=True)
+class _Policy(_BasePolicyRessource):
+    def _get(self, policy_uuid, tenant_uuids):
         policy = self.policy_service.get(policy_uuid, tenant_uuids)
         return policy_full_schema.dump(policy), 200
 
-    @http.required_acl('auth.policies.{policy_uuid}.delete')
-    def delete(self, policy_uuid):
-        tenant_uuids = get_tenant_uuids(recurse=True)
+    def _delete(self, policy_uuid, tenant_uuids):
         self.policy_service.delete(policy_uuid, tenant_uuids)
         return '', 204
 
-    @http.required_acl('auth.policies.{policy_uuid}.edit')
-    def put(self, policy_uuid):
+    def _put(self, policy_uuid, tenant_uuids):
         token = Token.from_headers()
-        tenant_uuids = get_tenant_uuids(recurse=True)
         try:
             body = policy_put_schema.load(request.get_json(force=True))
         except marshmallow.ValidationError as e:
@@ -82,6 +76,43 @@ class Policy(_BasePolicyRessource):
         body['tenant_uuids'] = tenant_uuids
         policy = self.policy_service.update(policy_uuid, **body)
         return policy_full_schema.dump(policy), 200
+
+
+class PolicyUUID(_Policy):
+    @http.required_acl('auth.policies.{policy_uuid}.read')
+    def get(self, policy_uuid):
+        tenant_uuids = get_tenant_uuids(recurse=True)
+        return super()._get(policy_uuid, tenant_uuids)
+
+    @http.required_acl('auth.policies.{policy_uuid}.delete')
+    def delete(self, policy_uuid):
+        tenant_uuids = get_tenant_uuids(recurse=True)
+        return super()._delete(policy_uuid, tenant_uuids)
+
+    @http.required_acl('auth.policies.{policy_uuid}.edit')
+    def put(self, policy_uuid):
+        tenant_uuids = get_tenant_uuids(recurse=True)
+        return super()._put(policy_uuid, tenant_uuids)
+
+
+class PolicySlug(_Policy):
+    @http.required_acl('auth.policies.{policy_slug}.read')
+    def get(self, policy_slug):
+        tenant_uuids = get_tenant_uuids(recurse=False)
+        policy = self.policy_service.get_by_slug(policy_slug, tenant_uuids)
+        return super()._get(policy.uuid, tenant_uuids)
+
+    @http.required_acl('auth.policies.{policy_slug}.delete')
+    def delete(self, policy_slug):
+        tenant_uuids = get_tenant_uuids(recurse=False)
+        policy = self.policy_service.get_by_slug(policy_slug, tenant_uuids)
+        return super()._delete(policy.uuid, tenant_uuids)
+
+    @http.required_acl('auth.policies.{policy_slug}.edit')
+    def put(self, policy_slug):
+        tenant_uuids = get_tenant_uuids(recurse=False)
+        policy = self.policy_service.get_by_slug(policy_slug, tenant_uuids)
+        return super()._put(policy.uuid, tenant_uuids)
 
 
 class PolicyAccess(_BasePolicyRessource):

@@ -197,7 +197,14 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         policy.tenant_uuid_exposed = requested_tenant_uuid or policy.tenant_uuid
 
     def get(self, policy_uuid, tenant_uuids=None):
-        query = self.session.query(Policy).filter(Policy.uuid == str(policy_uuid))
+        return self._get_by(uuid=str(policy_uuid), tenant_uuids=tenant_uuids)
+
+    def get_by(self, tenant_uuids=None, **kwargs):
+        return self._get_by(tenant_uuids=tenant_uuids, **kwargs)
+
+    def _get_by(self, tenant_uuids=None, **kwargs):
+        filter_ = self.new_strict_filter(**kwargs)
+        query = self.session.query(Policy).filter(filter_)
         if tenant_uuids is not None:
             query = query.filter(
                 or_(
@@ -207,7 +214,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             )
         policy = query.first()
         if not policy:
-            raise exceptions.UnknownPolicyException(policy_uuid)
+            raise exceptions.UnknownPolicyException(kwargs)
         return policy
 
     def find_by(self, **kwargs):
