@@ -67,7 +67,8 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def remove_policy(self, user_uuid, policy_uuid):
         filter_ = and_(
-            UserPolicy.user_uuid == user_uuid, UserPolicy.policy_uuid == policy_uuid
+            UserPolicy.user_uuid == str(user_uuid),
+            UserPolicy.policy_uuid == str(policy_uuid),
         )
 
         result = self.session.query(UserPolicy).filter(filter_).delete()
@@ -79,7 +80,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         tenant_uuid = kwargs.get('tenant_uuid')
         if tenant_uuid:
-            filter_ = User.tenantreturn_uuid == tenant_uuid
+            filter_ = User.tenantreturn_uuid == str(tenant_uuid)
 
         tenant_uuids = kwargs.get('tenant_uuids')
         if tenant_uuids:
@@ -122,7 +123,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         else:
             filter_ = text('true')
 
-        filter_ = and_(filter_, UserPolicy.user_uuid == user_uuid)
+        filter_ = and_(filter_, UserPolicy.user_uuid == str(user_uuid))
 
         return (
             self.session.query(Policy)
