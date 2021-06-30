@@ -434,8 +434,6 @@ class TestPoliciesBySlug(WazoAuthTestCase):
             response = client.policies.get(slug)
             assert_that(response, has_entries(slug=slug))
 
-            client.policies.delete(slug)
-
     @fixtures.http.policy()
     def test_delete(self, policy):
         assert_http_error(404, self.client.policies.delete, UNKNOWN_SLUG)
@@ -476,8 +474,6 @@ class TestPoliciesBySlug(WazoAuthTestCase):
             response = client.policies.edit(slug, new_name)
             assert_that(response, has_entries(slug=slug, name=new_name))
 
-            client.policies.delete(slug)
-
     @fixtures.http.policy(acl=['service1', 'service2'])
     def test_add_access(self, policy):
         access = 'service3'
@@ -503,8 +499,6 @@ class TestPoliciesBySlug(WazoAuthTestCase):
             client.policies.add_access(slug, access)
             response = client.policies.get(slug)
             assert_that(response, has_entries(acl=[access]))
-
-            client.policies.delete(slug)
 
     @fixtures.http.policy(acl=['service1', 'service2'])
     def test_remove_access(self, policy):
@@ -535,5 +529,3 @@ class TestPoliciesBySlug(WazoAuthTestCase):
             client.policies.remove_access(slug, access)
             response = client.policies.get(slug)
             assert_that(response, has_entries(acl=['service2']))
-
-            client.policies.delete(slug)
