@@ -21,7 +21,7 @@ class _BaseResource(http.AuthResource):
 
 
 class GroupPolicy(_BaseResource):
-    @http.required_acl('auth.groups.{group_uuid}.policies.{policy_uuid}.create')
+    @http.required_acl('auth.groups.{group_uuid}.policies.{policy_uuid}.delete')
     def delete(self, group_uuid, policy_uuid):
         scoping_tenant = Tenant.autodetect()
 
