@@ -140,3 +140,17 @@ class PolicyUUIDAccess(_PolicyAccess):
     def put(self, policy_uuid, access):
         tenant_uuids = get_tenant_uuids(recurse=True)
         return super()._put(policy_uuid, access, tenant_uuids)
+
+
+class PolicySlugAccess(_PolicyAccess):
+    @http.required_acl('auth.policies.{policy_slug}.edit')
+    def delete(self, policy_slug, access):
+        tenant_uuids = get_tenant_uuids(recurse=False)
+        policy = self.policy_service.get_by_slug(policy_slug, tenant_uuids)
+        return super()._delete(policy.uuid, access, tenant_uuids)
+
+    @http.required_acl('auth.policies.{policy_slug}.edit')
+    def put(self, policy_slug, access):
+        tenant_uuids = get_tenant_uuids(recurse=False)
+        policy = self.policy_service.get_by_slug(policy_slug, tenant_uuids)
+        return super()._put(policy.uuid, access, tenant_uuids)

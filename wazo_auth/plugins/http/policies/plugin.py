@@ -29,3 +29,8 @@ class Plugin:
             '/policies/<string:policy_slug>',
             resource_class_args=args,
         )
+        api.add_resource(
+            http.PolicySlugAccess,
+            '/policies/<string:policy_slug>/acl/<access>',
+            resource_class_args=args,
+        )

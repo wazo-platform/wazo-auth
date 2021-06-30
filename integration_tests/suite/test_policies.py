@@ -477,3 +477,63 @@ class TestPoliciesBySlug(WazoAuthTestCase):
             assert_that(response, has_entries(slug=slug, name=new_name))
 
             client.policies.delete(slug)
+
+    @fixtures.http.policy(acl=['service1', 'service2'])
+    def test_add_access(self, policy):
+        access = 'service3'
+        assert_http_error(404, self.client.policies.add_access, UNKNOWN_SLUG, access)
+
+        self.client.policies.add_access(policy['slug'], access)
+
+        expected_acl = [access, *policy['acl']]
+        response = self.client.policies.get(policy['slug'])
+        assert_that(response, has_entries(acl=contains_inanyorder(*expected_acl)))
+
+    @fixtures.http.policy()
+    def test_add_access_multi_tenant(self, policy):
+        access = 'service1'
+        with self.client_in_subtenant() as (client, _, __):
+            assert_http_error(404, client.policies.add_access, policy['slug'], access)
+
+            slug = 'slug_in_sub_tenant'
+            client.policies.new(name=slug, slug=slug, acl=[])
+
+            assert_http_error(404, self.client.policies.add_access, slug, access)
+
+            client.policies.add_access(slug, access)
+            response = client.policies.get(slug)
+            assert_that(response, has_entries(acl=[access]))
+
+            client.policies.delete(slug)
+
+    @fixtures.http.policy(acl=['service1', 'service2'])
+    def test_remove_access(self, policy):
+        access = 'service1'
+        assert_http_error(404, self.client.policies.remove_access, UNKNOWN_SLUG, access)
+
+        self.client.policies.remove_access(policy['slug'], access)
+
+        response = self.client.policies.get(policy['slug'])
+        assert_that(response, has_entries(acl=['service2']))
+
+    @fixtures.http.policy(acl=['service1', 'service2'])
+    def test_remove_access_multi_tenant(self, policy):
+        access = 'service1'
+        with self.client_in_subtenant() as (client, _, __):
+            assert_http_error(
+                404,
+                client.policies.remove_access,
+                policy['slug'],
+                access,
+            )
+
+            slug = 'slug_in_sub_tenant'
+            client.policies.new(name=slug, slug=slug, acl=['service1', 'service2'])
+
+            assert_http_error(404, self.client.policies.remove_access, slug, access)
+
+            client.policies.remove_access(slug, access)
+            response = client.policies.get(slug)
+            assert_that(response, has_entries(acl=['service2']))
+
+            client.policies.delete(slug)
