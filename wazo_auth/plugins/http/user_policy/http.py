@@ -8,7 +8,7 @@ from xivo.auth_verifier import AccessCheck, Unauthorized
 import marshmallow
 
 from wazo_auth import http, schemas, exceptions
-from wazo_auth.flask_helpers import Token
+from wazo_auth.flask_helpers import Token, get_tenant_uuids
 from wazo_auth.plugins.http.policies.schemas import policy_full_schema
 
 logger = logging.getLogger(__name__)
@@ -39,9 +39,8 @@ class UserPolicies(_BaseUserPolicyResource):
         return {'items': items, 'total': total, 'filtered': filtered}, 200
 
 
-class UserPolicy(_BaseUserPolicyResource):
-    @http.required_acl('auth.users.{user_uuid}.policies.{policy_uuid}.delete')
-    def delete(self, user_uuid, policy_uuid):
+class _UserPolicy(_BaseUserPolicyResource):
+    def _delete(self, user_uuid, policy_uuid, tenant_uuids):
         # FIXME(fblackburn): Currently not multi-tenant
         # self.policy_service.assert_user_in_subtenant(tenant_uuids, policy_uuid)
         # FIXME(fblackburn): Dissociation should be done on the same tenant
@@ -49,8 +48,7 @@ class UserPolicy(_BaseUserPolicyResource):
         self.user_service.remove_policy(user_uuid, policy_uuid)
         return '', 204
 
-    @http.required_acl('auth.users.{user_uuid}.policies.{policy_uuid}.create')
-    def put(self, user_uuid, policy_uuid):
+    def _put(self, user_uuid, policy_uuid, tenant_uuids):
         token = Token.from_headers()
 
         # FIXME(fblackburn): Currently not multi-tenant
@@ -68,3 +66,15 @@ class UserPolicy(_BaseUserPolicyResource):
 
         self.user_service.add_policy(user_uuid, policy_uuid)
         return '', 204
+
+
+class UserPolicyUUID(_UserPolicy):
+    @http.required_acl('auth.users.{user_uuid}.policies.{policy_uuid}.delete')
+    def delete(self, user_uuid, policy_uuid):
+        tenant_uuids = get_tenant_uuids(recurse=True)
+        return super()._delete(user_uuid, policy_uuid, tenant_uuids)
+
+    @http.required_acl('auth.users.{user_uuid}.policies.{policy_uuid}.create')
+    def put(self, user_uuid, policy_uuid):
+        tenant_uuids = get_tenant_uuids(recurse=True)
+        return super()._put(user_uuid, policy_uuid, tenant_uuids)
