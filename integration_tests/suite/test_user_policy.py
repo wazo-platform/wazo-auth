@@ -13,6 +13,7 @@ from hamcrest import (
 from xivo_test_helpers.hamcrest.raises import raises
 from .helpers import fixtures
 from .helpers.base import assert_http_error, assert_no_error, WazoAuthTestCase
+from .helpers.constants import UNKNOWN_SLUG, UNKNOWN_UUID
 
 
 class TestUsers(WazoAuthTestCase):
@@ -84,3 +85,92 @@ class TestUsers(WazoAuthTestCase):
 
         result = self.client.users.get_policies(user['uuid'])
         assert_that(result, has_entries(items=contains(policy1)))
+
+
+class TestUserPolicySlug(WazoAuthTestCase):
+    @fixtures.http.user()
+    @fixtures.http.policy()
+    @fixtures.http.policy()
+    def test_delete(self, user, policy1, policy2):
+        self.client.users.add_policy(user['uuid'], policy1['uuid'])
+        self.client.users.add_policy(user['uuid'], policy2['uuid'])
+
+        url = self.client.users.remove_policy
+        assert_http_error(404, url, UNKNOWN_UUID, policy1['slug'])
+        assert_http_error(404, url, user['uuid'], UNKNOWN_SLUG)
+        assert_no_error(url, user['uuid'], policy2['slug'])
+
+        result = self.client.users.get_policies(user['uuid'])
+        assert_that(result, has_entries('items', contains(policy1)))
+
+    @fixtures.http.user()
+    def test_delete_multi_tenant(self, user):
+        with self.client_in_subtenant() as (client, _, __):
+            policy_slug = 'policy_slug'
+            client.policies.new(name=policy_slug, slug=policy_slug)
+            visible_user = client.users.new(username='user2')
+            client.users.add_policy(visible_user['uuid'], policy_slug)
+
+            # FIXME: dissociation is not multi-tenant with user
+            # assert_http_error(
+            #     404,
+            #     client.users.remove_policy,
+            #     user['uuid'],
+            #     policy_slug,
+            # )
+
+            assert_http_error(
+                404,
+                self.client.users.remove_policy,
+                user['uuid'],
+                policy_slug,
+            )
+
+            assert_no_error(
+                client.users.remove_policy,
+                visible_user['uuid'],
+                policy_slug,
+            )
+            result = client.users.get_policies(visible_user['uuid'])
+            assert_that(result, has_entries(items=empty()))
+
+    @fixtures.http.user()
+    @fixtures.http.policy()
+    def test_put(self, user, policy):
+        url = self.client.users.add_policy
+        assert_http_error(404, url, UNKNOWN_UUID, policy['slug'])
+        assert_http_error(404, url, user['uuid'], UNKNOWN_SLUG)
+        assert_no_error(url, user['uuid'], policy['slug'])
+
+        result = self.client.users.get_policies(user['uuid'])
+        assert_that(result, has_entries(items=contains(policy)))
+
+    @fixtures.http.user()
+    def test_put_multi_tenant(self, user):
+        with self.client_in_subtenant() as (client, _, __):
+            policy_slug = 'policy_slug'
+            visible_policy = client.policies.new(name=policy_slug, slug=policy_slug)
+            visible_user = client.users.new(username='user2')
+
+            # FIXME: association is not multi-tenant with user
+            # assert_http_error(
+            #     404,
+            #     client.users.add_policy,
+            #     user['uuid'],
+            #     policy_slug,
+            # )
+
+            assert_http_error(
+                404,
+                self.client.users.add_policy,
+                user['uuid'],
+                policy_slug,
+            )
+
+            assert_no_error(
+                client.users.add_policy,
+                visible_user['uuid'],
+                policy_slug,
+            )
+            result = client.users.get_policies(visible_user['uuid'])
+            assert_that(result, has_entries(items=contains(visible_policy)))

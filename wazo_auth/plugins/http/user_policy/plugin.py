@@ -15,6 +15,11 @@ class Plugin:
             resource_class_args=args,
         )
         api.add_resource(
+            http.UserPolicySlug,
+            '/users/<uuid:user_uuid>/policies/<string:policy_slug>',
+            resource_class_args=args,
+        )
+        api.add_resource(
             http.UserPolicies,
             '/users/<uuid:user_uuid>/policies',
             resource_class_args=args,

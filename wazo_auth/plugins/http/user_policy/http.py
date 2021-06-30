@@ -78,3 +78,17 @@ class UserPolicyUUID(_UserPolicy):
     def put(self, user_uuid, policy_uuid):
         tenant_uuids = get_tenant_uuids(recurse=True)
         return super()._put(user_uuid, policy_uuid, tenant_uuids)
+
+
+class UserPolicySlug(_UserPolicy):
+    @http.required_acl('auth.users.{user_uuid}.policies.{policy_slug}.delete')
+    def delete(self, user_uuid, policy_slug):
+        tenant_uuids = get_tenant_uuids(recurse=False)
+        policy = self.policy_service.get_by_slug(policy_slug, tenant_uuids)
+        return super()._delete(user_uuid, policy.uuid, tenant_uuids)
+
+    @http.required_acl('auth.users.{user_uuid}.policies.{policy_slug}.create')
+    def put(self, user_uuid, policy_slug):
+        tenant_uuids = get_tenant_uuids(recurse=False)
+        policy = self.policy_service.get_by_slug(policy_slug, tenant_uuids)
+        return super()._put(user_uuid, policy.uuid, tenant_uuids)
