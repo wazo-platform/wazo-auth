@@ -97,11 +97,7 @@ class GroupService(BaseService):
             raise exceptions.SystemGroupForbidden(group_uuid)
         return self._dao.group.update(group_uuid, **kwargs)
 
-    def assert_group_in_subtenant(self, scoping_tenant_uuid, uuid):
-        tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
+    def assert_group_in_subtenant(self, tenant_uuids, uuid):
         exists = self._dao.group.exists(uuid, tenant_uuids=tenant_uuids)
         if not exists:
             raise exceptions.UnknownGroupException(uuid)
-
-    def build_tenant_list(self, tenant_uuid):
-        return self._tenant_tree.list_visible_tenants(tenant_uuid)

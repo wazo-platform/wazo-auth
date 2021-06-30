@@ -27,6 +27,7 @@ class Group(_BaseGroupResource):
     @http.required_acl('auth.groups.{group_uuid}.edit')
     def put(self, group_uuid):
         tenant_uuids = get_tenant_uuids(recurse=True)
+        self.group_service.assert_group_in_subtenant(tenant_uuids, group_uuid)
         try:
             body = schemas.GroupRequestSchema().load(request.get_json())
         except marshmallow.ValidationError as e:
