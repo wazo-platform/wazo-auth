@@ -115,21 +115,28 @@ class PolicySlug(_Policy):
         return super()._put(policy.uuid, tenant_uuids)
 
 
-class PolicyAccess(_BasePolicyRessource):
-    @http.required_acl('auth.policies.{policy_uuid}.edit')
-    def delete(self, policy_uuid, access):
-        scoping_tenant = Tenant.autodetect()
-        self.policy_service.delete_access(policy_uuid, access, scoping_tenant.uuid)
+class _PolicyAccess(_BasePolicyRessource):
+    def _delete(self, policy_uuid, access, tenant_uuids):
+        self.policy_service.delete_access(policy_uuid, access, tenant_uuids)
         return '', 204
 
-    @http.required_acl('auth.policies.{policy_uuid}.edit')
-    def put(self, policy_uuid, access):
+    def _put(self, policy_uuid, access, tenant_uuids):
         token = Token.from_headers()
-        scoping_tenant = Tenant.autodetect()
-
         access_check = AccessCheck(token.auth_id, token.session_uuid, token.acl)
         if not access_check.matches_required_access(access):
             raise Unauthorized(token.token, required_access=access)
 
-        self.policy_service.add_access(policy_uuid, access, scoping_tenant.uuid)
+        self.policy_service.add_access(policy_uuid, access, tenant_uuids)
         return '', 204
+
+
+class PolicyUUIDAccess(_PolicyAccess):
+    @http.required_acl('auth.policies.{policy_uuid}.edit')
+    def delete(self, policy_uuid, access):
+        tenant_uuids = get_tenant_uuids(recurse=True)
+        return super()._delete(policy_uuid, access, tenant_uuids)
+
+    @http.required_acl('auth.policies.{policy_uuid}.edit')
+    def put(self, policy_uuid, access):
+        tenant_uuids = get_tenant_uuids(recurse=True)
+        return super()._put(policy_uuid, access, tenant_uuids)
