@@ -163,10 +163,17 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             for group in query.all()
         ]
 
-    def update(self, group_uuid, **body):
+    def update(self, group_uuid, tenant_uuids=None, **body):
         filter_ = Group.uuid == str(group_uuid)
+        if tenant_uuids is not None:
+            filter_ = and_(filter_, Group.tenant_uuid.in_(tenant_uuids))
+
         try:
-            affected_rows = self.session.query(Group).filter(filter_).update(body)
+            affected_rows = (
+                self.session.query(Group)
+                .filter(filter_)
+                .update(body, synchronize_session='fetch')
+            )
             if not affected_rows:
                 raise exceptions.UnknownGroupException(group_uuid)
 
