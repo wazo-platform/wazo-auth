@@ -196,7 +196,7 @@ parameters:
     name: policy_uuid
     in: path
     type: string
-    description: The UUID of the policy
+    description: The UUID or SLUG of the policy. If SLUG is used, right tenant must be specified
     required: true
   access:
     name: access
