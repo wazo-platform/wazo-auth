@@ -25,6 +25,8 @@ class GroupPolicy(_BaseResource):
     def delete(self, group_uuid, policy_uuid):
         tenant_uuids = get_tenant_uuids(recurse=True)
         self.group_service.assert_group_in_subtenant(tenant_uuids, group_uuid)
+        # FIXME(fblackburn): Dissociation should be done on the same tenant
+        # self.policy_service.assert_policy_in_subtenant(tenant_uuids, policy_uuid)
         self.group_service.remove_policy(group_uuid, policy_uuid)
         return '', 204
 
@@ -33,6 +35,8 @@ class GroupPolicy(_BaseResource):
         tenant_uuids = get_tenant_uuids(recurse=True)
 
         self.group_service.assert_group_in_subtenant(tenant_uuids, group_uuid)
+        # FIXME(fblackburn): Association should be done on the same tenant
+        # self.policy_service.assert_policy_in_subtenant(tenant_uuids, policy_uuid)
 
         token = Token.from_headers()
         access_check = AccessCheck(token.auth_id, token.session_uuid, token.acl)
