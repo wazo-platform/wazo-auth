@@ -10,7 +10,7 @@ class Plugin:
         args = (dependencies['group_service'], dependencies['policy_service'])
 
         api.add_resource(
-            http.GroupPolicy,
+            http.GroupPolicyUUID,
             '/groups/<uuid:group_uuid>/policies/<uuid:policy_uuid>',
             resource_class_args=args,
         )

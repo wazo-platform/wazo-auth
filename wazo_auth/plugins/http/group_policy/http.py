@@ -20,9 +20,8 @@ class _BaseResource(http.AuthResource):
         self.policy_service = policy_service
 
 
-class GroupPolicy(_BaseResource):
-    @http.required_acl('auth.groups.{group_uuid}.policies.{policy_uuid}.delete')
-    def delete(self, group_uuid, policy_uuid):
+class _GroupPolicy(_BaseResource):
+    def _delete(self, group_uuid, policy_uuid, tenant_uuids):
         tenant_uuids = get_tenant_uuids(recurse=True)
         self.group_service.assert_group_in_subtenant(tenant_uuids, group_uuid)
         # FIXME(fblackburn): Dissociation should be done on the same tenant
@@ -30,8 +29,7 @@ class GroupPolicy(_BaseResource):
         self.group_service.remove_policy(group_uuid, policy_uuid)
         return '', 204
 
-    @http.required_acl('auth.groups.{group_uuid}.policies.{policy_uuid}.create')
-    def put(self, group_uuid, policy_uuid):
+    def _put(self, group_uuid, policy_uuid, tenant_uuids):
         tenant_uuids = get_tenant_uuids(recurse=True)
 
         self.group_service.assert_group_in_subtenant(tenant_uuids, group_uuid)
@@ -47,6 +45,18 @@ class GroupPolicy(_BaseResource):
 
         self.group_service.add_policy(group_uuid, policy_uuid)
         return '', 204
+
+
+class GroupPolicyUUID(_GroupPolicy):
+    @http.required_acl('auth.groups.{group_uuid}.policies.{policy_uuid}.delete')
+    def delete(self, group_uuid, policy_uuid):
+        tenant_uuids = get_tenant_uuids(recurse=True)
+        return super()._delete(group_uuid, policy_uuid, tenant_uuids)
+
+    @http.required_acl('auth.groups.{group_uuid}.policies.{policy_uuid}.create')
+    def put(self, group_uuid, policy_uuid):
+        tenant_uuids = get_tenant_uuids(recurse=True)
+        return super()._put(group_uuid, policy_uuid, tenant_uuids)
 
 
 class GroupPolicies(_BaseResource):
