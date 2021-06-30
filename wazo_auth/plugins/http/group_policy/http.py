@@ -59,6 +59,20 @@ class GroupPolicyUUID(_GroupPolicy):
         return super()._put(group_uuid, policy_uuid, tenant_uuids)
 
 
+class GroupPolicySlug(_GroupPolicy):
+    @http.required_acl('auth.groups.{group_uuid}.policies.{policy_slug}.delete')
+    def delete(self, group_uuid, policy_slug):
+        tenant_uuids = get_tenant_uuids(recurse=False)
+        policy = self.policy_service.get_by_slug(policy_slug, tenant_uuids)
+        return super()._delete(group_uuid, policy.uuid, tenant_uuids)
+
+    @http.required_acl('auth.groups.{group_uuid}.policies.{policy_slug}.create')
+    def put(self, group_uuid, policy_slug):
+        tenant_uuids = get_tenant_uuids(recurse=False)
+        policy = self.policy_service.get_by_slug(policy_slug, tenant_uuids)
+        return super()._put(group_uuid, policy.uuid, tenant_uuids)
+
+
 class GroupPolicies(_BaseResource):
     @http.required_acl('auth.groups.{group_uuid}.policies.read')
     def get(self, group_uuid):

@@ -15,6 +15,11 @@ class Plugin:
             resource_class_args=args,
         )
         api.add_resource(
+            http.GroupPolicySlug,
+            '/groups/<uuid:group_uuid>/policies/<string:policy_slug>',
+            resource_class_args=args,
+        )
+        api.add_resource(
             http.GroupPolicies,
             '/groups/<uuid:group_uuid>/policies',
             resource_class_args=args,
