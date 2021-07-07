@@ -15,7 +15,7 @@ from hamcrest import (
 from xivo_test_helpers.hamcrest.raises import raises
 from wazo_auth import exceptions
 from ..helpers import fixtures, base
-from ..helpers.constants import UNKNOWN_UUID
+from ..helpers.constants import UNKNOWN_UUID, UNKNOWN_SLUG
 
 
 class TestPolicyDAO(base.DAOTestCase):
@@ -406,7 +406,7 @@ class TestPolicyDAO(base.DAOTestCase):
         assert_that(policy.uuid, equal_to(policy_uuid))
 
         assert_that(
-            calling(self._policy_dao.get).with_args(self.unknown_uuid),
+            calling(self._policy_dao.get).with_args(UNKNOWN_UUID),
             raises(exceptions.UnknownPolicyException),
         )
 
@@ -418,6 +418,17 @@ class TestPolicyDAO(base.DAOTestCase):
                 policy_uuid,
                 tenant_uuids=[tenant_uuid],
             ),
+            raises(exceptions.UnknownPolicyException),
+        )
+
+    @fixtures.db.tenant()
+    @fixtures.db.policy(slug='slug')
+    def test_get_by(self, tenant_uuid, policy_uuid):
+        policy = self._policy_dao.get_by(slug='slug')
+        assert_that(policy.uuid, equal_to(policy_uuid))
+
+        assert_that(
+            calling(self._policy_dao.get).with_args(UNKNOWN_SLUG),
             raises(exceptions.UnknownPolicyException),
         )
 

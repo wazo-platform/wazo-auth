@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -7,7 +7,7 @@ from flask import request
 import marshmallow
 
 from wazo_auth import exceptions, http, schemas
-from wazo_auth.flask_helpers import Tenant
+from wazo_auth.flask_helpers import Tenant, get_tenant_uuids
 
 logger = logging.getLogger(__name__)
 
@@ -21,9 +21,9 @@ class _BaseResource(http.AuthResource):
 class GroupUser(_BaseResource):
     @http.required_acl('auth.groups.{group_uuid}.users.{user_uuid}.delete')
     def delete(self, group_uuid, user_uuid):
-        scoping_tenant = Tenant.autodetect()
+        tenant_uuids = get_tenant_uuids(recurse=True)
 
-        self.group_service.assert_group_in_subtenant(scoping_tenant.uuid, group_uuid)
+        self.group_service.assert_group_in_subtenant(tenant_uuids, group_uuid)
 
         logger.debug('disassociating group %s user %s', group_uuid, user_uuid)
         self.group_service.remove_user(group_uuid, user_uuid)
@@ -32,9 +32,10 @@ class GroupUser(_BaseResource):
     @http.required_acl('auth.groups.{group_uuid}.users.{user_uuid}.create')
     def put(self, group_uuid, user_uuid):
         scoping_tenant = Tenant.autodetect()
+        tenant_uuids = get_tenant_uuids(recurse=True)
 
         self.user_service.assert_user_in_subtenant(scoping_tenant.uuid, user_uuid)
-        self.group_service.assert_group_in_subtenant(scoping_tenant.uuid, group_uuid)
+        self.group_service.assert_group_in_subtenant(tenant_uuids, group_uuid)
 
         logger.debug('associating group %s user %s', group_uuid, user_uuid)
         self.group_service.add_user(group_uuid, user_uuid)

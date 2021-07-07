@@ -4,6 +4,7 @@
 
 * Policies endpoints now check that token has enough permission to assign access. To follow this
   change, the bootstrap user (i.e. wazo-auth-cli) has now all accesses (i.e. '#')
+* Policy's slug can now be used as identifier instead of UUID in endpoints
 
 ## 21.07
 

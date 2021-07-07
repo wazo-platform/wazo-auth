@@ -10,12 +10,17 @@ class Plugin:
         args = (dependencies['user_service'], dependencies['policy_service'])
 
         api.add_resource(
-            http.UserPolicy,
-            '/users/<string:user_uuid>/policies/<string:policy_uuid>',
+            http.UserPolicyUUID,
+            '/users/<uuid:user_uuid>/policies/<uuid:policy_uuid>',
+            resource_class_args=args,
+        )
+        api.add_resource(
+            http.UserPolicySlug,
+            '/users/<uuid:user_uuid>/policies/<string:policy_slug>',
             resource_class_args=args,
         )
         api.add_resource(
             http.UserPolicies,
-            '/users/<string:user_uuid>/policies',
+            '/users/<uuid:user_uuid>/policies',
             resource_class_args=args,
         )

@@ -52,14 +52,14 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def dissociate_access(self, policy_uuid, access):
         filter_ = and_(
             Access.access == access,
-            PolicyAccess.policy_uuid == policy_uuid,
+            PolicyAccess.policy_uuid == str(policy_uuid),
         )
 
         query = self.session.query(Access.id_).join(PolicyAccess).filter(filter_)
         access_id = query.first()
 
         filter_ = and_(
-            PolicyAccess.policy_uuid == policy_uuid,
+            PolicyAccess.policy_uuid == str(policy_uuid),
             PolicyAccess.access_id == access_id,
         )
         self.session.query(PolicyAccess).filter(filter_).delete()
@@ -103,7 +103,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return policy.uuid
 
     def delete(self, policy_uuid, tenant_uuids):
-        filter_ = Policy.uuid == policy_uuid
+        filter_ = Policy.uuid == str(policy_uuid)
         if tenant_uuids is not None:
             filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
 
@@ -197,7 +197,14 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         policy.tenant_uuid_exposed = requested_tenant_uuid or policy.tenant_uuid
 
     def get(self, policy_uuid, tenant_uuids=None):
-        query = self.session.query(Policy).filter(Policy.uuid == str(policy_uuid))
+        return self._get_by(uuid=str(policy_uuid), tenant_uuids=tenant_uuids)
+
+    def get_by(self, tenant_uuids=None, **kwargs):
+        return self._get_by(tenant_uuids=tenant_uuids, **kwargs)
+
+    def _get_by(self, tenant_uuids=None, **kwargs):
+        filter_ = self.new_strict_filter(**kwargs)
+        query = self.session.query(Policy).filter(filter_)
         if tenant_uuids is not None:
             query = query.filter(
                 or_(
@@ -207,7 +214,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             )
         policy = query.first()
         if not policy:
-            raise exceptions.UnknownPolicyException(policy_uuid)
+            raise exceptions.UnknownPolicyException(kwargs)
         return policy
 
     def find_by(self, **kwargs):
@@ -215,6 +222,8 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         query = self.session.query(Policy).filter(filter_)
         policy = query.first()
         if policy:
+            policy.tenant_uuid_exposed = policy.tenant_uuid
+
             # NOTE(fblackburn): di/association policy/access
             # don't use relationship and object is not updated
             self.session.expire(policy, ['accesses'])
@@ -229,7 +238,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         config_managed=None,
         tenant_uuids=None,
     ):
-        filter_ = Policy.uuid == policy_uuid
+        filter_ = Policy.uuid == str(policy_uuid)
         if tenant_uuids is not None:
             filter_ = and_(filter_, Policy.tenant_uuid.in_(tenant_uuids))
 
@@ -263,7 +272,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def _associate_acl(self, policy_uuid, acl):
         ids = self._create_or_find_acl(acl)
         access_policies = [
-            PolicyAccess(policy_uuid=policy_uuid, access_id=id_) for id_ in ids
+            PolicyAccess(policy_uuid=str(policy_uuid), access_id=id_) for id_ in ids
         ]
         self.session.add_all(access_policies)
 
@@ -283,7 +292,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return result
 
     def _dissociate_all_acl(self, policy_uuid):
-        filter_ = PolicyAccess.policy_uuid == policy_uuid
+        filter_ = PolicyAccess.policy_uuid == str(policy_uuid)
         self.session.query(PolicyAccess).filter(filter_).delete()
         self.session.flush()
 

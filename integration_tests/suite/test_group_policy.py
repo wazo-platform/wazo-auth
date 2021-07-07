@@ -6,13 +6,18 @@ from hamcrest import (
     assert_that,
     contains,
     contains_inanyorder,
+    empty,
     has_entries,
     has_items,
     has_item,
     not_,
 )
 from .helpers import base, fixtures
-from .helpers.constants import UNKNOWN_UUID, ALL_USERS_POLICY_SLUG
+from .helpers.constants import (
+    ALL_USERS_POLICY_SLUG,
+    UNKNOWN_SLUG,
+    UNKNOWN_UUID,
+)
 
 
 class TestGroupPolicyAssociation(base.WazoAuthTestCase):
@@ -246,3 +251,90 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
             connection.execute(
                 f"DELETE FROM auth_policy_access WHERE policy_uuid = '{policy_uuid}'"
             )
+
+
+class TestGroupPolicySlug(base.WazoAuthTestCase):
+    @fixtures.http.group()
+    @fixtures.http.policy()
+    @fixtures.http.policy()
+    def test_delete(self, group, policy1, policy2):
+        self.client.groups.add_policy(group['uuid'], policy1['uuid'])
+        self.client.groups.add_policy(group['uuid'], policy2['uuid'])
+
+        url = self.client.groups.remove_policy
+        base.assert_http_error(404, url, UNKNOWN_UUID, policy1['slug'])
+        base.assert_http_error(404, url, group['uuid'], UNKNOWN_SLUG)
+        base.assert_no_error(url, group['uuid'], policy2['slug'])
+
+        result = self.client.groups.get_policies(group['uuid'])
+        assert_that(result, has_entries('items', contains(policy1)))
+
+    @fixtures.http.group()
+    def test_delete_multi_tenant(self, group):
+        with self.client_in_subtenant() as (client, _, __):
+            policy_slug = 'policy_slug'
+            client.policies.new(name=policy_slug, slug=policy_slug)
+            visible_group = client.groups.new(name='group2')
+            client.groups.add_policy(visible_group['uuid'], policy_slug)
+
+            base.assert_http_error(
+                404,
+                client.groups.remove_policy,
+                group['uuid'],
+                policy_slug,
+            )
+
+            base.assert_http_error(
+                404,
+                self.client.groups.remove_policy,
+                group['uuid'],
+                policy_slug,
+            )
+
+            base.assert_no_error(
+                client.groups.remove_policy,
+                visible_group['uuid'],
+                policy_slug,
+            )
+            result = client.groups.get_policies(visible_group['uuid'])
+            assert_that(result, has_entries(items=empty()))
+
+    @fixtures.http.group()
+    @fixtures.http.policy()
+    def test_put(self, group, policy):
+        url = self.client.groups.add_policy
+        base.assert_http_error(404, url, UNKNOWN_UUID, policy['slug'])
+        base.assert_http_error(404, url, group['uuid'], UNKNOWN_SLUG)
+        base.assert_no_error(url, group['uuid'], policy['slug'])
+
+        result = self.client.groups.get_policies(group['uuid'])
+        assert_that(result, has_entries(items=contains(policy)))
+
+    @fixtures.http.group()
+    def test_put_multi_tenant(self, group):
+        with self.client_in_subtenant() as (client, _, __):
+            policy_slug = 'policy_slug'
+            visible_policy = client.policies.new(name=policy_slug, slug=policy_slug)
+            visible_group = client.groups.new(name='group2')
+
+            base.assert_http_error(
+                404,
+                client.groups.add_policy,
+                group['uuid'],
+                policy_slug,
+            )
+
+            base.assert_http_error(
+                404,
+                self.client.groups.add_policy,
+                group['uuid'],
+                policy_slug,
+            )
+
+            base.assert_no_error(
+                client.groups.add_policy,
+                visible_group['uuid'],
+                policy_slug,
+            )
+            result = client.groups.get_policies(visible_group['uuid'])
+            assert_that(result, has_entries(items=contains(visible_policy)))

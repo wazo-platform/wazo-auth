@@ -15,11 +15,7 @@ class GroupService(BaseService):
 
         return self._dao.group.add_user(group_uuid, user_uuid)
 
-    def count(self, scoping_tenant_uuid, recurse=False, **kwargs):
-        if scoping_tenant_uuid:
-            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(
-                scoping_tenant_uuid, recurse
-            )
+    def count(self, **kwargs):
         return self._dao.group.count(**kwargs)
 
     def count_policies(self, group_uuid, **kwargs):
@@ -33,17 +29,16 @@ class GroupService(BaseService):
         uuid = self._dao.group.create(**kwargs)
         return {'uuid': uuid, 'read_only': kwargs['system_managed'], **kwargs}
 
-    def delete(self, group_uuid, scoping_tenant_uuid):
-        tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
+    def delete(self, group_uuid, tenant_uuids):
         if self._dao.group.is_system_managed(group_uuid, tenant_uuids):
             raise exceptions.SystemGroupForbidden(group_uuid)
         return self._dao.group.delete(group_uuid, tenant_uuids=tenant_uuids)
 
-    def get(self, group_uuid, scoping_tenant_uuid):
+    def get(self, group_uuid, tenant_uuids):
         args = {
             'uuid': group_uuid,
             'limit': 1,
-            'tenant_uuids': self._tenant_tree.list_visible_tenants(scoping_tenant_uuid),
+            'tenant_uuids': tenant_uuids,
         }
 
         matching_groups = self._dao.group.list_(**args)
@@ -63,12 +58,7 @@ class GroupService(BaseService):
                     acl.extend(policy.acl)
         return acl
 
-    def list_(self, scoping_tenant_uuid=None, recurse=False, **kwargs):
-        if scoping_tenant_uuid:
-            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(
-                scoping_tenant_uuid, recurse
-            )
-
+    def list_(self, **kwargs):
         return self._dao.group.list_(**kwargs)
 
     def list_policies(self, group_uuid, **kwargs):
@@ -107,11 +97,7 @@ class GroupService(BaseService):
             raise exceptions.SystemGroupForbidden(group_uuid)
         return self._dao.group.update(group_uuid, **kwargs)
 
-    def assert_group_in_subtenant(self, scoping_tenant_uuid, uuid):
-        tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
+    def assert_group_in_subtenant(self, tenant_uuids, uuid):
         exists = self._dao.group.exists(uuid, tenant_uuids=tenant_uuids)
         if not exists:
             raise exceptions.UnknownGroupException(uuid)
-
-    def build_tenant_list(self, tenant_uuid):
-        return self._tenant_tree.list_visible_tenants(tenant_uuid)
