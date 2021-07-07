@@ -458,7 +458,7 @@ class TestPoliciesBySlug(WazoAuthTestCase):
         assert_http_error(404, self.client.policies.edit, UNKNOWN_SLUG, new_name)
 
         response = self.client.policies.edit(policy['slug'], new_name)
-        assert_that(response, has_entries(name=new_name, slug='name'))
+        assert_that(response, has_entries(name=new_name, slug=policy['slug']))
 
     @fixtures.http.policy(name='name')
     def test_put_multi_tenant(self, policy):
