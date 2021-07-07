@@ -80,7 +80,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         tenant_uuid = kwargs.get('tenant_uuid')
         if tenant_uuid:
-            filter_ = User.tenantreturn_uuid == str(tenant_uuid)
+            filter_ = User.tenant_uuid == str(tenant_uuid)
 
         tenant_uuids = kwargs.get('tenant_uuids')
         if tenant_uuids:
