@@ -15,6 +15,7 @@ from xivo.auth_verifier import (
     required_tenant,
     Unauthorized,
 )
+from wazo_auth.database.helpers import commit_or_rollback
 from werkzeug.local import LocalProxy as Proxy
 
 from . import exceptions
@@ -99,6 +100,7 @@ class AuthResource(ErrorCatchingResource):
 
 def init_top_tenant(dao):
     top_tenant_uuid = dao.tenant.find_top_tenant()
+    commit_or_rollback()
     app.config['top_tenant_uuid'] = top_tenant_uuid
     logger.debug('Initiated top tenant UUID: %s', top_tenant_uuid)
 
