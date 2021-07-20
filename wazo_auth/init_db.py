@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import argparse
@@ -59,7 +58,3 @@ def main():
     with conn:
         with conn.cursor() as cursor:
             db_helper.create_db_extensions(cursor, ['uuid-ossp'])
-
-
-if __name__ == '__main__':
-    main()

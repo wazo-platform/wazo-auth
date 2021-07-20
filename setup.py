@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from setuptools import find_packages
@@ -18,11 +18,11 @@ setup(
         'wazo_auth.plugins.http': ['*/api.yml'],
         'wazo_auth.plugins.external_auth': ['*/api.yml'],
     },
-    scripts=['bin/wazo-auth-init-db'],
     entry_points={
         'console_scripts': [
             'wazo-auth = wazo_auth.main:main',
             'wazo-auth-bootstrap = wazo_auth.bootstrap:main',
+            'wazo-auth-init-db=wazo_auth.init_db:main',
             'wazo-auth-wait=wazo_auth.wait:main',
         ],
         'wazo_auth.backends': [
