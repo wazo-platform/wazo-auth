@@ -225,7 +225,7 @@ class TestTenants(WazoAuthTestCase):
     def test_delete(self, tenant):
         with self.client_in_subtenant() as (client, user, sub_tenant):
             assert_http_error(404, client.tenants.delete, tenant['uuid'])
-            assert_no_error(client.tenants.delete, sub_tenant['uuid'])
+            assert_http_error(403, client.tenants.delete, sub_tenant['uuid'])
 
         assert_no_error(self.client.tenants.delete, tenant['uuid'])
         assert_http_error(404, self.client.tenants.delete, tenant['uuid'])

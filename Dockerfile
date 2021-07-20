@@ -8,9 +8,12 @@ ENV PATH="/opt/venv/bin:$PATH"
 RUN apt-get -q update
 RUN apt-get -yq install --no-install-recommends gcc libldap2-dev libsasl2-dev
 
-COPY . /usr/src/wazo-auth
+COPY requirements.txt /usr/src/wazo-auth/
 WORKDIR /usr/src/wazo-auth
 RUN pip install -r requirements.txt
+
+COPY setup.py /usr/src/wazo-auth/
+COPY wazo_auth /usr/src/wazo-auth/wazo_auth
 RUN python setup.py install
 
 FROM python:3.7-slim-buster AS build-image

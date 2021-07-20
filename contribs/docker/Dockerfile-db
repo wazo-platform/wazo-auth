@@ -9,7 +9,7 @@ ENV ALEMBIC_DB_URI postgresql://asterisk:proformatique@localhost/asterisk
 RUN true \
     && python3 setup.py install \
     && pg_start \
-    && bin/wazo-auth-init-db --user postgres \
+    && wazo-auth-init-db --user postgres \
     && (cd /usr/src/wazo-auth && alembic -c alembic.ini upgrade head) \
     && pg_stop \
     && true
