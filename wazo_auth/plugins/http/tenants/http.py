@@ -4,10 +4,12 @@
 import logging
 
 from flask import request
+from marshmallow import ValidationError
+
 from wazo_auth import exceptions, http, schemas
 from wazo_auth.flask_helpers import Tenant as TenantDetector
 
-from marshmallow import ValidationError
+from .exceptions import DeleteOwnTenantForbidden
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +25,8 @@ class Tenant(BaseResource):
         scoping_tenant = TenantDetector.autodetect()
 
         logger.debug('deleting tenant %s from %s', tenant_uuid, scoping_tenant.uuid)
+        if scoping_tenant.uuid == tenant_uuid:
+            raise DeleteOwnTenantForbidden(tenant_uuid)
 
         self.tenant_service.delete(scoping_tenant.uuid, tenant_uuid)
 

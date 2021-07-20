@@ -1,5 +1,9 @@
 # Changelog
 
+## 21.10
+
+* Forbid to delete its own tenant
+
 ## 21.09
 
 * Policies endpoints now check that token has enough permission to assign access. To follow this
