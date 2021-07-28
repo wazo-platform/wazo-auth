@@ -178,7 +178,7 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         self.client.groups.add_user(group['uuid'], user['uuid'])
         self.client.groups.add_policy(group['uuid'], policy['uuid'])
 
-        user_client = self.new_auth_client('foo', 'bar')
+        user_client = self.make_auth_client('foo', 'bar')
         token_data = user_client.token.new('wazo_user', expiration=5)
         assert_that(token_data, has_entries('acl', has_items('foobar')))
 
@@ -247,7 +247,7 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         )
 
     def _remove_policy_acl(self, policy_uuid):
-        with self.new_db_client().connect() as connection:
+        with self.make_db_client().connect() as connection:
             connection.execute(
                 f"DELETE FROM auth_policy_access WHERE policy_uuid = '{policy_uuid}'"
             )

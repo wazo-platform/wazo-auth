@@ -138,11 +138,11 @@ class BaseTestCase(AssetLaunchingTestCase):
         return self.docker_exec(command, 'smtp').decode('utf-8').strip().split('\n')
 
     def _post_token(self, username, password, *args, **kwargs):
-        client = self.new_auth_client(username, password)
+        client = self.make_auth_client(username, password)
         return client.token.new(*args, **kwargs)
 
     def _get_token(self, token, access=None, tenant=None):
-        client = self.new_auth_client()
+        client = self.make_auth_client()
         args = {}
         if access:
             args['required_acl'] = access
@@ -152,22 +152,22 @@ class BaseTestCase(AssetLaunchingTestCase):
         return client.token.get(token, **args)
 
     def _delete_token(self, token):
-        client = self.new_auth_client()
+        client = self.make_auth_client()
         return client.token.revoke(token)
 
     def _is_valid(self, token, access=None, tenant=None):
-        client = self.new_auth_client()
+        client = self.make_auth_client()
         args = {}
         if access:
             args['required_acl'] = access
         return client.token.is_valid(token, tenant=tenant, **args)
 
     def _check_scopes(self, token, scopes, tenant=None):
-        client = self.new_auth_client()
+        client = self.make_auth_client()
         return client.token.check_scopes(token, scopes, tenant)['scopes']
 
     @classmethod
-    def new_auth_client(cls, username=None, password=None, port=None):
+    def make_auth_client(cls, username=None, password=None, port=None):
         port = port or cls.auth_port
         kwargs = {'port': port, 'prefix': '', 'https': False}
 
@@ -178,14 +178,14 @@ class BaseTestCase(AssetLaunchingTestCase):
         return Client(cls.auth_host, **kwargs)
 
     @classmethod
-    def new_db_client(cls):
+    def make_db_client(cls):
         db_uri = DB_URI.format(port=cls.service_port(5432, 'postgres'))
         return Database(db_uri, db='asterisk')
 
     @classmethod
     def restart_postgres(cls):
         cls.restart_service('postgres')
-        database = cls.new_db_client()
+        database = cls.make_db_client()
         until.true(database.is_up, timeout=5, message='Postgres did not come back up')
         helpers.deinit_db()
         helpers.init_db(database.uri)
@@ -195,7 +195,7 @@ class BaseTestCase(AssetLaunchingTestCase):
         cls.restart_service('auth')
 
         cls.auth_port = cls.service_port(9497, service_name='auth')
-        cls.client = cls.new_auth_client(cls.username, cls.password)
+        cls.client = cls.make_auth_client(cls.username, cls.password)
         until.return_(cls.client.status.check, timeout=30)
         token_data = cls.client.token.new(backend='wazo_user', expiration=7200)
         cls.client.set_token(token_data['token'])
@@ -210,10 +210,10 @@ class WazoAuthTestCase(BaseTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        database = cls.new_db_client()
+        database = cls.make_db_client()
         helpers.init_db(database.uri)
 
-        cls.client = cls.new_auth_client(cls.username, cls.password)
+        cls.client = cls.make_auth_client(cls.username, cls.password)
 
         token_data = cls.client.token.new(backend='wazo_user', expiration=7200)
         cls.client.set_token(token_data['token'])
@@ -255,7 +255,7 @@ class WazoAuthTestCase(BaseTestCase):
         )
         policy = self.client.policies.new(name=random_string(5), acl=['#'])
         self.client.users.add_policy(user['uuid'], policy['uuid'])
-        client = self.new_auth_client(username, password)
+        client = self.make_auth_client(username, password)
         token = client.token.new(backend='wazo_user', expiration=3600)['token']
         client.set_token(token)
 

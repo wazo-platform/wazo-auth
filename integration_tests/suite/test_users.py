@@ -62,12 +62,12 @@ class TestUsers(WazoAuthTestCase):
 
         self.client.users.reset_password(username='foobar')
 
-        user_client = self.new_auth_client('foobar', 'foobar')
+        user_client = self.make_auth_client('foobar', 'foobar')
         assert_no_error(user_client.token.new, 'wazo_user')
 
         self.client.users.reset_password(email='foobaz@example.com')
 
-        user_client = self.new_auth_client('foobaz', 'foobaz')
+        user_client = self.make_auth_client('foobaz', 'foobaz')
         assert_no_error(user_client.token.new, 'wazo_user')
 
     def test_post_no_token(self):
@@ -192,7 +192,7 @@ class TestUsers(WazoAuthTestCase):
         user_args = {'username': 'foobar', 'password': 'foobaz', 'enabled': False}
         with self.user(self.client, **user_args) as user:
             assert_that(user, has_entries('enabled', False))
-            user_client = self.new_auth_client('foobar', 'foobaz')
+            user_client = self.make_auth_client('foobar', 'foobaz')
             assert_http_error(401, user_client.token.new, 'wazo_user')
 
     def test_post_from_subtenant_user(self):
@@ -400,7 +400,7 @@ class TestUsers(WazoAuthTestCase):
             new_password=new_password,
         )
 
-        user_client = self.new_auth_client('foo', new_password)
+        user_client = self.make_auth_client('foo', new_password)
         token_data = user_client.token.new('wazo_user', expiration=5)
         user_client.set_token(token_data['token'])
 
@@ -411,7 +411,7 @@ class TestUsers(WazoAuthTestCase):
             new_password='secret',
         )
 
-        user_client = self.new_auth_client('foo', 'secret')
+        user_client = self.make_auth_client('foo', 'secret')
         assert_no_error(user_client.token.new, 'wazo_user', expiration=5)
 
     @fixtures.http.user_register(password='secret')
