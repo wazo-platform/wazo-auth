@@ -90,15 +90,19 @@ class TestCore(WazoAuthTestCase):
     def test_that_get_does_not_work_after_delete(self):
         token = self._post_token('foo', 'bar')['token']
         self._delete_token(token)
-        self._get_token_with_expected_exception(
-            token, status_code=404, msg='No such token'
+        assert_that(
+            calling(self._get_token).with_args(token),
+            raises(requests.HTTPError, pattern='404'),
         )
 
     def test_that_deleting_unexistant_token_returns_200(self):
         self._delete_token(_new_token_id())  # no exception
 
     def test_that_the_wrong_password_returns_401(self):
-        self._post_token_with_expected_exception('foo', 'not_bar', status_code=401)
+        assert_that(
+            calling(self._post_token).with_args('foo', 'not_bar'),
+            raises(requests.HTTPError, pattern='401'),
+        )
 
     def test_that_the_right_credentials_return_a_token_with_datas(self):
         response = self._post_token('foo', 'bar')
@@ -113,13 +117,17 @@ class TestCore(WazoAuthTestCase):
         )
 
     def test_that_an_unknown_type_returns_a_401(self):
-        self._post_token_with_expected_exception(
-            'foo', 'not_bar', 'unexistant_backend', status_code=401
+        args = ('foo', 'not_bar', 'unexistant_backend')
+        assert_that(
+            calling(self._post_token).with_args(*args),
+            raises(requests.HTTPError, pattern='401'),
         )
 
     def test_that_a_broken_backend_returns_a_401(self):
-        self._post_token_with_expected_exception(
-            'foo', 'not_bar', 'broken_verify_password', status_code=401
+        args = ('foo', 'not_bar', 'broken_verify_password')
+        assert_that(
+            calling(self._post_token).with_args(*args),
+            raises(requests.HTTPError, pattern='401'),
         )
 
     def test_that_no_type_returns_400(self):
@@ -166,13 +174,15 @@ class TestCore(WazoAuthTestCase):
         )
 
     def test_the_expiration_argument_as_a_string(self):
-        self._post_token_with_expected_exception(
-            'foo', 'bar', expiration="string", status_code=400
+        assert_that(
+            calling(self._post_token).with_args('foo', 'bar', expiration="string"),
+            raises(requests.HTTPError, pattern='400'),
         )
 
     def test_negative_expiration(self):
-        self._post_token_with_expected_exception(
-            'foo', 'bar', expiration=-1, status_code=400
+        assert_that(
+            calling(self._post_token).with_args('foo', 'bar', expiration=-1),
+            raises(requests.HTTPError, pattern='400'),
         )
 
     def test_that_expired_tokens_are_not_valid(self):
@@ -209,13 +219,17 @@ class TestCore(WazoAuthTestCase):
 
     def test_that_unauthorized_access_on_GET_return_403(self):
         token = self._post_token('foo', 'bar')['token']
-        self._get_token_with_expected_exception(token, access='confd', status_code=403)
+        assert_that(
+            calling(self._get_token).with_args(token, access='confd'),
+            raises(requests.HTTPError, pattern='403'),
+        )
 
     def test_that_unauthorized_tenants_on_GET_return_403(self):
         token = self._post_token('foo', 'bar')['token']
 
-        self._get_token_with_expected_exception(
-            token, tenant=UNKNOWN_TENANT, status_code=403
+        assert_that(
+            calling(self._get_token).with_args(token, tenant=UNKNOWN_TENANT),
+            raises(requests.HTTPError, pattern='403'),
         )
 
         assert_that(

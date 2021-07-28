@@ -17,7 +17,6 @@ from hamcrest import (
     greater_than,
     has_length,
     has_properties,
-    equal_to,
 )
 from wazo_auth_client import Client
 from xivo_test_helpers import until
@@ -178,19 +177,6 @@ class BaseTestCase(AuthLaunchingTestCase):
         client = self.new_auth_client(username, password)
         return client.token.new(*args, **kwargs)
 
-    def _post_token_with_expected_exception(
-        self, *args, status_code=None, msg=None, **kwargs
-    ):
-        try:
-            self._post_token(*args, **kwargs)
-        except requests.HTTPError as e:
-            if status_code:
-                assert_that(e.response.status_code, equal_to(status_code))
-            if msg:
-                assert_that(e.response.json()['reason'][0], equal_to(msg))
-        else:
-            self.fail('Should have raised an exception')
-
     def _get_token(self, token, access=None, tenant=None):
         client = self.new_auth_client()
         args = {}
@@ -200,19 +186,6 @@ class BaseTestCase(AuthLaunchingTestCase):
             args['tenant'] = tenant
 
         return client.token.get(token, **args)
-
-    def _get_token_with_expected_exception(
-        self, token, access=None, tenant=None, status_code=None, msg=None
-    ):
-        try:
-            self._get_token(token, access, tenant)
-        except requests.HTTPError as e:
-            if status_code:
-                assert_that(e.response.status_code, equal_to(status_code))
-            if msg:
-                assert_that(e.response.json()['reason'][0], equal_to(msg))
-        else:
-            self.fail('Should have raised an exception')
 
     def _delete_token(self, token):
         client = self.new_auth_client()
