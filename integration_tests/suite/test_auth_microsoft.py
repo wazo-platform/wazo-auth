@@ -10,8 +10,6 @@ from hamcrest import (
     calling,
     has_entries,
     has_key,
-    has_properties,
-    has_property,
     none,
     not_,
 )
@@ -20,6 +18,7 @@ from wazo_auth_client import Client
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
 
+from .helpers import base
 from .helpers.base import BaseTestCase as _BaseTestCase
 
 MICROSOFT = 'microsoft'
@@ -124,19 +123,19 @@ class TestAuthMicrosoft(BaseTestCase):
     def test_given_no_external_auth_confirmed_when_get_then_not_found(self):
         result = self.client.external.create(MICROSOFT, self.admin_user_uuid, {})
 
-        _assert_that_raises_http_error(
+        base.assert_http_error(
             404, self.client.external.get, MICROSOFT, self.admin_user_uuid
         )
         self._simulate_user_authentication(result['state'])
         self.client.external.get(MICROSOFT, self.admin_user_uuid)
 
     def test_given_no_external_auth_when_delete_then_not_found(self):
-        _assert_that_raises_http_error(
+        base.assert_http_error(
             404, self.client.external.delete, MICROSOFT, self.admin_user_uuid
         )
 
     def test_given_no_external_auth_when_get_then_not_found(self):
-        _assert_that_raises_http_error(
+        base.assert_http_error(
             404, self.client.external.get, MICROSOFT, self.admin_user_uuid
         )
 
@@ -156,12 +155,12 @@ class TestAuthMicrosoft(BaseTestCase):
         )
 
     def test_when_delete_then_not_found(self):
-        _assert_that_raises_http_error(
+        base.assert_http_error(
             404, self.client.external.delete, MICROSOFT, self.admin_user_uuid
         )
 
     def test_when_delete_nothing_then_not_found(self):
-        _assert_that_raises_http_error(
+        base.assert_http_error(
             404, self.client.external.delete, MICROSOFT, self.admin_user_uuid
         )
 
@@ -190,15 +189,6 @@ class TestAuthMicrosoftWithNoConfig(BaseTestCase):
     asset = 'auth_microsoft'
 
     def test_given_no_config_when_create_then_not_found(self):
-        _assert_that_raises_http_error(
+        base.assert_http_error(
             404, self.client.external.create, MICROSOFT, self.admin_user_uuid, {}
         )
-
-
-def _assert_that_raises_http_error(status_code, fn, *args, **kwargs):
-    assert_that(
-        calling(fn).with_args(*args, **kwargs),
-        raises(requests.HTTPError).matching(
-            has_property('response', has_properties('status_code', status_code))
-        ),
-    )
