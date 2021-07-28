@@ -115,8 +115,7 @@ class BaseTestCase(AssetLaunchingTestCase):
         cls.auth_port = cls.service_port(9497, service_name='auth')
 
     def new_message_accumulator(self, routing_key):
-        port = self.service_port(5672, service_name='rabbitmq')
-        bus_client = BusClient.from_connection_fields(port=port, **self.bus_config)
+        bus_client = self.make_bus_client()
         return bus_client.accumulator(routing_key)
 
     def get_last_email_url(self):
@@ -142,8 +141,8 @@ class BaseTestCase(AssetLaunchingTestCase):
         return client.token.new(*args, **kwargs)
 
     @classmethod
-    def make_auth_client(cls, username=None, password=None, port=None):
-        port = port or cls.auth_port
+    def make_auth_client(cls, username=None, password=None):
+        port = cls.auth_port
         kwargs = {'port': port, 'prefix': '', 'https': False}
 
         if username and password:
@@ -154,8 +153,14 @@ class BaseTestCase(AssetLaunchingTestCase):
 
     @classmethod
     def make_db_client(cls):
-        db_uri = DB_URI.format(port=cls.service_port(5432, 'postgres'))
+        port = cls.service_port(5432, 'postgres')
+        db_uri = DB_URI.format(port=port)
         return Database(db_uri, db='asterisk')
+
+    @classmethod
+    def make_bus_client(cls):
+        port = cls.service_port(5672, 'rabbitmq')
+        return BusClient.from_connection_fields(host='127.0.0.1', port=port)
 
     @classmethod
     def restart_postgres(cls):
@@ -168,12 +173,9 @@ class BaseTestCase(AssetLaunchingTestCase):
     @classmethod
     def restart_auth(cls):
         cls.restart_service('auth')
-
         cls.auth_port = cls.service_port(9497, service_name='auth')
-        cls.client = cls.make_auth_client(cls.username, cls.password)
-        until.return_(cls.client.status.check, timeout=30)
-        token_data = cls.client.token.new(backend='wazo_user', expiration=7200)
-        cls.client.set_token(token_data['token'])
+        auth = cls.make_auth_client(cls.username, cls.password)
+        until.return_(auth.status.check, timeout=30)
 
 
 class WazoAuthTestCase(BaseTestCase):
@@ -188,11 +190,7 @@ class WazoAuthTestCase(BaseTestCase):
         database = cls.make_db_client()
         helpers.init_db(database.uri)
 
-        cls.client = cls.make_auth_client(cls.username, cls.password)
-
-        token_data = cls.client.token.new(backend='wazo_user', expiration=7200)
-        cls.client.set_token(token_data['token'])
-        cls.admin_token = token_data['token']
+        cls.reset_clients()
 
         policies = cls.client.policies.list(slug=bootstrap.DEFAULT_POLICY_SLUG)
         policy = policies['items'][0]
@@ -209,6 +207,13 @@ class WazoAuthTestCase(BaseTestCase):
     def tearDownClass(cls):
         helpers.deinit_db()
         super().tearDownClass()
+
+    @classmethod
+    def reset_clients(cls):
+        cls.client = cls.make_auth_client(cls.username, cls.password)
+        token = cls.client.token.new(expiration=7200)['token']
+        cls.client.set_token(token)
+        cls.admin_token = token
 
     @classmethod
     def get_top_tenant(cls):

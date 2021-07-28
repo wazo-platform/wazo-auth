@@ -189,6 +189,7 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         assert_that(policy, has_entries(acl=[]))
 
         self.restart_auth()
+        self.reset_clients()
 
         policy = self.client.policies.get(policy['uuid'])
         assert_that(policy, has_entries(acl=has_item('integration_tests.access')))
@@ -199,6 +200,7 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         self.client.groups.add_policy(group['uuid'], policy['uuid'])
 
         self.restart_auth()
+        self.reset_clients()
 
         policies = self.client.groups.get_policies(group['uuid'])['items']
         assert_that(policies, has_item(has_entries(uuid=policy['uuid'])))
@@ -213,6 +215,7 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         self.client.groups.add_policy(group['uuid'], policy['uuid'])
 
         self.restart_auth()
+        self.reset_clients()
 
         # all_users_policies are dissociated
         policies = self.client.groups.get_policies(group['uuid'])['items']
@@ -229,6 +232,7 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         self.client.groups.remove_policy(group['uuid'], policy['uuid'])
 
         self.restart_auth()
+        self.reset_clients()
 
         # default_policies are created
         policy = self.client.policies.get(policy['uuid'])
