@@ -6,7 +6,6 @@ import os
 import random
 import requests
 import string
-import time
 import unittest
 
 from contextlib import contextmanager
@@ -40,7 +39,6 @@ from .database import Database
 
 logging.getLogger('wazo_auth').setLevel(logging.WARNING)
 
-HOST = os.getenv('WAZO_AUTH_TEST_HOST', '127.0.0.1')
 SUB_TENANT_UUID = '76502c2b-cce5-409c-ab8f-d1fe41141a2d'
 ADDRESS_NULL = {
     'line_1': None,
@@ -50,17 +48,6 @@ ADDRESS_NULL = {
     'country': None,
     'zip_code': None,
 }
-
-
-def assert_sorted(action, order, expected):
-    asc_items = action(order=order, direction='asc')['items']
-    desc_items = action(order=order, direction='desc')['items']
-
-    assert_that(
-        asc_items, has_length(greater_than(1)), 'sorting requires atleast 2 items'
-    )
-    assert_that(asc_items, contains(*expected))
-    assert_that(desc_items, contains(*reversed(expected)))
 
 
 class DBStarter(AssetLaunchingTestCase):
@@ -116,33 +103,15 @@ class DAOTestCase(unittest.TestCase):
         return helpers.get_db_session()
 
 
-class AuthLaunchingTestCase(AssetLaunchingTestCase):
+class BaseTestCase(AssetLaunchingTestCase):
 
     assets_root = os.path.join(os.path.dirname(__file__), '../..', 'assets')
     service = 'auth'
 
     @classmethod
     def setUpClass(cls):
-        cls.auth_host = HOST
         super().setUpClass()
-
-    def _assert_that_wazo_auth_is_stopping(self):
-        for _ in range(20):
-            if not self.service_status('auth')['State']['Running']:
-                break
-            time.sleep(0.2)
-        else:
-            self.fail('wazo-auth did not stop')
-
-
-class BaseTestCase(AuthLaunchingTestCase):
-
-    bus_config = {'user': 'guest', 'password': 'guest', 'host': '127.0.0.1'}
-    email_dir = '/var/mail'
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+        cls.auth_host = '127.0.0.1'
         cls.auth_port = cls.service_port(9497, service_name='auth')
 
     def new_message_accumulator(self, routing_key):
@@ -161,17 +130,12 @@ class BaseTestCase(AuthLaunchingTestCase):
         return [self._email_body(f) for f in self._get_email_filenames()]
 
     def _email_body(self, filename):
-        return self.docker_exec(
-            ['cat', '{}/{}'.format(self.email_dir, filename)], 'smtp'
-        ).decode('utf-8')
+        command = ['cat', f'/var/mail/{filename}']
+        return self.docker_exec(command, 'smtp').decode('utf-8')
 
     def _get_email_filenames(self):
-        return (
-            self.docker_exec(['ls', self.email_dir], 'smtp')
-            .decode('utf-8')
-            .strip()
-            .split('\n')
-        )
+        command = ['ls', '/var/mail']
+        return self.docker_exec(command, 'smtp').decode('utf-8').strip().split('\n')
 
     def _post_token(self, username, password, *args, **kwargs):
         client = self.new_auth_client(username, password)
@@ -345,6 +309,18 @@ class WazoAuthTestCase(BaseTestCase):
             yield user
 
 
+@contextmanager
+def _resource(create, delete, *args, **kwargs):
+    resource = create(*args, **kwargs)
+    try:
+        yield resource
+    finally:
+        try:
+            delete(resource['uuid'])
+        except Exception:
+            pass
+
+
 def assert_no_error(fn, *args, **kwargs):
     return fn(*args, **kwargs)
 
@@ -358,13 +334,12 @@ def assert_http_error(status_code, fn, *args, **kwargs):
     )
 
 
-@contextmanager
-def _resource(create, delete, *args, **kwargs):
-    resource = create(*args, **kwargs)
-    try:
-        yield resource
-    finally:
-        try:
-            delete(resource['uuid'])
-        except Exception:
-            pass
+def assert_sorted(action, order, expected):
+    asc_items = action(order=order, direction='asc')['items']
+    desc_items = action(order=order, direction='desc')['items']
+
+    assert_that(
+        asc_items, has_length(greater_than(1)), 'sorting requires atleast 2 items'
+    )
+    assert_that(asc_items, contains(*expected))
+    assert_that(desc_items, contains(*reversed(expected)))
