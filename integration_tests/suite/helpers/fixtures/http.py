@@ -14,51 +14,6 @@ def _random_string(length):
     return ''.join(random.choice(string.ascii_lowercase) for _ in range(length))
 
 
-def admin_client(**decorator_args):
-    def decorator(decorated):
-        @wraps(decorated)
-        def wrapper(self, *args, **kwargs):
-            decorator_args.setdefault('tenant_name', _random_string(9))
-            decorator_args.setdefault('username', _random_string(5))
-
-            creator = self.client.users.new(username='creator', password='opensesame')
-            policy = self.client.policies.new('tmp', acl=['#'])
-            self.client.users.add_policy(creator['uuid'], policy['uuid'])
-
-            creator_client = self.make_auth_client(
-                username='creator', password='opensesame'
-            )
-            creator_token = creator_client.token.new()
-            creator_client.set_token(creator_token['token'])
-
-            tenant = creator_client.tenants.new(
-                name=decorator_args['tenant_name'], slug=decorator_args['tenant_slug']
-            )
-
-            username, password = decorator_args['username'], 'secret'
-            created_user = creator_client.users.new(
-                username=username, password=password, tenant_uuid=tenant['uuid']
-            )
-
-            created_client = self.make_auth_client(username=username, password=password)
-            created_token = created_client.token.new()
-            created_client.set_token(created_token['token'])
-
-            self.client.users.delete(creator['uuid'])
-            self.client.policies.delete(policy['uuid'])
-
-            result = decorated(self, created_client, *args, **kwargs)
-
-            self.client.users.delete(created_user['uuid'])
-            self.client.tenants.delete(tenant['uuid'])
-
-            return result
-
-        return wrapper
-
-    return decorator
-
-
 def tenant(**tenant_args):
     def decorator(decorated):
         @wraps(decorated)
