@@ -54,10 +54,10 @@ class TestCore(WazoAuthTestCase):
     def test_that_head_with_a_valid_token_returns_204(self):
         token = self._post_token('foo', 'bar')['token']
 
-        assert_that(self._is_valid(token))
+        assert_that(self.client.token.is_valid(token))
 
     def test_that_head_with_an_invalid_token_returns_404(self):
-        assert_that(self._is_valid('abcdef'), is_(False))
+        assert_that(self.client.token.is_valid('abcdef'), is_(False))
 
     def test_backends(self):
         url = 'http://{}:{}/0.1/backends'.format(self.auth_host, self.auth_port)
@@ -68,35 +68,35 @@ class TestCore(WazoAuthTestCase):
     def test_that_get_returns_the_auth_id(self):
         token = self._post_token('foo', 'bar')['token']
 
-        response = self._get_token(token)
+        response = self.client.token.get(token)
 
         assert_that(response['auth_id'], self.user['uuid'])
 
     def test_that_get_returns_the_xivo_uuid_in_the_response(self):
         token = self._post_token('foo', 'bar')['token']
 
-        response = self._get_token(token)
+        response = self.client.token.get(token)
 
         assert_that(response, has_entries(xivo_uuid='the-predefined-xivo-uuid'))
 
     def test_that_get_returns_the_pbx_user_uuid(self):
         token = self._post_token('foo', 'bar')['token']
 
-        response = self._get_token(token)
+        response = self.client.token.get(token)
 
         assert_that(response, has_entries(metadata=has_key('pbx_user_uuid')))
         assert_that(response, has_key('xivo_user_uuid'))  # Compatibility
 
     def test_that_get_does_not_work_after_delete(self):
         token = self._post_token('foo', 'bar')['token']
-        self._delete_token(token)
+        self.client.token.revoke(token)
         assert_that(
-            calling(self._get_token).with_args(token),
+            calling(self.client.token.get).with_args(token),
             raises(requests.HTTPError, pattern='404'),
         )
 
     def test_that_deleting_unexistant_token_returns_200(self):
-        self._delete_token(_new_token_id())  # no exception
+        self.client.token.revoke(_new_token_id())
 
     def test_that_the_wrong_password_returns_401(self):
         assert_that(
@@ -190,37 +190,45 @@ class TestCore(WazoAuthTestCase):
 
         time.sleep(2)
 
-        assert_that(self._is_valid(token), equal_to(False))
+        assert_that(self.client.token.is_valid(token), equal_to(False))
 
     def test_that_invalid_unicode_access_returns_403(self):
         token = self._post_token('foo', 'bar')['token']
-        assert_that(self._is_valid(token, access='éric'), is_(False))
+        assert_that(self.client.token.is_valid(token, required_acl='éric'), is_(False))
 
     def test_that_unauthorized_access_on_HEAD_return_403(self):
         token = self._post_token('foo', 'bar')['token']
-        assert_that(self._is_valid(token, access='confd'), is_(False))
+        assert_that(self.client.token.is_valid(token, required_acl='confd'), is_(False))
 
     def test_that_unauthorized_tenants_on_HEAD_return_403(self):
         token = self._post_token('foo', 'bar')['token']
 
         assert_that(
-            self._is_valid(token, tenant=UNKNOWN_TENANT),
+            self.client.token.is_valid(token, tenant=UNKNOWN_TENANT),
             is_(False),
         )
 
-        assert_that(self._is_valid(token, tenant=self.top_tenant_uuid), is_(True))
+        assert_that(
+            self.client.token.is_valid(token, tenant=self.top_tenant_uuid),
+            is_(True),
+        )
 
         with self.client_in_subtenant() as (sub_client, __, sub_tenant):
-            assert_that(self._is_valid(token, tenant=sub_tenant['uuid']), is_(True))
             assert_that(
-                self._is_valid(sub_client._token_id, tenant=self.top_tenant_uuid),
+                self.client.token.is_valid(token, tenant=sub_tenant['uuid']),
+                is_(True),
+            )
+            assert_that(
+                self.client.token.is_valid(
+                    sub_client._token_id, tenant=self.top_tenant_uuid
+                ),
                 is_(False),
             )
 
     def test_that_unauthorized_access_on_GET_return_403(self):
         token = self._post_token('foo', 'bar')['token']
         assert_that(
-            calling(self._get_token).with_args(token, access='confd'),
+            calling(self.client.token.get).with_args(token, required_acl='confd'),
             raises(requests.HTTPError, pattern='403'),
         )
 
@@ -228,7 +236,7 @@ class TestCore(WazoAuthTestCase):
         token = self._post_token('foo', 'bar')['token']
 
         assert_that(
-            calling(self._get_token).with_args(token, tenant=UNKNOWN_TENANT),
+            calling(self.client.token.get).with_args(token, tenant=UNKNOWN_TENANT),
             raises(requests.HTTPError, pattern='403'),
         )
 
@@ -250,7 +258,7 @@ class TestCore(WazoAuthTestCase):
 
         token = self._post_token('foo', 'bar')['token']
 
-        assert_that(self._is_valid(token, access='foo'))
+        assert_that(self.client.token.is_valid(token, required_acl='foo'))
 
     @fixtures.http.policy(name='fooer', acl=['foo'])
     def test_that_authorized_access_on_GET_return_200(self, policy):
@@ -258,7 +266,7 @@ class TestCore(WazoAuthTestCase):
 
         token = self._post_token('foo', 'bar')['token']
 
-        self._get_token(token, access='foo')  # no exception
+        self.client.token.get(token, required_acl='foo')  # no exception
 
     def test_that_expired_tokens_on_scope_check_returns_404(self):
         token = self._post_token('foo', 'bar', expiration=1)['token']
@@ -266,20 +274,20 @@ class TestCore(WazoAuthTestCase):
         time.sleep(2)
 
         assert_that(
-            calling(self._check_scopes).with_args(token, ['foo']),
+            calling(self.client.token.check_scopes).with_args(token, ['foo']),
             raises(requests.HTTPError, pattern='404'),
         )
 
     def test_that_scope_check_with_an_invalid_token_returns_404(self):
         assert_that(
-            calling(self._check_scopes).with_args('abcdef', []),
+            calling(self.client.token.check_scopes).with_args('abcdef', []),
             raises(requests.HTTPError, pattern='404'),
         )
 
     def test_that_unauthorized_acl_on_scope_check_return_all_false(self):
         token = self._post_token('foo', 'bar')['token']
         assert_that(
-            self._check_scopes(token, ['confd', 'foo', 'bar']),
+            self.client.token.check_scopes(token, ['confd', 'foo', 'bar'])['scopes'],
             has_entries(confd=False, foo=False, bar=False),
         )
 
@@ -287,14 +295,14 @@ class TestCore(WazoAuthTestCase):
         token = self._post_token('foo', 'bar')['token']
 
         assert_that(
-            calling(self._check_scopes).with_args(
+            calling(self.client.token.check_scopes).with_args(
                 token, ['foo'], tenant=UNKNOWN_TENANT
             ),
             raises(requests.HTTPError, pattern='403'),
         )
 
         assert_that(
-            calling(self._check_scopes).with_args(
+            calling(self.client.token.check_scopes).with_args(
                 token, ['foo'], tenant=self.top_tenant_uuid
             ),
             not_(raises(Exception)),
@@ -302,13 +310,13 @@ class TestCore(WazoAuthTestCase):
 
         with self.client_in_subtenant() as (sub_client, __, sub_tenant):
             assert_that(
-                calling(self._check_scopes).with_args(
+                calling(self.client.token.check_scopes).with_args(
                     token, ['foo'], tenant=sub_tenant['uuid']
                 ),
                 not_(raises(Exception)),
             )
             assert_that(
-                calling(self._check_scopes).with_args(
+                calling(self.client.token.check_scopes).with_args(
                     sub_client._token_id, ['foo'], tenant=self.top_tenant_uuid
                 ),
                 raises(requests.HTTPError, pattern='403'),
@@ -323,19 +331,20 @@ class TestCore(WazoAuthTestCase):
         token = self._post_token('foo', 'bar')['token']
 
         assert_that(
-            self._check_scopes(token, ['foo', 'bar']), has_entries(foo=True, bar=False)
+            self.client.token.check_scopes(token, ['foo', 'bar'])['scopes'],
+            has_entries(foo=True, bar=False),
         )
 
     def test_that_no_acl_on_scope_check_returns_empty_result(self):
         token = self._post_token('foo', 'bar')['token']
 
-        assert_that(self._check_scopes(token, []), is_(empty()))
+        assert_that(self.client.token.check_scopes(token, [])['scopes'], is_(empty()))
 
     def test_that_wrong_type_acl_on_scope_check_raises_400(self):
         token = self._post_token('foo', 'bar')['token']
 
         assert_that(
-            calling(self._check_scopes).with_args(token, [True]),
+            calling(self.client.token.check_scopes).with_args(token, [True]),
             raises(requests.HTTPError, pattern='400'),
         )
 
@@ -345,7 +354,7 @@ class TestCore(WazoAuthTestCase):
         self.restart_postgres()
 
         token = self._post_token('foo', 'bar')['token']
-        assert_that(self._is_valid(token))
+        assert_that(self.client.token.is_valid(token))
 
     def _is_token_in_the_db(self, token):
         s = helpers.get_db_session()

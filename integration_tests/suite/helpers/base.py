@@ -141,31 +141,6 @@ class BaseTestCase(AssetLaunchingTestCase):
         client = self.make_auth_client(username, password)
         return client.token.new(*args, **kwargs)
 
-    def _get_token(self, token, access=None, tenant=None):
-        client = self.make_auth_client()
-        args = {}
-        if access:
-            args['required_acl'] = access
-        if tenant:
-            args['tenant'] = tenant
-
-        return client.token.get(token, **args)
-
-    def _delete_token(self, token):
-        client = self.make_auth_client()
-        return client.token.revoke(token)
-
-    def _is_valid(self, token, access=None, tenant=None):
-        client = self.make_auth_client()
-        args = {}
-        if access:
-            args['required_acl'] = access
-        return client.token.is_valid(token, tenant=tenant, **args)
-
-    def _check_scopes(self, token, scopes, tenant=None):
-        client = self.make_auth_client()
-        return client.token.check_scopes(token, scopes, tenant)['scopes']
-
     @classmethod
     def make_auth_client(cls, username=None, password=None, port=None):
         port = port or cls.auth_port
