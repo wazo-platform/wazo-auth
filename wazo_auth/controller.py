@@ -11,7 +11,7 @@ from xivo import plugin_helpers
 from xivo.consul_helpers import ServiceCatalogRegistration
 from xivo.status import StatusAggregator
 
-from . import bus, http, services, token
+from . import bus, http, services, token, bootstrap
 from .database import queries
 from .database.helpers import db_ready, init_db
 from .flask_helpers import Tenant, Token
@@ -180,6 +180,15 @@ class Controller:
             self._all_users_service.update_policies()
             self._default_policy_service.delete_orphan_policies()
             http.init_top_tenant(self.dao)
+            if self._config['bootstrap_user_on_startup']:
+                bootstrap.create_initial_user(
+                    self._config['db_uri'],
+                    self._config['bootstrap_user_username'],
+                    self._config['bootstrap_user_password'],
+                    self._config.get('bootstrap_user_purpose') or bootstrap.PURPOSE,
+                    self._config.get('bootstrap_user_policy_slug')
+                    or bootstrap.DEFAULT_POLICY_SLUG,
+                )
 
         with bus.publisher_thread(self._bus_publisher):
             with ServiceCatalogRegistration(*self._service_discovery_args):

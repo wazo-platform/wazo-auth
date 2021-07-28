@@ -14,3 +14,7 @@ enabled_backend_plugins:
   wazo_user: true
 backend_policies:
   wazo_user: wazo_default_admin_policy # For testing only, not a legitimate configuration
+
+bootstrap_user_on_startup: True
+bootstrap_user_username: admin
+bootstrap_user_password: s3cre7

@@ -19,9 +19,6 @@ from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
 from wazo_auth_client import Client
 
-from wazo_auth import bootstrap
-from wazo_auth.database import helpers
-
 from .helpers.base import BaseTestCase
 
 
@@ -37,16 +34,6 @@ class BaseGoogleTestCase(BaseTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        database = cls.new_db_client()
-        until.true(database.is_up, timeout=5, message='Postgres did not come back up')
-        bootstrap.create_initial_user(
-            database.uri,
-            cls.username,
-            cls.password,
-            bootstrap.PURPOSE,
-            bootstrap.DEFAULT_POLICY_SLUG,
-        )
-
         port = cls.service_port(9497, 'auth')
         cls.client = Client(
             '127.0.0.1',
@@ -61,11 +48,6 @@ class BaseGoogleTestCase(BaseTestCase):
         cls.client.set_token(token_data['token'])
 
         cls.top_tenant_uuid = cls.get_top_tenant()['uuid']
-
-    @classmethod
-    def tearDownClass(cls):
-        helpers.deinit_db()
-        super().tearDownClass()
 
     @classmethod
     def get_top_tenant(cls):

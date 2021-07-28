@@ -21,3 +21,7 @@ default_policies:
     acl:
       - integration_tests.access
       - integration_tests.another_access
+
+bootstrap_user_on_startup: True
+bootstrap_user_username: admin
+bootstrap_user_password: s3cre7

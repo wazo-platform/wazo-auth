@@ -245,9 +245,10 @@ class BaseTestCase(AuthLaunchingTestCase):
         db_uri = DB_URI.format(port=cls.service_port(5432, 'postgres'))
         return Database(db_uri, db='asterisk')
 
-    def restart_postgres(self):
-        self.restart_service('postgres')
-        database = self.new_db_client()
+    @classmethod
+    def restart_postgres(cls):
+        cls.restart_service('postgres')
+        database = cls.new_db_client()
         until.true(database.is_up, timeout=5, message='Postgres did not come back up')
         helpers.deinit_db()
         helpers.init_db(database.uri)
@@ -273,14 +274,7 @@ class WazoAuthTestCase(BaseTestCase):
     def setUpClass(cls):
         super().setUpClass()
         database = cls.new_db_client()
-        until.true(database.is_up, timeout=5, message='Postgres did not come back up')
-        bootstrap.create_initial_user(
-            database.uri,
-            cls.username,
-            cls.password,
-            bootstrap.PURPOSE,
-            bootstrap.DEFAULT_POLICY_SLUG,
-        )
+        helpers.init_db(database.uri)
 
         cls.client = cls.new_auth_client(cls.username, cls.password)
 
