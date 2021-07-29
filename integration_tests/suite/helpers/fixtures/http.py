@@ -99,7 +99,7 @@ def user_register(**user_args):
                 result = decorated(self, *args, **kwargs)
             finally:
                 try:
-                    self.client.users.delete(user['uuid'])
+                    self.client.tenants.delete(user['tenant_uuid'])
                 except requests.HTTPError:
                     pass
             return result
