@@ -1,14 +1,21 @@
 debug: true
+
 rest_api:
   listen: 0.0.0.0
+
 db_uri: postgresql://asterisk:proformatique@postgres:5432
 confd_db_uri: postgresql://asterisk:proformatique@postgres:5432
 amqp:
   uri: amqp://guest:guest@rabbitmq:5672/
+
 smtp:
   hostname: smtp
+
 service_discovery:
   enabled: false
+
+enabled_http_plugins:
+  user_registration: true
 
 default_policies:
   wazo_default_user_policy:
@@ -20,6 +27,7 @@ default_policies:
   wazo_default_admin_policy:
     acl:
       - 'default.admin.policy'
+
 backend_policies:
   ldap_user: wazo_default_user_policy
   wazo_user: wazo_default_user_policy
