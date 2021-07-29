@@ -7,10 +7,6 @@ from .helpers.base import WazoAuthTestCase
 
 
 class TestDefaultTokenMetadata(WazoAuthTestCase):
-    def setUp(self):
-        super().setUp()
-        self.tenant_uuid = self.get_top_tenant()['uuid']
-
     @fixtures.http.user(password='s3cr37', purpose='user')
     @fixtures.http.group()
     def test_token_metadata(self, user, group):
@@ -22,7 +18,7 @@ class TestDefaultTokenMetadata(WazoAuthTestCase):
             token_data['metadata'],
             has_entries(
                 uuid=user['uuid'],
-                tenant_uuid=self.tenant_uuid,
+                tenant_uuid=self.top_tenant_uuid,
                 auth_id=user['uuid'],
                 pbx_user_uuid=user['uuid'],
                 xivo_uuid='the-predefined-xivo-uuid',
@@ -37,7 +33,7 @@ class TestDefaultTokenMetadata(WazoAuthTestCase):
             token_data['metadata'],
             has_entries(
                 uuid=user['uuid'],
-                tenant_uuid=self.tenant_uuid,
+                tenant_uuid=self.top_tenant_uuid,
                 auth_id=user['uuid'],
                 pbx_user_uuid=None,
                 xivo_uuid='the-predefined-xivo-uuid',
@@ -52,7 +48,7 @@ class TestDefaultTokenMetadata(WazoAuthTestCase):
             token_data['metadata'],
             has_entries(
                 uuid=user['uuid'],
-                tenant_uuid=self.tenant_uuid,
+                tenant_uuid=self.top_tenant_uuid,
                 auth_id=user['uuid'],
                 pbx_user_uuid=None,
                 xivo_uuid='the-predefined-xivo-uuid',
