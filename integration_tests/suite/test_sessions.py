@@ -131,7 +131,7 @@ class TestSessions(base.APIIntegrationTest):
     @fixtures.http.session()
     def test_delete_event(self, session):
         routing_key = 'auth.sessions.*.deleted'
-        msg_accumulator = self.new_message_accumulator(routing_key)
+        msg_accumulator = self.bus.accumulator(routing_key)
 
         self.client.sessions.delete(session['uuid'])
 
@@ -154,7 +154,7 @@ class TestSessions(base.APIIntegrationTest):
     @fixtures.http.user(username='foo', password='bar')
     def test_create_event(self, user):
         routing_key = 'auth.sessions.*.created'
-        msg_accumulator = self.new_message_accumulator(routing_key)
+        msg_accumulator = self.bus.accumulator(routing_key)
 
         session_uuid = self._post_token('foo', 'bar', session_type='Mobile')[
             'session_uuid'
@@ -182,7 +182,7 @@ class TestSessions(base.APIIntegrationTest):
         routing_key = 'auth.users.{uuid}.sessions.*.expire_soon'.format(
             uuid=user['uuid']
         )
-        msg_accumulator = self.new_message_accumulator(routing_key)
+        msg_accumulator = self.bus.accumulator(routing_key)
 
         session_uuid = self._post_token('foo', 'bar', expiration=3)['session_uuid']
 
@@ -205,7 +205,7 @@ class TestSessions(base.APIIntegrationTest):
     @fixtures.http.user(username='foo', password='bar')
     def test_delete_event_when_token_expired(self, user):
         routing_key = 'auth.sessions.*.deleted'
-        msg_accumulator = self.new_message_accumulator(routing_key)
+        msg_accumulator = self.bus.accumulator(routing_key)
 
         session_uuid = self._post_token('foo', 'bar', expiration=1)['session_uuid']
 
@@ -228,7 +228,7 @@ class TestSessions(base.APIIntegrationTest):
     @fixtures.http.user(username='foo', password='bar')
     def test_delete_event_when_token_deleted(self, user):
         routing_key = 'auth.sessions.*.deleted'
-        msg_accumulator = self.new_message_accumulator(routing_key)
+        msg_accumulator = self.bus.accumulator(routing_key)
 
         token = self._post_token('foo', 'bar')
         self.client.token.revoke(token['token'])

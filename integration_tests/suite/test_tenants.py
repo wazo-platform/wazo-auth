@@ -195,7 +195,7 @@ class TestTenants(base.APIIntegrationTest):
 
     def test_tenant_created_event(self):
         routing_key = 'auth.tenants.*.created'
-        msg_accumulator = self.new_message_accumulator(routing_key)
+        msg_accumulator = self.bus.accumulator(routing_key)
         name = 'My tenant'
         slug = 'my_tenant'
 

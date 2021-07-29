@@ -105,7 +105,7 @@ class TestUserSession(base.APIIntegrationTest):
     @fixtures.http.token(username='username', password='pass')
     def test_delete_event(self, user, token):
         routing_key = 'auth.sessions.*.deleted'
-        msg_accumulator = self.new_message_accumulator(routing_key)
+        msg_accumulator = self.bus.accumulator(routing_key)
 
         self.client.users.remove_session(user['uuid'], token['session_uuid'])
 

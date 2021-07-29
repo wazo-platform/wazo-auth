@@ -251,10 +251,6 @@ class BaseIntegrationTest(unittest.TestCase):
     def get_top_tenant(cls):
         return cls.client.tenants.list(name='master')['items'][0]
 
-    # TODO remove useless wrapper
-    def new_message_accumulator(self, routing_key):
-        return self.bus.accumulator(routing_key)
-
     @contextmanager
     def client_in_subtenant(self, username=None, parent_uuid=None):
         def random_string(n):

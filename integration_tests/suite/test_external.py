@@ -28,7 +28,7 @@ class TestExternalAuthAPI(base.ExternalAuthIntegrationTest):
     @fixtures.http.user_register()
     def test_create(self, user):
         routing_key = 'auth.users.{}.external.foo.created'.format(user['uuid'])
-        msg_accumulator = self.new_message_accumulator(routing_key)
+        msg_accumulator = self.bus.accumulator(routing_key)
 
         result = self.client.external.create('foo', user['uuid'], self.original_data)
         assert_that(result, has_entries(**self.original_data))
@@ -58,7 +58,7 @@ class TestExternalAuthAPI(base.ExternalAuthIntegrationTest):
     @fixtures.http.user_register()
     def test_delete(self, user):
         routing_key = 'auth.users.{}.external.foo.deleted'.format(user['uuid'])
-        msg_accumulator = self.new_message_accumulator(routing_key)
+        msg_accumulator = self.bus.accumulator(routing_key)
 
         self.client.external.create('foo', user['uuid'], self.original_data)
 
@@ -178,7 +178,7 @@ class TestExternalAuthAPI(base.ExternalAuthIntegrationTest):
     @fixtures.http.user()
     def test_external_oauth2(self, user):
         routing_key = 'auth.users.{}.external.foo.authorized'.format(user['uuid'])
-        msg_accumulator = self.new_message_accumulator(routing_key)
+        msg_accumulator = self.bus.accumulator(routing_key)
         token = 'a-token'
         result = self.client.external.create('foo', user['uuid'], self.original_data)
         time.sleep(1)  # wazo-auth needs some time to connect its websocket
