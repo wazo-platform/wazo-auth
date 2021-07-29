@@ -26,8 +26,7 @@ from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from wazo_auth.database import helpers
 from wazo_auth.database import models
-from .helpers import fixtures
-from .helpers.base import WazoAuthTestCase
+from .helpers import fixtures, base
 from .helpers.constants import UNKNOWN_TENANT, ISO_DATETIME
 
 requests.packages.urllib3.disable_warnings()
@@ -38,7 +37,8 @@ def _new_token_id():
     return uuid.uuid4()
 
 
-class TestCore(WazoAuthTestCase):
+@base.use_asset('base')
+class TestCore(base.APIIntegrationTest):
     def setUp(self):
         self.user = self.client.users.new(username='foo', password='bar')
 
@@ -352,6 +352,7 @@ class TestCore(WazoAuthTestCase):
         token = self._post_token('foo', 'bar')['token']
 
         self.restart_postgres()
+        self.reset_clients()
 
         token = self._post_token('foo', 'bar')['token']
         assert_that(self.client.token.is_valid(token))

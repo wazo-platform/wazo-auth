@@ -20,7 +20,8 @@ TENANT_UUID_1 = str(uuid.uuid4())
 TENANT_UUID_2 = str(uuid.uuid4())
 
 
-class TestSessions(base.WazoAuthTestCase):
+@base.use_asset('base')
+class TestSessions(base.APIIntegrationTest):
     @fixtures.http.session(mobile=False)
     @fixtures.http.session(mobile=True)
     def test_list(self, session_1, session_2):

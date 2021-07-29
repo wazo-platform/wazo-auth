@@ -12,14 +12,16 @@ from hamcrest import (
     not_,
 )
 
-from .helpers import fixtures
-from .helpers.base import assert_http_error, assert_no_error, WazoAuthTestCase
+from .helpers import fixtures, base
+from .helpers.base import assert_http_error, assert_no_error
 
 
-class TestResetPassword(WazoAuthTestCase):
+@base.use_asset('base')
+class TestResetPassword(base.APIIntegrationTest):
     @fixtures.http.user(username='foo', email_address='foo@example.com')
     @fixtures.http.user(username='bar', email_address='bar@example.com')
     def test_password_reset(self, foo, bar):
+        self.clean_emails()
         self.client.users.reset_password(username='foo')
         self.client.users.reset_password(email='bar@example.com')
 

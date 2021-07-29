@@ -21,12 +21,13 @@ from requests.exceptions import HTTPError
 from xivo_test_helpers.hamcrest.raises import raises
 from xivo_test_helpers import until
 
-from .helpers import fixtures
-from .helpers.base import WazoAuthTestCase, assert_http_error
+from .helpers import fixtures, base
+from .helpers.base import assert_http_error
 from .helpers.constants import UNKNOWN_UUID
 
 
-class TestTokens(WazoAuthTestCase):
+@base.use_asset('base')
+class TestTokens(base.APIIntegrationTest):
     @fixtures.http.user(username='foo', password='bar')
     @fixtures.http.token(
         username='foo',

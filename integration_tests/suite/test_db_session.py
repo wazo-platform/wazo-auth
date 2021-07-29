@@ -12,13 +12,14 @@ from hamcrest import (
     has_entries,
     has_items,
 )
-from ..helpers import base, fixtures
+from .helpers import base, fixtures
 
 TENANT_UUID_1 = str(uuid.uuid4())
 SESSION_UUID_1 = str(uuid.uuid4())
 SESSION_UUID_2 = str(uuid.uuid4())
 
 
+@base.use_asset('database')
 class TestSessionDAO(base.DAOTestCase):
     @fixtures.db.tenant(uuid=TENANT_UUID_1)
     @fixtures.db.token(session={'tenant_uuid': TENANT_UUID_1, 'mobile': True})

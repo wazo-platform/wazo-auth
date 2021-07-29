@@ -3,8 +3,8 @@
 
 from hamcrest import assert_that, contains_inanyorder, empty, has_entries
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
-from .helpers import fixtures
-from .helpers.base import assert_http_error, WazoAuthTestCase
+from .helpers import fixtures, base
+from .helpers.base import assert_http_error
 from .helpers.constants import UNKNOWN_UUID
 
 ONE = {'address': 'one@example.com', 'main': True, 'confirmed': True}
@@ -12,7 +12,8 @@ TWO = {'address': 'two@example.com', 'main': False, 'confirmed': False}
 THREE = {'address': 'three@example.com', 'main': False, 'confirmed': True}
 
 
-class TestEmails(WazoAuthTestCase):
+@base.use_asset('base')
+class TestEmails(base.APIIntegrationTest):
     @fixtures.http.user(username='foobar')
     def test_email_updates_as_admin(self, foobar):
         assert_http_error(404, self.client.admin.update_user_emails, UNKNOWN_UUID, [])

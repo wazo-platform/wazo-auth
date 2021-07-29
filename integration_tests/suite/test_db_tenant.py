@@ -22,7 +22,7 @@ from xivo_test_helpers.mock import ANY_UUID
 from wazo_auth import exceptions
 from wazo_auth.database import models
 
-from ..helpers import fixtures, base, constants
+from .helpers import fixtures, base, constants
 
 TENANT_UUID = '00000000-0000-4000-9000-000000000000'
 USER_UUID = '00000000-0000-4000-9000-111111111111'
@@ -37,6 +37,7 @@ class ValidSlug:
         return not self.__eq__(other)
 
 
+@base.use_asset('database')
 class TestTenantDAO(base.DAOTestCase):
     def test_tenant_segregation(self):
         # This test will use the following tenant scructure

@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -10,12 +10,13 @@ from hamcrest import (
     has_properties,
     starts_with,
 )
-from .helpers import fixtures
-from .helpers.base import assert_http_error, assert_no_error, WazoAuthTestCase
+from .helpers import fixtures, base
+from .helpers.base import assert_http_error, assert_no_error
 from .helpers.constants import UNKNOWN_UUID
 
 
-class TestEmailConfirmation(WazoAuthTestCase):
+@base.use_asset('base')
+class TestEmailConfirmation(base.APIIntegrationTest):
     @fixtures.http.user_register(email_address='foobar@example.com')
     def test_email_confirmation(self, user):
         email_uuid = user['emails'][0]['uuid']

@@ -16,11 +16,12 @@ from xivo_test_helpers.hamcrest.raises import raises
 
 from wazo_auth import exceptions
 from wazo_auth.database import models
-from ..helpers import fixtures, base
+from .helpers import fixtures, base
 
 SESSION_UUID_1 = str(uuid.uuid4())
 
 
+@base.use_asset('database')
 class TestExternalAuthDAO(base.DAOTestCase):
 
     auth_type = 'foobarcrm'

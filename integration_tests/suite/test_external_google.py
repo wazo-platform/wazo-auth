@@ -15,48 +15,15 @@ from hamcrest import (
 
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
-from wazo_auth_client import Client
 
 from .helpers import base
-from .helpers.base import BaseTestCase
-
 
 GOOGLE = 'google'
 AUTHORIZE_URL = 'http://127.0.0.1:{port}/google/authorize/{state}'
 
 
-class BaseGoogleTestCase(BaseTestCase):
-
-    username = 'mario'
-    password = 'mario'
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        port = cls.service_port(9497, 'auth')
-        cls.client = Client(
-            '127.0.0.1',
-            port=port,
-            prefix=None,
-            https=False,
-            username=cls.username,
-            password=cls.password,
-        )
-        token_data = cls.client.token.new(backend='wazo_user', expiration=7200)
-        cls.admin_user_uuid = token_data['metadata']['uuid']
-        cls.client.set_token(token_data['token'])
-
-        cls.top_tenant_uuid = cls.get_top_tenant()['uuid']
-
-    @classmethod
-    def get_top_tenant(cls):
-        return cls.client.tenants.list(name='master')['items'][0]
-
-
-class TestAuthGoogle(BaseGoogleTestCase):
-
-    asset = 'auth_google'
-
+@base.use_asset('base')
+class TestAuthGoogle(base.APIIntegrationTest):
     @classmethod
     def setUpClass(self):
         super().setUpClass()
@@ -158,9 +125,7 @@ class TestAuthGoogle(BaseGoogleTestCase):
         )
 
     def _simulate_user_authentication(self, state):
-        authorize_url = AUTHORIZE_URL.format(
-            port=self.service_port(80, 'oauth2sync'), state=state
-        )
+        authorize_url = AUTHORIZE_URL.format(port=self.oauth2_port, state=state)
         response = requests.get(authorize_url)
         response.raise_for_status()
 
@@ -177,10 +142,8 @@ class TestAuthGoogle(BaseGoogleTestCase):
         assert_that(response, not_(False), 'failed to simulate user authentication')
 
 
-class TestAuthGoogleWithNoConfig(BaseGoogleTestCase):
-
-    asset = 'auth_google'
-
+@base.use_asset('base')
+class TestAuthGoogleWithNoConfig(base.APIIntegrationTest):
     def test_given_no_config_when_create_then_not_found(self):
         base.assert_http_error(
             404, self.client.external.create, GOOGLE, self.admin_user_uuid, {}

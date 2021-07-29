@@ -18,9 +18,8 @@ from .helpers import base, fixtures
 TENANT_UUID = 'ad235675-053d-482a-9e07-6d36de6a48b5'
 
 
-class TestExternalAuthMobile(base.WazoAuthTestCase):
-    asset = 'external_auth'
-
+@base.use_asset('external_auth')
+class TestExternalAuthMobile(base.ExternalAuthIntegrationTest):
     EXTERNAL_AUTH_TYPE = 'mobile'
     SECRET = {
         'fcm_api_key': 'fcm_api_key',

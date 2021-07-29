@@ -23,3 +23,22 @@ default_policies:
 bootstrap_user_on_startup: True
 bootstrap_user_username: admin
 bootstrap_user_password: s3cre7
+
+oauth2_synchronization_ws_url_template: 'ws://oauth2sync:80/ws/{state}'
+oauth2_synchronization_redirect_url_template: 'http://oauth2sync:80/{auth_type}/authorize/{state}'
+
+google:
+  authorization_base_url: 'https://accounts.google.com/o/oauth2/v2/auth'
+  redirect_uri: 'http://oauth2sync:80/google/authorize'
+  token_url: 'http://oauth2sync:80/google/token'
+  websocket_host: 'ws://oauth2sync:80'
+
+microsoft:
+  authorization_base_url: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize'
+  redirect_uri: 'http://oauth2sync:80/microsoft/authorize'
+  scope: [
+        'offline_access',
+        'Contacts.Read'
+    ]
+  token_url: 'http://oauth2sync:80/microsoft/token'
+  websocket_host: 'ws://oauth2sync:80'

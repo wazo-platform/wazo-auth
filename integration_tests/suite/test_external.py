@@ -20,9 +20,8 @@ from .helpers import base, fixtures
 from .helpers.constants import UNKNOWN_UUID
 
 
-class TestExternalAuthAPI(base.WazoAuthTestCase):
-
-    asset = 'external_auth'
+@base.use_asset('external_auth')
+class TestExternalAuthAPI(base.ExternalAuthIntegrationTest):
     safe_data = {'scope': ['one', 'two', 'three']}
     original_data = {'secret': str(uuid4()), **safe_data}
 
@@ -209,15 +208,14 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
         until.assert_(bus_received_msg, tries=10, interval=0.25)
 
     def authorize_oauth2(self, auth_type, state, token):
-        port = self.service_port(80, 'oauth2sync')
-        url = 'http://127.0.0.1:{}/{}/authorize/{}'.format(port, auth_type, state)
+        url = f'http://127.0.0.1:{self.oauth2_port}/{auth_type}/authorize/{state}'
         result = requests.get(url, params={'access_token': token})
         result.raise_for_status()
 
 
-class TestExternalAuthConfigAPI(base.WazoAuthTestCase):
+@base.use_asset('external_auth')
+class TestExternalAuthConfigAPI(base.ExternalAuthIntegrationTest):
 
-    asset = 'external_auth'
     EXTERNAL_AUTH_TYPE = 'an-external-auth-type'
     SECRET = {'client_id': 'a-client-id', 'client_secret': 'a-client-secret'}
 

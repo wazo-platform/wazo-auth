@@ -24,7 +24,8 @@ TENANT_UUID_1 = str(uuid.uuid4())
 TENANT_UUID_2 = str(uuid.uuid4())
 
 
-class TestUserSession(base.WazoAuthTestCase):
+@base.use_asset('base')
+class TestUserSession(base.APIIntegrationTest):
     @fixtures.http.user(username='username', password='pass')
     @fixtures.http.token(username='username', password='pass')
     @fixtures.http.token(username='username', password='pass', session_type='Mobile')
