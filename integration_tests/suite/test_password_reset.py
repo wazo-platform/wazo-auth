@@ -65,6 +65,9 @@ class TestResetPassword(WazoAuthTestCase):
         user_client = self.new_auth_client(user['username'], new_password)
         assert_http_error(401, user_client.token.new, 'wazo_user', expiration=1)
 
+        # non-regression: bootstrap user still have password
+        assert_no_error(self.client.token.new, 'wazo_user', expiration=1)
+
     @fixtures.http.user()
     def test_set_password_does_not_log_password(self, user):
         new_password = '5ecr37'
