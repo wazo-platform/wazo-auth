@@ -136,21 +136,30 @@ class TestPolicies(WazoAuthTestCase):
     def test_post_duplicate_slug(self, a):
         assert_http_error(409, self.client.policies.new, name='dup', slug='dup')
 
-    def test_post_when_policy_has_more_access_than_token(self):
+    @fixtures.http.user(username='foo', password='bar')
+    def test_post_when_policy_has_more_access_than_token(self, user):
+        user_client = self.make_auth_client('foo', 'bar')
+        acl = ['auth.#', 'authorized', '!unauthorized']
+        user_policy = self.client.policies.new(name='foo-policy', acl=acl)
+        self.client.users.add_policy(user['uuid'], user_policy['uuid'])
+        token = user_client.token.new(expiration=30)['token']
+        user_client.set_token(token)
+
         policy_args = {
             'name': 'not-authorized',
             'acl': ['authorized', 'unauthorized'],
         }
-        assert_http_error(401, self.client.policies.new, **policy_args)
+        assert_http_error(401, user_client.policies.new, **policy_args)
 
         policy_args = {
             'name': 'authorized',
             'acl': ['authorized'],
         }
-        policy = self.client.policies.new(**policy_args)
+        policy = user_client.policies.new(**policy_args)
         assert_that(policy, has_entries(**policy_args))
 
         self.client.policies.delete(policy['uuid'])
+        self.client.policies.delete(user_policy['uuid'])
 
     @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='one', tenant_uuid=SUB_TENANT_UUID)
@@ -342,17 +351,27 @@ class TestPolicies(WazoAuthTestCase):
         policy = self.client.policies.list(slug=ALL_USERS_POLICY_SLUG)['items'][0]
         assert_http_error(403, self.client.policies.edit, policy['uuid'], 'name')
 
+    @fixtures.http.user(username='foo', password='bar')
     @fixtures.http.policy()
-    def test_put_when_policy_has_more_access_than_token(self, policy):
+    def test_put_when_policy_has_more_access_than_token(self, user, policy):
+        user_client = self.make_auth_client('foo', 'bar')
+        acl = ['auth.#', 'authorized', '!unauthorized']
+        user_policy = self.client.policies.new(name='foo-policy', acl=acl)
+        self.client.users.add_policy(user['uuid'], user_policy['uuid'])
+        token = user_client.token.new(expiration=30)['token']
+        user_client.set_token(token)
+
         new_body = dict(policy)
         new_body['acl'] = ['authorized', 'unauthorized']
-        assert_http_error(401, self.client.policies.edit, policy['uuid'], **new_body)
+        assert_http_error(401, user_client.policies.edit, policy['uuid'], **new_body)
 
         new_body['acl'] = ['authorized']
-        self.client.policies.edit(policy['uuid'], **new_body)
+        user_client.policies.edit(policy['uuid'], **new_body)
 
-        policy = self.client.policies.get(policy['uuid'])
+        policy = user_client.policies.get(policy['uuid'])
         assert_that(policy, has_entries(acl=new_body['acl']))
+
+        self.client.policies.delete(user_policy['uuid'])
 
     @fixtures.http.policy(acl=['dird.me.#', 'ctid-ng.#'])
     def test_add_access(self, policy):
@@ -379,19 +398,29 @@ class TestPolicies(WazoAuthTestCase):
             ),
         )
 
+    @fixtures.http.user(username='foo', password='bar')
     @fixtures.http.policy()
-    def test_add_access_when_policy_has_more_access_than_token(self, policy):
+    def test_add_access_when_policy_has_more_access_than_token(self, user, policy):
+        user_client = self.make_auth_client('foo', 'bar')
+        acl = ['auth.#', 'authorized', '!unauthorized']
+        user_policy = self.client.policies.new(name='foo-policy', acl=acl)
+        self.client.users.add_policy(user['uuid'], user_policy['uuid'])
+        token = user_client.token.new(expiration=30)['token']
+        user_client.set_token(token)
+
         assert_http_error(
             401,
-            self.client.policies.add_access,
+            user_client.policies.add_access,
             policy['uuid'],
             'unauthorized',
         )
 
-        self.client.policies.add_access(policy['uuid'], 'authorized')
+        user_client.policies.add_access(policy['uuid'], 'authorized')
 
-        policy = self.client.policies.get(policy['uuid'])
+        policy = user_client.policies.get(policy['uuid'])
         assert_that(policy, has_entries(acl=['authorized']))
+
+        self.client.policies.delete(user_policy['uuid'])
 
     @fixtures.http.policy(acl=['dird.me.#', 'ctid-ng.#'])
     def test_remove_access(self, policy):

@@ -22,7 +22,6 @@ from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.bus import BusClient
-from wazo_auth import bootstrap
 from wazo_auth.database import queries, helpers
 from wazo_auth.database.queries import (
     group,
@@ -189,18 +188,7 @@ class WazoAuthTestCase(BaseTestCase):
         super().setUpClass()
         database = cls.make_db_client()
         helpers.init_db(database.uri)
-
         cls.reset_clients()
-
-        policies = cls.client.policies.list(slug=bootstrap.DEFAULT_POLICY_SLUG)
-        policy = policies['items'][0]
-        new_acl = policy.pop('acl') + ['!unauthorized']
-        cls.client.policies.edit(policy['uuid'], acl=new_acl, **policy)
-
-        token_data = cls.client.token.new(backend='wazo_user', expiration=7200)
-        cls.admin_user_uuid = token_data['metadata']['uuid']
-        cls.client.set_token(token_data['token'])
-
         cls.top_tenant_uuid = cls.get_top_tenant()['uuid']
 
     @classmethod
@@ -211,9 +199,10 @@ class WazoAuthTestCase(BaseTestCase):
     @classmethod
     def reset_clients(cls):
         cls.client = cls.make_auth_client(cls.username, cls.password)
-        token = cls.client.token.new(expiration=7200)['token']
-        cls.client.set_token(token)
-        cls.admin_token = token
+        token = cls.client.token.new(expiration=7200)
+        cls.client.set_token(token['token'])
+        cls.admin_token = token['token']
+        cls.admin_user_uuid = token['metadata']['uuid']
 
     @classmethod
     def get_top_tenant(cls):

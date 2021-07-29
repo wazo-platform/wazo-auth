@@ -97,24 +97,36 @@ class TestGroupPolicyAssociation(base.WazoAuthTestCase):
         result = self.client.groups.get_policies(group['uuid'])
         assert_that(result, has_entries(items=contains(policy1)))
 
+    @fixtures.http.user(username='foo', password='bar')
     @fixtures.http.group()
     @fixtures.http.policy(acl=['authorized'])
     @fixtures.http.policy(acl=['authorized', 'unauthorized'])
-    def test_put_when_policy_has_more_access_than_token(self, group, policy1, policy2):
+    def test_put_when_policy_has_more_access_than_token(
+        self, login, group, policy1, policy2
+    ):
+        user_client = self.make_auth_client('foo', 'bar')
+        acl = ['auth.#', 'authorized', '!unauthorized']
+        user_policy = self.client.policies.new(name='foo-policy', acl=acl)
+        self.client.users.add_policy(login['uuid'], user_policy['uuid'])
+        token = user_client.token.new(expiration=30)['token']
+        user_client.set_token(token)
+
         base.assert_no_error(
-            self.client.groups.add_policy,
+            user_client.groups.add_policy,
             group['uuid'],
             policy1['uuid'],
         )
         base.assert_http_error(
             401,
-            self.client.groups.add_policy,
+            user_client.groups.add_policy,
             group['uuid'],
             policy2['uuid'],
         )
 
         result = self.client.groups.get_policies(group['uuid'])
         assert_that(result, has_entries(items=contains(policy1)))
+
+        self.client.policies.delete(user_policy['uuid'])
 
     @fixtures.http.group()
     @fixtures.http.policy(name='foo')
