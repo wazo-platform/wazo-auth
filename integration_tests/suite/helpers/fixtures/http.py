@@ -14,51 +14,6 @@ def _random_string(length):
     return ''.join(random.choice(string.ascii_lowercase) for _ in range(length))
 
 
-def admin_client(**decorator_args):
-    def decorator(decorated):
-        @wraps(decorated)
-        def wrapper(self, *args, **kwargs):
-            decorator_args.setdefault('tenant_name', _random_string(9))
-            decorator_args.setdefault('username', _random_string(5))
-
-            creator = self.client.users.new(username='creator', password='opensesame')
-            policy = self.client.policies.new('tmp', acl=['#'])
-            self.client.users.add_policy(creator['uuid'], policy['uuid'])
-
-            creator_client = self.new_auth_client(
-                username='creator', password='opensesame'
-            )
-            creator_token = creator_client.token.new()
-            creator_client.set_token(creator_token['token'])
-
-            tenant = creator_client.tenants.new(
-                name=decorator_args['tenant_name'], slug=decorator_args['tenant_slug']
-            )
-
-            username, password = decorator_args['username'], 'secret'
-            created_user = creator_client.users.new(
-                username=username, password=password, tenant_uuid=tenant['uuid']
-            )
-
-            created_client = self.new_auth_client(username=username, password=password)
-            created_token = created_client.token.new()
-            created_client.set_token(created_token['token'])
-
-            self.client.users.delete(creator['uuid'])
-            self.client.policies.delete(policy['uuid'])
-
-            result = decorated(self, created_client, *args, **kwargs)
-
-            self.client.users.delete(created_user['uuid'])
-            self.client.tenants.delete(tenant['uuid'])
-
-            return result
-
-        return wrapper
-
-    return decorator
-
-
 def tenant(**tenant_args):
     def decorator(decorated):
         @wraps(decorated)
@@ -89,7 +44,7 @@ def token(**token_args):
                 token_args.setdefault('client_id', _random_string(20))
             username = token_args.pop('username')
             password = token_args.pop('password')
-            client = self.new_auth_client(username, password)
+            client = self.make_auth_client(username, password)
             token = client.token.new(**token_args)
             if 'client_id' in token_args:
                 token['client_id'] = token_args['client_id']
@@ -144,7 +99,7 @@ def user_register(**user_args):
                 result = decorated(self, *args, **kwargs)
             finally:
                 try:
-                    self.client.users.delete(user['uuid'])
+                    self.client.tenants.delete(user['tenant_uuid'])
                 except requests.HTTPError:
                     pass
             return result
@@ -177,7 +132,7 @@ def policy(**policy_args):
             self.client.set_token(old_token)
             args = list(args) + [policy]
             try:
-                with config_managed_policy(self.new_db_client(), policy, policy_args):
+                with config_managed_policy(self.make_db_client(), policy, policy_args):
                     result = decorated(self, *args, **kwargs)
             finally:
                 try:
@@ -218,7 +173,7 @@ def group(**group_args):
             args = list(args) + [group]
             try:
                 with system_managed_group(
-                    self.new_db_client(), group['uuid'], group_args
+                    self.make_db_client(), group['uuid'], group_args
                 ):
                     result = decorated(self, *args, **kwargs)
             finally:
@@ -244,7 +199,7 @@ def session(**session_args):
             token_args = {'session_type': 'mobile' if mobile else None}
 
             user = self.client.users.new(**user_args)
-            client = self.new_auth_client(user_args['username'], user_args['password'])
+            client = self.make_auth_client(user_args['username'], user_args['password'])
             token = client.token.new(**token_args)
             session = self.client.users.get_sessions(user['uuid'])['items'][0]
             args = list(args) + [session]

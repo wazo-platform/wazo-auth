@@ -1,23 +1,25 @@
 token_cleanup_interval: 2.0
 
-enabled_http_plugins:
-  users: true
-  user_registration: true
-  init: true
 enabled_backend_plugins:
   broken_init: true
   broken_verify_password: true
-  wazo_user: true
+
 backend_policies:
   wazo_user: wazo_default_admin_policy # For testing only, not a legitimate configuration
+
 password_reset_email_template: '/var/lib/wazo-auth/templates/raw_password_reset_email.jinja'
 email_confirmation_get_response_body_template: '/var/lib/wazo-auth/templates/email_confirmation_get_body.jinja'
 email_confirmation_get_mimetype: 'text/x-test'
 
 all_users_policies:
   wazo-all-users-policy: true
+
 default_policies:
   wazo-all-users-policy:
     acl:
       - integration_tests.access
       - integration_tests.another_access
+
+bootstrap_user_on_startup: True
+bootstrap_user_username: admin
+bootstrap_user_password: s3cre7

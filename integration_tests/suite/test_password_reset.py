@@ -37,7 +37,7 @@ class TestResetPassword(WazoAuthTestCase):
             self._update_password_from_email(email, new_password)
 
         for username in ('foo', 'bar'):
-            user_client = self.new_auth_client(username, new_password)
+            user_client = self.make_auth_client(username, new_password)
             assert_no_error(user_client.token.new, 'wazo_user', expiration=1)
 
     def _update_password_from_email(self, raw_email, password):
@@ -55,14 +55,14 @@ class TestResetPassword(WazoAuthTestCase):
 
         self.client.users.set_password(user['uuid'], new_password)
 
-        user_client = self.new_auth_client(user['username'], new_password)
+        user_client = self.make_auth_client(user['username'], new_password)
         assert_no_error(user_client.token.new, 'wazo_user', expiration=1)
 
         new_password = None
 
         self.client.users.set_password(user['uuid'], new_password)
 
-        user_client = self.new_auth_client(user['username'], new_password)
+        user_client = self.make_auth_client(user['username'], new_password)
         assert_http_error(401, user_client.token.new, 'wazo_user', expiration=1)
 
         # non-regression: bootstrap user still have password

@@ -1,6 +1,3 @@
-enabled_external_auth_plugins:
-  microsoft: true
-
 microsoft:
   authorization_base_url: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize'
   redirect_uri: 'http://oauth2sync:80/microsoft/authorize'
@@ -10,3 +7,7 @@ microsoft:
     ]
   token_url: 'http://oauth2sync:80/microsoft/token'
   websocket_host: 'ws://oauth2sync:80'
+
+bootstrap_user_on_startup: True
+bootstrap_user_username: mario
+bootstrap_user_password: mario

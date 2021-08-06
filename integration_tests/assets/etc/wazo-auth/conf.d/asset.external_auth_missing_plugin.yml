@@ -1,5 +1,0 @@
-enabled_http_plugins:
-  user_registration: true
-enabled_external_auth_plugins:
-  foo: true
-  bar: false

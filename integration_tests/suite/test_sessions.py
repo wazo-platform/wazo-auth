@@ -230,7 +230,7 @@ class TestSessions(base.WazoAuthTestCase):
         msg_accumulator = self.new_message_accumulator(routing_key)
 
         token = self._post_token('foo', 'bar')
-        self._delete_token(token['token'])
+        self.client.token.revoke(token['token'])
 
         def bus_received_msg():
             assert_that(

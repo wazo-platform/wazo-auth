@@ -107,6 +107,9 @@ _DEFAULT_CONFIG = {
     'confd_db_uri': 'postgresql://asterisk:proformatique@localhost/asterisk',
     'all_users_policies': {},
     'default_policies': {},
+    'bootstrap_user_on_startup': False,
+    'bootstrap_user_username': None,
+    'bootstrap_user_password': None,
 }
 
 

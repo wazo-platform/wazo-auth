@@ -74,7 +74,7 @@ def main():
     args = parser.parse_args()
 
     if args.action == 'setup':
-        print('`wazo-auth-initial_user setup` command is no longer needed')
+        print('`wazo-auth-bootstrap setup` command is no longer needed')
     elif args.action == 'complete':
         try:
             complete()

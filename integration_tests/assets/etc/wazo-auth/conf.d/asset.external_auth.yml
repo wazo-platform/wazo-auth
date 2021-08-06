@@ -1,16 +1,10 @@
-token_cleanup_interval: 2.0
-
 oauth2_synchronization_ws_url_template: 'ws://oauth2sync:80/ws/{state}'
 oauth2_synchronization_redirect_url_template: 'http://oauth2sync:80/{auth_type}/authorize/{state}'
 
-enabled_http_plugins:
-  user_registration: true
 enabled_external_auth_plugins:
   foo: true
   bar: true
-enabled_backend_plugins:
-  broken_init: true
-  broken_verify_password: true
-  wazo_user: true
-backend_policies:
-  wazo_user: wazo_default_admin_policy # For testing only, not a legitimate configuration
+
+bootstrap_user_on_startup: True
+bootstrap_user_username: admin
+bootstrap_user_password: s3cre7

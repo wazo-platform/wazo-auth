@@ -3,3 +3,7 @@ google:
   redirect_uri: 'http://oauth2sync:80/google/authorize'
   token_url: 'http://oauth2sync:80/google/token'
   websocket_host: 'ws://oauth2sync:80'
+
+bootstrap_user_on_startup: True
+bootstrap_user_username: mario
+bootstrap_user_password: mario

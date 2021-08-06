@@ -2,11 +2,12 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import ldap
+import requests
 import time
 
 from collections import namedtuple
 from ldap.modlist import addModlist
-from hamcrest import assert_that, has_entries
+from hamcrest import assert_that, has_entries, calling, raises
 
 from .helpers.base import BaseTestCase
 
@@ -103,8 +104,10 @@ class TestLDAP(_BaseLDAPTestCase):
         assert_that(response, has_entries(metadata=has_entries(pbx_user_uuid='1')))
 
     def test_ldap_authentication_fail_when_wrong_password(self):
-        self._post_token_with_expected_exception(
-            'Alice Wonderland', 'wrong_password', backend='ldap_user', status_code=401
+        args = ('Alice Wonderland', 'wrong_password')
+        assert_that(
+            calling(self._post_token).with_args(*args, backend='ldap_user'),
+            raises(requests.HTTPError, pattern='401'),
         )
 
 
@@ -129,11 +132,10 @@ class TestLDAPAnonymous(_BaseLDAPTestCase):
         assert_that(response, has_entries(metadata=has_entries(pbx_user_uuid='1')))
 
     def test_ldap_authentication_fail_when_wrong_password(self):
-        self._post_token_with_expected_exception(
-            'awonderland@wazo-auth.com',
-            'wrong_password',
-            backend='ldap_user',
-            status_code=401,
+        args = ('awonderland@wazo-auth.com', 'wrong_password')
+        assert_that(
+            calling(self._post_token).with_args(*args, backend='ldap_user'),
+            raises(requests.HTTPError, pattern='401'),
         )
 
 
@@ -158,6 +160,8 @@ class TestLDAPServiceUser(_BaseLDAPTestCase):
         assert_that(response, has_entries(metadata=has_entries(pbx_user_uuid='1')))
 
     def test_ldap_authentication_fail_when_wrong_password(self):
-        self._post_token_with_expected_exception(
-            'awonderland', 'wrong_password', backend='ldap_user', status_code=401
+        args = ('awonderland', 'wrong_password')
+        assert_that(
+            calling(self._post_token).with_args(*args, backend='ldap_user'),
+            raises(requests.HTTPError, pattern='401'),
         )

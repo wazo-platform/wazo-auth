@@ -6,7 +6,6 @@ import os
 import random
 import requests
 import string
-import time
 import unittest
 
 from contextlib import contextmanager
@@ -17,14 +16,12 @@ from hamcrest import (
     greater_than,
     has_length,
     has_properties,
-    equal_to,
 )
 from wazo_auth_client import Client
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
 from xivo_test_helpers.bus import BusClient
-from wazo_auth import bootstrap
 from wazo_auth.database import queries, helpers
 from wazo_auth.database.queries import (
     group,
@@ -41,7 +38,6 @@ from .database import Database
 
 logging.getLogger('wazo_auth').setLevel(logging.WARNING)
 
-HOST = os.getenv('WAZO_AUTH_TEST_HOST', '127.0.0.1')
 SUB_TENANT_UUID = '76502c2b-cce5-409c-ab8f-d1fe41141a2d'
 ADDRESS_NULL = {
     'line_1': None,
@@ -51,17 +47,6 @@ ADDRESS_NULL = {
     'country': None,
     'zip_code': None,
 }
-
-
-def assert_sorted(action, order, expected):
-    asc_items = action(order=order, direction='asc')['items']
-    desc_items = action(order=order, direction='desc')['items']
-
-    assert_that(
-        asc_items, has_length(greater_than(1)), 'sorting requires atleast 2 items'
-    )
-    assert_that(asc_items, contains(*expected))
-    assert_that(desc_items, contains(*reversed(expected)))
 
 
 class DBStarter(AssetLaunchingTestCase):
@@ -117,38 +102,19 @@ class DAOTestCase(unittest.TestCase):
         return helpers.get_db_session()
 
 
-class AuthLaunchingTestCase(AssetLaunchingTestCase):
+class BaseTestCase(AssetLaunchingTestCase):
 
     assets_root = os.path.join(os.path.dirname(__file__), '../..', 'assets')
     service = 'auth'
 
     @classmethod
     def setUpClass(cls):
-        cls.auth_host = HOST
         super().setUpClass()
-
-    def _assert_that_wazo_auth_is_stopping(self):
-        for _ in range(20):
-            if not self.service_status('auth')['State']['Running']:
-                break
-            time.sleep(0.2)
-        else:
-            self.fail('wazo-auth did not stop')
-
-
-class BaseTestCase(AuthLaunchingTestCase):
-
-    bus_config = {'user': 'guest', 'password': 'guest', 'host': '127.0.0.1'}
-    email_dir = '/var/mail'
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+        cls.auth_host = '127.0.0.1'
         cls.auth_port = cls.service_port(9497, service_name='auth')
 
     def new_message_accumulator(self, routing_key):
-        port = self.service_port(5672, service_name='rabbitmq')
-        bus_client = BusClient.from_connection_fields(port=port, **self.bus_config)
+        bus_client = self.make_bus_client()
         return bus_client.accumulator(routing_key)
 
     def get_last_email_url(self):
@@ -162,76 +128,20 @@ class BaseTestCase(AuthLaunchingTestCase):
         return [self._email_body(f) for f in self._get_email_filenames()]
 
     def _email_body(self, filename):
-        return self.docker_exec(
-            ['cat', '{}/{}'.format(self.email_dir, filename)], 'smtp'
-        ).decode('utf-8')
+        command = ['cat', f'/var/mail/{filename}']
+        return self.docker_exec(command, 'smtp').decode('utf-8')
 
     def _get_email_filenames(self):
-        return (
-            self.docker_exec(['ls', self.email_dir], 'smtp')
-            .decode('utf-8')
-            .strip()
-            .split('\n')
-        )
+        command = ['ls', '/var/mail']
+        return self.docker_exec(command, 'smtp').decode('utf-8').strip().split('\n')
 
     def _post_token(self, username, password, *args, **kwargs):
-        client = self.new_auth_client(username, password)
+        client = self.make_auth_client(username, password)
         return client.token.new(*args, **kwargs)
 
-    def _post_token_with_expected_exception(
-        self, *args, status_code=None, msg=None, **kwargs
-    ):
-        try:
-            self._post_token(*args, **kwargs)
-        except requests.HTTPError as e:
-            if status_code:
-                assert_that(e.response.status_code, equal_to(status_code))
-            if msg:
-                assert_that(e.response.json()['reason'][0], equal_to(msg))
-        else:
-            self.fail('Should have raised an exception')
-
-    def _get_token(self, token, access=None, tenant=None):
-        client = self.new_auth_client()
-        args = {}
-        if access:
-            args['required_acl'] = access
-        if tenant:
-            args['tenant'] = tenant
-
-        return client.token.get(token, **args)
-
-    def _get_token_with_expected_exception(
-        self, token, access=None, tenant=None, status_code=None, msg=None
-    ):
-        try:
-            self._get_token(token, access, tenant)
-        except requests.HTTPError as e:
-            if status_code:
-                assert_that(e.response.status_code, equal_to(status_code))
-            if msg:
-                assert_that(e.response.json()['reason'][0], equal_to(msg))
-        else:
-            self.fail('Should have raised an exception')
-
-    def _delete_token(self, token):
-        client = self.new_auth_client()
-        return client.token.revoke(token)
-
-    def _is_valid(self, token, access=None, tenant=None):
-        client = self.new_auth_client()
-        args = {}
-        if access:
-            args['required_acl'] = access
-        return client.token.is_valid(token, tenant=tenant, **args)
-
-    def _check_scopes(self, token, scopes, tenant=None):
-        client = self.new_auth_client()
-        return client.token.check_scopes(token, scopes, tenant)['scopes']
-
     @classmethod
-    def new_auth_client(cls, username=None, password=None, port=None):
-        port = port or cls.auth_port
+    def make_auth_client(cls, username=None, password=None):
+        port = cls.auth_port
         kwargs = {'port': port, 'prefix': '', 'https': False}
 
         if username and password:
@@ -241,13 +151,20 @@ class BaseTestCase(AuthLaunchingTestCase):
         return Client(cls.auth_host, **kwargs)
 
     @classmethod
-    def new_db_client(cls):
-        db_uri = DB_URI.format(port=cls.service_port(5432, 'postgres'))
+    def make_db_client(cls):
+        port = cls.service_port(5432, 'postgres')
+        db_uri = DB_URI.format(port=port)
         return Database(db_uri, db='asterisk')
 
-    def restart_postgres(self):
-        self.restart_service('postgres')
-        database = self.new_db_client()
+    @classmethod
+    def make_bus_client(cls):
+        port = cls.service_port(5672, 'rabbitmq')
+        return BusClient.from_connection_fields(host='127.0.0.1', port=port)
+
+    @classmethod
+    def restart_postgres(cls):
+        cls.restart_service('postgres')
+        database = cls.make_db_client()
         until.true(database.is_up, timeout=5, message='Postgres did not come back up')
         helpers.deinit_db()
         helpers.init_db(database.uri)
@@ -255,12 +172,9 @@ class BaseTestCase(AuthLaunchingTestCase):
     @classmethod
     def restart_auth(cls):
         cls.restart_service('auth')
-
         cls.auth_port = cls.service_port(9497, service_name='auth')
-        cls.client = cls.new_auth_client(cls.username, cls.password)
-        until.return_(cls.client.status.check, timeout=30)
-        token_data = cls.client.token.new(backend='wazo_user', expiration=7200)
-        cls.client.set_token(token_data['token'])
+        auth = cls.make_auth_client(cls.username, cls.password)
+        until.return_(auth.status.check, timeout=30)
 
 
 class WazoAuthTestCase(BaseTestCase):
@@ -272,37 +186,23 @@ class WazoAuthTestCase(BaseTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        database = cls.new_db_client()
-        until.true(database.is_up, timeout=5, message='Postgres did not come back up')
-        bootstrap.create_initial_user(
-            database.uri,
-            cls.username,
-            cls.password,
-            bootstrap.PURPOSE,
-            bootstrap.DEFAULT_POLICY_SLUG,
-        )
-
-        cls.client = cls.new_auth_client(cls.username, cls.password)
-
-        token_data = cls.client.token.new(backend='wazo_user', expiration=7200)
-        cls.client.set_token(token_data['token'])
-        cls.admin_token = token_data['token']
-
-        policies = cls.client.policies.list(slug=bootstrap.DEFAULT_POLICY_SLUG)
-        policy = policies['items'][0]
-        new_acl = policy.pop('acl') + ['!unauthorized']
-        cls.client.policies.edit(policy['uuid'], acl=new_acl, **policy)
-
-        token_data = cls.client.token.new(backend='wazo_user', expiration=7200)
-        cls.admin_user_uuid = token_data['metadata']['uuid']
-        cls.client.set_token(token_data['token'])
-
+        database = cls.make_db_client()
+        helpers.init_db(database.uri)
+        cls.reset_clients()
         cls.top_tenant_uuid = cls.get_top_tenant()['uuid']
 
     @classmethod
     def tearDownClass(cls):
         helpers.deinit_db()
         super().tearDownClass()
+
+    @classmethod
+    def reset_clients(cls):
+        cls.client = cls.make_auth_client(cls.username, cls.password)
+        token = cls.client.token.new(expiration=7200)
+        cls.client.set_token(token['token'])
+        cls.admin_token = token['token']
+        cls.admin_user_uuid = token['metadata']['uuid']
 
     @classmethod
     def get_top_tenant(cls):
@@ -324,7 +224,7 @@ class WazoAuthTestCase(BaseTestCase):
         )
         policy = self.client.policies.new(name=random_string(5), acl=['#'])
         self.client.users.add_policy(user['uuid'], policy['uuid'])
-        client = self.new_auth_client(username, password)
+        client = self.make_auth_client(username, password)
         token = client.token.new(backend='wazo_user', expiration=3600)['token']
         client.set_token(token)
 
@@ -378,6 +278,18 @@ class WazoAuthTestCase(BaseTestCase):
             yield user
 
 
+@contextmanager
+def _resource(create, delete, *args, **kwargs):
+    resource = create(*args, **kwargs)
+    try:
+        yield resource
+    finally:
+        try:
+            delete(resource['uuid'])
+        except Exception:
+            pass
+
+
 def assert_no_error(fn, *args, **kwargs):
     return fn(*args, **kwargs)
 
@@ -391,13 +303,12 @@ def assert_http_error(status_code, fn, *args, **kwargs):
     )
 
 
-@contextmanager
-def _resource(create, delete, *args, **kwargs):
-    resource = create(*args, **kwargs)
-    try:
-        yield resource
-    finally:
-        try:
-            delete(resource['uuid'])
-        except Exception:
-            pass
+def assert_sorted(action, order, expected):
+    asc_items = action(order=order, direction='asc')['items']
+    desc_items = action(order=order, direction='desc')['items']
+
+    assert_that(
+        asc_items, has_length(greater_than(1)), 'sorting requires atleast 2 items'
+    )
+    assert_that(asc_items, contains(*expected))
+    assert_that(desc_items, contains(*reversed(expected)))
