@@ -8,13 +8,12 @@ from hamcrest import (
     has_entry,
 )
 
-from .helpers.base import assert_http_error, WazoAuthTestCase
+from .helpers import base
+from .helpers.base import assert_http_error
 
 
-class TestConfig(WazoAuthTestCase):
-
-    asset = 'base'
-
+@base.use_asset('base')
+class TestConfig(base.APIIntegrationTest):
     def test_config(self):
         result = self.client.config.get()
 

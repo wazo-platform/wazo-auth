@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that, has_entries
-from .helpers import fixtures
-from .helpers.base import WazoAuthTestCase
+from .helpers import fixtures, base
 
 
-class TestDefaultTokenMetadata(WazoAuthTestCase):
+@base.use_asset('base')
+class TestDefaultTokenMetadata(base.APIIntegrationTest):
     @fixtures.http.user(password='s3cr37', purpose='user')
     @fixtures.http.group()
     def test_token_metadata(self, user, group):

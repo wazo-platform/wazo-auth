@@ -11,12 +11,13 @@ from hamcrest import (
     has_properties,
 )
 from xivo_test_helpers.hamcrest.raises import raises
-from .helpers import fixtures
-from .helpers.base import assert_http_error, assert_no_error, WazoAuthTestCase
+from .helpers import fixtures, base
+from .helpers.base import assert_http_error, assert_no_error
 from .helpers.constants import UNKNOWN_SLUG, UNKNOWN_UUID
 
 
-class TestUsers(WazoAuthTestCase):
+@base.use_asset('base')
+class TestUsers(base.APIIntegrationTest):
     @fixtures.http.user_register(username='foo', password='bar')
     @fixtures.http.policy(name='one', acl=['this.is.a.test.access'])
     @fixtures.http.policy(name='two', acl=['acl.one', 'acl.two'])
@@ -103,7 +104,8 @@ class TestUsers(WazoAuthTestCase):
         self.client.policies.delete(user_policy['uuid'])
 
 
-class TestUserPolicySlug(WazoAuthTestCase):
+@base.use_asset('base')
+class TestUserPolicySlug(base.APIIntegrationTest):
     @fixtures.http.user()
     @fixtures.http.policy()
     @fixtures.http.policy()

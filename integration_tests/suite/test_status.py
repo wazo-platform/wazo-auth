@@ -1,15 +1,13 @@
-# Copyright 2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo_test_helpers import until
 
-from .helpers.base import WazoAuthTestCase
+from .helpers import base
 
 
-class TestStatusAllOK(WazoAuthTestCase):
-
-    asset = 'base'
-
+@base.use_asset('base')
+class TestStatusAllOK(base.APIIntegrationTest):
     def test_head_status_ok(self):
         def status_ok():
             self.client.status.check()

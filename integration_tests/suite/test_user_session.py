@@ -24,7 +24,8 @@ TENANT_UUID_1 = str(uuid.uuid4())
 TENANT_UUID_2 = str(uuid.uuid4())
 
 
-class TestUserSession(base.WazoAuthTestCase):
+@base.use_asset('base')
+class TestUserSession(base.APIIntegrationTest):
     @fixtures.http.user(username='username', password='pass')
     @fixtures.http.token(username='username', password='pass')
     @fixtures.http.token(username='username', password='pass', session_type='Mobile')
@@ -104,7 +105,7 @@ class TestUserSession(base.WazoAuthTestCase):
     @fixtures.http.token(username='username', password='pass')
     def test_delete_event(self, user, token):
         routing_key = 'auth.sessions.*.deleted'
-        msg_accumulator = self.new_message_accumulator(routing_key)
+        msg_accumulator = self.bus.accumulator(routing_key)
 
         self.client.users.remove_session(user['uuid'], token['session_uuid'])
 

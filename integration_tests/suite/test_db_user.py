@@ -24,12 +24,13 @@ from wazo_auth import exceptions
 from wazo_auth.database import models
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 
-from ..helpers import fixtures, base
-from ..helpers.constants import UNKNOWN_UUID
+from .helpers import fixtures, base
+from .helpers.constants import UNKNOWN_UUID
 
 USER_UUID = '00000000-0000-4000-9000-111111111111'
 
 
+@base.use_asset('database')
 class TestUserDAO(base.DAOTestCase):
 
     salt = os.urandom(64)

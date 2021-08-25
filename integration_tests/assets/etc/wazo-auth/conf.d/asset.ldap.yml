@@ -6,3 +6,7 @@ ldap:
   user_login_attribute: 'cn'
 backend_policies:
   ldap_user: none
+
+bootstrap_user_on_startup: True
+bootstrap_user_username: admin
+bootstrap_user_password: s3cre7

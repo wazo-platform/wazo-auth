@@ -14,10 +14,11 @@ from hamcrest import (
 )
 from xivo_test_helpers.hamcrest.raises import raises
 from wazo_auth import exceptions
-from ..helpers import fixtures, base
-from ..helpers.constants import UNKNOWN_UUID, UNKNOWN_SLUG
+from .helpers import fixtures, base
+from .helpers.constants import UNKNOWN_UUID, UNKNOWN_SLUG
 
 
+@base.use_asset('database')
 class TestPolicyDAO(base.DAOTestCase):
     def setUp(self):
         super().setUp()

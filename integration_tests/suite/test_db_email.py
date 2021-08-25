@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -8,12 +8,13 @@ from xivo_test_helpers.hamcrest.raises import raises
 
 from wazo_auth import exceptions
 from wazo_auth.database import models
-from ..helpers import fixtures, base
-from ..helpers.constants import UNKNOWN_UUID
+from .helpers import fixtures, base
+from .helpers.constants import UNKNOWN_UUID
 
 SESSION_UUID_1 = str(uuid.uuid4())
 
 
+@base.use_asset('database')
 class TestEmailDAO(base.DAOTestCase):
     @fixtures.db.email()
     def test_confirm(self, email_uuid):

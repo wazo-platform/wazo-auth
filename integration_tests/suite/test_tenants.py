@@ -12,13 +12,12 @@ from hamcrest import (
 )
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
-from .helpers import fixtures
+from .helpers import fixtures, base
 from .helpers.base import (
     ADDRESS_NULL,
     assert_http_error,
     assert_no_error,
     assert_sorted,
-    WazoAuthTestCase,
     SUB_TENANT_UUID,
 )
 from .helpers.constants import (
@@ -27,7 +26,6 @@ from .helpers.constants import (
     NB_DEFAULT_POLICIES,
     UNKNOWN_UUID,
 )
-
 
 ADDRESS_1 = {
     'line_1': 'Here',
@@ -39,7 +37,8 @@ ADDRESS_1 = {
 PHONE_1 = '555-555-5555'
 
 
-class TestTenants(WazoAuthTestCase):
+@base.use_asset('base')
+class TestTenants(base.APIIntegrationTest):
     @fixtures.http.tenant(name='foobar', address=ADDRESS_1, phone=PHONE_1, slug='slug1')
     @fixtures.http.tenant(
         uuid='6668ca15-6d9e-4000-b2ec-731bc7316767', name='foobaz', slug='slug2'
@@ -196,7 +195,7 @@ class TestTenants(WazoAuthTestCase):
 
     def test_tenant_created_event(self):
         routing_key = 'auth.tenants.*.created'
-        msg_accumulator = self.new_message_accumulator(routing_key)
+        msg_accumulator = self.bus.accumulator(routing_key)
         name = 'My tenant'
         slug = 'my_tenant'
 
@@ -335,7 +334,8 @@ class TestTenants(WazoAuthTestCase):
         assert_that(result, has_entries(**tenant))
 
 
-class TestTenantPolicyAssociation(WazoAuthTestCase):
+@base.use_asset('base')
+class TestTenantPolicyAssociation(base.APIIntegrationTest):
     @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='foo', tenant_uuid=SUB_TENANT_UUID)
     @fixtures.http.policy(name='bar', tenant_uuid=SUB_TENANT_UUID)

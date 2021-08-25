@@ -22,12 +22,13 @@ from hamcrest import (
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from xivo_test_helpers.hamcrest.raises import raises
-from .helpers import fixtures
+from .helpers import fixtures, base
 from .helpers.constants import UNKNOWN_UUID
-from .helpers.base import assert_http_error, assert_no_error, WazoAuthTestCase
+from .helpers.base import assert_http_error, assert_no_error
 
 
-class TestUsers(WazoAuthTestCase):
+@base.use_asset('base')
+class TestUsers(base.APIIntegrationTest):
     @fixtures.http.user_register()
     def test_delete(self, alice):
         with self.client_in_subtenant() as (client, bob, sub_tenant):

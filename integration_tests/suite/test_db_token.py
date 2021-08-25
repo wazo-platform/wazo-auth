@@ -16,11 +16,12 @@ from hamcrest import (
 
 from wazo_auth import exceptions
 from wazo_auth.database import models
-from ..helpers import base, fixtures
+from .helpers import base, fixtures
 
 SESSION_UUID_1 = str(uuid.uuid4())
 
 
+@base.use_asset('database')
 class TestTokenDAO(base.DAOTestCase):
     def test_create(self):
         now = int(time.time())

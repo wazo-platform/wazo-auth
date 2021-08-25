@@ -9,7 +9,7 @@ from collections import namedtuple
 from ldap.modlist import addModlist
 from hamcrest import assert_that, has_entries, calling, raises
 
-from .helpers.base import BaseTestCase
+from .helpers import base
 
 Contact = namedtuple('Contact', ['cn', 'uid', 'password', 'mail', 'login_attribute'])
 
@@ -69,24 +69,34 @@ def add_contacts(contacts, ldap_uri):
         helper.add_contact(contact, 'quebec')
 
 
-class _BaseLDAPTestCase(BaseTestCase):
+class _BaseLDAPTestCase(base.BaseIntegrationTest):
+
+    username = 'admin'
+    password = 's3cre7'
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        port = cls.service_port(389, 'slapd')
-        ldap_uri = 'ldap://127.0.0.1:{port}'.format(port=port)
-
-        try:
-            add_contacts(cls.CONTACTS, ldap_uri)
-        except Exception:
-            super().tearDownClass()
-            raise
+        ldap_host = '127.0.0.1'
+        ldap_port = cls.asset_cls.service_port(389, 'slapd')
+        ldap_uri = f'ldap://{ldap_host}:{ldap_port}'
+        add_contacts(cls.CONTACTS, ldap_uri)
 
 
-class TestLDAP(_BaseLDAPTestCase):
+class LDAPIntegrationTest(_BaseLDAPTestCase):
+    asset_cls = base.LDAPAssetLaunchingTestCase
 
-    asset = 'ldap'
 
+class LDAPAnonymousIntegrationTest(_BaseLDAPTestCase):
+    asset_cls = base.LDAPAnonymousAssetLaunchingTestCase
+
+
+class LDAPServiceUserIntegrationTest(_BaseLDAPTestCase):
+    asset_cls = base.LDAPServiceUserAssetLaunchingTestCase
+
+
+@base.use_asset('ldap')
+class TestLDAP(LDAPIntegrationTest):
     CONTACTS = [
         Contact(
             'Alice Wonderland',
@@ -111,10 +121,8 @@ class TestLDAP(_BaseLDAPTestCase):
         )
 
 
-class TestLDAPAnonymous(_BaseLDAPTestCase):
-
-    asset = 'ldap_anonymous'
-
+@base.use_asset('ldap_anonymous')
+class TestLDAPAnonymous(LDAPAnonymousIntegrationTest):
     CONTACTS = [
         Contact(
             'Alice Wonderland',
@@ -139,10 +147,8 @@ class TestLDAPAnonymous(_BaseLDAPTestCase):
         )
 
 
-class TestLDAPServiceUser(_BaseLDAPTestCase):
-
-    asset = 'ldap_service_user'
-
+@base.use_asset('ldap_service_user')
+class TestLDAPServiceUser(LDAPServiceUserIntegrationTest):
     CONTACTS = [
         Contact(
             'Alice Wonderland',

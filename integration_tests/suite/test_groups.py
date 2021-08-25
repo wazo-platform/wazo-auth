@@ -17,7 +17,8 @@ from .helpers import base, fixtures
 from .helpers.constants import UNKNOWN_UUID, NB_DEFAULT_GROUPS
 
 
-class TestGroups(base.WazoAuthTestCase):
+@base.use_asset('base')
+class TestGroups(base.APIIntegrationTest):
 
     invalid_bodies = [{}, {'name': None}, {'name': 42}, {'not name': 'foobar'}]
 

@@ -3,11 +3,13 @@
 
 import logging
 import os
+import pytest
 import random
 import requests
 import string
 import unittest
 
+from sqlalchemy.exc import UnboundExecutionError
 from contextlib import contextmanager
 from hamcrest import (
     assert_that,
@@ -20,7 +22,12 @@ from hamcrest import (
 from wazo_auth_client import Client
 from xivo_test_helpers import until
 from xivo_test_helpers.hamcrest.raises import raises
-from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
+from xivo_test_helpers.asset_launching_test_case import (
+    AssetLaunchingTestCase,
+    NoSuchPort,
+    NoSuchService,
+    WrongClient,
+)
 from xivo_test_helpers.bus import BusClient
 from wazo_auth.database import queries, helpers
 from wazo_auth.database.queries import (
@@ -48,23 +55,104 @@ ADDRESS_NULL = {
     'zip_code': None,
 }
 
+use_asset = pytest.mark.usefixtures
 
-class DBStarter(AssetLaunchingTestCase):
 
-    asset = 'database'
+class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
+
     assets_root = os.path.join(os.path.dirname(__file__), '../..', 'assets')
-    service = 'postgres'
+    service = 'auth'
+    auth_host = '127.0.0.1'
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.db_uri = DB_URI.format(port=DBStarter.service_port(5432, 'postgres'))
-        helpers.init_db(cls.db_uri)
+        port = cls.service_port(5432, 'postgres')
+        db_uri = DB_URI.format(port=port)
+        helpers.init_db(db_uri)
 
     @classmethod
     def tearDownClass(cls):
-        helpers.deinit_db()
+        try:
+            helpers.deinit_db()
+        except UnboundExecutionError:
+            pass
         super().tearDownClass()
+
+    @classmethod
+    def make_auth_client(cls, username=None, password=None):
+        try:
+            port = cls.service_port(9497, service_name='auth')
+        except (NoSuchService, NoSuchPort):
+            return WrongClient('auth')
+        kwargs = {'port': port, 'prefix': '', 'https': False}
+
+        if username and password:
+            kwargs['username'] = username
+            kwargs['password'] = password
+
+        return Client(cls.auth_host, **kwargs)
+
+    @classmethod
+    def make_db_client(cls):
+        try:
+            port = cls.service_port(5432, 'postgres')
+        except (NoSuchService, NoSuchPort):
+            return WrongClient('postgres')
+        db_uri = DB_URI.format(port=port)
+        return Database(db_uri, db='asterisk')
+
+    @classmethod
+    def make_bus_client(cls):
+        try:
+            port = cls.service_port(5672, 'rabbitmq')
+        except (NoSuchService, NoSuchPort):
+            return WrongClient('rabbitmq')
+        return BusClient.from_connection_fields(host='127.0.0.1', port=port)
+
+    @classmethod
+    def restart_postgres(cls):
+        cls.restart_service('postgres')
+        database = cls.make_db_client()
+        until.true(database.is_up, timeout=5, message='Postgres did not come back up')
+        helpers.deinit_db()
+        helpers.init_db(database.uri)
+
+    @classmethod
+    def restart_auth(cls):
+        cls.restart_service('auth')
+        auth = cls.make_auth_client()
+        logging.getLogger('xivo_test_helpers').setLevel(logging.INFO)
+        until.return_(auth.status.check, timeout=30)
+        logging.getLogger('xivo_test_helpers').setLevel(logging.DEBUG)
+
+
+class DBAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
+    asset = 'database'
+    service = 'postgres'
+
+
+class APIAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
+    asset = 'base'
+
+
+class ExternalAuthAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
+    asset = 'external_auth'
+
+
+# Legacy LDAP
+class LDAPAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
+    asset = 'ldap'
+
+
+# Legacy LDAP
+class LDAPAnonymousAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
+    asset = 'ldap_anonymous'
+
+
+# Legacy LDAP
+class LDAPServiceUserAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
+    asset = 'ldap_service_user'
 
 
 class DAOTestCase(unittest.TestCase):
@@ -102,107 +190,62 @@ class DAOTestCase(unittest.TestCase):
         return helpers.get_db_session()
 
 
-class BaseTestCase(AssetLaunchingTestCase):
-
-    assets_root = os.path.join(os.path.dirname(__file__), '../..', 'assets')
-    service = 'auth'
-
+class BaseIntegrationTest(unittest.TestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.auth_host = '127.0.0.1'
-        cls.auth_port = cls.service_port(9497, service_name='auth')
-
-    def new_message_accumulator(self, routing_key):
-        bus_client = self.make_bus_client()
-        return bus_client.accumulator(routing_key)
-
-    def get_last_email_url(self):
-        last_email = self.get_emails()[-1]
-        email_urls = [
-            line for line in last_email.split('\n') if line.startswith('https://')
-        ]
-        return email_urls[-1]
-
-    def get_emails(self):
-        return [self._email_body(f) for f in self._get_email_filenames()]
-
-    def _email_body(self, filename):
-        command = ['cat', f'/var/mail/{filename}']
-        return self.docker_exec(command, 'smtp').decode('utf-8')
-
-    def _get_email_filenames(self):
-        command = ['ls', '/var/mail']
-        return self.docker_exec(command, 'smtp').decode('utf-8').strip().split('\n')
+    def make_auth_client(cls, *args, **kwargs):
+        return cls.asset_cls.make_auth_client(*args, **kwargs)
 
     def _post_token(self, username, password, *args, **kwargs):
-        client = self.make_auth_client(username, password)
-        return client.token.new(*args, **kwargs)
-
-    @classmethod
-    def make_auth_client(cls, username=None, password=None):
-        port = cls.auth_port
-        kwargs = {'port': port, 'prefix': '', 'https': False}
-
-        if username and password:
-            kwargs['username'] = username
-            kwargs['password'] = password
-
-        return Client(cls.auth_host, **kwargs)
-
-    @classmethod
-    def make_db_client(cls):
-        port = cls.service_port(5432, 'postgres')
-        db_uri = DB_URI.format(port=port)
-        return Database(db_uri, db='asterisk')
-
-    @classmethod
-    def make_bus_client(cls):
-        port = cls.service_port(5672, 'rabbitmq')
-        return BusClient.from_connection_fields(host='127.0.0.1', port=port)
-
-    @classmethod
-    def restart_postgres(cls):
-        cls.restart_service('postgres')
-        database = cls.make_db_client()
-        until.true(database.is_up, timeout=5, message='Postgres did not come back up')
-        helpers.deinit_db()
-        helpers.init_db(database.uri)
-
-    @classmethod
-    def restart_auth(cls):
-        cls.restart_service('auth')
-        cls.auth_port = cls.service_port(9497, service_name='auth')
-        auth = cls.make_auth_client(cls.username, cls.password)
-        until.return_(auth.status.check, timeout=30)
-
-
-class WazoAuthTestCase(BaseTestCase):
-
-    username = 'admin'
-    password = 's3cre7'
-    asset = 'base'
+        auth = self.asset_cls.make_auth_client(username, password)
+        return auth.token.new(*args, **kwargs)
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        database = cls.make_db_client()
-        helpers.init_db(database.uri)
         cls.reset_clients()
         cls.top_tenant_uuid = cls.get_top_tenant()['uuid']
 
     @classmethod
-    def tearDownClass(cls):
-        helpers.deinit_db()
-        super().tearDownClass()
-
-    @classmethod
     def reset_clients(cls):
-        cls.client = cls.make_auth_client(cls.username, cls.password)
+        cls.client = cls.asset_cls.make_auth_client(cls.username, cls.password)
         token = cls.client.token.new(expiration=7200)
         cls.client.set_token(token['token'])
         cls.admin_token = token['token']
         cls.admin_user_uuid = token['metadata']['uuid']
+        cls.bus = cls.asset_cls.make_bus_client()
+        cls.database = cls.asset_cls.make_db_client()
+
+    @property
+    def auth_host(self):
+        return self.asset_cls.auth_host
+
+    @property
+    def auth_port(self):
+        return self.asset_cls.service_port(9497, 'auth')
+
+    @property
+    def oauth2_port(self):
+        return self.asset_cls.service_port(80, 'oauth2sync')
+
+    @classmethod
+    def restart_auth(cls):
+        return cls.asset_cls.restart_auth()
+
+    @classmethod
+    def restart_postgres(cls):
+        return cls.asset_cls.restart_postgres()
+
+    @classmethod
+    def service_logs(cls, *args, **kwargs):
+        return cls.asset_cls.service_logs(*args, **kwargs)
+
+    @classmethod
+    def stop_service(cls, *args, **kwargs):
+        return cls.asset_cls.stop_service(*args, **kwargs)
+
+    @classmethod
+    def start_service(cls, *args, **kwargs):
+        return cls.asset_cls.start_service(*args, **kwargs)
 
     @classmethod
     def get_top_tenant(cls):
@@ -224,7 +267,7 @@ class WazoAuthTestCase(BaseTestCase):
         )
         policy = self.client.policies.new(name=random_string(5), acl=['#'])
         self.client.users.add_policy(user['uuid'], policy['uuid'])
-        client = self.make_auth_client(username, password)
+        client = self.asset_cls.make_auth_client(username, password)
         token = client.token.new(backend='wazo_user', expiration=3600)['token']
         client.set_token(token)
 
@@ -237,6 +280,51 @@ class WazoAuthTestCase(BaseTestCase):
             except Exception:
                 pass
             self.client.policies.delete(policy['uuid'])
+
+
+class ExternalAuthIntegrationTest(BaseIntegrationTest):
+
+    asset_cls = ExternalAuthAssetLaunchingTestCase
+    username = 'admin'
+    password = 's3cre7'
+
+
+class APIIntegrationTest(BaseIntegrationTest):
+
+    asset_cls = APIAssetLaunchingTestCase
+    username = 'admin'
+    password = 's3cre7'
+
+    def get_last_email_url(self):
+        last_email = self.get_emails()[-1]
+        email_urls = [
+            line for line in last_email.split('\n') if line.startswith('https://')
+        ]
+        return email_urls[-1]
+
+    def get_emails(self):
+        return [self._email_body(f) for f in self._get_email_filenames()]
+
+    def _email_body(self, filename):
+        command = ['cat', f'/var/mail/{filename}']
+        return self.asset_cls.docker_exec(command, 'smtp').decode('utf-8')
+
+    def _get_email_filenames(self):
+        command = ['ls', '/var/mail']
+        return (
+            self.asset_cls.docker_exec(command, 'smtp')
+            .decode('utf-8')
+            .strip()
+            .split('\n')
+        )
+
+    def clean_emails(self):
+        for filename in self._get_email_filenames():
+            self._remove_email(filename)
+
+    def _remove_email(self, filename):
+        command = ['rm', f'/var/mail/{filename}']
+        self.asset_cls.docker_exec(command, 'smtp')
 
     @staticmethod
     @contextmanager

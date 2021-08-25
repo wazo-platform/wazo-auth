@@ -2,12 +2,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that, has_entries, has_item
-from .helpers import fixtures
-from .helpers.base import assert_http_error, WazoAuthTestCase
+from .helpers import fixtures, base
+from .helpers.base import assert_http_error
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 
 
-class TestWazoUserBackend(WazoAuthTestCase):
+@base.use_asset('base')
+class TestWazoUserBackend(base.APIIntegrationTest):
     @fixtures.http.user_register(
         username='foobar', email_address='foobar@example.com', password='s3cr37'
     )

@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -6,11 +6,12 @@ import uuid
 from hamcrest import assert_that, calling, equal_to, instance_of
 from xivo_test_helpers.hamcrest.raises import raises
 
-from ..helpers import base, fixtures
+from .helpers import base, fixtures
 
 SESSION_UUID_1 = str(uuid.uuid4())
 
 
+@base.use_asset('database')
 class TestAddressDAO(base.DAOTestCase):
     def setUp(self):
         super().setUp()

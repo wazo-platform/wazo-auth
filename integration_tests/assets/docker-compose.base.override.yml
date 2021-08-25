@@ -3,11 +3,12 @@ services:
   sync:
     depends_on:
       - auth
+      - oauth2sync
       - postgres
       - rabbitmq
       - smtp
     environment:
-      TARGETS: "auth:9497 postgres:5432 rabbitmq:5672 smtp:25"
+      TARGETS: "auth:9497 oauth2sync:80 postgres:5432 rabbitmq:5672 smtp:25"
 
   auth:
     volumes:

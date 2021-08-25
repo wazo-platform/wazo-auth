@@ -132,7 +132,7 @@ def policy(**policy_args):
             self.client.set_token(old_token)
             args = list(args) + [policy]
             try:
-                with config_managed_policy(self.make_db_client(), policy, policy_args):
+                with config_managed_policy(self.database, policy, policy_args):
                     result = decorated(self, *args, **kwargs)
             finally:
                 try:
@@ -172,9 +172,7 @@ def group(**group_args):
             group = self.client.groups.new(**group_args)
             args = list(args) + [group]
             try:
-                with system_managed_group(
-                    self.make_db_client(), group['uuid'], group_args
-                ):
+                with system_managed_group(self.database, group['uuid'], group_args):
                     result = decorated(self, *args, **kwargs)
             finally:
                 try:

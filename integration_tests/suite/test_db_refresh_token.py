@@ -5,13 +5,14 @@ import datetime
 import uuid
 
 from hamcrest import assert_that, contains_inanyorder, empty, equal_to, has_entries
-from ..helpers import fixtures, base
+from .helpers import fixtures, base
 
 ALICE_UUID = str(uuid.uuid4())
 TENANT_UUID = str(uuid.uuid4())
 CREATED_AT = datetime.datetime.now()
 
 
+@base.use_asset('database')
 class TestRefreshTokenDAO(base.DAOTestCase):
     @fixtures.db.tenant(uuid=TENANT_UUID)
     @fixtures.db.user(uuid=ALICE_UUID, username='alice', tenant_uuid=TENANT_UUID)

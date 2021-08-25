@@ -20,16 +20,15 @@ from .helpers import base, fixtures
 from .helpers.constants import UNKNOWN_UUID
 
 
-class TestExternalAuthAPI(base.WazoAuthTestCase):
-
-    asset = 'external_auth'
+@base.use_asset('external_auth')
+class TestExternalAuthAPI(base.ExternalAuthIntegrationTest):
     safe_data = {'scope': ['one', 'two', 'three']}
     original_data = {'secret': str(uuid4()), **safe_data}
 
     @fixtures.http.user_register()
     def test_create(self, user):
         routing_key = 'auth.users.{}.external.foo.created'.format(user['uuid'])
-        msg_accumulator = self.new_message_accumulator(routing_key)
+        msg_accumulator = self.bus.accumulator(routing_key)
 
         result = self.client.external.create('foo', user['uuid'], self.original_data)
         assert_that(result, has_entries(**self.original_data))
@@ -59,7 +58,7 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
     @fixtures.http.user_register()
     def test_delete(self, user):
         routing_key = 'auth.users.{}.external.foo.deleted'.format(user['uuid'])
-        msg_accumulator = self.new_message_accumulator(routing_key)
+        msg_accumulator = self.bus.accumulator(routing_key)
 
         self.client.external.create('foo', user['uuid'], self.original_data)
 
@@ -179,7 +178,7 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
     @fixtures.http.user()
     def test_external_oauth2(self, user):
         routing_key = 'auth.users.{}.external.foo.authorized'.format(user['uuid'])
-        msg_accumulator = self.new_message_accumulator(routing_key)
+        msg_accumulator = self.bus.accumulator(routing_key)
         token = 'a-token'
         result = self.client.external.create('foo', user['uuid'], self.original_data)
         time.sleep(1)  # wazo-auth needs some time to connect its websocket
@@ -209,15 +208,14 @@ class TestExternalAuthAPI(base.WazoAuthTestCase):
         until.assert_(bus_received_msg, tries=10, interval=0.25)
 
     def authorize_oauth2(self, auth_type, state, token):
-        port = self.service_port(80, 'oauth2sync')
-        url = 'http://127.0.0.1:{}/{}/authorize/{}'.format(port, auth_type, state)
+        url = f'http://127.0.0.1:{self.oauth2_port}/{auth_type}/authorize/{state}'
         result = requests.get(url, params={'access_token': token})
         result.raise_for_status()
 
 
-class TestExternalAuthConfigAPI(base.WazoAuthTestCase):
+@base.use_asset('external_auth')
+class TestExternalAuthConfigAPI(base.ExternalAuthIntegrationTest):
 
-    asset = 'external_auth'
     EXTERNAL_AUTH_TYPE = 'an-external-auth-type'
     SECRET = {'client_id': 'a-client-id', 'client_secret': 'a-client-secret'}
 

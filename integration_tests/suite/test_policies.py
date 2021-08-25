@@ -19,12 +19,12 @@ from hamcrest import (
 )
 from mock import ANY
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
+from .helpers import base
 from .helpers.base import (
     assert_no_error,
     assert_http_error,
     assert_sorted,
     SUB_TENANT_UUID,
-    WazoAuthTestCase,
 )
 from .helpers import fixtures
 from .helpers.constants import (
@@ -35,7 +35,8 @@ from .helpers.constants import (
 )
 
 
-class TestPolicies(WazoAuthTestCase):
+@base.use_asset('base')
+class TestPolicies(base.APIIntegrationTest):
     @fixtures.http.tenant()
     @fixtures.http.policy(name='foobaz')
     def test_post(self, tenant, foobaz):
@@ -83,7 +84,7 @@ class TestPolicies(WazoAuthTestCase):
             [None],
         ]
 
-        url = 'http://127.0.0.1:{}/0.1/policies'.format(self.service_port(9497, 'auth'))
+        url = f'http://{self.auth_host}:{self.auth_port}/0.1/policies'
         headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -442,7 +443,8 @@ class TestPolicies(WazoAuthTestCase):
         assert_that(response, has_entries(acl=contains_inanyorder('dird.me.#')))
 
 
-class TestPoliciesBySlug(WazoAuthTestCase):
+@base.use_asset('base')
+class TestPoliciesBySlug(base.APIIntegrationTest):
     @fixtures.http.policy(slug='my_policy')
     def test_get(self, policy):
         response = self.client.policies.get(policy['slug'])

@@ -21,12 +21,13 @@ from requests.exceptions import HTTPError
 from xivo_test_helpers.hamcrest.raises import raises
 from xivo_test_helpers import until
 
-from .helpers import fixtures
-from .helpers.base import WazoAuthTestCase, assert_http_error
+from .helpers import fixtures, base
+from .helpers.base import assert_http_error
 from .helpers.constants import UNKNOWN_UUID
 
 
-class TestTokens(WazoAuthTestCase):
+@base.use_asset('base')
+class TestTokens(base.APIIntegrationTest):
     @fixtures.http.user(username='foo', password='bar')
     @fixtures.http.token(
         username='foo',
@@ -81,7 +82,7 @@ class TestTokens(WazoAuthTestCase):
     @fixtures.http.user(username='foo', password='bar')
     def test_refresh_token_created_event(self, user):
         routing_key = 'auth.users.{uuid}.tokens.*.created'.format(**user)
-        msg_accumulator = self.new_message_accumulator(routing_key)
+        msg_accumulator = self.bus.accumulator(routing_key)
 
         client_id = 'mytestapp'
         self._post_token(
@@ -121,7 +122,7 @@ class TestTokens(WazoAuthTestCase):
         )
 
         routing_key = 'auth.users.{uuid}.tokens.#'.format(**user)
-        msg_accumulator = self.new_message_accumulator(routing_key)
+        msg_accumulator = self.bus.accumulator(routing_key)
 
         # The same same refresh token is returned, not a new one
         self._post_token(
@@ -236,7 +237,7 @@ class TestTokens(WazoAuthTestCase):
             user_uuid=user['uuid'],
             client_id=client_id,
         )
-        msg_accumulator = self.new_message_accumulator(routing_key)
+        msg_accumulator = self.bus.accumulator(routing_key)
 
         self.client.token.delete(user['uuid'], client_id)
 

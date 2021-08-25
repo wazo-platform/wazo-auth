@@ -15,7 +15,8 @@ from .helpers.base import assert_http_error, assert_no_error, assert_sorted
 from .helpers.constants import UNKNOWN_UUID, NB_DEFAULT_GROUPS
 
 
-class TestGroupUserList(base.WazoAuthTestCase):
+@base.use_asset('base')
+class TestGroupUserList(base.APIIntegrationTest):
     def setUp(self):
         super().setUp()
         self.foo = self.client.users.new(username='foo')
@@ -60,7 +61,8 @@ class TestGroupUserList(base.WazoAuthTestCase):
         assert_that(result, has_entries(total=3, filtered=3, items=expected))
 
 
-class TestUserGroupList(base.WazoAuthTestCase):
+@base.use_asset('base')
+class TestUserGroupList(base.APIIntegrationTest):
     def setUp(self):
         super().setUp()
         self.foo = self.client.groups.new(name='group-foo')
@@ -127,7 +129,8 @@ class TestUserGroupList(base.WazoAuthTestCase):
         )
 
 
-class TestUserGroupAssociation(base.WazoAuthTestCase):
+@base.use_asset('base')
+class TestUserGroupAssociation(base.APIIntegrationTest):
     @fixtures.http.user_register()
     @fixtures.http.user_register()
     @fixtures.http.group()
