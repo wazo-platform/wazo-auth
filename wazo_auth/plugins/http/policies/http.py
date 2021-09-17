@@ -29,7 +29,7 @@ class Policies(_BasePolicyRessource):
 
         access_check = AccessCheck(token.auth_id, token.session_uuid, token.acl)
         for access in body['acl']:
-            if not access_check.matches_required_access(access):
+            if not access_check.may_add_access(access):
                 raise Unauthorized(token.token, required_access=access)
 
         policy = self.policy_service.create(**body)
@@ -70,7 +70,7 @@ class _Policy(_BasePolicyRessource):
 
         access_check = AccessCheck(token.auth_id, token.session_uuid, token.acl)
         for access in body['acl']:
-            if not access_check.matches_required_access(access):
+            if not access_check.may_add_access(access):
                 raise Unauthorized(token.token, required_access=access)
 
         body['tenant_uuids'] = tenant_uuids
@@ -123,7 +123,7 @@ class _PolicyAccess(_BasePolicyRessource):
     def _put(self, policy_uuid, access, tenant_uuids):
         token = Token.from_headers()
         access_check = AccessCheck(token.auth_id, token.session_uuid, token.acl)
-        if not access_check.matches_required_access(access):
+        if not access_check.may_add_access(access):
             raise Unauthorized(token.token, required_access=access)
 
         self.policy_service.add_access(policy_uuid, access, tenant_uuids)
