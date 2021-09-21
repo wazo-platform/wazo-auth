@@ -5,6 +5,7 @@ import requests
 from hamcrest import (
     assert_that,
     calling,
+    contains,
     contains_exactly,
     empty,
     has_entries,
@@ -192,6 +193,40 @@ class TestUserPolicySlug(base.APIIntegrationTest):
             )
             result = client.users.get_policies(visible_user['uuid'])
             assert_that(result, has_entries(items=empty()))
+
+    @fixtures.http.user(username='foo', password='bar')
+    @fixtures.http.user()
+    @fixtures.http.policy(acl=['authorized'])
+    @fixtures.http.policy(acl=['authorized', '!unauthorized'])
+    def test_delete_when_policy_negative_access_in_token(
+        self, login, user, policy1, policy2
+    ):
+        self.client.users.add_policy(user['uuid'], policy1['uuid'])
+        self.client.users.add_policy(user['uuid'], policy2['uuid'])
+
+        user_client = self.make_auth_client('foo', 'bar')
+        acl = ['auth.#', 'authorized', '!unauthorized']
+        user_policy = self.client.policies.new(name='foo-policy', acl=acl)
+        self.client.users.add_policy(login['uuid'], user_policy['uuid'])
+        token = user_client.token.new(expiration=30)['token']
+        user_client.set_token(token)
+
+        assert_no_error(
+            user_client.users.remove_policy,
+            user['uuid'],
+            policy1['uuid'],
+        )
+        assert_http_error(
+            401,
+            user_client.users.remove_policy,
+            user['uuid'],
+            policy2['uuid'],
+        )
+
+        result = self.client.users.get_policies(user['uuid'])
+        assert_that(result, has_entries(items=contains(policy2)))
+
+        self.client.policies.delete(user_policy['uuid'])
 
     @fixtures.http.user()
     @fixtures.http.policy()

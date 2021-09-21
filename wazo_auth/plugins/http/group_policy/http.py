@@ -26,6 +26,14 @@ class _GroupPolicy(_BaseResource):
         self.group_service.assert_group_in_subtenant(tenant_uuids, group_uuid)
         # FIXME(fblackburn): Dissociation should be done on the same tenant
         # self.policy_service.assert_policy_in_subtenant(tenant_uuids, policy_uuid)
+
+        token = Token.from_headers()
+        access_check = AccessCheck(token.auth_id, token.session_uuid, token.acl)
+        policy = self.policy_service.get(policy_uuid, tenant_uuids)
+        for access in policy.acl:
+            if not access_check.may_remove_access(access):
+                raise Unauthorized(token.token, required_access=access)
+
         self.group_service.remove_policy(group_uuid, policy_uuid)
         return '', 204
 

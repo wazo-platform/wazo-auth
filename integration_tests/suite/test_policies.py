@@ -482,7 +482,10 @@ class TestPolicies(base.APIIntegrationTest):
 
     @fixtures.http.user(username='foo', password='bar')
     @fixtures.http.policy()
-    def test_put_when_policy_has_more_access_than_token(self, user, policy):
+    @fixtures.http.policy(acl=['authorized', '!anything', '!unauthorized'])
+    def test_put_when_policy_has_more_access_than_token(
+        self, user, policy_empty, policy_restrictive
+    ):
         user_client = self.make_auth_client('foo', 'bar')
         acl = ['auth.#', 'authorized', '!unauthorized']
         user_policy = self.client.policies.new(name='foo-policy', acl=acl)
@@ -490,14 +493,32 @@ class TestPolicies(base.APIIntegrationTest):
         token = user_client.token.new(expiration=30)['token']
         user_client.set_token(token)
 
-        new_body = dict(policy)
+        # Adding unauthorized access
+        new_body = dict(policy_empty)
         new_body['acl'] = ['authorized', 'unauthorized']
-        assert_http_error(401, user_client.policies.edit, policy['uuid'], **new_body)
+        assert_http_error(
+            401, user_client.policies.edit, policy_empty['uuid'], **new_body
+        )
 
-        new_body['acl'] = ['authorized', '!forbid-access']
-        user_client.policies.edit(policy['uuid'], **new_body)
+        new_body['acl'] = ['authorized', '!anything']
+        user_client.policies.edit(policy_empty['uuid'], **new_body)
 
-        policy = user_client.policies.get(policy['uuid'])
+        policy = user_client.policies.get(policy_empty['uuid'])
+        assert_that(policy, has_entries(acl=new_body['acl']))
+
+        # Removing unauthorized access
+        new_body = dict(policy_restrictive)
+        new_body['acl'] = ['authorized', '!anything']  # removed !unauthorized
+        assert_http_error(
+            401, user_client.policies.edit, policy_restrictive['uuid'], **new_body
+        )
+
+        # Removing authorized access
+        new_body = dict(policy_restrictive)
+        new_body['acl'] = ['!unauthorized']  # removed authorized and !anything
+        user_client.policies.edit(policy_restrictive['uuid'], **new_body)
+
+        policy = user_client.policies.get(policy_restrictive['uuid'])
         assert_that(policy, has_entries(acl=new_body['acl']))
 
         self.client.policies.delete(user_policy['uuid'])
@@ -572,6 +593,30 @@ class TestPolicies(base.APIIntegrationTest):
 
         response = self.client.policies.get(policy['uuid'])
         assert_that(response, has_entries(acl=contains_inanyorder('dird.me.#')))
+
+    @fixtures.http.user(username='foo', password='bar')
+    @fixtures.http.policy(acl=['authorized', '!unauthorized'])
+    def test_remove_access_when_negative_access_in_token(self, user, policy):
+        user_client = self.make_auth_client('foo', 'bar')
+        acl = ['auth.#', 'authorized', '!unauthorized']
+        user_policy = self.client.policies.new(name='foo-policy', acl=acl)
+        self.client.users.add_policy(user['uuid'], user_policy['uuid'])
+        token = user_client.token.new(expiration=30)['token']
+        user_client.set_token(token)
+
+        assert_http_error(
+            401,
+            user_client.policies.remove_access,
+            policy['uuid'],
+            '!unauthorized',
+        )
+
+        user_client.policies.remove_access(policy['uuid'], 'authorized')
+
+        policy = user_client.policies.get(policy['uuid'])
+        assert_that(policy, has_entries(acl=['!unauthorized']))
+
+        self.client.policies.delete(user_policy['uuid'])
 
 
 @base.use_asset('base')
