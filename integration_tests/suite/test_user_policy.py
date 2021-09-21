@@ -74,7 +74,7 @@ class TestUsers(base.APIIntegrationTest):
 
     @fixtures.http.user(username='foo', password='bar')
     @fixtures.http.user()
-    @fixtures.http.policy(acl=['authorized'])
+    @fixtures.http.policy(acl=['authorized', '!forbid-access'])
     @fixtures.http.policy(acl=['authorized', 'unauthorized'])
     def test_put_when_policy_has_more_access_than_token(
         self, login, user, policy1, policy2

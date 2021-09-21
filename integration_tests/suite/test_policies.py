@@ -154,7 +154,7 @@ class TestPolicies(base.APIIntegrationTest):
 
         policy_args = {
             'name': 'authorized',
-            'acl': ['authorized'],
+            'acl': ['authorized', '!forbid-access'],
         }
         policy = user_client.policies.new(**policy_args)
         assert_that(policy, has_entries(**policy_args))
@@ -366,7 +366,7 @@ class TestPolicies(base.APIIntegrationTest):
         new_body['acl'] = ['authorized', 'unauthorized']
         assert_http_error(401, user_client.policies.edit, policy['uuid'], **new_body)
 
-        new_body['acl'] = ['authorized']
+        new_body['acl'] = ['authorized', '!forbid-access']
         user_client.policies.edit(policy['uuid'], **new_body)
 
         policy = user_client.policies.get(policy['uuid'])
@@ -417,9 +417,10 @@ class TestPolicies(base.APIIntegrationTest):
         )
 
         user_client.policies.add_access(policy['uuid'], 'authorized')
+        user_client.policies.add_access(policy['uuid'], '!forbid-access')
 
         policy = user_client.policies.get(policy['uuid'])
-        assert_that(policy, has_entries(acl=['authorized']))
+        assert_that(policy, has_entries(acl=['authorized', '!forbid-access']))
 
         self.client.policies.delete(user_policy['uuid'])
 

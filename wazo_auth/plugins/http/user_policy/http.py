@@ -61,7 +61,7 @@ class _UserPolicy(_BaseUserPolicyResource):
         # policy = self.policy_service.get(policy_uuid, tenant_uuids)
         policy = self.policy_service.get(policy_uuid, tenant_uuids=None)
         for access in policy.acl:
-            if not access_check.matches_required_access(access):
+            if not access_check.may_add_access(access):
                 raise Unauthorized(token.token, required_access=access)
 
         self.user_service.add_policy(user_uuid, policy_uuid)
