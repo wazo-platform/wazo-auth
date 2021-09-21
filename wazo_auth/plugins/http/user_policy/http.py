@@ -45,6 +45,12 @@ class _UserPolicy(_BaseUserPolicyResource):
         # self.policy_service.assert_user_in_subtenant(tenant_uuids, policy_uuid)
         # FIXME(fblackburn): Dissociation should be done on the same tenant
         # self.policy_service.assert_policy_in_subtenant(tenant_uuids, policy_uuid)
+        token = Token.from_headers()
+        policy = self.policy_service.get(policy_uuid, tenant_uuids)
+        access_check = AccessCheck(token.auth_id, token.session_uuid, token.acl)
+        for access in policy.acl:
+            if not access_check.may_remove_access(access):
+                raise Unauthorized(token.token, required_access=access)
         self.user_service.remove_policy(user_uuid, policy_uuid)
         return '', 204
 
