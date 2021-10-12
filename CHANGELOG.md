@@ -1,5 +1,10 @@
 # Changelog
 
+## 21.14
+
+* New `default_user_policy` configuration has been added to apply this policy to all users
+* `backend_policies` has been deprecated and will be removed in further version
+
 ## 21.10
 
 * Forbid to delete its own tenant
