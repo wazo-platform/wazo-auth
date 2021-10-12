@@ -149,9 +149,9 @@ class TestTenants(base.APIIntegrationTest):
         # Assert default policies from tenant point of view
         result = []
         for group in wazo_all_users_groups:
-            self.client.set_tenant(group['tenant_uuid'])
+            self.client.tenant_uuid = group['tenant_uuid']
             policies = self.client.groups.get_policies(group['uuid'])['items']
-            self.client.set_tenant(None)
+            self.client.tenant_uuid = None
             result.append({'group': group, 'policies': policies})
 
         assert_that(
