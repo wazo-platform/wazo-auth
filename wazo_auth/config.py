@@ -67,7 +67,7 @@ _DEFAULT_CONFIG = {
         'microsoft': True,
         'mobile': True,
     },
-    'backend_policies': {},
+    'backend_policies': {},  # 21.14: Deprecated
     'rest_api': {
         'max_threads': 25,
         'listen': '127.0.0.1',

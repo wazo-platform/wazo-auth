@@ -7,8 +7,7 @@ ldap:
   user_base_dn: "dc=wazo-auth,dc=wazo,dc=community"
   user_login_attribute: 'mail'
 
-backend_policies:
-  ldap_user: none
+default_user_policy: null
 
 bootstrap_user_on_startup: True
 bootstrap_user_username: admin
