@@ -103,13 +103,11 @@ class TestExternalAuthMobile(base.ExternalAuthIntegrationTest):
     def get_sender_id(self, user):
         # NOTE(sileht): client doesn't have this endpoints has its specific to
         # android application
+        headers = self.client.external._get_headers()
         url = '{}/sender_id'.format(
             self.client.external._build_url(self.EXTERNAL_AUTH_TYPE, user['uuid'])
         )
-
-        r = self.client.external.session.get(
-            url, headers=self.client.external._ro_headers
-        )
+        r = self.client.external.session.get(url, headers=headers)
         if r.status_code != 200:
             self.client.external.raise_from_response(r)
 
