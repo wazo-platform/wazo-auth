@@ -38,7 +38,7 @@ class TestExternalAuthMobile(base.ExternalAuthIntegrationTest):
     @fixtures.http.user(username='one', password='pass', tenant_uuid=TENANT_UUID)
     @fixtures.http.token(username='one', password='pass', expiration=30)
     def test_mobile_workflow(self, tenant, user, token):
-        self.client.set_tenant(tenant['uuid'])
+        self.client.tenant_uuid = tenant['uuid']
         self.client.external.create_config(
             auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET
         )
@@ -103,13 +103,11 @@ class TestExternalAuthMobile(base.ExternalAuthIntegrationTest):
     def get_sender_id(self, user):
         # NOTE(sileht): client doesn't have this endpoints has its specific to
         # android application
+        headers = self.client.external._get_headers()
         url = '{}/sender_id'.format(
             self.client.external._build_url(self.EXTERNAL_AUTH_TYPE, user['uuid'])
         )
-
-        r = self.client.external.session.get(
-            url, headers=self.client.external._ro_headers
-        )
+        r = self.client.external.session.get(url, headers=headers)
         if r.status_code != 200:
             self.client.external.raise_from_response(r)
 
