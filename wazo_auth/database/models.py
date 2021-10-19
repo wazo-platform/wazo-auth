@@ -132,6 +132,7 @@ class Tenant(Base):
 class Token(Base):
 
     __tablename__ = 'auth_token'
+    __table_args__ = (Index('auth_token__idx__session_uuid', 'session_uuid'),)
 
     uuid = Column(
         String(38), server_default=text('uuid_generate_v4()'), primary_key=True
