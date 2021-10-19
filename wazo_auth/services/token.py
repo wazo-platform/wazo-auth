@@ -28,7 +28,8 @@ logger = logging.getLogger(__name__)
 class TokenService(BaseService):
     def __init__(self, config, dao, tenant_tree, bus_publisher, user_service):
         super().__init__(dao, tenant_tree)
-        self._backend_policies = config.get('backend_policies', {})
+        self._deprecated_backend_policies = config.get('backend_policies', {})
+        self._default_user_policy = config.get('default_user_policy')
         self._default_expiration = config['default_token_lifetime']
         self._bus_publisher = bus_publisher
         self._user_service = user_service
@@ -210,7 +211,12 @@ class TokenService(BaseService):
         return token, scope_statuses
 
     def _get_acl(self, backend_name):
-        policy_name = self._backend_policies.get(backend_name)
+        # 21.14: deprecated
+        policy_name = self._deprecated_backend_policies.get(backend_name)
+
+        if not policy_name:
+            policy_name = self._default_user_policy
+
         if not policy_name:
             return []
 
