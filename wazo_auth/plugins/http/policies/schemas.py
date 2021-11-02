@@ -18,7 +18,7 @@ class PolicyFullSchema(BaseSchema):
     )
     description = fields.String(allow_none=True, missing=None)
     acl = fields.List(fields.String(), missing=[], attribute='acl')
-    read_only = fields.Boolean(dump_only=True, attribute='config_managed')
+    read_only = fields.Boolean(dump_only=True)
 
 
 class PolicyPutSchema(PolicyFullSchema):

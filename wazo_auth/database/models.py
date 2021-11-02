@@ -232,6 +232,7 @@ class Policy(Base):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.tenant_uuid_exposed = None
+        self.read_only = None
 
 
 class User(Base):
