@@ -447,6 +447,7 @@ class TestPolicyDAO(base.DAOTestCase):
             acl=acl,
             tenant_uuid=tenant_uuid,
             config_managed=False,
+            shared=False,
         )
         try:
             yield uuid_

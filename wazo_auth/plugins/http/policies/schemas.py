@@ -19,11 +19,13 @@ class PolicyFullSchema(BaseSchema):
     description = fields.String(allow_none=True, missing=None)
     acl = fields.List(fields.String(), missing=[], attribute='acl')
     read_only = fields.Boolean(dump_only=True)
+    shared = fields.Boolean(missing=False)
 
 
 class PolicyPutSchema(PolicyFullSchema):
 
     slug = fields.String(dump_only=True)
+    shared = fields.String(dump_only=True)
 
 
 policy_full_schema = PolicyFullSchema()

@@ -79,7 +79,16 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         return self.session.query(Policy).filter(filter_).count()
 
-    def create(self, name, slug, description, acl, tenant_uuid, config_managed=False):
+    def create(
+        self,
+        name,
+        slug,
+        description,
+        acl,
+        tenant_uuid,
+        config_managed=False,
+        shared=False,
+    ):
         if not slug:
             slug = self._generate_slug(name)
 
@@ -88,6 +97,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             slug=slug,
             description=description,
             config_managed=config_managed,
+            shared=shared,
             tenant_uuid=tenant_uuid,
         )
         self.session.add(policy)

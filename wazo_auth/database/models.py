@@ -222,6 +222,8 @@ class Policy(Base):
         server_default='false',
         nullable=True,
     )
+    shared = Column(Boolean, default=False, server_default='false', nullable=False)
+
     tenant = relationship('Tenant', cascade='all, delete-orphan', single_parent=True)
     accesses = relationship('Access', secondary='auth_policy_access', viewonly=True)
 

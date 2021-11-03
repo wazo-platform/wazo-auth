@@ -48,6 +48,7 @@ class TestPolicies(base.APIIntegrationTest):
                 slug='foobaz',
                 description=none(),
                 acl=empty(),
+                shared=False,
                 tenant_uuid=self.top_tenant_uuid,
             ),
         )
@@ -57,6 +58,7 @@ class TestPolicies(base.APIIntegrationTest):
             'slug': 'slug1',
             'description': 'a test policy',
             'acl': ['dird.me.#', 'ctid-ng.#'],
+            'shared': False,
             'tenant_uuid': tenant['uuid'],
         }
         # Specify the tenant_uuid
