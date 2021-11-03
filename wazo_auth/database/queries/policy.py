@@ -198,6 +198,11 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return filter_
 
     def list_without_relations(self, **kwargs):
+        if 'read_only' in kwargs:
+            raise NotImplementedError('read_only filter')
+        if 'tenant_uuid_exposed' in kwargs:
+            raise NotImplementedError('tenant_uuid_exposed filter')
+
         search_filter = self.new_search_filter(**kwargs)
         strict_filter = self.new_strict_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
@@ -232,6 +237,11 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return self._get_by(tenant_uuids=tenant_uuids, **kwargs)
 
     def _get_by(self, tenant_uuids=None, **kwargs):
+        if 'read_only' in kwargs:
+            raise NotImplementedError('read_only filter')
+        if 'tenant_uuid_exposed' in kwargs:
+            raise NotImplementedError('tenant_uuid_exposed filter')
+
         filter_ = self.new_strict_filter(**kwargs)
         query = self.session.query(Policy).filter(filter_)
         if tenant_uuids is not None:
@@ -248,6 +258,11 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return policy
 
     def find_by(self, **kwargs):
+        if 'read_only' in kwargs:
+            raise NotImplementedError('read_only filter')
+        if 'tenant_uuid_exposed' in kwargs:
+            raise NotImplementedError('tenant_uuid_exposed filter')
+
         filter_ = self.new_strict_filter(**kwargs)
         query = self.session.query(Policy).filter(filter_)
         policy = query.first()
