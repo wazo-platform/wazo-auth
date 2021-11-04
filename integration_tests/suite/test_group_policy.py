@@ -13,6 +13,7 @@ from hamcrest import (
     not_,
 )
 from .helpers import base, fixtures
+from .helpers.base import SUB_TENANT_UUID
 from .helpers.constants import (
     ALL_USERS_POLICY_SLUG,
     UNKNOWN_SLUG,
@@ -356,3 +357,34 @@ class TestGroupPolicySlug(base.APIIntegrationTest):
             )
             result = client.groups.get_policies(visible_group['uuid'])
             assert_that(result, has_entries(items=contains(visible_policy)))
+
+    @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http.group(tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http.policy(slug='top_shared', shared=True)
+    @fixtures.http.policy(slug='child', tenant_uuid=SUB_TENANT_UUID)
+    def test_policy_list_with_shared(self, tenant, group, top_shared, child):
+        self.client.groups.add_policy(group['uuid'], top_shared['uuid'])
+        self.client.groups.add_policy(group['uuid'], child['uuid'])
+        result = self.client.groups.get_policies(
+            group['uuid'],
+            tenant_uuid=SUB_TENANT_UUID,
+        )
+        assert_that(
+            result,
+            has_entries(
+                total=2,
+                filtered=2,
+                items=contains_inanyorder(
+                    has_entries(
+                        slug='top_shared',
+                        read_only=True,
+                        tenant_uuid=group['tenant_uuid'],
+                    ),
+                    has_entries(
+                        slug='child',
+                        read_only=False,
+                        tenant_uuid=group['tenant_uuid'],
+                    ),
+                ),
+            ),
+        )
