@@ -102,6 +102,8 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             shared=shared,
             tenant_uuid=tenant_uuid,
         )
+        self._check_duplicate_policy(policy)
+
         self.session.add(policy)
         try:
             self.session.flush()
@@ -113,6 +115,27 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         self._associate_acl(policy.uuid, acl)
         self.session.flush()
         return policy.uuid
+
+    def _check_duplicate_policy(self, policy):
+        tenant_uuids = self._reverse_tenant_tree_query(policy.tenant_uuid)
+        filter_ = and_(
+            Policy.tenant_uuid.in_(tenant_uuids),
+            Policy.shared.is_(True),
+            or_(Policy.slug == policy.slug, Policy.name == policy.name)
+        )
+        result = self.session.query(Policy).filter(filter_).first()
+        if result:
+            raise exceptions.DuplicatePolicyException(policy.name)
+
+        if policy.shared:
+            tenant_uuids = self._tenant_tree_query(policy.tenant_uuid)
+            filter_ = and_(
+                Policy.tenant_uuid.in_(tenant_uuids),
+                or_(Policy.slug == policy.slug, Policy.name == policy.name)
+            )
+            result = self.session.query(Policy).filter(filter_).first()
+            if result:
+                raise exceptions.DuplicatePolicyException(policy.name)
 
     def delete(self, policy_uuid, tenant_uuids):
         filter_ = Policy.uuid == str(policy_uuid)
@@ -267,6 +290,30 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def _find_top_tenant(self):
         query = self.session.query(Tenant).filter(Tenant.uuid == Tenant.parent_uuid)
         return query.first()
+
+    def _tenant_tree_query(self, scoping_tenant_uuid):
+        top_tenant_uuid = self._find_top_tenant()
+        if scoping_tenant_uuid == top_tenant_uuid:
+            return self.session.query(Tenant.uuid)
+
+        included_tenants = (
+            self.session.query(Tenant.uuid, Tenant.parent_uuid)
+            .filter(Tenant.uuid == str(scoping_tenant_uuid))
+            .cte(recursive=True)
+        )
+        included_tenants = included_tenants.union_all(
+            self.session.query(Tenant.uuid, Tenant.parent_uuid).filter(
+                and_(
+                    Tenant.parent_uuid == included_tenants.c.uuid,
+                    Tenant.uuid != Tenant.parent_uuid,
+                )
+            )
+        )
+        return (
+            self.session.query(Tenant.uuid)
+            .select_from(included_tenants)
+            .join(Tenant, Tenant.uuid == included_tenants.c.uuid)
+        )
 
     def _set_tenant_uuid_exposed(self, policy, tenant_uuids):
         tenant_uuid = policy.tenant_uuid

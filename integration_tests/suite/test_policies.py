@@ -139,6 +139,20 @@ class TestPolicies(base.APIIntegrationTest):
     def test_post_duplicate_slug(self, a):
         assert_http_error(409, self.client.policies.new, name='dup', slug='dup')
 
+    @fixtures.http.policy(slug='top', shared=True)
+    def test_post_duplicate_slug_when_top_shared(self, policy):
+        parent_uuid = policy['tenant_uuid']
+        with self.client_in_subtenant(parent_uuid=parent_uuid) as (client, _, tenant):
+            assert_http_error(409, client.policies.new, name='top', slug='top')
+
+    def test_post_duplicate_slug_shared_when_child_exists(self):
+        args = {'name': 'child', 'slug': 'child'}
+        with self.client_in_subtenant() as (client, _, tenant):
+            client.policies.new(**args)
+            assert_http_error(409, self.client.policies.new, shared=True, **args)
+            assert_no_error(self.client.policies.new, shared=False, **args)
+        self.client.policies.delete(args['slug'])
+
     @fixtures.http.user(username='foo', password='bar')
     def test_post_when_policy_has_more_access_than_token(self, user):
         user_client = self.make_auth_client('foo', 'bar')
