@@ -298,6 +298,35 @@ class TestPolicies(base.APIIntegrationTest):
                 has_entries(uuid=uuid_(), name='in sub-tenant'),
             )
 
+    @fixtures.http.policy(name='foobar', shared=True)
+    def test_get_when_shared(self, policy):
+        response = self.client.policies.get(policy['uuid'])
+        assert_that(
+            response,
+            has_entries(
+                name='foobar',
+                read_only=False,
+                shared=True,
+                tenant_uuid=policy['tenant_uuid'],
+            ),
+        )
+
+        with self.client_in_subtenant() as (client, _, tenant):
+            response = client.policies.get(policy['uuid'])
+            assert_that(
+                response,
+                has_entries(
+                    name='foobar',
+                    read_only=True,
+                    shared=True,
+                    tenant_uuid=tenant['uuid'],
+                ),
+            )
+            assert_that(
+                response['tenant_uuid'],
+                not_(equal_to(policy['tenant_uuid'])),
+            )
+
     @fixtures.http.policy()
     def test_delete(self, policy):
         with self.client_in_subtenant() as (client, _, __):

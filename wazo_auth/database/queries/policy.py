@@ -214,7 +214,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         query = self._paginator.update_query(query, **kwargs)
         policies = query.all()
         for policy in policies:
-            self._set_tenant_uuid_exposed(policy, tenant_uuid)
+            self._set_tenant_uuid_exposed(policy, [tenant_uuid])
             self._set_read_only(policy)
         return policies
 
@@ -261,8 +261,13 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         query = self.session.query(Tenant).filter(Tenant.uuid == Tenant.parent_uuid)
         return query.first()
 
-    def _set_tenant_uuid_exposed(self, policy, requested_tenant_uuid):
-        policy.tenant_uuid_exposed = requested_tenant_uuid or policy.tenant_uuid
+    def _set_tenant_uuid_exposed(self, policy, tenant_uuids):
+        tenant_uuid = policy.tenant_uuid
+        if policy.config_managed or policy.shared:
+            if tenant_uuids and tenant_uuid not in tenant_uuids:
+                tenant_uuid = tenant_uuids[0]
+
+        policy.tenant_uuid_exposed = tenant_uuid
 
     def _set_read_only(self, policy):
         if policy.config_managed:
@@ -290,15 +295,18 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         filter_ = self.new_strict_filter(**kwargs)
         query = self.session.query(Policy).filter(filter_)
         if tenant_uuids is not None:
+            owner_tenant_uuid = tenant_uuids[0]  # TODO Verify if item 0 is always requested
             read_only_filter = or_(
                 Policy.tenant_uuid.in_(tenant_uuids),
-                self._read_only_filter(read_only=True),
+                self._read_only_filter(owner_tenant_uuid),
             )
             query = query.filter(read_only_filter)
         policy = query.first()
+
         if not policy:
             raise exceptions.UnknownPolicyException(kwargs)
 
+        self._set_tenant_uuid_exposed(policy, tenant_uuids)
         self._set_read_only(policy)
         return policy
 
