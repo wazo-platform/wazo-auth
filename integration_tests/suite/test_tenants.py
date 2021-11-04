@@ -353,10 +353,10 @@ class TestTenantPolicyAssociation(base.APIIntegrationTest):
 
         result = action()
         expected = contains_inanyorder(
-            *[
-                has_entries(name=n)
-                for n in ('foo', 'bar', 'baz', *DEFAULT_POLICIES_SLUG)
-            ]
+            has_entries(name='foo'),
+            has_entries(name='bar'),
+            has_entries(name='baz'),
+            *[has_entries(name=slug) for slug in DEFAULT_POLICIES_SLUG],
         )
         assert_that(
             result,
