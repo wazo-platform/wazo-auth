@@ -28,6 +28,11 @@ TENANT_UUID = '00000000-0000-4000-9000-000000000000'
 USER_UUID = '00000000-0000-4000-9000-111111111111'
 ADDRESS_ID = 42
 
+TENANT_UUID_1 = '00000000-0000-4000-a000-000000000001'
+TENANT_UUID_2 = '00000000-0000-4000-a000-000000000002'
+TENANT_UUID_3 = '00000000-0000-4000-a000-000000000003'
+TENANT_UUID_4 = '00000000-0000-4000-a000-000000000004'
+
 
 class ValidSlug:
     def __eq__(self, other):
@@ -306,3 +311,16 @@ class TestTenantDAO(base.DAOTestCase):
             .filter(models.Tenant.uuid == models.Tenant.parent_uuid)
             .scalar()
         )
+
+    @fixtures.db.tenant(name='1', uuid=TENANT_UUID_1)
+    @fixtures.db.tenant(name='2', uuid=TENANT_UUID_2, parent_uuid=TENANT_UUID_1)
+    @fixtures.db.tenant(name='3', uuid=TENANT_UUID_3, parent_uuid=TENANT_UUID_1)
+    @fixtures.db.tenant(name='4', uuid=TENANT_UUID_4, parent_uuid=TENANT_UUID_2)
+    def test_tenant_query_always_return_scoped_tenant_first(self, *_):
+        result = self._tenant_dao._tenant_query(TENANT_UUID_2)
+        assert_that(result[0], has_properties(name='2'))
+
+        self._tenant_dao.update(TENANT_UUID_2, name='2-updated')
+
+        result = self._tenant_dao._tenant_query(TENANT_UUID_2)
+        assert_that(result[0], has_properties(name='2-updated'))

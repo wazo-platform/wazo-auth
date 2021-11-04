@@ -70,12 +70,12 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         filter_ = self.new_search_filter(search=search)
 
         if tenant_uuids is not None:
-            owner_tenant_uuid = tenant_uuids[0]
+            requested_tenant_uuid = self._extract_requested_tenant_uuid(tenant_uuids)
             filter_ = and_(
                 filter_,
                 or_(
                     Policy.tenant_uuid.in_(tenant_uuids),
-                    self._read_only_filter(owner_tenant_uuid),
+                    self._read_only_filter(requested_tenant_uuid),
                 ),
             )
 
@@ -181,11 +181,11 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         read_only = kwargs.get('read_only')
         read_only_filter = ''
         if tenant_uuids is not None:
-            owner_tenant_uuid = tenant_uuids[0]  # TODO Verify if item 0 is always requested
+            requested_tenant_uuid = self._extract_requested_tenant_uuid(tenant_uuids)
             if read_only is True:
                 parent_owner_uuid = (
                     self.session.query(Tenant.parent_uuid)
-                    .filter(Tenant.uuid == owner_tenant_uuid)
+                    .filter(Tenant.uuid == requested_tenant_uuid)
                     .first()
                 )
                 read_only_filter = self._read_only_filter(parent_owner_uuid)
@@ -195,7 +195,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             elif read_only is None:
                 read_only_filter = or_(
                     Policy.tenant_uuid.in_(tenant_uuids),
-                    self._read_only_filter(owner_tenant_uuid)
+                    self._read_only_filter(requested_tenant_uuid)
                 )
         else:
             if read_only is True:
@@ -349,10 +349,10 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         filter_ = self.new_strict_filter(**kwargs)
         query = self.session.query(Policy).filter(filter_)
         if tenant_uuids is not None:
-            owner_tenant_uuid = tenant_uuids[0]  # TODO Verify if item 0 is always requested
+            requested_tenant_uuid = self._extract_requested_tenant_uuid(tenant_uuids)
             read_only_filter = or_(
                 Policy.tenant_uuid.in_(tenant_uuids),
-                self._read_only_filter(owner_tenant_uuid),
+                self._read_only_filter(requested_tenant_uuid),
             )
             query = query.filter(read_only_filter)
         policy = query.first()
@@ -468,6 +468,14 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def _slug_exist(self, slug):
         return self.session.query(Policy.slug).filter(Policy.slug == slug).count() > 0
+
+    def _extract_requested_tenant_uuid(tenant_uuids):
+        # NOTE(fblackburn): We rely on implementation detail about tenant_uuids generation to
+        # extract requested tenant_uuid. A better solution would be to stop extracting tenant_uuids
+        # from http layer and only pass requested_tenant_uuid, only for policy resource
+        if not tenant_uuids:
+            raise Exception(f'Cannot extract requested tenant from "{tenant_uuids}"')
+        return tenant_uuids[0]
 
 
 def _slug_from_name(name):
