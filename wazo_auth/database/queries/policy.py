@@ -13,9 +13,10 @@ from .base import BaseDAO, PaginatorMixin
 from . import filters
 from ..models import (
     Access,
-    PolicyAccess,
     GroupPolicy,
     Policy,
+    PolicyAccess,
+    Tenant,
     UserPolicy,
 )
 from ... import exceptions
@@ -69,11 +70,12 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         filter_ = self.new_search_filter(search=search)
 
         if tenant_uuids is not None:
+            owner_tenant_uuid = tenant_uuids[0]
             filter_ = and_(
                 filter_,
                 or_(
                     Policy.tenant_uuid.in_(tenant_uuids),
-                    Policy.config_managed.is_(True),
+                    self._read_only_filter(owner_tenant_uuid),
                 ),
             )
 
@@ -188,31 +190,23 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             self._set_read_only(policy)
         return policies
 
-    def _read_only_filter(self, read_only):
-        if read_only is True:
-            filter_ = Policy.config_managed.is_(True)
-        elif read_only is False:
-            filter_ = Policy.config_managed.is_(False)
-        else:
-            filter_ = ''  # no filter
-        return filter_
-
     def list_without_relations(self, **kwargs):
         if 'read_only' in kwargs:
             raise NotImplementedError('read_only filter')
         if 'tenant_uuid_exposed' in kwargs:
             raise NotImplementedError('tenant_uuid_exposed filter')
 
+        tenant_uuid = kwargs.pop('tenant_uuid', None)
+
         search_filter = self.new_search_filter(**kwargs)
         strict_filter = self.new_strict_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
 
-        tenant_uuid = kwargs.pop('tenant_uuid', None)
         if tenant_uuid:
             tenant_uuid = str(tenant_uuid)
             read_only_filter = or_(
                 Policy.tenant_uuid == tenant_uuid,
-                self._read_only_filter(read_only=True),
+                self._read_only_filter(tenant_uuid)
             )
             filter_ = and_(filter_, read_only_filter)
 
@@ -224,11 +218,62 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             self._set_read_only(policy)
         return policies
 
+    def _read_only_filter(self, tenant_uuid):
+        filter_ = Policy.config_managed.is_(True)
+        tenant_branch_query = self._reverse_tenant_tree_query(tenant_uuid)
+        shared_filter = and_(
+            Policy.shared.is_(True),
+            Policy.tenant_uuid.in_(tenant_branch_query),
+        )
+        filter_ = or_(filter_, shared_filter)
+        return filter_
+
+    def _reverse_tenant_tree_query(self, bottom_tenant_uuid):
+        top_tenant_uuid = self._find_top_tenant().uuid
+        if bottom_tenant_uuid == top_tenant_uuid:
+            return self.session.query(Tenant.uuid).filter(Tenant.uuid == bottom_tenant_uuid)
+
+        included_tenants = (
+            self.session.query(Tenant.parent_uuid, Tenant.uuid)
+            .filter(
+                or_(
+                    Tenant.uuid == str(bottom_tenant_uuid),
+                    Tenant.uuid == top_tenant_uuid,
+                )
+            )
+            .cte(recursive=True)
+        )
+        included_tenants = included_tenants.union_all(
+            self.session.query(Tenant.parent_uuid, Tenant.uuid).filter(
+                and_(
+                    Tenant.uuid == included_tenants.c.parent_uuid,
+                    Tenant.parent_uuid != Tenant.uuid,
+                )
+            )
+        )
+        return (
+            self.session.query(Tenant.uuid)
+            .select_from(included_tenants)
+            .join(Tenant, Tenant.uuid == included_tenants.c.uuid)
+        )
+
+    def _find_top_tenant(self):
+        query = self.session.query(Tenant).filter(Tenant.uuid == Tenant.parent_uuid)
+        return query.first()
+
     def _set_tenant_uuid_exposed(self, policy, requested_tenant_uuid):
         policy.tenant_uuid_exposed = requested_tenant_uuid or policy.tenant_uuid
 
     def _set_read_only(self, policy):
-        policy.read_only = policy.config_managed
+        if policy.config_managed:
+            policy.read_only = True
+            return
+
+        if policy.shared and policy.tenant_uuid_exposed != policy.tenant_uuid:
+            policy.read_only = True
+            return
+
+        policy.read_only = False
 
     def get(self, policy_uuid, tenant_uuids=None):
         return self._get_by(uuid=str(policy_uuid), tenant_uuids=tenant_uuids)

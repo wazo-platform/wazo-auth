@@ -438,3 +438,21 @@ class TestTenantPolicyAssociation(base.APIIntegrationTest):
                 items=expected,
             ),
         )
+
+    @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http.policy(slug='top_shared', shared=True)
+    @fixtures.http.policy(slug='child', tenant_uuid=SUB_TENANT_UUID)
+    def test_policy_list_with_shared(self, *args):
+        result = self.client.tenants.get_policies(SUB_TENANT_UUID)
+        assert_that(
+            result,
+            has_entries(
+                total=2 + NB_DEFAULT_POLICIES,
+                filtered=2 + NB_DEFAULT_POLICIES,
+                items=contains_inanyorder(
+                    has_entries(slug='top_shared'),
+                    has_entries(slug='child'),
+                    *[has_entries(name=slug) for slug in DEFAULT_POLICIES_SLUG],
+                ),
+            ),
+        )
