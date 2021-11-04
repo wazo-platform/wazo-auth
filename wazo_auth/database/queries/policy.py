@@ -156,19 +156,30 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         filter_ = and_(strict_filter, search_filter)
 
         read_only = kwargs.get('read_only')
-        read_only_filter = self._read_only_filter(read_only)
+        read_only_filter = ''
         if tenant_uuids is not None:
+            owner_tenant_uuid = tenant_uuids[0]  # TODO Verify if item 0 is always requested
             if read_only is True:
-                # NOTE(fblackburn): read_only == config_managed and not scoped by tenant
-                pass
+                parent_owner_uuid = (
+                    self.session.query(Tenant.parent_uuid)
+                    .filter(Tenant.uuid == owner_tenant_uuid)
+                    .first()
+                )
+                read_only_filter = self._read_only_filter(parent_owner_uuid)
             elif read_only is False:
                 tenant_filter = Policy.tenant_uuid.in_(tenant_uuids)
                 read_only_filter = and_(tenant_filter, read_only_filter)
             elif read_only is None:
                 read_only_filter = or_(
                     Policy.tenant_uuid.in_(tenant_uuids),
-                    self._read_only_filter(read_only=True),
+                    self._read_only_filter(owner_tenant_uuid)
                 )
+        else:
+            if read_only is True:
+                read_only_filter = Policy.config_managed.is_(True)
+            elif read_only is False:
+                read_only_filter = Policy.config_managed.is_(False)
+
         filter_ = and_(filter_, read_only_filter)
 
         query = (
@@ -182,11 +193,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         policies = query.all()
         for policy in policies:
-            tenant_uuid = policy.tenant_uuid
-            if policy.config_managed:
-                if tenant_uuids and tenant_uuid not in tenant_uuids:
-                    tenant_uuid = tenant_uuids[0]
-            policy.tenant_uuid_exposed = tenant_uuid
+            self._set_tenant_uuid_exposed(policy, tenant_uuids)
             self._set_read_only(policy)
         return policies
 

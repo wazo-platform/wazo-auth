@@ -293,23 +293,28 @@ class TestPolicyDAO(base.DAOTestCase):
     @fixtures.db.policy(slug='hidden-shared', tenant_uuid=TENANT_UUID_3, shared=True)
     @fixtures.db.policy(slug='child-hidden-shared', tenant_uuid=TENANT_UUID_4, shared=True)
     # fmt: on
-    def test_list_without_relations_with_shared(self, *_):
-        result = self._policy_dao.list_without_relations(tenant_uuid=TENANT_UUID_2)
-        assert_that(
-            result,
-            contains_inanyorder(
-                has_properties(
-                    slug='top-shared',
-                    read_only=True,
-                    tenant_uuid_exposed=TENANT_UUID_2,
-                ),
-                has_properties(
-                    slug='child-normal',
-                    read_only=False,
-                    tenant_uuid_exposed=TENANT_UUID_2,
-                ),
+    def test_methods_with_shared(self, *_):
+        expected = [
+            has_properties(
+                slug='top-shared',
+                read_only=True,
+                tenant_uuid_exposed=TENANT_UUID_2,
             ),
-        )
+            has_properties(
+                slug='child-normal',
+                read_only=False,
+                tenant_uuid_exposed=TENANT_UUID_2,
+            ),
+        ]
+
+        result = self._policy_dao.list_without_relations(tenant_uuid=TENANT_UUID_2)
+        assert_that(result, contains_inanyorder(*expected))
+
+        result = self._policy_dao.list_(tenant_uuids=[TENANT_UUID_2])
+        assert_that(result, contains_inanyorder(*expected))
+
+        result = self._policy_dao.count(search=None, tenant_uuids=[TENANT_UUID_2])
+        assert_that(result, equal_to(len(expected)))
 
     # fmt: off
     @fixtures.db.tenant(name='top', uuid=TENANT_UUID_1)

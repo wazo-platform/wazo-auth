@@ -256,6 +256,43 @@ class TestPolicies(base.APIIntegrationTest):
             ),
         )
 
+    @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http.policy(slug='policy', shared=True, tenant_uuid=SUB_TENANT_UUID)
+    def test_list_when_shared(self, _, policy):
+        response = self.client.policies.list(tenant_uuid=SUB_TENANT_UUID)
+        assert_that(
+            response,
+            has_entries(
+                total=1 + NB_DEFAULT_POLICIES,
+                items=has_items(
+                    has_entries(
+                        slug='policy',
+                        read_only=False,
+                        shared=True,
+                        tenant_uuid=policy['tenant_uuid'],
+                    )
+                ),
+            )
+        )
+
+        parent_uuid = SUB_TENANT_UUID
+        with self.client_in_subtenant(parent_uuid=parent_uuid) as (client, _, tenant):
+            response = client.policies.list()
+            assert_that(
+                response,
+                has_entries(
+                    total=1 + NB_DEFAULT_POLICIES,
+                    items=has_items(
+                        has_entries(
+                            slug='policy',
+                            read_only=True,
+                            shared=True,
+                            tenant_uuid=tenant['uuid'],
+                        )
+                    ),
+                )
+            )
+
     @fixtures.http.group()
     @fixtures.http.group()
     @fixtures.http.user()
