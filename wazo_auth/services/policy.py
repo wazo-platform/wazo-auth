@@ -19,8 +19,12 @@ class PolicyService(BaseService):
 
     def delete(self, policy_uuid, tenant_uuids):
         policy = self._dao.policy.find_by(uuid=policy_uuid)
-        if policy and policy.config_managed:
-            raise exceptions.ReadOnlyPolicyException(policy_uuid)
+        if policy:
+            if policy.config_managed:
+                raise exceptions.ReadOnlyPolicyException(policy_uuid)
+
+            if policy.shared and policy.tenant_uuid not in tenant_uuids:
+                raise exceptions.ReadOnlyPolicyException(policy_uuid)
 
         return self._dao.policy.delete(policy_uuid, tenant_uuids=tenant_uuids)
 

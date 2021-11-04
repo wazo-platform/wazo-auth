@@ -378,6 +378,12 @@ class TestPolicies(base.APIIntegrationTest):
         policy = self.client.policies.list(slug=ALL_USERS_POLICY_SLUG)['items'][0]
         assert_http_error(403, self.client.policies.delete, policy['uuid'])
 
+    @fixtures.http.policy(slug='top', shared=True)
+    def test_delete_when_shared_and_read_only(self, policy):
+        with self.client_in_subtenant() as (client, _, tenant):
+            assert_http_error(403, client.policies.delete, policy['uuid'])
+        assert_no_error(self.client.policies.delete, policy['uuid'])
+
     @fixtures.http.policy(
         name='foobar',
         description='a test policy',
