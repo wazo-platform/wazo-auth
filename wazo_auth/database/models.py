@@ -235,6 +235,7 @@ class Policy(Base):
         super().__init__(*args, **kwargs)
         self.tenant_uuid_exposed = None
         self.read_only = None
+        self.shared_exposed = None
 
 
 class User(Base):

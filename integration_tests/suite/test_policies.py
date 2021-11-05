@@ -300,7 +300,7 @@ class TestPolicies(base.APIIntegrationTest):
                         has_entries(
                             slug='policy',
                             read_only=True,
-                            shared=True,
+                            shared=False,
                             tenant_uuid=tenant['uuid'],
                         )
                     ),
@@ -369,7 +369,7 @@ class TestPolicies(base.APIIntegrationTest):
                 has_entries(
                     name='foobar',
                     read_only=True,
-                    shared=True,
+                    shared=False,
                     tenant_uuid=tenant['uuid'],
                 ),
             )

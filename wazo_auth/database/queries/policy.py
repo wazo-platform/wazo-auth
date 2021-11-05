@@ -218,6 +218,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         for policy in policies:
             self._set_tenant_uuid_exposed(policy, tenant_uuids)
             self._set_read_only(policy)
+            self._set_shared_exposed(policy)
         return policies
 
     def list_without_relations(self, **kwargs):
@@ -225,6 +226,8 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             raise NotImplementedError('read_only filter')
         if 'tenant_uuid_exposed' in kwargs:
             raise NotImplementedError('tenant_uuid_exposed filter')
+        if 'shared_exposed' in kwargs:
+            raise NotImplementedError('shared_exposed filter')
 
         tenant_uuid = kwargs.pop('tenant_uuid', None)
 
@@ -246,6 +249,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         for policy in policies:
             self._set_tenant_uuid_exposed(policy, [tenant_uuid])
             self._set_read_only(policy)
+            self._set_shared_exposed(policy)
         return policies
 
     def _read_only_filter(self, tenant_uuid):
@@ -334,6 +338,13 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         policy.read_only = False
 
+    def _set_shared_exposed(self, policy):
+        if policy.shared and policy.tenant_uuid_exposed != policy.tenant_uuid:
+            policy.shared_exposed = False
+            return
+
+        policy.shared_exposed = policy.shared
+
     def get(self, policy_uuid, tenant_uuids=None):
         return self._get_by(uuid=str(policy_uuid), tenant_uuids=tenant_uuids)
 
@@ -345,6 +356,8 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             raise NotImplementedError('read_only filter')
         if 'tenant_uuid_exposed' in kwargs:
             raise NotImplementedError('tenant_uuid_exposed filter')
+        if 'shared_exposed' in kwargs:
+            raise NotImplementedError('shared_exposed filter')
 
         filter_ = self.new_strict_filter(**kwargs)
         query = self.session.query(Policy).filter(filter_)
@@ -362,6 +375,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         self._set_tenant_uuid_exposed(policy, tenant_uuids)
         self._set_read_only(policy)
+        self._set_shared_exposed(policy)
         return policy
 
     def find_by(self, **kwargs):
@@ -369,6 +383,8 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             raise NotImplementedError('read_only filter')
         if 'tenant_uuid_exposed' in kwargs:
             raise NotImplementedError('tenant_uuid_exposed filter')
+        if 'shared_exposed' in kwargs:
+            raise NotImplementedError('shared_exposed filter')
 
         filter_ = self.new_strict_filter(**kwargs)
         query = self.session.query(Policy).filter(filter_)
@@ -376,6 +392,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if policy:
             policy.tenant_uuid_exposed = policy.tenant_uuid
             self._set_read_only(policy)
+            self._set_shared_exposed(policy)
 
             # NOTE(fblackburn): di/association policy/access
             # don't use relationship and object is not updated
