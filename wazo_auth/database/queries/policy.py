@@ -246,8 +246,9 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         query = self.session.query(Policy).filter(filter_).group_by(Policy)
         query = self._paginator.update_query(query, **kwargs)
         policies = query.all()
+        tenant_uuids = [tenant_uuid] if tenant_uuid else None
         for policy in policies:
-            self._set_tenant_uuid_exposed(policy, [tenant_uuid])
+            self._set_tenant_uuid_exposed(policy, tenant_uuids)
             self._set_read_only(policy)
             self._set_shared_exposed(policy)
         return policies
@@ -321,8 +322,12 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def _set_tenant_uuid_exposed(self, policy, tenant_uuids):
         tenant_uuid = policy.tenant_uuid
+        if not tenant_uuids:
+            policy.tenant_uuid_exposed = tenant_uuid
+            return
+
         if policy.config_managed or policy.shared:
-            if tenant_uuids and tenant_uuid not in tenant_uuids:
+            if tenant_uuid not in tenant_uuids:
                 tenant_uuid = tenant_uuids[0]
 
         policy.tenant_uuid_exposed = tenant_uuid
@@ -390,7 +395,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         query = self.session.query(Policy).filter(filter_)
         policy = query.first()
         if policy:
-            policy.tenant_uuid_exposed = policy.tenant_uuid
+            self._set_tenant_uuid_exposed(policy, tenant_uuids=None)
             self._set_read_only(policy)
             self._set_shared_exposed(policy)
 
@@ -486,7 +491,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def _slug_exist(self, slug):
         return self.session.query(Policy.slug).filter(Policy.slug == slug).count() > 0
 
-    def _extract_requested_tenant_uuid(tenant_uuids):
+    def _extract_requested_tenant_uuid(self, tenant_uuids):
         # NOTE(fblackburn): We rely on implementation detail about tenant_uuids generation to
         # extract requested tenant_uuid. A better solution would be to stop extracting tenant_uuids
         # from http layer and only pass requested_tenant_uuid, only for policy resource
