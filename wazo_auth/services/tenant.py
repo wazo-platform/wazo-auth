@@ -25,13 +25,8 @@ class TenantService(BaseService):
 
     def count_policies(self, tenant_uuid, scoping_tenant_uuid, **kwargs):
         self.assert_tenant_under(scoping_tenant_uuid, tenant_uuid)
-        search = kwargs.pop('search', None)
         tenant_uuids = [str(tenant_uuid)]
-        return self._dao.policy.count(
-            search=search,
-            tenant_uuids=tenant_uuids,
-            **kwargs,
-        )
+        return self._dao.policy.count(tenant_uuids=tenant_uuids, **kwargs)
 
     def count_users(self, tenant_uuid, **kwargs):
         result = self._dao.tenant.count_users(tenant_uuid, **kwargs)

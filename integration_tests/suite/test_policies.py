@@ -234,7 +234,13 @@ class TestPolicies(base.APIIntegrationTest):
     @fixtures.http.policy(name='three', tenant_uuid=SUB_TENANT_UUID)
     def test_list_searching(self, _, one, two, three):
         response = self.client.policies.list(tenant_uuid=SUB_TENANT_UUID, search='one')
-        assert_that(response, has_entries(total=1, items=contains(one)))
+        assert_that(
+            response,
+            has_entries(
+                total=3 + NB_DEFAULT_POLICIES,
+                items=contains(one),
+            ),
+        )
 
         response = self.client.policies.list(
             tenant_uuid=SUB_TENANT_UUID, read_only=False

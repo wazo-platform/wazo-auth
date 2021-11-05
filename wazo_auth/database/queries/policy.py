@@ -66,8 +66,13 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         self.session.query(PolicyAccess).filter(filter_).delete()
         self.session.flush()
 
-    def count(self, search, tenant_uuids=None, **ignored):
-        filter_ = self.new_search_filter(search=search)
+    def count(self, tenant_uuids=None, filtered=False, **kwargs):
+        filter_ = ''
+
+        if filtered:
+            strict_filter = self.new_strict_filter(**kwargs)
+            search_filter = self.new_search_filter(**kwargs)
+            filter_ = and_(filter_, strict_filter, search_filter)
 
         if tenant_uuids is not None:
             requested_tenant_uuid = self._extract_requested_tenant_uuid(tenant_uuids)
