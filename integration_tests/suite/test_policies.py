@@ -286,7 +286,7 @@ class TestPolicies(base.APIIntegrationTest):
                         tenant_uuid=policy['tenant_uuid'],
                     )
                 ),
-            )
+            ),
         )
 
         parent_uuid = SUB_TENANT_UUID
@@ -304,7 +304,7 @@ class TestPolicies(base.APIIntegrationTest):
                             tenant_uuid=tenant['uuid'],
                         )
                     ),
-                )
+                ),
             )
 
     @fixtures.http.group()

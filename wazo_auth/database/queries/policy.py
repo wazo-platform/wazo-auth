@@ -121,7 +121,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         filter_ = and_(
             Policy.tenant_uuid.in_(tenant_uuids),
             Policy.shared.is_(True),
-            or_(Policy.slug == policy.slug, Policy.name == policy.name)
+            or_(Policy.slug == policy.slug, Policy.name == policy.name),
         )
         result = self.session.query(Policy).filter(filter_).first()
         if result:
@@ -131,7 +131,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             tenant_uuids = self._tenant_tree_query(policy.tenant_uuid)
             filter_ = and_(
                 Policy.tenant_uuid.in_(tenant_uuids),
-                or_(Policy.slug == policy.slug, Policy.name == policy.name)
+                or_(Policy.slug == policy.slug, Policy.name == policy.name),
             )
             result = self.session.query(Policy).filter(filter_).first()
             if result:
@@ -195,7 +195,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             elif read_only is None:
                 read_only_filter = or_(
                     Policy.tenant_uuid.in_(tenant_uuids),
-                    self._read_only_filter(requested_tenant_uuid)
+                    self._read_only_filter(requested_tenant_uuid),
                 )
         else:
             if read_only is True:
@@ -239,7 +239,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             tenant_uuid = str(tenant_uuid)
             read_only_filter = or_(
                 Policy.tenant_uuid == tenant_uuid,
-                self._read_only_filter(tenant_uuid)
+                self._read_only_filter(tenant_uuid),
             )
             filter_ = and_(filter_, read_only_filter)
 
@@ -266,7 +266,8 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def _reverse_tenant_tree_query(self, bottom_tenant_uuid):
         top_tenant_uuid = self._find_top_tenant().uuid
         if bottom_tenant_uuid == top_tenant_uuid:
-            return self.session.query(Tenant.uuid).filter(Tenant.uuid == bottom_tenant_uuid)
+            filter_ = Tenant.uuid == top_tenant_uuid
+            return self.session.query(Tenant.uuid).filter(filter_)
 
         included_tenants = (
             self.session.query(Tenant.parent_uuid, Tenant.uuid)
