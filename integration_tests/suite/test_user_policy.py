@@ -12,7 +12,7 @@ from hamcrest import (
 )
 from xivo_test_helpers.hamcrest.raises import raises
 from .helpers import fixtures, base
-from .helpers.base import assert_http_error, assert_no_error
+from .helpers.base import assert_http_error, assert_no_error, SUB_TENANT_UUID
 from .helpers.constants import UNKNOWN_SLUG, UNKNOWN_UUID
 
 
@@ -102,6 +102,44 @@ class TestUsers(base.APIIntegrationTest):
         assert_that(result, has_entries(items=contains(policy1)))
 
         self.client.policies.delete(user_policy['uuid'])
+
+    @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http.user(tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http.policy(slug='top_shared', shared=True)
+    def test_delete_with_shared(self, tenant, user, policy):
+        self.client.users.add_policy(user['uuid'], policy['uuid'])
+        base.assert_no_error(
+            self.client.users.remove_policy,
+            user['uuid'],
+            policy['uuid'],
+            tenant_uuid=SUB_TENANT_UUID,
+        )
+        self.client.users.add_policy(user['uuid'], policy['slug'])
+        base.assert_no_error(
+            self.client.users.remove_policy,
+            user['uuid'],
+            policy['slug'],
+            tenant_uuid=SUB_TENANT_UUID,
+        )
+
+    @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http.user(tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http.policy(slug='top_shared', shared=True)
+    def test_put_with_shared(self, tenant, user, policy):
+        self.client.users.remove_policy(user['uuid'], policy['uuid'])
+        base.assert_no_error(
+            self.client.users.add_policy,
+            user['uuid'],
+            policy['uuid'],
+            tenant_uuid=SUB_TENANT_UUID,
+        )
+        self.client.users.remove_policy(user['uuid'], policy['slug'])
+        base.assert_no_error(
+            self.client.users.add_policy,
+            user['uuid'],
+            policy['slug'],
+            tenant_uuid=SUB_TENANT_UUID,
+        )
 
 
 @base.use_asset('base')

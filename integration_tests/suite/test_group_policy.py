@@ -62,6 +62,25 @@ class TestGroupPolicyAssociation(base.APIIntegrationTest):
         result = self.client.groups.get_policies(group['uuid'])
         assert_that(result, has_entries('items', contains(policy1)))
 
+    @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http.group(tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http.policy(slug='top_shared', shared=True)
+    def test_delete_with_shared(self, tenant, group, policy):
+        self.client.groups.add_policy(group['uuid'], policy['uuid'])
+        base.assert_no_error(
+            self.client.groups.remove_policy,
+            group['uuid'],
+            policy['uuid'],
+            tenant_uuid=SUB_TENANT_UUID,
+        )
+        self.client.groups.add_policy(group['uuid'], policy['slug'])
+        base.assert_no_error(
+            self.client.groups.remove_policy,
+            group['uuid'],
+            policy['slug'],
+            tenant_uuid=SUB_TENANT_UUID,
+        )
+
     @fixtures.http.group()
     @fixtures.http.policy()
     @fixtures.http.policy()
@@ -98,6 +117,25 @@ class TestGroupPolicyAssociation(base.APIIntegrationTest):
 
         result = self.client.groups.get_policies(group['uuid'])
         assert_that(result, has_entries(items=contains(policy1)))
+
+    @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http.group(tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http.policy(slug='top_shared', shared=True)
+    def test_put_with_shared(self, tenant, group, policy):
+        self.client.groups.remove_policy(group['uuid'], policy['uuid'])
+        base.assert_no_error(
+            self.client.groups.add_policy,
+            group['uuid'],
+            policy['uuid'],
+            tenant_uuid=SUB_TENANT_UUID,
+        )
+        self.client.groups.remove_policy(group['uuid'], policy['slug'])
+        base.assert_no_error(
+            self.client.groups.add_policy,
+            group['uuid'],
+            policy['slug'],
+            tenant_uuid=SUB_TENANT_UUID,
+        )
 
     @fixtures.http.user(username='foo', password='bar')
     @fixtures.http.group()
