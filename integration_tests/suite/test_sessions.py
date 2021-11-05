@@ -138,7 +138,7 @@ class TestSessions(base.APIIntegrationTest):
         def bus_received_msg():
             assert_that(
                 msg_accumulator.accumulate(),
-                contains(
+                has_items(
                     has_entries(
                         data={
                             'uuid': session['uuid'],
@@ -189,7 +189,7 @@ class TestSessions(base.APIIntegrationTest):
         def bus_received_msg():
             assert_that(
                 msg_accumulator.accumulate(),
-                contains(
+                has_items(
                     has_entries(
                         data={
                             'uuid': session_uuid,
@@ -212,7 +212,7 @@ class TestSessions(base.APIIntegrationTest):
         def bus_received_msg():
             assert_that(
                 msg_accumulator.accumulate(),
-                contains(
+                has_items(
                     has_entries(
                         data={
                             'uuid': session_uuid,
@@ -236,7 +236,7 @@ class TestSessions(base.APIIntegrationTest):
         def bus_received_msg():
             assert_that(
                 msg_accumulator.accumulate(),
-                contains(
+                has_items(
                     has_entries(
                         data={
                             'uuid': token['session_uuid'],
