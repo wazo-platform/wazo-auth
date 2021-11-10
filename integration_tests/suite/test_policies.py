@@ -446,6 +446,12 @@ class TestPolicies(base.APIIntegrationTest):
         policy = self.client.policies.list(slug=ALL_USERS_POLICY_SLUG)['items'][0]
         assert_http_error(403, self.client.policies.edit, policy['uuid'], 'name')
 
+    @fixtures.http.policy(shared=True)
+    def test_put_when_shared(self, policy):
+        with self.client_in_subtenant() as (client, _, tenant):
+            assert_http_error(403, client.policies.edit, policy['uuid'], 'name')
+        assert_no_error(self.client.policies.edit, policy['uuid'], **policy)
+
     @fixtures.http.user(username='foo', password='bar')
     @fixtures.http.policy()
     def test_put_when_policy_has_more_access_than_token(self, user, policy):
