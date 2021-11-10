@@ -107,7 +107,8 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             shared=shared,
             tenant_uuid=tenant_uuid,
         )
-        self._check_duplicate_policy(policy)
+        self._check_duplicate_with_parent_tenants(policy)
+        self._check_duplicate_with_children_tenants(policy)
 
         self.session.add(policy)
         try:
@@ -121,7 +122,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         self.session.flush()
         return policy.uuid
 
-    def _check_duplicate_policy(self, policy):
+    def _check_duplicate_with_parent_tenants(self, policy):
         tenant_uuids = self._reverse_tenant_tree_query(policy.tenant_uuid)
         filter_ = and_(
             Policy.tenant_uuid.in_(tenant_uuids),
@@ -132,15 +133,18 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if result:
             raise exceptions.DuplicatePolicyException(policy.name)
 
-        if policy.shared:
-            tenant_uuids = self._tenant_tree_query(policy.tenant_uuid)
-            filter_ = and_(
-                Policy.tenant_uuid.in_(tenant_uuids),
-                or_(Policy.slug == policy.slug, Policy.name == policy.name),
-            )
-            result = self.session.query(Policy).filter(filter_).first()
-            if result:
-                raise exceptions.DuplicatePolicyException(policy.name)
+    def _check_duplicate_with_children_tenants(self, policy):
+        if not policy.shared:
+            return
+
+        tenant_uuids = self._tenant_tree_query(policy.tenant_uuid)
+        filter_ = and_(
+            Policy.tenant_uuid.in_(tenant_uuids),
+            or_(Policy.slug == policy.slug, Policy.name == policy.name),
+        )
+        result = self.session.query(Policy).filter(filter_).first()
+        if result:
+            raise exceptions.DuplicatePolicyException(policy.name)
 
     def delete(self, policy_uuid, tenant_uuids):
         filter_ = Policy.uuid == str(policy_uuid)
