@@ -222,6 +222,8 @@ class Policy(Base):
         server_default='false',
         nullable=True,
     )
+    shared = Column(Boolean, default=False, server_default='false', nullable=False)
+
     tenant = relationship('Tenant', cascade='all, delete-orphan', single_parent=True)
     accesses = relationship('Access', secondary='auth_policy_access', viewonly=True)
 
@@ -232,6 +234,8 @@ class Policy(Base):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.tenant_uuid_exposed = None
+        self.read_only = None
+        self.shared_exposed = None
 
 
 class User(Base):

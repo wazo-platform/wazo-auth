@@ -17,6 +17,11 @@ from wazo_auth import exceptions
 from .helpers import fixtures, base
 from .helpers.constants import UNKNOWN_UUID, UNKNOWN_SLUG
 
+TENANT_UUID_1 = '00000000-0000-4000-a000-000000000001'
+TENANT_UUID_2 = '00000000-0000-4000-a000-000000000002'
+TENANT_UUID_3 = '00000000-0000-4000-a000-000000000003'
+TENANT_UUID_4 = '00000000-0000-4000-a000-000000000004'
+
 
 @base.use_asset('database')
 class TestPolicyDAO(base.DAOTestCase):
@@ -278,6 +283,63 @@ class TestPolicyDAO(base.DAOTestCase):
             ),
         )
 
+    # fmt: off
+    @fixtures.db.tenant(name='top', uuid=TENANT_UUID_1)
+    @fixtures.db.tenant(name='child', uuid=TENANT_UUID_2, parent_uuid=TENANT_UUID_1)
+    @fixtures.db.tenant(name='hidden', uuid=TENANT_UUID_3, parent_uuid=TENANT_UUID_1)
+    @fixtures.db.tenant(name='child-hidden', uuid=TENANT_UUID_4, parent_uuid=TENANT_UUID_2)
+    @fixtures.db.policy(slug='top-shared', tenant_uuid=TENANT_UUID_1, shared=True)
+    @fixtures.db.policy(slug='child-normal', tenant_uuid=TENANT_UUID_2)
+    @fixtures.db.policy(slug='hidden-shared', tenant_uuid=TENANT_UUID_3, shared=True)
+    @fixtures.db.policy(slug='child-hidden-shared', tenant_uuid=TENANT_UUID_4, shared=True)
+    # fmt: on
+    def test_methods_with_shared(self, *_):
+        expected = [
+            has_properties(
+                slug='top-shared',
+                read_only=True,
+                tenant_uuid_exposed=TENANT_UUID_2,
+            ),
+            has_properties(
+                slug='child-normal',
+                read_only=False,
+                tenant_uuid_exposed=TENANT_UUID_2,
+            ),
+        ]
+
+        result = self._policy_dao.list_without_relations(tenant_uuid=TENANT_UUID_2)
+        assert_that(result, contains_inanyorder(*expected))
+
+        result = self._policy_dao.list_(tenant_uuids=[TENANT_UUID_2])
+        assert_that(result, contains_inanyorder(*expected))
+
+        result = self._policy_dao.count(search=None, tenant_uuids=[TENANT_UUID_2])
+        assert_that(result, equal_to(len(expected)))
+
+    # fmt: off
+    @fixtures.db.tenant(name='top', uuid=TENANT_UUID_1)
+    @fixtures.db.tenant(name='child', uuid=TENANT_UUID_2, parent_uuid=TENANT_UUID_1)
+    @fixtures.db.policy(slug='top-managed', tenant_uuid=TENANT_UUID_1, config_managed=True)
+    @fixtures.db.policy(slug='child-normal', tenant_uuid=TENANT_UUID_2)
+    # fmt: on
+    def test_list_without_relations_with_config_managed(self, *_):
+        result = self._policy_dao.list_without_relations(tenant_uuid=TENANT_UUID_2)
+        assert_that(
+            result,
+            contains_inanyorder(
+                has_properties(
+                    slug='top-managed',
+                    read_only=True,
+                    tenant_uuid_exposed=TENANT_UUID_2,
+                ),
+                has_properties(
+                    slug='child-normal',
+                    read_only=False,
+                    tenant_uuid_exposed=TENANT_UUID_2,
+                ),
+            ),
+        )
+
     @fixtures.db.user()
     @fixtures.db.policy(name='a')
     @fixtures.db.policy(name='b', description='The second foobar')
@@ -447,6 +509,7 @@ class TestPolicyDAO(base.DAOTestCase):
             acl=acl,
             tenant_uuid=tenant_uuid,
             config_managed=False,
+            shared=False,
         )
         try:
             yield uuid_

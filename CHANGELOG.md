@@ -1,5 +1,9 @@
 # Changelog
 
+## 21.15
+
+* The `policies` resource now has a `shared` field
+
 ## 21.14
 
 * New `default_user_policy` configuration has been added to apply this policy to all users

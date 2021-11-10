@@ -219,6 +219,9 @@ definitions:
         type: array
         items:
           type: string
+      shared:
+        type: boolean
+        description: Should be shared to sub-tenants or not. Cannot be changed after creation
     required:
       - name
   PolicyResult:

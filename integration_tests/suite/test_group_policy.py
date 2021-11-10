@@ -13,6 +13,7 @@ from hamcrest import (
     not_,
 )
 from .helpers import base, fixtures
+from .helpers.base import SUB_TENANT_UUID
 from .helpers.constants import (
     ALL_USERS_POLICY_SLUG,
     UNKNOWN_SLUG,
@@ -61,6 +62,25 @@ class TestGroupPolicyAssociation(base.APIIntegrationTest):
         result = self.client.groups.get_policies(group['uuid'])
         assert_that(result, has_entries('items', contains(policy1)))
 
+    @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http.group(tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http.policy(slug='top_shared', shared=True)
+    def test_delete_with_shared(self, tenant, group, policy):
+        self.client.groups.add_policy(group['uuid'], policy['uuid'])
+        base.assert_no_error(
+            self.client.groups.remove_policy,
+            group['uuid'],
+            policy['uuid'],
+            tenant_uuid=SUB_TENANT_UUID,
+        )
+        self.client.groups.add_policy(group['uuid'], policy['slug'])
+        base.assert_no_error(
+            self.client.groups.remove_policy,
+            group['uuid'],
+            policy['slug'],
+            tenant_uuid=SUB_TENANT_UUID,
+        )
+
     @fixtures.http.group()
     @fixtures.http.policy()
     @fixtures.http.policy()
@@ -97,6 +117,25 @@ class TestGroupPolicyAssociation(base.APIIntegrationTest):
 
         result = self.client.groups.get_policies(group['uuid'])
         assert_that(result, has_entries(items=contains(policy1)))
+
+    @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http.group(tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http.policy(slug='top_shared', shared=True)
+    def test_put_with_shared(self, tenant, group, policy):
+        self.client.groups.remove_policy(group['uuid'], policy['uuid'])
+        base.assert_no_error(
+            self.client.groups.add_policy,
+            group['uuid'],
+            policy['uuid'],
+            tenant_uuid=SUB_TENANT_UUID,
+        )
+        self.client.groups.remove_policy(group['uuid'], policy['slug'])
+        base.assert_no_error(
+            self.client.groups.add_policy,
+            group['uuid'],
+            policy['slug'],
+            tenant_uuid=SUB_TENANT_UUID,
+        )
 
     @fixtures.http.user(username='foo', password='bar')
     @fixtures.http.group()
@@ -268,6 +307,37 @@ class TestGroupPolicyAssociation(base.APIIntegrationTest):
             connection.execute(
                 f"DELETE FROM auth_policy_access WHERE policy_uuid = '{policy_uuid}'"
             )
+
+    @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http.group(tenant_uuid=SUB_TENANT_UUID)
+    @fixtures.http.policy(slug='top_shared', shared=True)
+    @fixtures.http.policy(slug='child', tenant_uuid=SUB_TENANT_UUID)
+    def test_policy_list_with_shared(self, tenant, group, top_shared, child):
+        self.client.groups.add_policy(group['uuid'], top_shared['uuid'])
+        self.client.groups.add_policy(group['uuid'], child['uuid'])
+        result = self.client.groups.get_policies(
+            group['uuid'],
+            tenant_uuid=SUB_TENANT_UUID,
+        )
+        assert_that(
+            result,
+            has_entries(
+                total=2,
+                filtered=2,
+                items=contains_inanyorder(
+                    has_entries(
+                        slug='top_shared',
+                        read_only=True,
+                        tenant_uuid=group['tenant_uuid'],
+                    ),
+                    has_entries(
+                        slug='child',
+                        read_only=False,
+                        tenant_uuid=group['tenant_uuid'],
+                    ),
+                ),
+            ),
+        )
 
 
 @base.use_asset('base')

@@ -48,6 +48,7 @@ class TestPolicies(base.APIIntegrationTest):
                 slug='foobaz',
                 description=none(),
                 acl=empty(),
+                shared=False,
                 tenant_uuid=self.top_tenant_uuid,
             ),
         )
@@ -57,6 +58,7 @@ class TestPolicies(base.APIIntegrationTest):
             'slug': 'slug1',
             'description': 'a test policy',
             'acl': ['dird.me.#', 'ctid-ng.#'],
+            'shared': False,
             'tenant_uuid': tenant['uuid'],
         }
         # Specify the tenant_uuid
@@ -136,6 +138,20 @@ class TestPolicies(base.APIIntegrationTest):
     @fixtures.http.policy(slug='dup')
     def test_post_duplicate_slug(self, a):
         assert_http_error(409, self.client.policies.new, name='dup', slug='dup')
+
+    @fixtures.http.policy(slug='top', shared=True)
+    def test_post_duplicate_slug_when_top_shared(self, policy):
+        parent_uuid = policy['tenant_uuid']
+        with self.client_in_subtenant(parent_uuid=parent_uuid) as (client, _, tenant):
+            assert_http_error(409, client.policies.new, name='top', slug='top')
+
+    def test_post_duplicate_slug_shared_when_child_exists(self):
+        args = {'name': 'child', 'slug': 'child'}
+        with self.client_in_subtenant() as (client, _, tenant):
+            client.policies.new(**args)
+            assert_http_error(409, self.client.policies.new, shared=True, **args)
+            assert_no_error(self.client.policies.new, shared=False, **args)
+        self.client.policies.delete(args['slug'])
 
     @fixtures.http.user(username='foo', password='bar')
     def test_post_when_policy_has_more_access_than_token(self, user):
@@ -218,7 +234,13 @@ class TestPolicies(base.APIIntegrationTest):
     @fixtures.http.policy(name='three', tenant_uuid=SUB_TENANT_UUID)
     def test_list_searching(self, _, one, two, three):
         response = self.client.policies.list(tenant_uuid=SUB_TENANT_UUID, search='one')
-        assert_that(response, has_entries(total=1, items=contains(one)))
+        assert_that(
+            response,
+            has_entries(
+                total=3 + NB_DEFAULT_POLICIES,
+                items=contains(one),
+            ),
+        )
 
         response = self.client.policies.list(
             tenant_uuid=SUB_TENANT_UUID, read_only=False
@@ -253,6 +275,43 @@ class TestPolicies(base.APIIntegrationTest):
                 items=all_of(has_items(two, three), not_(has_item(one))),
             ),
         )
+
+    @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http.policy(slug='policy', shared=True, tenant_uuid=SUB_TENANT_UUID)
+    def test_list_when_shared(self, _, policy):
+        response = self.client.policies.list(tenant_uuid=SUB_TENANT_UUID)
+        assert_that(
+            response,
+            has_entries(
+                total=1 + NB_DEFAULT_POLICIES,
+                items=has_items(
+                    has_entries(
+                        slug='policy',
+                        read_only=False,
+                        shared=True,
+                        tenant_uuid=policy['tenant_uuid'],
+                    )
+                ),
+            ),
+        )
+
+        parent_uuid = SUB_TENANT_UUID
+        with self.client_in_subtenant(parent_uuid=parent_uuid) as (client, _, tenant):
+            response = client.policies.list()
+            assert_that(
+                response,
+                has_entries(
+                    total=1 + NB_DEFAULT_POLICIES,
+                    items=has_items(
+                        has_entries(
+                            slug='policy',
+                            read_only=True,
+                            shared=False,
+                            tenant_uuid=tenant['uuid'],
+                        )
+                    ),
+                ),
+            )
 
     @fixtures.http.group()
     @fixtures.http.group()
@@ -296,6 +355,35 @@ class TestPolicies(base.APIIntegrationTest):
                 has_entries(uuid=uuid_(), name='in sub-tenant'),
             )
 
+    @fixtures.http.policy(name='foobar', shared=True)
+    def test_get_when_shared(self, policy):
+        response = self.client.policies.get(policy['uuid'])
+        assert_that(
+            response,
+            has_entries(
+                name='foobar',
+                read_only=False,
+                shared=True,
+                tenant_uuid=policy['tenant_uuid'],
+            ),
+        )
+
+        with self.client_in_subtenant() as (client, _, tenant):
+            response = client.policies.get(policy['uuid'])
+            assert_that(
+                response,
+                has_entries(
+                    name='foobar',
+                    read_only=True,
+                    shared=False,
+                    tenant_uuid=tenant['uuid'],
+                ),
+            )
+            assert_that(
+                response['tenant_uuid'],
+                not_(equal_to(policy['tenant_uuid'])),
+            )
+
     @fixtures.http.policy()
     def test_delete(self, policy):
         with self.client_in_subtenant() as (client, _, __):
@@ -309,6 +397,12 @@ class TestPolicies(base.APIIntegrationTest):
     def test_delete_default_policy(self):
         policy = self.client.policies.list(slug=ALL_USERS_POLICY_SLUG)['items'][0]
         assert_http_error(403, self.client.policies.delete, policy['uuid'])
+
+    @fixtures.http.policy(slug='top', shared=True)
+    def test_delete_when_shared_and_read_only(self, policy):
+        with self.client_in_subtenant() as (client, _, tenant):
+            assert_http_error(403, client.policies.delete, policy['uuid'])
+        assert_no_error(self.client.policies.delete, policy['uuid'])
 
     @fixtures.http.policy(
         name='foobar',
