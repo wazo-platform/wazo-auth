@@ -221,7 +221,15 @@ definitions:
           type: string
       shared:
         type: boolean
-        description: Should be shared to sub-tenants or not. Cannot be changed after creation
+        description: |
+          Should be shared to sub-tenants or not. Cannot be changed after creation
+
+          When shared is `true`, then all tenants below this policy's tenant
+          will see it as their own policy with the attribute `read_only: true`.
+
+          Using `shared` attribute will add uniqueness constraints for the slug
+          among all policies' sub-tenants.
+
     required:
       - name
   PolicyResult:

@@ -46,8 +46,12 @@ class PolicyService(BaseService):
 
     def update(self, policy_uuid, tenant_uuids, **body):
         policy = self._dao.policy.find_by(uuid=policy_uuid)
-        if policy and policy.config_managed:
-            raise exceptions.ReadOnlyPolicyException(policy_uuid)
+        if policy:
+            if policy.config_managed:
+                raise exceptions.ReadOnlyPolicyException(policy_uuid)
+
+            if policy.shared and policy.tenant_uuid not in tenant_uuids:
+                raise exceptions.ReadOnlyPolicyException(policy_uuid)
 
         self._dao.policy.update(policy_uuid, tenant_uuids=tenant_uuids, **body)
         return self._dao.policy.find_by(uuid=policy_uuid, tenant_uuids=tenant_uuids)
