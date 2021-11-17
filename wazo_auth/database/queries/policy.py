@@ -8,6 +8,7 @@ from sqlalchemy import (
     and_,
     exc,
     or_,
+    text,
 )
 from .base import BaseDAO, PaginatorMixin
 from . import filters
@@ -67,7 +68,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         self.session.flush()
 
     def count(self, tenant_uuids=None, filtered=False, **kwargs):
-        filter_ = ''
+        filter_ = text('')
 
         if filtered:
             strict_filter = self.new_strict_filter(**kwargs)
@@ -188,7 +189,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         filter_ = and_(strict_filter, search_filter)
 
         read_only = kwargs.get('read_only')
-        read_only_filter = ''
+        read_only_filter = text('')
         if tenant_uuids is not None:
             requested_tenant_uuid = self._extract_requested_tenant_uuid(tenant_uuids)
             if read_only is True:
