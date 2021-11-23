@@ -130,6 +130,15 @@ class UnknownTenantException(APIException):
         super().__init__(404, msg, 'unknown-tenant', details, 'tenants')
 
 
+class UnauthorizedTenantwithChildrenDelete(APIException):
+    def __init__(self, tenant_uuid):
+        msg = 'Unauthorized delete of tenant : "{}" ; since it has at least one child'.format(
+            tenant_uuid
+        )
+        details = {'uuid': str(tenant_uuid)}
+        super().__init__(400, msg, details, 'tenants')
+
+
 class UnknownEmailException(APIException):
     def __init__(self, email_uuid):
         msg = 'No such email: "{}"'.format(email_uuid)

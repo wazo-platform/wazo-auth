@@ -104,7 +104,19 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         tenant = self.session.query(Tenant).get(uuid)
         if not tenant:
             raise exceptions.UnknownTenantException(uuid)
-        self.session.delete(tenant)
+
+        children_count = (
+            self.session.query(Tenant).filter(Tenant.parent_uuid == uuid).count()
+        )
+
+        if children_count > 0:
+
+            raise exceptions.UnauthorizedTenantwithChildrenDelete(uuid)
+
+        else:
+
+            self.session.delete(tenant)
+
         self.session.flush()
         # NOTE: A lot of resources have been delete by cascade
         self.session.expire_all()
