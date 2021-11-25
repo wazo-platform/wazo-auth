@@ -229,6 +229,15 @@ class TestTenants(base.APIIntegrationTest):
         assert_no_error(self.client.tenants.delete, tenant['uuid'])
         assert_http_error(404, self.client.tenants.delete, tenant['uuid'])
 
+    @fixtures.http.tenant()
+    def test_delete_tenant_with_children(self, tenant):
+        with self.client_in_subtenant(parent_uuid=tenant['uuid']) as (
+            client,
+            user,
+            sub_tenant,
+        ):
+            assert_http_error(400, self.client.tenants.delete, tenant['uuid'])
+
     @fixtures.http.tenant(address=ADDRESS_1)
     def test_get_one(self, tenant):
         with self.client_in_subtenant() as (client, user, sub_tenant):

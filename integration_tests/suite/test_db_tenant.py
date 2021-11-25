@@ -4,7 +4,6 @@
 import pytest
 
 from uuid import uuid4
-
 from hamcrest import (
     assert_that,
     calling,
@@ -23,6 +22,9 @@ from wazo_auth import exceptions
 from wazo_auth.database import models
 
 from .helpers import fixtures, base, constants
+from .helpers.base import (
+    assert_no_error,
+)
 
 TENANT_UUID = '00000000-0000-4000-9000-000000000000'
 USER_UUID = '00000000-0000-4000-9000-111111111111'
@@ -224,6 +226,18 @@ class TestTenantDAO(base.DAOTestCase):
             calling(self._tenant_dao.delete).with_args(tenant_uuid),
             raises(exceptions.UnknownTenantException),
         )
+
+    @fixtures.db.tenant()
+    def test_delete_tenant_with_children(self, tenant_uuid):
+
+        a_uuid = self._create_tenant(name='a', parent_uuid=tenant_uuid)
+
+        assert_that(
+            calling(self._tenant_dao.delete).with_args(tenant_uuid),
+            raises(exceptions.UnauthorizedTenantwithChildrenDelete),
+        )
+
+        assert_no_error(self._tenant_dao.delete, a_uuid)
 
     @fixtures.db.tenant(uuid=TENANT_UUID)
     @fixtures.db.address(id_=ADDRESS_ID, tenant_uuid=TENANT_UUID)
