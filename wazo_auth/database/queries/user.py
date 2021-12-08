@@ -132,9 +132,9 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             .count()
         )
 
-    def create(self, username, **kwargs):
+    def create(self, **kwargs):
         user_args = {
-            'username': username,
+            'username': kwargs.get('username'),
             'firstname': kwargs.get('firstname'),
             'lastname': kwargs.get('lastname'),
             'password_hash': kwargs.get('hash_'),
@@ -186,7 +186,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         return {
             'uuid': user.uuid,
-            'username': username,
+            'username': user.username,
             'firstname': user.firstname,
             'lastname': user.lastname,
             'purpose': user.purpose,

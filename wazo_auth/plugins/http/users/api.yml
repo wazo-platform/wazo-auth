@@ -217,8 +217,6 @@ definitions:
         - user
         - internal
         - external_api
-    required:
-      - username
   UserEdit:
     type: object
     properties:
@@ -240,8 +238,6 @@ definitions:
         - user
         - internal
         - external_api
-    required:
-      - username
   UserEmail:
     type: object
     properties:

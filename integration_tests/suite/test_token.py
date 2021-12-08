@@ -29,7 +29,7 @@ from .helpers.constants import UNKNOWN_UUID
 
 @base.use_asset('base')
 class TestTokens(base.APIIntegrationTest):
-    @fixtures.http.user(username='u1', email_address='u1@example.com', password='bar')
+    @fixtures.http.user(email_address='u1@example.com', password='bar')
     def test_that_the_email_can_be_used_to_get_a_token(self, u1):
         client = Client(
             'localhost',

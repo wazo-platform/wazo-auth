@@ -51,7 +51,7 @@ class TestResetPassword(base.APIIntegrationTest):
 
         return self.client.users.set_password(user_uuid, password, token)
 
-    @fixtures.http.user()
+    @fixtures.http.user(username='foobar')
     def test_set_password(self, user):
         new_password = '5ecr37'
 

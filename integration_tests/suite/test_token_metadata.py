@@ -7,7 +7,7 @@ from .helpers import fixtures, base
 
 @base.use_asset('base')
 class TestDefaultTokenMetadata(base.APIIntegrationTest):
-    @fixtures.http.user(password='s3cr37', purpose='user')
+    @fixtures.http.user(username='foobar', password='s3cr37', purpose='user')
     @fixtures.http.group()
     def test_token_metadata(self, user, group):
         self.client.groups.add_user(group['uuid'], user['uuid'])
@@ -25,7 +25,7 @@ class TestDefaultTokenMetadata(base.APIIntegrationTest):
             ),
         )
 
-    @fixtures.http.user(password='s3cr37', purpose='internal')
+    @fixtures.http.user(username='foobar', password='s3cr37', purpose='internal')
     def test_internal_purpose_metadata(self, user):
         token_data = self._post_token(user['username'], 's3cr37')
 
@@ -40,7 +40,7 @@ class TestDefaultTokenMetadata(base.APIIntegrationTest):
             ),
         )
 
-    @fixtures.http.user(password='s3cr37', purpose='external_api')
+    @fixtures.http.user(username='foobar', password='s3cr37', purpose='external_api')
     def test_external_api_purpose_metadata(self, user):
         token_data = self._post_token(user['username'], 's3cr37')
 

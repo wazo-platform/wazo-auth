@@ -1,5 +1,10 @@
 # Changelog
 
+## 22.01
+
+* The `users` resource does not require a `username` anymore
+* The `token` resource now works with the `username` or a confirmed email address
+
 ## 21.15
 
 * The `policies` resource now has a `shared` field

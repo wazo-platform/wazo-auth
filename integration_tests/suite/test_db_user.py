@@ -217,7 +217,7 @@ class TestUserDAO(base.DAOTestCase):
         email_address = 'foobar@example.com'
 
         user_uuid = self._user_dao.create(
-            username,
+            username=username,
             email_address=email_address,
             tenant_uuid=self.top_tenant_uuid,
             hash_=hash_,
@@ -240,7 +240,7 @@ class TestUserDAO(base.DAOTestCase):
         )
         assert_that(
             calling(self._user_dao.create).with_args(
-                'foo',
+                username='foo',
                 uuid=user_uuid,
                 email_address='foo@bar.baz',
                 tenant_uuid=self.top_tenant_uuid,
@@ -262,7 +262,7 @@ class TestUserDAO(base.DAOTestCase):
         email_address = 'foobar@example.com'
 
         user_uuid = self._user_dao.create(
-            username,
+            username=username,
             email_address=email_address,
             tenant_uuid=self.top_tenant_uuid,
             hash_=hash_,
@@ -293,7 +293,7 @@ class TestUserDAO(base.DAOTestCase):
     def test_that_the_username_is_unique(self, user_uuid):
         assert_that(
             calling(self._user_dao.create).with_args(
-                'foobar',
+                username='foobar',
                 email_address='foo@bar',
                 hash_='hash_two',
                 salt=self.salt,
@@ -312,7 +312,7 @@ class TestUserDAO(base.DAOTestCase):
     def test_that_the_email_is_unique(self, user_uuid):
         assert_that(
             calling(self._user_dao.create).with_args(
-                'bar',
+                username='bar',
                 email_address='foobar@example.com',
                 tenant_uuid=self.top_tenant_uuid,
                 hash_='hash_two',
