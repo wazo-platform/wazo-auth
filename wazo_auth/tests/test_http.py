@@ -21,6 +21,7 @@ class HTTPAppTestCase(TestCase):
     headers = {'content-type': 'application/json'}
 
     def setUp(self, config):
+        self.authentication_service = Mock(services.AuthenticationService)
         self.user_service = Mock(services.UserService)
         self.policy_service = Mock()
         self.tenant_service = Mock(services.TenantService)
@@ -31,6 +32,7 @@ class HTTPAppTestCase(TestCase):
         self.tokens = Mock()
         self.users = Mock()
         self.session_service = Mock()
+        self.status_aggregator = Mock()
         self.template_formatter = Mock()
 
         app = Flask('wazo-auth')
@@ -39,6 +41,7 @@ class HTTPAppTestCase(TestCase):
         api = Api(app, prefix='/0.1')
         dependencies = {
             'api': api,
+            'authentication_service': self.authentication_service,
             'config': config,
             'backends': s.backends,
             'policy_service': self.policy_service,
@@ -51,6 +54,7 @@ class HTTPAppTestCase(TestCase):
             'tokens': self.tokens,
             'users': self.users,
             'session_service': self.session_service,
+            'status_aggregator': self.status_aggregator,
             'template_formatter': self.template_formatter,
         }
         plugin_helpers.load(
