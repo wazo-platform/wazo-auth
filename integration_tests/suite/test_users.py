@@ -192,7 +192,7 @@ class TestUsers(base.APIIntegrationTest):
 
         user_args = {'username': 'foobar', 'password': 'foobaz', 'enabled': False}
         with self.user(self.client, **user_args) as user:
-            assert_that(user, has_entries('enabled', False))
+            assert_that(user, has_entries(enabled=False))
             user_client = self.make_auth_client('foobar', 'foobaz')
             assert_http_error(401, user_client.token.new, 'wazo_user')
 
@@ -322,9 +322,7 @@ class TestUsers(base.APIIntegrationTest):
             )
 
             tenants = self.client.users.get_tenants(user['uuid'])
-            assert_that(
-                tenants, has_entries('items', contains(has_entries('uuid', uuid_())))
-            )
+            assert_that(tenants, has_entries(items=contains(has_entries(uuid=uuid_()))))
 
     def test_register_post_does_not_log_password(self):
         args = {

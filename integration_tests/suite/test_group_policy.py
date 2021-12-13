@@ -60,7 +60,7 @@ class TestGroupPolicyAssociation(base.APIIntegrationTest):
         )
 
         result = self.client.groups.get_policies(group['uuid'])
-        assert_that(result, has_entries('items', contains(policy1)))
+        assert_that(result, has_entries(items=contains(policy1)))
 
     @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
     @fixtures.http.group(tenant_uuid=SUB_TENANT_UUID)
@@ -232,7 +232,7 @@ class TestGroupPolicyAssociation(base.APIIntegrationTest):
 
         user_client = base.APIAssetLaunchingTestCase.make_auth_client('foo', 'bar')
         token_data = user_client.token.new('wazo_user', expiration=5)
-        assert_that(token_data, has_entries('acl', has_items('foobar')))
+        assert_that(token_data, has_entries(acl=has_items('foobar')))
 
     def test_default_policies_are_updated_at_startup(self):
         policy = self.client.policies.list(slug=ALL_USERS_POLICY_SLUG)['items'][0]
@@ -355,7 +355,7 @@ class TestGroupPolicySlug(base.APIIntegrationTest):
         base.assert_no_error(url, group['uuid'], policy2['slug'])
 
         result = self.client.groups.get_policies(group['uuid'])
-        assert_that(result, has_entries('items', contains(policy1)))
+        assert_that(result, has_entries(items=contains(policy1)))
 
     @fixtures.http.group()
     def test_delete_multi_tenant(self, group):

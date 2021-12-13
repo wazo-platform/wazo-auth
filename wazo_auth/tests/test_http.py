@@ -3,7 +3,7 @@
 
 from unittest import TestCase
 
-from hamcrest import assert_that, equal_to, has_entries, any_of
+from hamcrest import any_of, assert_that, equal_to, has_entries, has_entry
 from flask import Flask
 from flask_restful import Api
 from mock import ANY, Mock, sentinel as s, patch
@@ -102,16 +102,14 @@ class TestUserResource(HTTPAppTestCase):
 
         assert_that(
             result.json,
-            has_entries(
-                'uuid', uuid, 'username', username, 'email_address', email_address
-            ),
+            has_entries(uuid=uuid, username=username, email_address=email_address),
         )
 
     def test_that_an_empty_body_returns_400(self):
         result = self.app.post(self.url, json='null')
 
         assert_that(result.status_code, equal_to(400))
-        assert_that(result.json, has_entries('error_id', 'invalid-data'))
+        assert_that(result.json, has_entry('error_id', 'invalid-data'))
 
     def test_that_empty_fields_are_not_valid(self):
         username, password, email_address = 'foobar', 'b3h01D', 'foobar@example.com'
@@ -131,13 +129,15 @@ class TestUserResource(HTTPAppTestCase):
             assert_that(
                 result.json,
                 has_entries(
-                    'error_id',
-                    'invalid-data',
-                    'resource',
-                    'users',
-                    'details',
-                    has_entries(
-                        field, has_entries('constraint_id', any_of('length', 'type'))
+                    error_id='invalid-data',
+                    resource='users',
+                    details=has_entries(
+                        {
+                            field: has_entry(
+                                'constraint_id',
+                                any_of('length', 'type'),
+                            )
+                        }
                     ),
                 ),
                 field,
@@ -157,12 +157,9 @@ class TestUserResource(HTTPAppTestCase):
             assert_that(
                 result.json,
                 has_entries(
-                    'error_id',
-                    'invalid-data',
-                    'resource',
-                    'users',
-                    'details',
-                    has_entries(field, has_entries('constraint_id', 'not_null')),
+                    error_id='invalid-data',
+                    resource='users',
+                    details=has_entries(field=has_entry('constraint_id', 'not_null')),
                 ),
                 field,
             )
@@ -193,12 +190,9 @@ class TestUserResource(HTTPAppTestCase):
         assert_that(
             result.json,
             has_entries(
-                'total',
-                expected_total,
-                'filtered',
-                expected_filtered,
-                'items',
-                expected_result,
+                total=expected_total,
+                filtered=expected_filtered,
+                items=expected_result,
             ),
         )
 
@@ -218,9 +212,7 @@ class TestUserResource(HTTPAppTestCase):
         assert_that(result.status_code, equal_to(400))
         assert_that(
             result.json,
-            has_entries(
-                'error_id', 'invalid-list-param', 'message', has_entries('limit', ANY)
-            ),
+            has_entries(error_id='invalid-list-param', message=has_entry('limit', ANY)),
         )
 
         invalid_params = dict(params)
@@ -230,7 +222,7 @@ class TestUserResource(HTTPAppTestCase):
         assert_that(
             result.json,
             has_entries(
-                'error_id', 'invalid-list-param', 'message', has_entries('offset', ANY)
+                error_id='invalid-list-param', message=has_entry('offset', ANY)
             ),
         )
 
@@ -241,10 +233,8 @@ class TestUserResource(HTTPAppTestCase):
         assert_that(
             result.json,
             has_entries(
-                'error_id',
-                'invalid-list-param',
-                'message',
-                has_entries('direction', ANY),
+                error_id='invalid-list-param',
+                message=has_entry('direction', ANY),
             ),
         )
 
@@ -254,9 +244,7 @@ class TestUserResource(HTTPAppTestCase):
         assert_that(result.status_code, equal_to(400))
         assert_that(
             result.json,
-            has_entries(
-                'error_id', 'invalid-list-param', 'message', has_entries('order', ANY)
-            ),
+            has_entries(error_id='invalid-list-param', message=has_entry('order', ANY)),
         )
 
     def test_user_get(self):

@@ -157,7 +157,7 @@ class TestUserPolicySlug(base.APIIntegrationTest):
         assert_no_error(url, user['uuid'], policy2['slug'])
 
         result = self.client.users.get_policies(user['uuid'])
-        assert_that(result, has_entries('items', contains(policy1)))
+        assert_that(result, has_entries(items=contains(policy1)))
 
     @fixtures.http.user()
     def test_delete_multi_tenant(self, user):
