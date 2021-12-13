@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -84,7 +84,7 @@ class TestUserEmailPutSchema(TestCase):
             raises(
                 ValidationError,
                 has_property(
-                    "messages", has_entries("emails", has_entry(1, has_key('address')))
+                    "messages", has_entries(emails=has_entry(1, has_key('address')))
                 ),
             ),
         )
@@ -167,7 +167,7 @@ class TestAdminUserEmailPutSchema(TestCase):
             raises(
                 ValidationError,
                 has_property(
-                    "messages", has_entries("emails", has_entry(1, has_key('address')))
+                    "messages", has_entries(emails=has_entry(1, has_key('address')))
                 ),
             ),
         )

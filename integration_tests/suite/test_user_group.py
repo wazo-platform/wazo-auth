@@ -154,7 +154,7 @@ class TestUserGroupAssociation(base.APIIntegrationTest):
         )
 
         result = self.client.groups.get_users(group['uuid'])
-        assert_that(result, has_entries('items', contains_inanyorder(user1)))
+        assert_that(result, has_entries(items=contains_inanyorder(user1)))
 
         with self.client_in_subtenant() as (client, user3, _):
             action = client.groups.remove_user
@@ -189,7 +189,7 @@ class TestUserGroupAssociation(base.APIIntegrationTest):
         )
 
         result = self.client.groups.get_users(group['uuid'])
-        assert_that(result, has_entries('items', contains_inanyorder(user1)))
+        assert_that(result, has_entries(items=contains_inanyorder(user1)))
 
         with self.client_in_subtenant() as (client, user3, __):
             action = client.groups.add_user

@@ -39,7 +39,7 @@ class TestWazoUserBackend(base.APIIntegrationTest):
 
     @fixtures.http.tenant()
     # extra tenant: "master" tenant
-    @fixtures.http.user(password='s3cr37')
+    @fixtures.http.user(username='foobar', password='s3cr37')
     def test_token_metadata(self, tenant, user):
         top_tenant = self.get_top_tenant()
 

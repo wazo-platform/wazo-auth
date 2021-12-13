@@ -1,9 +1,9 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
 
-from hamcrest import assert_that, equal_to, has_entries, any_of
+from hamcrest import any_of, assert_that, equal_to, has_entries, has_entry
 from flask import Flask
 from flask_restful import Api
 from mock import ANY, Mock, sentinel as s, patch
@@ -21,6 +21,7 @@ class HTTPAppTestCase(TestCase):
     headers = {'content-type': 'application/json'}
 
     def setUp(self, config):
+        self.authentication_service = Mock(services.AuthenticationService)
         self.user_service = Mock(services.UserService)
         self.policy_service = Mock()
         self.tenant_service = Mock(services.TenantService)
@@ -31,6 +32,7 @@ class HTTPAppTestCase(TestCase):
         self.tokens = Mock()
         self.users = Mock()
         self.session_service = Mock()
+        self.status_aggregator = Mock()
         self.template_formatter = Mock()
 
         app = Flask('wazo-auth')
@@ -39,6 +41,7 @@ class HTTPAppTestCase(TestCase):
         api = Api(app, prefix='/0.1')
         dependencies = {
             'api': api,
+            'authentication_service': self.authentication_service,
             'config': config,
             'backends': s.backends,
             'policy_service': self.policy_service,
@@ -51,6 +54,7 @@ class HTTPAppTestCase(TestCase):
             'tokens': self.tokens,
             'users': self.users,
             'session_service': self.session_service,
+            'status_aggregator': self.status_aggregator,
             'template_formatter': self.template_formatter,
         }
         plugin_helpers.load(
@@ -102,52 +106,14 @@ class TestUserResource(HTTPAppTestCase):
 
         assert_that(
             result.json,
-            has_entries(
-                'uuid', uuid, 'username', username, 'email_address', email_address
-            ),
+            has_entries(uuid=uuid, username=username, email_address=email_address),
         )
-
-    def test_that_ommiting_a_required_fields_returns_400(self):
-        username, password, email_address = 'foobar', 'b3h01D', 'foobar@example.com'
-        valid_body = {
-            'username': username,
-            'password': password,
-            'email_address': email_address,
-        }
-
-        for field in ['username']:
-            body = dict(valid_body)
-            del body[field]
-
-            result = self.app.post(self.url, json=body)
-
-            assert_that(result.status_code, equal_to(400), field)
-            assert_that(
-                result.json,
-                has_entries(
-                    'error_id',
-                    'invalid-data',
-                    'message',
-                    'Missing data for required field.',
-                    'resource',
-                    'users',
-                    'details',
-                    {
-                        field: {
-                            'constraint_id': 'required',
-                            'constraint': 'required',
-                            'message': ANY,
-                        }
-                    },
-                ),
-                field,
-            )
 
     def test_that_an_empty_body_returns_400(self):
         result = self.app.post(self.url, json='null')
 
         assert_that(result.status_code, equal_to(400))
-        assert_that(result.json, has_entries('error_id', 'invalid-data'))
+        assert_that(result.json, has_entry('error_id', 'invalid-data'))
 
     def test_that_empty_fields_are_not_valid(self):
         username, password, email_address = 'foobar', 'b3h01D', 'foobar@example.com'
@@ -167,38 +133,16 @@ class TestUserResource(HTTPAppTestCase):
             assert_that(
                 result.json,
                 has_entries(
-                    'error_id',
-                    'invalid-data',
-                    'resource',
-                    'users',
-                    'details',
-                    has_entries(
-                        field, has_entries('constraint_id', any_of('length', 'type'))
+                    error_id='invalid-data',
+                    resource='users',
+                    details=has_entries(
+                        {
+                            field: has_entry(
+                                'constraint_id',
+                                any_of('length', 'type'),
+                            )
+                        }
                     ),
-                ),
-                field,
-            )
-
-    def test_that_null_fields_are_not_valid(self):
-        username = 'foobar'
-        valid_body = {'username': username}
-
-        for field in ('username',):
-            body = dict(valid_body)
-            body[field] = None
-
-            result = self.app.post(self.url, json=body)
-
-            assert_that(result.status_code, equal_to(400), field)
-            assert_that(
-                result.json,
-                has_entries(
-                    'error_id',
-                    'invalid-data',
-                    'resource',
-                    'users',
-                    'details',
-                    has_entries(field, has_entries('constraint_id', 'not_null')),
                 ),
                 field,
             )
@@ -229,12 +173,9 @@ class TestUserResource(HTTPAppTestCase):
         assert_that(
             result.json,
             has_entries(
-                'total',
-                expected_total,
-                'filtered',
-                expected_filtered,
-                'items',
-                expected_result,
+                total=expected_total,
+                filtered=expected_filtered,
+                items=expected_result,
             ),
         )
 
@@ -254,9 +195,7 @@ class TestUserResource(HTTPAppTestCase):
         assert_that(result.status_code, equal_to(400))
         assert_that(
             result.json,
-            has_entries(
-                'error_id', 'invalid-list-param', 'message', has_entries('limit', ANY)
-            ),
+            has_entries(error_id='invalid-list-param', message=has_entry('limit', ANY)),
         )
 
         invalid_params = dict(params)
@@ -266,7 +205,7 @@ class TestUserResource(HTTPAppTestCase):
         assert_that(
             result.json,
             has_entries(
-                'error_id', 'invalid-list-param', 'message', has_entries('offset', ANY)
+                error_id='invalid-list-param', message=has_entry('offset', ANY)
             ),
         )
 
@@ -277,10 +216,8 @@ class TestUserResource(HTTPAppTestCase):
         assert_that(
             result.json,
             has_entries(
-                'error_id',
-                'invalid-list-param',
-                'message',
-                has_entries('direction', ANY),
+                error_id='invalid-list-param',
+                message=has_entry('direction', ANY),
             ),
         )
 
@@ -290,9 +227,7 @@ class TestUserResource(HTTPAppTestCase):
         assert_that(result.status_code, equal_to(400))
         assert_that(
             result.json,
-            has_entries(
-                'error_id', 'invalid-list-param', 'message', has_entries('order', ANY)
-            ),
+            has_entries(error_id='invalid-list-param', message=has_entry('order', ANY)),
         )
 
     def test_user_get(self):

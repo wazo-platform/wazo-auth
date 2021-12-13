@@ -39,6 +39,7 @@ class BaseServiceTestCase(TestCase):
         self.token_dao = Mock(token.TokenDAO)
         self.user_dao = Mock(user.UserDAO)
         self.encrypter = Mock(services.PasswordEncrypter)
+        self.encrypter._salt_len = 32
         self.encrypter.encrypt_password.return_value = s.salt, s.hash_
 
         self.tenant_dao.find_top_tenant.return_value = self.top_tenant_uuid

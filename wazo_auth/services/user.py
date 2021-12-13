@@ -12,10 +12,21 @@ from wazo_auth.services.helpers import BaseService
 logger = logging.getLogger(__name__)
 
 
+class UnknownUserHash:
+    def __eq__(self, other):
+        return False
+
+    def __ne__(self, other):
+        return True
+
+
 class UserService(BaseService):
     def __init__(self, dao, tenant_tree, encrypter=None):
         super().__init__(dao, tenant_tree)
         self._encrypter = encrypter or PasswordEncrypter()
+        self._unknown_user_salt = os.urandom(self._encrypter._salt_len)
+        # The unknown_user_hash will never be equal, whatever the user input is
+        self._unknown_user_hash = UnknownUserHash()
 
     def add_policy(self, user_uuid, policy_uuid):
         self._dao.user.add_policy(user_uuid, policy_uuid)
@@ -83,6 +94,9 @@ class UserService(BaseService):
             return user
         raise exceptions.UnknownUserException(user_uuid)
 
+    def get_username_by_login(self, login):
+        return self._dao.user.get_username_by_login(login)
+
     def list_groups(self, user_uuid, **kwargs):
         return self._dao.group.list_(user_uuid=user_uuid, **kwargs)
 
@@ -143,17 +157,23 @@ class UserService(BaseService):
         visible_tenants = self._tenant_tree.list_visible_tenants(user['tenant_uuid'])
         return tenant_uuid in visible_tenants
 
-    def verify_password(self, username, password, reset=False):
+    def verify_password(self, login, password, reset=False):
         if reset:
             return True
 
         try:
+            username = self._dao.user.get_username_by_login(login)
             hash_, salt = self._dao.user.get_credentials(username)
-        except exceptions.UnknownUsernameException:
-            return False
+        except (
+            exceptions.UnknownUsernameException,
+            exceptions.UnknownLoginException,
+        ):
+            hash_ = self._unknown_user_hash
+            salt = self._unknown_user_salt
 
         if not hash_ or not salt:
-            return False
+            hash_ = self._unknown_user_hash
+            salt = self._unknown_user_salt
 
         return hash_ == self._encrypter.compute_password_hash(password, salt)
 

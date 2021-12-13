@@ -67,7 +67,6 @@ def user(**user_args):
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
-            user_args.setdefault('username', _random_string(20))
             user_args.setdefault('password', _random_string(20))
             user = self.client.users.new(**user_args)
             args = list(args) + [user]

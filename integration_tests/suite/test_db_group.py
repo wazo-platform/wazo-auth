@@ -131,7 +131,7 @@ class TestGroupDAO(base.DAOTestCase):
     @fixtures.db.group(name='baz')
     def test_list(self, user1_uuid, user2_uuid, *group_uuids):
         def build_list_matcher(*names):
-            return [has_entries('name', name) for name in names]
+            return [has_entries(name=name) for name in names]
 
         result = self._group_dao.list_()
         expected = build_list_matcher('foo', 'bar', 'baz')
