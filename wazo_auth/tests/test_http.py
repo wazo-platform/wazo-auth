@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -106,42 +106,6 @@ class TestUserResource(HTTPAppTestCase):
                 'uuid', uuid, 'username', username, 'email_address', email_address
             ),
         )
-
-    def test_that_ommiting_a_required_fields_returns_400(self):
-        username, password, email_address = 'foobar', 'b3h01D', 'foobar@example.com'
-        valid_body = {
-            'username': username,
-            'password': password,
-            'email_address': email_address,
-        }
-
-        for field in ['username']:
-            body = dict(valid_body)
-            del body[field]
-
-            result = self.app.post(self.url, json=body)
-
-            assert_that(result.status_code, equal_to(400), field)
-            assert_that(
-                result.json,
-                has_entries(
-                    'error_id',
-                    'invalid-data',
-                    'message',
-                    'Missing data for required field.',
-                    'resource',
-                    'users',
-                    'details',
-                    {
-                        field: {
-                            'constraint_id': 'required',
-                            'constraint': 'required',
-                            'message': ANY,
-                        }
-                    },
-                ),
-                field,
-            )
 
     def test_that_an_empty_body_returns_400(self):
         result = self.app.post(self.url, json='null')
