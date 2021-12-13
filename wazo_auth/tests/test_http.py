@@ -143,27 +143,6 @@ class TestUserResource(HTTPAppTestCase):
                 field,
             )
 
-    def test_that_null_fields_are_not_valid(self):
-        username = 'foobar'
-        valid_body = {'username': username}
-
-        for field in ('username',):
-            body = dict(valid_body)
-            body[field] = None
-
-            result = self.app.post(self.url, json=body)
-
-            assert_that(result.status_code, equal_to(400), field)
-            assert_that(
-                result.json,
-                has_entries(
-                    error_id='invalid-data',
-                    resource='users',
-                    details=has_entries(field=has_entry('constraint_id', 'not_null')),
-                ),
-                field,
-            )
-
     def test_user_list(self):
         params = {
             'direction': 'desc',
