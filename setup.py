@@ -23,6 +23,7 @@ setup(
             'wazo-auth = wazo_auth.main:main',
             'wazo-auth-bootstrap = wazo_auth.bootstrap:main',
             'wazo-auth-init-db=wazo_auth.init_db:main',
+            'wazo-auth-upgrade-db=wazo_auth.main:upgrade_db',
             'wazo-auth-wait=wazo_auth.wait:main',
         ],
         'wazo_auth.backends': [

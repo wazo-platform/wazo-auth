@@ -34,4 +34,4 @@ EXPOSE 9497
 
 # Activate virtual env
 ENV PATH="/opt/venv/bin:$PATH"
-CMD ["wazo-auth", "-d"]
+CMD ["wazo-auth", "-d", "--db-upgrade-on-startup"]
