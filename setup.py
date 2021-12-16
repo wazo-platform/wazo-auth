@@ -30,8 +30,7 @@ setup(
             'wazo_user = wazo_auth.plugins.backends.wazo_user:WazoUser',
             'ldap_user = wazo_auth.plugins.backends.ldap_user:LDAPUser',
             'broken_init = wazo_auth.plugins.backends.broken:BrokenInitBackend',
-            'broken_verify_password '
-            '= wazo_auth.plugins.backends.broken:BrokenVerifyPasswordBackend',
+            'broken_verify_password = wazo_auth.plugins.backends.broken:BrokenVerifyPasswordBackend',  # noqa
         ],
         'wazo_auth.http': [
             'api = wazo_auth.plugins.http.api.plugin:Plugin',
