@@ -10,6 +10,6 @@ RUN true \
     && python3 setup.py install \
     && pg_start \
     && wazo-auth-init-db --user postgres \
-    && (cd /usr/src/wazo-auth && alembic -c alembic.ini upgrade head) \
+    && (cd /usr/src/wazo-auth && python3 -m alembic.config -c wazo_auth/database/alembic.ini upgrade head) \
     && pg_stop \
     && true
