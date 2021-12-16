@@ -9,7 +9,6 @@ USER='wazo-auth'
 HOME="/var/lib/${USER}"
 GROUP=$USER
 LOG_FILENAME="/var/log/${DAEMONNAME}.log"
-ALEMBIC_INI_PATH="/usr/share/${DAEMONNAME}"
 
 case "$1" in
     configure)
@@ -78,7 +77,7 @@ EOF
                     --auth_db_uri "postgresql://$db_admin_username:$db_admin_password@$db_host:$db_port/$db_app_name"
             fi
             echo "Upgrading ${DAEMONNAME} database ..."
-            (cd $ALEMBIC_INI_PATH && python3 -m alembic.config -c alembic.ini upgrade head)
+            wazo-auth-upgrade-db
         fi
 
         # If root's configuration file is already there, do not bootstrap again
