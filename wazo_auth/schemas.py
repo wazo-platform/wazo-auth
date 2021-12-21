@@ -16,22 +16,22 @@ class GroupRequestSchema(BaseSchema):
 class TenantAddress(BaseSchema):
 
     line_1 = fields.String(
-        validate=validate.Length(min=1, max=256), missing=None, default=None
+        validate=validate.Length(min=0, max=256), missing=None, default=None
     )
     line_2 = fields.String(
-        validate=validate.Length(min=1, max=256), missing=None, default=None
+        validate=validate.Length(min=0, max=256), missing=None, default=None
     )
     city = fields.String(
-        validate=validate.Length(min=1, max=128), missing=None, default=None
+        validate=validate.Length(min=0, max=128), missing=None, default=None
     )
     state = fields.String(
-        validate=validate.Length(min=1, max=128), missing=None, default=None
+        validate=validate.Length(min=0, max=128), missing=None, default=None
     )
     country = fields.String(
-        validate=validate.Length(min=1, max=128), missing=None, default=None
+        validate=validate.Length(min=0, max=128), missing=None, default=None
     )
     zip_code = fields.String(
-        validate=validate.Length(min=1, max=16), missing=None, default=None
+        validate=validate.Length(min=0, max=16), missing=None, default=None
     )
 
 
