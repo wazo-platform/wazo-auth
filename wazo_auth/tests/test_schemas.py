@@ -5,6 +5,7 @@ from unittest import TestCase
 from uuid import UUID
 from hamcrest import assert_that, equal_to, has_entries
 
+
 from .. import schemas
 
 
@@ -54,6 +55,32 @@ class TestTenantSchema(TestCase):
                         'zip_code': None,
                     },
                 }
+            ),
+        )
+
+    def test_that_an_address_with_empty_strings_is_accepted(self):
+        uuid = 'e04f397c-0d52-4a83-aa8e-7ee374e9eed3'
+        address = _Address(
+            line_1='', line_2='', city='', state='', country='', zip_code=''
+        )
+        tenant = _Tenant(uuid=uuid, address=address, slug='address')
+
+        result = self.schema.dump(tenant)
+
+        assert_that(
+            result,
+            has_entries(
+                uuid=uuid,
+                name=None,
+                slug='address',
+                address={
+                    'line_1': '',
+                    'line_2': '',
+                    'city': '',
+                    'state': '',
+                    'country': '',
+                    'zip_code': '',
+                },
             ),
         )
 
