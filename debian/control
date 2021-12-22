@@ -32,9 +32,9 @@ Depends: ${python3:Depends},
          python3-stevedore,
          python3-unidecode,
          python3-websocket,
+         wazo-dbms,
          wazo-uuid,
          xivo-bus-python3 (>> 17.16),
-         xivo-dbms (>= 19.07~20190429.122922.25c3757.deb9),
          xivo-lib-python-python3,
          xivo-libdao-python3 (>= 17.02~20170124.144633.cb56771)
 Conflicts: xivo-auth
