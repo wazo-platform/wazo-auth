@@ -19,5 +19,5 @@ jinja2==2.10
 psycopg2-binary
 stevedore==1.29.0
 unidecode==1.0.23
-marshmallow==3.0.0b14
+marshmallow==3.10.0
 python-consul==0.7.1
