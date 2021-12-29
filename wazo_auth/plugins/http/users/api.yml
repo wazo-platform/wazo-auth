@@ -38,7 +38,6 @@ paths:
         - name: body
           in: body
           description: The user creation parameters
-          required: true
           schema:
             $ref: '#/definitions/UserCreate'
         - $ref: '#/parameters/tenantuuid'
