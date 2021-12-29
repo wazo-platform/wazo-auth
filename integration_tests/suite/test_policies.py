@@ -18,7 +18,7 @@ from hamcrest import (
     not_,
 )
 from mock import ANY
-from xivo_test_helpers.hamcrest.uuid_ import uuid_
+from wazo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers import base
 from .helpers.base import (
     assert_no_error,

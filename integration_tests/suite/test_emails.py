@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that, contains_inanyorder, empty, has_entries
-from xivo_test_helpers.hamcrest.uuid_ import uuid_
+from wazo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers import fixtures, base
 from .helpers.base import assert_http_error
 from .helpers.constants import UNKNOWN_UUID

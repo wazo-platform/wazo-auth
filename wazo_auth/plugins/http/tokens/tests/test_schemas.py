@@ -6,7 +6,7 @@ from unittest import TestCase
 from marshmallow.exceptions import ValidationError
 
 from hamcrest import assert_that, calling, has_properties, has_item, not_
-from xivo_test_helpers.hamcrest.raises import raises
+from wazo_test_helpers.hamcrest.raises import raises
 
 from ..schemas import TokenRequestSchema
 
