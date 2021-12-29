@@ -12,7 +12,7 @@ from hamcrest import (
     has_entries,
     has_properties,
 )
-from xivo_test_helpers.hamcrest.raises import raises
+from wazo_test_helpers.hamcrest.raises import raises
 
 from wazo_auth import exceptions
 from wazo_auth.database import models

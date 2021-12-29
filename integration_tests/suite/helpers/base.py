@@ -20,15 +20,15 @@ from hamcrest import (
     has_properties,
 )
 from wazo_auth_client import Client
-from xivo_test_helpers import until
-from xivo_test_helpers.hamcrest.raises import raises
-from xivo_test_helpers.asset_launching_test_case import (
+from wazo_test_helpers import until
+from wazo_test_helpers.hamcrest.raises import raises
+from wazo_test_helpers.asset_launching_test_case import (
     AssetLaunchingTestCase,
     NoSuchPort,
     NoSuchService,
     WrongClient,
 )
-from xivo_test_helpers.bus import BusClient
+from wazo_test_helpers.bus import BusClient
 from wazo_auth.database import queries, helpers
 from wazo_auth.database.queries import (
     group,
@@ -122,9 +122,9 @@ class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
     def restart_auth(cls):
         cls.restart_service('auth')
         auth = cls.make_auth_client()
-        logging.getLogger('xivo_test_helpers').setLevel(logging.INFO)
+        logging.getLogger('wazo_test_helpers').setLevel(logging.INFO)
         until.return_(auth.status.check, timeout=30)
-        logging.getLogger('xivo_test_helpers').setLevel(logging.DEBUG)
+        logging.getLogger('wazo_test_helpers').setLevel(logging.DEBUG)
 
 
 class DBAssetLaunchingTestCase(BaseAssetLaunchingTestCase):

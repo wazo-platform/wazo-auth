@@ -13,7 +13,7 @@ from hamcrest import (
     not_,
 )
 
-from xivo_test_helpers import until
+from wazo_test_helpers import until
 from .helpers import base, fixtures
 
 TENANT_UUID_1 = str(uuid.uuid4())

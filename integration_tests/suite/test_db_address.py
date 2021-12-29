@@ -4,7 +4,7 @@
 import uuid
 
 from hamcrest import assert_that, calling, equal_to, instance_of
-from xivo_test_helpers.hamcrest.raises import raises
+from wazo_test_helpers.hamcrest.raises import raises
 
 from .helpers import base, fixtures
 
