@@ -23,14 +23,14 @@ setup(
             'wazo-auth = wazo_auth.main:main',
             'wazo-auth-bootstrap = wazo_auth.bootstrap:main',
             'wazo-auth-init-db=wazo_auth.init_db:main',
+            'wazo-auth-upgrade-db=wazo_auth.main:upgrade_db',
             'wazo-auth-wait=wazo_auth.wait:main',
         ],
         'wazo_auth.backends': [
             'wazo_user = wazo_auth.plugins.backends.wazo_user:WazoUser',
             'ldap_user = wazo_auth.plugins.backends.ldap_user:LDAPUser',
             'broken_init = wazo_auth.plugins.backends.broken:BrokenInitBackend',
-            'broken_verify_password '
-            '= wazo_auth.plugins.backends.broken:BrokenVerifyPasswordBackend',
+            'broken_verify_password = wazo_auth.plugins.backends.broken:BrokenVerifyPasswordBackend',  # noqa
         ],
         'wazo_auth.http': [
             'api = wazo_auth.plugins.http.api.plugin:Plugin',
