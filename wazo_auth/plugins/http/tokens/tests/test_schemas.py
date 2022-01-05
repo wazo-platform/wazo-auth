@@ -7,6 +7,7 @@ from marshmallow.exceptions import ValidationError
 
 from hamcrest import assert_that, calling, has_properties, has_item, not_
 from wazo_test_helpers.hamcrest.raises import raises
+from marshmallow import EXCLUDE
 
 from ..schemas import TokenRequestSchema
 
@@ -21,7 +22,7 @@ class TestTokenRequestSchema(TestCase):
         for value in invalid_values:
             body = {'expiration': value}
             assert_that(
-                calling(self.schema.load).with_args(body),
+                calling(self.schema.load).with_args(body, unknown=EXCLUDE),
                 raises(ValidationError).matching(
                     has_properties(field_names=has_item('expiration'))
                 ),
@@ -29,13 +30,16 @@ class TestTokenRequestSchema(TestCase):
 
     def test_minimal_body(self):
         body = {}
-        assert_that(calling(self.schema.load).with_args(body), not_(raises(Exception)))
+        assert_that(
+            calling(self.schema.load).with_args(body, unknown=EXCLUDE),
+            not_(raises(Exception)),
+        )
 
     def test_that_acces_type_offline_requires_a_client_id(self):
         body = {'access_type': 'offline'}
 
         assert_that(
-            calling(self.schema.load).with_args(body),
+            calling(self.schema.load).with_args(body, unknown=EXCLUDE),
             raises(ValidationError).matching(
                 has_properties(field_names=has_item('_schema'))
             ),
@@ -44,15 +48,22 @@ class TestTokenRequestSchema(TestCase):
     def test_that_the_access_type_is_online_when_using_a_refresh_token(self):
         body = {'refresh_token': 'foobar', 'client_id': 'x'}
 
-        assert_that(calling(self.schema.load).with_args(body), not_(raises(Exception)))
-
         assert_that(
-            calling(self.schema.load).with_args({'access_type': 'online', **body}),
+            calling(self.schema.load).with_args(body, unknown=EXCLUDE),
             not_(raises(Exception)),
         )
 
         assert_that(
-            calling(self.schema.load).with_args({'access_type': 'offline', **body}),
+            calling(self.schema.load).with_args(
+                {'access_type': 'online', **body}, unknown=EXCLUDE
+            ),
+            not_(raises(Exception)),
+        )
+
+        assert_that(
+            calling(self.schema.load).with_args(
+                {'access_type': 'offline', **body}, unknown=EXCLUDE
+            ),
             raises(ValidationError).matching(
                 has_properties(field_names=has_item('_schema'))
             ),
@@ -62,12 +73,14 @@ class TestTokenRequestSchema(TestCase):
         body = {'refresh_token': 'the-token'}
 
         assert_that(
-            calling(self.schema.load).with_args({'client_id': 'x', **body}),
+            calling(self.schema.load).with_args(
+                {'client_id': 'x', **body}, unknown=EXCLUDE
+            ),
             not_(raises(Exception)),
         )
 
         assert_that(
-            calling(self.schema.load).with_args(body),
+            calling(self.schema.load).with_args(body, unknown=EXCLUDE),
             raises(ValidationError).matching(
                 has_properties(field_names=has_item('_schema'))
             ),

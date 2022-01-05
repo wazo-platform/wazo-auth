@@ -6,6 +6,7 @@ from uuid import UUID
 from hamcrest import assert_that, equal_to, has_entries
 
 from .. import schemas
+from marshmallow import EXCLUDE
 
 
 class _Address:
@@ -84,7 +85,7 @@ class TestTenantSchema(TestCase):
     def test_that_a_null_contact_is_accepted(self):
         body = {'contact': None, 'slug': 'nocontact'}
 
-        result = self.schema.load(body)
+        result = self.schema.load(body, unknown=EXCLUDE)
 
         assert_that(result, has_entries(contact_uuid=None))
 
@@ -99,12 +100,12 @@ class TestTenantSchema(TestCase):
     def test_uuid(self):
         body = {'name': 'foobar', 'slug': 'slug'}
 
-        result = self.schema.load(body)
+        result = self.schema.load(body, unknown=EXCLUDE)
 
         assert_that(result, has_entries(uuid=None, name='foobar'))
 
         uuid_ = body['uuid'] = 'c5b146ac-a442-4d65-a087-09a5f943ca53'
 
-        result = self.schema.load(body)
+        result = self.schema.load(body, unknown=EXCLUDE)
 
         assert_that(result, has_entries(uuid=UUID(uuid_), name='foobar'))

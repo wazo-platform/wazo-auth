@@ -18,7 +18,7 @@ sqlalchemy==1.2.18
 stevedore==1.29.0
 unidecode==1.0.23
 alembic==1.0.0
-marshmallow==3.0.0b14
+marshmallow==3.10.0
 jinja2==2.10
 netifaces==0.10.4
 tenacity==4.12.0

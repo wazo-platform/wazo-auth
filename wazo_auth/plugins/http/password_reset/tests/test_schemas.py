@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import unittest
+from marshmallow import EXCLUDE
 
 from hamcrest import (
     assert_that,
@@ -27,7 +28,9 @@ class TestSchema(unittest.TestCase):
         email = 'foobar@example.com'
         query_string = {'email': email}
 
-        result = self.password_query_parameters_schema.load(query_string)
+        result = self.password_query_parameters_schema.load(
+            query_string, unknown=EXCLUDE
+        )
 
         assert_that(result, has_entries(email_address=email))
 
@@ -35,7 +38,9 @@ class TestSchema(unittest.TestCase):
         query_string = {'email': 'foo@bar.com', 'username': 'foobar'}
 
         assert_that(
-            calling(self.password_query_parameters_schema.load).with_args(query_string),
+            calling(self.password_query_parameters_schema.load).with_args(
+                query_string, unknown=EXCLUDE
+            ),
             raises(
                 ValidationError,
                 has_property(
@@ -50,14 +55,18 @@ class TestSchema(unittest.TestCase):
     def test_username_only(self):
         query_string = {'username': 'foobar'}
 
-        result = self.password_query_parameters_schema.load(query_string)
+        result = self.password_query_parameters_schema.load(
+            query_string, unknown=EXCLUDE
+        )
 
         assert_that(result, has_entries(username='foobar', email_address=None))
 
     def test_email_only(self):
         query_string = {'email': 'foobar@example.com'}
 
-        result = self.password_query_parameters_schema.load(query_string)
+        result = self.password_query_parameters_schema.load(
+            query_string, unknown=EXCLUDE
+        )
 
         assert_that(
             result, has_entries(username=None, email_address='foobar@example.com')
@@ -66,12 +75,16 @@ class TestSchema(unittest.TestCase):
     def test_invalid_field(self):
         query_string = {'username': 300 * 'a'}
         assert_that(
-            calling(self.password_query_parameters_schema.load).with_args(query_string),
+            calling(self.password_query_parameters_schema.load).with_args(
+                query_string, unknown=EXCLUDE
+            ),
             raises(ValidationError, has_property("messages", not_(equal_to(None)))),
         )
 
         query_string = {'email': 'patate'}
         assert_that(
-            calling(self.password_query_parameters_schema.load).with_args(query_string),
+            calling(self.password_query_parameters_schema.load).with_args(
+                query_string, unknown=EXCLUDE
+            ),
             raises(ValidationError, has_property("messages", not_(equal_to(None)))),
         )

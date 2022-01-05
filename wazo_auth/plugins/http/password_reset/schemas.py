@@ -19,7 +19,7 @@ class PasswordResetQueryParameters(BaseSchema):
     email_address = fields.Email(data_key='email', missing=None)
 
     @validates_schema
-    def validate_mutually_exclusive_fields(self, data):
+    def validate_mutually_exclusive_fields(self, data, **kwargs):
         username = data.get('username')
         email = data.get('email_address')
 

@@ -14,6 +14,7 @@ from hamcrest import (
     has_property,
 )
 from marshmallow import ValidationError
+from marshmallow import EXCLUDE
 
 from wazo_test_helpers.hamcrest.raises import raises
 
@@ -35,7 +36,7 @@ class TestUserEmailPutSchema(TestCase):
         params = {'emails': []}
         expected = []
 
-        body = self.user_schema.load(params)
+        body = self.user_schema.load(params, unknown=EXCLUDE)
         assert_that(body, equal_to(expected))
 
     def test_confirmed_field(self):
@@ -47,13 +48,13 @@ class TestUserEmailPutSchema(TestCase):
             equal_to({'address': FOUR['address'], 'main': False}),
         )
 
-        body = self.user_schema.load(params)
+        body = self.user_schema.load(params, unknown=EXCLUDE)
         assert_that(body, expected)
 
     def test_main_field(self):
         params = {'emails': [ONE, FIVE]}
         assert_that(
-            calling(self.user_schema.load).with_args(params),
+            calling(self.user_schema.load).with_args(params, unknown=EXCLUDE),
             raises(
                 ValidationError,
                 has_property(
@@ -65,7 +66,7 @@ class TestUserEmailPutSchema(TestCase):
 
         params = {'emails': [TWO]}
         assert_that(
-            calling(self.user_schema.load).with_args(params),
+            calling(self.user_schema.load).with_args(params, unknown=EXCLUDE),
             raises(
                 ValidationError,
                 has_property(
@@ -80,7 +81,7 @@ class TestUserEmailPutSchema(TestCase):
     def test_address_field(self):
         params = {'emails': [ONE, SIX]}
         assert_that(
-            calling(self.user_schema.load).with_args(params),
+            calling(self.user_schema.load).with_args(params, unknown=EXCLUDE),
             raises(
                 ValidationError,
                 has_property(
@@ -91,7 +92,7 @@ class TestUserEmailPutSchema(TestCase):
 
         params = {'emails': [ONE, TWO, TWO]}
         assert_that(
-            calling(self.user_schema.load).with_args(params),
+            calling(self.user_schema.load).with_args(params, unknown=EXCLUDE),
             raises(
                 ValidationError,
                 has_property(
@@ -105,7 +106,7 @@ class TestUserEmailPutSchema(TestCase):
 
         params = {}
         assert_that(
-            calling(self.user_schema.load).with_args(params),
+            calling(self.user_schema.load).with_args(params, unknown=EXCLUDE),
             raises(ValidationError, has_property("messages", has_key('emails'))),
         )
 
@@ -118,7 +119,7 @@ class TestAdminUserEmailPutSchema(TestCase):
         params = {'emails': []}
         expected = []
 
-        body = self.admin_schema.load(params)
+        body = self.admin_schema.load(params, unknown=EXCLUDE)
         assert_that(body, equal_to(expected))
 
     def test_confirmed_field(self):
@@ -130,13 +131,13 @@ class TestAdminUserEmailPutSchema(TestCase):
             has_entries(address=FOUR['address'], confirmed=False),
         )
 
-        body = self.admin_schema.load(params)
+        body = self.admin_schema.load(params, unknown=EXCLUDE)
         assert_that(body, expected)
 
     def test_main_field(self):
         params = {'emails': [ONE, FIVE]}
         assert_that(
-            calling(self.admin_schema.load).with_args(params),
+            calling(self.admin_schema.load).with_args(params, unknown=EXCLUDE),
             raises(
                 ValidationError,
                 has_property(
@@ -148,7 +149,7 @@ class TestAdminUserEmailPutSchema(TestCase):
 
         params = {'emails': [TWO]}
         assert_that(
-            calling(self.admin_schema.load).with_args(params),
+            calling(self.admin_schema.load).with_args(params, unknown=EXCLUDE),
             raises(
                 ValidationError,
                 has_property(
@@ -163,7 +164,7 @@ class TestAdminUserEmailPutSchema(TestCase):
     def test_address_field(self):
         params = {'emails': [ONE, SIX]}
         assert_that(
-            calling(self.admin_schema.load).with_args(params),
+            calling(self.admin_schema.load).with_args(params, unknown=EXCLUDE),
             raises(
                 ValidationError,
                 has_property(
@@ -174,7 +175,7 @@ class TestAdminUserEmailPutSchema(TestCase):
 
         params = {'emails': [ONE, TWO, TWO]}
         assert_that(
-            calling(self.admin_schema.load).with_args(params),
+            calling(self.admin_schema.load).with_args(params, unknown=EXCLUDE),
             raises(
                 ValidationError,
                 has_property(
