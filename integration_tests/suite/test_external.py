@@ -14,7 +14,7 @@ from hamcrest import (
     has_entries,
     has_items,
 )
-from xivo_test_helpers import until
+from wazo_test_helpers import until
 
 from .helpers import base, fixtures
 from .helpers.constants import UNKNOWN_UUID

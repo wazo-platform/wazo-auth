@@ -10,7 +10,7 @@ from hamcrest import (
     has_entries,
     has_properties,
 )
-from xivo_test_helpers.hamcrest.raises import raises
+from wazo_test_helpers.hamcrest.raises import raises
 from .helpers import fixtures, base
 from .helpers.base import assert_http_error, assert_no_error, SUB_TENANT_UUID
 from .helpers.constants import UNKNOWN_SLUG, UNKNOWN_UUID

@@ -1,4 +1,2 @@
 etc/*  etc/
-alembic/ usr/share/wazo-auth/
-alembic.ini usr/share/wazo-auth/
 templates/* var/lib/wazo-auth/templates/

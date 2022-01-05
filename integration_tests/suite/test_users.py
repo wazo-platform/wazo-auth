@@ -19,9 +19,9 @@ from hamcrest import (
     has_key,
     not_,
 )
-from xivo_test_helpers import until
-from xivo_test_helpers.hamcrest.uuid_ import uuid_
-from xivo_test_helpers.hamcrest.raises import raises
+from wazo_test_helpers import until
+from wazo_test_helpers.hamcrest.uuid_ import uuid_
+from wazo_test_helpers.hamcrest.raises import raises
 from .helpers import fixtures, base
 from .helpers.constants import UNKNOWN_UUID
 from .helpers.base import assert_http_error, assert_no_error

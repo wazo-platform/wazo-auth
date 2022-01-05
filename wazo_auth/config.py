@@ -104,6 +104,7 @@ _DEFAULT_CONFIG = {
     'smtp': {'hostname': 'localhost', 'port': 25},
     'db_connect_retry_timeout_seconds': 300,
     'db_uri': 'postgresql://asterisk:proformatique@localhost/asterisk',
+    'db_upgrade_on_startup': False,
     'confd_db_uri': 'postgresql://asterisk:proformatique@localhost/asterisk',
     'all_users_policies': {},
     'default_policies': {},
@@ -127,6 +128,12 @@ def _parse_cli_args(argv):
         help="Logs messages with LOG_LEVEL details. Must be one of:\n"
         "critical, error, warning, info, debug. Default: %(default)s",
     )
+    parser.add_argument(
+        "--db-upgrade-on-startup",
+        action="store_true",
+        default=False,
+        help="Upgrade database on startup if needed",
+    )
     parsed_args = parser.parse_args(argv)
 
     result = {}
@@ -138,6 +145,8 @@ def _parse_cli_args(argv):
         result['debug'] = parsed_args.debug
     if parsed_args.log_level:
         result['log_level'] = parsed_args.log_level
+    if parsed_args.db_upgrade_on_startup:
+        result['db_upgrade_on_startup'] = parsed_args.db_upgrade_on_startup
 
     return result
 

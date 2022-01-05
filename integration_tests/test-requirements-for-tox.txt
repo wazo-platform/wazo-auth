@@ -11,7 +11,7 @@ python-ldap
 https://github.com/wazo-platform/wazo-lib-rest-client/archive/master.zip
 https://github.com/wazo-platform/wazo-auth-client/archive/master.zip
 https://github.com/wazo-platform/wazo-confd-client/archive/master.zip
-https://github.com/wazo-platform/xivo-test-helpers/archive/master.zip
+https://github.com/wazo-platform/wazo-test-helpers/archive/master.zip
 https://github.com/wazo-platform/xivo-lib-python/archive/master.zip
 https://github.com/wazo-platform/xivo-bus/archive/master.zip
 sqlalchemy==1.2.18

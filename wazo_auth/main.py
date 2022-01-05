@@ -1,4 +1,4 @@
-# Copyright 2015-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import sys
@@ -10,6 +10,7 @@ from xivo.user_rights import change_user
 
 from wazo_auth.config import get_config
 from wazo_auth.controller import Controller
+from wazo_auth.database import database
 
 SPAMMY_LOGGERS = ['urllib3', 'Flask-Cors', 'amqp', 'kombu']
 
@@ -27,9 +28,11 @@ def main():
         log_level=config['log_level'],
     )
 
-    user = config.get('user')
-    if user:
-        change_user(user)
+    if config['user']:
+        change_user(config['user'])
+
+    if config["db_upgrade_on_startup"]:
+        database.upgrade(config["db_uri"])
 
     try:
         set_xivo_uuid(config, logger)
@@ -39,3 +42,8 @@ def main():
 
     controller = Controller(config)
     controller.run()
+
+
+def upgrade_db():
+    conf = get_config(sys.argv[1:])
+    database.upgrade(conf["db_uri"])
