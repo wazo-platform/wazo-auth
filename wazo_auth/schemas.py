@@ -2,8 +2,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import post_dump
+from marshmallow import ValidationError
 from xivo.mallow import fields, validate
 from xivo import mallow_helpers as mallow
+import exceptions 
+
 
 BaseSchema = mallow.Schema
 
@@ -15,24 +18,29 @@ class GroupRequestSchema(BaseSchema):
 
 class TenantAddress(BaseSchema):
 
-    line_1 = fields.String(
-        validate=validate.Length(min=0, max=256), missing=None, default=None
-    )
-    line_2 = fields.String(
-        validate=validate.Length(min=0, max=256), missing=None, default=None
-    )
-    city = fields.String(
-        validate=validate.Length(min=0, max=128), missing=None, default=None
-    )
-    state = fields.String(
-        validate=validate.Length(min=0, max=128), missing=None, default=None
-    )
-    country = fields.String(
-        validate=validate.Length(min=0, max=128), missing=None, default=None
-    )
-    zip_code = fields.String(
-        validate=validate.Length(min=0, max=16), missing=None, default=None
-    )
+    try:
+
+        line_1 = fields.String(
+            validate=validate.Length(min=1, max=256), missing=None, default=None
+        )
+        line_2 = fields.String(
+            validate=validate.Length(min=1, max=256), missing=None, default=None
+        )
+        city = fields.String(
+            validate=validate.Length(min=1, max=128), missing=None, default=None
+        )
+        state = fields.String(
+            validate=validate.Length(min=1, max=128), missing=None, default=None
+        )
+        country = fields.String(
+            validate=validate.Length(min=1, max=128), missing=None, default=None
+        )
+        zip_code = fields.String(
+            validate=validate.Length(min=1, max=16), missing=None, default=None
+        )
+
+    except ValidationError as ex:
+        raise exceptions.InvalidTenantAddressLengthException.from_errors(ex.messages)
 
 
 empty_tenant_address = TenantAddress().dump({})

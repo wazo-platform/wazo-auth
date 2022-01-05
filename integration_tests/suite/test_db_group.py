@@ -12,8 +12,8 @@ from hamcrest import (
     has_key,
     has_properties,
 )
-from xivo_test_helpers.mock import ANY_UUID
-from xivo_test_helpers.hamcrest.raises import raises
+from wazo_test_helpers.mock import ANY_UUID
+from wazo_test_helpers.hamcrest.raises import raises
 
 from wazo_auth import exceptions
 from wazo_auth.database import models

@@ -194,6 +194,10 @@ class TenantParamException(_BaseParamException):
 
     resource = 'tenants'
 
+class InvalidTenantAddressLengthException(_BaseParamException):
+
+    resource = 'tenants'
+
 
 class PasswordChangeException(_BaseParamException):
 

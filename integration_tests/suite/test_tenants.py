@@ -10,8 +10,8 @@ from hamcrest import (
     has_entries,
     has_item,
 )
-from xivo_test_helpers import until
-from xivo_test_helpers.hamcrest.uuid_ import uuid_
+from wazo_test_helpers import until
+from wazo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers import fixtures, base
 from .helpers.base import (
     ADDRESS_NULL,

@@ -4,7 +4,7 @@
 from hamcrest import assert_that, has_entries, has_item
 from .helpers import fixtures, base
 from .helpers.base import assert_http_error
-from xivo_test_helpers.hamcrest.uuid_ import uuid_
+from wazo_test_helpers.hamcrest.uuid_ import uuid_
 
 
 @base.use_asset('base')
