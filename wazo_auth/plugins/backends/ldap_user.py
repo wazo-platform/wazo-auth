@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -44,20 +44,20 @@ class LDAPUser(BaseAuthenticationBackend):
 
     def verify_password(self, username, password, args):
         try:
-            xivo_ldap = _XivoLDAP(self.uri)
+            wazo_ldap = _WazoLDAP(self.uri)
 
             if self.bind_anonymous or (self.bind_dn and self.bind_password):
-                if xivo_ldap.perform_bind(self.bind_dn, self.bind_password):
-                    user_dn = self._perform_search_dn(xivo_ldap, username)
+                if wazo_ldap.perform_bind(self.bind_dn, self.bind_password):
+                    user_dn = self._perform_search_dn(wazo_ldap, username)
                 else:
                     return False
             else:
                 user_dn = self._build_dn_with_config(username)
 
-            if not user_dn or not xivo_ldap.perform_bind(user_dn, password):
+            if not user_dn or not wazo_ldap.perform_bind(user_dn, password):
                 return False
 
-            user_email = self._get_user_ldap_email(xivo_ldap, user_dn)
+            user_email = self._get_user_ldap_email(wazo_ldap, user_dn)
             if not user_email:
                 return False
 
@@ -78,13 +78,13 @@ class LDAPUser(BaseAuthenticationBackend):
 
     def _get_pbx_user_uuid_by_ldap_attribute(self, user_email):
         with session_scope():
-            xivo_user = find_by(email=user_email)
-            if not xivo_user:
+            wazo_user = find_by(email=user_email)
+            if not wazo_user:
                 logger.warning(
                     '%s does not have an email associated with a PBX user', user_email
                 )
-                return xivo_user
-            return xivo_user.uuid
+                return wazo_user
+            return wazo_user.uuid
 
     def _build_dn_with_config(self, login):
         login_esc = escape_dn_chars(login)
@@ -92,8 +92,8 @@ class LDAPUser(BaseAuthenticationBackend):
             self.user_login_attribute, login_esc, self.user_base_dn
         )
 
-    def _get_user_ldap_email(self, xivo_ldap, user_dn):
-        _, obj = xivo_ldap.perform_search(
+    def _get_user_ldap_email(self, wazo_ldap, user_dn):
+        _, obj = wazo_ldap.perform_search(
             user_dn, ldap.SCOPE_BASE, attrlist=[self.user_email_attribute]
         )
         email = obj.get(self.user_email_attribute, None)
@@ -102,10 +102,10 @@ class LDAPUser(BaseAuthenticationBackend):
             logger.debug('LDAP : No email found for the user DN: %s', user_dn)
         return email.decode('utf-8')
 
-    def _perform_search_dn(self, xivo_ldap, username):
+    def _perform_search_dn(self, wazo_ldap, username):
         username_esc = escape_filter_chars(username)
         filterstr = '{}={}'.format(self.user_login_attribute, username_esc)
-        dn, _ = xivo_ldap.perform_search(
+        dn, _ = wazo_ldap.perform_search(
             self.user_base_dn, ldap.SCOPE_SUBTREE, filterstr=filterstr, attrlist=['']
         )
         if not dn:
@@ -117,7 +117,7 @@ class LDAPUser(BaseAuthenticationBackend):
         return dn
 
 
-class _XivoLDAP:
+class _WazoLDAP:
     def __init__(self, uri):
         self.uri = uri
         self.ldapobj = self._create_ldap_obj(self.uri)
