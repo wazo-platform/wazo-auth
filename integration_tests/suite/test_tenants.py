@@ -15,6 +15,7 @@ from wazo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers import fixtures, base
 from .helpers.base import (
     ADDRESS_NULL,
+    ADDRESS_EMPTY,
     assert_http_error,
     assert_no_error,
     assert_sorted,
@@ -302,6 +303,22 @@ class TestTenants(base.APIIntegrationTest):
                 result = client.tenants.list()
                 matcher = contains(sub_tenant, subsub)
                 then(result, total=2, filtered=2, item_matcher=matcher)
+
+    @fixtures.http.tenant()
+    @fixtures.http.user()
+    def test_put_tenant_with_empty_address_returns_400(self, tenant, user):
+        name = 'foobar'
+        body = {'name': name, 'address': ADDRESS_EMPTY, 'contact': user['uuid']}
+        assert_http_error(400, self.client.tenants.new, tenant['uuid'], **body)
+        # assert_http_error(400, self.client.tenants.edit, tenant['uuid'], **body)
+
+    @fixtures.http.tenant()
+    @fixtures.http.user()
+    def test_put_tenant_with_null_address_returns_400(self, tenant, user):
+        name = 'foobar'
+        body = {'name': name, 'address': ADDRESS_NULL, 'contact': user['uuid']}
+        assert_http_error(400, self.client.tenants.new, tenant['uuid'], **body)
+        # assert_http_error(400, self.client.tenants.edit, tenant['uuid'], **body)
 
     @fixtures.http.tenant()
     @fixtures.http.user()

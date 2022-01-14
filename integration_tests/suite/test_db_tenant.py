@@ -26,6 +26,7 @@ from .helpers.base import (
     assert_no_error,
 )
 
+
 TENANT_UUID = '00000000-0000-4000-9000-000000000000'
 USER_UUID = '00000000-0000-4000-9000-111111111111'
 ADDRESS_ID = 42

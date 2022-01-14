@@ -54,6 +54,14 @@ ADDRESS_NULL = {
     'country': None,
     'zip_code': None,
 }
+ADDRESS_EMPTY = {
+    'line_1': '',
+    'line_2': '',
+    'city': '',
+    'state': '',
+    'country': '',
+    'zip_code': '',
+}
 
 use_asset = pytest.mark.usefixtures
 

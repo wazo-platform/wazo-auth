@@ -194,9 +194,12 @@ class TenantParamException(_BaseParamException):
 
     resource = 'tenants'
 
-class InvalidTenantAddressLengthException(_BaseParamException):
 
-    resource = 'tenants'
+class InvalidTenantAddressLengthException(APIException):
+    def __init__(self, error_message, error_details):
+        resource = 'tenants'
+        error_id = 'invalid-data'
+        super().__init__(400, error_message, error_id, error_details, resource)
 
 
 class PasswordChangeException(_BaseParamException):

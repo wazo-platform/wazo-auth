@@ -75,6 +75,33 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if uuid_:
             tenant.uuid = str(uuid_)
 
+        empty_or_null_found_dict = dict()
+        for address_field, address_field_value in tenant.address.items():
+            if not address_field_value:
+                empty_or_null_found_dict[address_field] = True
+        if bool(empty_or_null_found_dict):
+            error_message = 'Invalid tenant address length'
+            error_details = dict()
+            error_address_fields_causes = dict()
+            for field, _bool in empty_or_null_found_dict.items():
+                field_max = (
+                    256
+                    if field in ['line_1', 'line_2']
+                    else 128
+                    if field in ['city', 'state', 'country']
+                    else 16
+                )
+                error_address_fields_causes[field] = {
+                    'constraint_id': "length",
+                    'constraint': {'min': 1, 'max': field_max},
+                    'message': "Length must be between 1 and " + str(field_max),
+                }
+            error_details['address'] = error_address_fields_causes
+
+            raise exceptions.InvalidTenantAddressLengthException(
+                error_message, error_details
+            )
+
         self.session.add(tenant)
         try:
             self.session.flush()

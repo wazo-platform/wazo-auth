@@ -3,8 +3,7 @@
 
 from unittest import TestCase
 from uuid import UUID
-from hamcrest import assert_that, equal_to, has_entries, raises, calling
-from wazo_auth import exceptions
+from hamcrest import assert_that, equal_to, has_entries
 
 
 from .. import schemas
@@ -57,30 +56,6 @@ class TestTenantSchema(TestCase):
                     },
                 }
             ),
-        )
-
-    def test_that_an_address_with_empty_entries_returns_error(self):
-        uuid = 'e04f397c-0d52-4a83-aa8e-7ee374e9eed3'
-        address = _Address(
-            line_1='', line_2='', city='', state='', country='', zip_code=''
-        )
-        tenant = _Tenant(uuid=uuid, address=address, slug='address')
-
-        assert_that(
-            calling(self.schema.dump).with_args(tenant),
-            raises(exceptions.InvalidTenantAddressLengthException)
-        )
-
-    def test_that_an_address_with_none_entries_returns_error(self):
-        uuid = 'e04f397c-0d52-4a83-aa8e-7ee374e9eed3'
-        address = _Address(
-            line_1=None, line_2=None, city=None, state=None, country=None, zip_code=None
-        )
-        tenant = _Tenant(uuid=uuid, address=address, slug='address')
-
-        assert_that(
-            calling(self.schema.dump).with_args(tenant),
-            raises(exceptions.InvalidTenantAddressLengthException)
         )
 
     def test_with_an_address(self):
