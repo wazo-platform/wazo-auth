@@ -305,6 +305,28 @@ class TestTenants(base.APIIntegrationTest):
 
     @fixtures.http.tenant()
     @fixtures.http.user()
+    def test_put_tenant_with_empty_address_returns_400(self, tenant, user):
+        name = 'foobar'
+        body = {'name': name, 'address': ADDRESS_EMPTY, 'contact': user['uuid']}
+        try:
+            with self.client_in_subtenant() as (client, _, _):
+                assert_http_error(400, client.tenants.edit, tenant['uuid'], **body)
+        finally:
+            self.client.tenants.delete(tenant['uuid'])
+
+    @fixtures.http.tenant()
+    @fixtures.http.user()
+    def test_put_tenant_with_null_address_returns_400(self, tenant, user):
+        name = 'foobar'
+        body = {'name': name, 'address': ADDRESS_NULL, 'contact': user['uuid']}
+        try:
+            with self.client_in_subtenant() as (client, _, _):
+                assert_http_error(400, client.tenants.edit, tenant['uuid'], **body)
+        finally:
+            self.client.tenants.delete(tenant['uuid'])
+
+    @fixtures.http.tenant()
+    @fixtures.http.user()
     def test_put(self, tenant, user):
         name = 'foobar'
         body = {'name': name, 'address': ADDRESS_1, 'contact': user['uuid']}

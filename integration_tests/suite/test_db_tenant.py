@@ -23,6 +23,8 @@ from wazo_auth.database import models
 
 from .helpers import fixtures, base, constants
 from .helpers.base import (
+    ADDRESS_EMPTY,
+    ADDRESS_NULL,
     assert_no_error,
 )
 
@@ -208,6 +210,50 @@ class TestTenantDAO(base.DAOTestCase):
         assert_that(
             calling(self._create_tenant).with_args(uuid=uuid, parent_uuid=uuid),
             raises(exceptions.MasterTenantConflictException),
+        )
+
+    @fixtures.db.tenant(name='foobar')
+    def test_tenant_creation_with_empty_address_raises_exception(self, foobar_uuid):
+
+        uuid = uuid4()
+        assert_that(
+            calling(self._create_tenant).with_args(
+                uuid=uuid, parent_uuid=uuid, address=ADDRESS_EMPTY
+            ),
+            raises(exceptions.InvalidTenantAddressLengthException),
+        )
+
+    @fixtures.db.tenant(name='foobar')
+    def test_tenant_creation_with_null_address_raises_exception(self, foobar_uuid):
+
+        uuid = uuid4()
+        assert_that(
+            calling(self._create_tenant).with_args(
+                uuid=uuid, parent_uuid=uuid, address=ADDRESS_NULL
+            ),
+            raises(exceptions.InvalidTenantAddressLengthException),
+        )
+
+    @fixtures.db.tenant(name='1', uuid=TENANT_UUID_1)
+    @fixtures.db.tenant(name='2', uuid=TENANT_UUID_2, parent_uuid=TENANT_UUID_1)
+    def test_tenant_update_with_empty_address_raises_exception(self, *_):
+
+        assert_that(
+            calling(self._tenant_dao.update).with_args(
+                TENANT_UUID_2, address=ADDRESS_EMPTY
+            ),
+            raises(exceptions.InvalidTenantAddressLengthException),
+        )
+
+    @fixtures.db.tenant(name='1', uuid=TENANT_UUID_1)
+    @fixtures.db.tenant(name='2', uuid=TENANT_UUID_2, parent_uuid=TENANT_UUID_1)
+    def test_tenant_update_with_null_address_raises_exception(self, *_):
+
+        assert_that(
+            calling(self._tenant_dao.update).with_args(
+                TENANT_UUID_2, address=ADDRESS_NULL
+            ),
+            raises(exceptions.InvalidTenantAddressLengthException),
         )
 
     def test_tenant_creation_auto_generates_slug(self):

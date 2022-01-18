@@ -54,6 +54,18 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         parent_uuid = kwargs.get('parent_uuid')
         uuid_ = kwargs.get('uuid')
 
+        if 'address' in kwargs:
+
+            error_message, error_details = check_tenant_address_for_empty_fields(
+                kwargs['address']
+            )
+
+            if error_message and error_details:
+
+                raise exceptions.InvalidTenantAddressLengthException(
+                    error_message, error_details
+                )
+
         if uuid_ and parent_uuid and str(uuid_) == str(parent_uuid):
             if self.find_top_tenant():
                 raise exceptions.MasterTenantConflictException()
@@ -166,6 +178,18 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             'phone': kwargs.get('phone'),
         }
 
+        if 'address' in kwargs:
+            values['address'] = kwargs.get('address')
+            error_message, error_details = check_tenant_address_for_empty_fields(
+                values['address']
+            )
+
+            if error_message and error_details:
+
+                raise exceptions.InvalidTenantAddressLengthException(
+                    error_message, error_details
+                )
+
         try:
             self.session.query(Tenant).filter(filter_).update(values)
             self.session.flush()
@@ -227,3 +251,30 @@ def _generate_random_name(length):
     return ''.join(
         random.choice(string.ascii_letters + string.digits) for _ in range(length)
     )
+
+
+def check_tenant_address_for_empty_fields(address):
+    error_message = 'Invalid tenant address length'
+    error_details = dict()
+    empty_or_null_found_dict = dict()
+    for address_field, address_field_value in address.items():
+        if not address_field_value:
+            empty_or_null_found_dict[address_field] = True
+    if bool(empty_or_null_found_dict):
+        error_address_fields_causes = dict()
+        for field, _bool in empty_or_null_found_dict.items():
+            field_max = (
+                256
+                if field in ['line_1', 'line_2']
+                else 128
+                if field in ['city', 'state', 'country']
+                else 16
+            )
+            error_address_fields_causes[field] = {
+                'constraint_id': "length",
+                'constraint': {'min': 1, 'max': field_max},
+                'message': "Length must be between 1 and " + str(field_max),
+            }
+        error_details['address'] = error_address_fields_causes
+
+    return error_message, error_details
