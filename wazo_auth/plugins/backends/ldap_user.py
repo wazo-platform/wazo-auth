@@ -100,6 +100,7 @@ class LDAPUser(BaseAuthenticationBackend):
         email = email[0] if isinstance(email, list) else email
         if not email:
             logger.debug('LDAP : No email found for the user DN: %s', user_dn)
+            return
         return email.decode('utf-8')
 
     def _perform_search_dn(self, wazo_ldap, username):

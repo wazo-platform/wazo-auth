@@ -1,4 +1,4 @@
-# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import ldap
@@ -42,6 +42,20 @@ class LDAPHelper:
 
         self._ldap_obj.add_s(dn, modlist)
 
+    def add_contact_without_email(self, contact, ou):
+        dn = 'cn={},{}'.format(contact.cn, self.OU_DN[ou])
+        modlist = addModlist(
+            {
+                'objectClass': [b'inetOrgPerson'],
+                'cn': [contact.cn.encode('utf-8')],
+                'sn': [contact.cn.encode('utf-8')],
+                'uid': [contact.uid.encode('utf-8')],
+                'userPassword': [contact.password.encode('utf-8')],
+            }
+        )
+
+        self._ldap_obj.add_s(dn, modlist)
+
     def add_ou(self):
         modlist = addModlist(
             {'objectClass': [b'organizationalUnit'], 'ou': [b'people']}
@@ -66,7 +80,10 @@ def add_contacts(contacts, ldap_uri):
     helper.add_ou()
     helper.add_contact(Contact('wazo_auth', 'wazo_auth', 'S3cr$t', '', 'cn'), 'people')
     for contact in contacts:
-        helper.add_contact(contact, 'quebec')
+        if not contact.mail:
+            helper.add_contact_without_email(contact, 'quebec')
+        else:
+            helper.add_contact(contact, 'quebec')
 
 
 class _BaseLDAPTestCase(base.BaseIntegrationTest):
@@ -104,7 +121,21 @@ class TestLDAP(LDAPIntegrationTest):
             'awonderland_password',
             'awonderland@wazo-auth.com',
             'cn',
-        )
+        ),
+        Contact(
+            'Humpty Dumpty',
+            'humptydumpty',
+            'humptydumpty_password',
+            None,
+            'uid',
+        ),
+        Contact(
+            'Lewis Carroll',
+            'lewiscarroll',
+            'lewiscarroll_password',
+            'lewiscarroll@wazo-auth.com',
+            'mail',
+        ),
     ]
 
     def test_ldap_authentication(self):
@@ -120,6 +151,20 @@ class TestLDAP(LDAPIntegrationTest):
             raises(requests.HTTPError, pattern='401'),
         )
 
+    def test_ldap_authentication_fails_when_no_email_in_ldap(self):
+        args = ('Humpty Dumpty', 'humptydumpty_password')
+        assert_that(
+            calling(self._post_token).with_args(*args, backend='ldap_user'),
+            raises(requests.HTTPError, pattern='401')
+        )
+
+    def test_ldap_authentication_fails_when_no_email_in_user(self):
+        args = ('Lewis Carroll', 'lewiscarroll_password')
+        assert_that(
+            calling(self._post_token).with_args(*args, backend='ldap_user'),
+            raises(requests.HTTPError, pattern='401')
+        )
+
 
 @base.use_asset('ldap_anonymous')
 class TestLDAPAnonymous(LDAPAnonymousIntegrationTest):
@@ -130,7 +175,21 @@ class TestLDAPAnonymous(LDAPAnonymousIntegrationTest):
             'awonderland_password',
             'awonderland@wazo-auth.com',
             'mail',
-        )
+        ),
+        Contact(
+            'Humpty Dumpty',
+            'humptydumpty',
+            'humptydumpty_password',
+            None,
+            'uid',
+        ),
+        Contact(
+            'Lewis Carroll',
+            'lewiscarroll',
+            'lewiscarroll_password',
+            'lewiscarroll@wazo-auth.com',
+            'mail',
+        ),
     ]
 
     def test_ldap_authentication(self):
@@ -146,6 +205,20 @@ class TestLDAPAnonymous(LDAPAnonymousIntegrationTest):
             raises(requests.HTTPError, pattern='401'),
         )
 
+    def test_ldap_authentication_fails_when_no_email_in_ldap(self):
+        args = ('humptydumpty@wazo-auth.com', 'humptydumpty_password')
+        assert_that(
+            calling(self._post_token).with_args(*args, backend='ldap_user'),
+            raises(requests.HTTPError, pattern='401')
+        )
+
+    def test_ldap_authentication_fails_when_no_email_in_user(self):
+        args = ('lewiscarroll@wazo-auth.com', 'lewiscarroll_password')
+        assert_that(
+            calling(self._post_token).with_args(*args, backend='ldap_user'),
+            raises(requests.HTTPError, pattern='401')
+        )
+
 
 @base.use_asset('ldap_service_user')
 class TestLDAPServiceUser(LDAPServiceUserIntegrationTest):
@@ -156,7 +229,21 @@ class TestLDAPServiceUser(LDAPServiceUserIntegrationTest):
             'awonderland_password',
             'awonderland@wazo-auth.com',
             'uid',
-        )
+        ),
+        Contact(
+            'Humpty Dumpty',
+            'humptydumpty',
+            'humptydumpty_password',
+            None,
+            'uid',
+        ),
+        Contact(
+            'Lewis Carroll',
+            'lewiscarroll',
+            'lewiscarroll_password',
+            'lewiscarroll@wazo-auth.com',
+            'mail',
+        ),
     ]
 
     def test_ldap_authentication(self):
@@ -170,4 +257,18 @@ class TestLDAPServiceUser(LDAPServiceUserIntegrationTest):
         assert_that(
             calling(self._post_token).with_args(*args, backend='ldap_user'),
             raises(requests.HTTPError, pattern='401'),
+        )
+
+    def test_ldap_authentication_fails_when_no_email_in_ldap(self):
+        args = ('humptydumpty', 'humptydumpty_password')
+        assert_that(
+            calling(self._post_token).with_args(*args, backend='ldap_user'),
+            raises(requests.HTTPError, pattern='401')
+        )
+
+    def test_ldap_authentication_fails_when_no_email_in_user(self):
+        args = ('lewiscarroll', 'lewiscarroll_password')
+        assert_that(
+            calling(self._post_token).with_args(*args, backend='ldap_user'),
+            raises(requests.HTTPError, pattern='401')
         )
