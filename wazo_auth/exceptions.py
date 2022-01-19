@@ -177,7 +177,11 @@ class _BaseParamException(APIException):
             for info in infos:
                 if isinstance(info, (str, bytes)):
                     info = {'message': info}
-                return cls(info['message'], {field: info})
+                if 'message' in info:
+                    return cls(info['message'], {field: info})
+                else:
+                    for sub_field, sub_info in info.items():
+                        return cls(sub_info[0]['message'], {sub_field: sub_info[0]})
 
 
 class GroupParamException(_BaseParamException):
