@@ -91,29 +91,6 @@ class _BaseLDAPTestCase(base.BaseIntegrationTest):
     username = 'admin'
     password = 's3cre7'
 
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        ldap_host = '127.0.0.1'
-        ldap_port = cls.asset_cls.service_port(389, 'slapd')
-        ldap_uri = f'ldap://{ldap_host}:{ldap_port}'
-        add_contacts(cls.CONTACTS, ldap_uri)
-
-
-class LDAPIntegrationTest(_BaseLDAPTestCase):
-    asset_cls = base.LDAPAssetLaunchingTestCase
-
-
-class LDAPAnonymousIntegrationTest(_BaseLDAPTestCase):
-    asset_cls = base.LDAPAnonymousAssetLaunchingTestCase
-
-
-class LDAPServiceUserIntegrationTest(_BaseLDAPTestCase):
-    asset_cls = base.LDAPServiceUserAssetLaunchingTestCase
-
-
-@base.use_asset('ldap')
-class TestLDAP(LDAPIntegrationTest):
     CONTACTS = [
         Contact(
             'Alice Wonderland',
@@ -137,6 +114,30 @@ class TestLDAP(LDAPIntegrationTest):
             'mail',
         ),
     ]
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        ldap_host = '127.0.0.1'
+        ldap_port = cls.asset_cls.service_port(389, 'slapd')
+        ldap_uri = f'ldap://{ldap_host}:{ldap_port}'
+        add_contacts(cls.CONTACTS, ldap_uri)
+
+
+class LDAPIntegrationTest(_BaseLDAPTestCase):
+    asset_cls = base.LDAPAssetLaunchingTestCase
+
+
+class LDAPAnonymousIntegrationTest(_BaseLDAPTestCase):
+    asset_cls = base.LDAPAnonymousAssetLaunchingTestCase
+
+
+class LDAPServiceUserIntegrationTest(_BaseLDAPTestCase):
+    asset_cls = base.LDAPServiceUserAssetLaunchingTestCase
+
+
+@base.use_asset('ldap')
+class TestLDAP(LDAPIntegrationTest):
 
     def test_ldap_authentication(self):
         response = self._post_token(
@@ -168,29 +169,6 @@ class TestLDAP(LDAPIntegrationTest):
 
 @base.use_asset('ldap_anonymous')
 class TestLDAPAnonymous(LDAPAnonymousIntegrationTest):
-    CONTACTS = [
-        Contact(
-            'Alice Wonderland',
-            'awonderland',
-            'awonderland_password',
-            'awonderland@wazo-auth.com',
-            'mail',
-        ),
-        Contact(
-            'Humpty Dumpty',
-            'humptydumpty',
-            'humptydumpty_password',
-            None,
-            'uid',
-        ),
-        Contact(
-            'Lewis Carroll',
-            'lewiscarroll',
-            'lewiscarroll_password',
-            'lewiscarroll@wazo-auth.com',
-            'mail',
-        ),
-    ]
 
     def test_ldap_authentication(self):
         response = self._post_token(
@@ -222,29 +200,6 @@ class TestLDAPAnonymous(LDAPAnonymousIntegrationTest):
 
 @base.use_asset('ldap_service_user')
 class TestLDAPServiceUser(LDAPServiceUserIntegrationTest):
-    CONTACTS = [
-        Contact(
-            'Alice Wonderland',
-            'awonderland',
-            'awonderland_password',
-            'awonderland@wazo-auth.com',
-            'uid',
-        ),
-        Contact(
-            'Humpty Dumpty',
-            'humptydumpty',
-            'humptydumpty_password',
-            None,
-            'uid',
-        ),
-        Contact(
-            'Lewis Carroll',
-            'lewiscarroll',
-            'lewiscarroll_password',
-            'lewiscarroll@wazo-auth.com',
-            'mail',
-        ),
-    ]
 
     def test_ldap_authentication(self):
         response = self._post_token(
