@@ -138,7 +138,6 @@ class LDAPServiceUserIntegrationTest(_BaseLDAPTestCase):
 
 @base.use_asset('ldap')
 class TestLDAP(LDAPIntegrationTest):
-
     def test_ldap_authentication(self):
         response = self._post_token(
             'Alice Wonderland', 'awonderland_password', backend='ldap_user'
@@ -156,20 +155,19 @@ class TestLDAP(LDAPIntegrationTest):
         args = ('Humpty Dumpty', 'humptydumpty_password')
         assert_that(
             calling(self._post_token).with_args(*args, backend='ldap_user'),
-            raises(requests.HTTPError, pattern='401')
+            raises(requests.HTTPError, pattern='401'),
         )
 
     def test_ldap_authentication_fails_when_no_email_in_user(self):
         args = ('Lewis Carroll', 'lewiscarroll_password')
         assert_that(
             calling(self._post_token).with_args(*args, backend='ldap_user'),
-            raises(requests.HTTPError, pattern='401')
+            raises(requests.HTTPError, pattern='401'),
         )
 
 
 @base.use_asset('ldap_anonymous')
 class TestLDAPAnonymous(LDAPAnonymousIntegrationTest):
-
     def test_ldap_authentication(self):
         response = self._post_token(
             'awonderland@wazo-auth.com', 'awonderland_password', backend='ldap_user'
@@ -187,20 +185,19 @@ class TestLDAPAnonymous(LDAPAnonymousIntegrationTest):
         args = ('humptydumpty@wazo-auth.com', 'humptydumpty_password')
         assert_that(
             calling(self._post_token).with_args(*args, backend='ldap_user'),
-            raises(requests.HTTPError, pattern='401')
+            raises(requests.HTTPError, pattern='401'),
         )
 
     def test_ldap_authentication_fails_when_no_email_in_user(self):
         args = ('lewiscarroll@wazo-auth.com', 'lewiscarroll_password')
         assert_that(
             calling(self._post_token).with_args(*args, backend='ldap_user'),
-            raises(requests.HTTPError, pattern='401')
+            raises(requests.HTTPError, pattern='401'),
         )
 
 
 @base.use_asset('ldap_service_user')
 class TestLDAPServiceUser(LDAPServiceUserIntegrationTest):
-
     def test_ldap_authentication(self):
         response = self._post_token(
             'awonderland', 'awonderland_password', backend='ldap_user'
@@ -218,12 +215,12 @@ class TestLDAPServiceUser(LDAPServiceUserIntegrationTest):
         args = ('humptydumpty', 'humptydumpty_password')
         assert_that(
             calling(self._post_token).with_args(*args, backend='ldap_user'),
-            raises(requests.HTTPError, pattern='401')
+            raises(requests.HTTPError, pattern='401'),
         )
 
     def test_ldap_authentication_fails_when_no_email_in_user(self):
         args = ('lewiscarroll', 'lewiscarroll_password')
         assert_that(
             calling(self._post_token).with_args(*args, backend='ldap_user'),
-            raises(requests.HTTPError, pattern='401')
+            raises(requests.HTTPError, pattern='401'),
         )
