@@ -1,8 +1,8 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
-from hamcrest import assert_that, equal_to, has_entries
+from hamcrest import assert_that, equal_to, has_entries, starts_with
 from mock import ANY, Mock, patch, sentinel as s
 from wazo_auth.config import _DEFAULT_CONFIG
 from wazo_auth.tests.test_http import HTTPAppTestCase
@@ -77,6 +77,48 @@ class TestTenantPost(HTTPAppTestCase):
                 country=None,
             ),
         )
+
+    @patch('wazo_auth.plugins.http.tenants.http.TenantDetector')
+    def test_that_empty_tenant_addresses_return_400(self, TenantDetector):
+        TenantDetector.autodetect.return_value = Mock(uuid=s.tenant_uuid)
+
+        invalid_datas = [
+            (
+                'address',
+                {
+                    'address': {
+                        'line_1': 'xxx',
+                        'line_2': 'xxx',
+                        'city': 'Montreal',
+                        'state': '',
+                        'country': 'Canada',
+                        'zip_code': 'xxx',
+                    }
+                },
+            ),
+        ]
+
+        for field, invalid_data in invalid_datas:
+            result = self.post(invalid_data)
+            assert_that(result.status_code, equal_to(400), invalid_data)
+            assert_that(
+                result.json,
+                has_entries(
+                    error_id='invalid-data',
+                    message=starts_with('Length must be between'),
+                    resource='tenants',
+                    details=has_entries(
+                        address=has_entries(
+                            state=has_entries(
+                                constraint_id='length',
+                                constraint=ANY,
+                                message=starts_with('Length must be between'),
+                            ),
+                        ),
+                    ),
+                ),
+                invalid_data,
+            )
 
     def post(self, data):
         return self.app.post(self.url, data=json.dumps(data), headers=self.headers)
