@@ -183,7 +183,8 @@ class _BaseParamException(APIException):
                 else:
                     for sub_field, sub_infos in info.items():
                         for sub_info in sub_infos:
-                            return cls(sub_info['message'], {sub_field: sub_info})
+                            info = {sub_field: sub_info}
+                            return cls(sub_info['message'], {field: info})
 
 
 class GroupParamException(_BaseParamException):

@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -108,11 +108,12 @@ class TestTenantPost(HTTPAppTestCase):
                     message=starts_with('Length must be between'),
                     resource='tenants',
                     details=has_entries(
-                        'state',
-                        has_entries(
-                            constraint_id='length',
-                            constraint=ANY,
-                            message=starts_with('Length must be between'),
+                        address=has_entries(
+                            state=has_entries(
+                                constraint_id='length',
+                                constraint=ANY,
+                                message=starts_with('Length must be between'),
+                            ),
                         ),
                     ),
                 ),
