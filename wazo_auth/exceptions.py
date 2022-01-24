@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unidecode import unidecode
@@ -177,11 +177,13 @@ class _BaseParamException(APIException):
             for info in infos:
                 if isinstance(info, (str, bytes)):
                     info = {'message': info}
+
                 if 'message' in info:
                     return cls(info['message'], {field: info})
                 else:
-                    for sub_field, sub_info in info.items():
-                        return cls(sub_info[0]['message'], {sub_field: sub_info[0]})
+                    for sub_field, sub_infos in info.items():
+                        for sub_info in sub_infos:
+                            return cls(sub_info['message'], {sub_field: sub_info})
 
 
 class GroupParamException(_BaseParamException):
