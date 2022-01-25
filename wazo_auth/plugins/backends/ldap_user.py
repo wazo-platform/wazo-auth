@@ -9,9 +9,6 @@ from ldap.filter import escape_filter_chars
 from ldap.dn import escape_dn_chars
 from wazo_auth import BaseAuthenticationBackend
 
-from xivo_dao.resources.user.dao import find_by
-from xivo_dao.helpers.db_utils import session_scope
-
 logger = logging.getLogger(__name__)
 
 
@@ -20,6 +17,7 @@ class LDAPUser(BaseAuthenticationBackend):
         super().load(dependencies)
         config = dependencies['config']
         xivo_dao.init_db(config['confd_db_uri'])
+        self._user_service = dependencies['user_service']
         self.config = config['ldap']
         self.uri = self.config['uri']
         self.bind_dn = self.config.get('bind_dn', '')
@@ -68,7 +66,7 @@ class LDAPUser(BaseAuthenticationBackend):
             logger.exception('ldap.LDAPError (%r, %r)', self.config, exc)
             return False
 
-        pbx_user_uuid = self._get_pbx_user_uuid_by_ldap_attribute(user_email)
+        pbx_user_uuid = self._get_user_uuid_by_ldap_attribute(user_email)
         if not pbx_user_uuid:
             return False
 
@@ -76,15 +74,15 @@ class LDAPUser(BaseAuthenticationBackend):
 
         return True
 
-    def _get_pbx_user_uuid_by_ldap_attribute(self, user_email):
-        with session_scope():
-            wazo_user = find_by(email=user_email)
-            if not wazo_user:
-                logger.warning(
-                    '%s does not have an email associated with a PBX user', user_email
-                )
-                return wazo_user
-            return wazo_user.uuid
+    def _get_user_uuid_by_ldap_attribute(self, user_email):
+        try:
+            user = next(iter(self._user_service.list_users(email_address=user_email)))
+        except StopIteration:
+            logger.warning(
+                '%s does not have an email associated with an auth user', user_email
+            )
+            return
+        return user['uuid']
 
     def _build_dn_with_config(self, login):
         login_esc = escape_dn_chars(login)

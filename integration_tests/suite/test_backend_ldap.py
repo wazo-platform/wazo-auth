@@ -9,7 +9,7 @@ from collections import namedtuple
 from ldap.modlist import addModlist
 from hamcrest import assert_that, has_entries, calling, raises
 
-from .helpers import base
+from .helpers import base, fixtures
 
 Contact = namedtuple('Contact', ['cn', 'uid', 'password', 'mail', 'login_attribute'])
 
@@ -108,7 +108,9 @@ class _BaseLDAPTestCase(base.BaseIntegrationTest):
             raise Exception('could not add contacts: LDAP server is down')
 
         helper.add_ou()
-        helper.add_contact(Contact('wazo_auth', 'wazo_auth', 'S3cr$t', '', 'cn'), 'people')
+        helper.add_contact(
+            Contact('wazo_auth', 'wazo_auth', 'S3cr$t', '', 'cn'), 'people'
+        )
         for contact in contacts:
             if not contact.mail:
                 helper.add_contact_without_email(contact, 'quebec')
@@ -138,20 +140,25 @@ class LDAPServiceUserIntegrationTest(_BaseLDAPTestCase):
 
 @base.use_asset('ldap')
 class TestLDAP(LDAPIntegrationTest):
-    def test_ldap_authentication(self):
+    @fixtures.http.user(email_address='awonderland@wazo-auth.com')
+    def test_ldap_authentication(self, user):
         response = self._post_token(
             'Alice Wonderland', 'awonderland_password', backend='ldap_user'
         )
-        assert_that(response, has_entries(metadata=has_entries(pbx_user_uuid='1')))
+        assert_that(
+            response, has_entries(metadata=has_entries(pbx_user_uuid=user['uuid']))
+        )
 
-    def test_ldap_authentication_fail_when_wrong_password(self):
+    @fixtures.http.user(email_address='awonderland@wazo-auth.com')
+    def test_ldap_authentication_fail_when_wrong_password(self, _):
         args = ('Alice Wonderland', 'wrong_password')
         assert_that(
             calling(self._post_token).with_args(*args, backend='ldap_user'),
             raises(requests.HTTPError, pattern='401'),
         )
 
-    def test_ldap_authentication_fails_when_no_email_in_ldap(self):
+    @fixtures.http.user(email_address='humptydumpty@wazo-auth.com')
+    def test_ldap_authentication_fails_when_no_email_in_ldap(self, _):
         args = ('Humpty Dumpty', 'humptydumpty_password')
         assert_that(
             calling(self._post_token).with_args(*args, backend='ldap_user'),
@@ -168,20 +175,25 @@ class TestLDAP(LDAPIntegrationTest):
 
 @base.use_asset('ldap_anonymous')
 class TestLDAPAnonymous(LDAPAnonymousIntegrationTest):
-    def test_ldap_authentication(self):
+    @fixtures.http.user(email_address='awonderland@wazo-auth.com')
+    def test_ldap_authentication(self, user):
         response = self._post_token(
             'awonderland@wazo-auth.com', 'awonderland_password', backend='ldap_user'
         )
-        assert_that(response, has_entries(metadata=has_entries(pbx_user_uuid='1')))
+        assert_that(
+            response, has_entries(metadata=has_entries(pbx_user_uuid=user['uuid']))
+        )
 
-    def test_ldap_authentication_fail_when_wrong_password(self):
+    @fixtures.http.user(email_address='awonderland@wazo-auth.com')
+    def test_ldap_authentication_fail_when_wrong_password(self, _):
         args = ('awonderland@wazo-auth.com', 'wrong_password')
         assert_that(
             calling(self._post_token).with_args(*args, backend='ldap_user'),
             raises(requests.HTTPError, pattern='401'),
         )
 
-    def test_ldap_authentication_fails_when_no_email_in_ldap(self):
+    @fixtures.http.user(email_address='humptydumpty@wazo-auth.com')
+    def test_ldap_authentication_fails_when_no_email_in_ldap(self, _):
         args = ('humptydumpty@wazo-auth.com', 'humptydumpty_password')
         assert_that(
             calling(self._post_token).with_args(*args, backend='ldap_user'),
@@ -198,20 +210,25 @@ class TestLDAPAnonymous(LDAPAnonymousIntegrationTest):
 
 @base.use_asset('ldap_service_user')
 class TestLDAPServiceUser(LDAPServiceUserIntegrationTest):
-    def test_ldap_authentication(self):
+    @fixtures.http.user(email_address='awonderland@wazo-auth.com')
+    def test_ldap_authentication(self, user):
         response = self._post_token(
             'awonderland', 'awonderland_password', backend='ldap_user'
         )
-        assert_that(response, has_entries(metadata=has_entries(pbx_user_uuid='1')))
+        assert_that(
+            response, has_entries(metadata=has_entries(pbx_user_uuid=user['uuid']))
+        )
 
-    def test_ldap_authentication_fail_when_wrong_password(self):
+    @fixtures.http.user(email_address='awonderland@wazo-auth.com')
+    def test_ldap_authentication_fail_when_wrong_password(self, _):
         args = ('awonderland', 'wrong_password')
         assert_that(
             calling(self._post_token).with_args(*args, backend='ldap_user'),
             raises(requests.HTTPError, pattern='401'),
         )
 
-    def test_ldap_authentication_fails_when_no_email_in_ldap(self):
+    @fixtures.http.user(email_address='humptydumpty@wazo-auth.com')
+    def test_ldap_authentication_fails_when_no_email_in_ldap(self, _):
         args = ('humptydumpty', 'humptydumpty_password')
         assert_that(
             calling(self._post_token).with_args(*args, backend='ldap_user'),
