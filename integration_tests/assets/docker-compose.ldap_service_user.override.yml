@@ -8,10 +8,6 @@ services:
     environment:
       TARGETS: "slapd:389 postgres:5432 auth:9497"
 
-  postgres:
-    volumes:
-      - "./postgres_data/populate.ldap.hardcoded.sql:/pg-init-db/populate.sql"
-
   auth:
     volumes:
       - "./etc/wazo-auth/conf.d/asset.ldap_service_user.yml:/etc/wazo-auth/conf.d/asset.ldap_service_user.yml"
