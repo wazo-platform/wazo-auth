@@ -67,25 +67,6 @@ class LDAPHelper:
         self._ldap_obj.add_s(self.QUEBEC_DN, modlist)
 
 
-def add_contacts(contacts, ldap_uri):
-    for _ in range(10):
-        try:
-            helper = LDAPHelper(ldap_uri)
-            break
-        except ldap.SERVER_DOWN:
-            time.sleep(1)
-    else:
-        raise Exception('could not add contacts: LDAP server is down')
-
-    helper.add_ou()
-    helper.add_contact(Contact('wazo_auth', 'wazo_auth', 'S3cr$t', '', 'cn'), 'people')
-    for contact in contacts:
-        if not contact.mail:
-            helper.add_contact_without_email(contact, 'quebec')
-        else:
-            helper.add_contact(contact, 'quebec')
-
-
 class _BaseLDAPTestCase(base.BaseIntegrationTest):
 
     username = 'admin'
@@ -116,12 +97,31 @@ class _BaseLDAPTestCase(base.BaseIntegrationTest):
     ]
 
     @classmethod
+    def add_contacts(cls, contacts, ldap_uri):
+        for _ in range(10):
+            try:
+                helper = LDAPHelper(ldap_uri)
+                break
+            except ldap.SERVER_DOWN:
+                time.sleep(1)
+        else:
+            raise Exception('could not add contacts: LDAP server is down')
+
+        helper.add_ou()
+        helper.add_contact(Contact('wazo_auth', 'wazo_auth', 'S3cr$t', '', 'cn'), 'people')
+        for contact in contacts:
+            if not contact.mail:
+                helper.add_contact_without_email(contact, 'quebec')
+            else:
+                helper.add_contact(contact, 'quebec')
+
+    @classmethod
     def setUpClass(cls):
         super().setUpClass()
         ldap_host = '127.0.0.1'
         ldap_port = cls.asset_cls.service_port(389, 'slapd')
         ldap_uri = f'ldap://{ldap_host}:{ldap_port}'
-        add_contacts(cls.CONTACTS, ldap_uri)
+        cls.add_contacts(cls.CONTACTS, ldap_uri)
 
 
 class LDAPIntegrationTest(_BaseLDAPTestCase):
