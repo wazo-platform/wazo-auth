@@ -1,8 +1,8 @@
 # Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import logging
 import ldap
+import logging
 
 from ldap.filter import escape_filter_chars
 from ldap.dn import escape_dn_chars
