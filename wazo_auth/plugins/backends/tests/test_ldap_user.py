@@ -13,8 +13,6 @@ from wazo_auth.plugins.backends.ldap_user import LDAPUser, _WazoLDAP
 class TestGetACLS(unittest.TestCase):
     def setUp(self):
         config = {
-            'confd': {},
-            'confd_db_uri': 'postgresql:///',
             'ldap': {
                 'uri': 'ldap://host:389',
                 'user_base_dn': 'dc=example,dc=com',
@@ -35,8 +33,6 @@ class TestGetACLS(unittest.TestCase):
 class TestGetMetadata(unittest.TestCase):
     def setUp(self):
         config = {
-            'confd': {},
-            'confd_db_uri': 'postgresql:///',
             'ldap': {
                 'uri': 'ldap://host:389',
                 'user_base_dn': 'dc=example,dc=com',
@@ -62,8 +58,6 @@ class TestGetMetadata(unittest.TestCase):
 class TestVerifyPassword(unittest.TestCase):
     def setUp(self):
         self.config = {
-            'confd': {},
-            'confd_db_uri': 'postgresql:///',
             'ldap': {
                 'uri': 'ldap://host:389',
                 'user_base_dn': 'dc=example,dc=com',
@@ -129,10 +123,7 @@ class TestVerifyPassword(unittest.TestCase):
         )
 
     def test_that_verify_password_escape_filter_chars(self, wazo_ldap):
-        extended_config = {
-            'confd_db_uri': 'postgresql:///',
-            'ldap': {'bind_anonymous': True},
-        }
+        extended_config = {'ldap': {'bind_anonymous': True}}
         extended_config['ldap'].update(self.config['ldap'])
         backend = LDAPUser()
         backend.load({'config': self.config, 'user_service': self.user_service})
@@ -179,11 +170,7 @@ class TestVerifyPassword(unittest.TestCase):
         assert_that(args, equal_to({}))
 
     def test_that_verify_password_calls_with_bind_anonymous(self, wazo_ldap):
-        extended_config = {
-            'confd': {},
-            'confd_db_uri': 'postgresql:///',
-            'ldap': {'bind_anonymous': True},
-        }
+        extended_config = {'ldap': {'bind_anonymous': True}}
         extended_config['ldap'].update(self.config['ldap'])
         backend = LDAPUser()
         backend.load({'config': extended_config, 'user_service': self.user_service})
@@ -203,11 +190,7 @@ class TestVerifyPassword(unittest.TestCase):
     def test_that_verify_password_calls_return_false_when_no_binding_with_anonymous(
         self, wazo_ldap
     ):
-        extended_config = {
-            'confd': {},
-            'confd_db_uri': 'postgresql:///',
-            'ldap': {'bind_anonymous': True},
-        }
+        extended_config = {'ldap': {'bind_anonymous': True}}
         extended_config['ldap'].update(self.config['ldap'])
         wazo_ldap = wazo_ldap.return_value
         backend = LDAPUser()
@@ -222,8 +205,6 @@ class TestVerifyPassword(unittest.TestCase):
 
     def test_that_verify_password_calls_with_bind_dn(self, wazo_ldap):
         extended_config = {
-            'confd': {},
-            'confd_db_uri': 'postgresql:///',
             'ldap': {'bind_dn': 'uid=foo,dc=example,dc=com', 'bind_password': 'S3cr$t'},
         }
         extended_config['ldap'].update(self.config['ldap'])
@@ -248,11 +229,7 @@ class TestVerifyPassword(unittest.TestCase):
     def test_that_verify_password_calls_with_missing_bind_password_try_bind(
         self, wazo_ldap
     ):
-        extended_config = {
-            'confd': {},
-            'confd_db_uri': 'postgresql:///',
-            'ldap': {'bind_dn': 'uid=foo,dc=example,dc=com'},
-        }
+        extended_config = {'ldap': {'bind_dn': 'uid=foo,dc=example,dc=com'}}
         extended_config['ldap'].update(self.config['ldap'])
         backend = LDAPUser()
         backend.load({'config': extended_config, 'user_service': self.user_service})
