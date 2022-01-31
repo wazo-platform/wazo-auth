@@ -4,14 +4,29 @@
 import unittest
 import ldap
 
-from mock import patch, MagicMock, Mock, call
 from hamcrest import assert_that, empty, equal_to, has_entries
+from mock import call, MagicMock, Mock, patch, sentinel
 
 from wazo_auth.plugins.backends.ldap_user import LDAPUser, _WazoLDAP
 
 
-class TestGetACLS(unittest.TestCase):
+class BaseTestCase(unittest.TestCase):
     def setUp(self):
+        self.user_service = MagicMock()
+        self.user_service.return_value.list_users = MagicMock()
+        self.purposes = MagicMock()
+        self.purposes.return_value = {
+            'user': MagicMock(
+                metadata_plugins=[
+                    MagicMock(get_token_metadata=Mock(return_value=sentinel.metadata)),
+                ],
+            ),
+        }
+
+
+class TestGetACLS(BaseTestCase):
+    def setUp(self):
+        super().setUp()
         config = {
             'ldap': {
                 'uri': 'ldap://host:389',
@@ -19,19 +34,24 @@ class TestGetACLS(unittest.TestCase):
                 'user_login_attribute': 'uid',
             },
         }
-        self.args = {'pbx_user_uuid': 'alice-uuid'}
+        self.args = {'pbx_user_uuid': 'alice-uuid', 'user_email': 'alice@wazo-auth.com'}
         self.backend = LDAPUser()
-        self.user_service = MagicMock()
-        self.user_service.return_value.list_users = MagicMock()
-        self.backend.load({'config': config, 'user_service': self.user_service})
+        self.backend.load(
+            {
+                'config': config,
+                'user_service': self.user_service,
+                'purposes': self.purposes,
+            }
+        )
 
     def test_get_acl(self):
         result = self.backend.get_acl('alice', self.args)
         assert_that(result, empty())
 
 
-class TestGetMetadata(unittest.TestCase):
+class TestGetMetadata(BaseTestCase):
     def setUp(self):
+        super().setUp()
         config = {
             'ldap': {
                 'uri': 'ldap://host:389',
@@ -39,11 +59,15 @@ class TestGetMetadata(unittest.TestCase):
                 'user_login_attribute': 'uid',
             },
         }
-        self.args = {'pbx_user_uuid': 'alice-uuid'}
+        self.args = {'pbx_user_uuid': 'alice-uuid', 'user_email': 'alice@wazo-auth.com'}
         self.backend = LDAPUser()
-        self.user_service = MagicMock()
-        self.user_service.return_value.list_users = MagicMock()
-        self.backend.load({'config': config, 'user_service': self.user_service})
+        self.backend.load(
+            {
+                'config': config,
+                'user_service': self.user_service,
+                'purposes': self.purposes,
+            },
+        )
 
     def test_that_get_metadata_calls_the_dao(self):
         expected_result = has_entries(auth_id='alice-uuid', pbx_user_uuid='alice-uuid')
@@ -55,8 +79,9 @@ class TestGetMetadata(unittest.TestCase):
 
 
 @patch('wazo_auth.plugins.backends.ldap_user._WazoLDAP')
-class TestVerifyPassword(unittest.TestCase):
+class TestVerifyPassword(BaseTestCase):
     def setUp(self):
+        super().setUp()
         self.config = {
             'ldap': {
                 'uri': 'ldap://host:389',
@@ -66,15 +91,20 @@ class TestVerifyPassword(unittest.TestCase):
         }
         self.expected_user_dn = 'uid=foo,dc=example,dc=com'
         self.expected_user_email = 'foo@example.com'
-        obj = Mock()
-        obj.return_value.mail.return_value = self.expected_user_email
+        obj = {'mail': self.expected_user_email.encode('utf-8')}
         self.search_obj_result = (self.expected_user_dn, obj)
         self.list_users = MagicMock()
         self.user_service = MagicMock(list_users=self.list_users)
 
     def test_that_verify_password_return_false_when_ldaperror(self, wazo_ldap):
         backend = LDAPUser()
-        backend.load({'config': self.config, 'user_service': self.user_service})
+        backend.load(
+            {
+                'config': self.config,
+                'user_service': self.user_service,
+                'purposes': self.purposes,
+            }
+        )
         wazo_ldap.side_effect = ldap.LDAPError
         args = {}
 
@@ -83,7 +113,13 @@ class TestVerifyPassword(unittest.TestCase):
 
     def test_that_verify_password_return_false_when_serverdown(self, wazo_ldap):
         backend = LDAPUser()
-        backend.load({'config': self.config, 'user_service': self.user_service})
+        backend.load(
+            {
+                'config': self.config,
+                'user_service': self.user_service,
+                'purposes': self.purposes,
+            },
+        )
         wazo_ldap.side_effect = ldap.SERVER_DOWN
         args = {}
 
@@ -92,7 +128,13 @@ class TestVerifyPassword(unittest.TestCase):
 
     def test_that_verify_password_calls_perform_bind(self, wazo_ldap):
         backend = LDAPUser()
-        backend.load({'config': self.config, 'user_service': self.user_service})
+        backend.load(
+            {
+                'config': self.config,
+                'user_service': self.user_service,
+                'purposes': self.purposes,
+            }
+        )
 
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
@@ -107,7 +149,13 @@ class TestVerifyPassword(unittest.TestCase):
 
     def test_that_verify_password_escape_dn_chars(self, wazo_ldap):
         backend = LDAPUser()
-        backend.load({'config': self.config, 'user_service': self.user_service})
+        backend.load(
+            {
+                'config': self.config,
+                'user_service': self.user_service,
+                'purposes': self.purposes,
+            }
+        )
 
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
@@ -126,7 +174,13 @@ class TestVerifyPassword(unittest.TestCase):
         extended_config = {'ldap': {'bind_anonymous': True}}
         extended_config['ldap'].update(self.config['ldap'])
         backend = LDAPUser()
-        backend.load({'config': self.config, 'user_service': self.user_service})
+        backend.load(
+            {
+                'config': self.config,
+                'user_service': self.user_service,
+                'purposes': self.purposes,
+            }
+        )
 
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
@@ -143,7 +197,13 @@ class TestVerifyPassword(unittest.TestCase):
 
     def test_that_verify_password_calls_return_false_when_no_user_bind(self, wazo_ldap):
         backend = LDAPUser()
-        backend.load({'config': self.config, 'user_service': self.user_service})
+        backend.load(
+            {
+                'config': self.config,
+                'user_service': self.user_service,
+                'purposes': self.purposes,
+            }
+        )
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = False
         args = {}
@@ -157,7 +217,13 @@ class TestVerifyPassword(unittest.TestCase):
         self, wazo_ldap
     ):
         backend = LDAPUser()
-        backend.load({'config': self.config, 'user_service': self.user_service})
+        backend.load(
+            {
+                'config': self.config,
+                'user_service': self.user_service,
+                'purposes': self.purposes,
+            }
+        )
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
@@ -173,7 +239,13 @@ class TestVerifyPassword(unittest.TestCase):
         extended_config = {'ldap': {'bind_anonymous': True}}
         extended_config['ldap'].update(self.config['ldap'])
         backend = LDAPUser()
-        backend.load({'config': extended_config, 'user_service': self.user_service})
+        backend.load(
+            {
+                'config': extended_config,
+                'user_service': self.user_service,
+                'purposes': self.purposes,
+            }
+        )
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
@@ -183,7 +255,10 @@ class TestVerifyPassword(unittest.TestCase):
         result = backend.verify_password('foo', 'bar', args)
 
         assert_that(result, equal_to(True))
-        assert_that(args, equal_to({'pbx_user_uuid': 'alice-uuid'}))
+        assert_that(
+            args,
+            equal_to({'pbx_user_uuid': 'alice-uuid', 'user_email': 'foo@example.com'}),
+        )
         expected_call = [call('', ''), call(self.expected_user_dn, 'bar')]
         wazo_ldap.perform_bind.assert_has_calls(expected_call)
 
@@ -194,7 +269,13 @@ class TestVerifyPassword(unittest.TestCase):
         extended_config['ldap'].update(self.config['ldap'])
         wazo_ldap = wazo_ldap.return_value
         backend = LDAPUser()
-        backend.load({'config': extended_config, 'user_service': self.user_service})
+        backend.load(
+            {
+                'config': extended_config,
+                'user_service': self.user_service,
+                'purposes': self.purposes,
+            }
+        )
         wazo_ldap.perform_bind.return_value = False
         args = {}
 
@@ -209,7 +290,13 @@ class TestVerifyPassword(unittest.TestCase):
         }
         extended_config['ldap'].update(self.config['ldap'])
         backend = LDAPUser()
-        backend.load({'config': extended_config, 'user_service': self.user_service})
+        backend.load(
+            {
+                'config': extended_config,
+                'user_service': self.user_service,
+                'purposes': self.purposes,
+            }
+        )
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
@@ -219,7 +306,10 @@ class TestVerifyPassword(unittest.TestCase):
         result = backend.verify_password('foo', 'bar', args)
 
         assert_that(result, equal_to(True))
-        assert_that(args, equal_to({'pbx_user_uuid': 'alice-uuid'}))
+        assert_that(
+            args,
+            equal_to({'pbx_user_uuid': 'alice-uuid', 'user_email': 'foo@example.com'}),
+        )
         expected_call = [
             call('uid=foo,dc=example,dc=com', 'S3cr$t'),
             call(self.expected_user_dn, 'bar'),
@@ -232,7 +322,13 @@ class TestVerifyPassword(unittest.TestCase):
         extended_config = {'ldap': {'bind_dn': 'uid=foo,dc=example,dc=com'}}
         extended_config['ldap'].update(self.config['ldap'])
         backend = LDAPUser()
-        backend.load({'config': extended_config, 'user_service': self.user_service})
+        backend.load(
+            {
+                'config': extended_config,
+                'user_service': self.user_service,
+                'purposes': self.purposes,
+            }
+        )
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
@@ -242,7 +338,10 @@ class TestVerifyPassword(unittest.TestCase):
         result = backend.verify_password('foo', 'bar', args)
 
         assert_that(result, equal_to(True))
-        assert_that(args, equal_to({'pbx_user_uuid': 'alice-uuid'}))
+        assert_that(
+            args,
+            equal_to({'pbx_user_uuid': 'alice-uuid', 'user_email': 'foo@example.com'}),
+        )
         wazo_ldap.perform_bind.assert_called_once_with(self.expected_user_dn, 'bar')
 
 

@@ -16,6 +16,7 @@ class LDAPUser(BaseAuthenticationBackend):
         super().load(dependencies)
         config = dependencies['config']
         self._user_service = dependencies['user_service']
+        self._purposes = dependencies['purposes']
         self.config = config['ldap']
         self.uri = self.config['uri']
         self.bind_dn = self.config.get('bind_dn', '')
@@ -29,13 +30,17 @@ class LDAPUser(BaseAuthenticationBackend):
         acl = args.get('acl', [])
         return acl
 
-    def get_metadata(self, username, args):
-        metadata = super().get_metadata(username, args)
+    def get_metadata(self, login, args):
+        metadata = super().get_metadata(login, args)
         user_data = {
             'auth_id': args['pbx_user_uuid'],  # TODO the auth id should be the ldap id
             'pbx_user_uuid': args['pbx_user_uuid'],
         }
         metadata.update(user_data)
+        username = self._user_service.get_username_by_login(args['user_email'])
+        purpose = self._user_service.list_users(username=username)[0]['purpose']
+        for plugin in self._purposes.get(purpose).metadata_plugins:
+            metadata.update(plugin.get_token_metadata(username, args))
         return metadata
 
     def verify_password(self, username, password, args):
@@ -69,6 +74,7 @@ class LDAPUser(BaseAuthenticationBackend):
             return False
 
         args['pbx_user_uuid'] = pbx_user_uuid
+        args['user_email'] = user_email
 
         return True
 
