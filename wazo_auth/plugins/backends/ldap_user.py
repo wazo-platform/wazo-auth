@@ -16,6 +16,7 @@ class LDAPUser(BaseAuthenticationBackend):
         super().load(dependencies)
         config = dependencies['config']
         self._user_service = dependencies['user_service']
+        self._group_service = dependencies['group_service']
         self._purposes = dependencies['purposes']
         self.config = config['ldap']
         self.uri = self.config['uri']
@@ -27,8 +28,11 @@ class LDAPUser(BaseAuthenticationBackend):
         self.user_email_attribute = self.config.get('user_email_attribute', 'mail')
 
     def get_acl(self, login, args):
-        acl = args.get('acl', [])
-        return acl
+        backend_acl = args.get('acl', [])
+        username = self._user_service.get_username_by_login(args['user_email'])
+        group_acl = self._group_service.get_acl(username)
+        user_acl = self._user_service.get_acl(username)
+        return backend_acl + group_acl + user_acl
 
     def get_metadata(self, login, args):
         metadata = super().get_metadata(login, args)

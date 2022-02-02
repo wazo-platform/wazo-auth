@@ -4,24 +4,35 @@
 import unittest
 import ldap
 
-from hamcrest import assert_that, empty, equal_to, has_entries
-from mock import call, MagicMock, Mock, patch, sentinel
+from hamcrest import assert_that, equal_to, has_entries, has_items
+from mock import call, Mock, patch
 
 from wazo_auth.plugins.backends.ldap_user import LDAPUser, _WazoLDAP
 
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.user_service = MagicMock()
-        self.user_service.return_value.list_users = MagicMock()
-        self.purposes = MagicMock()
-        self.purposes.return_value = {
-            'user': MagicMock(
-                metadata_plugins=[
-                    MagicMock(get_token_metadata=Mock(return_value=sentinel.metadata)),
-                ],
-            ),
-        }
+        super().setUp()
+        self.user_service = Mock()
+        self.user_service.list_users = Mock()
+        self.user_service.list_users.return_value = [
+            {'uuid': 'alice-uuid', 'purpose': 'user'}
+        ]
+        self.user_service.get_acl = Mock()
+        self.user_service.get_acl.return_value = ['acl1']
+        self.user_service.get_username_by_login = Mock()
+        self.user_service.get_username_by_login.return_value = 'alice'
+
+        self.group_service = Mock()
+        self.group_service.get_acl = Mock()
+        self.group_service.get_acl.return_value = ['acl2']
+
+        user_metadata_plugin = Mock()
+        user_metadata_plugin.get_token_metadata = Mock()
+        user_metadata_plugin.get_token_metadata.return_value = {}
+        user_purpose = Mock()
+        user_purpose.metadata_plugins = [user_metadata_plugin]
+        self.purposes = {'user': user_purpose}
 
 
 class TestGetACLS(BaseTestCase):
@@ -34,19 +45,29 @@ class TestGetACLS(BaseTestCase):
                 'user_login_attribute': 'uid',
             },
         }
-        self.args = {'pbx_user_uuid': 'alice-uuid', 'user_email': 'alice@wazo-auth.com'}
+        self.args = {
+            'pbx_user_uuid': 'alice-uuid',
+            'user_email': 'alice@wazo-auth.com',
+            'acl': ['acl0'],
+        }
         self.backend = LDAPUser()
         self.backend.load(
             {
                 'config': config,
                 'user_service': self.user_service,
+                'group_service': self.group_service,
                 'purposes': self.purposes,
             }
         )
 
     def test_get_acl(self):
         result = self.backend.get_acl('alice', self.args)
-        assert_that(result, empty())
+        assert_that(result, has_items('acl1', 'acl2'))
+
+    def test_get_acl_when_acls_in_backend(self):
+        self.args['acl'] = ['acl0']
+        result = self.backend.get_acl('alice', self.args)
+        assert_that(result, has_items('acl0', 'acl1', 'acl2'))
 
 
 class TestGetMetadata(BaseTestCase):
@@ -65,6 +86,7 @@ class TestGetMetadata(BaseTestCase):
             {
                 'config': config,
                 'user_service': self.user_service,
+                'group_service': self.group_service,
                 'purposes': self.purposes,
             },
         )
@@ -93,8 +115,8 @@ class TestVerifyPassword(BaseTestCase):
         self.expected_user_email = 'foo@example.com'
         obj = {'mail': self.expected_user_email.encode('utf-8')}
         self.search_obj_result = (self.expected_user_dn, obj)
-        self.list_users = MagicMock()
-        self.user_service = MagicMock(list_users=self.list_users)
+        self.list_users = Mock()
+        self.user_service = Mock(list_users=self.list_users)
 
     def test_that_verify_password_return_false_when_ldaperror(self, wazo_ldap):
         backend = LDAPUser()
@@ -102,6 +124,7 @@ class TestVerifyPassword(BaseTestCase):
             {
                 'config': self.config,
                 'user_service': self.user_service,
+                'group_service': self.group_service,
                 'purposes': self.purposes,
             }
         )
@@ -117,6 +140,7 @@ class TestVerifyPassword(BaseTestCase):
             {
                 'config': self.config,
                 'user_service': self.user_service,
+                'group_service': self.group_service,
                 'purposes': self.purposes,
             },
         )
@@ -132,6 +156,7 @@ class TestVerifyPassword(BaseTestCase):
             {
                 'config': self.config,
                 'user_service': self.user_service,
+                'group_service': self.group_service,
                 'purposes': self.purposes,
             }
         )
@@ -153,6 +178,7 @@ class TestVerifyPassword(BaseTestCase):
             {
                 'config': self.config,
                 'user_service': self.user_service,
+                'group_service': self.group_service,
                 'purposes': self.purposes,
             }
         )
@@ -178,6 +204,7 @@ class TestVerifyPassword(BaseTestCase):
             {
                 'config': self.config,
                 'user_service': self.user_service,
+                'group_service': self.group_service,
                 'purposes': self.purposes,
             }
         )
@@ -201,6 +228,7 @@ class TestVerifyPassword(BaseTestCase):
             {
                 'config': self.config,
                 'user_service': self.user_service,
+                'group_service': self.group_service,
                 'purposes': self.purposes,
             }
         )
@@ -221,6 +249,7 @@ class TestVerifyPassword(BaseTestCase):
             {
                 'config': self.config,
                 'user_service': self.user_service,
+                'group_service': self.group_service,
                 'purposes': self.purposes,
             }
         )
@@ -243,6 +272,7 @@ class TestVerifyPassword(BaseTestCase):
             {
                 'config': extended_config,
                 'user_service': self.user_service,
+                'group_service': self.group_service,
                 'purposes': self.purposes,
             }
         )
@@ -273,6 +303,7 @@ class TestVerifyPassword(BaseTestCase):
             {
                 'config': extended_config,
                 'user_service': self.user_service,
+                'group_service': self.group_service,
                 'purposes': self.purposes,
             }
         )
@@ -294,6 +325,7 @@ class TestVerifyPassword(BaseTestCase):
             {
                 'config': extended_config,
                 'user_service': self.user_service,
+                'group_service': self.group_service,
                 'purposes': self.purposes,
             }
         )
@@ -326,6 +358,7 @@ class TestVerifyPassword(BaseTestCase):
             {
                 'config': extended_config,
                 'user_service': self.user_service,
+                'group_service': self.group_service,
                 'purposes': self.purposes,
             }
         )
