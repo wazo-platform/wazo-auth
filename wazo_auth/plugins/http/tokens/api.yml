@@ -377,7 +377,7 @@ definitions:
               The UUID of the matching wazo-confd user if there is one. This
               field can be null.
 
-              This field yould NOT be used anymore, the "pbx_user_uuid" in the
+              This field should NOT be used anymore, the "pbx_user_uuid" in the
               metadata field is the prefered method to access this information.
           xivo_uuid:
             type: string
