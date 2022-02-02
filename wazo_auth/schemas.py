@@ -61,7 +61,7 @@ class TenantFullSchema(BaseSchema):
     )
 
     @post_dump
-    def add_empty_address(self, data):
+    def add_empty_address(self, data, **kwargs):
         data['address'] = data['address'] or empty_tenant_address
         return data
 

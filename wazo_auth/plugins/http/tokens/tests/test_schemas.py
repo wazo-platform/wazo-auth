@@ -5,7 +5,7 @@ from unittest import TestCase
 
 from marshmallow.exceptions import ValidationError
 
-from hamcrest import assert_that, calling, has_properties, has_item, not_
+from hamcrest import assert_that, calling, has_properties, not_
 from wazo_test_helpers.hamcrest.raises import raises
 
 from ..schemas import TokenRequestSchema
@@ -22,9 +22,7 @@ class TestTokenRequestSchema(TestCase):
             body = {'expiration': value}
             assert_that(
                 calling(self.schema.load).with_args(body),
-                raises(ValidationError).matching(
-                    has_properties(field_names=has_item('expiration'))
-                ),
+                raises(ValidationError).matching(has_properties(field_name='expiration')),
             )
 
     def test_minimal_body(self):
@@ -36,9 +34,7 @@ class TestTokenRequestSchema(TestCase):
 
         assert_that(
             calling(self.schema.load).with_args(body),
-            raises(ValidationError).matching(
-                has_properties(field_names=has_item('_schema'))
-            ),
+            raises(ValidationError).matching(has_properties(field_name='_schema')),
         )
 
     def test_that_the_access_type_is_online_when_using_a_refresh_token(self):
@@ -53,9 +49,7 @@ class TestTokenRequestSchema(TestCase):
 
         assert_that(
             calling(self.schema.load).with_args({'access_type': 'offline', **body}),
-            raises(ValidationError).matching(
-                has_properties(field_names=has_item('_schema'))
-            ),
+            raises(ValidationError).matching(has_properties(field_name='_schema')),
         )
 
     def test_that_a_refresh_token_requires_a_client_id(self):
@@ -68,9 +62,7 @@ class TestTokenRequestSchema(TestCase):
 
         assert_that(
             calling(self.schema.load).with_args(body),
-            raises(ValidationError).matching(
-                has_properties(field_names=has_item('_schema'))
-            ),
+            raises(ValidationError).matching(has_properties(field_name='_schema')),
         )
 
     def test_that_ldap_backend_requires_tenant_id(self):
