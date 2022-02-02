@@ -1,0 +1,153 @@
+paths:
+  /backends/ldap:
+    get:
+      security:
+        - wazo_auth_token: []
+      produces:
+        - application/json
+      summary: Get current tenant's LDAP backend configuration.
+      description: '**Required ACL:** `auth.backends.ldap.read`'
+      operationId: getLDAPBackendConfig
+      tags:
+        - backends
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+      responses:
+        '200':
+          description: The LDAP backend configuration
+          schema:
+            $ref: '#/definitions/LDAPBackendConfig'
+        '404':
+          description: Configuration not found for this tenant
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+    post:
+      security:
+        - wazo_auth_token: []
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Create current tenant's LDAP backend configuration
+      description: '**Required ACL:** `auth.backends.ldap.create`'
+      operationId: createLDAPBackendConfig
+      tags:
+        - backends
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+        - name: body
+          in: body
+          description: The LDAP backend configuration
+          required: true
+          schema:
+            $ref: '#/definitions/LDAPBackendConfigEdit'
+      responses:
+        '200':
+          description: The LDAP backend configuration has been created
+          schema:
+            $ref: '#/definitions/LDAPBackendConfig'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      security:
+        - wazo_auth_token: []
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Update current tenant's LDAP backend configuration
+      description: '**Required ACL:** `auth.backends.ldap.edit`'
+      operationId: updateLDAPBackendConfig
+      tags:
+        - backends
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+        - name: body
+          in: body
+          description: The LDAP backend configuration
+          required: true
+          schema:
+            $ref: '#/definitions/LDAPBackendConfigEdit'
+      responses:
+        '200':
+          description: The LDAP backend configuration has been updated
+          schema:
+            $ref: '#/definitions/LDAPBackendConfig'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+definitions:
+  LDAPBackendConfig:
+    type: object
+    required:
+      - host
+      - port
+      - user_base_dn
+      - user_login_attribute
+      - user_email_attribute
+    properties:
+      tenant_uuid:
+        type: string
+        readOnly: true
+      host:
+        type: string
+        description: |
+          The host or IP address of the LDAP server.
+      port:
+        type: integer
+        description: The port on which to connect to the LDAP server.
+        example: 386
+      protocol_version:
+        type: integer
+        minimum: 2
+        maximum: 3
+        description: LDAP protocol version to use
+        default: 3
+      protocol_security:
+        type: string
+        description: The layer of security to use for the connection.
+        enum:
+          - null
+          - tls
+          - ldaps
+        default: null
+      bind_dn:
+        type: string
+        description: |
+          The DN to use to bind the `wazo-auth` service to the LDAP server. If
+          unspecified, `wazo-auth` will not bind with a service user but only with the
+          final user account. For this to work though, your users will need to have the
+          right to read their own information, particularly their email address.
+        example: CN=wazo-auth,DC=wazo-platform,DC=org
+      user_base_dn:
+        type: string
+        description: The base DN in which users are located
+        example: OU=people,DC=wazo-platform,DC=org
+      user_login_attribute:
+        type: string
+        description: |
+          The attribute that identifies users. It will be prepended to the
+          `user_base_dn`.
+        example: uid
+      user_email_attribute:
+        type: string
+        description: The attribute of the email address in the LDAP schema.
+        example: mail
+  LDAPBackendConfigEdit:
+    allOf:
+      - $ref: '#/definitions/LDAPBackendConfig'
+      - type: object
+        required:
+          - bind_password
+        properties:
+          bind_password:
+            type: string
+            description: |
+              The password to use to bind the `wazo-auth` service to the LDAP server.
