@@ -22,4 +22,4 @@ class LDAPConfigDAO(BaseDAO):
                 'user_login_attribute': ldap_config.user_login_attribute,
                 'user_email_attribute': ldap_config.user_email_attribute,
             }
-        # XXX raise exception LDAPConfigNonExisting???
+        raise exceptions.UnknownLDAPConfigException(tenant_uuid)

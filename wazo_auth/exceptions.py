@@ -102,6 +102,13 @@ class UnknownExternalAuthConfigException(APIException):
         super().__init__(404, msg, 'unknown-external-auth', details, auth_type)
 
 
+class UnknownLDAPConfigException(APIException):
+    def __init__(self, tenant_uuid):
+        msg = 'No LDAP config found for this tenant: "{}"'.format(tenant_uuid)
+        details = {'uuid': str(tenant_uuid)}
+        super().__init__(404, msg, 'unknown-ldap-config', details, 'ldap_config')
+
+
 class UnknownExternalAuthTypeException(APIException):
     def __init__(self, auth_type):
         msg = 'No such auth type: "{}"'.format(auth_type)
