@@ -5,6 +5,7 @@ from hamcrest import (
     assert_that,
     calling,
     has_entries,
+    not_,
     raises,
 )
 from wazo_auth import exceptions
@@ -62,5 +63,20 @@ class TestLDAPConfigDAO(base.DAOTestCase):
 
         assert_that(
             calling(self._ldap_config_dao.update).with_args(UNKNOWN_TENANT),
+            raises(exceptions.UnknownLDAPConfigException),
+        )
+
+    @fixtures.db.ldap_config()
+    def test_delete(self, tenant_uuid):
+        assert_that(
+            calling(self._ldap_config_dao.delete).with_args(UNKNOWN_TENANT),
+            raises(exceptions.UnknownLDAPConfigException),
+        )
+        assert_that(
+            calling(self._ldap_config_dao.delete).with_args(tenant_uuid),
+            not_(raises(exceptions.UnknownLDAPConfigException)),
+        )
+        assert_that(
+            calling(self._ldap_config_dao.get).with_args(tenant_uuid),
             raises(exceptions.UnknownLDAPConfigException),
         )
