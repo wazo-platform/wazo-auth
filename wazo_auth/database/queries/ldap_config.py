@@ -1,6 +1,8 @@
 # Copyright 2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from sqlalchemy import exc
+
 from .base import BaseDAO
 from ..models import LDAPConfig
 from ... import exceptions
@@ -52,5 +54,11 @@ class LDAPConfigDAO(BaseDAO):
             bind_password=bind_password,
         )
         self.session.add(ldap_config)
-        self.session.flush()
+        try:
+            self.session.flush()
+        except exc.IntegrityError as e:
+            self.session.rollback()
+            if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                raise exceptions.DuplicatedLDAPConfigException(tenant_uuid)
+            raise
         return ldap_config.tenant_uuid

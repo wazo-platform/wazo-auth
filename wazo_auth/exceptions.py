@@ -102,6 +102,14 @@ class UnknownExternalAuthConfigException(APIException):
         super().__init__(404, msg, 'unknown-external-auth', details, auth_type)
 
 
+class DuplicatedLDAPConfigException(Exception):
+    def __init__(self, tenant_uuid):
+        self.tenant_uuid = tenant_uuid
+        super().__init__(
+            f'Duplicated LDAP config for tenant_uuid {tenant_uuid}',
+        )
+
+
 class UnknownLDAPConfigException(APIException):
     def __init__(self, tenant_uuid):
         msg = 'No LDAP config found for this tenant: "{}"'.format(tenant_uuid)
