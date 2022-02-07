@@ -3,23 +3,23 @@
 
 from xivo.mallow import fields
 from wazo_auth.schemas import BaseSchema
-from xivo.mallow.validate import Range, OneOf
+from xivo.mallow.validate import Length, OneOf, Range
 
 
 class LDAPConfig(BaseSchema):
     tenant_uuid = fields.String(dump_only=True)
-    host = fields.String()
-    port = fields.Integer()
+    host = fields.String(validate=Length(max=512), required=True)
+    port = fields.Integer(required=True)
     protocol_version = fields.Integer(validate=Range(min=2, max=3))
-    protocol_security = fields.String(validate=OneOf(['ldaps', 'tls']), missing=None)
-    bind_dn = fields.String()
-    user_base_dn = fields.String()
-    user_login_attribute = fields.String()
-    user_email_attribute = fields.String()
+    protocol_security = fields.String(validate=OneOf(['ldaps', 'tls']), missing=None, allow_none=True)
+    bind_dn = fields.String(validate=Length(max=256), allow_none=True)
+    user_base_dn = fields.String(validate=Length(max=256), required=True)
+    user_login_attribute = fields.String(validate=Length(max=64), required=True)
+    user_email_attribute = fields.String(validate=Length(max=64), required=True)
 
 
 class LDAPConfigEdit(LDAPConfig):
-    bind_password = fields.String()
+    bind_password = fields.String(load_only=True, allow_none=True)
 
 
 ldap_config_schema = LDAPConfig()

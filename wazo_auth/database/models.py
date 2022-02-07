@@ -344,7 +344,7 @@ class LDAPConfig(Base):
         Text,
         CheckConstraint("protocol_security in ('ldaps', 'tls')"),
     )
-    bind_dn = Column(String(255))
+    bind_dn = Column(String(256))
     bind_password = Column(Text)
     user_base_dn = Column(String(256), nullable=False)
     user_login_attribute = Column(String(64), nullable=False)
