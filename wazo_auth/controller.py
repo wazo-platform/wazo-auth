@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -96,6 +96,8 @@ class Controller:
             config['all_users_policies'],
         )
 
+        ldap_service = services.LDAPService(self.dao, self._tenant_tree)
+
         self._metadata_plugins = plugin_helpers.load(
             namespace='wazo_auth.metadata',
             names=self._config['enabled_metadata_plugins'],
@@ -142,6 +144,7 @@ class Controller:
             'tenant_service': self._tenant_service,
             'session_service': session_service,
             'template_formatter': template_formatter,
+            'ldap_service': ldap_service,
         }
         Tenant.setup(self._token_service, self._user_service, self._tenant_service)
         Token.setup(self._token_service)

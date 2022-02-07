@@ -7,7 +7,7 @@ from xivo.mallow.validate import Range, OneOf
 
 
 class LDAPConfig(BaseSchema):
-    tenant_uuid = fields.String()
+    tenant_uuid = fields.String(dump_only=True)
     host = fields.String()
     port = fields.Integer()
     protocol_version = fields.Integer(validate=Range(min=2, max=3))
@@ -20,3 +20,7 @@ class LDAPConfig(BaseSchema):
 
 class LDAPConfigEdit(LDAPConfig):
     bind_password = fields.String()
+
+
+ldap_config_schema = LDAPConfig()
+ldap_config_edit_schema = LDAPConfigEdit()

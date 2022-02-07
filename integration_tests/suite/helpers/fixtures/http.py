@@ -1,4 +1,4 @@
-# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import random
@@ -206,6 +206,33 @@ def session(**session_args):
                 try:
                     self.client.users.delete(user['uuid'])
                     self.client.token.revoke(token['token'])
+                except requests.HTTPError:
+                    pass
+            return result
+
+        return wrapper
+
+    return decorator
+
+
+def ldap_config(**ldap_config_args):
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            ldap_config_args.setdefault('tenant_uuid', self.top_tenant_uuid)
+            ldap_config_args.setdefault('host', _random_string(20))
+            ldap_config_args.setdefault('port', 386)
+            ldap_config_args.setdefault('user_base_dn', 'ou=people,dc=wazo-platform,dc=org')
+            ldap_config_args.setdefault('user_login_attribute', 'uid')
+            ldap_config_args.setdefault('user_email_attribute', 'mail')
+
+            ldap_config = self.client.ldap_config.create_or_update(ldap_config_args)
+            args = list(args) + [ldap_config]
+            try:
+                result = decorated(self, *args, **kwargs)
+            finally:
+                try:
+                    self.client.ldap_config.delete(ldap_config['tenant_uuid'])
                 except requests.HTTPError:
                     pass
             return result

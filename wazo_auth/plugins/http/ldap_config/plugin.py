@@ -9,7 +9,6 @@ class Plugin:
         api = dependencies['api']
         args = (
             dependencies['ldap_service'],
-            dependencies['user_service'],
         )
 
         api.add_resource(
