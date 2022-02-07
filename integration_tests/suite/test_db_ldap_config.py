@@ -80,3 +80,8 @@ class TestLDAPConfigDAO(base.DAOTestCase):
             calling(self._ldap_config_dao.get).with_args(tenant_uuid),
             raises(exceptions.UnknownLDAPConfigException),
         )
+
+    @fixtures.db.ldap_config()
+    def test_exists(self, tenant_uuid):
+        assert_that(self._ldap_config_dao.exists(tenant_uuid))
+        assert_that(not_(self._ldap_config_dao.exists(UNKNOWN_TENANT)))
