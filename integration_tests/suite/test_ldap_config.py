@@ -3,6 +3,7 @@
 
 from hamcrest import (
     assert_that,
+    equal_to,
     has_entries,
     has_key,
     not_,
@@ -116,8 +117,38 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
             body_copy.update(invalid_modification)
             base.assert_http_error(400, self.client.ldap_config.create_or_update, body_copy)
 
-    def test_put_config_when_already_exists(self):
-        pass
+    @fixtures.http.ldap_config()
+    def test_put_config_when_already_exists(self, ldap_config):
+        new_body = {
+            'host': 'patate',
+            'port': 689,
+            'protocol_version': 2,
+            'protocol_security': 'ldaps',
+            'bind_dn': 'uid=root,ou=people,dc=wazo-platform,dc=io',
+            'bind_password': 'not-so-super-secret',
+            'user_base_dn': 'ou=genses,dc=wazo-platform,dc=io',
+            'user_login_attribute': 'cn',
+            'user_email_attribute': 'email',
+        }
+        result = self.client.ldap_config.create_or_update(new_body)
+        expected = {
+            'host': 'patate',
+            'port': 689,
+            'protocol_version': 2,
+            'protocol_security': 'ldaps',
+            'bind_dn': 'uid=root,ou=people,dc=wazo-platform,dc=io',
+            'user_base_dn': 'ou=genses,dc=wazo-platform,dc=io',
+            'user_login_attribute': 'cn',
+            'user_email_attribute': 'email',
+        }
+        assert_that(result, has_entries(**expected))
+        assert_that(result, not_(has_key('bind_password')))
+
+    @fixtures.http.ldap_config()
+    def test_put_multi_tenant(self, ldap_config):
+        with self.client_in_subtenant() as (client, _, tenant):
+            result = client.ldap_config.create_or_update(ldap_config)
+            assert_that(result, has_entries(tenant_uuid=tenant['uuid']))
 
     def test_delete_config(self):
         pass
