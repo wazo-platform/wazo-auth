@@ -62,3 +62,15 @@ class LDAPConfigDAO(BaseDAO):
                 raise exceptions.DuplicatedLDAPConfigException(tenant_uuid)
             raise
         return ldap_config.tenant_uuid
+
+    def update(self, tenant_uuid, **kwargs):
+        filter_ = LDAPConfig.tenant_uuid == str(tenant_uuid)
+        ldap_config = self.get(tenant_uuid)
+        ldap_config.update(kwargs)
+
+        try:
+            self.session.query(LDAPConfig).filter(filter_).update(ldap_config)
+            self.session.flush()
+        except exc.IntegrityError:
+            self.session.rollback()
+            raise

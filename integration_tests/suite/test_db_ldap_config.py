@@ -9,7 +9,7 @@ from hamcrest import (
 )
 from wazo_auth import exceptions
 from .helpers import fixtures, base
-from .helpers.constants import UNKNOWN_UUID
+from .helpers.constants import UNKNOWN_TENANT, UNKNOWN_UUID
 
 
 @base.use_asset('database')
@@ -33,6 +33,7 @@ class TestLDAPConfigDAO(base.DAOTestCase):
             'user_login_attribute': 'uid',
             'user_email_attribute': 'mail',
             'protocol_version': 2,
+            'protocol_security': 'ldaps',
         }
 
         ldap_config_tenant = self._ldap_config_dao.create(**args)
@@ -42,4 +43,24 @@ class TestLDAPConfigDAO(base.DAOTestCase):
         assert_that(
             calling(self._ldap_config_dao.create).with_args(**args),
             raises(exceptions.DuplicatedLDAPConfigException),
+        )
+
+    @fixtures.db.ldap_config()
+    def test_update(self, tenant_uuid):
+        args = {
+            'host': 'wazo-test',
+            'port': 689,
+            'user_base_dn': 'ou=quebec,ou=people,dc=wazo-platform,dc=org',
+            'user_login_attribute': 'cn',
+            'user_email_attribute': 'udsCanonicalAddress',
+            'protocol_version': 3,
+            'protocol_security': 'ldaps',
+        }
+        self._ldap_config_dao.update(tenant_uuid, **args)
+        ldap_config = self._ldap_config_dao.get(tenant_uuid)
+        assert_that(ldap_config, has_entries(**args))
+
+        assert_that(
+            calling(self._ldap_config_dao.update).with_args(UNKNOWN_TENANT),
+            raises(exceptions.UnknownLDAPConfigException),
         )
