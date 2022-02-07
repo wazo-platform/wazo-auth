@@ -197,28 +197,23 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def delete(self, user_uuid):
         user = self.session.query(User).filter(User.uuid == str(user_uuid)).first()
-
         if not user:
             raise exceptions.UnknownUserException(user_uuid)
-
         self.session.delete(user)
         self.session.flush()
 
     def get_credentials(self, user_uuid):
-        query = (
-            self.session.query(User.password_salt, User.password_hash)
-            .filter(
-                and_(
-                    self.new_strict_filter(uuid=user_uuid),
-                    User.enabled.is_(True),
-                )
+        query = self.session.query(User.password_salt, User.password_hash).filter(
+            and_(
+                self.new_strict_filter(uuid=user_uuid),
+                User.enabled.is_(True),
             )
         )
 
-        for row in query.all():
-            return row.password_hash, row.password_salt
-
-        raise exceptions.UnknownUserUUIDException(user_uuid)
+        row = query.first()
+        if not row:
+            raise exceptions.UnknownUserUUIDException(user_uuid)
+        return row.password_hash, row.password_salt
 
     def get_user_uuid_by_login(self, login):
         query = (
@@ -231,19 +226,17 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 )
             )
         )
-
-        for row in query.all():
-            return row.uuid
-
-        raise exceptions.UnknownLoginException(login)
+        row = query.first()
+        if not row:
+            raise exceptions.UnknownLoginException(login)
+        return row.uuid
 
     def get_emails(self, user_uuid):
-        result = []
-
         user = self.session.query(User).filter(User.uuid == str(user_uuid)).first()
         if not user:
             raise exceptions.UnknownUserException(user_uuid)
 
+        result = []
         for email in user.emails:
             result.append(
                 {
@@ -253,7 +246,6 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     'confirmed': email.confirmed,
                 }
             )
-
         return result
 
     def list_(self, **kwargs):
@@ -307,9 +299,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return users
 
     def update(self, user_uuid, **kwargs):
-        filter_ = User.uuid == str(user_uuid)
-
-        self.session.query(User).filter(filter_).update(kwargs)
+        self.session.query(User).filter(User.uuid == str(user_uuid)).update(kwargs)
         self.session.flush()
 
     def update_emails(self, user_uuid, emails):
@@ -355,10 +345,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     @staticmethod
     def _emails_to_dict(emails):
-        result = {}
-        for email in emails:
-            result[email['address']] = email
-        return result
+        return {email['address']: email for email in emails}
 
     @staticmethod
     def _merge_existing_emails(new, old):
