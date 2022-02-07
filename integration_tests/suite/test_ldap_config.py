@@ -150,8 +150,9 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
             result = client.ldap_config.create_or_update(ldap_config)
             assert_that(result, has_entries(tenant_uuid=tenant['uuid']))
 
-    def test_delete_config(self):
-        pass
+    @fixtures.http.ldap_config()
+    def test_delete_config(self, _):
+        base.assert_no_error(self.client.ldap_config.delete)
 
     def test_delete_config_when_none_exists(self):
-        pass
+        base.assert_http_error(404, self.client.ldap_config.delete)
