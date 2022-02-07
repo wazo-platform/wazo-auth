@@ -153,9 +153,9 @@ class UnknownUserException(APIException):
         super().__init__(404, msg, 'unknown-user', details, 'users')
 
 
-class UnknownUsernameException(Exception):
-    def __init__(self, username):
-        msg = 'No such user: "{}"'.format(username)
+class UnknownUserUUIDException(Exception):
+    def __init__(self, user_uuid):
+        msg = 'No such user: "{}"'.format(user_uuid)
         super().__init__(msg)
 
 

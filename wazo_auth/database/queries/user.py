@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, or_, text
@@ -204,34 +204,36 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         self.session.delete(user)
         self.session.flush()
 
-    def get_credentials(self, username):
-        filter_ = and_(
-            self.new_strict_filter(username=username), User.enabled.is_(True)
-        )
-
-        query = self.session.query(User.password_salt, User.password_hash).filter(
-            filter_
+    def get_credentials(self, user_uuid):
+        query = (
+            self.session.query(User.password_salt, User.password_hash)
+            .filter(
+                and_(
+                    self.new_strict_filter(uuid=user_uuid),
+                    User.enabled.is_(True),
+                )
+            )
         )
 
         for row in query.all():
             return row.password_hash, row.password_salt
 
-        raise exceptions.UnknownUsernameException(username)
+        raise exceptions.UnknownUserUUIDException(user_uuid)
 
-    def get_username_by_login(self, login):
+    def get_user_uuid_by_login(self, login):
         query = (
-            self.session.query(User.username)
+            self.session.query(User.uuid)
             .outerjoin(Email)
             .filter(
                 or_(
-                    User.username == login,
+                    and_(User.username == login, User.username.isnot(None)),
                     and_(Email.address == login, Email.confirmed.is_(True)),
                 )
             )
         )
 
         for row in query.all():
-            return row.username
+            return row.uuid
 
         raise exceptions.UnknownLoginException(login)
 

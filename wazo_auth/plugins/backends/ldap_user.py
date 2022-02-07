@@ -29,9 +29,9 @@ class LDAPUser(BaseAuthenticationBackend):
 
     def get_acl(self, login, args):
         backend_acl = args.get('acl', [])
-        username = self._user_service.get_username_by_login(args['user_email'])
-        group_acl = self._group_service.get_acl(username)
-        user_acl = self._user_service.get_acl(username)
+        user_uuid = self._user_service.get_user_uuid_by_login(args['user_email'])
+        group_acl = self._group_service.get_acl(user_uuid)
+        user_acl = self._user_service.get_acl(user_uuid)
         return backend_acl + group_acl + user_acl
 
     def get_metadata(self, login, args):
@@ -41,10 +41,10 @@ class LDAPUser(BaseAuthenticationBackend):
             'pbx_user_uuid': args['pbx_user_uuid'],
         }
         metadata.update(user_data)
-        username = self._user_service.get_username_by_login(args['user_email'])
-        purpose = self._user_service.list_users(username=username)[0]['purpose']
+        user_uuid = self._user_service.get_user_uuid_by_login(args['user_email'])
+        purpose = self._user_service.list_users(uuid=user_uuid)[0]['purpose']
         for plugin in self._purposes.get(purpose).metadata_plugins:
-            metadata.update(plugin.get_token_metadata(username, args))
+            metadata.update(plugin.get_token_metadata(args['user_email'], args))
         return metadata
 
     def verify_password(self, username, password, args):

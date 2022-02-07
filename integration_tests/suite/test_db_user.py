@@ -1,4 +1,4 @@
-# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -617,18 +617,18 @@ class TestUserDAO(base.DAOTestCase):
 
     @fixtures.db.user(username='foobar')
     @fixtures.db.user(username='foobaz', enabled=False)
-    def test_get_credential(self, *ignored_uuids):
+    def test_get_credential(self, u1, u2):
         assert_that(
-            calling(self._user_dao.get_credentials).with_args('not-foobar'),
-            raises(exceptions.UnknownUsernameException),
+            calling(self._user_dao.get_credentials).with_args(UNKNOWN_UUID),
+            raises(exceptions.UnknownUserUUIDException),
         )
 
         assert_that(
-            calling(self._user_dao.get_credentials).with_args('foobaz'),
-            raises(exceptions.UnknownUsernameException),
+            calling(self._user_dao.get_credentials).with_args(u2),
+            raises(exceptions.UnknownUserUUIDException),
         )
 
-        hash_, salt = self._user_dao.get_credentials('foobar')
+        hash_, salt = self._user_dao.get_credentials(u1)
         assert_that(hash_, not_(none()))
         assert_that(salt, not_(none()))
 
@@ -637,20 +637,20 @@ class TestUserDAO(base.DAOTestCase):
     @fixtures.db.user(username='u2', email_address='u2@example.com', email_confirmed=True)
     @fixtures.db.user(username='u3', email_address='u3@example.com', email_confirmed=False)
     # fmt: on
-    def test_get_username_by_login(self, u3, u2, u1):
-        result = self._user_dao.get_username_by_login('u1')
-        assert_that(result, equal_to('u1'))
+    def test_get_username_by_login(self, u1, u2, u3):
+        result = self._user_dao.get_user_uuid_by_login('u1')
+        assert_that(result, equal_to(u1))
 
-        result = self._user_dao.get_username_by_login('u2@example.com')
-        assert_that(result, equal_to('u2'))
+        result = self._user_dao.get_user_uuid_by_login('u2@example.com')
+        assert_that(result, equal_to(u2))
 
         assert_that(
-            calling(self._user_dao.get_username_by_login).with_args('u3@example.com'),
+            calling(self._user_dao.get_user_uuid_by_login).with_args('u3@example.com'),
             raises(exceptions.UnknownLoginException),
         )
 
         assert_that(
-            calling(self._user_dao.get_username_by_login).with_args('u0'),
+            calling(self._user_dao.get_user_uuid_by_login).with_args('u0'),
             raises(exceptions.UnknownLoginException),
         )
 
