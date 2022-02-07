@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -32,6 +32,7 @@ from wazo_test_helpers.bus import BusClient
 from wazo_auth.database import queries, helpers
 from wazo_auth.database.queries import (
     group,
+    ldap_config,
     policy,
     tenant,
     token,
@@ -165,6 +166,7 @@ class DAOTestCase(unittest.TestCase):
         self._email_dao = queries.EmailDAO()
         self._external_auth_dao = queries.ExternalAuthDAO()
         self._group_dao = group.GroupDAO()
+        self._ldap_config_dao = ldap_config.LDAPConfigDAO()
         self._policy_dao = policy.PolicyDAO()
         self._user_dao = user.UserDAO()
         self._refresh_token_dao = refresh_token.RefreshTokenDAO()

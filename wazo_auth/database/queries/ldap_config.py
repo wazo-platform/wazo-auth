@@ -8,7 +8,9 @@ from ... import exceptions
 
 class LDAPConfigDAO(BaseDAO):
     def get(self, tenant_uuid):
-        ldap_config = self.session.query(LDAPConfig).get(tenant_uuid)
+        ldap_config = self.session.query(LDAPConfig).filter(
+            LDAPConfig.tenant_uuid == tenant_uuid
+        ).first()
         if ldap_config:
             return {
                 'tenant_uuid': ldap_config.tenant_uuid,
@@ -23,3 +25,32 @@ class LDAPConfigDAO(BaseDAO):
                 'user_email_attribute': ldap_config.user_email_attribute,
             }
         raise exceptions.UnknownLDAPConfigException(tenant_uuid)
+
+    def create(
+        self,
+        tenant_uuid,
+        host,
+        port,
+        user_base_dn,
+        user_login_attribute,
+        user_email_attribute,
+        protocol_version=3,
+        protocol_security=None,
+        bind_dn=None,
+        bind_password=None,
+    ):
+        ldap_config = LDAPConfig(
+            tenant_uuid=tenant_uuid,
+            host=host,
+            port=port,
+            user_base_dn=user_base_dn,
+            user_login_attribute=user_login_attribute,
+            user_email_attribute=user_email_attribute,
+            protocol_version=protocol_version,
+            protocol_security=protocol_security,
+            bind_dn=bind_dn,
+            bind_password=bind_password,
+        )
+        self.session.add(ldap_config)
+        self.session.flush()
+        return ldap_config.tenant_uuid
