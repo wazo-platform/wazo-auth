@@ -278,7 +278,9 @@ def ldap_config(**ldap_config_args):
             ldap_config_args.setdefault('tenant_uuid', self.top_tenant_uuid)
             ldap_config_args.setdefault('host', 'localhost')
             ldap_config_args.setdefault('port', 386)
-            ldap_config_args.setdefault('user_base_dn', 'ou=people,dc=wazo-platform,dc=org')
+            ldap_config_args.setdefault(
+                'user_base_dn', 'ou=people,dc=wazo-platform,dc=org'
+            )
             ldap_config_args.setdefault('user_login_attribute', 'uid')
             ldap_config_args.setdefault('user_email_attribute', 'mail')
             ldap_config = self._ldap_config_dao.create(**ldap_config_args)

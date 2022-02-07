@@ -7,9 +7,7 @@ from . import http
 class Plugin:
     def load(self, dependencies):
         api = dependencies['api']
-        args = (
-            dependencies['ldap_service'],
-        )
+        args = (dependencies['ldap_service'],)
 
         api.add_resource(
             http.LDAPConfig,

@@ -10,9 +10,11 @@ from ... import exceptions
 
 class LDAPConfigDAO(BaseDAO):
     def get(self, tenant_uuid):
-        ldap_config = self.session.query(LDAPConfig).filter(
-            LDAPConfig.tenant_uuid == tenant_uuid
-        ).first()
+        ldap_config = (
+            self.session.query(LDAPConfig)
+            .filter(LDAPConfig.tenant_uuid == tenant_uuid)
+            .first()
+        )
         if ldap_config:
             return {
                 'tenant_uuid': ldap_config.tenant_uuid,
@@ -77,7 +79,11 @@ class LDAPConfigDAO(BaseDAO):
 
     def delete(self, tenant_uuid):
         filter_ = LDAPConfig.tenant_uuid == str(tenant_uuid)
-        nb_deleted = self.session.query(LDAPConfig).filter(filter_).delete(synchronize_session=False)
+        nb_deleted = (
+            self.session.query(LDAPConfig)
+            .filter(filter_)
+            .delete(synchronize_session=False)
+        )
         self.session.flush()
         if nb_deleted < 1:
             raise exceptions.UnknownLDAPConfigException(tenant_uuid)

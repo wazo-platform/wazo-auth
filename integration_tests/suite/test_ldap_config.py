@@ -3,7 +3,6 @@
 
 from hamcrest import (
     assert_that,
-    equal_to,
     has_entries,
     has_key,
     not_,
@@ -19,9 +18,7 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
     @fixtures.http.ldap_config()
     def test_get_config(self, ldap_config):
         response = self.client.ldap_config.get(ldap_config['tenant_uuid'])
-        assert_that(
-            response, has_entries(tenant_uuid=ldap_config['tenant_uuid'])
-        )
+        assert_that(response, has_entries(tenant_uuid=ldap_config['tenant_uuid']))
 
         base.assert_http_error(401, self.client.ldap_config.get, UNKNOWN_TENANT)
 
@@ -115,10 +112,12 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
         for invalid_modification in invalid_bodies_modifications:
             body_copy = valid_body.copy()
             body_copy.update(invalid_modification)
-            base.assert_http_error(400, self.client.ldap_config.create_or_update, body_copy)
+            base.assert_http_error(
+                400, self.client.ldap_config.create_or_update, body_copy
+            )
 
     @fixtures.http.ldap_config()
-    def test_put_config_when_already_exists(self, ldap_config):
+    def test_put_config_when_already_exists(self, _):
         new_body = {
             'host': 'patate',
             'port': 689,

@@ -11,7 +11,9 @@ class LDAPConfig(BaseSchema):
     host = fields.String(validate=Length(max=512), required=True)
     port = fields.Integer(required=True)
     protocol_version = fields.Integer(validate=Range(min=2, max=3))
-    protocol_security = fields.String(validate=OneOf(['ldaps', 'tls']), missing=None, allow_none=True)
+    protocol_security = fields.String(
+        validate=OneOf(['ldaps', 'tls']), missing=None, allow_none=True
+    )
     bind_dn = fields.String(validate=Length(max=256), allow_none=True)
     user_base_dn = fields.String(validate=Length(max=256), required=True)
     user_login_attribute = fields.String(validate=Length(max=64), required=True)
