@@ -57,6 +57,25 @@ class TestTokens(base.APIIntegrationTest):
         token_data = client.token.new(expiration=1)
         assert_that(token_data, has_entries(metadata=has_entries(uuid=u2['uuid'])))
 
+    @fixtures.http.user(username='u1@example.com', email_address=None, password='pass1')
+    @fixtures.http.user(username=None, email_address='u1@example.com', password='pass2')
+    def test_that_the_email_is_preferred_than_username_to_get_a_token(self, u1, u2):
+        client = Client('localhost', port=self.auth_port, prefix=None, https=False)
+
+        client.username = 'u1@example.com'
+        client.password = 'pass1'
+        assert_that(
+            calling(client.token.new).with_args(expiration=1),
+            raises(Exception).matching(
+                has_properties(response=has_properties(status_code=401))
+            ),
+        )
+
+        client.username = 'u1@example.com'
+        client.password = 'pass2'
+        token_data = client.token.new(expiration=1)
+        assert_that(token_data, has_entries(metadata=has_entries(uuid=u2['uuid'])))
+
     @fixtures.http.user(username='foo', password='bar')
     @fixtures.http.token(
         username='foo',
