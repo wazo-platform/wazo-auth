@@ -122,6 +122,7 @@ class Controller:
                 'user_service': self._user_service,
                 'group_service': group_service,
                 'tenant_service': self._tenant_service,
+                'ldap_service': ldap_service,
                 'purposes': self._purposes,
                 'config': config,
             },

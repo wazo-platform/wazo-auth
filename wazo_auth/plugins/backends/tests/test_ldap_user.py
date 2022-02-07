@@ -27,6 +27,8 @@ class BaseTestCase(unittest.TestCase):
         self.group_service.get_acl = Mock()
         self.group_service.get_acl.return_value = ['acl2']
 
+        self.ldap_service = Mock()
+
         user_metadata_plugin = Mock()
         user_metadata_plugin.get_token_metadata = Mock()
         user_metadata_plugin.get_token_metadata.return_value = {}
@@ -56,6 +58,7 @@ class TestGetACLS(BaseTestCase):
                 'config': config,
                 'user_service': self.user_service,
                 'group_service': self.group_service,
+                'ldap_service': self.ldap_service,
                 'purposes': self.purposes,
             }
         )
@@ -87,6 +90,7 @@ class TestGetMetadata(BaseTestCase):
                 'config': config,
                 'user_service': self.user_service,
                 'group_service': self.group_service,
+                'ldap_service': self.ldap_service,
                 'purposes': self.purposes,
             },
         )
@@ -125,6 +129,7 @@ class TestVerifyPassword(BaseTestCase):
                 'config': self.config,
                 'user_service': self.user_service,
                 'group_service': self.group_service,
+                'ldap_service': self.ldap_service,
                 'purposes': self.purposes,
             }
         )
@@ -141,6 +146,7 @@ class TestVerifyPassword(BaseTestCase):
                 'config': self.config,
                 'user_service': self.user_service,
                 'group_service': self.group_service,
+                'ldap_service': self.ldap_service,
                 'purposes': self.purposes,
             },
         )
@@ -157,6 +163,7 @@ class TestVerifyPassword(BaseTestCase):
                 'config': self.config,
                 'user_service': self.user_service,
                 'group_service': self.group_service,
+                'ldap_service': self.ldap_service,
                 'purposes': self.purposes,
             }
         )
@@ -179,6 +186,7 @@ class TestVerifyPassword(BaseTestCase):
                 'config': self.config,
                 'user_service': self.user_service,
                 'group_service': self.group_service,
+                'ldap_service': self.ldap_service,
                 'purposes': self.purposes,
             }
         )
@@ -205,6 +213,7 @@ class TestVerifyPassword(BaseTestCase):
                 'config': self.config,
                 'user_service': self.user_service,
                 'group_service': self.group_service,
+                'ldap_service': self.ldap_service,
                 'purposes': self.purposes,
             }
         )
@@ -229,6 +238,7 @@ class TestVerifyPassword(BaseTestCase):
                 'config': self.config,
                 'user_service': self.user_service,
                 'group_service': self.group_service,
+                'ldap_service': self.ldap_service,
                 'purposes': self.purposes,
             }
         )
@@ -250,6 +260,7 @@ class TestVerifyPassword(BaseTestCase):
                 'config': self.config,
                 'user_service': self.user_service,
                 'group_service': self.group_service,
+                'ldap_service': self.ldap_service,
                 'purposes': self.purposes,
             }
         )
@@ -273,6 +284,7 @@ class TestVerifyPassword(BaseTestCase):
                 'config': extended_config,
                 'user_service': self.user_service,
                 'group_service': self.group_service,
+                'ldap_service': self.ldap_service,
                 'purposes': self.purposes,
             }
         )
@@ -304,6 +316,7 @@ class TestVerifyPassword(BaseTestCase):
                 'config': extended_config,
                 'user_service': self.user_service,
                 'group_service': self.group_service,
+                'ldap_service': self.ldap_service,
                 'purposes': self.purposes,
             }
         )
@@ -326,6 +339,7 @@ class TestVerifyPassword(BaseTestCase):
                 'config': extended_config,
                 'user_service': self.user_service,
                 'group_service': self.group_service,
+                'ldap_service': self.ldap_service,
                 'purposes': self.purposes,
             }
         )
@@ -359,6 +373,7 @@ class TestVerifyPassword(BaseTestCase):
                 'config': extended_config,
                 'user_service': self.user_service,
                 'group_service': self.group_service,
+                'ldap_service': self.ldap_service,
                 'purposes': self.purposes,
             }
         )

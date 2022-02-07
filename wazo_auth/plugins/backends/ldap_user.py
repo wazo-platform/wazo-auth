@@ -18,6 +18,7 @@ class LDAPUser(BaseAuthenticationBackend):
         self._user_service = dependencies['user_service']
         self._group_service = dependencies['group_service']
         self._purposes = dependencies['purposes']
+        self._ldap_service = dependencies['ldap_service']
         self.config = config['ldap']
         self.uri = self.config['uri']
         self.bind_dn = self.config.get('bind_dn', '')
