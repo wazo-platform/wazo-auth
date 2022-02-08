@@ -120,7 +120,7 @@ definitions:
       port:
         type: integer
         description: The port on which to connect to the LDAP server.
-        example: 386
+        example: 389
       protocol_version:
         type: integer
         minimum: 2
