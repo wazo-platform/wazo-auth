@@ -637,7 +637,7 @@ class TestUserDAO(base.DAOTestCase):
     @fixtures.db.user(username='u2', email_address='u2@example.com', email_confirmed=True)
     @fixtures.db.user(username='u3', email_address='u3@example.com', email_confirmed=False)
     # fmt: on
-    def test_get_username_by_login(self, u1, u2, u3):
+    def test_get_user_uuid_by_login(self, u1, u2, u3):
         result = self._user_dao.get_user_uuid_by_login('u1')
         assert_that(result, equal_to(u1))
 
