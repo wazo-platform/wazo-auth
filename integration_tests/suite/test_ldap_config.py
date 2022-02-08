@@ -19,6 +19,7 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
     def test_get_config(self, ldap_config):
         response = self.client.ldap_config.get(ldap_config['tenant_uuid'])
         assert_that(response, has_entries(tenant_uuid=ldap_config['tenant_uuid']))
+        assert_that(response, not_(has_key('bind_password')))
 
         base.assert_http_error(401, self.client.ldap_config.get, UNKNOWN_TENANT)
 
