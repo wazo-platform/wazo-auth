@@ -654,13 +654,6 @@ class TestUserDAO(base.DAOTestCase):
             raises(exceptions.UnknownLoginException),
         )
 
-    def _email_exists(self, address):
-        filter_ = models.Email.address == address
-        return (
-            self.session.query(func.count(models.Email.uuid)).filter(filter_).scalar()
-            > 0
-        )
-
     @fixtures.db.user(username='u1@example.com', enabled=True)
     @fixtures.db.user(username='u2@example.com', enabled=False)
     @fixtures.db.user(email_address='u3@example.com', email_confirmed=True)
@@ -686,3 +679,10 @@ class TestUserDAO(base.DAOTestCase):
 
         result = self._user_dao.login_exists('u3@example.com', ignored_user=u3)
         assert_that(result, equal_to(False))
+
+    def _email_exists(self, address):
+        filter_ = models.Email.address == address
+        return (
+            self.session.query(func.count(models.Email.uuid)).filter(filter_).scalar()
+            > 0
+        )
