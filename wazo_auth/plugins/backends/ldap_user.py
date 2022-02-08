@@ -55,9 +55,9 @@ class LDAPUser(BaseAuthenticationBackend):
         user_email_attribute = config.get('user_email_attribute')
         user_base_dn = config.get('user_base_dn')
 
+        wazo_ldap = _WazoLDAP(config)
         try:
-            wazo_ldap = _WazoLDAP(config)
-
+            wazo_ldap.connect()
             if bind_dn and bind_password:
                 if wazo_ldap.perform_bind(bind_dn, bind_password):
                     user_dn = self._perform_search_dn(
@@ -152,6 +152,8 @@ class _WazoLDAP:
         self.uri = self._build_uri(
             config['protocol_security'], config['port'], config['host']
         )
+
+    def connect(self):
         self.ldapobj = self._create_ldap_obj(self.config)
 
     def _build_uri(self, protocol_security, port, host):
