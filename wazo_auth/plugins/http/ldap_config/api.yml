@@ -25,6 +25,35 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/Error'
+    post:
+      security:
+        - wazo_auth_token: []
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Create current tenant's LDAP backend configuration
+      description: '**Required ACL:** `auth.backends.ldap.create`'
+      operationId: createLDAPBackendConfig
+      tags:
+        - backends
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+        - name: body
+          in: body
+          description: The LDAP backend configuration
+          required: true
+          schema:
+            $ref: '#/definitions/LDAPBackendConfigEdit'
+      responses:
+        '200':
+          description: The LDAP backend configuration has been created
+          schema:
+            $ref: '#/definitions/LDAPBackendConfig'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
     put:
       security:
         - wazo_auth_token: []

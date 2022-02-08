@@ -228,7 +228,7 @@ def ldap_config(**ldap_config_args):
             ldap_config_args.setdefault('user_login_attribute', 'uid')
             ldap_config_args.setdefault('user_email_attribute', 'mail')
 
-            ldap_config = self.client.ldap_config.create_or_update(ldap_config_args)
+            ldap_config = self.client.ldap_config.create(ldap_config_args)
             args = list(args) + [ldap_config]
             try:
                 result = decorated(self, *args, **kwargs)

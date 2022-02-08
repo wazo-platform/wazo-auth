@@ -22,6 +22,10 @@ class LDAPConfig(AuthResource):
         scoping_tenant = Tenant.autodetect()
         return self._ldap_service.get(scoping_tenant.uuid), 200
 
+    @required_acl('auth.backends.ldap.create')
+    def post(self):
+        return self.put()
+
     @required_acl('auth.backends.ldap.edit')
     def put(self):
         scoping_tenant = Tenant.autodetect()
