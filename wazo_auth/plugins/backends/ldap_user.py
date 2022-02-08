@@ -14,19 +14,11 @@ logger = logging.getLogger(__name__)
 class LDAPUser(BaseAuthenticationBackend):
     def load(self, dependencies):
         super().load(dependencies)
-        config = dependencies['config']
         self._user_service = dependencies['user_service']
         self._group_service = dependencies['group_service']
         self._purposes = dependencies['purposes']
         self._ldap_service = dependencies['ldap_service']
-        self.config = config['ldap']
-        self.uri = self.config['uri']
-        self.bind_dn = self.config.get('bind_dn', '')
-        self.bind_password = self.config.get('bind_password', '')
-        self.bind_anonymous = self.config.get('bind_anonymous', False)
-        self.user_base_dn = self.config['user_base_dn']
-        self.user_login_attribute = self.config['user_login_attribute']
-        self.user_email_attribute = self.config.get('user_email_attribute', 'mail')
+        self._tenant_service = dependencies['tenant_service']
 
     def get_acl(self, login, args):
         backend_acl = args.get('acl', [])
@@ -49,11 +41,17 @@ class LDAPUser(BaseAuthenticationBackend):
         return metadata
 
     def verify_password(self, username, password, args):
-        try:
-            wazo_ldap = _WazoLDAP(self.uri)
+        tenant = self._get_tenant(args['tenant_id'])  # TODO Add token POST schema validation
 
-            if self.bind_anonymous or (self.bind_dn and self.bind_password):
-                if wazo_ldap.perform_bind(self.bind_dn, self.bind_password):
+        config = self._get_ldap_config(tenant)
+        if not config:
+            return False
+
+        try:
+            wazo_ldap = _WazoLDAP(config['uri'])
+
+            if config['bind_dn'] and config['bind_password']:
+                if wazo_ldap.perform_bind(config['bind_dn'], config['bind_password']):
                     user_dn = self._perform_search_dn(wazo_ldap, username)
                 else:
                     return False
@@ -68,10 +66,10 @@ class LDAPUser(BaseAuthenticationBackend):
                 return False
 
         except ldap.SERVER_DOWN:
-            logger.warning('LDAP : SERVER not responding on %s', self.uri)
+            logger.warning('LDAP : SERVER not responding on %s', config['uri'])
             return False
         except ldap.LDAPError as exc:
-            logger.exception('ldap.LDAPError (%r, %r)', self.config, exc)
+            logger.exception('ldap.LDAPError (%r, %r)', config, exc)
             return False
 
         pbx_user_uuid = self._get_user_uuid_by_ldap_attribute(user_email)
@@ -82,6 +80,22 @@ class LDAPUser(BaseAuthenticationBackend):
         args['user_email'] = user_email
 
         return True
+
+    def _build_uri(self, protocol_security, port, host):
+        scheme = 'ldaps' if protocol_security == 'ldaps' else 'ldap'
+        return f'{scheme}://{host}:{port}'
+
+    def _get_ldap_config(self, tenant_uuid):
+        config = self._ldap_service.get(tenant_uuid)
+        config['uri'] = self._build_uri(
+            config['protocol_security'],
+            config['port'],
+            config['host'],
+        )
+        return config
+
+    def _get_tenant(self, tenant_id):
+        return self._tenant_service.get_by_uuid_or_slug(None, tenant_id)
 
     def _get_user_uuid_by_ldap_attribute(self, user_email):
         try:

@@ -59,6 +59,7 @@ class TestGetACLS(BaseTestCase):
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
+                'tenant_service': self.tenant_service,
                 'purposes': self.purposes,
             }
         )
@@ -91,6 +92,7 @@ class TestGetMetadata(BaseTestCase):
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
+                'tenant_service': self.tenant_service,
                 'purposes': self.purposes,
             },
         )
@@ -130,6 +132,7 @@ class TestVerifyPassword(BaseTestCase):
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
+                'tenant_service': self.tenant_service,
                 'purposes': self.purposes,
             }
         )
@@ -147,6 +150,7 @@ class TestVerifyPassword(BaseTestCase):
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
+                'tenant_service': self.tenant_service,
                 'purposes': self.purposes,
             },
         )
@@ -164,6 +168,7 @@ class TestVerifyPassword(BaseTestCase):
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
+                'tenant_service': self.tenant_service,
                 'purposes': self.purposes,
             }
         )
@@ -187,6 +192,7 @@ class TestVerifyPassword(BaseTestCase):
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
+                'tenant_service': self.tenant_service,
                 'purposes': self.purposes,
             }
         )
@@ -214,6 +220,7 @@ class TestVerifyPassword(BaseTestCase):
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
+                'tenant_service': self.tenant_service,
                 'purposes': self.purposes,
             }
         )
@@ -239,6 +246,7 @@ class TestVerifyPassword(BaseTestCase):
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
+                'tenant_service': self.tenant_service,
                 'purposes': self.purposes,
             }
         )
@@ -261,6 +269,7 @@ class TestVerifyPassword(BaseTestCase):
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
+                'tenant_service': self.tenant_service,
                 'purposes': self.purposes,
             }
         )
@@ -285,6 +294,7 @@ class TestVerifyPassword(BaseTestCase):
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
+                'tenant_service': self.tenant_service,
                 'purposes': self.purposes,
             }
         )
@@ -317,6 +327,7 @@ class TestVerifyPassword(BaseTestCase):
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
+                'tenant_service': self.tenant_service,
                 'purposes': self.purposes,
             }
         )
@@ -340,6 +351,7 @@ class TestVerifyPassword(BaseTestCase):
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
+                'tenant_service': self.tenant_service,
                 'purposes': self.purposes,
             }
         )
@@ -374,6 +386,7 @@ class TestVerifyPassword(BaseTestCase):
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
+                'tenant_service': self.tenant_service,
                 'purposes': self.purposes,
             }
         )
