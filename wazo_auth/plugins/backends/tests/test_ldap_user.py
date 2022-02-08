@@ -40,13 +40,6 @@ class BaseTestCase(unittest.TestCase):
 class TestGetACLS(BaseTestCase):
     def setUp(self):
         super().setUp()
-        config = {
-            'ldap': {
-                'uri': 'ldap://host:389',
-                'user_base_dn': 'dc=example,dc=com',
-                'user_login_attribute': 'uid',
-            },
-        }
         self.args = {
             'pbx_user_uuid': 'alice-uuid',
             'user_email': 'alice@wazo-auth.com',
@@ -55,7 +48,6 @@ class TestGetACLS(BaseTestCase):
         self.backend = LDAPUser()
         self.backend.load(
             {
-                'config': config,
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
@@ -77,18 +69,10 @@ class TestGetACLS(BaseTestCase):
 class TestGetMetadata(BaseTestCase):
     def setUp(self):
         super().setUp()
-        config = {
-            'ldap': {
-                'uri': 'ldap://host:389',
-                'user_base_dn': 'dc=example,dc=com',
-                'user_login_attribute': 'uid',
-            },
-        }
         self.args = {'pbx_user_uuid': 'alice-uuid', 'user_email': 'alice@wazo-auth.com'}
         self.backend = LDAPUser()
         self.backend.load(
             {
-                'config': config,
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
@@ -110,13 +94,6 @@ class TestGetMetadata(BaseTestCase):
 class TestVerifyPassword(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.config = {
-            'ldap': {
-                'uri': 'ldap://host:389',
-                'user_base_dn': 'dc=example,dc=com',
-                'user_login_attribute': 'uid',
-            },
-        }
         self.expected_user_dn = 'uid=foo,dc=example,dc=com'
         self.expected_user_email = 'foo@example.com'
         obj = {'mail': self.expected_user_email.encode('utf-8')}
@@ -128,7 +105,6 @@ class TestVerifyPassword(BaseTestCase):
         backend = LDAPUser()
         backend.load(
             {
-                'config': self.config,
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
@@ -146,7 +122,6 @@ class TestVerifyPassword(BaseTestCase):
         backend = LDAPUser()
         backend.load(
             {
-                'config': self.config,
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
@@ -164,7 +139,6 @@ class TestVerifyPassword(BaseTestCase):
         backend = LDAPUser()
         backend.load(
             {
-                'config': self.config,
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
@@ -188,7 +162,6 @@ class TestVerifyPassword(BaseTestCase):
         backend = LDAPUser()
         backend.load(
             {
-                'config': self.config,
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
@@ -211,12 +184,9 @@ class TestVerifyPassword(BaseTestCase):
         )
 
     def test_that_verify_password_escape_filter_chars(self, wazo_ldap):
-        extended_config = {'ldap': {'bind_anonymous': True}}
-        extended_config['ldap'].update(self.config['ldap'])
         backend = LDAPUser()
         backend.load(
             {
-                'config': self.config,
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
@@ -242,7 +212,6 @@ class TestVerifyPassword(BaseTestCase):
         backend = LDAPUser()
         backend.load(
             {
-                'config': self.config,
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
@@ -265,7 +234,6 @@ class TestVerifyPassword(BaseTestCase):
         backend = LDAPUser()
         backend.load(
             {
-                'config': self.config,
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
@@ -283,61 +251,6 @@ class TestVerifyPassword(BaseTestCase):
 
         assert_that(result, equal_to(False))
         assert_that(args, equal_to({}))
-
-    def test_that_verify_password_calls_with_bind_anonymous(self, wazo_ldap):
-        extended_config = {'ldap': {'bind_anonymous': True}}
-        extended_config['ldap'].update(self.config['ldap'])
-        backend = LDAPUser()
-        backend.load(
-            {
-                'config': extended_config,
-                'user_service': self.user_service,
-                'group_service': self.group_service,
-                'ldap_service': self.ldap_service,
-                'tenant_service': self.tenant_service,
-                'purposes': self.purposes,
-            }
-        )
-        wazo_ldap = wazo_ldap.return_value
-        wazo_ldap.perform_bind.return_value = True
-        wazo_ldap.perform_search.return_value = self.search_obj_result
-        self.list_users.return_value = [{'uuid': 'alice-uuid'}]
-        args = {}
-
-        result = backend.verify_password('foo', 'bar', args)
-
-        assert_that(result, equal_to(True))
-        assert_that(
-            args,
-            equal_to({'pbx_user_uuid': 'alice-uuid', 'user_email': 'foo@example.com'}),
-        )
-        expected_call = [call('', ''), call(self.expected_user_dn, 'bar')]
-        wazo_ldap.perform_bind.assert_has_calls(expected_call)
-
-    def test_that_verify_password_calls_return_false_when_no_binding_with_anonymous(
-        self, wazo_ldap
-    ):
-        extended_config = {'ldap': {'bind_anonymous': True}}
-        extended_config['ldap'].update(self.config['ldap'])
-        wazo_ldap = wazo_ldap.return_value
-        backend = LDAPUser()
-        backend.load(
-            {
-                'config': extended_config,
-                'user_service': self.user_service,
-                'group_service': self.group_service,
-                'ldap_service': self.ldap_service,
-                'tenant_service': self.tenant_service,
-                'purposes': self.purposes,
-            }
-        )
-        wazo_ldap.perform_bind.return_value = False
-        args = {}
-
-        result = backend.verify_password('foo', 'bar', args)
-
-        assert_that(result, equal_to(False))
-        wazo_ldap.perform_bind.assert_called_once_with('', '')
 
     def test_that_verify_password_calls_with_bind_dn(self, wazo_ldap):
         extended_config = {
@@ -409,7 +322,10 @@ class TestVerifyPassword(BaseTestCase):
 class TestWazoLDAP(unittest.TestCase):
     def setUp(self):
         self.config = {
-            'uri': 'ldap://host:389',
+            'protocol_security': '',
+            'protocol_version': 3,
+            'port': 389,
+            'host': 'host',
             'user_base_dn': 'dc=example,dc=com',
             'user_login_attribute': 'uid',
         }
@@ -418,12 +334,28 @@ class TestWazoLDAP(unittest.TestCase):
     def test_wazo_ldap_init(self, ldap_initialize):
         ldapobj = ldap_initialize.return_value = Mock()
 
-        _WazoLDAP(self.config['uri'])
+        wazo_ldap = _WazoLDAP(self.config)
 
-        ldap_initialize.assert_called_once_with(self.config['uri'])
+        ldap_initialize.assert_called_once_with(wazo_ldap.uri)
         ldapobj.set_option.assert_any_call(ldap.OPT_REFERRALS, 0)
         ldapobj.set_option.assert_any_call(ldap.OPT_NETWORK_TIMEOUT, 2)
         ldapobj.set_option.assert_any_call(ldap.OPT_TIMEOUT, 2)
+        ldapobj.set_option.assert_any_call(ldap.OPT_PROTOCOL_VERSION, ldap.VERSION3)
+
+    @patch('ldap.initialize')
+    def test_wazo_ldap_init_tls(self, ldap_initialize):
+        ldapobj = ldap_initialize.return_value = Mock()
+
+        with patch.dict(self.config, {'protocol_security': 'tls'}) as config:
+            wazo_ldap = _WazoLDAP(config)
+
+        ldap_initialize.assert_called_once_with(wazo_ldap.uri)
+        ldapobj.set_option.assert_any_call(ldap.OPT_REFERRALS, 0)
+        ldapobj.set_option.assert_any_call(ldap.OPT_NETWORK_TIMEOUT, 2)
+        ldapobj.set_option.assert_any_call(ldap.OPT_TIMEOUT, 2)
+        ldapobj.set_option.assert_any_call(ldap.OPT_PROTOCOL_VERSION, ldap.VERSION3)
+        ldapobj.set_option.assert_any_call(ldap.OPT_X_TLS_NEWCTX, 0)
+        ldapobj.start_tls_s.assert_called_once()
 
     @patch('ldap.initialize', Mock())
     def test_that_perform_bind(self):
