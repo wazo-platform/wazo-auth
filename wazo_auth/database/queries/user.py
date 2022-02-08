@@ -205,7 +205,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def get_credentials(self, user_uuid):
         query = self.session.query(User.password_salt, User.password_hash).filter(
             and_(
-                self.new_strict_filter(uuid=user_uuid),
+                User.uuid == user_uuid,
                 User.enabled.is_(True),
             )
         )
