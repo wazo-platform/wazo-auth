@@ -665,7 +665,7 @@ class TestUserDAO(base.DAOTestCase):
     @fixtures.db.user(username='u2@example.com', enabled=False)
     @fixtures.db.user(email_address='u3@example.com', email_confirmed=True)
     @fixtures.db.user(email_address='u4@example.com', email_confirmed=False)
-    def test_login_exists(self, *_):
+    def test_login_exists(self, u1, u2, u3, u4):
         result = self._user_dao.login_exists('u1@example.com')
         assert_that(result, equal_to(True))
 
@@ -679,4 +679,10 @@ class TestUserDAO(base.DAOTestCase):
         assert_that(result, equal_to(True))
 
         result = self._user_dao.login_exists('unknown@example.com')
+        assert_that(result, equal_to(False))
+
+        result = self._user_dao.login_exists('u1@example.com', ignored_user=u1)
+        assert_that(result, equal_to(False))
+
+        result = self._user_dao.login_exists('u3@example.com', ignored_user=u3)
         assert_that(result, equal_to(False))

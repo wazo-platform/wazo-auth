@@ -284,6 +284,14 @@ class TestUsers(base.APIIntegrationTest):
         result = self.client.users.edit(user_uuid, **body)
         assert_that(result, has_entries(**body))
 
+    @fixtures.http.user()
+    @fixtures.http.user(username='u2@example.com')
+    @fixtures.http.user(email_address='u3@example.com')
+    def test_put_with_same_login(self, u1, *_):
+        uuid = u1['uuid']
+        assert_http_error(409, self.client.users.edit, uuid, username='u2@example.com')
+        assert_http_error(409, self.client.users.edit, uuid, username='u3@example.com')
+
     def test_register_post(self):
         args = {
             'username': 'foobar',

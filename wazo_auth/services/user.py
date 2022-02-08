@@ -154,6 +154,10 @@ class UserService(BaseService):
 
     def update(self, scoping_tenant_uuid, user_uuid, **kwargs):
         self.assert_user_in_subtenant(scoping_tenant_uuid, user_uuid)
+        username = kwargs['username']
+        if username and self._dao.user.login_exists(username, ignored_user=user_uuid):
+            raise exceptions.UsernameLoginAlreadyExists(username)
+
         self._dao.user.update(user_uuid, **kwargs)
         return self.get_user(user_uuid)
 
