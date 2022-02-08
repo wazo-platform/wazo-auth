@@ -1,4 +1,4 @@
-# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo_bus.resources.auth import events
@@ -59,6 +59,16 @@ class TenantService(BaseService):
             raise exceptions.UnknownTenantException(uuid)
 
         return self._get(uuid)
+
+    def get_by_uuid_or_slug(self, scoping_tenant_uuid, id_):
+        visible_tenants = self._tenant_tree.list_visible_tenant_uuids_with_slugs(
+            scoping_tenant_uuid
+        )
+        for tenant_uuid, tenant_slug in visible_tenants:
+            if tenant_uuid == id_ or tenant_slug == id_:
+                return self._get(tenant_uuid)
+
+        raise exceptions.UnknownTenantException(id_)
 
     def _get(self, uuid):
         tenants = self._dao.tenant.list_(uuid=uuid, limit=1)
