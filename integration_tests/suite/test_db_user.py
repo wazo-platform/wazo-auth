@@ -654,6 +654,12 @@ class TestUserDAO(base.DAOTestCase):
             raises(exceptions.UnknownLoginException),
         )
 
+    @fixtures.db.user(username='u1@example.com')
+    @fixtures.db.user(email_address='u1@example.com', email_confirmed=True)
+    def test_get_user_uuid_by_login_returns_email_first(self, u1, u2):
+        result = self._user_dao.get_user_uuid_by_login('u1@example.com')
+        assert_that(result, equal_to(u2))
+
     @fixtures.db.user(username='u1@example.com', enabled=True)
     @fixtures.db.user(username='u2@example.com', enabled=False)
     @fixtures.db.user(email_address='u3@example.com', email_confirmed=True)
