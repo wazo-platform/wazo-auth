@@ -321,7 +321,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def login_exists(self, login, ignored_user=None):
         filter_ = or_(User.username == login, Email.address == login)
         if ignored_user:
-            filter_ = and_(filter_, User.uuid != ignored_user)
+            filter_ = and_(filter_, User.uuid != str(ignored_user))
         query = self.session.query(User.uuid).outerjoin(Email).filter(filter_)
         row = query.first()
         return True if row else False

@@ -1,4 +1,4 @@
-# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that, contains_inanyorder, empty, has_entries
@@ -75,3 +75,21 @@ class TestEmails(base.APIIntegrationTest):
         assert_http_error(
             409, self.client.users.update_emails, foo['uuid'], duplicated_emails
         )
+
+    @fixtures.http.user()
+    @fixtures.http.user(username='u2@example.com')
+    @fixtures.http.user(email_address='u3@example.com')
+    def test_email_same_login(self, u1, u2, u3):
+        uuid = u1['uuid']
+
+        email = {'address': 'u2@example.com', 'main': True, 'confirmed': True}
+        assert_http_error(409, self.client.users.update_emails, uuid, [email])
+
+        email = {'address': 'u2@example.com', 'main': True, 'confirmed': False}
+        assert_http_error(409, self.client.users.update_emails, uuid, [email])
+
+        email = {'address': 'u3@example.com', 'main': True, 'confirmed': True}
+        assert_http_error(409, self.client.users.update_emails, uuid, [email])
+
+        email = {'address': 'u3@example.com', 'main': True, 'confirmed': False}
+        assert_http_error(409, self.client.users.update_emails, uuid, [email])

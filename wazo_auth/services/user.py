@@ -162,6 +162,11 @@ class UserService(BaseService):
         return self.get_user(user_uuid)
 
     def update_emails(self, user_uuid, emails):
+        for email in emails:
+            address = email['address']
+            if email and self._dao.user.login_exists(address, ignored_user=user_uuid):
+                raise exceptions.EmailLoginAlreadyExists(address)
+
         return self._dao.user.update_emails(user_uuid, emails)
 
     def user_has_sub_tenant(self, user_uuid, tenant_uuid):
