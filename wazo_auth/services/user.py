@@ -126,6 +126,14 @@ class UserService(BaseService):
         if password:
             kwargs['salt'], kwargs['hash_'] = self._encrypter.encrypt_password(password)
 
+        username = kwargs['username']
+        if username and self._dao.user.login_exists(username):
+            raise exceptions.UsernameLoginAlreadyExists(username)
+
+        email = kwargs.get('email_address')
+        if email and self._dao.user.login_exists(email):
+            raise exceptions.EmailLoginAlreadyExists(email)
+
         user = self._dao.user.create(**kwargs)
 
         tenant_uuid = kwargs['tenant_uuid']

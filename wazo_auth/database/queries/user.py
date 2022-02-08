@@ -1,7 +1,7 @@
 # Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from sqlalchemy import and_, exc, text
+from sqlalchemy import and_, or_, exc, text
 from sqlalchemy.orm import joinedload
 from .base import BaseDAO, PaginatorMixin
 from . import filters
@@ -317,6 +317,12 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         self.session.flush()
         return emails
+
+    def login_exists(self, login):
+        filter_ = or_(User.username == login, Email.address == login)
+        query = self.session.query(User.uuid).outerjoin(Email).filter(filter_)
+        row = query.first()
+        return True if row else False
 
     def _add_user_email(self, user_uuid, args):
         args.setdefault('confirmed', False)
