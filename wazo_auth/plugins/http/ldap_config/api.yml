@@ -131,10 +131,10 @@ definitions:
         type: string
         description: The layer of security to use for the connection.
         enum:
-          - null
-          - tls
-          - ldaps
-        default: null
+          - ""
+          - "tls"
+          - "ldaps"
+        default: ""
       bind_dn:
         type: string
         description: |
