@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, or_, text
@@ -197,51 +197,46 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def delete(self, user_uuid):
         user = self.session.query(User).filter(User.uuid == str(user_uuid)).first()
-
         if not user:
             raise exceptions.UnknownUserException(user_uuid)
-
         self.session.delete(user)
         self.session.flush()
 
-    def get_credentials(self, username):
-        filter_ = and_(
-            self.new_strict_filter(username=username), User.enabled.is_(True)
-        )
-
+    def get_credentials(self, user_uuid):
         query = self.session.query(User.password_salt, User.password_hash).filter(
-            filter_
+            and_(
+                self.new_strict_filter(uuid=user_uuid),
+                User.enabled.is_(True),
+            )
         )
 
-        for row in query.all():
-            return row.password_hash, row.password_salt
+        row = query.first()
+        if not row:
+            raise exceptions.UnknownUserUUIDException(user_uuid)
+        return row.password_hash, row.password_salt
 
-        raise exceptions.UnknownUsernameException(username)
-
-    def get_username_by_login(self, login):
+    def get_user_uuid_by_login(self, login):
         query = (
-            self.session.query(User.username)
+            self.session.query(User.uuid)
             .outerjoin(Email)
             .filter(
                 or_(
-                    User.username == login,
+                    and_(User.username == login, User.username.isnot(None)),
                     and_(Email.address == login, Email.confirmed.is_(True)),
                 )
             )
         )
-
-        for row in query.all():
-            return row.username
-
-        raise exceptions.UnknownLoginException(login)
+        row = query.first()
+        if not row:
+            raise exceptions.UnknownLoginException(login)
+        return row.uuid
 
     def get_emails(self, user_uuid):
-        result = []
-
         user = self.session.query(User).filter(User.uuid == str(user_uuid)).first()
         if not user:
             raise exceptions.UnknownUserException(user_uuid)
 
+        result = []
         for email in user.emails:
             result.append(
                 {
@@ -251,7 +246,6 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     'confirmed': email.confirmed,
                 }
             )
-
         return result
 
     def list_(self, **kwargs):
@@ -305,9 +299,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return users
 
     def update(self, user_uuid, **kwargs):
-        filter_ = User.uuid == str(user_uuid)
-
-        self.session.query(User).filter(filter_).update(kwargs)
+        self.session.query(User).filter(User.uuid == str(user_uuid)).update(kwargs)
         self.session.flush()
 
     def update_emails(self, user_uuid, emails):
@@ -353,10 +345,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     @staticmethod
     def _emails_to_dict(emails):
-        result = {}
-        for email in emails:
-            result[email['address']] = email
-        return result
+        return {email['address']: email for email in emails}
 
     @staticmethod
     def _merge_existing_emails(new, old):

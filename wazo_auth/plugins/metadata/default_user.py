@@ -1,4 +1,4 @@
-# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -9,17 +9,13 @@ logger = logging.getLogger(__name__)
 
 
 class DefaultUser(BaseMetadata):
-    def load(self, dependencies):
-        super().load(dependencies)
-        self._user_service = dependencies['user_service']
-
     def get_token_metadata(self, login, args):
-        user = self._user_service.list_users(username=login)[0]
+        default_metadata = super().get_token_metadata(login, args)
         metadata = {
-            'uuid': user['uuid'],
-            'tenant_uuid': user['tenant_uuid'],
-            'auth_id': user['uuid'],
-            'pbx_user_uuid': user['uuid'],
-            'xivo_uuid': self.get_xivo_uuid(args),
+            'uuid': default_metadata['uuid'],
+            'tenant_uuid': default_metadata['tenant_uuid'],
+            'auth_id': default_metadata['auth_id'],
+            'pbx_user_uuid': default_metadata['uuid'],
+            'xivo_uuid': default_metadata['xivo_uuid'],
         }
         return metadata

@@ -1,4 +1,4 @@
-# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import binascii
@@ -76,8 +76,8 @@ class UserService(BaseService):
         self.assert_user_in_subtenant(scoping_tenant_uuid, user_uuid)
         self._dao.user.delete(user_uuid)
 
-    def get_acl(self, username):
-        users = self._dao.user.list_(username=username, limit=1)
+    def get_acl(self, user_uuid):
+        users = self._dao.user.list_(uuid=user_uuid, limit=1)
         acl = []
         for user in users:
             policies = self.list_policies(user['uuid'])
@@ -94,8 +94,8 @@ class UserService(BaseService):
             return user
         raise exceptions.UnknownUserException(user_uuid)
 
-    def get_username_by_login(self, login):
-        return self._dao.user.get_username_by_login(login)
+    def get_user_uuid_by_login(self, login):
+        return self._dao.user.get_user_uuid_by_login(login)
 
     def list_groups(self, user_uuid, **kwargs):
         return self._dao.group.list_(user_uuid=user_uuid, **kwargs)
@@ -162,11 +162,11 @@ class UserService(BaseService):
             return True
 
         try:
-            username = self._dao.user.get_username_by_login(login)
-            hash_, salt = self._dao.user.get_credentials(username)
+            user_uuid = self._dao.user.get_user_uuid_by_login(login)
+            hash_, salt = self._dao.user.get_credentials(user_uuid)
         except (
-            exceptions.UnknownUsernameException,
             exceptions.UnknownLoginException,
+            exceptions.UnknownUserUUIDException,
         ):
             hash_ = self._unknown_user_hash
             salt = self._unknown_user_salt

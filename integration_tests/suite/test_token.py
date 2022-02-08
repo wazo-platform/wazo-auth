@@ -1,4 +1,4 @@
-# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import pytest
@@ -41,6 +41,21 @@ class TestTokens(base.APIIntegrationTest):
         )
         token_data = client.token.new(backend='wazo_user', expiration=1)
         assert_that(token_data, has_entries(token=not_(None)))
+
+    @fixtures.http.user(username=None, email_address='u1@example.com', password='pass1')
+    @fixtures.http.user(username=None, email_address='u2@example.com', password='pass2')
+    def test_that_the_email_can_be_used_to_get_a_token_when_many_users(self, u1, u2):
+        client = Client('localhost', port=self.auth_port, prefix=None, https=False)
+
+        client.username = 'u1@example.com'
+        client.password = 'pass1'
+        token_data = client.token.new(expiration=1)
+        assert_that(token_data, has_entries(metadata=has_entries(uuid=u1['uuid'])))
+
+        client.username = 'u2@example.com'
+        client.password = 'pass2'
+        token_data = client.token.new(expiration=1)
+        assert_that(token_data, has_entries(metadata=has_entries(uuid=u2['uuid'])))
 
     @fixtures.http.user(username='foo', password='bar')
     @fixtures.http.token(

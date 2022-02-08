@@ -1,4 +1,4 @@
-# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_auth import exceptions
@@ -47,8 +47,8 @@ class GroupService(BaseService):
 
         raise exceptions.UnknownGroupException(group_uuid)
 
-    def get_acl(self, username):
-        users = self._dao.user.list_(username=username, limit=1)
+    def get_acl(self, user_uuid):
+        users = self._dao.user.list_(uuid=user_uuid, limit=1)
         acl = []
         for user in users:
             groups = self._dao.group.list_(user_uuid=user['uuid'])
