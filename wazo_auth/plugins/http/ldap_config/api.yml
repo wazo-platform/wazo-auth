@@ -83,6 +83,23 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/Error'
+    delete:
+      security:
+        - wazo_auth_token: []
+      summary: Delete current tenant's LDAP backend configuration
+      description: '**Required ACL:** `auth.backends.ldap.delete`'
+      operationId: deleteLDAPBackendConfig
+      tags:
+        - backends
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+      responses:
+        '204':
+          description: The LDAP backend configuration has been deleted
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
 definitions:
   LDAPBackendConfig:
     type: object
