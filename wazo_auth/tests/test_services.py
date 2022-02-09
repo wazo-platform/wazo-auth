@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that, contains, calling, equal_to, has_entries, not_, raises
@@ -308,6 +308,7 @@ class TestUserService(BaseServiceTestCase):
             'tenant_uuid': s.tenant_uuid,
         }
         self.user_dao.create.return_value = {'uuid': s.user_uuid}
+        self.user_dao.login_exists.return_value = False
         self.group_dao.get_all_users_group.return_value = Mock(uuid='')
 
         result = self.service.new_user(**params)
