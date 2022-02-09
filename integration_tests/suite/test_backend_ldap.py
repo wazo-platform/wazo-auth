@@ -22,6 +22,7 @@ class LDAPHelper:
     PEOPLE_DN = 'ou=people,{}'.format(BASE_DN)
     QUEBEC_DN = 'ou=quebec,{}'.format(PEOPLE_DN)
     OU_DN = {'people': PEOPLE_DN, 'quebec': QUEBEC_DN}
+    setup_ran = False
 
     def __init__(self, ldap_uri):
         self._ldap_obj = ldap.initialize(ldap_uri)
@@ -67,8 +68,9 @@ class LDAPHelper:
         self._ldap_obj.add_s(self.QUEBEC_DN, modlist)
 
 
-class _BaseLDAPTestCase(base.BaseIntegrationTest):
+class BaseLDAPIntegrationTest(base.BaseIntegrationTest):
 
+    asset_cls = base.LDAPAssetLaunchingTestCase
     username = 'admin'
     password = 's3cre7'
 
@@ -97,7 +99,25 @@ class _BaseLDAPTestCase(base.BaseIntegrationTest):
     ]
 
     @classmethod
-    def add_contacts(cls, contacts, ldap_uri):
+    def add_contacts(cls, contacts, ldap_helper):
+        ldap_helper.add_ou()
+        ldap_helper.add_contact(
+            Contact('wazo_auth', 'wazo_auth', 'S3cr$t', '', 'cn'), 'people'
+        )
+        for contact in contacts:
+            if not contact.mail:
+                ldap_helper.add_contact_without_email(contact, 'quebec')
+            else:
+                ldap_helper.add_contact(contact, 'quebec')
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        ldap_host = '127.0.0.1'
+        ldap_port = cls.asset_cls.service_port(389, 'slapd')
+        ldap_uri = f'ldap://{ldap_host}:{ldap_port}'
+
         for _ in range(10):
             try:
                 helper = LDAPHelper(ldap_uri)
@@ -106,99 +126,124 @@ class _BaseLDAPTestCase(base.BaseIntegrationTest):
                 time.sleep(1)
         else:
             raise Exception('could not add contacts: LDAP server is down')
-
-        helper.add_ou()
-        helper.add_contact(
-            Contact('wazo_auth', 'wazo_auth', 'S3cr$t', '', 'cn'), 'people'
-        )
-        for contact in contacts:
-            if not contact.mail:
-                helper.add_contact_without_email(contact, 'quebec')
-            else:
-                helper.add_contact(contact, 'quebec')
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        ldap_host = '127.0.0.1'
-        ldap_port = cls.asset_cls.service_port(389, 'slapd')
-        ldap_uri = f'ldap://{ldap_host}:{ldap_port}'
-        cls.add_contacts(cls.CONTACTS, ldap_uri)
-
-
-class LDAPIntegrationTest(_BaseLDAPTestCase):
-    asset_cls = base.LDAPAssetLaunchingTestCase
-
-
-class LDAPServiceUserIntegrationTest(_BaseLDAPTestCase):
-    asset_cls = base.LDAPServiceUserAssetLaunchingTestCase
+        if not LDAPHelper.setup_ran:
+            cls.add_contacts(cls.CONTACTS, helper)
+            LDAPHelper.setup_ran = True
 
 
 @base.use_asset('ldap')
-class TestLDAP(LDAPIntegrationTest):
+class TestLDAP(BaseLDAPIntegrationTest):
+    def setUp(self):
+        ldap_config = self.client.ldap_config.create(
+            {
+                'host': 'slapd',
+                'port': 389,
+                'user_base_dn': 'ou=quebec,ou=people,dc=wazo-auth,dc=wazo,dc=community',
+                'user_login_attribute': 'cn',
+                'user_email_attribute': 'mail',
+            },
+            tenant_uuid=self.top_tenant_uuid,
+        )
+        self.addCleanup(self.client.ldap_config.delete, ldap_config['tenant_uuid'])
+
     @fixtures.http.user(email_address='awonderland@wazo-auth.com')
     def test_ldap_authentication(self, user):
         response = self._post_token(
-            'Alice Wonderland', 'awonderland_password', backend='ldap_user'
+            'Alice Wonderland',
+            'awonderland_password',
+            backend='ldap_user',
+            tenant_id=self.top_tenant_uuid,
         )
         assert_that(
             response, has_entries(metadata=has_entries(pbx_user_uuid=user['uuid']))
         )
 
     @fixtures.http.user(email_address='awonderland@wazo-auth.com')
-    def test_ldap_authentication_fail_when_wrong_password(self, _):
+    def test_ldap_authentication_fail_when_wrong_password(self, user):
         args = ('Alice Wonderland', 'wrong_password')
         assert_that(
-            calling(self._post_token).with_args(*args, backend='ldap_user'),
+            calling(self._post_token).with_args(
+                *args, backend='ldap_user', tenant_id=self.top_tenant_uuid
+            ),
             raises(requests.HTTPError, pattern='401'),
         )
 
     @fixtures.http.user(email_address='humptydumpty@wazo-auth.com')
-    def test_ldap_authentication_fails_when_no_email_in_ldap(self, _):
+    def test_ldap_authentication_fails_when_no_email_in_ldap(self, user):
         args = ('Humpty Dumpty', 'humptydumpty_password')
         assert_that(
-            calling(self._post_token).with_args(*args, backend='ldap_user'),
+            calling(self._post_token).with_args(
+                *args, backend='ldap_user', tenant_id=self.top_tenant_uuid
+            ),
             raises(requests.HTTPError, pattern='401'),
         )
 
-    def test_ldap_authentication_fails_when_no_email_in_user(self):
+    @fixtures.http.user(email_address=None)
+    def test_ldap_authentication_fails_when_no_email_in_user(self, user):
         args = ('Lewis Carroll', 'lewiscarroll_password')
         assert_that(
-            calling(self._post_token).with_args(*args, backend='ldap_user'),
+            calling(self._post_token).with_args(
+                *args, backend='ldap_user', tenant_id=self.top_tenant_uuid
+            ),
             raises(requests.HTTPError, pattern='401'),
         )
 
 
-@base.use_asset('ldap_service_user')
-class TestLDAPServiceUser(LDAPServiceUserIntegrationTest):
+@base.use_asset('ldap')
+class TestLDAPServiceUser(BaseLDAPIntegrationTest):
+    def setUp(self):
+        ldap_config = self.client.ldap_config.create(
+            {
+                'host': 'slapd',
+                'port': 389,
+                'bind_dn': 'cn=wazo_auth,ou=people,dc=wazo-auth,dc=wazo,dc=community',
+                'bind_password': 'S3cr$t',
+                'user_base_dn': 'dc=wazo-auth,dc=wazo,dc=community',
+                'user_login_attribute': 'uid',
+                'user_email_attribute': 'mail',
+            },
+            tenant_uuid=self.top_tenant_uuid,
+        )
+        self.addCleanup(self.client.ldap_config.delete, ldap_config['tenant_uuid'])
+
     @fixtures.http.user(email_address='awonderland@wazo-auth.com')
     def test_ldap_authentication(self, user):
         response = self._post_token(
-            'awonderland', 'awonderland_password', backend='ldap_user'
+            'awonderland',
+            'awonderland_password',
+            backend='ldap_user',
+            tenant_id=self.top_tenant_uuid,
         )
         assert_that(
             response, has_entries(metadata=has_entries(pbx_user_uuid=user['uuid']))
         )
 
     @fixtures.http.user(email_address='awonderland@wazo-auth.com')
-    def test_ldap_authentication_fail_when_wrong_password(self, _):
+    def test_ldap_authentication_fail_when_wrong_password(self, user):
         args = ('awonderland', 'wrong_password')
         assert_that(
-            calling(self._post_token).with_args(*args, backend='ldap_user'),
+            calling(self._post_token).with_args(
+                *args, backend='ldap_user', tenant_id=self.top_tenant_uuid
+            ),
             raises(requests.HTTPError, pattern='401'),
         )
 
     @fixtures.http.user(email_address='humptydumpty@wazo-auth.com')
-    def test_ldap_authentication_fails_when_no_email_in_ldap(self, _):
+    def test_ldap_authentication_fails_when_no_email_in_ldap(self, user):
         args = ('humptydumpty', 'humptydumpty_password')
         assert_that(
-            calling(self._post_token).with_args(*args, backend='ldap_user'),
+            calling(self._post_token).with_args(
+                *args, backend='ldap_user', tenant_id=self.top_tenant_uuid
+            ),
             raises(requests.HTTPError, pattern='401'),
         )
 
-    def test_ldap_authentication_fails_when_no_email_in_user(self):
+    @fixtures.http.user(email_address=None)
+    def test_ldap_authentication_fails_when_no_email_in_user(self, user):
         args = ('lewiscarroll', 'lewiscarroll_password')
         assert_that(
-            calling(self._post_token).with_args(*args, backend='ldap_user'),
+            calling(self._post_token).with_args(
+                *args, backend='ldap_user', tenant_id=self.top_tenant_uuid
+            ),
             raises(requests.HTTPError, pattern='401'),
         )
