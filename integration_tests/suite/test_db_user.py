@@ -637,7 +637,7 @@ class TestUserDAO(base.DAOTestCase):
     @fixtures.db.user(username='u2', email_address='u2@example.com', email_confirmed=True)
     @fixtures.db.user(username='u3', email_address='u3@example.com', email_confirmed=False)
     # fmt: on
-    def test_get_username_by_login(self, u1, u2, u3):
+    def test_get_user_uuid_by_login(self, u1, u2, u3):
         result = self._user_dao.get_user_uuid_by_login('u1')
         assert_that(result, equal_to(u1))
 
@@ -653,6 +653,38 @@ class TestUserDAO(base.DAOTestCase):
             calling(self._user_dao.get_user_uuid_by_login).with_args('u0'),
             raises(exceptions.UnknownLoginException),
         )
+
+    @fixtures.db.user(username='u1@example.com')
+    @fixtures.db.user(email_address='u1@example.com', email_confirmed=True)
+    def test_get_user_uuid_by_login_returns_email_first(self, u1, u2):
+        result = self._user_dao.get_user_uuid_by_login('u1@example.com')
+        assert_that(result, equal_to(u2))
+
+    @fixtures.db.user(username='u1@example.com', enabled=True)
+    @fixtures.db.user(username='u2@example.com', enabled=False)
+    @fixtures.db.user(email_address='u3@example.com', email_confirmed=True)
+    @fixtures.db.user(email_address='u4@example.com', email_confirmed=False)
+    def test_login_exists(self, u1, u2, u3, u4):
+        result = self._user_dao.login_exists('u1@example.com')
+        assert_that(result, equal_to(True))
+
+        result = self._user_dao.login_exists('u2@example.com')
+        assert_that(result, equal_to(True))
+
+        result = self._user_dao.login_exists('u3@example.com')
+        assert_that(result, equal_to(True))
+
+        result = self._user_dao.login_exists('u4@example.com')
+        assert_that(result, equal_to(True))
+
+        result = self._user_dao.login_exists('unknown@example.com')
+        assert_that(result, equal_to(False))
+
+        result = self._user_dao.login_exists('u1@example.com', ignored_user=u1)
+        assert_that(result, equal_to(False))
+
+        result = self._user_dao.login_exists('u3@example.com', ignored_user=u3)
+        assert_that(result, equal_to(False))
 
     def _email_exists(self, address):
         filter_ = models.Email.address == address

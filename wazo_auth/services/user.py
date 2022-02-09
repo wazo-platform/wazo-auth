@@ -126,6 +126,14 @@ class UserService(BaseService):
         if password:
             kwargs['salt'], kwargs['hash_'] = self._encrypter.encrypt_password(password)
 
+        username = kwargs['username']
+        if username and self._dao.user.login_exists(username):
+            raise exceptions.UsernameLoginAlreadyExists(username)
+
+        email = kwargs.get('email_address')
+        if email and self._dao.user.login_exists(email):
+            raise exceptions.EmailLoginAlreadyExists(email)
+
         user = self._dao.user.create(**kwargs)
 
         tenant_uuid = kwargs['tenant_uuid']
@@ -146,10 +154,19 @@ class UserService(BaseService):
 
     def update(self, scoping_tenant_uuid, user_uuid, **kwargs):
         self.assert_user_in_subtenant(scoping_tenant_uuid, user_uuid)
+        username = kwargs['username']
+        if username and self._dao.user.login_exists(username, ignored_user=user_uuid):
+            raise exceptions.UsernameLoginAlreadyExists(username)
+
         self._dao.user.update(user_uuid, **kwargs)
         return self.get_user(user_uuid)
 
     def update_emails(self, user_uuid, emails):
+        for email in emails:
+            address = email['address']
+            if email and self._dao.user.login_exists(address, ignored_user=user_uuid):
+                raise exceptions.EmailLoginAlreadyExists(address)
+
         return self._dao.user.update_emails(user_uuid, emails)
 
     def user_has_sub_tenant(self, user_uuid, tenant_uuid):

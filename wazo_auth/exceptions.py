@@ -153,6 +153,20 @@ class UnknownUserException(APIException):
         super().__init__(404, msg, 'unknown-user', details, 'users')
 
 
+class UsernameLoginAlreadyExists(APIException):
+    def __init__(self, username):
+        msg = f'The login "{username}" is already used'
+        details = {'username': {'constraint_id': 'unique', 'message': msg}}
+        super().__init__(409, 'Conflict detected', 'conflict', details, 'users')
+
+
+class EmailLoginAlreadyExists(APIException):
+    def __init__(self, email):
+        msg = f'The login "{email}" is already used'
+        details = {'email_address': {'constraint_id': 'unique', 'message': msg}}
+        super().__init__(409, 'Conflict detected', 'conflict', details, 'users')
+
+
 class UnknownUserUUIDException(Exception):
     def __init__(self, user_uuid):
         msg = 'No such user: "{}"'.format(user_uuid)

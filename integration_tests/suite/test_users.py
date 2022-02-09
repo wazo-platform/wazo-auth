@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from datetime import datetime
@@ -234,6 +234,15 @@ class TestUsers(base.APIIntegrationTest):
         logs = self.service_logs('auth', since=time_start)
         assert_that(logs, not_(contains_string(args['password'])))
 
+    @fixtures.http.user(username='user1@example.com')
+    @fixtures.http.user(email_address='user2@example.com')
+    def test_post_with_same_login(self, *_):
+        assert_http_error(409, self.client.users.new, username='user1@example.com')
+        assert_http_error(409, self.client.users.new, username='user2@example.com')
+
+        assert_http_error(409, self.client.users.new, email_address='user1@example.com')
+        assert_http_error(409, self.client.users.new, email_address='user2@example.com')
+
     @fixtures.http.user(
         username='foobar', firstname='foo', lastname='bar', purpose='user'
     )
@@ -274,6 +283,14 @@ class TestUsers(base.APIIntegrationTest):
         body = {'username': 'foobaz', 'firstname': None, 'lastname': None}
         result = self.client.users.edit(user_uuid, **body)
         assert_that(result, has_entries(**body))
+
+    @fixtures.http.user()
+    @fixtures.http.user(username='u2@example.com')
+    @fixtures.http.user(email_address='u3@example.com')
+    def test_put_with_same_login(self, u1, *_):
+        uuid = u1['uuid']
+        assert_http_error(409, self.client.users.edit, uuid, username='u2@example.com')
+        assert_http_error(409, self.client.users.edit, uuid, username='u3@example.com')
 
     def test_register_post(self):
         args = {

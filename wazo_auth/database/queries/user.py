@@ -1,7 +1,7 @@
 # Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from sqlalchemy import and_, exc, or_, text
+from sqlalchemy import and_, or_, exc, text
 from sqlalchemy.orm import joinedload
 from .base import BaseDAO, PaginatorMixin
 from . import filters
@@ -205,7 +205,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def get_credentials(self, user_uuid):
         query = self.session.query(User.password_salt, User.password_hash).filter(
             and_(
-                self.new_strict_filter(uuid=user_uuid),
+                User.uuid == user_uuid,
                 User.enabled.is_(True),
             )
         )
@@ -216,16 +216,19 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return row.password_hash, row.password_salt
 
     def get_user_uuid_by_login(self, login):
+        if not login:
+            raise exceptions.UnknownLoginException(login)
+
         query = (
             self.session.query(User.uuid)
             .outerjoin(Email)
-            .filter(
-                or_(
-                    and_(User.username == login, User.username.isnot(None)),
-                    and_(Email.address == login, Email.confirmed.is_(True)),
-                )
-            )
+            .filter(and_(Email.address == login, Email.confirmed.is_(True)))
         )
+        row = query.first()
+        if row:
+            return row.uuid
+
+        query = self.session.query(User.uuid).filter(and_(User.username == login))
         row = query.first()
         if not row:
             raise exceptions.UnknownLoginException(login)
@@ -314,6 +317,14 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         self.session.flush()
         return emails
+
+    def login_exists(self, login, ignored_user=None):
+        filter_ = or_(User.username == login, Email.address == login)
+        if ignored_user:
+            filter_ = and_(filter_, User.uuid != str(ignored_user))
+        query = self.session.query(User.uuid).outerjoin(Email).filter(filter_)
+        row = query.first()
+        return True if row else False
 
     def _add_user_email(self, user_uuid, args):
         args.setdefault('confirmed', False)
