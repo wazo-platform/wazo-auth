@@ -1,4 +1,4 @@
-# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from .all_users import AllUsersService
@@ -7,6 +7,7 @@ from .default_policy import DefaultPolicyService
 from .email import EmailService
 from .external_auth import ExternalAuthService
 from .group import GroupService
+from .ldap import LDAPService
 from .policy import PolicyService
 from .session import SessionService
 from .tenant import TenantService
@@ -20,6 +21,7 @@ __all__ = [
     'EmailService',
     'ExternalAuthService',
     'GroupService',
+    'LDAPService',
     'PasswordEncrypter',
     'PolicyService',
     'SessionService',

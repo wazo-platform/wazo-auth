@@ -1,4 +1,4 @@
-# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -261,6 +261,31 @@ def refresh_token(**refresh_token_args):
             refresh_token = self._refresh_token_dao.create(refresh_token_args)
             self.session.begin_nested()
             args = list(args) + [refresh_token]
+            try:
+                return decorated(self, *args, **kwargs)
+            finally:
+                self.session.rollback()
+
+        return wrapper
+
+    return decorator
+
+
+def ldap_config(**ldap_config_args):
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            ldap_config_args.setdefault('tenant_uuid', self.top_tenant_uuid)
+            ldap_config_args.setdefault('host', 'localhost')
+            ldap_config_args.setdefault('port', 386)
+            ldap_config_args.setdefault(
+                'user_base_dn', 'ou=people,dc=wazo-platform,dc=org'
+            )
+            ldap_config_args.setdefault('user_login_attribute', 'uid')
+            ldap_config_args.setdefault('user_email_attribute', 'mail')
+            ldap_config = self._ldap_config_dao.create(**ldap_config_args)
+            self.session.begin_nested()
+            args = list(args) + [ldap_config]
             try:
                 return decorated(self, *args, **kwargs)
             finally:

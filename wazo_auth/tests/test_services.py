@@ -15,6 +15,7 @@ from ..database.queries import (
     email,
     external_auth,
     group,
+    ldap_config,
     policy,
     refresh_token,
     session,
@@ -32,6 +33,7 @@ class BaseServiceTestCase(TestCase):
         self.email_dao = Mock(email.EmailDAO)
         self.external_auth_dao = Mock(external_auth.ExternalAuthDAO)
         self.group_dao = Mock(group.GroupDAO)
+        self.ldap_config_dao = Mock(ldap_config.LDAPConfigDAO)
         self.policy_dao = Mock(policy.PolicyDAO)
         self.refresh_token_dao = Mock(refresh_token.RefreshTokenDAO)
         self.session_dao = Mock(session.SessionDAO)
@@ -49,6 +51,7 @@ class BaseServiceTestCase(TestCase):
             email=self.email_dao,
             external_auth=self.external_auth_dao,
             group=self.group_dao,
+            ldap_config=self.ldap_config_dao,
             policy=self.policy_dao,
             refresh_token=self.refresh_token_dao,
             session=self.session_dao,

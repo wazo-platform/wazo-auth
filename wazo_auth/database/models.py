@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import (
@@ -10,6 +10,7 @@ from sqlalchemy import (
     Index,
     Integer,
     LargeBinary,
+    SmallInteger,
     String,
     Text,
     UniqueConstraint,
@@ -324,3 +325,27 @@ class PolicyAccess(Base):
         ForeignKey('auth_access.id', ondelete='CASCADE'),
         primary_key=True,
     )
+
+
+class LDAPConfig(Base):
+
+    __tablename__ = 'auth_ldap_config'
+
+    tenant_uuid = Column(
+        String(38),
+        ForeignKey('auth_tenant.uuid', ondelete='CASCADE'),
+        nullable=False,
+        primary_key=True,
+    )
+    host = Column(String(512), nullable=False)
+    port = Column(Integer, nullable=False)
+    protocol_version = Column(SmallInteger)
+    protocol_security = Column(
+        Text,
+        CheckConstraint("protocol_security in ('ldaps', 'tls')"),
+    )
+    bind_dn = Column(String(256))
+    bind_password = Column(Text)
+    user_base_dn = Column(String(256), nullable=False)
+    user_login_attribute = Column(String(64), nullable=False)
+    user_email_attribute = Column(String(64), nullable=False)

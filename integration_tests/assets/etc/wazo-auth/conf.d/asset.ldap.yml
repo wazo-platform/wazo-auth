@@ -1,5 +1,9 @@
 enabled_backend_plugins:
   ldap_user: true
+
+enabled_http_plugins:
+  ldap_config: true
+
 ldap:
   uri: ldap://slapd
   user_base_dn: 'ou=quebec,ou=people,dc=wazo-auth,dc=wazo,dc=community'
