@@ -130,10 +130,6 @@ class LDAPIntegrationTest(_BaseLDAPTestCase):
     asset_cls = base.LDAPAssetLaunchingTestCase
 
 
-class LDAPAnonymousIntegrationTest(_BaseLDAPTestCase):
-    asset_cls = base.LDAPAnonymousAssetLaunchingTestCase
-
-
 class LDAPServiceUserIntegrationTest(_BaseLDAPTestCase):
     asset_cls = base.LDAPServiceUserAssetLaunchingTestCase
 
@@ -167,41 +163,6 @@ class TestLDAP(LDAPIntegrationTest):
 
     def test_ldap_authentication_fails_when_no_email_in_user(self):
         args = ('Lewis Carroll', 'lewiscarroll_password')
-        assert_that(
-            calling(self._post_token).with_args(*args, backend='ldap_user'),
-            raises(requests.HTTPError, pattern='401'),
-        )
-
-
-@base.use_asset('ldap_anonymous')
-class TestLDAPAnonymous(LDAPAnonymousIntegrationTest):
-    @fixtures.http.user(email_address='awonderland@wazo-auth.com')
-    def test_ldap_authentication(self, user):
-        response = self._post_token(
-            'awonderland@wazo-auth.com', 'awonderland_password', backend='ldap_user'
-        )
-        assert_that(
-            response, has_entries(metadata=has_entries(pbx_user_uuid=user['uuid']))
-        )
-
-    @fixtures.http.user(email_address='awonderland@wazo-auth.com')
-    def test_ldap_authentication_fail_when_wrong_password(self, _):
-        args = ('awonderland@wazo-auth.com', 'wrong_password')
-        assert_that(
-            calling(self._post_token).with_args(*args, backend='ldap_user'),
-            raises(requests.HTTPError, pattern='401'),
-        )
-
-    @fixtures.http.user(email_address='humptydumpty@wazo-auth.com')
-    def test_ldap_authentication_fails_when_no_email_in_ldap(self, _):
-        args = ('humptydumpty@wazo-auth.com', 'humptydumpty_password')
-        assert_that(
-            calling(self._post_token).with_args(*args, backend='ldap_user'),
-            raises(requests.HTTPError, pattern='401'),
-        )
-
-    def test_ldap_authentication_fails_when_no_email_in_user(self):
-        args = ('lewiscarroll@wazo-auth.com', 'lewiscarroll_password')
         assert_that(
             calling(self._post_token).with_args(*args, backend='ldap_user'),
             raises(requests.HTTPError, pattern='401'),

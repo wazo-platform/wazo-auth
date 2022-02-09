@@ -147,11 +147,6 @@ class LDAPAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
 
 
 # Legacy LDAP
-class LDAPAnonymousAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
-    asset = 'ldap_anonymous'
-
-
-# Legacy LDAP
 class LDAPServiceUserAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
     asset = 'ldap_service_user'
 
