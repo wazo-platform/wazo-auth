@@ -141,7 +141,6 @@ class ExternalAuthAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
     asset = 'external_auth'
 
 
-# Legacy LDAP
 class LDAPAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
     asset = 'ldap'
 

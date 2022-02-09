@@ -41,7 +41,6 @@ def external_auth():
         asset.ExternalAuthAssetLaunchingTestCase.tearDownClass()
 
 
-# Legacy LDAP
 @pytest.fixture(scope='session')
 def ldap():
     asset.LDAPAssetLaunchingTestCase.setUpClass()
