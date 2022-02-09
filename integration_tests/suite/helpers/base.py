@@ -146,11 +146,6 @@ class LDAPAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
     asset = 'ldap'
 
 
-# Legacy LDAP
-class LDAPServiceUserAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
-    asset = 'ldap_service_user'
-
-
 class DAOTestCase(unittest.TestCase):
 
     unknown_uuid = '00000000-0000-0000-0000-000000000000'
