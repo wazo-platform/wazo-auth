@@ -41,9 +41,7 @@ class LDAPUser(BaseAuthenticationBackend):
         return metadata
 
     def verify_password(self, username, password, args):
-        tenant = self._get_tenant(
-            args['tenant_id']
-        )  # TODO Add token POST schema validation
+        tenant = self._get_tenant(args['tenant_id'])
 
         config = self._get_ldap_config(tenant['uuid'])
         if not config:

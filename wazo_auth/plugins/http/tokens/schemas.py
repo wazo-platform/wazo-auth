@@ -37,6 +37,18 @@ class TokenRequestSchema(BaseSchema):
             )
 
     @validates_schema
+    def check_backend_type_for_tenant(self, data):
+        backend = data.get('backend')
+        if not backend == 'ldap_user':
+            return
+
+        tenant_id = data.get('tenant_id')
+        if not tenant_id:
+            raise ValidationError(
+                '"tenant_id" must be specified when using ldap backend'
+            )
+
+    @validates_schema
     def check_refresh_token_usage(self, data):
         refresh_token = data.get('refresh_token')
         if not refresh_token:
