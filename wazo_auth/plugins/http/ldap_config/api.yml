@@ -62,7 +62,7 @@ paths:
       produces:
         - application/json
       summary: Update current tenant's LDAP backend configuration
-      description: '**Required ACL:** `auth.backends.ldap.edit`'
+      description: '**Required ACL:** `auth.backends.ldap.update'
       operationId: updateLDAPBackendConfig
       tags:
         - backends

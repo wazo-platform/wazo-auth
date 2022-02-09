@@ -26,7 +26,7 @@ class LDAPConfig(AuthResource):
     def post(self):
         return self.put()
 
-    @required_acl('auth.backends.ldap.edit')
+    @required_acl('auth.backends.ldap.update')
     def put(self):
         scoping_tenant = Tenant.autodetect()
         try:
