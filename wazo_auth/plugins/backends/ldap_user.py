@@ -45,6 +45,9 @@ class LDAPUser(BaseAuthenticationBackend):
 
         config = self._get_ldap_config(tenant['uuid'])
         if not config:
+            logger.warning(
+                'Could not login: no LDAP config for tenant "%s"', tenant['uuid']
+            )
             return False
 
         bind_dn = config.get('bind_dn')
@@ -65,6 +68,11 @@ class LDAPUser(BaseAuthenticationBackend):
                         user_base_dn,
                     )
                 else:
+                    logger.warning(
+                        'Could not login: service-level bind failed for "%s" on tenant "%s"',
+                        bind_dn,
+                        tenant['uuid'],
+                    )
                     return False
             else:
                 user_dn = self._build_dn_with_config(
@@ -72,16 +80,24 @@ class LDAPUser(BaseAuthenticationBackend):
                 )
 
             if not user_dn or not wazo_ldap.perform_bind(user_dn, password):
+                logger.debug(
+                    'Could not login: invalid credentials for user "%s" on tenant "%s"',
+                    user_dn,
+                )
                 return False
 
             user_email = self._get_user_ldap_email(
                 wazo_ldap, user_dn, user_email_attribute
             )
             if not user_email:
+                logger.debug(
+                    'Could not login: the LDAP user "%s" does not have an email address',
+                    user_dn,
+                )
                 return False
 
         except ldap.SERVER_DOWN:
-            logger.warning('LDAP : SERVER not responding on %s', wazo_ldap.uri)
+            logger.warning('LDAP : SERVER not responding on "%s"', wazo_ldap.uri)
             return False
         except ldap.LDAPError as exc:
             logger.exception('ldap.LDAPError (%r, %r)', config, exc)
@@ -91,6 +107,11 @@ class LDAPUser(BaseAuthenticationBackend):
             user_email, tenant['uuid']
         )
         if not pbx_user_uuid:
+            logger.debug(
+                'Could not log in: user "%s" could not be found in tenant "%s"',
+                user_email,
+                tenant['uuid'],
+            )
             return False
 
         args['pbx_user_uuid'] = pbx_user_uuid

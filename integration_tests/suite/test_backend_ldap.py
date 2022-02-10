@@ -13,7 +13,6 @@ from .helpers import base, fixtures
 
 Contact = namedtuple('Contact', ['cn', 'uid', 'password', 'mail', 'login_attribute'])
 
-
 TENANT_1_UUID = '2ec55cd6-c465-47a9-922f-569b404c48b8'
 TENANT_2_UUID = '402f2ee0-2af9-4b87-80ce-9d9e94f620e5'
 
