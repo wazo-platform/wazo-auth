@@ -141,7 +141,7 @@ class LDAPUser(BaseAuthenticationBackend):
 
     def _build_dn_with_config(self, login, user_login_attribute, user_base_dn):
         login_esc = escape_dn_chars(login)
-        return '{}={},{}'.format(user_login_attribute, login_esc, user_base_dn)
+        return f'{user_login_attribute}={login_esc},{user_base_dn}'
 
     def _get_user_ldap_email(self, wazo_ldap, user_dn, user_email_attribute):
         _, obj = wazo_ldap.perform_search(
@@ -158,7 +158,7 @@ class LDAPUser(BaseAuthenticationBackend):
         self, wazo_ldap, username, user_login_attribute, user_base_dn
     ):
         username_esc = escape_filter_chars(username)
-        filterstr = '{}={}'.format(user_login_attribute, username_esc)
+        filterstr = f'{user_login_attribute}={username_esc}'
         dn, _ = wazo_ldap.perform_search(
             user_base_dn, ldap.SCOPE_SUBTREE, filterstr=filterstr, attrlist=['']
         )
