@@ -41,12 +41,12 @@ class LDAPUser(BaseAuthenticationBackend):
         return metadata
 
     def verify_password(self, username, password, args):
-        tenant = self._get_tenant(args['tenant_id'])
+        tenant_uuid = self._get_tenant(args['tenant_id'])['uuid']
 
-        config = self._get_ldap_config(tenant['uuid'])
+        config = self._get_ldap_config(tenant_uuid)
         if not config:
             logger.warning(
-                'Could not login: no LDAP config for tenant "%s"', tenant['uuid']
+                'Could not login: no LDAP config for tenant "%s"', tenant_uuid
             )
             return False
 
@@ -71,7 +71,7 @@ class LDAPUser(BaseAuthenticationBackend):
                     logger.warning(
                         'Could not login: service-level bind failed for "%s" on tenant "%s"',
                         bind_dn,
-                        tenant['uuid'],
+                        tenant_uuid,
                     )
                     return False
             else:
@@ -103,14 +103,12 @@ class LDAPUser(BaseAuthenticationBackend):
             logger.exception('ldap.LDAPError (%r, %r)', config, exc)
             return False
 
-        pbx_user_uuid = self._get_user_uuid_by_ldap_attribute(
-            user_email, tenant['uuid']
-        )
+        pbx_user_uuid = self._get_user_uuid_by_ldap_attribute(user_email, tenant_uuid)
         if not pbx_user_uuid:
             logger.debug(
                 'Could not log in: user "%s" could not be found in tenant "%s"',
                 user_email,
-                tenant['uuid'],
+                tenant_uuid,
             )
             return False
 
