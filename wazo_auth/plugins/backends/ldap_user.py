@@ -83,6 +83,7 @@ class LDAPUser(BaseAuthenticationBackend):
                 logger.debug(
                     'Could not login: invalid credentials for user "%s" on tenant "%s"',
                     user_dn,
+                    tenant_uuid,
                 )
                 return False
 
