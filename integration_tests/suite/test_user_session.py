@@ -1,4 +1,4 @@
-# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -13,6 +13,7 @@ from hamcrest import (
     has_entries,
     has_items,
     has_length,
+    has_entry,
 )
 
 from wazo_test_helpers import until
@@ -111,14 +112,17 @@ class TestUserSession(base.APIIntegrationTest):
 
         def bus_received_msg():
             assert_that(
-                msg_accumulator.accumulate(),
+                msg_accumulator.accumulate(with_headers=True),
                 contains(
                     has_entries(
-                        data={
-                            'uuid': token['session_uuid'],
-                            'user_uuid': user['uuid'],
-                            'tenant_uuid': user['tenant_uuid'],
-                        }
+                        message=has_entries(
+                            data={
+                                'uuid': token['session_uuid'],
+                                'user_uuid': user['uuid'],
+                                'tenant_uuid': user['tenant_uuid'],
+                            }
+                        ),
+                        headers=has_entry('tenant_uuid', user['tenant_uuid']),
                     )
                 ),
             )

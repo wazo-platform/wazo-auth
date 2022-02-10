@@ -16,6 +16,7 @@ from hamcrest import (
     has_key,
     has_properties,
     not_,
+    has_entry,
 )
 from requests.exceptions import HTTPError
 from wazo_test_helpers.hamcrest.raises import raises
@@ -124,15 +125,18 @@ class TestTokens(base.APIIntegrationTest):
 
         def bus_received_msg():
             assert_that(
-                msg_accumulator.accumulate(),
+                msg_accumulator.accumulate(with_headers=True),
                 contains(
                     has_entries(
-                        data={
-                            'client_id': client_id,
-                            'user_uuid': user['uuid'],
-                            'tenant_uuid': user['tenant_uuid'],
-                            'mobile': True,
-                        }
+                        message=has_entries(
+                            data={
+                                'client_id': client_id,
+                                'user_uuid': user['uuid'],
+                                'tenant_uuid': user['tenant_uuid'],
+                                'mobile': True,
+                            }
+                        ),
+                        headers=has_entry('tenant_uuid', user['tenant_uuid']),
                     )
                 ),
             )
@@ -168,15 +172,18 @@ class TestTokens(base.APIIntegrationTest):
 
         def bus_received_msg():
             assert_that(
-                msg_accumulator.accumulate(),
+                msg_accumulator.accumulate(with_headers=True),
                 contains(
                     has_entries(
-                        name='auth_refresh_token_deleted',
-                        data=has_entries(
-                            client_id=client_id,
-                            user_uuid=user['uuid'],
-                            tenant_uuid=user['tenant_uuid'],
+                        message=has_entries(
+                            name='auth_refresh_token_deleted',
+                            data=has_entries(
+                                client_id=client_id,
+                                user_uuid=user['uuid'],
+                                tenant_uuid=user['tenant_uuid'],
+                            ),
                         ),
+                        headers=has_entry('tenant_uuid', user['tenant_uuid']),
                     )
                 ),
             )
@@ -272,15 +279,18 @@ class TestTokens(base.APIIntegrationTest):
 
         def bus_received_msg():
             assert_that(
-                msg_accumulator.accumulate(),
+                msg_accumulator.accumulate(with_headers=True),
                 contains(
                     has_entries(
-                        data={
-                            'client_id': client_id,
-                            'user_uuid': user['uuid'],
-                            'tenant_uuid': user['tenant_uuid'],
-                            'mobile': True,
-                        }
+                        message=has_entries(
+                            data={
+                                'client_id': client_id,
+                                'user_uuid': user['uuid'],
+                                'tenant_uuid': user['tenant_uuid'],
+                                'mobile': True,
+                            }
+                        ),
+                        headers=has_entry('tenant_uuid', user['tenant_uuid']),
                     )
                 ),
             )

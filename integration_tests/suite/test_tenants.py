@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from functools import partial
@@ -9,6 +9,7 @@ from hamcrest import (
     equal_to,
     has_entries,
     has_item,
+    has_entry,
 )
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.uuid_ import uuid_
@@ -198,19 +199,22 @@ class TestTenants(base.APIIntegrationTest):
         msg_accumulator = self.bus.accumulator(routing_key)
         name = 'My tenant'
         slug = 'my_tenant'
+        tenant = self.client.tenants.new(name=name, slug=slug)
 
         def bus_received_msg():
             assert_that(
-                msg_accumulator.accumulate(),
+                msg_accumulator.accumulate(with_headers=True),
                 contains(
                     has_entries(
-                        name='auth_tenant_added',
-                        data=has_entries(name=name, slug=slug),
+                        message=has_entries(
+                            name='auth_tenant_added',
+                            data=has_entries(name=name, slug=slug),
+                        ),
+                        headers=has_entry('tenant_uuid', tenant['uuid']),
                     )
                 ),
             )
 
-        tenant = self.client.tenants.new(name=name, slug=slug)
         try:
             until.assert_(bus_received_msg, tries=10, interval=0.25)
         finally:
