@@ -161,8 +161,6 @@ definitions:
     allOf:
       - $ref: '#/definitions/LDAPBackendConfig'
       - type: object
-        required:
-          - bind_password
         properties:
           bind_password:
             type: string
