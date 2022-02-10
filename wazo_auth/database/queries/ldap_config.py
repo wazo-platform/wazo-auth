@@ -27,6 +27,7 @@ class LDAPConfigDAO(BaseDAO):
                 'user_base_dn': ldap_config.user_base_dn,
                 'user_login_attribute': ldap_config.user_login_attribute,
                 'user_email_attribute': ldap_config.user_email_attribute,
+                'search_filters': ldap_config.search_filters,
             }
         raise exceptions.UnknownLDAPConfigException(tenant_uuid)
 
@@ -42,6 +43,7 @@ class LDAPConfigDAO(BaseDAO):
         protocol_security=None,
         bind_dn=None,
         bind_password=None,
+        search_filters=None,
     ):
         ldap_config = LDAPConfig(
             tenant_uuid=tenant_uuid,
@@ -54,6 +56,7 @@ class LDAPConfigDAO(BaseDAO):
             protocol_security=protocol_security,
             bind_dn=bind_dn,
             bind_password=bind_password,
+            search_filters=search_filters,
         )
         self.session.add(ldap_config)
         try:
