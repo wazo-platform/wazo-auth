@@ -14,6 +14,10 @@ from .helpers import base, fixtures
 Contact = namedtuple('Contact', ['cn', 'uid', 'password', 'mail', 'login_attribute'])
 
 
+TENANT_1_UUID = '2ec55cd6-c465-47a9-922f-569b404c48b8'
+TENANT_2_UUID = '402f2ee0-2af9-4b87-80ce-9d9e94f620e5'
+
+
 class LDAPHelper:
 
     BASE_DN = 'dc=wazo-auth,dc=wazo,dc=community'
@@ -158,8 +162,32 @@ class TestLDAP(BaseLDAPIntegrationTest):
             response, has_entries(metadata=has_entries(pbx_user_uuid=user['uuid']))
         )
 
+    @fixtures.http.tenant(uuid=TENANT_1_UUID)
+    @fixtures.http.user(
+        email_address='lewiscarroll@wazo-auth.com', tenant_uuid=TENANT_1_UUID
+    )
+    @fixtures.http.tenant(uuid=TENANT_2_UUID)
+    @fixtures.http.ldap_config(
+        tenant_uuid=TENANT_2_UUID,
+        host='slapd',
+        port=389,
+        bind_dn='cn=wazo_auth,ou=people,dc=wazo-auth,dc=wazo,dc=community',
+        bind_password='S3cr$t',
+        user_base_dn='dc=wazo-auth,dc=wazo,dc=community',
+        user_login_attribute='mail',
+        user_email_attribute='mail',
+    )
+    def test_ldap_authentication_multi_tenant(self, _, __, tenant2, ___):
+        args = ('lewiscarroll@wazo-auth.com', 'lewiscarroll_password')
+        assert_that(
+            calling(self._post_token).with_args(
+                *args, backend='ldap_user', tenant_id=tenant2['slug']
+            ),
+            raises(requests.HTTPError, pattern='401'),
+        )
+
     @fixtures.http.user(email_address='awonderland@wazo-auth.com')
-    def test_ldap_authentication_fail_when_wrong_password(self, user):
+    def test_ldap_authentication_fail_when_wrong_password(self, _):
         args = ('Alice Wonderland', 'wrong_password')
         assert_that(
             calling(self._post_token).with_args(
@@ -169,7 +197,7 @@ class TestLDAP(BaseLDAPIntegrationTest):
         )
 
     @fixtures.http.user(email_address='humptydumpty@wazo-auth.com')
-    def test_ldap_authentication_fails_when_no_email_in_ldap(self, user):
+    def test_ldap_authentication_fails_when_no_email_in_ldap(self, _):
         args = ('Humpty Dumpty', 'humptydumpty_password')
         assert_that(
             calling(self._post_token).with_args(
@@ -179,7 +207,7 @@ class TestLDAP(BaseLDAPIntegrationTest):
         )
 
     @fixtures.http.user(email_address=None)
-    def test_ldap_authentication_fails_when_no_email_in_user(self, user):
+    def test_ldap_authentication_fails_when_no_email_in_user(self, _):
         args = ('Lewis Carroll', 'lewiscarroll_password')
         assert_that(
             calling(self._post_token).with_args(
@@ -218,8 +246,32 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
             response, has_entries(metadata=has_entries(pbx_user_uuid=user['uuid']))
         )
 
+    @fixtures.http.tenant(uuid=TENANT_1_UUID)
+    @fixtures.http.user(
+        email_address='lewiscarroll@wazo-auth.com', tenant_uuid=TENANT_1_UUID
+    )
+    @fixtures.http.tenant(uuid=TENANT_2_UUID)
+    @fixtures.http.ldap_config(
+        tenant_uuid=TENANT_2_UUID,
+        host='slapd',
+        port=389,
+        bind_dn='cn=wazo_auth,ou=people,dc=wazo-auth,dc=wazo,dc=community',
+        bind_password='S3cr$t',
+        user_base_dn='dc=wazo-auth,dc=wazo,dc=community',
+        user_login_attribute='mail',
+        user_email_attribute='mail',
+    )
+    def test_ldap_authentication_multi_tenant(self, _, __, tenant2, ___):
+        args = ('lewiscarroll@wazo-auth.com', 'lewiscarroll_password')
+        assert_that(
+            calling(self._post_token).with_args(
+                *args, backend='ldap_user', tenant_id=tenant2['slug']
+            ),
+            raises(requests.HTTPError, pattern='401'),
+        )
+
     @fixtures.http.user(email_address='awonderland@wazo-auth.com')
-    def test_ldap_authentication_fail_when_wrong_password(self, user):
+    def test_ldap_authentication_fail_when_wrong_password(self, _):
         args = ('awonderland', 'wrong_password')
         assert_that(
             calling(self._post_token).with_args(
@@ -229,7 +281,7 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
         )
 
     @fixtures.http.user(email_address='humptydumpty@wazo-auth.com')
-    def test_ldap_authentication_fails_when_no_email_in_ldap(self, user):
+    def test_ldap_authentication_fails_when_no_email_in_ldap(self, _):
         args = ('humptydumpty', 'humptydumpty_password')
         assert_that(
             calling(self._post_token).with_args(
@@ -239,7 +291,7 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
         )
 
     @fixtures.http.user(email_address=None)
-    def test_ldap_authentication_fails_when_no_email_in_user(self, user):
+    def test_ldap_authentication_fails_when_no_email_in_user(self, _):
         args = ('lewiscarroll', 'lewiscarroll_password')
         assert_that(
             calling(self._post_token).with_args(

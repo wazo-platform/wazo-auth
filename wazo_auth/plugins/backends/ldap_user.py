@@ -87,7 +87,9 @@ class LDAPUser(BaseAuthenticationBackend):
             logger.exception('ldap.LDAPError (%r, %r)', config, exc)
             return False
 
-        pbx_user_uuid = self._get_user_uuid_by_ldap_attribute(user_email)
+        pbx_user_uuid = self._get_user_uuid_by_ldap_attribute(
+            user_email, tenant['uuid']
+        )
         if not pbx_user_uuid:
             return False
 
@@ -102,9 +104,15 @@ class LDAPUser(BaseAuthenticationBackend):
     def _get_tenant(self, tenant_id):
         return self._tenant_service.get_by_uuid_or_slug(None, tenant_id)
 
-    def _get_user_uuid_by_ldap_attribute(self, user_email):
+    def _get_user_uuid_by_ldap_attribute(self, user_email, tenant_uuid):
         try:
-            user = next(iter(self._user_service.list_users(email_address=user_email)))
+            user = next(
+                iter(
+                    self._user_service.list_users(
+                        email_address=user_email, tenant_uuid=tenant_uuid
+                    )
+                )
+            )
         except StopIteration:
             logger.warning(
                 '%s does not have an email associated with an auth user', user_email
