@@ -133,7 +133,6 @@ class LDAPUser(BaseAuthenticationBackend):
         logger.warning(
             '%s does not have an email associated with an auth user', user_email
         )
-        return
 
     def _build_dn_with_config(self, login, user_login_attribute, user_base_dn):
         login_esc = escape_dn_chars(login)
