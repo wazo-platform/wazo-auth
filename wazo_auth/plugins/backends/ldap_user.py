@@ -124,20 +124,15 @@ class LDAPUser(BaseAuthenticationBackend):
         return self._tenant_service.get_by_uuid_or_slug(None, tenant_id)
 
     def _get_user_uuid_by_ldap_attribute(self, user_email, tenant_uuid):
-        try:
-            user = next(
-                iter(
-                    self._user_service.list_users(
-                        email_address=user_email, tenant_uuid=tenant_uuid
-                    )
-                )
-            )
-        except StopIteration:
-            logger.warning(
-                '%s does not have an email associated with an auth user', user_email
-            )
-            return
-        return user['uuid']
+        for user in self._user_service.list_users(
+            email_address=user_email, tenant_uuid=tenant_uuid
+        ):
+            return user['uuid']
+
+        logger.warning(
+            '%s does not have an email associated with an auth user', user_email
+        )
+        return
 
     def _build_dn_with_config(self, login, user_login_attribute, user_base_dn):
         login_esc = escape_dn_chars(login)
