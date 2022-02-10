@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_auth.services.helpers import BaseService
@@ -36,4 +36,6 @@ class SessionService(BaseService):
             user_uuid=token['auth_id'],
             tenant_uuid=session['tenant_uuid'],
         )
-        self._bus_publisher.publish(event)
+        self._bus_publisher.publish(
+            event, headers={'tenant_uuid': session['tenant_uuid']}
+        )

@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -189,5 +189,6 @@ class ExpiredTokenRemover:
                 logger.warning(
                     'session without token associated: {}'.format(session['uuid'])
                 )
-
-            self._bus_publisher.publish(event_class(**event_args))
+            tenant_uuid = event_args.get('tenant_uuid', None)
+            headers = {'tenant_uuid': tenant_uuid} if tenant_uuid else None
+            self._bus_publisher.publish(event_class(**event_args), headers=headers)
