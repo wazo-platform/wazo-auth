@@ -42,7 +42,7 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
     def test_put_new_config(self):
         body = {
             'host': 'localhost',
-            'port': 386,
+            'port': 389,
             'protocol_version': 3,
             'protocol_security': None,
             'bind_dn': 'uid=admin,ou=people,dc=wazo-platform,dc=io',
@@ -54,7 +54,7 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
         response = self.client.ldap_config.update(body)
         expected = {
             'host': 'localhost',
-            'port': 386,
+            'port': 389,
             'protocol_version': 3,
             'protocol_security': None,
             'bind_dn': 'uid=admin,ou=people,dc=wazo-platform,dc=io',
@@ -68,7 +68,7 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
     def test_put_new_config_errors(self):
         valid_body = {
             'host': 'localhost',
-            'port': 386,
+            'port': 389,
             'protocol_version': 3,
             'protocol_security': None,
             'bind_dn': 'uid=admin,ou=people,dc=wazo-platform,dc=io',
