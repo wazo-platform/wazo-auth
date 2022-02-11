@@ -76,7 +76,9 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
             'user_base_dn': 'ou=people,dc=wazo-platform,dc=io',
             'user_login_attribute': 'uid',
             'user_email_attribute': 'mail',
-            'search_filters': '(&({user_login_attribute}={username})(&(objectClass=inetOrgPerson)))',
+            'search_filters': (
+                '(&({user_login_attribute}={username})(&(objectClass=inetOrgPerson)))'
+            ),
         }
         invalid_bodies_modifications = [
             {'host': 1},
