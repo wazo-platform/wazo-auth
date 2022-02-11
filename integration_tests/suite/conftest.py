@@ -1,4 +1,4 @@
-# Copyright 2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import pytest
@@ -41,7 +41,6 @@ def external_auth():
         asset.ExternalAuthAssetLaunchingTestCase.tearDownClass()
 
 
-# Legacy LDAP
 @pytest.fixture(scope='session')
 def ldap():
     asset.LDAPAssetLaunchingTestCase.setUpClass()
@@ -49,23 +48,3 @@ def ldap():
         yield
     finally:
         asset.LDAPAssetLaunchingTestCase.tearDownClass()
-
-
-# Legacy LDAP
-@pytest.fixture(scope='session')
-def ldap_anonymous():
-    asset.LDAPAnonymousAssetLaunchingTestCase.setUpClass()
-    try:
-        yield
-    finally:
-        asset.LDAPAnonymousAssetLaunchingTestCase.tearDownClass()
-
-
-# Legacy LDAP
-@pytest.fixture(scope='session')
-def ldap_service_user():
-    asset.LDAPServiceUserAssetLaunchingTestCase.setUpClass()
-    try:
-        yield
-    finally:
-        asset.LDAPServiceUserAssetLaunchingTestCase.tearDownClass()

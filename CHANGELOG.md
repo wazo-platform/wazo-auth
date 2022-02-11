@@ -1,5 +1,18 @@
 # Changelog
 
+## 22.03
+
+* New endpoint to get and update configuration of the LDAP authentication source:
+
+  * `GET /backends/ldap`
+  * `PUT /backends/ldap`
+  * `POST /backends/ldap`
+  * `DELETE /backends/ldap`
+
+  * The `POST /0.1/token` endpoint now accepts the following body paremeters
+
+    * `tenant_id`: mandatory for `ldap_user` backend
+
 ## 22.01
 
 * The `users` resource does not require a `username` anymore
@@ -55,7 +68,6 @@
 ## 21.04
 
 * The `tenants` resource now has a `slug` field
-
 
 ## 20.16
 

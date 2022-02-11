@@ -4,11 +4,6 @@ enabled_backend_plugins:
 enabled_http_plugins:
   ldap_config: true
 
-ldap:
-  uri: ldap://slapd
-  user_base_dn: 'ou=quebec,ou=people,dc=wazo-auth,dc=wazo,dc=community'
-  user_login_attribute: 'cn'
-
 default_user_policy: null
 
 bootstrap_user_on_startup: True

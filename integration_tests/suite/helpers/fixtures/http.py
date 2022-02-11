@@ -219,22 +219,25 @@ def ldap_config(**ldap_config_args):
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
-            ldap_config_args.setdefault('tenant_uuid', self.top_tenant_uuid)
-            ldap_config_args.setdefault('host', _random_string(20))
-            ldap_config_args.setdefault('port', 386)
+            ldap_config_args.setdefault('host', 'slapd')
+            ldap_config_args.setdefault('port', 389)
             ldap_config_args.setdefault(
                 'user_base_dn', 'ou=people,dc=wazo-platform,dc=org'
             )
             ldap_config_args.setdefault('user_login_attribute', 'uid')
             ldap_config_args.setdefault('user_email_attribute', 'mail')
 
-            ldap_config = self.client.ldap_config.create(ldap_config_args)
+            tenant_uuid = ldap_config_args.get('tenant_uuid', self.top_tenant_uuid)
+            ldap_config = self.client.ldap_config.create(
+                ldap_config_args,
+                tenant_uuid=tenant_uuid,
+            )
             args = list(args) + [ldap_config]
             try:
                 result = decorated(self, *args, **kwargs)
             finally:
                 try:
-                    self.client.ldap_config.delete(ldap_config['tenant_uuid'])
+                    self.client.ldap_config.delete(tenant_uuid=tenant_uuid)
                 except requests.HTTPError:
                     pass
             return result

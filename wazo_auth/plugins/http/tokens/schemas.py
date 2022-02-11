@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import validates_schema
@@ -16,6 +16,7 @@ class TokenRequestSchema(BaseSchema):
     access_type = fields.String(validate=OneOf(['online', 'offline']))
     client_id = fields.String(validate=Length(min=1, max=1024))
     refresh_token = fields.String()
+    tenant_id = fields.String()
 
     @validates_schema
     def check_access_type_usage(self, data):
@@ -33,6 +34,18 @@ class TokenRequestSchema(BaseSchema):
         if not client_id:
             raise ValidationError(
                 '"client_id" must be specified when using "access_type" is "offline"'
+            )
+
+    @validates_schema
+    def check_backend_type_for_tenant(self, data):
+        backend = data.get('backend')
+        if not backend == 'ldap_user':
+            return
+
+        tenant_id = data.get('tenant_id')
+        if not tenant_id:
+            raise ValidationError(
+                '"tenant_id" must be specified when using ldap backend'
             )
 
     @validates_schema

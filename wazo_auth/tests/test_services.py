@@ -59,6 +59,7 @@ class BaseServiceTestCase(TestCase):
             token=self.token_dao,
             user=self.user_dao,
         )
+        self.all_users_policies = Mock()
 
 
 class TestExternalAuthService(BaseServiceTestCase):
@@ -339,3 +340,28 @@ class TestUserService(BaseServiceTestCase):
 
         self.user_dao.create.assert_called_once_with(**expected_db_params)
         assert_that(result, equal_to(self.user_dao.create.return_value))
+
+
+class TestTenantService(BaseServiceTestCase):
+    def setUp(self):
+        super().setUp()
+        self.tenant_tree = Mock()
+        self.service = services.TenantService(
+            self.dao,
+            self.tenant_tree,
+            all_users_policies=self.all_users_policies,
+        )
+        self.service._get = Mock()
+
+    def test_get_by_uuid_or_slug(self):
+        self.tenant_tree.list_visible_tenant_uuids_with_slugs.return_value = [
+            ('1234-uuid', 'slug1'),
+            ('2345-uuid', 'slug2'),
+        ]
+        result = self.service.get_by_uuid_or_slug(None, '1234-uuid')
+        self.service._get.assert_called_with('1234-uuid')
+        assert_that(result, equal_to(self.service._get.return_value))
+
+        result = self.service.get_by_uuid_or_slug(None, 'slug2')
+        self.service._get.assert_called_with('2345-uuid')
+        assert_that(result, equal_to(self.service._get.return_value))

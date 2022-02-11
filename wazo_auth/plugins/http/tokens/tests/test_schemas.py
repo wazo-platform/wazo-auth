@@ -1,4 +1,4 @@
-# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -63,6 +63,21 @@ class TestTokenRequestSchema(TestCase):
 
         assert_that(
             calling(self.schema.load).with_args({'client_id': 'x', **body}),
+            not_(raises(Exception)),
+        )
+
+        assert_that(
+            calling(self.schema.load).with_args(body),
+            raises(ValidationError).matching(
+                has_properties(field_names=has_item('_schema'))
+            ),
+        )
+
+    def test_that_ldap_backend_requires_tenant_id(self):
+        body = {'backend': 'ldap_user'}
+
+        assert_that(
+            calling(self.schema.load).with_args({'tenant_id': 'x', **body}),
             not_(raises(Exception)),
         )
 

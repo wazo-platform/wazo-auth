@@ -1,4 +1,4 @@
-# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -90,3 +90,7 @@ class TenantTree:
     def list_visible_tenants(self, scoping_tenant_uuid):
         visible_tenants = self._tenant_dao.list_visible_tenants(scoping_tenant_uuid)
         return [tenant.uuid for tenant in visible_tenants]
+
+    def list_visible_tenant_uuids_with_slugs(self, scoping_tenant_uuid):
+        visible_tenants = self._tenant_dao.list_visible_tenants(scoping_tenant_uuid)
+        return [(tenant.uuid, tenant.slug) for tenant in visible_tenants]

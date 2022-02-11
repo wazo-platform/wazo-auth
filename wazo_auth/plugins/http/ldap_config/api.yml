@@ -120,7 +120,7 @@ definitions:
       port:
         type: integer
         description: The port on which to connect to the LDAP server.
-        example: 386
+        example: 389
       protocol_version:
         type: integer
         minimum: 2
@@ -131,10 +131,10 @@ definitions:
         type: string
         description: The layer of security to use for the connection.
         enum:
-          - null
-          - tls
-          - ldaps
-        default: null
+          - ""
+          - "tls"
+          - "ldaps"
+        default: ""
       bind_dn:
         type: string
         description: |
@@ -161,8 +161,6 @@ definitions:
     allOf:
       - $ref: '#/definitions/LDAPBackendConfig'
       - type: object
-        required:
-          - bind_password
         properties:
           bind_password:
             type: string
