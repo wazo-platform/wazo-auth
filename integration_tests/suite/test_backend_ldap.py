@@ -11,7 +11,10 @@ from hamcrest import assert_that, has_entries, calling, raises
 
 from .helpers import base, fixtures
 
-Contact = namedtuple('Contact', ['cn', 'uid', 'password', 'mail', 'login_attribute'])
+Contact = namedtuple(
+    'Contact',
+    ['cn', 'uid', 'password', 'mail', 'login_attribute', 'employee_type'],
+)
 
 TENANT_1_UUID = '2ec55cd6-c465-47a9-922f-569b404c48b8'
 TENANT_2_UUID = '402f2ee0-2af9-4b87-80ce-9d9e94f620e5'
@@ -41,6 +44,7 @@ class LDAPHelper:
                 'uid': [contact.uid.encode('utf-8')],
                 'userPassword': [contact.password.encode('utf-8')],
                 'mail': [contact.mail.encode('utf-8')],
+                'employeeType': [contact.employee_type.encode('utf-8')],
             }
         )
 
@@ -55,6 +59,7 @@ class LDAPHelper:
                 'sn': [contact.cn.encode('utf-8')],
                 'uid': [contact.uid.encode('utf-8')],
                 'userPassword': [contact.password.encode('utf-8')],
+                'employeeType': [contact.employee_type.encode('utf-8')],
             }
         )
 
@@ -80,25 +85,36 @@ class BaseLDAPIntegrationTest(base.BaseIntegrationTest):
 
     CONTACTS = [
         Contact(
-            'Alice Wonderland',
-            'awonderland',
-            'awonderland_password',
-            'awonderland@wazo-auth.com',
-            'cn',
+            cn='Alice Wonderland',
+            uid='awonderland',
+            password='awonderland_password',
+            mail='awonderland@wazo-auth.com',
+            login_attribute='cn',
+            employee_type='human',
         ),
         Contact(
-            'Humpty Dumpty',
-            'humptydumpty',
-            'humptydumpty_password',
-            None,
-            'uid',
+            cn='Humpty Dumpty',
+            uid='humptydumpty',
+            password='humptydumpty_password',
+            mail=None,
+            login_attribute='uid',
+            employee_type='human',
         ),
         Contact(
-            'Lewis Carroll',
-            'lewiscarroll',
-            'lewiscarroll_password',
-            'lewiscarroll@wazo-auth.com',
-            'mail',
+            cn='Lewis Carroll',
+            uid='lewiscarroll',
+            password='lewiscarroll_password',
+            mail='lewiscarroll@wazo-auth.com',
+            login_attribute='mail',
+            employee_type='human',
+        ),
+        Contact(
+            cn='The Cheshire Cat',
+            uid='cheshirecat',
+            password='cheshirecat_password',
+            mail='cheshirecat@wazo-auth.com',
+            login_attribute='mail',
+            employee_type='animal',
         ),
     ]
 
@@ -106,7 +122,7 @@ class BaseLDAPIntegrationTest(base.BaseIntegrationTest):
     def add_contacts(cls, contacts, ldap_helper):
         ldap_helper.add_ou()
         ldap_helper.add_contact(
-            Contact('wazo_auth', 'wazo_auth', 'S3cr$t', '', 'cn'), 'people'
+            Contact('wazo_auth', 'wazo_auth', 'S3cr$t', '', 'cn', 'service'), 'people'
         )
         for contact in contacts:
             if not contact.mail:
@@ -229,6 +245,7 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
                 'user_base_dn': 'dc=wazo-auth,dc=wazo,dc=community',
                 'user_login_attribute': 'uid',
                 'user_email_attribute': 'mail',
+                'search_filters': '(&({user_login_attribute}={username})(employeeType=human))',
             },
             tenant_uuid=self.top_tenant_uuid,
         )
@@ -293,6 +310,16 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
     @fixtures.http.user(email_address=None)
     def test_ldap_authentication_fails_when_no_email_in_user(self, _):
         args = ('lewiscarroll', 'lewiscarroll_password')
+        assert_that(
+            calling(self._post_token).with_args(
+                *args, backend='ldap_user', tenant_id=self.top_tenant_uuid
+            ),
+            raises(requests.HTTPError, pattern='401'),
+        )
+
+    @fixtures.http.user(email_address='cheshirecat@wazo-auth.com')
+    def test_ldap_authentication_search_filter_does_not_match_employee_type(self, _):
+        args = ('cheshirecat', 'cheshirecat_password')
         assert_that(
             calling(self._post_token).with_args(
                 *args, backend='ldap_user', tenant_id=self.top_tenant_uuid
