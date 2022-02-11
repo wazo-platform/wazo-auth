@@ -173,9 +173,8 @@ class TokenService(BaseService):
             user_uuid=token['auth_id'],
             tenant_uuid=session['tenant_uuid'],
         )
-        self._bus_publisher.publish(
-            event, headers={'tenant_uuid': session['tenant_uuid']}
-        )
+        headers = {'tenant_uuid': session['tenant_uuid']}
+        self._bus_publisher.publish(event, headers=headers)
 
     def get(self, token_uuid, required_access):
         token_data = self._dao.token.get(token_uuid)
