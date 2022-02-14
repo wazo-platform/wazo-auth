@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -62,7 +62,7 @@ class TestCore(base.APIIntegrationTest):
     def test_backends(self):
         url = 'http://{}:{}/0.1/backends'.format(self.auth_host, self.auth_port)
         response = requests.get(url, verify=False)
-        backends = ['broken_init', 'broken_verify_password', 'wazo_user']
+        backends = ['broken_init', 'broken_verify_password', 'wazo_user', 'ldap_user']
         assert_that(response.json()['data'], contains_inanyorder(*backends))
 
     def test_that_get_returns_the_auth_id(self):
