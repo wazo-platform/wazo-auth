@@ -166,4 +166,4 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
         base.assert_no_error(self.client.ldap_config.delete)
 
     def test_delete_config_when_none_exists(self):
-        base.assert_http_error(404, self.client.ldap_config.delete)
+        base.assert_no_error(self.client.ldap_config.delete)
