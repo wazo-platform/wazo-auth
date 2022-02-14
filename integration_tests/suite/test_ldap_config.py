@@ -155,6 +155,27 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
         assert_that(result, has_entries(**expected))
         assert_that(result, not_(has_key('bind_password')))
 
+    def test_put_config_minimal_fields(self):
+        body = {
+            'host': 'patate',
+            'port': 689,
+            'user_base_dn': 'ou=genses,dc=wazo-platform,dc=io',
+            'user_login_attribute': 'cn',
+            'user_email_attribute': 'email',
+        }
+        result = self.client.ldap_config.update(body)
+        expected = {
+            'host': 'patate',
+            'port': 689,
+            'protocol_version': 3,
+            'protocol_security': None,
+            'bind_dn': None,
+            'user_base_dn': 'ou=genses,dc=wazo-platform,dc=io',
+            'user_login_attribute': 'cn',
+            'user_email_attribute': 'email',
+        }
+        assert_that(result, has_entries(**expected))
+
     @fixtures.http.ldap_config()
     def test_put_multi_tenant(self, ldap_config):
         with self.client_in_subtenant() as (client, _, tenant):

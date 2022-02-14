@@ -10,10 +10,11 @@ class LDAPConfig(BaseSchema):
     tenant_uuid = fields.String(dump_only=True, default=None)
     host = fields.String(validate=Length(max=512), required=True, default=None)
     port = fields.Integer(required=True, default=None)
-    protocol_version = fields.Integer(validate=Range(min=2, max=3), default=None)
+    protocol_version = fields.Integer(
+        validate=Range(min=2, max=3), missing=3, default=None
+    )
     protocol_security = fields.String(
         validate=OneOf(['ldaps', 'tls']),
-        missing=None,
         allow_none=True,
         default=None,
     )
