@@ -7,7 +7,3 @@ services:
       - slapd
     environment:
       TARGETS: "slapd:389 postgres:5432 auth:9497"
-
-  auth:
-    volumes:
-      - "./etc/wazo-auth/conf.d/asset.ldap.yml:/etc/wazo-auth/conf.d/asset.ldap.yml"
