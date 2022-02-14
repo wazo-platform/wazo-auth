@@ -1,4 +1,4 @@
-# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -10,6 +10,7 @@ from functools import partial
 import marshmallow
 from xivo_bus.resources.auth import events
 
+from wazo_auth.exceptions import UnknownUserException
 from wazo_auth.services.helpers import BaseService
 from wazo_auth.database.helpers import commit_or_rollback
 
@@ -47,7 +48,8 @@ class _OAuth2Synchronizer:
             msg = json.loads(msg)
             success_cb(msg)
             commit_or_rollback()
-            self._bus_publisher.publish(event)
+            headers = {'tenant_uuid': event.tenant_uuid}
+            self._bus_publisher.publish(event, headers=headers)
         finally:
             ws.close()
 
@@ -76,14 +78,23 @@ class ExternalAuthService(BaseService):
         self._dao.external_auth.enable_all(self._enabled_external_auth)
         self._enabled_external_auth_populated = True
 
+    def _get_user_tenant_uuid(self, user_uuid):
+        users = self._dao.user.list_(uuid=user_uuid, limit=1)
+        if not users:
+            raise UnknownUserException(user_uuid)
+        user = users[0]
+        return user['tenant_uuid']
+
     def count(self, user_uuid, **kwargs):
         self._populate_enabled_external_auth()
         return self._dao.external_auth.count(user_uuid, **kwargs)
 
     def create(self, user_uuid, auth_type, data):
         result = self._dao.external_auth.create(user_uuid, auth_type, data)
+        tenant_uuid = self._get_user_tenant_uuid(user_uuid)
         event = events.UserExternalAuthAdded(user_uuid, auth_type)
-        self._bus_publisher.publish(event)
+        headers = {'tenant_uuid': tenant_uuid} if tenant_uuid else {}
+        self._bus_publisher.publish(event, headers=headers)
         return result
 
     def create_config(self, auth_type, data, tenant_uuid):
@@ -91,8 +102,10 @@ class ExternalAuthService(BaseService):
 
     def delete(self, user_uuid, auth_type):
         self._dao.external_auth.delete(user_uuid, auth_type)
+        tenant_uuid = self._get_user_tenant_uuid(user_uuid)
         event = events.UserExternalAuthDeleted(user_uuid, auth_type)
-        self._bus_publisher.publish(event)
+        headers = {'tenant_uuid': tenant_uuid} if tenant_uuid else {}
+        self._bus_publisher.publish(event, headers=headers)
 
     def delete_config(self, auth_type, tenant_uuid):
         self._dao.external_auth.delete_config(auth_type, tenant_uuid)
@@ -136,6 +149,8 @@ class ExternalAuthService(BaseService):
         self, auth_type, user_uuid, state, cb, *args, **kwargs
     ):
         event = events.UserExternalAuthAuthorized(user_uuid, auth_type)
+        tenant_uuid = self._get_user_tenant_uuid(user_uuid)
+        setattr(event, 'tenant_uuid', tenant_uuid)
         self._oauth2_synchronizer.synchronize(
             event, state, partial(cb, *args, **kwargs)
         )

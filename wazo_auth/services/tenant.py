@@ -47,7 +47,7 @@ class TenantService(BaseService):
         result = self._dao.tenant.delete(uuid)
 
         event = events.TenantDeletedEvent(uuid)
-        self._bus_publisher.publish(event)
+        self._bus_publisher.publish(event, headers={'tenant_uuid': uuid})
         return result
 
     def find_top_tenant(self):
@@ -103,7 +103,7 @@ class TenantService(BaseService):
             name=result['name'],
             slug=result['slug'],
         )
-        self._bus_publisher.publish(event)
+        self._bus_publisher.publish(event, headers={'tenant_uuid': uuid})
 
         all_users_group_uuid = self._dao.group.create(
             name=f'wazo-all-users-tenant-{uuid}',
@@ -139,5 +139,5 @@ class TenantService(BaseService):
 
         result = self._get(tenant_uuid)
         event = events.TenantUpdatedEvent(tenant_uuid, result.get('name'))
-        self._bus_publisher.publish(event)
+        self._bus_publisher.publish(event, headers={'tenant_uuid': tenant_uuid})
         return result

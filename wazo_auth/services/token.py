@@ -1,4 +1,4 @@
-# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -49,14 +49,15 @@ class TokenService(BaseService):
             user_uuid=user_uuid,
             client_id=client_id,
         )
+        tenant_uuid = refresh_token['tenant_uuid']
 
         event = RefreshTokenDeletedEvent(
             client_id=client_id,
             user_uuid=user_uuid,
-            tenant_uuid=refresh_token['tenant_uuid'],
+            tenant_uuid=tenant_uuid,
             mobile=refresh_token['mobile'],
         )
-        self._bus_publisher.publish(event)
+        self._bus_publisher.publish(event, headers={'tenant_uuid': tenant_uuid})
 
         self._dao.refresh_token.delete(tenant_uuids, user_uuid, client_id)
 
@@ -75,6 +76,7 @@ class TokenService(BaseService):
         auth_id = metadata['auth_id']
         pbx_user_uuid = metadata.get('pbx_user_uuid')
         xivo_uuid = metadata['xivo_uuid']
+        tenant_uuid = metadata.get('tenant_uuid')
 
         args['acl'] = self._get_acl(args['backend'])
         args['metadata'] = metadata
@@ -84,8 +86,8 @@ class TokenService(BaseService):
         current_time = time.time()
 
         session_payload = {}
-        if metadata.get('tenant_uuid'):
-            session_payload['tenant_uuid'] = metadata['tenant_uuid']
+        if tenant_uuid:
+            session_payload['tenant_uuid'] = tenant_uuid
         if args.get('mobile'):
             session_payload['mobile'] = args['mobile']
 
@@ -119,10 +121,8 @@ class TokenService(BaseService):
                     metadata['uuid'],
                 )
             else:
-                event = RefreshTokenCreatedEvent(
-                    tenant_uuid=metadata.get('tenant_uuid'), **body
-                )
-                self._bus_publisher.publish(event)
+                event = RefreshTokenCreatedEvent(tenant_uuid=tenant_uuid, **body)
+                self._bus_publisher.publish(event, headers={'tenant_uuid': tenant_uuid})
             token_payload['refresh_token'] = refresh_token
 
         token_uuid, session_uuid = self._dao.token.create(
@@ -134,7 +134,8 @@ class TokenService(BaseService):
         event = SessionCreatedEvent(
             session_uuid, user_uuid=user_uuid, **session_payload
         )
-        self._bus_publisher.publish(event)
+        headers = {'tenant_uuid': tenant_uuid} if tenant_uuid else {}
+        self._bus_publisher.publish(event, headers=headers)
 
         return token
 
@@ -175,7 +176,8 @@ class TokenService(BaseService):
             user_uuid=token['auth_id'],
             tenant_uuid=session['tenant_uuid'],
         )
-        self._bus_publisher.publish(event)
+        headers = {'tenant_uuid': session['tenant_uuid']}
+        self._bus_publisher.publish(event, headers=headers)
 
     def get(self, token_uuid, required_access):
         token_data = self._dao.token.get(token_uuid)
