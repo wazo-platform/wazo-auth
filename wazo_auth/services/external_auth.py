@@ -157,8 +157,5 @@ class ExternalAuthService(BaseService):
         return self._dao.external_auth.update_config(auth_type, data, tenant_uuid)
 
     def _get_tenant_uuid_from_user(self, user_uuid):
-        try:
-            user = self._dao.user.list_(uuid=user_uuid, limit=1)[0]
-            return user['tenant_uuid']
-        except IndexError:
-            return None
+        user = self._dao.user.list_(uuid=user_uuid, limit=1)[0]
+        return user['tenant_uuid']

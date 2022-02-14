@@ -209,10 +209,8 @@ class TestExternalAuthAPI(base.ExternalAuthIntegrationTest):
         until.assert_(oauth2_is_done, timeout=5, interval=0.25)
 
         def bus_received_msg():
-            msg = msg_accumulator.accumulate(with_headers=True)
-            print(msg)
             assert_that(
-                msg,
+                msg_accumulator.accumulate(with_headers=True),
                 contains(
                     has_entries(
                         message=has_entries(
