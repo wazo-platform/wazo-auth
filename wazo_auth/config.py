@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import argparse
@@ -40,6 +40,7 @@ _DEFAULT_CONFIG = {
         'external': True,
         'group_policy': True,
         'groups': True,
+        'ldap_config': False,
         'password_reset': True,
         'policies': True,
         'sessions': True,
