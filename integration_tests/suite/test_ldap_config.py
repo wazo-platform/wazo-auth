@@ -13,7 +13,7 @@ from .helpers import base
 from .helpers import fixtures
 
 
-@base.use_asset('ldap')
+@base.use_asset('base')
 class TestLDAPConfigAuth(base.APIIntegrationTest):
     @fixtures.http.ldap_config()
     def test_get_config(self, ldap_config):

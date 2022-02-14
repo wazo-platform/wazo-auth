@@ -141,10 +141,6 @@ class ExternalAuthAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
     asset = 'external_auth'
 
 
-class LDAPAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
-    asset = 'ldap'
-
-
 class DAOTestCase(unittest.TestCase):
 
     unknown_uuid = '00000000-0000-0000-0000-000000000000'
