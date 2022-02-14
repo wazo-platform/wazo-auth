@@ -228,7 +228,7 @@ def ldap_config(**ldap_config_args):
             ldap_config_args.setdefault('user_email_attribute', 'mail')
 
             tenant_uuid = ldap_config_args.get('tenant_uuid', self.top_tenant_uuid)
-            ldap_config = self.client.ldap_config.create(
+            ldap_config = self.client.ldap_config.update(
                 ldap_config_args,
                 tenant_uuid=tenant_uuid,
             )

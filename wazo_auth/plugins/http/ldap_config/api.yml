@@ -5,7 +5,9 @@ paths:
         - wazo_auth_token: []
       produces:
         - application/json
-      summary: Get current tenant's LDAP backend configuration.
+      summary: |
+        Get current tenant's LDAP backend configuration. If there is no configuration,
+        all the fields will be `null`.
       description: '**Required ACL:** `auth.backends.ldap.read`'
       operationId: getLDAPBackendConfig
       tags:
@@ -15,39 +17,6 @@ paths:
       responses:
         '200':
           description: The LDAP backend configuration
-          schema:
-            $ref: '#/definitions/LDAPBackendConfig'
-        '404':
-          description: Configuration not found for this tenant
-          schema:
-            $ref: '#/definitions/Error'
-        '401':
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/Error'
-    post:
-      security:
-        - wazo_auth_token: []
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      summary: Create current tenant's LDAP backend configuration
-      description: '**Required ACL:** `auth.backends.ldap.create`'
-      operationId: createLDAPBackendConfig
-      tags:
-        - backends
-      parameters:
-        - $ref: '#/parameters/tenantuuid'
-        - name: body
-          in: body
-          description: The LDAP backend configuration
-          required: true
-          schema:
-            $ref: '#/definitions/LDAPBackendConfigEdit'
-      responses:
-        '200':
-          description: The LDAP backend configuration has been created
           schema:
             $ref: '#/definitions/LDAPBackendConfig'
         '401':

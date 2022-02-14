@@ -6,7 +6,6 @@
 
   * `GET /backends/ldap`
   * `PUT /backends/ldap`
-  * `POST /backends/ldap`
   * `DELETE /backends/ldap`
 
   * The `POST /0.1/token` endpoint now accepts the following body paremeters
