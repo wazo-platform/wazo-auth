@@ -71,9 +71,10 @@ class LDAPHelper:
         self._ldap_obj.add_s(self.QUEBEC_DN, modlist)
 
 
+@base.use_asset('base')
 class BaseLDAPIntegrationTest(base.BaseIntegrationTest):
 
-    asset_cls = base.LDAPAssetLaunchingTestCase
+    asset_cls = base.APIAssetLaunchingTestCase
     username = 'admin'
     password = 's3cre7'
 
@@ -134,7 +135,7 @@ class BaseLDAPIntegrationTest(base.BaseIntegrationTest):
             LDAPHelper.setup_ran = True
 
 
-@base.use_asset('ldap')
+@base.use_asset('base')
 class TestLDAP(BaseLDAPIntegrationTest):
     def setUp(self):
         ldap_config = self.client.ldap_config.update(
@@ -216,7 +217,7 @@ class TestLDAP(BaseLDAPIntegrationTest):
         )
 
 
-@base.use_asset('ldap')
+@base.use_asset('base')
 class TestLDAPServiceUser(BaseLDAPIntegrationTest):
     def setUp(self):
         ldap_config = self.client.ldap_config.update(

@@ -39,12 +39,3 @@ def external_auth():
         yield
     finally:
         asset.ExternalAuthAssetLaunchingTestCase.tearDownClass()
-
-
-@pytest.fixture(scope='session')
-def ldap():
-    asset.LDAPAssetLaunchingTestCase.setUpClass()
-    try:
-        yield
-    finally:
-        asset.LDAPAssetLaunchingTestCase.tearDownClass()

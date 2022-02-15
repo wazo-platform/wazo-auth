@@ -7,12 +7,12 @@ services:
       - postgres
       - rabbitmq
       - smtp
+      - slapd
     environment:
-      TARGETS: "auth:9497 oauth2sync:80 postgres:5432 rabbitmq:5672 smtp:25"
+      TARGETS: "slapd:389 auth:9497 oauth2sync:80 postgres:5432 rabbitmq:5672 smtp:25"
 
   auth:
     volumes:
       - "./templates/raw_password_reset_email.base.jinja:/var/lib/wazo-auth/templates/raw_password_reset_email.jinja"
       - "./templates/email_confirmation_get_body.base.jinja:/var/lib/wazo-auth/templates/email_confirmation_get_body.jinja"
       - "./etc/wazo-auth/conf.d/asset.base.yml:/etc/wazo-auth/conf.d/asset.base.yml"
-
