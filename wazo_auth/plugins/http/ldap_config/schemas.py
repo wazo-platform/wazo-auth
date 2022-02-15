@@ -26,7 +26,7 @@ class LDAPConfig(BaseSchema):
     user_email_attribute = fields.String(
         validate=Length(max=64), required=True, default=None
     )
-    search_filters = fields.String(allow_none=True)
+    search_filters = fields.String(allow_none=True, default=None)
 
 
 class LDAPConfigEdit(LDAPConfig):

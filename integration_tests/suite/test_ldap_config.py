@@ -36,6 +36,7 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
                 user_base_dn=None,
                 user_login_attribute=None,
                 user_email_attribute=None,
+                search_filters=None,
             ),
         )
 
@@ -50,6 +51,7 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
             'user_base_dn': 'ou=people,dc=wazo-platform,dc=io',
             'user_login_attribute': 'uid',
             'user_email_attribute': 'mail',
+            'search_filters': '{user_login_attribute}={username}',
         }
         response = self.client.ldap_config.update(body)
         expected = {
@@ -61,6 +63,7 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
             'user_base_dn': 'ou=people,dc=wazo-platform,dc=io',
             'user_login_attribute': 'uid',
             'user_email_attribute': 'mail',
+            'search_filters': '{user_login_attribute}={username}',
         }
         assert_that(response, has_entries(**expected))
         assert_that(response, not_(has_key('bind_password')))
@@ -171,7 +174,6 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
             'user_base_dn': 'ou=genses,dc=wazo-platform,dc=io',
             'user_login_attribute': 'cn',
             'user_email_attribute': 'email',
-            'search_filters': '{user_login_attribute}={username}',
         }
         result = self.client.ldap_config.update(body)
         expected = {
@@ -183,7 +185,6 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
             'user_base_dn': 'ou=genses,dc=wazo-platform,dc=io',
             'user_login_attribute': 'cn',
             'user_email_attribute': 'email',
-            'search_filters': '{user_login_attribute}={username}',
         }
         assert_that(result, has_entries(**expected))
 
