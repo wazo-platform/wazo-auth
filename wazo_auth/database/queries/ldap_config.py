@@ -79,14 +79,8 @@ class LDAPConfigDAO(BaseDAO):
 
     def delete(self, tenant_uuid):
         filter_ = LDAPConfig.tenant_uuid == str(tenant_uuid)
-        nb_deleted = (
-            self.session.query(LDAPConfig)
-            .filter(filter_)
-            .delete(synchronize_session=False)
-        )
+        self.session.query(LDAPConfig).filter(filter_).delete(synchronize_session=False)
         self.session.flush()
-        if nb_deleted < 1:
-            raise exceptions.UnknownLDAPConfigException(tenant_uuid)
 
     def exists(self, tenant_uuid):
         filter_ = LDAPConfig.tenant_uuid == str(tenant_uuid)

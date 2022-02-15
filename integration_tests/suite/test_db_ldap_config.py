@@ -70,11 +70,11 @@ class TestLDAPConfigDAO(base.DAOTestCase):
     def test_delete(self, tenant_uuid):
         assert_that(
             calling(self._ldap_config_dao.delete).with_args(UNKNOWN_TENANT),
-            raises(exceptions.UnknownLDAPConfigException),
+            not_(raises(Exception)),
         )
         assert_that(
             calling(self._ldap_config_dao.delete).with_args(tenant_uuid),
-            not_(raises(exceptions.UnknownLDAPConfigException)),
+            not_(raises(Exception)),
         )
         assert_that(
             calling(self._ldap_config_dao.get).with_args(tenant_uuid),

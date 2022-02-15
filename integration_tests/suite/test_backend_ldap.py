@@ -137,7 +137,7 @@ class BaseLDAPIntegrationTest(base.BaseIntegrationTest):
 @base.use_asset('ldap')
 class TestLDAP(BaseLDAPIntegrationTest):
     def setUp(self):
-        ldap_config = self.client.ldap_config.create(
+        ldap_config = self.client.ldap_config.update(
             {
                 'host': 'slapd',
                 'port': 389,
@@ -219,7 +219,7 @@ class TestLDAP(BaseLDAPIntegrationTest):
 @base.use_asset('ldap')
 class TestLDAPServiceUser(BaseLDAPIntegrationTest):
     def setUp(self):
-        ldap_config = self.client.ldap_config.create(
+        ldap_config = self.client.ldap_config.update(
             {
                 'host': 'slapd',
                 'port': 389,

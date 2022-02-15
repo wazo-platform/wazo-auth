@@ -7,17 +7,25 @@ from xivo.mallow.validate import Length, OneOf, Range
 
 
 class LDAPConfig(BaseSchema):
-    tenant_uuid = fields.String(dump_only=True)
-    host = fields.String(validate=Length(max=512), required=True)
-    port = fields.Integer(required=True)
-    protocol_version = fields.Integer(validate=Range(min=2, max=3))
-    protocol_security = fields.String(
-        validate=OneOf(['ldaps', 'tls']), missing=None, allow_none=True
+    tenant_uuid = fields.String(dump_only=True, default=None)
+    host = fields.String(validate=Length(max=512), required=True, default=None)
+    port = fields.Integer(required=True, default=None)
+    protocol_version = fields.Integer(
+        validate=Range(min=2, max=3), missing=3, default=None
     )
-    bind_dn = fields.String(validate=Length(max=256), allow_none=True)
-    user_base_dn = fields.String(validate=Length(max=256), required=True)
-    user_login_attribute = fields.String(validate=Length(max=64), required=True)
-    user_email_attribute = fields.String(validate=Length(max=64), required=True)
+    protocol_security = fields.String(
+        validate=OneOf(['ldaps', 'tls']),
+        allow_none=True,
+        default=None,
+    )
+    bind_dn = fields.String(validate=Length(max=256), allow_none=True, default=None)
+    user_base_dn = fields.String(validate=Length(max=256), required=True, default=None)
+    user_login_attribute = fields.String(
+        validate=Length(max=64), required=True, default=None
+    )
+    user_email_attribute = fields.String(
+        validate=Length(max=64), required=True, default=None
+    )
 
 
 class LDAPConfigEdit(LDAPConfig):
