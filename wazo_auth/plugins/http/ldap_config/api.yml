@@ -126,6 +126,13 @@ definitions:
         type: string
         description: The attribute of the email address in the LDAP schema.
         example: mail
+      search_filters:
+        type: string
+        description: |
+          Filters for finding a user DN given a service bind is used.
+          Available variables are `username`, `user_login_attribute`,
+          `user_email_attribute` and `user_base_dn`.
+        example: "{user_login_attribute}={username}"
   LDAPBackendConfigEdit:
     allOf:
       - $ref: '#/definitions/LDAPBackendConfig'

@@ -349,3 +349,4 @@ class LDAPConfig(Base):
     user_base_dn = Column(String(256), nullable=False)
     user_login_attribute = Column(String(64), nullable=False)
     user_email_attribute = Column(String(64), nullable=False)
+    search_filters = Column(Text, nullable=True)

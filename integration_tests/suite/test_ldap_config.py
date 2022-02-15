@@ -42,7 +42,7 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
     def test_put_new_config(self):
         body = {
             'host': 'localhost',
-            'port': 386,
+            'port': 389,
             'protocol_version': 3,
             'protocol_security': None,
             'bind_dn': 'uid=admin,ou=people,dc=wazo-platform,dc=io',
@@ -54,7 +54,7 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
         response = self.client.ldap_config.update(body)
         expected = {
             'host': 'localhost',
-            'port': 386,
+            'port': 389,
             'protocol_version': 3,
             'protocol_security': None,
             'bind_dn': 'uid=admin,ou=people,dc=wazo-platform,dc=io',
@@ -68,7 +68,7 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
     def test_put_new_config_errors(self):
         valid_body = {
             'host': 'localhost',
-            'port': 386,
+            'port': 389,
             'protocol_version': 3,
             'protocol_security': None,
             'bind_dn': 'uid=admin,ou=people,dc=wazo-platform,dc=io',
@@ -76,6 +76,9 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
             'user_base_dn': 'ou=people,dc=wazo-platform,dc=io',
             'user_login_attribute': 'uid',
             'user_email_attribute': 'mail',
+            'search_filters': (
+                '(&({user_login_attribute}={username})(&(objectClass=inetOrgPerson)))'
+            ),
         }
         invalid_bodies_modifications = [
             {'host': 1},
@@ -121,6 +124,10 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
             {'user_email_attribute': 'a' * 65},
             {'user_email_attribute': []},
             {'user_email_attribute': {}},
+            {'search_filters': 1},
+            {'search_filters': True},
+            {'search_filters': []},
+            {'search_filters': {}},
         ]
 
         for invalid_modification in invalid_bodies_modifications:
@@ -140,6 +147,7 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
             'user_base_dn': 'ou=genses,dc=wazo-platform,dc=io',
             'user_login_attribute': 'cn',
             'user_email_attribute': 'email',
+            'search_filters': '{user_login_attribute}={username}',
         }
         result = self.client.ldap_config.update(new_body)
         expected = {
@@ -151,6 +159,7 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
             'user_base_dn': 'ou=genses,dc=wazo-platform,dc=io',
             'user_login_attribute': 'cn',
             'user_email_attribute': 'email',
+            'search_filters': '{user_login_attribute}={username}',
         }
         assert_that(result, has_entries(**expected))
         assert_that(result, not_(has_key('bind_password')))
@@ -162,6 +171,7 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
             'user_base_dn': 'ou=genses,dc=wazo-platform,dc=io',
             'user_login_attribute': 'cn',
             'user_email_attribute': 'email',
+            'search_filters': '{user_login_attribute}={username}',
         }
         result = self.client.ldap_config.update(body)
         expected = {
@@ -173,6 +183,7 @@ class TestLDAPConfigAuth(base.APIIntegrationTest):
             'user_base_dn': 'ou=genses,dc=wazo-platform,dc=io',
             'user_login_attribute': 'cn',
             'user_email_attribute': 'email',
+            'search_filters': '{user_login_attribute}={username}',
         }
         assert_that(result, has_entries(**expected))
 

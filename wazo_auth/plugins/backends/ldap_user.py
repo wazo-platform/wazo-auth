@@ -55,6 +55,7 @@ class LDAPUser(BaseAuthenticationBackend):
         user_login_attribute = config.get('user_login_attribute')
         user_email_attribute = config.get('user_email_attribute')
         user_base_dn = config.get('user_base_dn')
+        search_filters = config.get('search_filters')
 
         wazo_ldap = _WazoLDAP(config)
         try:
@@ -65,7 +66,9 @@ class LDAPUser(BaseAuthenticationBackend):
                         wazo_ldap,
                         username,
                         user_login_attribute,
+                        user_email_attribute,
                         user_base_dn,
+                        search_filters=search_filters,
                     )
                 else:
                     logger.warning(
@@ -150,10 +153,24 @@ class LDAPUser(BaseAuthenticationBackend):
         return email.decode('utf-8')
 
     def _perform_search_dn(
-        self, wazo_ldap, username, user_login_attribute, user_base_dn
+        self,
+        wazo_ldap,
+        username,
+        user_login_attribute,
+        user_email_attribute,
+        user_base_dn,
+        search_filters=None,
     ):
-        username_esc = escape_filter_chars(username)
-        filterstr = f'{user_login_attribute}={username_esc}'
+        if not search_filters:
+            search_filters = '{user_login_attribute}={username}'
+
+        filterstr = search_filters.format(
+            username=escape_filter_chars(username),
+            user_login_attribute=escape_filter_chars(user_login_attribute),
+            user_base_dn=escape_filter_chars(user_base_dn),
+            user_email_attribute=escape_filter_chars(user_email_attribute),
+        )
+
         dn, _ = wazo_ldap.perform_search(
             user_base_dn, ldap.SCOPE_SUBTREE, filterstr=filterstr, attrlist=['']
         )

@@ -35,6 +35,7 @@ class TestLDAPConfigDAO(base.DAOTestCase):
             'user_email_attribute': 'mail',
             'protocol_version': 2,
             'protocol_security': 'ldaps',
+            'search_filters': '{user_login_attribute}={username}',
         }
 
         ldap_config_tenant = self._ldap_config_dao.create(**args)
@@ -56,6 +57,7 @@ class TestLDAPConfigDAO(base.DAOTestCase):
             'user_email_attribute': 'udsCanonicalAddress',
             'protocol_version': 3,
             'protocol_security': 'ldaps',
+            'search_filters': '{user_login_attribute}={username}',
         }
         self._ldap_config_dao.update(tenant_uuid, **args)
         ldap_config = self._ldap_config_dao.get(tenant_uuid)
