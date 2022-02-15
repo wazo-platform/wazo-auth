@@ -1,7 +1,6 @@
 # Copyright 2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from contextlib import suppress
 from wazo_auth.services.helpers import BaseService
 
 from .. import exceptions
@@ -22,5 +21,4 @@ class LDAPService(BaseService):
         return self._dao.ldap_config.get(kwargs['tenant_uuid'])
 
     def delete(self, tenant_uuid):
-        with suppress(exceptions.UnknownLDAPConfigException):
-            return self._dao.ldap_config.delete(tenant_uuid)
+        return self._dao.ldap_config.delete(tenant_uuid)
