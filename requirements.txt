@@ -7,6 +7,7 @@ flask-httpauth==3.2.4
 flask-restful==0.3.7
 flask==1.0.2
 kombu==4.6.11
+itsdangerous==0.24  # from flask
 jsonpatch==1.21
 psycopg2==2.7.7
 python-consul==0.7.1
