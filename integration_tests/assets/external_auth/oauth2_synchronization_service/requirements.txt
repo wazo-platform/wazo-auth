@@ -1,4 +1,5 @@
 flask<2
 werkzeug<2
+markupsafe<2.1  # incompatible with flask
 flask_sockets
 gunicorn

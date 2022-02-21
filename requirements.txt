@@ -11,6 +11,7 @@ itsdangerous==0.24  # from flask
 jinja2==2.10
 jsonpatch==1.21
 kombu==4.6.11
+markupsafe==1.1.0  # from flask
 marshmallow==3.0.0b14
 netifaces==0.10.4
 psycopg2==2.7.7
