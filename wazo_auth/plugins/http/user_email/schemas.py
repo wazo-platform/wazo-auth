@@ -1,7 +1,7 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from marshmallow import EXCLUDE, post_load, validates_schema, ValidationError
+from marshmallow import post_load, validates_schema, ValidationError
 from xivo.mallow import fields
 from wazo_auth.schemas import BaseSchema
 
@@ -50,8 +50,8 @@ class _EmailPutSchema(BaseSchema):
 
 
 class AdminEmailPutSchema(_EmailPutSchema):
-    emails = fields.Nested(_AdminEmailSchema, required=True, many=True, unknown=EXCLUDE)
+    emails = fields.Nested(_AdminEmailSchema, required=True, many=True)
 
 
 class UserEmailPutSchema(_EmailPutSchema):
-    emails = fields.Nested(_UserEmailSchema, required=True, many=True, unknown=EXCLUDE)
+    emails = fields.Nested(_UserEmailSchema, required=True, many=True)
