@@ -5,7 +5,7 @@ from unittest import TestCase
 
 from marshmallow.exceptions import ValidationError
 
-from hamcrest import assert_that, calling, has_properties, not_
+from hamcrest import assert_that, calling, has_properties, has_key, not_
 from wazo_test_helpers.hamcrest.raises import raises
 
 from ..schemas import TokenRequestSchema
@@ -22,7 +22,9 @@ class TestTokenRequestSchema(TestCase):
             body = {'expiration': value}
             assert_that(
                 calling(self.schema.load).with_args(body),
-                raises(ValidationError).matching(has_properties(field_name='expiration')),
+                raises(ValidationError).matching(
+                    has_properties(messages=has_key('expiration'))
+                ),
             )
 
     def test_minimal_body(self):
