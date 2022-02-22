@@ -77,7 +77,5 @@ class TestTokenRequestSchema(TestCase):
 
         assert_that(
             calling(self.schema.load).with_args(body),
-            raises(ValidationError).matching(
-                has_properties(field_names=has_item('_schema'))
-            ),
+            raises(ValidationError).matching(has_properties(field_name='_schema')),
         )
