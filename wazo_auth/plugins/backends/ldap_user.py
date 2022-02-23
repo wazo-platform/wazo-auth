@@ -22,17 +22,20 @@ class LDAPUser(BaseAuthenticationBackend):
 
     def get_acl(self, login, args):
         backend_acl = args.get('acl', [])
-        user_uuid = self._user_service.get_user_uuid_by_login(args['user_email'])
+        login_to_use = args.get('user_email') or login
+        user_uuid = self._user_service.get_user_uuid_by_login(login_to_use)
         group_acl = self._group_service.get_acl(user_uuid)
         user_acl = self._user_service.get_acl(user_uuid)
         return backend_acl + group_acl + user_acl
 
     def get_metadata(self, login, args):
         metadata = super().get_metadata(login, args)
-        user_uuid = self._user_service.get_user_uuid_by_login(args['user_email'])
+        login_to_use = args.get('user_email') or login
+        user_uuid = self._user_service.get_user_uuid_by_login(login_to_use)
+        metadata['auth_id'] = user_uuid
         purpose = self._user_service.list_users(uuid=user_uuid)[0]['purpose']
         for plugin in self._purposes.get(purpose).metadata_plugins:
-            metadata.update(plugin.get_token_metadata(args['user_email'], args))
+            metadata.update(plugin.get_token_metadata(login_to_use, args))
         return metadata
 
     def verify_password(self, username, password, args):
@@ -102,8 +105,8 @@ class LDAPUser(BaseAuthenticationBackend):
             logger.exception('ldap.LDAPError (%r, %r)', config, exc)
             return False
 
-        pbx_user_uuid = self._get_user_uuid_by_ldap_attribute(user_email, tenant_uuid)
-        if not pbx_user_uuid:
+        pbx_user = self._get_user_by_ldap_attribute(user_email, tenant_uuid)
+        if not pbx_user:
             logger.debug(
                 'Could not log in: user "%s" could not be found in tenant "%s"',
                 user_email,
@@ -111,8 +114,9 @@ class LDAPUser(BaseAuthenticationBackend):
             )
             return False
 
-        args['pbx_user_uuid'] = pbx_user_uuid
+        args['pbx_user_uuid'] = pbx_user['uuid']
         args['user_email'] = user_email
+        args['real_login'] = user_email
 
         return True
 
@@ -122,11 +126,11 @@ class LDAPUser(BaseAuthenticationBackend):
     def _get_tenant(self, tenant_id):
         return self._tenant_service.get_by_uuid_or_slug(None, tenant_id)
 
-    def _get_user_uuid_by_ldap_attribute(self, user_email, tenant_uuid):
+    def _get_user_by_ldap_attribute(self, user_email, tenant_uuid):
         for user in self._user_service.list_users(
             email_address=user_email, tenant_uuid=tenant_uuid
         ):
-            return user['uuid']
+            return user
 
         logger.warning(
             '%s does not have an email associated with an auth user', user_email

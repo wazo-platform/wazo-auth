@@ -20,8 +20,8 @@ class BaseTestCase(unittest.TestCase):
         ]
         self.user_service.get_acl = Mock()
         self.user_service.get_acl.return_value = ['acl1']
-        self.user_service.get_username_by_login = Mock()
-        self.user_service.get_username_by_login.return_value = 'alice'
+        self.user_service.get_user_uuid_by_login = Mock()
+        self.user_service.get_user_uuid_by_login.return_value = 'alice-uuid'
 
         self.group_service = Mock()
         self.group_service.get_acl = Mock()
@@ -47,7 +47,10 @@ class BaseTestCase(unittest.TestCase):
 
         user_metadata_plugin = Mock()
         user_metadata_plugin.get_token_metadata = Mock()
-        user_metadata_plugin.get_token_metadata.return_value = {}
+        user_metadata_plugin.get_token_metadata.return_value = {
+            'auth_id': 'alice-uuid',
+            'pbx_user_uuid': 'alice-uuid',
+        }
         user_purpose = Mock()
         user_purpose.metadata_plugins = [user_metadata_plugin]
         self.purposes = {'user': user_purpose}
@@ -98,7 +101,10 @@ class TestGetMetadata(BaseTestCase):
         )
 
     def test_that_get_metadata_calls_the_dao(self):
-        expected_result = has_entries(auth_id='alice-uuid', pbx_user_uuid='alice-uuid')
+        expected_result = has_entries(
+            auth_id='alice-uuid',
+            pbx_user_uuid='alice-uuid',
+        )
         result = self.backend.get_metadata('alice', self.args)
         assert_that(result, expected_result)
 
@@ -301,6 +307,7 @@ class TestVerifyPassword(BaseTestCase):
                     'tenant_id': 'test',
                     'pbx_user_uuid': 'alice-uuid',
                     'user_email': 'foo@example.com',
+                    'real_login': 'foo@example.com',
                 }
             ),
         )
@@ -342,6 +349,7 @@ class TestVerifyPassword(BaseTestCase):
                     'tenant_id': 'test',
                     'pbx_user_uuid': 'alice-uuid',
                     'user_email': 'foo@example.com',
+                    'real_login': 'foo@example.com',
                 }
             ),
         )

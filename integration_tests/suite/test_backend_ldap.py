@@ -326,3 +326,44 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
             ),
             raises(requests.HTTPError, pattern='401'),
         )
+
+
+@base.use_asset('base')
+class TestLDAPRefreshToken(BaseLDAPIntegrationTest):
+    def setUp(self):
+        ldap_config = self.client.ldap_config.update(
+            {
+                'host': 'slapd',
+                'port': 389,
+                'user_base_dn': 'ou=quebec,ou=people,dc=wazo-auth,dc=wazo,dc=community',
+                'user_login_attribute': 'cn',
+                'user_email_attribute': 'mail',
+            },
+            tenant_uuid=self.top_tenant_uuid,
+        )
+        self.addCleanup(self.client.ldap_config.delete, ldap_config['tenant_uuid'])
+
+    @fixtures.http.user(email_address='awonderland@wazo-auth.com')
+    def test_ldap_login_with_refresh_token(self, user):
+        client_id = 'my-test'
+        args = ('Alice Wonderland', 'awonderland_password')
+        refresh_token = self._post_token(
+            *args,
+            backend='ldap_user',
+            client_id=client_id,
+            access_type='offline',
+            tenant_id=self.top_tenant_uuid,
+        )['refresh_token']
+
+        response = self._post_token(
+            None,
+            None,
+            backend='ldap_user',
+            expiration=1,
+            refresh_token=refresh_token,
+            client_id=client_id,
+            tenant_id=self.top_tenant_uuid,
+        )
+        assert_that(
+            response, has_entries(metadata=has_entries(pbx_user_uuid=user['uuid']))
+        )
