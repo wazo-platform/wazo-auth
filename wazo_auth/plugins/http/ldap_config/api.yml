@@ -130,8 +130,9 @@ definitions:
         type: string
         description: |
           Filters for finding a user DN given a service bind is used.
-          Available variables are `username`, `user_login_attribute`,
-          `user_email_attribute` and `user_base_dn`.
+          Available variables are `username`, `user_login_attribute` and
+          `user_email_attribute`. These variables come from the fields of the
+          same name from the API.
         example: "{user_login_attribute}={username}"
   LDAPBackendConfigEdit:
     allOf:

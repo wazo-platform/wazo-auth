@@ -167,7 +167,6 @@ class LDAPUser(BaseAuthenticationBackend):
         filterstr = search_filters.format(
             username=escape_filter_chars(username),
             user_login_attribute=escape_filter_chars(user_login_attribute),
-            user_base_dn=escape_filter_chars(user_base_dn),
             user_email_attribute=escape_filter_chars(user_email_attribute),
         )
 
