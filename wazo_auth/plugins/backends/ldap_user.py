@@ -29,11 +29,6 @@ class LDAPUser(BaseAuthenticationBackend):
 
     def get_metadata(self, login, args):
         metadata = super().get_metadata(login, args)
-        user_data = {
-            'auth_id': args['pbx_user_uuid'],  # TODO the auth id should be the ldap id
-            'pbx_user_uuid': args['pbx_user_uuid'],
-        }
-        metadata.update(user_data)
         user_uuid = self._user_service.get_user_uuid_by_login(args['user_email'])
         purpose = self._user_service.list_users(uuid=user_uuid)[0]['purpose']
         for plugin in self._purposes.get(purpose).metadata_plugins:
