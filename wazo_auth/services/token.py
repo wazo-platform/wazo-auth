@@ -106,7 +106,9 @@ class TokenService(BaseService):
         if args.get('access_type', 'online') == 'offline':
             body = {
                 'backend': args['backend'],
-                'login': args['login'],
+                'login': args['login']
+                if not args.get('real_login')
+                else args['real_login'],
                 'client_id': args['client_id'],
                 'user_uuid': metadata['uuid'],
                 'user_agent': args['user_agent'],
