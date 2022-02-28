@@ -19,7 +19,7 @@ class TokenRequestSchema(BaseSchema):
     tenant_id = fields.String()
 
     @validates_schema
-    def check_access_type_usage(self, data):
+    def check_access_type_usage(self, data, **kwargs):
         access_type = data.get('access_type')
         if access_type != 'offline':
             return
@@ -37,7 +37,7 @@ class TokenRequestSchema(BaseSchema):
             )
 
     @validates_schema
-    def check_backend_type_for_tenant(self, data):
+    def check_backend_type_for_tenant(self, data, **kwargs):
         backend = data.get('backend')
         if not backend == 'ldap_user':
             return
@@ -49,7 +49,7 @@ class TokenRequestSchema(BaseSchema):
             )
 
     @validates_schema
-    def check_refresh_token_usage(self, data):
+    def check_refresh_token_usage(self, data, **kwargs):
         refresh_token = data.get('refresh_token')
         if not refresh_token:
             return

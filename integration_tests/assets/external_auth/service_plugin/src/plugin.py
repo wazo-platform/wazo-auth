@@ -90,7 +90,7 @@ class BarSafeData(Schema):
     scope = fields.List(fields.String)
 
     @pre_load
-    def ensure_dict(self, data):
+    def ensure_dict(self, data, **kwargs):
         return data or {}
 
 

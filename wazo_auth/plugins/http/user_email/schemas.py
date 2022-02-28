@@ -1,7 +1,7 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from marshmallow import EXCLUDE, post_load, validates_schema, ValidationError
+from marshmallow import post_load, validates_schema, ValidationError
 from xivo.mallow import fields
 from wazo_auth.schemas import BaseSchema
 
@@ -21,11 +21,11 @@ class _UserEmailSchema(BaseSchema):
 
 class _EmailPutSchema(BaseSchema):
     @post_load
-    def as_list(self, data):
+    def as_list(self, data, **kwargs):
         return data['emails']
 
     @validates_schema
-    def validate_only_one_main(self, data):
+    def validate_only_one_main(self, data, **kwargs):
         emails = data.get('emails')
         if not emails:
             return
@@ -39,7 +39,7 @@ class _EmailPutSchema(BaseSchema):
             raise ValidationError('At least one address should be main')
 
     @validates_schema
-    def validate_no_duplicates(self, data):
+    def validate_no_duplicates(self, data, **kwargs):
         emails = data.get('emails')
         if not emails:
             return
@@ -50,8 +50,8 @@ class _EmailPutSchema(BaseSchema):
 
 
 class AdminEmailPutSchema(_EmailPutSchema):
-    emails = fields.Nested(_AdminEmailSchema, required=True, many=True, unknown=EXCLUDE)
+    emails = fields.Nested(_AdminEmailSchema, required=True, many=True)
 
 
 class UserEmailPutSchema(_EmailPutSchema):
-    emails = fields.Nested(_UserEmailSchema, required=True, many=True, unknown=EXCLUDE)
+    emails = fields.Nested(_UserEmailSchema, required=True, many=True)
