@@ -9,7 +9,7 @@ import threading
 from datetime import datetime
 
 from xivo.auth_verifier import AccessCheck
-from xivo_bus.resources.auth.events import SessionDeletedEvent, SessionExpireSoonEvent
+from xivo_bus.resources.auth.events import SessionExpireSoonEvent
 
 from wazo_auth.database.helpers import Session
 
@@ -106,11 +106,12 @@ class Token:
 
 
 class ExpiredTokenRemover:
-    def __init__(self, config, dao, bus_publisher):
+    def __init__(self, config, dao, bus_publisher, session_service):
         self._dao = dao
         self._bus_publisher = bus_publisher
         self._cleanup_interval = config['token_cleanup_interval']
         self._debug = config['debug']
+        self._session_service = session_service
 
         self._tombstone = threading.Event()
         self._thread = threading.Thread(target=self._loop)
@@ -155,7 +156,7 @@ class ExpiredTokenRemover:
         finally:
             Session.close()
 
-        self._publish_event(tokens, sessions, SessionDeletedEvent)
+        self._publish_session_deleted_event(tokens, sessions)
 
     def _tokens_notice(self):
         try:
@@ -171,9 +172,9 @@ class ExpiredTokenRemover:
         finally:
             Session.close()
 
-        self._publish_event(tokens, sessions, SessionExpireSoonEvent)
+        self._publish_session_expire_soon_event(tokens, sessions)
 
-    def _publish_event(self, tokens, sessions, event_class):
+    def _publish_session_expire_soon_event(self, tokens, sessions):
         for session in sessions:
             event_args = {
                 'uuid': session['uuid'],
@@ -192,4 +193,22 @@ class ExpiredTokenRemover:
             headers = None
             if event_args['tenant_uuid']:
                 headers = {'tenant_uuid': event_args['tenant_uuid']}
-            self._bus_publisher.publish(event_class(**event_args), headers=headers)
+            self._bus_publisher.publish(
+                SessionExpireSoonEvent(**event_args),
+                headers=headers,
+            )
+
+    def _publish_session_deleted_event(self, tokens, sessions):
+        for session in sessions:
+            for token in tokens:
+                if token['session_uuid'] == session['uuid']:
+                    self._session_service.notify_session_deleted(
+                        session['uuid'],
+                        token['auth_id'],
+                        token['metadata']['tenant_uuid'],
+                    )
+                    break
+            else:
+                logger.warning(
+                    'session without token associated: {}'.format(session['uuid'])
+                )

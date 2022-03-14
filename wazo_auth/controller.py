@@ -79,7 +79,12 @@ class Controller:
         )
         self._user_service = services.UserService(self.dao, self._tenant_tree)
         self._token_service = services.TokenService(
-            config, self.dao, self._tenant_tree, self._bus_publisher, self._user_service
+            config,
+            self.dao,
+            self._tenant_tree,
+            self._bus_publisher,
+            self._user_service,
+            session_service,
         )
         self._tenant_service = services.TenantService(
             self.dao,
@@ -170,7 +175,10 @@ class Controller:
         self._rest_api = CoreRestApi(config, self._token_service, self._user_service)
 
         self._expired_token_remover = token.ExpiredTokenRemover(
-            config, self.dao, self._bus_publisher
+            config,
+            self.dao,
+            self._bus_publisher,
+            session_service,
         )
 
     def run(self):

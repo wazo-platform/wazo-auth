@@ -31,10 +31,17 @@ class SessionService(BaseService):
         if not token:
             return
 
-        event = SessionDeletedEvent(
-            uuid=session['uuid'],
-            user_uuid=token['auth_id'],
-            tenant_uuid=session['tenant_uuid'],
+        self.notify_session_deleted(
+            session['uuid'],
+            token['auth_id'],
+            session['tenant_uuid'],
         )
-        headers = {'tenant_uuid': session['tenant_uuid']}
+
+    def notify_session_deleted(self, session_uuid, user_uuid, tenant_uuid):
+        event = SessionDeletedEvent(
+            uuid=session_uuid,
+            user_uuid=user_uuid,
+            tenant_uuid=tenant_uuid,
+        )
+        headers = {'tenant_uuid': tenant_uuid}
         self._bus_publisher.publish(event, headers=headers)

@@ -8,7 +8,6 @@ from xivo_bus.resources.auth.events import (
     RefreshTokenCreatedEvent,
     RefreshTokenDeletedEvent,
     SessionCreatedEvent,
-    SessionDeletedEvent,
 )
 
 from wazo_auth.token import Token
@@ -26,13 +25,16 @@ logger = logging.getLogger(__name__)
 
 
 class TokenService(BaseService):
-    def __init__(self, config, dao, tenant_tree, bus_publisher, user_service):
+    def __init__(
+        self, config, dao, tenant_tree, bus_publisher, user_service, session_service
+    ):
         super().__init__(dao, tenant_tree)
         self._deprecated_backend_policies = config.get('backend_policies', {})
         self._default_user_policy = config.get('default_user_policy')
         self._default_expiration = config['default_token_lifetime']
         self._bus_publisher = bus_publisher
         self._user_service = user_service
+        self._session_service = session_service
 
     def count_refresh_tokens(
         self, scoping_tenant_uuid=None, recurse=False, **search_params
@@ -173,13 +175,11 @@ class TokenService(BaseService):
         if not session:
             return
 
-        event = SessionDeletedEvent(
-            uuid=session['uuid'],
-            user_uuid=token['auth_id'],
-            tenant_uuid=session['tenant_uuid'],
+        self._session_service.notify_session_deleted(
+            session['uuid'],
+            token['auth_id'],
+            session['tenant_uuid'],
         )
-        headers = {'tenant_uuid': session['tenant_uuid']}
-        self._bus_publisher.publish(event, headers=headers)
 
     def get(self, token_uuid, required_access):
         token_data = self._dao.token.get(token_uuid)
