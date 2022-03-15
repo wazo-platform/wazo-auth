@@ -8,6 +8,7 @@ from xivo_bus.resources.auth.events import (
     RefreshTokenCreatedEvent,
     RefreshTokenDeletedEvent,
     SessionCreatedEvent,
+    UserSessionsUpdatedEvent,
 )
 
 from wazo_auth.token import Token
@@ -135,11 +136,26 @@ class TokenService(BaseService):
         token = Token(token_uuid, session_uuid=session_uuid, **token_payload)
 
         user_uuid = auth_id if is_uuid(auth_id) else None
+        headers = {'tenant_uuid': tenant_uuid} if tenant_uuid else {}
+        if user_uuid:
+            headers[f'user_uuid:{user_uuid}'] = True
+
         event = SessionCreatedEvent(
             session_uuid, user_uuid=user_uuid, **session_payload
         )
-        headers = {'tenant_uuid': tenant_uuid} if tenant_uuid else {}
         self._bus_publisher.publish(event, headers=headers)
+
+        if user_uuid and tenant_uuid:
+            sessions = self._dao.session.list_(
+                tenant_uuids=[tenant_uuid],
+                user_uuid=user_uuid,
+            )
+            event = UserSessionsUpdatedEvent(
+                user_uuid=user_uuid,
+                tenant_uuid=tenant_uuid,
+                sessions=sessions,
+            )
+            self._bus_publisher.publish(event, headers=headers)
 
         return token
 

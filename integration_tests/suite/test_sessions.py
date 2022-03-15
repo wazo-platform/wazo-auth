@@ -6,6 +6,7 @@ import uuid
 from hamcrest import (
     assert_that,
     contains,
+    contains_inanyorder,
     greater_than_or_equal_to,
     has_entries,
     has_items,
@@ -178,6 +179,73 @@ class TestSessions(base.APIIntegrationTest):
                             }
                         ),
                         headers=has_entry('tenant_uuid', user['tenant_uuid']),
+                    )
+                ),
+            )
+
+        until.assert_(bus_received_msg, tries=10, interval=0.25)
+
+    @fixtures.http.user(username='foo', password='bar')
+    def test_updated_event(self, user):
+        user_uuid = user['uuid']
+        routing_key = f'auth.users.{user_uuid}.sessions.updated'
+        msg_accumulator = self.bus.accumulator(routing_key)
+
+        session_1_uuid = self._post_token('foo', 'bar', session_type='Mobile')[
+            'session_uuid'
+        ]
+        session_2_uuid = self._post_token('foo', 'bar')['session_uuid']
+
+        def bus_received_msg():
+            assert_that(
+                msg_accumulator.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries(
+                            data=has_entries(
+                                user_uuid=user['uuid'],
+                                tenant_uuid=user['tenant_uuid'],
+                                sessions=contains_inanyorder(
+                                    {'uuid': session_1_uuid, 'mobile': True},
+                                    {'uuid': session_2_uuid, 'mobile': False},
+                                ),
+                            )
+                        ),
+                        headers=has_entries(
+                            'tenant_uuid',
+                            user['tenant_uuid'],
+                            f'user_uuid:{user_uuid}',
+                            True,
+                        ),
+                    )
+                ),
+            )
+
+        until.assert_(bus_received_msg, tries=10, interval=0.25)
+
+        msg_accumulator = self.bus.accumulator(routing_key)
+        self.client.sessions.delete(session_1_uuid)
+
+        def bus_received_msg():
+            assert_that(
+                msg_accumulator.accumulate(with_headers=True),
+                has_items(
+                    has_entries(
+                        message=has_entries(
+                            data=has_entries(
+                                user_uuid=user['uuid'],
+                                tenant_uuid=user['tenant_uuid'],
+                                sessions=contains_inanyorder(
+                                    {'uuid': session_2_uuid, 'mobile': False},
+                                ),
+                            )
+                        ),
+                        headers=has_entries(
+                            'tenant_uuid',
+                            user['tenant_uuid'],
+                            f'user_uuid:{user_uuid}',
+                            True,
+                        ),
                     )
                 ),
             )

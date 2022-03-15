@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_auth.services.helpers import BaseService
-from xivo_bus.resources.auth.events import SessionDeletedEvent
+from xivo_bus.resources.auth.events import SessionDeletedEvent, UserSessionsUpdatedEvent
 
 
 class SessionService(BaseService):
@@ -38,10 +38,25 @@ class SessionService(BaseService):
         )
 
     def notify_session_deleted(self, session_uuid, user_uuid, tenant_uuid):
+        headers = {
+            f'user_uuid:{user_uuid}': True,
+            'tenant_uuid': tenant_uuid,
+        }
+
         event = SessionDeletedEvent(
             uuid=session_uuid,
             user_uuid=user_uuid,
             tenant_uuid=tenant_uuid,
         )
-        headers = {'tenant_uuid': tenant_uuid}
+        self._bus_publisher.publish(event, headers=headers)
+
+        sessions = self._dao.session.list_(
+            user_uuid=user_uuid,
+            tenant_uuids=[tenant_uuid],
+        )
+        event = UserSessionsUpdatedEvent(
+            user_uuid=user_uuid,
+            tenant_uuid=tenant_uuid,
+            sessions=sessions,
+        )
         self._bus_publisher.publish(event, headers=headers)
