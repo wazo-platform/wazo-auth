@@ -2,6 +2,7 @@ https://github.com/wazo-platform/xivo-bus/archive/master.zip
 https://github.com/wazo-platform/xivo-dao/archive/master.zip
 https://github.com/wazo-platform/xivo-lib-python/archive/master.zip
 https://github.com/wazo-platform/wazo-auth-client/archive/master.zip
+https://github.com/wazo-platform/wazo-lib-rest-client/archive/master.zip  # from wazo-auth-client
 alembic==1.0.0
 cheroot==6.5.4
 flask-cors==3.0.7
