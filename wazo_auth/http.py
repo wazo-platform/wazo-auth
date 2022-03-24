@@ -15,6 +15,10 @@ from xivo.auth_verifier import (
     required_tenant,
     Unauthorized,
 )
+from wazo_auth_client.exceptions import (
+    InvalidTokenException,
+    MissingPermissionsTokenException,
+)
 from wazo_auth.database.helpers import commit_or_rollback
 from werkzeug.local import LocalProxy as Proxy
 
@@ -36,9 +40,9 @@ class AuthClientFacade:
                 current_app.config['token_service'].get(token_id, required_access)
                 return True
             except exceptions.UnknownTokenException:
-                return False
+                raise InvalidTokenException()
             except exceptions.MissingAccessTokenException:
-                return False
+                raise MissingPermissionsTokenException()
 
         def get(self, token_id, required_access=None):
             try:
