@@ -22,6 +22,7 @@ from hamcrest import (
     raises,
 )
 
+from wazo_auth_client import exceptions
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.uuid_ import uuid_
 from wazo_auth.database import helpers
@@ -57,7 +58,10 @@ class TestCore(base.APIIntegrationTest):
         assert_that(self.client.token.is_valid(token))
 
     def test_that_head_with_an_invalid_token_returns_404(self):
-        assert_that(self.client.token.is_valid('abcdef'), is_(False))
+        assert_that(
+            self.client.token.is_valid('abcdef'),
+            raises(exceptions.InvalidTokenException),
+        )
 
     def test_backends(self):
         url = 'http://{}:{}/0.1/backends'.format(self.auth_host, self.auth_port)
@@ -190,22 +194,30 @@ class TestCore(base.APIIntegrationTest):
 
         time.sleep(2)
 
-        assert_that(self.client.token.is_valid(token), equal_to(False))
+        assert_that(
+            self.client.token.is_valid(token), raises(exceptions.InvalidTokenException)
+        )
 
     def test_that_invalid_unicode_access_returns_403(self):
         token = self._post_token('foo', 'bar')['token']
-        assert_that(self.client.token.is_valid(token, required_acl='éric'), is_(False))
+        assert_that(
+            self.client.token.is_valid(token, required_acl='éric'),
+            raises(exceptions.MissingPermissionsTokenException),
+        )
 
     def test_that_unauthorized_access_on_HEAD_return_403(self):
         token = self._post_token('foo', 'bar')['token']
-        assert_that(self.client.token.is_valid(token, required_acl='confd'), is_(False))
+        assert_that(
+            self.client.token.is_valid(token, required_acl='confd'),
+            raises(exceptions.MissingPermissionsTokenException),
+        )
 
     def test_that_unauthorized_tenants_on_HEAD_return_403(self):
         token = self._post_token('foo', 'bar')['token']
 
         assert_that(
             self.client.token.is_valid(token, tenant=UNKNOWN_TENANT),
-            is_(False),
+            raises(exceptions.MissingPermissionsTokenException),
         )
 
         assert_that(
@@ -222,7 +234,7 @@ class TestCore(base.APIIntegrationTest):
                 self.client.token.is_valid(
                     sub_client._token_id, tenant=self.top_tenant_uuid
                 ),
-                is_(False),
+                raises(exceptions.MissingPermissionsTokenException),
             )
 
     def test_that_unauthorized_access_on_GET_return_403(self):
