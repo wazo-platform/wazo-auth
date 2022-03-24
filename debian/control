@@ -37,6 +37,7 @@ Depends: ${python3:Depends},
          wazo-uuid,
          xivo-bus-python3 (>> 17.16),
          xivo-lib-python-python3,
+         wazo-auth-client-python3,
          xivo-libdao-python3 (>= 17.02~20170124.144633.cb56771)
 Conflicts: xivo-auth
 Replaces: xivo-auth
