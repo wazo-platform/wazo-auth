@@ -57,9 +57,9 @@ class TestCore(base.APIIntegrationTest):
 
         assert_that(self.client.token.is_valid(token))
 
-    def test_that_head_with_an_invalid_token_returns_404(self):
+    def test_that_head_with_an_invalid_token_raises_invalid_token_exception(self):
         assert_that(
-            self.client.token.is_valid('abcdef'),
+            calling(self.client.token.is_valid).with_args('abcdef'),
             raises(exceptions.InvalidTokenException),
         )
 
@@ -189,34 +189,37 @@ class TestCore(base.APIIntegrationTest):
             raises(requests.HTTPError, pattern='400'),
         )
 
-    def test_that_expired_tokens_are_not_valid(self):
+    def test_that_expired_tokens_raise_invalid_token_exception(self):
         token = self._post_token('foo', 'bar', expiration=1)['token']
 
         time.sleep(2)
 
         assert_that(
-            self.client.token.is_valid(token), raises(exceptions.InvalidTokenException)
+            calling(self.client.token.is_valid).with_args(token),
+            raises(exceptions.InvalidTokenException),
         )
 
-    def test_that_invalid_unicode_access_returns_403(self):
+    def test_that_invalid_unicode_access_raise_missing_permissions_exception(self):
         token = self._post_token('foo', 'bar')['token']
         assert_that(
-            self.client.token.is_valid(token, required_acl='éric'),
+            calling(self.client.token.is_valid).with_args(token, required_acl='éric'),
             raises(exceptions.MissingPermissionsTokenException),
         )
 
-    def test_that_unauthorized_access_on_HEAD_return_403(self):
+    def test_that_unauthorized_access_on_HEAD_raise_missing_permission_exception(self):
         token = self._post_token('foo', 'bar')['token']
         assert_that(
-            self.client.token.is_valid(token, required_acl='confd'),
+            calling(self.client.token.is_valid).with_args(token, required_acl='confd'),
             raises(exceptions.MissingPermissionsTokenException),
         )
 
-    def test_that_unauthorized_tenants_on_HEAD_return_403(self):
+    def test_that_unauthorized_tenants_on_HEAD_raises_missing_permissions_exception(
+        self,
+    ):
         token = self._post_token('foo', 'bar')['token']
 
         assert_that(
-            self.client.token.is_valid(token, tenant=UNKNOWN_TENANT),
+            calling(self.client.token.is_valid).with_args(token, tenant=UNKNOWN_TENANT),
             raises(exceptions.MissingPermissionsTokenException),
         )
 
@@ -231,7 +234,7 @@ class TestCore(base.APIIntegrationTest):
                 is_(True),
             )
             assert_that(
-                self.client.token.is_valid(
+                calling(self.client.token.is_valid).with_args(
                     sub_client._token_id, tenant=self.top_tenant_uuid
                 ),
                 raises(exceptions.MissingPermissionsTokenException),
