@@ -35,7 +35,7 @@ def _error(code, msg):
 
 class AuthClientFacade:
     class TokenCommand:
-        def is_valid(self, token_id, required_access):
+        def check(self, token_id, required_access):
             try:
                 current_app.config['token_service'].get(token_id, required_access)
                 return True
@@ -43,6 +43,15 @@ class AuthClientFacade:
                 raise InvalidTokenException()
             except exceptions.MissingAccessTokenException:
                 raise MissingPermissionsTokenException()
+
+        def is_valid(self, token_id, required_access):
+            try:
+                current_app.config['token_service'].get(token_id, required_access)
+                return True
+            except exceptions.UnknownTokenException:
+                return False
+            except exceptions.MissingAccessTokenException:
+                return False
 
         def get(self, token_id, required_access=None):
             try:

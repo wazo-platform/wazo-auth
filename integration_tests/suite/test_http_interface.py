@@ -55,11 +55,11 @@ class TestCore(base.APIIntegrationTest):
     def test_that_head_with_a_valid_token_returns_204(self):
         token = self._post_token('foo', 'bar')['token']
 
-        assert_that(self.client.token.is_valid(token))
+        assert_that(self.client.token.check(token))
 
     def test_that_head_with_an_invalid_token_raises_invalid_token_exception(self):
         assert_that(
-            calling(self.client.token.is_valid).with_args('abcdef'),
+            calling(self.client.token.check).with_args('abcdef'),
             raises(exceptions.InvalidTokenException),
         )
 
@@ -195,21 +195,21 @@ class TestCore(base.APIIntegrationTest):
         time.sleep(2)
 
         assert_that(
-            calling(self.client.token.is_valid).with_args(token),
+            calling(self.client.token.check).with_args(token),
             raises(exceptions.InvalidTokenException),
         )
 
     def test_that_invalid_unicode_access_raise_missing_permissions_exception(self):
         token = self._post_token('foo', 'bar')['token']
         assert_that(
-            calling(self.client.token.is_valid).with_args(token, required_acl='éric'),
+            calling(self.client.token.check).with_args(token, required_acl='éric'),
             raises(exceptions.MissingPermissionsTokenException),
         )
 
     def test_that_unauthorized_access_on_HEAD_raise_missing_permission_exception(self):
         token = self._post_token('foo', 'bar')['token']
         assert_that(
-            calling(self.client.token.is_valid).with_args(token, required_acl='confd'),
+            calling(self.client.token.check).with_args(token, required_acl='confd'),
             raises(exceptions.MissingPermissionsTokenException),
         )
 
@@ -219,22 +219,22 @@ class TestCore(base.APIIntegrationTest):
         token = self._post_token('foo', 'bar')['token']
 
         assert_that(
-            calling(self.client.token.is_valid).with_args(token, tenant=UNKNOWN_TENANT),
+            calling(self.client.token.check).with_args(token, tenant=UNKNOWN_TENANT),
             raises(exceptions.MissingPermissionsTokenException),
         )
 
         assert_that(
-            self.client.token.is_valid(token, tenant=self.top_tenant_uuid),
+            self.client.token.check(token, tenant=self.top_tenant_uuid),
             is_(True),
         )
 
         with self.client_in_subtenant() as (sub_client, __, sub_tenant):
             assert_that(
-                self.client.token.is_valid(token, tenant=sub_tenant['uuid']),
+                self.client.token.check(token, tenant=sub_tenant['uuid']),
                 is_(True),
             )
             assert_that(
-                calling(self.client.token.is_valid).with_args(
+                calling(self.client.token.check).with_args(
                     sub_client._token_id, tenant=self.top_tenant_uuid
                 ),
                 raises(exceptions.MissingPermissionsTokenException),
@@ -273,7 +273,7 @@ class TestCore(base.APIIntegrationTest):
 
         token = self._post_token('foo', 'bar')['token']
 
-        assert_that(self.client.token.is_valid(token, required_acl='foo'))
+        assert_that(self.client.token.check(token, required_acl='foo'))
 
     @fixtures.http.policy(name='fooer', acl=['foo'])
     def test_that_authorized_access_on_GET_return_200(self, policy):
@@ -370,7 +370,7 @@ class TestCore(base.APIIntegrationTest):
         self.reset_clients()
 
         token = self._post_token('foo', 'bar')['token']
-        assert_that(self.client.token.is_valid(token))
+        assert_that(self.client.token.check(token))
 
     def _is_token_in_the_db(self, token):
         s = helpers.get_db_session()
