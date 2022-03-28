@@ -13,7 +13,15 @@ from .helpers import base, fixtures
 
 Contact = namedtuple(
     'Contact',
-    ['cn', 'uid', 'password', 'mail', 'login_attribute', 'employee_type'],
+    [
+        'cn',
+        'uid',
+        'password',
+        'mail',
+        'login_attribute',
+        'employee_type',
+        'search_only',
+    ],
 )
 
 TENANT_1_UUID = '2ec55cd6-c465-47a9-922f-569b404c48b8'
@@ -29,11 +37,19 @@ class LDAPHelper:
     PEOPLE_DN = 'ou=people,{}'.format(BASE_DN)
     QUEBEC_DN = 'ou=quebec,{}'.format(PEOPLE_DN)
     OU_DN = {'people': PEOPLE_DN, 'quebec': QUEBEC_DN}
+    CONFIG_DN = 'cn=config'
+    CONFIG_DATABASE_DN = 'olcDatabase={{2}}mdb,{}'.format(CONFIG_DN)
+    CONFIG_ADMIN_DN = 'cn=admin,{}'.format(CONFIG_DN)
+    CONFIG_ADMIN_PASSWORD = 'configpassword'
     setup_ran = False
 
     def __init__(self, ldap_uri):
         self._ldap_obj = ldap.initialize(ldap_uri)
         self._ldap_obj.simple_bind_s(self.ADMIN_DN, self.ADMIN_PASSWORD)
+        self._ldap_admin_obj = ldap.initialize(ldap_uri)
+        self._ldap_admin_obj.simple_bind_s(
+            self.CONFIG_ADMIN_DN, self.CONFIG_ADMIN_PASSWORD
+        )
 
     def add_contact(self, contact, ou):
         dn = 'cn={},{}'.format(contact.cn, self.OU_DN[ou])
@@ -76,6 +92,23 @@ class LDAPHelper:
         )
         self._ldap_obj.add_s(self.QUEBEC_DN, modlist)
 
+    def add_acl(self, contact, affected_ou, acl):
+        _, old_config = self._ldap_admin_obj.search_ext_s(
+            self.CONFIG_DATABASE_DN, ldap.SCOPE_SUBTREE
+        )[0]
+
+        new_config = old_config.copy()
+        ou = self.OU_DN[affected_ou]
+        user_dn = 'cn={},{}'.format(contact.cn, ou)
+
+        new_config['olcAccess'] = new_config.get('olcAccess', [])
+        acls = new_config['olcAccess']
+        acls.insert(
+            0, f'to attrs=mail by dn.exact="{user_dn}" {acl} by * write'.encode('utf-8')
+        )
+        acls.append('to * by self read by users read by * read'.encode('utf-8'))
+        self._ldap_admin_obj.add_s(self.CONFIG_DATABASE_DN, addModlist(new_config))
+
 
 @base.use_asset('base')
 class BaseLDAPIntegrationTest(base.BaseIntegrationTest):
@@ -92,6 +125,7 @@ class BaseLDAPIntegrationTest(base.BaseIntegrationTest):
             mail='awonderland@wazo-auth.com',
             login_attribute='cn',
             employee_type='human',
+            search_only=False,
         ),
         Contact(
             cn='Humpty Dumpty',
@@ -100,6 +134,7 @@ class BaseLDAPIntegrationTest(base.BaseIntegrationTest):
             mail=None,
             login_attribute='uid',
             employee_type='human',
+            search_only=False,
         ),
         Contact(
             cn='Lewis Carroll',
@@ -108,6 +143,7 @@ class BaseLDAPIntegrationTest(base.BaseIntegrationTest):
             mail='lewiscarroll@wazo-auth.com',
             login_attribute='mail',
             employee_type='human',
+            search_only=False,
         ),
         Contact(
             cn='The Cheshire Cat',
@@ -116,6 +152,16 @@ class BaseLDAPIntegrationTest(base.BaseIntegrationTest):
             mail='cheshirecat@wazo-auth.com',
             login_attribute='mail',
             employee_type='animal',
+            search_only=False,
+        ),
+        Contact(
+            cn='The White Queen',
+            uid='whitequeen',
+            password='whitequeen_password',
+            mail='whitequeen@wazo-auth.com',
+            login_attribute='mail',
+            employee_type='human',
+            search_only=True,
         ),
     ]
 
@@ -123,13 +169,17 @@ class BaseLDAPIntegrationTest(base.BaseIntegrationTest):
     def add_contacts(cls, contacts, ldap_helper):
         ldap_helper.add_ou()
         ldap_helper.add_contact(
-            Contact('wazo_auth', 'wazo_auth', 'S3cr$t', '', 'cn', 'service'), 'people'
+            Contact('wazo_auth', 'wazo_auth', 'S3cr$t', '', 'cn', 'service', False),
+            'people',
         )
         for contact in contacts:
             if not contact.mail:
                 ldap_helper.add_contact_without_email(contact, 'quebec')
             else:
                 ldap_helper.add_contact(contact, 'quebec')
+
+            if contact.search_only:
+                ldap_helper.add_acl(contact, 'quebec', 'search')
 
     @classmethod
     def setUpClass(cls):
@@ -177,6 +227,21 @@ class TestLDAP(BaseLDAPIntegrationTest):
         )
         assert_that(
             response, has_entries(metadata=has_entries(pbx_user_uuid=user['uuid']))
+        )
+
+    @fixtures.http.user(email_address='whitequeen@wazo-auth.com')
+    def test_ldap_authentication_user_cannot_read_ldap_email(self, _):
+        args = [
+            'The White Queen',
+            'whitequeen_password',
+        ]
+        assert_that(
+            calling(self._post_token).with_args(
+                *args,
+                backend='ldap_user',
+                tenant_id=self.top_tenant_uuid,
+            ),
+            raises(requests.HTTPError, pattern='401'),
         )
 
     @fixtures.http.tenant(uuid=TENANT_1_UUID)
@@ -257,6 +322,18 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
         response = self._post_token(
             'awonderland',
             'awonderland_password',
+            backend='ldap_user',
+            tenant_id=self.top_tenant_uuid,
+        )
+        assert_that(
+            response, has_entries(metadata=has_entries(pbx_user_uuid=user['uuid']))
+        )
+
+    @fixtures.http.user(email_address='whitequeen@wazo-auth.com')
+    def test_ldap_authentication_user_cannot_read_ldap_email(self, user):
+        response = self._post_token(
+            'whitequeen',
+            'whitequeen_password',
             backend='ldap_user',
             tenant_id=self.top_tenant_uuid,
         )
