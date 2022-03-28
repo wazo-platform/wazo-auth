@@ -260,7 +260,7 @@ class TestLDAP(BaseLDAPIntegrationTest):
         user_email_attribute='mail',
     )
     def test_ldap_authentication_multi_tenant(self, _, __, tenant2, ___):
-        args = ('lewiscarroll@wazo-auth.com', 'lewiscarroll_password')
+        args = ('Lewis Carroll', 'lewiscarroll_password')
         assert_that(
             calling(self._post_token).with_args(
                 *args, backend='ldap_user', tenant_id=tenant2['slug']
