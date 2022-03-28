@@ -18,6 +18,7 @@ Contact = namedtuple(
 
 TENANT_1_UUID = '2ec55cd6-c465-47a9-922f-569b404c48b8'
 TENANT_2_UUID = '402f2ee0-2af9-4b87-80ce-9d9e94f620e5'
+LDAP_PORT = 1389
 
 
 class LDAPHelper:
@@ -135,7 +136,7 @@ class BaseLDAPIntegrationTest(base.BaseIntegrationTest):
         super().setUpClass()
 
         ldap_host = '127.0.0.1'
-        ldap_port = cls.asset_cls.service_port(389, 'slapd')
+        ldap_port = cls.asset_cls.service_port(LDAP_PORT, 'slapd')
         ldap_uri = f'ldap://{ldap_host}:{ldap_port}'
 
         for _ in range(10):
@@ -157,7 +158,7 @@ class TestLDAP(BaseLDAPIntegrationTest):
         ldap_config = self.client.ldap_config.update(
             {
                 'host': 'slapd',
-                'port': 389,
+                'port': LDAP_PORT,
                 'user_base_dn': 'ou=quebec,ou=people,dc=wazo-auth,dc=wazo,dc=community',
                 'user_login_attribute': 'cn',
                 'user_email_attribute': 'mail',
@@ -186,7 +187,7 @@ class TestLDAP(BaseLDAPIntegrationTest):
     @fixtures.http.ldap_config(
         tenant_uuid=TENANT_2_UUID,
         host='slapd',
-        port=389,
+        port=LDAP_PORT,
         bind_dn='cn=wazo_auth,ou=people,dc=wazo-auth,dc=wazo,dc=community',
         bind_password='S3cr$t',
         user_base_dn='dc=wazo-auth,dc=wazo,dc=community',
@@ -239,7 +240,7 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
         ldap_config = self.client.ldap_config.update(
             {
                 'host': 'slapd',
-                'port': 389,
+                'port': LDAP_PORT,
                 'bind_dn': 'cn=wazo_auth,ou=people,dc=wazo-auth,dc=wazo,dc=community',
                 'bind_password': 'S3cr$t',
                 'user_base_dn': 'dc=wazo-auth,dc=wazo,dc=community',
@@ -271,7 +272,7 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
     @fixtures.http.ldap_config(
         tenant_uuid=TENANT_2_UUID,
         host='slapd',
-        port=389,
+        port=LDAP_PORT,
         bind_dn='cn=wazo_auth,ou=people,dc=wazo-auth,dc=wazo,dc=community',
         bind_password='S3cr$t',
         user_base_dn='dc=wazo-auth,dc=wazo,dc=community',
@@ -334,7 +335,7 @@ class TestLDAPRefreshToken(BaseLDAPIntegrationTest):
         ldap_config = self.client.ldap_config.update(
             {
                 'host': 'slapd',
-                'port': 389,
+                'port': LDAP_PORT,
                 'user_base_dn': 'ou=quebec,ou=people,dc=wazo-auth,dc=wazo,dc=community',
                 'user_login_attribute': 'cn',
                 'user_email_attribute': 'mail',
