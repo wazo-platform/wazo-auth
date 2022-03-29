@@ -9,7 +9,7 @@ services:
       - smtp
       - slapd
     environment:
-      TARGETS: "slapd:389 auth:9497 oauth2sync:80 postgres:5432 rabbitmq:5672 smtp:25"
+      TARGETS: "slapd:1389 auth:9497 oauth2sync:80 postgres:5432 rabbitmq:5672 smtp:25"
 
   auth:
     volumes:

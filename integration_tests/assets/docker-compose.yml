@@ -36,13 +36,18 @@ services:
       - "5672"
 
   slapd:
-    image: nickstenning/slapd
+    image: bitnami/openldap
     environment:
-      LDAP_DOMAIN: wazo-auth.wazo.community
-      LDAP_ORGANISATION: acme
-      LDAP_ROOTPASS: wazopassword
+      BITNAMI_DEBUG: "true"
+      LDAP_PORT_NUMBER: 1389
+      LDAP_ROOT: dc=wazo-auth,dc=wazo,dc=community
+      LDAP_ADMIN_USERNAME: admin
+      LDAP_ADMIN_PASSWORD: wazopassword
+      LDAP_CONFIG_ADMIN_ENABLED: "yes"
+      LDAP_CONFIG_ADMIN_USERNAME: admin
+      LDAP_CONFIG_ADMIN_PASSWORD: configpassword
     ports:
-      - "389"
+      - "1389"
 
   smtp:
     image: munkyboy/fakesmtp

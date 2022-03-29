@@ -56,11 +56,12 @@ class LDAPUser(BaseAuthenticationBackend):
         search_filters = config.get('search_filters')
 
         wazo_ldap = _WazoLDAP(config)
+        user_email = None
         try:
             wazo_ldap.connect()
             if bind_dn and bind_password:
                 if wazo_ldap.perform_bind(bind_dn, bind_password):
-                    user_dn = self._perform_search_dn(
+                    user_dn, user_email = self._perform_search_attributes(
                         wazo_ldap,
                         username,
                         user_login_attribute,
@@ -88,9 +89,10 @@ class LDAPUser(BaseAuthenticationBackend):
                 )
                 return False
 
-            user_email = self._get_user_ldap_email(
-                wazo_ldap, user_dn, user_email_attribute
-            )
+            if not user_email:
+                user_email = self._get_user_ldap_email(
+                    wazo_ldap, user_dn, user_email_attribute
+                )
             if not user_email:
                 logger.debug(
                     'Could not login: the LDAP user "%s" does not have an email address',
@@ -144,14 +146,18 @@ class LDAPUser(BaseAuthenticationBackend):
         _, obj = wazo_ldap.perform_search(
             user_dn, ldap.SCOPE_BASE, attrlist=[user_email_attribute]
         )
-        email = obj.get(user_email_attribute, None)
-        email = email[0] if isinstance(email, list) else email
+        email = self._extract_email_attribute(obj, user_email_attribute)
         if not email:
             logger.debug('LDAP : No email found for the user DN: %s', user_dn)
             return
-        return email.decode('utf-8')
+        return email
 
-    def _perform_search_dn(
+    def _extract_email_attribute(self, ldap_obj, user_email_attribute):
+        email = ldap_obj.get(user_email_attribute, None)
+        email = email[0] if isinstance(email, list) else email
+        return email.decode('utf-8') if email else None
+
+    def _perform_search_attributes(
         self,
         wazo_ldap,
         username,
@@ -169,8 +175,11 @@ class LDAPUser(BaseAuthenticationBackend):
             user_email_attribute=escape_filter_chars(user_email_attribute),
         )
 
-        dn, _ = wazo_ldap.perform_search(
-            user_base_dn, ldap.SCOPE_SUBTREE, filterstr=filterstr, attrlist=['']
+        dn, obj = wazo_ldap.perform_search(
+            user_base_dn,
+            ldap.SCOPE_SUBTREE,
+            filterstr=filterstr,
+            attrlist=[user_email_attribute],
         )
         if not dn:
             logger.debug(
@@ -178,7 +187,8 @@ class LDAPUser(BaseAuthenticationBackend):
                 user_base_dn,
                 filterstr,
             )
-        return dn
+            return None, None
+        return dn, self._extract_email_attribute(obj, user_email_attribute)
 
 
 class _WazoLDAP:
