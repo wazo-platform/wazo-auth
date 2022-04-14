@@ -1,7 +1,7 @@
 # Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from marshmallow import post_dump
+from marshmallow import post_dump, post_load
 from xivo.mallow import fields, validate
 from xivo import mallow_helpers as mallow
 
@@ -53,6 +53,16 @@ class TenantFullSchema(BaseSchema):
     phone = fields.String(
         validate=validate.Length(min=1, max=32), default=None, missing=None
     )
+    domain_names = fields.List(
+        fields.String(
+            validate=validate.Regexp(
+                r'^([A-Za-z0-9]\.|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9]\.){1,3}[A-Za-z]{2,6}$'
+            )
+        ),
+        missing=[],
+        default=[],
+        allow_none=False,
+    )
     address = fields.Nested(
         TenantAddress,
         missing=empty_tenant_address,
@@ -63,6 +73,11 @@ class TenantFullSchema(BaseSchema):
     @post_dump
     def add_empty_address(self, data, **kwargs):
         data['address'] = data['address'] or empty_tenant_address
+        return data
+
+    @post_load
+    def ensure_domain_names_are_unique(self, data, **kwargs):
+        data['domain_names'] = sorted(list(set(data['domain_names'])))
         return data
 
 
