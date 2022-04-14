@@ -1,5 +1,16 @@
 # Changelog
 
+## 22.06
+
+* The following field:
+
+  * `domain_names`
+
+has been added to the following resources:
+
+  * `tenants`
+
+
 ## 22.03
 
 * New endpoint to get and update configuration of the LDAP authentication source:

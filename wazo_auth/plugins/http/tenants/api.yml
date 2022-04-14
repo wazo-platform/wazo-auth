@@ -180,6 +180,12 @@ definitions:
       phone:
         type: string
         description: "The tenant's contact phone number"
+      domain_names:
+        type: array
+        description: "A list containing human readeable unique domain names, associated with a specific tenant"
+        uniqueItems: true
+        items:
+          type: string
       address:
         $ref: '#/definitions/TenantAddress'
   TenantCreate:
@@ -200,6 +206,12 @@ definitions:
       phone:
         type: string
         description: "The tenant's contact phone number"
+      domain_names:
+        type: array
+        description: "A list containing human readeable unique domain names, associated with a specific tenant"
+        uniqueItems: true
+        items:
+          type: string
       address:
         $ref: '#/definitions/TenantAddress'
   TenantEdit:
@@ -214,6 +226,12 @@ definitions:
       phone:
         type: string
         description: "The tenant's contact phone number"
+      domain_names:
+        type: array
+        description: "A list containing human readeable unique domain names, associated with a specific tenant"
+        uniqueItems: true
+        items:
+          type: string
       address:
         $ref: '#/definitions/TenantAddress'
   TenantAddress:
