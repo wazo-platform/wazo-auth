@@ -130,23 +130,22 @@ class Tenant(Base):
     phone = Column(Text)
     contact_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='SET NULL'))
     parent_uuid = Column(String(38), ForeignKey('auth_tenant.uuid'), nullable=False)
-    domain_names = relationship('DomainName', back_populates='tenant')
+    domain_names = relationship(
+        'DomainName', uselist=True, cascade='all, delete-orphan'
+    )
 
 
 class DomainName(Base):
 
     __tablename__ = 'auth_tenant_domain_name'
 
-    name = Column(String(RFC_DN_MAX_LENGTH), nullable=False)
+    name = Column(String(RFC_DN_MAX_LENGTH), nullable=False, unique=True)
     tenant_uuid = Column(
         String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False
     )
 
-    tenant = relationship(
-        'Tenant',
-        back_populates='domain_names',
-        cascade='all, delete-orphan',
-        single_parent=True,
+    uuid = Column(
+        String(36), server_default=text('uuid_generate_v4()'), primary_key=True
     )
 
 

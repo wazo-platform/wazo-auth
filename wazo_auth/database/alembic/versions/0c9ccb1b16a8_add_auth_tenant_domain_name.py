@@ -19,23 +19,26 @@ RFC_DN_MAX_LENGTH = 61
 def upgrade():
     op.create_table(
         TABLE_NAME,
-        Column(
-            'tenant_uuid',
-            Column(
-                sa.String(38),
-                sa.ForeignKey('auth_tenant.uuid', ondelete='CASCADE'),
-                nullable=False,
-            ),
+        sa.Column(
+            'uuid',
+            sa.String(36),
+            server_default=sa.text('uuid_generate_v4()'),
+            primary_key=True,
         ),
-        Column(
+        sa.Column(
+            'tenant_uuid',
+            sa.String(38),
+            sa.ForeignKey('auth_tenant.uuid', ondelete='CASCADE'),
+            nullable=False,
+        ),
+        sa.Column(
             'name',
             sa.String(RFC_DN_MAX_LENGTH),
             nullable=False,
+            unique=True,
         ),
     )
-    op.create_unique_constraint(
-        'auth_tenant_domain_name_key', TABLE_NAME, ['name', 'tenant_uuid']
-    )
+    op.create_unique_constraint('auth_tenant_domain_name_key', TABLE_NAME, ['name'])
 
 
 def downgrade():

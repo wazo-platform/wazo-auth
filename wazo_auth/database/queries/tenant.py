@@ -8,7 +8,7 @@ import re
 from sqlalchemy import and_, exc, text
 from wazo_auth import schemas
 from .base import BaseDAO, PaginatorMixin
-from ..models import Address, Tenant, User
+from ..models import Address, DomainName, Tenant, User
 from . import filters
 from ... import exceptions
 
@@ -53,6 +53,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def create(self, **kwargs):
         parent_uuid = kwargs.get('parent_uuid')
         uuid_ = kwargs.get('uuid')
+        domain_names = kwargs.get('domain_names', [])
 
         if uuid_ and parent_uuid and str(uuid_) == str(parent_uuid):
             if self.find_top_tenant():
@@ -75,12 +76,24 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if uuid_:
             tenant.uuid = str(uuid_)
 
+        new_domain_names = []
+        if domain_names and len(domain_names) > 0:
+            for domain_name in domain_names:
+                new_domain_names.append(
+                    DomainName(name=domain_name, tenant_uuid=tenant.uuid)
+                )
+
+        tenant.domain_names = new_domain_names
+
         self.session.add(tenant)
         try:
             self.session.flush()
         except exc.IntegrityError as e:
             self.session.rollback()
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                constraint = e.orig.diag.constraint_name
+                if constraint == 'auth_tenant_domain_name_name_key':
+                    raise exceptions.DomainAlreadyExistException(domain_names)
                 column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
                 value = locals().get(column)
                 if column:

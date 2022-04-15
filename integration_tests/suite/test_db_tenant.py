@@ -35,6 +35,10 @@ TENANT_UUID_2 = '00000000-0000-4000-a000-000000000002'
 TENANT_UUID_3 = '00000000-0000-4000-a000-000000000003'
 TENANT_UUID_4 = '00000000-0000-4000-a000-000000000004'
 
+VALID_DOMAIN_NAMES_1 = ['wazo.io', 'stack.dev.wazo.io']
+VALID_DOMAIN_NAMES_2 = ['gmail.com', 'yahoo.com', 'google.ca']
+VALID_DOMAIN_NAMES_3 = ['outlook.fr', 'mail.yahoo.fr']
+
 
 class ValidSlug:
     def __eq__(self, other):
@@ -183,23 +187,31 @@ class TestTenantDAO(base.DAOTestCase):
         expected = build_list_matcher('baz a', 'foo c', 'master')
         assert_that(result, contains(*expected))
 
-    @fixtures.db.tenant(name='foobar')
+    @fixtures.db.tenant(name='foobar', domain_names=VALID_DOMAIN_NAMES_1)
     def test_tenant_creation(self, foobar_uuid):
         # The parent_uuid defaults to the master tenant's UUID
         top_tenant_uuid = self._top_tenant_uuid()
-        self._assert_tenant_matches(foobar_uuid, 'foobar', top_tenant_uuid)
+        self._assert_tenant_matches(
+            foobar_uuid, 'foobar', top_tenant_uuid, domain_names=VALID_DOMAIN_NAMES_1
+        )
 
         # The parent_uuid can be specified
-        foobaz_uuid = self._create_tenant(name='foobaz', parent_uuid=foobar_uuid)
+        foobaz_uuid = self._create_tenant(
+            name='foobaz', parent_uuid=foobar_uuid, domain_names=VALID_DOMAIN_NAMES_2
+        )
         try:
-            self._assert_tenant_matches(foobaz_uuid, 'foobaz', foobar_uuid)
+            self._assert_tenant_matches(
+                foobaz_uuid, 'foobaz', foobar_uuid, domain_names=VALID_DOMAIN_NAMES_2
+            )
         finally:
             self._tenant_dao.delete(foobaz_uuid)
 
         # The UUID can be specified
-        c_uuid = self._create_tenant(uuid=uuid4(), name='c')
+        c_uuid = self._create_tenant(
+            uuid=uuid4(), name='c', domain_names=VALID_DOMAIN_NAMES_3
+        )
         try:
-            self._assert_tenant_matches(c_uuid, 'c')
+            self._assert_tenant_matches(c_uuid, 'c', domain_names=VALID_DOMAIN_NAMES_3)
         finally:
             self._tenant_dao.delete(c_uuid)
 
@@ -210,15 +222,28 @@ class TestTenantDAO(base.DAOTestCase):
             raises(exceptions.MasterTenantConflictException),
         )
 
+    @fixtures.db.tenant(name='foobar', domain_names=VALID_DOMAIN_NAMES_1)
+    def test_tenants_with_duplicate_domain_names_creation_raises_409(self, foobar_uuid):
+
+        uuid = uuid4()
+        assert_that(
+            calling(self._create_tenant).with_args(uuid=uuid, domain_names=['wazo.io']),
+            raises(exceptions.DomainAlreadyExistException),
+        )
+
     def test_tenant_creation_auto_generates_slug(self):
-        tenant_uuid = self._create_tenant(name='t', slug=None)
+        tenant_uuid = self._create_tenant(
+            name='t', slug=None, domain_names=VALID_DOMAIN_NAMES_1
+        )
 
         try:
-            self._assert_tenant_matches(tenant_uuid, 't', slug=ValidSlug())
+            self._assert_tenant_matches(
+                tenant_uuid, 't', slug=ValidSlug(), domain_names=VALID_DOMAIN_NAMES_1
+            )
         finally:
             self._tenant_dao.delete(tenant_uuid)
 
-    @fixtures.db.tenant()
+    @fixtures.db.tenant(domain_names=VALID_DOMAIN_NAMES_3)
     def test_delete(self, tenant_uuid):
         self._tenant_dao.delete(tenant_uuid)
 
@@ -299,24 +324,39 @@ class TestTenantDAO(base.DAOTestCase):
         result = self.session.query(models.PolicyAccess).get(access_id)
         assert_that(result, equal_to(None))
 
-    def _assert_tenant_matches(self, uuid, name, parent_uuid=ANY_UUID, slug=ANY):
+    def _assert_tenant_matches(
+        self, uuid, name, parent_uuid=ANY_UUID, slug=ANY, domain_names=[]
+    ):
+
         assert_that(uuid, equal_to(ANY_UUID))
         s = self._tenant_dao.session
         tenant = (
-            s.query(models.Tenant.name, models.Tenant.parent_uuid, models.Tenant.slug)
+            s.query(
+                models.Tenant.name,
+                models.Tenant.parent_uuid,
+                models.Tenant.slug,
+            )
             .filter(models.Tenant.uuid == uuid)
             .first()
         )
 
         assert_that(
-            tenant, has_properties(name=name, parent_uuid=parent_uuid, slug=slug)
+            tenant,
+            has_properties(name=name, parent_uuid=parent_uuid, slug=slug),
         )
+
+        if domain_names and len(domain_names) > 0:
+
+            filter_ = models.DomainName.name.in_(domain_names)
+            count_ = s.query(models.DomainName).filter(filter_).count()
+            assert_that(count_, equal_to(len(domain_names)))
 
     def _create_tenant(self, **kwargs):
         kwargs.setdefault('name', None)
         kwargs.setdefault('phone', None)
         kwargs.setdefault('slug', None)
         kwargs.setdefault('contact_uuid', None)
+        kwargs.setdefault('domain_names', [])
         return self._tenant_dao.create(**kwargs)
 
     def _top_tenant_uuid(self):
