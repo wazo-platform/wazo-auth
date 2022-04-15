@@ -26,6 +26,8 @@ from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
+RFC_DN_MAX_LENGTH = 61
+
 
 class Address(Base):
 
@@ -128,6 +130,24 @@ class Tenant(Base):
     phone = Column(Text)
     contact_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='SET NULL'))
     parent_uuid = Column(String(38), ForeignKey('auth_tenant.uuid'), nullable=False)
+    domain_names = relationship('DomainName', back_populates='tenant')
+
+
+class DomainName(Base):
+
+    __tablename__ = 'auth_tenant_domain_name'
+
+    name = Column(String(RFC_DN_MAX_LENGTH), nullable=False)
+    tenant_uuid = Column(
+        String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False
+    )
+
+    tenant = relationship(
+        'Tenant',
+        back_populates='domain_names',
+        cascade='all, delete-orphan',
+        single_parent=True,
+    )
 
 
 class Token(Base):
