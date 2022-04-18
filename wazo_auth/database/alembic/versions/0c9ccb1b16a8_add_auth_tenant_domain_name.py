@@ -38,9 +38,7 @@ def upgrade():
             unique=True,
         ),
     )
-    op.create_unique_constraint('auth_tenant_domain_name_key', TABLE_NAME, ['name'])
 
 
 def downgrade():
-    op.drop_constraint('auth_tenant_domain_name_key', TABLE_NAME)
     op.drop_table(TABLE_NAME)

@@ -425,10 +425,8 @@ class DomainAlreadyExistException(APIException):
 
 
 class DomainNameNotFoundException(APIException):
-    def __init__(self, tenant_uuid, domain_name):
-        msg = 'Tenant : "{}" has no domain name : "{}" in its list of domain names'.format(
-            tenant_uuid, domain_name
-        )
+    def __init__(self, domain_name):
+        msg = 'Domain name : "{}" does not exist in the database'.format(domain_name)
         details = {'domain_names': {'constraint_id': 'not-found', 'message': msg}}
         error_id = 'unknown-domain-name'
         resource = 'tenants'

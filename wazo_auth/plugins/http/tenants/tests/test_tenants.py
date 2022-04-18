@@ -131,31 +131,20 @@ class TestTenantPost(HTTPAppTestCase):
         TenantDetector.autodetect.return_value = Mock(uuid=s.tenant_uuid)
 
         invalid_datas = [
-            (
-                'domain_names',
-                {
-                    'domain_names': [
-                        '-wazo.io',
-                        ' wazo.io',
-                        '#',
-                        123,
-                        'wazo .io',
-                        'wazo.io-',
-                        'wazo',
-                        '=wazo.io',
-                        '+wazo.io',
-                        '_wazo.io',
-                        'wazo_io',
-                        'wazo_io  ',
-                        'x' * 62,
-                        None,
-                        '',
-                        [],
-                        {},
-                        ['wazo.io'],
-                    ]
-                },
-            ),
+            ('domain_names', {'domain_names': ['-wazo.io']}),
+            ('domain_names', {'domain_names': [' wazo.io']}),
+            ('domain_names', {'domain_names': ['#']}),
+            ('domain_names', {'domain_names': ['123']}),
+            ('domain_names', {'domain_names': ['wazo .io']}),
+            ('domain_names', {'domain_names': ['wazo.io-']}),
+            ('domain_names', {'domain_names': ['wazo']}),
+            ('domain_names', {'domain_names': ['=wazo.io']}),
+            ('domain_names', {'domain_names': ['+wazo.io']}),
+            ('domain_names', {'domain_names': ['_wazo.io']}),
+            ('domain_names', {'domain_names': ['wazo_io']}),
+            ('domain_names', {'domain_names': ['wazo_io  ']}),
+            ('domain_names', {'domain_names': ['x' * 62]}),
+            ('domain_names', {'domain_names': ['']}),
         ]
 
         for field, invalid_data in invalid_datas:
@@ -165,7 +154,7 @@ class TestTenantPost(HTTPAppTestCase):
                 result.json,
                 has_entries(
                     error_id='invalid-data',
-                    message='String does not match expected pattern.',
+                    message=ANY,
                     resource='tenants',
                     details=has_entries(
                         field,

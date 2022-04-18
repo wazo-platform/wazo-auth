@@ -57,7 +57,7 @@ class TenantFullSchema(BaseSchema):
         fields.String(
             validate=validate.Regexp(
                 r'^([A-Za-z0-9]\.|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9]\.){1,3}[A-Za-z]{2,6}$'
-            )
+            ),
         ),
         missing=[],
         default=[],

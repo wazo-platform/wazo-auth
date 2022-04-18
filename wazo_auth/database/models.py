@@ -138,14 +138,13 @@ class Tenant(Base):
 class DomainName(Base):
 
     __tablename__ = 'auth_tenant_domain_name'
+    uuid = Column(
+        String(36), server_default=text('uuid_generate_v4()'), primary_key=True
+    )
 
     name = Column(String(RFC_DN_MAX_LENGTH), nullable=False, unique=True)
     tenant_uuid = Column(
         String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False
-    )
-
-    uuid = Column(
-        String(36), server_default=text('uuid_generate_v4()'), primary_key=True
     )
 
 
