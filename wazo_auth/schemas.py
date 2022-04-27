@@ -151,9 +151,17 @@ class UserSessionListSchema(BaseListSchema):
 
 
 class TenantListSchema(BaseListSchema):
-    sort_columns = ['name', 'slug']
+    sort_columns = ['name', 'slug', 'domain_name', 'domain_names', 'search_domain']
     default_sort_column = 'name'
-    searchable_columns = ['uuid', 'uuids', 'name', 'slug']
+    searchable_columns = [
+        'uuid',
+        'uuids',
+        'name',
+        'slug',
+        'domain_name',
+        'domain_names',
+        'search_domain',
+    ]
 
 
 class UserTenantListSchema(BaseListSchema):

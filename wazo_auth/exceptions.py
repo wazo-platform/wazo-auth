@@ -422,12 +422,3 @@ class DomainAlreadyExistException(APIException):
         error_id = 'conflict'
         resource = 'tenants'
         super().__init__(409, 'Conflict detected', error_id, details, resource)
-
-
-class DomainNameNotFoundException(APIException):
-    def __init__(self, domain_name):
-        msg = 'Domain name : "{}" does not exist in the database'.format(domain_name)
-        details = {'domain_names': {'constraint_id': 'not-found', 'message': msg}}
-        error_id = 'unknown-domain-name'
-        resource = 'tenants'
-        super().__init__(404, 'Domain name not found', error_id, details, resource)

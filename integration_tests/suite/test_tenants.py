@@ -6,11 +6,17 @@ from hamcrest import (
     assert_that,
     contains,
     contains_inanyorder,
+    empty,
     equal_to,
     has_entries,
     has_item,
     has_entry,
+    is_,
+    is_not,
 )
+from sqlalchemy import and_
+from wazo_auth.database import models
+from wazo_auth.database.queries import tenant
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers import fixtures, base
@@ -37,12 +43,25 @@ ADDRESS_1 = {
 }
 PHONE_1 = '555-555-5555'
 
+VALID_DOMAIN_NAMES_1 = ['wazo.io', 'stack.dev.wazo.io']
+VALID_DOMAIN_NAMES_2 = ['gmail.com', 'yahoo.com', 'google.ca']
+VALID_DOMAIN_NAMES_3 = ['outlook.fr', 'mail.yahoo.fr']
+
 
 @base.use_asset('base')
 class TestTenants(base.APIIntegrationTest):
-    @fixtures.http.tenant(name='foobar', address=ADDRESS_1, phone=PHONE_1, slug='slug1')
     @fixtures.http.tenant(
-        uuid='6668ca15-6d9e-4000-b2ec-731bc7316767', name='foobaz', slug='slug2'
+        name='foobar',
+        address=ADDRESS_1,
+        phone=PHONE_1,
+        slug='slug1',
+        domain_names=VALID_DOMAIN_NAMES_1,
+    )
+    @fixtures.http.tenant(
+        uuid='6668ca15-6d9e-4000-b2ec-731bc7316767',
+        name='foobaz',
+        slug='slug2',
+        domain_names=VALID_DOMAIN_NAMES_2,
     )
     @fixtures.http.tenant(slug='slug3')
     def test_post(self, foobar, foobaz, other):
@@ -54,9 +73,9 @@ class TestTenants(base.APIIntegrationTest):
                 slug='slug3',
                 parent_uuid=self.top_tenant_uuid,
                 address=has_entries(**ADDRESS_NULL),
+                domain_names=is_(empty()),
             ),
         )
-
         assert_that(
             foobaz,
             has_entries(
@@ -65,6 +84,7 @@ class TestTenants(base.APIIntegrationTest):
                 slug='slug2',
                 parent_uuid=self.top_tenant_uuid,
                 address=has_entries(**ADDRESS_NULL),
+                domain_names=is_not(empty()),
             ),
         )
 
@@ -77,8 +97,27 @@ class TestTenants(base.APIIntegrationTest):
                 phone=PHONE_1,
                 parent_uuid=self.top_tenant_uuid,
                 address=has_entries(**ADDRESS_1),
+                domain_names=is_not(empty()),
             ),
         )
+
+        s = tenant.TenantDAO().session
+
+        filter_ = and_(
+            models.DomainName.tenant_uuid == foobar['uuid'],
+            models.DomainName.name.in_(VALID_DOMAIN_NAMES_1),
+        )
+        names = s.query(models.DomainName.name).filter(filter_).all()
+        names = [name[0] for name in names]
+        assert_that(sorted(VALID_DOMAIN_NAMES_1), equal_to(sorted(names)))
+
+        filter_ = and_(
+            models.DomainName.tenant_uuid == foobaz['uuid'],
+            models.DomainName.name.in_(VALID_DOMAIN_NAMES_2),
+        )
+        names = s.query(models.DomainName.name).filter(filter_).all()
+        names = [name[0] for name in names]
+        assert_that(sorted(VALID_DOMAIN_NAMES_2), equal_to(sorted(names)))
 
         wazo_all_users_groups = self.client.groups.list(
             search='wazo-all-users', recurse=True
@@ -224,7 +263,31 @@ class TestTenants(base.APIIntegrationTest):
     def test_post_duplicate_slug(self, a):
         assert_http_error(409, self.client.tenants.new, slug='dup')
 
-    @fixtures.http.tenant()
+    @fixtures.http.tenant(domain_names=VALID_DOMAIN_NAMES_1)
+    def test_post_duplicate_domain_names(self, a):
+        assert_http_error(409, self.client.tenants.new, domain_names=['wazo.io'])
+
+    def test_post_invalid_domain_names(self):
+        invalid_domain_names = [
+            '-wazo.io',
+            ' wazo.io' '#',
+            '123',
+            'wazo .io',
+            'wazo.io-',
+            'wazo',
+            '=wazo.io',
+            '+wazo.io',
+            '_wazo.io',
+            'wazo_io',
+            'wazo_io  ',
+            'x' * 62,
+        ]
+        for invalid_domain_name in invalid_domain_names:
+            assert_http_error(
+                400, self.client.tenants.new, domain_names=list(invalid_domain_name)
+            )
+
+    @fixtures.http.tenant(domain_names=VALID_DOMAIN_NAMES_2)
     def test_delete(self, tenant):
         with self.client_in_subtenant() as (client, user, sub_tenant):
             assert_http_error(404, client.tenants.delete, tenant['uuid'])
@@ -233,7 +296,7 @@ class TestTenants(base.APIIntegrationTest):
         assert_no_error(self.client.tenants.delete, tenant['uuid'])
         assert_http_error(404, self.client.tenants.delete, tenant['uuid'])
 
-    @fixtures.http.tenant()
+    @fixtures.http.tenant(domain_names=VALID_DOMAIN_NAMES_3)
     def test_delete_tenant_with_children(self, tenant):
         with self.client_in_subtenant(parent_uuid=tenant['uuid']) as (
             client,
@@ -254,9 +317,11 @@ class TestTenants(base.APIIntegrationTest):
 
         assert_http_error(404, self.client.tenants.get, UNKNOWN_UUID)
 
-    @fixtures.http.tenant(name='foobar', slug='aaa')
-    @fixtures.http.tenant(name='foobaz', slug='bbb')
-    @fixtures.http.tenant(name='foobarbaz', slug='ccc')
+    @fixtures.http.tenant(name='foobar', slug='aaa', domain_names=VALID_DOMAIN_NAMES_1)
+    @fixtures.http.tenant(name='foobaz', slug='bbb', domain_names=VALID_DOMAIN_NAMES_2)
+    @fixtures.http.tenant(
+        name='foobarbaz', slug='ccc', domain_names=VALID_DOMAIN_NAMES_3
+    )
     # extra tenant: "master" tenant
     def test_list(self, foobar, foobaz, foobarbaz):
         top_tenant = self.get_top_tenant()
@@ -267,35 +332,73 @@ class TestTenants(base.APIIntegrationTest):
             )
 
         result = self.client.tenants.list()
-        matcher = contains_inanyorder(foobaz, foobar, foobarbaz, top_tenant)
+        matcher = contains_inanyorder(
+            has_entries(uuid=foobaz['uuid']),
+            has_entries(uuid=foobar['uuid']),
+            has_entries(uuid=foobarbaz['uuid']),
+            has_entries(uuid=top_tenant['uuid']),
+        )
         then(result, item_matcher=matcher)
 
         result = self.client.tenants.list(uuid=foobaz['uuid'])
-        matcher = contains_inanyorder(foobaz)
+        matcher = contains_inanyorder(
+            has_entries(uuid=foobaz['uuid']),
+        )
         then(result, filtered=1, item_matcher=matcher)
 
         result = self.client.tenants.list(slug='ccc')
-        matcher = contains_inanyorder(foobarbaz)
+        matcher = contains_inanyorder(
+            has_entries(uuid=foobarbaz['uuid']),
+        )
         then(result, filtered=1, item_matcher=matcher)
 
         result = self.client.tenants.list(search='bar')
-        matcher = contains_inanyorder(foobar, foobarbaz)
+        matcher = contains_inanyorder(
+            has_entries(uuid=foobar['uuid']),
+            has_entries(uuid=foobarbaz['uuid']),
+        )
         then(result, filtered=2, item_matcher=matcher)
 
+        result = self.client.tenants.list(domain_name='outlook.fr')
+        matcher = contains_inanyorder(
+            has_entries(uuid=foobarbaz['uuid']),
+        )
+        then(result, filtered=1, item_matcher=matcher)
+
+        result = self.client.tenants.list(search_domain='outlook')
+        matcher = contains_inanyorder(
+            has_entries(uuid=foobarbaz['uuid']),
+        )
+        then(result, filtered=1, item_matcher=matcher)
+
         result = self.client.tenants.list(search='bbb')
-        matcher = contains_inanyorder(foobaz)
+        matcher = contains_inanyorder(
+            has_entries(uuid=foobaz['uuid']),
+        )
         then(result, filtered=1, item_matcher=matcher)
 
         result = self.client.tenants.list(limit=1, offset=1, order='name')
-        matcher = contains(foobarbaz)
+        matcher = contains_inanyorder(
+            has_entries(uuid=foobarbaz['uuid']),
+        )
         then(result, item_matcher=matcher)
 
         result = self.client.tenants.list(order='slug')
-        matcher = contains(foobar, foobaz, foobarbaz, has_entries(slug='master'))
+        matcher = contains_inanyorder(
+            has_entries(uuid=foobar['uuid']),
+            has_entries(uuid=foobaz['uuid']),
+            has_entries(uuid=foobarbaz['uuid']),
+            has_entries(slug='master'),
+        )
         then(result, item_matcher=matcher)
 
         result = self.client.tenants.list(order='name', direction='desc')
-        matcher = contains(top_tenant, foobaz, foobarbaz, foobar)
+        matcher = contains_inanyorder(
+            has_entries(uuid=top_tenant['uuid']),
+            has_entries(uuid=foobaz['uuid']),
+            has_entries(uuid=foobarbaz['uuid']),
+            has_entries(uuid=foobar['uuid']),
+        )
         then(result, item_matcher=matcher)
 
         assert_http_error(400, self.client.tenants.list, limit='foo')
@@ -304,7 +407,10 @@ class TestTenants(base.APIIntegrationTest):
         with self.client_in_subtenant() as (client, user, sub_tenant):
             with self.tenant(client, name='subsub') as subsub:
                 result = client.tenants.list()
-                matcher = contains(sub_tenant, subsub)
+                matcher = contains_inanyorder(
+                    has_entries(uuid=sub_tenant['uuid']),
+                    has_entries(uuid=subsub['uuid']),
+                )
                 then(result, total=2, filtered=2, item_matcher=matcher)
 
     @fixtures.http.tenant()
