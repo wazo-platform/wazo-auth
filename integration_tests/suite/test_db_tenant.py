@@ -161,7 +161,7 @@ class TestTenantDAO(base.DAOTestCase):
         result = self._tenant_dao.count(visible_tenants, domain_name='outlook.fr')
         assert_that(result, equal_to(1))
 
-        result = self._tenant_dao.count(visible_tenants, search_domain='yahoo')
+        result = self._tenant_dao.count(visible_tenants, search='yahoo')
         assert_that(result, equal_to(2))
 
     @fixtures.db.tenant(name='baz a', domain_names=VALID_DOMAIN_NAMES_1)
@@ -189,7 +189,7 @@ class TestTenantDAO(base.DAOTestCase):
         expected = build_list_matcher('bar b', 'baz a')
         assert_that(result, contains_inanyorder(*expected))
 
-        result = self._tenant_dao.list_(search_domain='yahoo')
+        result = self._tenant_dao.list_(search='yahoo')
         expected = build_list_matcher('bar b', 'foo c')
         assert_that(result, contains_inanyorder(*expected))
 

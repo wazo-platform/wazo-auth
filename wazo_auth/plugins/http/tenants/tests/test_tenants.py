@@ -170,6 +170,32 @@ class TestTenantPost(HTTPAppTestCase):
                 invalid_data,
             )
 
+        invalid_domains_types = [
+            ('domain_names', {'domain_names': None}),
+            ('domain_names', {'domain_names': True}),
+            ('domain_names', {'domain_names': False}),
+            ('domain_names', {'domain_names': 'wazo.community'}),
+            ('domain_names', {'domain_names': 42}),
+            ('domain_names', {'domain_names': {'name': 'wazo.community'}}),
+        ]
+
+        for field, invalid_data in invalid_domains_types:
+            result = self.post(invalid_data)
+            assert_that(result.status_code, equal_to(400), invalid_data)
+            assert_that(
+                result.json,
+                has_entries(
+                    error_id='invalid-data',
+                    message=ANY,
+                    resource='tenants',
+                    details=has_entries(
+                        field,
+                        has_entries(constraint_id=ANY, message=ANY),
+                    ),
+                ),
+                invalid_data,
+            )
+
     @patch('wazo_auth.plugins.http.tenants.http.TenantDetector')
     def test_that_post_with_duplicate_domain_names_returns_unique_ones(
         self, TenantDetector

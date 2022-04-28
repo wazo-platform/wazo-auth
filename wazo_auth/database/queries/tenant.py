@@ -250,10 +250,10 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def _slug_exist(self, slug):
         return self.session.query(Tenant.slug).filter(Tenant.slug == slug).count() > 0
 
-    def _add_domain_filters(self, search_domain=None, domain_name=None, **ignored):
+    def _add_domain_filters(self, search=None, domain_name=None, **ignored):
         filter_ = text('true')
-        if search_domain:
-            search_pattern = '%{}%'.format(search_domain)
+        if search:
+            search_pattern = '%{}%'.format(search)
             domain_name_search_filter_ = Tenant.domain_names.any(
                 DomainName.name.ilike(search_pattern)
             )

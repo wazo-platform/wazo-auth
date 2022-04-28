@@ -10,6 +10,13 @@ has been added to the following resources:
 
   * `tenants`
 
+supporting the following operations:
+
+  * `GET /tenants/domain_name`
+  * `PUT /tenants/{tenant_uuid}/domain_names`
+  * `DELETE /tenants/{tenant_uuid}/domain_names`
+  * `POST /tenants/{tenant_uuid}/domain_names`
+
 
 ## 22.03
 
