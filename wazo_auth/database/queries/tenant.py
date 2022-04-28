@@ -179,8 +179,22 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             'contact_uuid': kwargs.get('contact_uuid'),
             'phone': kwargs.get('phone'),
         }
+        domain_names = kwargs.get('domain_names', [])
 
         try:
+            if domain_names:
+                tenant = self.session.query(Tenant).filter(filter_).first()
+                self.session.query(DomainName).filter(
+                    DomainName.tenant_uuid == str(tenant_uuid)
+                ).delete()
+                self.session.commit()
+                for domain_name in domain_names:
+                    tenant.domain_names.append(
+                        DomainName(name=domain_name, tenant_uuid=str(tenant_uuid))
+                    )
+
+                self.session.commit()
+
             self.session.query(Tenant).filter(filter_).update(values)
             self.session.flush()
         except exc.IntegrityError as e:
@@ -189,6 +203,10 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 constraint = e.orig.diag.constraint_name
                 if constraint == 'auth_tenant_contact_uuid_fkey':
                     raise exceptions.UnknownUserException(kwargs['contact_uuid'])
+            elif e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                constraint = e.orig.diag.constraint_name
+                if constraint == 'auth_tenant_domain_name_name_key':
+                    raise exceptions.DomainAlreadyExistException(domain_names)
             raise
 
     def _tenant_query(self, scoping_tenant_uuid):

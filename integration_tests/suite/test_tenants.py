@@ -16,7 +16,7 @@ from hamcrest import (
 )
 from sqlalchemy import and_
 from wazo_auth.database import models
-from wazo_auth.database.queries import tenant
+from wazo_auth.database.queries import tenant as t
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers import fixtures, base
@@ -101,7 +101,7 @@ class TestTenants(base.APIIntegrationTest):
             ),
         )
 
-        s = tenant.TenantDAO().session
+        s = t.TenantDAO().session
 
         filter_ = and_(
             models.DomainName.tenant_uuid == foobar['uuid'],
@@ -442,6 +442,51 @@ class TestTenants(base.APIIntegrationTest):
                 address=has_entries(**ADDRESS_1),
             ),
         )
+
+    @fixtures.http.tenant(domain_names=VALID_DOMAIN_NAMES_1)
+    @fixtures.http.user()
+    def test_put_updated_domain_names(self, tenant, user):
+        name = 'foobar'
+        body = {
+            'name': name,
+            'address': ADDRESS_1,
+            'contact': user['uuid'],
+            'domain_names': ['wazo.io'],
+        }
+
+        result = self.client.tenants.edit(tenant['uuid'], **body)
+
+        assert_that(
+            result,
+            has_entries(
+                uuid=tenant['uuid'],
+                name=name,
+                contact=user['uuid'],
+                address=has_entries(**ADDRESS_1),
+                domain_names=is_not(empty()),
+            ),
+        )
+
+        s = t.TenantDAO().session
+
+        filter_ = and_(
+            models.DomainName.tenant_uuid == tenant['uuid'],
+            models.DomainName.name.in_(['wazo.io']),
+        )
+        names = s.query(models.DomainName.name).filter(filter_).all()
+        names = [name[0] for name in names]
+        assert_that(sorted(['wazo.io']), equal_to(sorted(names)))
+
+    @fixtures.http.tenant(domain_names=VALID_DOMAIN_NAMES_1)
+    @fixtures.http.tenant(domain_names=VALID_DOMAIN_NAMES_2)
+    def test_put_duplicate_domain_names_raises_409(self, tenant_1, tenant_2):
+        name = 'foobar'
+        body = {
+            'name': name,
+            'domain_names': ['wazo.io'],
+        }
+
+        assert_http_error(409, self.client.tenants.edit, tenant_2['uuid'], **body)
 
     @fixtures.http.tenant(slug='ABC')
     def test_put_slug_is_read_only(self, tenant):
