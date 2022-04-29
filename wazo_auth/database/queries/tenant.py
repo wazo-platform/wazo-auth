@@ -77,13 +77,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if uuid_:
             tenant.uuid = str(uuid_)
 
-        new_domain_names = []
-        for domain_name in domain_names:
-            new_domain_names.append(
-                DomainName(name=domain_name, tenant_uuid=tenant.uuid)
-            )
-
-        tenant.domain_names = new_domain_names
+        tenant.domain_names = domain_names
 
         self.session.add(tenant)
         try:
@@ -172,37 +166,28 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         return [to_dict(*row) for row in query.all()]
 
-    def update(self, tenant_uuid, **kwargs):
-        filter_ = Tenant.uuid == str(tenant_uuid)
-        values = {
-            'name': kwargs.get('name'),
-            'contact_uuid': kwargs.get('contact_uuid'),
-            'phone': kwargs.get('phone'),
-        }
-        domain_names = kwargs.get('domain_names', [])
-
+    def update(
+        self,
+        tenant_uuid,
+        name=None,
+        phone=None,
+        domain_names=None,
+        contact_uuid=None,
+        **kwargs
+    ):
         try:
-            if domain_names:
-                tenant = self.session.query(Tenant).filter(filter_).first()
-                self.session.query(DomainName).filter(
-                    DomainName.tenant_uuid == str(tenant_uuid)
-                ).delete()
-                self.session.commit()
-                for domain_name in domain_names:
-                    tenant.domain_names.append(
-                        DomainName(name=domain_name, tenant_uuid=str(tenant_uuid))
-                    )
-
-                self.session.commit()
-
-            self.session.query(Tenant).filter(filter_).update(values)
+            tenant = self.session.query(Tenant).get(str(tenant_uuid))
+            tenant.domain_names = domain_names or []
+            tenant.contact_uuid = contact_uuid
+            tenant.phone = phone
+            tenant.name = name
             self.session.flush()
         except exc.IntegrityError as e:
             self.session.rollback()
             if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
                 constraint = e.orig.diag.constraint_name
                 if constraint == 'auth_tenant_contact_uuid_fkey':
-                    raise exceptions.UnknownUserException(kwargs['contact_uuid'])
+                    raise exceptions.UnknownUserException(contact_uuid)
             elif e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 constraint = e.orig.diag.constraint_name
                 if constraint == 'auth_tenant_domain_name_name_key':
@@ -254,12 +239,12 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         filter_ = text('true')
         if search:
             search_pattern = '%{}%'.format(search)
-            domain_name_search_filter_ = Tenant.domain_names.any(
+            domain_name_search_filter_ = Tenant.domains.any(
                 DomainName.name.ilike(search_pattern)
             )
             filter_ = and_(filter_, domain_name_search_filter_)
         if domain_name:
-            domain_name_strict_filter_ = Tenant.domain_names.any(
+            domain_name_strict_filter_ = Tenant.domains.any(
                 DomainName.name == domain_name
             )
             filter_ = and_(filter_, domain_name_strict_filter_)

@@ -80,7 +80,7 @@ class TestTenants(base.APIIntegrationTest):
                 slug='slug2',
                 parent_uuid=self.top_tenant_uuid,
                 address=has_entries(**ADDRESS_NULL),
-                domain_names=sorted(VALID_DOMAIN_NAMES_2),
+                domain_names=VALID_DOMAIN_NAMES_2,
             ),
         )
 
@@ -93,7 +93,7 @@ class TestTenants(base.APIIntegrationTest):
                 phone=PHONE_1,
                 parent_uuid=self.top_tenant_uuid,
                 address=has_entries(**ADDRESS_1),
-                domain_names=sorted(VALID_DOMAIN_NAMES_1),
+                domain_names=VALID_DOMAIN_NAMES_1,
             ),
         )
 
