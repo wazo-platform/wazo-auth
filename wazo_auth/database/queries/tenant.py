@@ -8,7 +8,7 @@ import re
 from sqlalchemy import and_, exc, text
 from wazo_auth import schemas
 from .base import BaseDAO, PaginatorMixin
-from ..models import Address, DomainName, Tenant, User
+from ..models import Address, Tenant, User
 from . import filters
 from ... import exceptions
 
@@ -36,8 +36,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if filtered is not False:
             strict_filter = self.new_strict_filter(**kwargs)
             search_filter = self.new_search_filter(**kwargs)
-            domain_name_filter = self._add_domain_filters(**kwargs)
-            filter_ = and_(filter_, strict_filter, search_filter, domain_name_filter)
+            filter_ = and_(filter_, strict_filter, search_filter)
 
         return self.session.query(Tenant).filter(filter_).count()
 
@@ -149,8 +148,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         search_filter = self.new_search_filter(**kwargs)
         strict_filter = self.new_strict_filter(**kwargs)
-        domain_name_filter = self._add_domain_filters(**kwargs)
-        filter_ = and_(filter_, strict_filter, search_filter, domain_name_filter)
+        filter_ = and_(filter_, strict_filter, search_filter)
 
         query = (
             self.session.query(Tenant, Address)
@@ -234,21 +232,6 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def _slug_exist(self, slug):
         return self.session.query(Tenant.slug).filter(Tenant.slug == slug).count() > 0
-
-    def _add_domain_filters(self, search=None, domain_name=None, **ignored):
-        filter_ = text('true')
-        if search:
-            search_pattern = '%{}%'.format(search)
-            domain_name_search_filter_ = Tenant.domains.any(
-                DomainName.name.ilike(search_pattern)
-            )
-            filter_ = and_(filter_, domain_name_search_filter_)
-        if domain_name:
-            domain_name_strict_filter_ = Tenant.domains.any(
-                DomainName.name == domain_name
-            )
-            filter_ = and_(filter_, domain_name_strict_filter_)
-        return filter_
 
 
 def _slug_from_name(name):

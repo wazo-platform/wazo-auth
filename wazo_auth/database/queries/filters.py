@@ -1,8 +1,9 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, or_, text
 from ..models import (
+    DomainName,
     Email,
     ExternalAuthType,
     Group,
@@ -24,13 +25,25 @@ class SearchFilter:
         if search is None:
             return text('true')
 
+        pattern = self.new_pattern(search)
+        return or_(column.ilike(pattern) for column in self._columns)
+
+    def new_pattern(self, search):
         if not search:
-            pattern = '%'
+            return '%'
         else:
             words = [w for w in search.split(' ') if w]
-            pattern = '%{}%'.format('%'.join(words))
+            return '%{}%'.format('%'.join(words))
 
-        return or_(column.ilike(pattern) for column in self._columns)
+
+class _TenantSearchFilter(SearchFilter):
+    def new_filter(self, search=None, **kwargs):
+        if search is None:
+            return text('true')
+
+        filter_ = super().new_filter(search, **kwargs)
+        pattern = self.new_pattern(search)
+        return or_(filter_, Tenant.domains.any(DomainName.name.ilike(pattern)))
 
 
 class StrictFilter:
@@ -50,6 +63,14 @@ class StrictFilter:
             else:
                 filter_ = and_(filter_, column == value)
 
+        return filter_
+
+
+class _TenantStrictFilter(StrictFilter):
+    def new_filter(self, domain_name=None, **kwargs):
+        filter_ = super().new_filter(**kwargs)
+        if domain_name:
+            filter_ = and_(filter_, Tenant.domains.any(DomainName.name == domain_name))
         return filter_
 
 
@@ -85,7 +106,7 @@ refresh_token_strict_filter = StrictFilter(
     ('created_at', RefreshToken.created_at, None),
     ('mobile', RefreshToken.mobile, None),
 )
-tenant_strict_filter = StrictFilter(
+tenant_strict_filter = _TenantStrictFilter(
     ('uuid', Tenant.uuid, str),
     ('uuids', Tenant.uuid, list),
     ('name', Tenant.name, None),
@@ -104,7 +125,7 @@ user_strict_filter = StrictFilter(
 external_auth_search_filter = SearchFilter(ExternalAuthType.name)
 group_search_filter = SearchFilter(Group.name)
 policy_search_filter = SearchFilter(Policy.name, Policy.description)
-tenant_search_filter = SearchFilter(Tenant.name, Tenant.slug)
+tenant_search_filter = _TenantSearchFilter(Tenant.name, Tenant.slug)
 user_search_filter = SearchFilter(
     User.firstname, User.lastname, User.username, Email.address
 )

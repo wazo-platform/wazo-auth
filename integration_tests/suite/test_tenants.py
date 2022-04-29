@@ -80,7 +80,7 @@ class TestTenants(base.APIIntegrationTest):
                 slug='slug2',
                 parent_uuid=self.top_tenant_uuid,
                 address=has_entries(**ADDRESS_NULL),
-                domain_names=VALID_DOMAIN_NAMES_2,
+                domain_names=contains_inanyorder(*VALID_DOMAIN_NAMES_2),
             ),
         )
 
@@ -93,7 +93,7 @@ class TestTenants(base.APIIntegrationTest):
                 phone=PHONE_1,
                 parent_uuid=self.top_tenant_uuid,
                 address=has_entries(**ADDRESS_1),
-                domain_names=VALID_DOMAIN_NAMES_1,
+                domain_names=contains_inanyorder(*VALID_DOMAIN_NAMES_1),
             ),
         )
 
@@ -217,7 +217,7 @@ class TestTenants(base.APIIntegrationTest):
         name = 'My tenant'
         slug = 'my_tenant'
         tenant = self.client.tenants.new(
-            name=name, slug=slug, domain_names=sorted(VALID_DOMAIN_NAMES_1)
+            name=name, slug=slug, domain_names=VALID_DOMAIN_NAMES_1
         )
 
         def bus_received_msg():
@@ -230,7 +230,7 @@ class TestTenants(base.APIIntegrationTest):
                             data=has_entries(
                                 name=name,
                                 slug=slug,
-                                domain_names=sorted(VALID_DOMAIN_NAMES_1),
+                                domain_names=contains_inanyorder(*VALID_DOMAIN_NAMES_1),
                             ),
                         ),
                         headers=has_entry('tenant_uuid', tenant['uuid']),
