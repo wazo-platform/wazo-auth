@@ -170,11 +170,6 @@ class Domain(Base):
         String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False
     )
 
-    @property
-    def _get_name(self):
-
-        return str(self.name)
-
 
 class Token(Base):
 
