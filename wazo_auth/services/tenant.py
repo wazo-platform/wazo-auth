@@ -102,6 +102,7 @@ class TenantService(BaseService):
             uuid=uuid,
             name=result['name'],
             slug=result['slug'],
+            domain_names=result['domain_names'],
         )
         self._bus_publisher.publish(event, headers={'tenant_uuid': uuid})
 

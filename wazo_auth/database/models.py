@@ -26,6 +26,8 @@ from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
+RFC_DN_MAX_LENGTH = 61
+
 
 class Address(Base):
 
@@ -128,6 +130,45 @@ class Tenant(Base):
     phone = Column(Text)
     contact_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='SET NULL'))
     parent_uuid = Column(String(38), ForeignKey('auth_tenant.uuid'), nullable=False)
+    domains = relationship(
+        'Domain', uselist=True, cascade='all, delete-orphan', backref='tenant'
+    )
+
+    @hybrid_property
+    def domain_names(self):
+        if self.domains:
+            return [domain.name for domain in self.domains]
+        else:
+            return []
+
+    @domain_names.setter
+    def domain_names(self, value):
+        current_names = set(domain.name for domain in self.domains)
+        new_names = set(value)
+        missing_names = new_names - current_names
+        domains = set()
+
+        for domain in self.domains:
+            if domain.name in new_names:
+                domains.add(domain)
+
+        for name in missing_names:
+            domains.add(Domain(name=name, tenant=self))
+
+        self.domains = list(domains)
+
+
+class Domain(Base):
+
+    __tablename__ = 'auth_tenant_domain'
+    uuid = Column(
+        String(36), server_default=text('uuid_generate_v4()'), primary_key=True
+    )
+
+    name = Column(String(RFC_DN_MAX_LENGTH), nullable=False, unique=True)
+    tenant_uuid = Column(
+        String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False
+    )
 
 
 class Token(Base):

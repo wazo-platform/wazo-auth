@@ -411,3 +411,14 @@ class TopTenantNotInitialized(APIException):
     def __init__(self):
         msg = 'wazo-auth top tenant is not initialized'
         super().__init__(503, msg, 'top-tenant-not-initialized')
+
+
+class DomainAlreadyExistException(APIException):
+    def __init__(self, domain_name):
+        msg = 'Domain name : "{}" is already in use, no duplicates allowed'.format(
+            domain_name
+        )
+        details = {'domain_names': {'constraint-id': 'unique', 'message': msg}}
+        error_id = 'conflict'
+        resource = 'tenants'
+        super().__init__(409, 'Conflict detected', error_id, details, resource)

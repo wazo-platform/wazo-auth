@@ -45,6 +45,7 @@ class TestTenantSchema(TestCase):
                     'slug': 'slug',
                     'contact': None,
                     'phone': None,
+                    'domain_names': [],
                     'address': {
                         'line_1': None,
                         'line_2': None,
@@ -70,6 +71,7 @@ class TestTenantSchema(TestCase):
                 uuid=uuid,
                 name=None,
                 slug='address',
+                domain_names=[],
                 address={
                     'line_1': 'here',
                     'line_2': None,

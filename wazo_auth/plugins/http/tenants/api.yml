@@ -5,7 +5,10 @@ paths:
         - tenants
       security:
         - wazo_auth_token: []
-      description: '**Required ACL**: `auth.tenants.read`'
+      description: |
+        **Required ACL**: `auth.tenants.read`
+
+        Tenants can be filtered by domain name using the `domain_name` query string to do an exact match on one of its domain names or using the `search` query string for a fuzzy match.
       summary: 'Retrieves the list of tenants'
       parameters:
       - $ref: '#/parameters/order'
@@ -180,6 +183,12 @@ definitions:
       phone:
         type: string
         description: "The tenant's contact phone number"
+      domain_names:
+        type: array
+        description: "A list containing human readeable unique domain names, associated with a specific tenant"
+        uniqueItems: true
+        items:
+          type: string
       address:
         $ref: '#/definitions/TenantAddress'
   TenantCreate:
@@ -200,6 +209,12 @@ definitions:
       phone:
         type: string
         description: "The tenant's contact phone number"
+      domain_names:
+        type: array
+        description: "A list containing human readeable unique domain names, associated with a specific tenant"
+        uniqueItems: true
+        items:
+          type: string
       address:
         $ref: '#/definitions/TenantAddress'
   TenantEdit:
@@ -214,6 +229,12 @@ definitions:
       phone:
         type: string
         description: "The tenant's contact phone number"
+      domain_names:
+        type: array
+        description: "A list containing human readeable unique domain names, associated with a specific tenant"
+        uniqueItems: true
+        items:
+          type: string
       address:
         $ref: '#/definitions/TenantAddress'
   TenantAddress:

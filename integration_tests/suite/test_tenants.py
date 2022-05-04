@@ -6,10 +6,12 @@ from hamcrest import (
     assert_that,
     contains,
     contains_inanyorder,
+    empty,
     equal_to,
     has_entries,
     has_item,
     has_entry,
+    is_,
 )
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.uuid_ import uuid_
@@ -37,12 +39,25 @@ ADDRESS_1 = {
 }
 PHONE_1 = '555-555-5555'
 
+VALID_DOMAIN_NAMES_1 = ['wazo.io', 'stack.dev.wazo.io']
+VALID_DOMAIN_NAMES_2 = ['gmail.com', 'yahoo.com', 'google.ca']
+VALID_DOMAIN_NAMES_3 = ['outlook.fr', 'mail.yahoo.fr']
+
 
 @base.use_asset('base')
 class TestTenants(base.APIIntegrationTest):
-    @fixtures.http.tenant(name='foobar', address=ADDRESS_1, phone=PHONE_1, slug='slug1')
     @fixtures.http.tenant(
-        uuid='6668ca15-6d9e-4000-b2ec-731bc7316767', name='foobaz', slug='slug2'
+        name='foobar',
+        address=ADDRESS_1,
+        phone=PHONE_1,
+        slug='slug1',
+        domain_names=VALID_DOMAIN_NAMES_1,
+    )
+    @fixtures.http.tenant(
+        uuid='6668ca15-6d9e-4000-b2ec-731bc7316767',
+        name='foobaz',
+        slug='slug2',
+        domain_names=VALID_DOMAIN_NAMES_2,
     )
     @fixtures.http.tenant(slug='slug3')
     def test_post(self, foobar, foobaz, other):
@@ -54,9 +69,9 @@ class TestTenants(base.APIIntegrationTest):
                 slug='slug3',
                 parent_uuid=self.top_tenant_uuid,
                 address=has_entries(**ADDRESS_NULL),
+                domain_names=is_(empty()),
             ),
         )
-
         assert_that(
             foobaz,
             has_entries(
@@ -65,6 +80,7 @@ class TestTenants(base.APIIntegrationTest):
                 slug='slug2',
                 parent_uuid=self.top_tenant_uuid,
                 address=has_entries(**ADDRESS_NULL),
+                domain_names=contains_inanyorder(*VALID_DOMAIN_NAMES_2),
             ),
         )
 
@@ -77,6 +93,7 @@ class TestTenants(base.APIIntegrationTest):
                 phone=PHONE_1,
                 parent_uuid=self.top_tenant_uuid,
                 address=has_entries(**ADDRESS_1),
+                domain_names=contains_inanyorder(*VALID_DOMAIN_NAMES_1),
             ),
         )
 
@@ -199,7 +216,9 @@ class TestTenants(base.APIIntegrationTest):
         msg_accumulator = self.bus.accumulator(routing_key)
         name = 'My tenant'
         slug = 'my_tenant'
-        tenant = self.client.tenants.new(name=name, slug=slug)
+        tenant = self.client.tenants.new(
+            name=name, slug=slug, domain_names=VALID_DOMAIN_NAMES_1
+        )
 
         def bus_received_msg():
             assert_that(
@@ -208,7 +227,11 @@ class TestTenants(base.APIIntegrationTest):
                     has_entries(
                         message=has_entries(
                             name='auth_tenant_added',
-                            data=has_entries(name=name, slug=slug),
+                            data=has_entries(
+                                name=name,
+                                slug=slug,
+                                domain_names=contains_inanyorder(*VALID_DOMAIN_NAMES_1),
+                            ),
                         ),
                         headers=has_entry('tenant_uuid', tenant['uuid']),
                     )
@@ -224,7 +247,38 @@ class TestTenants(base.APIIntegrationTest):
     def test_post_duplicate_slug(self, a):
         assert_http_error(409, self.client.tenants.new, slug='dup')
 
-    @fixtures.http.tenant()
+    @fixtures.http.tenant(domain_names=VALID_DOMAIN_NAMES_1)
+    def test_post_duplicate_domain_names(self, a):
+        assert_http_error(409, self.client.tenants.new, domain_names=['wazo.io'])
+
+    def test_post_invalid_domain_names(self):
+        invalid_domain_names = [
+            ['-wazo.io'],
+            [' wazo.io'],
+            ['#'],
+            ['123'],
+            ['wazo .io'],
+            ['wazo.io-'],
+            ['wazo'],
+            ['=wazo.io'],
+            ['+wazo.io'],
+            ['_wazo.io'],
+            ['wazo_io'],
+            ['wazo_io  '],
+            ['x' * 62],
+            None,
+            True,
+            False,
+            'wazo.community',
+            42,
+            {'name': 'wazo.community'},
+        ]
+        for invalid_domain_name in invalid_domain_names:
+            assert_http_error(
+                400, self.client.tenants.new, domain_names=invalid_domain_name
+            )
+
+    @fixtures.http.tenant(domain_names=VALID_DOMAIN_NAMES_2)
     def test_delete(self, tenant):
         with self.client_in_subtenant() as (client, user, sub_tenant):
             assert_http_error(404, client.tenants.delete, tenant['uuid'])
@@ -233,7 +287,7 @@ class TestTenants(base.APIIntegrationTest):
         assert_no_error(self.client.tenants.delete, tenant['uuid'])
         assert_http_error(404, self.client.tenants.delete, tenant['uuid'])
 
-    @fixtures.http.tenant()
+    @fixtures.http.tenant(domain_names=VALID_DOMAIN_NAMES_3)
     def test_delete_tenant_with_children(self, tenant):
         with self.client_in_subtenant(parent_uuid=tenant['uuid']) as (
             client,
@@ -254,9 +308,11 @@ class TestTenants(base.APIIntegrationTest):
 
         assert_http_error(404, self.client.tenants.get, UNKNOWN_UUID)
 
-    @fixtures.http.tenant(name='foobar', slug='aaa')
-    @fixtures.http.tenant(name='foobaz', slug='bbb')
-    @fixtures.http.tenant(name='foobarbaz', slug='ccc')
+    @fixtures.http.tenant(name='foobar', slug='aaa', domain_names=VALID_DOMAIN_NAMES_1)
+    @fixtures.http.tenant(name='foobaz', slug='bbb', domain_names=VALID_DOMAIN_NAMES_2)
+    @fixtures.http.tenant(
+        name='foobarbaz', slug='ccc', domain_names=VALID_DOMAIN_NAMES_3
+    )
     # extra tenant: "master" tenant
     def test_list(self, foobar, foobaz, foobarbaz):
         top_tenant = self.get_top_tenant()
@@ -277,6 +333,14 @@ class TestTenants(base.APIIntegrationTest):
         result = self.client.tenants.list(slug='ccc')
         matcher = contains_inanyorder(foobarbaz)
         then(result, filtered=1, item_matcher=matcher)
+
+        result = self.client.tenants.list(domain_name='outlook.fr')
+        matcher = contains_inanyorder(foobarbaz)
+        then(result, filtered=1, item_matcher=matcher)
+
+        result = self.client.tenants.list(search='yahoo')
+        matcher = contains_inanyorder(foobaz, foobarbaz)
+        then(result, filtered=2, item_matcher=matcher)
 
         result = self.client.tenants.list(search='bar')
         matcher = contains_inanyorder(foobar, foobarbaz)
@@ -336,6 +400,41 @@ class TestTenants(base.APIIntegrationTest):
                 address=has_entries(**ADDRESS_1),
             ),
         )
+
+    @fixtures.http.tenant(domain_names=VALID_DOMAIN_NAMES_1)
+    @fixtures.http.user()
+    def test_put_updated_domain_names(self, tenant, user):
+        name = 'foobar'
+        body = {
+            'name': name,
+            'address': ADDRESS_1,
+            'contact': user['uuid'],
+            'domain_names': ['wazo.io'],
+        }
+
+        result = self.client.tenants.edit(tenant['uuid'], **body)
+
+        assert_that(
+            result,
+            has_entries(
+                uuid=tenant['uuid'],
+                name=name,
+                contact=user['uuid'],
+                address=has_entries(**ADDRESS_1),
+                domain_names=['wazo.io'],
+            ),
+        )
+
+    @fixtures.http.tenant(domain_names=VALID_DOMAIN_NAMES_1)
+    @fixtures.http.tenant(domain_names=VALID_DOMAIN_NAMES_2)
+    def test_put_duplicate_domain_names_raises_409(self, tenant_1, tenant_2):
+        name = 'foobar'
+        body = {
+            'name': name,
+            'domain_names': ['wazo.io'],
+        }
+
+        assert_http_error(409, self.client.tenants.edit, tenant_2['uuid'], **body)
 
     @fixtures.http.tenant(slug='ABC')
     def test_put_slug_is_read_only(self, tenant):

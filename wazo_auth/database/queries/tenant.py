@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import random
@@ -53,6 +53,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def create(self, **kwargs):
         parent_uuid = kwargs.get('parent_uuid')
         uuid_ = kwargs.get('uuid')
+        domain_names = kwargs.get('domain_names', [])
 
         if uuid_ and parent_uuid and str(uuid_) == str(parent_uuid):
             if self.find_top_tenant():
@@ -75,12 +76,17 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if uuid_:
             tenant.uuid = str(uuid_)
 
+        tenant.domain_names = domain_names
+
         self.session.add(tenant)
         try:
             self.session.flush()
         except exc.IntegrityError as e:
             self.session.rollback()
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                constraint = e.orig.diag.constraint_name
+                if constraint == 'auth_tenant_domain_name_key':
+                    raise exceptions.DomainAlreadyExistException(domain_names)
                 column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
                 value = locals().get(column)
                 if column:
@@ -158,23 +164,32 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         return [to_dict(*row) for row in query.all()]
 
-    def update(self, tenant_uuid, **kwargs):
-        filter_ = Tenant.uuid == str(tenant_uuid)
-        values = {
-            'name': kwargs.get('name'),
-            'contact_uuid': kwargs.get('contact_uuid'),
-            'phone': kwargs.get('phone'),
-        }
-
+    def update(
+        self,
+        tenant_uuid,
+        name=None,
+        phone=None,
+        domain_names=None,
+        contact_uuid=None,
+        **kwargs
+    ):
         try:
-            self.session.query(Tenant).filter(filter_).update(values)
+            tenant = self.session.query(Tenant).get(str(tenant_uuid))
+            tenant.domain_names = domain_names or []
+            tenant.contact_uuid = contact_uuid
+            tenant.phone = phone
+            tenant.name = name
             self.session.flush()
         except exc.IntegrityError as e:
             self.session.rollback()
             if e.orig.pgcode == self._FKEY_CONSTRAINT_CODE:
                 constraint = e.orig.diag.constraint_name
                 if constraint == 'auth_tenant_contact_uuid_fkey':
-                    raise exceptions.UnknownUserException(kwargs['contact_uuid'])
+                    raise exceptions.UnknownUserException(contact_uuid)
+            elif e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
+                constraint = e.orig.diag.constraint_name
+                if constraint == 'auth_tenant_domain_name_key':
+                    raise exceptions.DomainAlreadyExistException(domain_names)
             raise
 
     def _tenant_query(self, scoping_tenant_uuid):
