@@ -3,7 +3,7 @@
 
 from sqlalchemy import and_, or_, text
 from ..models import (
-    DomainName,
+    Domain,
     Email,
     ExternalAuthType,
     Group,
@@ -43,7 +43,7 @@ class _TenantSearchFilter(SearchFilter):
 
         filter_ = super().new_filter(search, **kwargs)
         pattern = self.new_pattern(search)
-        return or_(filter_, Tenant.domains.any(DomainName.name.ilike(pattern)))
+        return or_(filter_, Tenant.domains.any(Domain.name.ilike(pattern)))
 
 
 class StrictFilter:
@@ -70,7 +70,7 @@ class _TenantStrictFilter(StrictFilter):
     def new_filter(self, domain_name=None, **kwargs):
         filter_ = super().new_filter(**kwargs)
         if domain_name:
-            filter_ = and_(filter_, Tenant.domains.any(DomainName.name == domain_name))
+            filter_ = and_(filter_, Tenant.domains.any(Domain.name == domain_name))
         return filter_
 
 

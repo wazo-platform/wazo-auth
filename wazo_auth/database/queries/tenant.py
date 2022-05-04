@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import random
@@ -85,7 +85,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             self.session.rollback()
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 constraint = e.orig.diag.constraint_name
-                if constraint == 'auth_tenant_domain_name_name_key':
+                if constraint == 'auth_tenant_domain_name_key':
                     raise exceptions.DomainAlreadyExistException(domain_names)
                 column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
                 value = locals().get(column)
@@ -188,7 +188,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     raise exceptions.UnknownUserException(contact_uuid)
             elif e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
                 constraint = e.orig.diag.constraint_name
-                if constraint == 'auth_tenant_domain_name_name_key':
+                if constraint == 'auth_tenant_domain_name_key':
                     raise exceptions.DomainAlreadyExistException(domain_names)
             raise
 

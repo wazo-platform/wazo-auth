@@ -12,7 +12,7 @@ import sqlalchemy as sa
 revision = '0c9ccb1b16a8'
 down_revision = 'a6cda77a7e3f'
 
-TABLE_NAME = 'auth_tenant_domain_name'
+TABLE_NAME = 'auth_tenant_domain'
 RFC_DN_MAX_LENGTH = 61
 
 

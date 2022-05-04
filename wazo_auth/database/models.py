@@ -131,7 +131,7 @@ class Tenant(Base):
     contact_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='SET NULL'))
     parent_uuid = Column(String(38), ForeignKey('auth_tenant.uuid'), nullable=False)
     domains = relationship(
-        'DomainName', uselist=True, cascade='all, delete-orphan', backref='tenant'
+        'Domain', uselist=True, cascade='all, delete-orphan', backref='tenant'
     )
 
     @hybrid_property
@@ -153,14 +153,14 @@ class Tenant(Base):
                 domains.add(domain)
 
         for name in missing_names:
-            domains.add(DomainName(name=name, tenant=self))
+            domains.add(Domain(name=name, tenant=self))
 
         self.domains = list(domains)
 
 
-class DomainName(Base):
+class Domain(Base):
 
-    __tablename__ = 'auth_tenant_domain_name'
+    __tablename__ = 'auth_tenant_domain'
     uuid = Column(
         String(36), server_default=text('uuid_generate_v4()'), primary_key=True
     )

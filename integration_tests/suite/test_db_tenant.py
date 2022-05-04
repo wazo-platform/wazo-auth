@@ -1,4 +1,4 @@
-# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import pytest
@@ -371,8 +371,8 @@ class TestTenantDAO(base.DAOTestCase):
 
         if domain_names:
 
-            filter_ = models.DomainName.name.in_(domain_names)
-            names = s.query(models.DomainName.name).filter(filter_).all()
+            filter_ = models.Domain.name.in_(domain_names)
+            names = s.query(models.Domain.name).filter(filter_).all()
             names = [name[0] for name in names]
             assert_that(sorted(domain_names), equal_to(sorted(names)))
 
