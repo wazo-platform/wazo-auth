@@ -26,7 +26,7 @@ from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
-RFC_DN_MAX_LENGTH = 61
+RFC_DN_MAX_LENGTH = 253
 
 
 class Address(Base):

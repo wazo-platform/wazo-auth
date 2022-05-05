@@ -56,7 +56,7 @@ class TenantFullSchema(BaseSchema):
     domain_names = fields.List(
         fields.String(
             validate=validate.Regexp(
-                r'^([A-Za-z0-9]\.|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9]\.){1,3}[A-Za-z]{2,6}$'
+                r'^(?=.{1,253}\.?$)(?:(?!(-|_)|[^.]+_)[A-Za-z0-9-_]{1,}(?<!-)(?:\.|$)){2,63}$'
             ),
         ),
         missing=[],
