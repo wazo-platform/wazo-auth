@@ -143,7 +143,6 @@ class TestTenantPost(HTTPAppTestCase):
             ('domain_names', {'domain_names': ['_wazo.io']}),
             ('domain_names', {'domain_names': ['wazo_io']}),
             ('domain_names', {'domain_names': ['wazo_io  ']}),
-            ('domain_names', {'domain_names': ['x' * 62]}),
             ('domain_names', {'domain_names': ['']}),
         ]
 
@@ -244,6 +243,39 @@ class TestTenantPost(HTTPAppTestCase):
                 country=None,
             ),
         )
+
+    @patch('wazo_auth.plugins.http.tenants.http.TenantDetector')
+    def test_post_valid_domain_names(self, TenantDetector):
+        TenantDetector.autodetect.return_value = Mock(uuid=s.tenant_uuid)
+
+        valid_domain_names = [
+            ['stack.dev.wazo.io'],
+            ['wazo.community'],
+            ['mail.yahoo.com'],
+            ['mail.yahoo.fr'],
+            ['wazo.42'],
+            ['portal.staging.wazo.cloud'],
+            ['github.com'],
+            ['stackoverflow.com'],
+            ['quintana.wazo.community'],
+            ['wazo-dev.atlassian.net'],
+        ]
+
+        for valid_data in valid_domain_names:
+            body = {
+                'name': 'foobar',
+                'slug': 'slug',
+                'ignored': True,
+                'domain_names': valid_data,
+            }
+            self.tenant_service.new.return_value = {
+                'name': 'foobar',
+                'uuid': '022035fe-f5e5-4c16-bd5f-8fea8f4c9d08',
+                'domain_names': valid_data,
+            }
+            result = self.post(body)
+            assert_that(result.status_code, equal_to(200))
+            assert_that(result.json, equal_to(self.tenant_service.new.return_value))
 
     def post(self, data):
         return self.app.post(self.url, data=json.dumps(data), headers=self.headers)

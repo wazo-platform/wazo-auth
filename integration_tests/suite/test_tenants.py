@@ -265,7 +265,6 @@ class TestTenants(base.APIIntegrationTest):
             ['_wazo.io'],
             ['wazo_io'],
             ['wazo_io  '],
-            ['x' * 62],
             None,
             True,
             False,
