@@ -19,8 +19,6 @@ paths:
 
         The username/password and refresh_token method of authentication are mutually exclusive
 
-        the hostname and tenant_id must also be mutually exclusive.
-
         For more details about the backends, see http://documentation.wazo.community/en/latest/system/wazo-auth/stock_plugins.html#backends-plugins
       operationId: createToken
       tags:
@@ -42,7 +40,7 @@ paths:
             hostname:
               type: string
               description: |
-                The `hostname/domain_name` used within LDAP authentication. It must be mutually exclusive with the `tenant_id`; raises ValidationError otherwise.
+                The `hostname` must match a tenant's domain_name entry to find the appropriate ldap configuration.
             expiration:
               type: integer
             access_type:
