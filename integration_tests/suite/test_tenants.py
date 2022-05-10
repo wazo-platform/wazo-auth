@@ -39,7 +39,7 @@ ADDRESS_1 = {
 }
 PHONE_1 = '555-555-5555'
 
-VALID_DOMAIN_NAMES_1 = ['wazo.io', 'stack.dev.wazo.io']
+VALID_DOMAIN_NAMES_1 = ['wazo.io', 'shopify.ca']
 VALID_DOMAIN_NAMES_2 = ['gmail.com', 'yahoo.com', 'google.ca']
 VALID_DOMAIN_NAMES_3 = ['outlook.fr', 'mail.yahoo.fr']
 

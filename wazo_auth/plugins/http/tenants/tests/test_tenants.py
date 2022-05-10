@@ -203,7 +203,6 @@ class TestTenantPost(HTTPAppTestCase):
 
         duplicate_domain_names = [
             'wazo.io',
-            'stack.dev.wazo.io',
             'wazo.io',
             'gmail.com',
             'gmail.com',
@@ -249,16 +248,16 @@ class TestTenantPost(HTTPAppTestCase):
         TenantDetector.autodetect.return_value = Mock(uuid=s.tenant_uuid)
 
         valid_domain_names = [
-            ['stack.dev.wazo.io'],
-            ['wazo.community'],
             ['mail.yahoo.com'],
             ['mail.yahoo.fr'],
-            ['wazo.42'],
-            ['portal.staging.wazo.cloud'],
+            ['trademark247.com'],
             ['github.com'],
             ['stackoverflow.com'],
-            ['quintana.wazo.community'],
-            ['wazo-dev.atlassian.net'],
+            ['tesla.ca'],
+            ['dev.atlassian.net'],
+            ['shopify.ca'],
+            ['whatever.42'],
+            ['gmail.com'],
         ]
 
         for valid_data in valid_domain_names:

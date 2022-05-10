@@ -233,7 +233,7 @@ class TestLDAP(BaseLDAPIntegrationTest):
         user_login_attribute='cn',
         user_email_attribute='mail',
     )
-    def test_ldap_authentication_with_tenant_id_and_hostname(self, user):
+    def test_ldap_authentication_with_tenant_id_and_hostname(self, tenant, user, _):
         response = self._post_token(
             'Alice Wonderland',
             'awonderland_password',

@@ -35,7 +35,7 @@ TENANT_UUID_2 = '00000000-0000-4000-a000-000000000002'
 TENANT_UUID_3 = '00000000-0000-4000-a000-000000000003'
 TENANT_UUID_4 = '00000000-0000-4000-a000-000000000004'
 
-VALID_DOMAIN_NAMES_1 = ['wazo.io', 'stack.dev.wazo.io']
+VALID_DOMAIN_NAMES_1 = ['wazo.io', 'shopify.ca']
 VALID_DOMAIN_NAMES_2 = ['gmail.com', 'yahoo.com', 'google.ca']
 VALID_DOMAIN_NAMES_3 = ['outlook.fr', 'mail.yahoo.fr']
 
@@ -150,9 +150,7 @@ class TestTenantDAO(base.DAOTestCase):
         result = self._tenant_dao.count(visible_tenants, name='b')
         assert_that(result, equal_to(1))
 
-        result = self._tenant_dao.count(
-            visible_tenants, domain_name='stack.dev.wazo.io'
-        )
+        result = self._tenant_dao.count(visible_tenants, domain_name='shopify.ca')
         assert_that(result, equal_to(1))
 
         result = self._tenant_dao.count(visible_tenants, domain_name='google.ca')
