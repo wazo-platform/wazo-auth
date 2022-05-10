@@ -39,7 +39,24 @@ class LDAPUser(BaseAuthenticationBackend):
         return metadata
 
     def verify_password(self, username, password, args):
-        tenant_uuid = self._get_tenant(args['tenant_id'])['uuid']
+        if 'domain_name' in args:
+            top_tenant_uuid = self._tenant_service.find_top_tenant()
+            tenants = self._tenant_service.list_(
+                top_tenant_uuid, domain_name=args['domain_name']
+            )
+            if not tenants:
+                logger.warning(
+                    'Failed login using non-existing domain_name: %s',
+                    args['domain_name'],
+                )
+                return False
+            tenant_uuid = tenants[0]['uuid']
+        elif 'tenant_id' in args:
+            # tenant_id was deprecated in wazo 22.07
+            tenant_uuid = self._get_tenant(args['tenant_id'])['uuid']
+            logger.warning(
+                'LDAP login using the "tenant_id" is deprecated. Use "domain_name" instead'
+            )
 
         config = self._get_ldap_config(tenant_uuid)
         if not config:

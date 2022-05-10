@@ -37,11 +37,10 @@ paths:
             backend:
               type: string
               default: wazo_user
-            tenant_id:
+            domain_name:
               type: string
               description: |
-                The `tenant_id` is the tenant identifier (uuid or slug) in which the token should be created. This is
-                useful only in cases where the backend used is external, i.e not `wazo_user`.
+                The `domain_name` must match a tenant's domain_name entry to find the appropriate ldap configuration.
             expiration:
               type: integer
             access_type:

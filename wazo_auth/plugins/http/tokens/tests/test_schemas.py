@@ -67,11 +67,24 @@ class TestTokenRequestSchema(TestCase):
             raises(ValidationError).matching(has_properties(field_name='_schema')),
         )
 
-    def test_that_ldap_backend_requires_tenant_id(self):
+    def test_that_ldap_backend_using_both_tenant_id_and_domain_name_raises_400(self):
+        body = {'backend': 'ldap_user', 'tenant_id': 'x', 'domain_name': 'wazo.io'}
+
+        assert_that(
+            calling(self.schema.load).with_args(body),
+            raises(ValidationError).matching(has_properties(field_name='_schema')),
+        )
+
+    def test_that_ldap_backend_requires_tenant_id_or_domain_name(self):
         body = {'backend': 'ldap_user'}
 
         assert_that(
             calling(self.schema.load).with_args({'tenant_id': 'x', **body}),
+            not_(raises(Exception)),
+        )
+
+        assert_that(
+            calling(self.schema.load).with_args({'domain_name': 'x', **body}),
             not_(raises(Exception)),
         )
 

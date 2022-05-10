@@ -44,6 +44,18 @@ class BaseTestCase(unittest.TestCase):
         self.tenant_service.get_by_uuid_or_slug.return_value = {
             'uuid': 'tenant-uuid-1234',
         }
+        self.tenant_service.list_.return_value = [
+            {
+                'uuid': 'tenant-uuid-1234',
+                'domain_names': [
+                    'wazo.io',
+                    'shopify.ca',
+                    'mail.wazo.io',
+                    'stackoverflow.com',
+                ],
+                'name': '1234',
+            }
+        ]
 
         user_metadata_plugin = Mock()
         user_metadata_plugin.get_token_metadata = Mock()
@@ -354,6 +366,53 @@ class TestVerifyPassword(BaseTestCase):
             ),
         )
         wazo_ldap.perform_bind.assert_called_once_with(self.expected_user_dn, 'bar')
+
+    def test_that_verify_password_works_using_domain_name(self, wazo_ldap):
+        backend = LDAPUser()
+        backend.load(
+            {
+                'user_service': self.user_service,
+                'group_service': self.group_service,
+                'ldap_service': self.ldap_service,
+                'tenant_service': self.tenant_service,
+                'purposes': self.purposes,
+            }
+        )
+
+        wazo_ldap = wazo_ldap.return_value
+        wazo_ldap.perform_bind.return_value = True
+        wazo_ldap.perform_search.return_value = self.search_obj_result
+        self.list_users.return_value = [{'uuid': 'alice-uuid'}]
+        args = {'domain_name': 'wazo.io'}
+
+        result = backend.verify_password('foo', 'bar', args)
+
+        assert_that(result, equal_to(True))
+
+    def test_that_verify_password_using_non_existing_domain_name_returns_false(
+        self, wazo_ldap
+    ):
+        backend = LDAPUser()
+        backend.load(
+            {
+                'user_service': self.user_service,
+                'group_service': self.group_service,
+                'ldap_service': self.ldap_service,
+                'tenant_service': self.tenant_service,
+                'purposes': self.purposes,
+            }
+        )
+
+        wazo_ldap = wazo_ldap.return_value
+        wazo_ldap.perform_bind.return_value = True
+        wazo_ldap.perform_search.return_value = self.search_obj_result
+        self.list_users.return_value = [{'uuid': 'alice-uuid'}]
+        self.tenant_service.list_.return_value = []
+        args = {'domain_name': 'gmail.com'}
+
+        result = backend.verify_password('foo', 'bar', args)
+
+        assert_that(result, equal_to(False))
 
 
 class TestWazoLDAP(unittest.TestCase):
