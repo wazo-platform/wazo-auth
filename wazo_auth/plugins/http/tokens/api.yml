@@ -19,6 +19,8 @@ paths:
 
         The username/password and refresh_token method of authentication are mutually exclusive
 
+        the hostname and tenant_id must also be mutually exclusive.
+
         For more details about the backends, see http://documentation.wazo.community/en/latest/system/wazo-auth/stock_plugins.html#backends-plugins
       operationId: createToken
       tags:
@@ -37,11 +39,6 @@ paths:
             backend:
               type: string
               default: wazo_user
-            tenant_id:
-              type: string
-              description: |
-                The `tenant_id` is the tenant identifier (uuid or slug) in which the token should be created. This is
-                useful only in cases where the backend used is external, i.e not `wazo_user`.
             hostname:
               type: string
               description: |
