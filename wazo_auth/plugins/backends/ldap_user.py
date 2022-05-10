@@ -39,7 +39,19 @@ class LDAPUser(BaseAuthenticationBackend):
         return metadata
 
     def verify_password(self, username, password, args):
-        tenant_uuid = self._get_tenant(args['tenant_id'])['uuid']
+        if 'tenant_id' in args and not 'hostname' in args:
+
+            tenant_uuid = self._get_tenant(args['tenant_id'])['uuid']
+
+        elif 'hostname' in args:
+
+            top_tenant_uuid = self._tenant_service.find_top_tenant()
+            tenants = self._tenant_service.list_(
+                top_tenant_uuid, domain_name=args['hostname']
+            )
+            if not tenants:
+                return False
+            tenant_uuid = tenants[0]['uuid']
 
         config = self._get_ldap_config(tenant_uuid)
         if not config:
