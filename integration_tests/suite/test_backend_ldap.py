@@ -217,16 +217,66 @@ class TestLDAP(BaseLDAPIntegrationTest):
         )
         self.addCleanup(self.client.ldap_config.delete, ldap_config['tenant_uuid'])
 
-    @fixtures.http.user(email_address='awonderland@wazo-auth.com')
-    def test_ldap_authentication(self, user):
+    @fixtures.http.tenant(
+        uuid=TENANT_1_UUID,
+        slug='mytenant',
+        domain_names=['wazo.community', 'cust-42.myclients.com'],
+    )
+    @fixtures.http.user(
+        email_address='awonderland@wazo-auth.com', tenant_uuid=TENANT_1_UUID
+    )
+    @fixtures.http.ldap_config(
+        tenant_uuid=TENANT_1_UUID,
+        host='slapd',
+        port=LDAP_PORT,
+        user_base_dn='ou=quebec,ou=people,dc=wazo-auth,dc=wazo,dc=community',
+        user_login_attribute='cn',
+        user_email_attribute='mail',
+    )
+    def test_ldap_authentication_with_tenant_id_and_hostname(self, user):
         response = self._post_token(
             'Alice Wonderland',
             'awonderland_password',
             backend='ldap_user',
-            tenant_id=self.top_tenant_uuid,
+            tenant_id=tenant['uuid'],
         )
         assert_that(
             response, has_entries(metadata=has_entries(pbx_user_uuid=user['uuid']))
+        )
+
+        response = self._post_token(
+            'Alice Wonderland',
+            'awonderland_password',
+            backend='ldap_user',
+            tenant_id=tenant['slug'],
+        )
+        assert_that(
+            response, has_entries(metadata=has_entries(pbx_user_uuid=user['uuid']))
+        )
+
+        response = self._post_token(
+            'Alice Wonderland',
+            'awonderland_password',
+            backend='ldap_user',
+            hostname='cust-42.myclients.com',
+        )
+        assert_that(
+            response, has_entries(metadata=has_entries(pbx_user_uuid=user['uuid']))
+        )
+
+        args = (
+            'Alice Wonderland',
+            'awonderland_password',
+        )
+
+        assert_that(
+            calling(self._post_token).with_args(
+                *args,
+                backend='ldap_user',
+                tenant_id=tenant['uuid'],
+                hostname='cust-42.myclients.com',
+            ),
+            raises(requests.HTTPError, pattern='400'),
         )
 
     @fixtures.http.user(email_address='whitequeen@wazo-auth.com')
