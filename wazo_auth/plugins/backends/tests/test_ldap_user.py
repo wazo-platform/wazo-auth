@@ -5,7 +5,7 @@ import unittest
 import ldap
 
 from hamcrest import assert_that, equal_to, has_entries, has_items
-from mock import call, MagicMock, Mock, patch
+from mock import call, Mock, patch
 
 from wazo_auth.plugins.backends.ldap_user import LDAPUser, _WazoLDAP
 
@@ -44,10 +44,7 @@ class BaseTestCase(unittest.TestCase):
         self.tenant_service.get_by_uuid_or_slug.return_value = {
             'uuid': 'tenant-uuid-1234',
         }
-
-        self.magic_tenant_service = MagicMock()
-        self.magic_tenant_service.list_ = MagicMock()
-        self.magic_tenant_service.list_.return_value = [
+        self.tenant_service.list_.return_value = [
             {
                 'uuid': 'tenant-uuid-1234',
                 'domain_names': [
@@ -377,7 +374,7 @@ class TestVerifyPassword(BaseTestCase):
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
-                'tenant_service': self.magic_tenant_service,
+                'tenant_service': self.tenant_service,
                 'purposes': self.purposes,
             }
         )
@@ -401,7 +398,7 @@ class TestVerifyPassword(BaseTestCase):
                 'user_service': self.user_service,
                 'group_service': self.group_service,
                 'ldap_service': self.ldap_service,
-                'tenant_service': self.magic_tenant_service,
+                'tenant_service': self.tenant_service,
                 'purposes': self.purposes,
             }
         )
@@ -410,7 +407,7 @@ class TestVerifyPassword(BaseTestCase):
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
         self.list_users.return_value = [{'uuid': 'alice-uuid'}]
-        self.magic_tenant_service.list_.return_value = []
+        self.tenant_service.list_.return_value = []
         args = {'hostname': 'gmail.com'}
 
         result = backend.verify_password('foo', 'bar', args)
