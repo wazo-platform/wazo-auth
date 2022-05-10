@@ -50,6 +50,11 @@ class TokenRequestSchema(BaseSchema):
                 '"tenant_id" and "hostname" must be mutually exclusive'
             )
 
+        if not tenant_id and not hostname:
+            raise ValidationError(
+                '"tenant_id" or "hostname" must be specified when using the "ldap_user" backend'
+            )
+
     @validates_schema
     def check_refresh_token_usage(self, data, **kwargs):
         refresh_token = data.get('refresh_token')
