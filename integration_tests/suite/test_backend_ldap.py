@@ -233,7 +233,7 @@ class TestLDAP(BaseLDAPIntegrationTest):
         user_login_attribute='cn',
         user_email_attribute='mail',
     )
-    def test_ldap_authentication_with_tenant_id_and_hostname(self, tenant, user, _):
+    def test_ldap_authentication_with_tenant_id_and_domain_name(self, tenant, user, _):
         response = self._post_token(
             'Alice Wonderland',
             'awonderland_password',
@@ -258,7 +258,7 @@ class TestLDAP(BaseLDAPIntegrationTest):
             'Alice Wonderland',
             'awonderland_password',
             backend='ldap_user',
-            hostname='cust-42.myclients.com',
+            domain_name='cust-42.myclients.com',
         )
         assert_that(
             response, has_entries(metadata=has_entries(pbx_user_uuid=user['uuid']))
@@ -274,7 +274,7 @@ class TestLDAP(BaseLDAPIntegrationTest):
                 *args,
                 backend='ldap_user',
                 tenant_id=tenant['uuid'],
-                hostname='cust-42.myclients.com',
+                domain_name='cust-42.myclients.com',
             ),
             raises(requests.HTTPError, pattern='400'),
         )

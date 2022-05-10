@@ -4,11 +4,11 @@
 
 The `POST /0.1/token` endpoint now accepts the following body parameters:
 
-  * `hostname`: mandatory for `ldap_user` backend
+  * `domain_name`: mandatory for `ldap_user` backend
 
 The following body parameters have been deprecated on the `POST /0.1/token` endpoint:
 
-  * `tenant_id` use the `hostname` parameter instead
+  * `tenant_id` use the `domain_name` parameter instead
 
 * The following field:
 

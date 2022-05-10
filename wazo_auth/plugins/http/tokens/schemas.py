@@ -17,7 +17,7 @@ class TokenRequestSchema(BaseSchema):
     client_id = fields.String(validate=Length(min=1, max=1024))
     refresh_token = fields.String()
     tenant_id = fields.String()
-    hostname = fields.String()
+    domain_name = fields.String()
 
     @validates_schema
     def check_access_type_usage(self, data, **kwargs):
@@ -38,21 +38,21 @@ class TokenRequestSchema(BaseSchema):
             )
 
     @validates_schema
-    def check_backend_type_for_tenant_id_and_hostname(self, data, **kwargs):
+    def check_backend_type_for_tenant_id_and_domain_name(self, data, **kwargs):
         backend = data.get('backend')
         if not backend == 'ldap_user':
             return
 
         tenant_id = data.get('tenant_id')
-        hostname = data.get('hostname')
-        if tenant_id and hostname:
+        domain_name = data.get('domain_name')
+        if tenant_id and domain_name:
             raise ValidationError(
-                '"tenant_id" and "hostname" must be mutually exclusive'
+                '"tenant_id" and "domain_name" must be mutually exclusive'
             )
 
-        if not tenant_id and not hostname:
+        if not tenant_id and not domain_name:
             raise ValidationError(
-                '"tenant_id" or "hostname" must be specified when using the "ldap_user" backend'
+                '"tenant_id" or "domain_name" must be specified when using the "ldap_user" backend'
             )
 
     @validates_schema
