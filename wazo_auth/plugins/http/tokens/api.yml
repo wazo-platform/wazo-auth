@@ -42,6 +42,10 @@ paths:
               description: |
                 The `tenant_id` is the tenant identifier (uuid or slug) in which the token should be created. This is
                 useful only in cases where the backend used is external, i.e not `wazo_user`.
+            hostname:
+              type: string
+              description: |
+                The `hostname/domain_name` used within LDAP authentication. It must be mutually exclusive with the `tenant_id`; raises ValidationError otherwise.
             expiration:
               type: integer
             access_type:

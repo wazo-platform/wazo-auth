@@ -50,6 +50,9 @@ class LDAPUser(BaseAuthenticationBackend):
                 top_tenant_uuid, domain_name=args['hostname']
             )
             if not tenants:
+                logger.warning(
+                    'Failed login using non-existing hostname: %s', args['hostname']
+                )
                 return False
             tenant_uuid = tenants[0]['uuid']
 
