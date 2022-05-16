@@ -185,7 +185,7 @@ definitions:
         description: "The tenant's contact phone number"
       domain_names:
         type: array
-        description: "A list containing human readeable unique domain names, associated with a specific tenant"
+        description: "A list containing human readable unique domain names, associated with a specific tenant"
         uniqueItems: true
         items:
           type: string
