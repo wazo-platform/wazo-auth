@@ -3,7 +3,7 @@
 
 import pytest
 
-from mock import ANY
+from unittest.mock import ANY
 from hamcrest import (
     assert_that,
     calling,

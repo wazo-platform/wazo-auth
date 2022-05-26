@@ -6,9 +6,9 @@ import uuid
 import logging
 
 from datetime import datetime, timedelta
+from unittest.mock import ANY
 
 import requests
-from mock import ANY
 from hamcrest import (
     assert_that,
     calling,

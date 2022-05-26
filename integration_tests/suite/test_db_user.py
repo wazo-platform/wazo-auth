@@ -3,6 +3,8 @@
 
 import os
 
+from unittest.mock import ANY
+
 from hamcrest import (
     assert_that,
     calling,
@@ -15,7 +17,6 @@ from hamcrest import (
     none,
     not_,
 )
-from mock import ANY
 from sqlalchemy import and_, func
 
 from wazo_test_helpers.hamcrest.raises import raises

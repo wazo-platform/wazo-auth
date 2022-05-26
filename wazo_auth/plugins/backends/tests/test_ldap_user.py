@@ -4,8 +4,9 @@
 import unittest
 import ldap
 
+from unittest.mock import call, Mock, patch
+
 from hamcrest import assert_that, equal_to, has_entries, has_items
-from mock import call, Mock, patch
 
 from wazo_auth.plugins.backends.ldap_user import LDAPUser, _WazoLDAP
 
@@ -443,8 +444,8 @@ class TestWazoLDAP(unittest.TestCase):
     def test_wazo_ldap_init_tls(self, ldap_initialize):
         ldapobj = ldap_initialize.return_value = Mock()
 
-        with patch.dict(self.config, {'protocol_security': 'tls'}) as config:
-            wazo_ldap = _WazoLDAP(config)
+        with patch.dict(self.config, {'protocol_security': 'tls'}):
+            wazo_ldap = _WazoLDAP(self.config)
             wazo_ldap.connect()
 
         ldap_initialize.assert_called_once_with(wazo_ldap.uri)
