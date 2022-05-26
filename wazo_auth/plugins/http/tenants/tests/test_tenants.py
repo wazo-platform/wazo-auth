@@ -2,8 +2,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
+
+from unittest.mock import ANY, Mock, patch, sentinel as s
+
 from hamcrest import assert_that, equal_to, has_entries, has_value, starts_with
-from mock import ANY, Mock, patch, sentinel as s
 from wazo_auth.config import _DEFAULT_CONFIG
 from wazo_auth.tests.test_http import HTTPAppTestCase
 

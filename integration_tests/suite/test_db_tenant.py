@@ -3,7 +3,9 @@
 
 import pytest
 
+from unittest.mock import ANY
 from uuid import uuid4
+
 from hamcrest import (
     assert_that,
     calling,
@@ -15,7 +17,6 @@ from hamcrest import (
     has_properties,
     raises,
 )
-from mock import ANY
 
 from wazo_test_helpers.mock import ANY_UUID
 from wazo_auth import exceptions

@@ -1,9 +1,12 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
 import requests
+
 from functools import partial
+from unittest.mock import ANY
+
 from hamcrest import (
     all_of,
     assert_that,
@@ -17,7 +20,6 @@ from hamcrest import (
     none,
     not_,
 )
-from mock import ANY
 from wazo_test_helpers.hamcrest.uuid_ import uuid_
 from .helpers import base
 from .helpers.base import (

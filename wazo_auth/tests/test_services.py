@@ -1,13 +1,13 @@
 # Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from hamcrest import assert_that, contains, calling, equal_to, has_entries, not_, raises
-from ..schemas import BaseSchema
-from xivo.mallow import fields
-from mock import Mock, patch, sentinel as s
 from unittest import TestCase
+from unittest.mock import Mock, patch, sentinel as s
 
+from hamcrest import assert_that, contains, calling, equal_to, has_entries, not_, raises
 from wazo_auth.config import _DEFAULT_CONFIG
+from xivo.mallow import fields
+
 from .. import exceptions, services
 from ..database import queries
 from ..database.queries import (
@@ -23,6 +23,7 @@ from ..database.queries import (
     token,
     user,
 )
+from ..schemas import BaseSchema
 
 
 class BaseServiceTestCase(TestCase):
