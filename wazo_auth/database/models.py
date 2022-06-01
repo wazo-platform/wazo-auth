@@ -131,7 +131,16 @@ class Tenant(Base):
     contact_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='SET NULL'))
     parent_uuid = Column(String(38), ForeignKey('auth_tenant.uuid'), nullable=False)
     domains = relationship(
-        'Domain', uselist=True, cascade='all, delete-orphan', backref='tenant'
+        'Domain',
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        backref='tenant',
+    )
+    address = relationship(
+        'Address',
+        uselist=False,
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     @hybrid_property
