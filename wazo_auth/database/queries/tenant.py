@@ -111,16 +111,11 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if not tenant:
             raise exceptions.UnknownTenantException(uuid)
 
-        children_count = (
-            self.session.query(Tenant).filter(Tenant.parent_uuid == uuid).count()
-        )
-
+        query = self.session.query(Tenant).filter(Tenant.parent_uuid == uuid)
+        children_count = query.count()
         if children_count > 0:
-
             raise exceptions.UnauthorizedTenantwithChildrenDelete(uuid)
-
         else:
-
             self.session.delete(tenant)
 
         self.session.flush()
