@@ -5,10 +5,10 @@ import random
 import string
 import re
 
-from sqlalchemy import and_, exc, text
+from sqlalchemy import and_, exc, text, func
 from wazo_auth import schemas
 from .base import BaseDAO, PaginatorMixin
-from ..models import Address, Tenant, User
+from ..models import Address, Domain, Tenant, User
 from . import filters
 from ... import exceptions
 
@@ -139,7 +139,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return query.all()
 
     def list_(self, **kwargs):
-        schema = schemas.TenantFullSchema()
+        schema = schemas.TenantRawListSchema()
         filter_ = text('true')
 
         tenant_uuids = kwargs.get('tenant_uuids')
@@ -150,16 +150,23 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         strict_filter = self.new_strict_filter(**kwargs)
         filter_ = and_(filter_, strict_filter, search_filter)
 
+        domain_names = func.array_agg(Domain.name).label('domain_names')
         query = (
-            self.session.query(Tenant, Address)
+            self.session.query(Tenant, Address, domain_names)
             .outerjoin(Address)
+            .outerjoin(Domain)
             .filter(filter_)
             .group_by(Tenant, Address)
         )
         query = self._paginator.update_query(query, **kwargs)
 
-        def to_dict(tenant, address):
+        def to_dict(tenant, address, domain_names):
             tenant.address = address
+            # NOTE(fblackburn): This is an ugly hack to avoid to use setter from Tenant model.
+            # We should avoid to assign attribute to sqlalchemy object in READ operation or we take
+            # risk to update the object in database
+            # NOTE(fblackburn): filter [None] result
+            tenant.raw_domain_names = [name for name in domain_names if name]
             return schema.dump(tenant)
 
         return [to_dict(*row) for row in query.all()]
