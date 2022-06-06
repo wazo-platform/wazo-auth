@@ -131,7 +131,16 @@ class Tenant(Base):
     contact_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='SET NULL'))
     parent_uuid = Column(String(38), ForeignKey('auth_tenant.uuid'), nullable=False)
     domains = relationship(
-        'Domain', uselist=True, cascade='all, delete-orphan', backref='tenant'
+        'Domain',
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        backref='tenant',
+    )
+    address = relationship(
+        'Address',
+        uselist=False,
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     @hybrid_property
@@ -192,7 +201,7 @@ class Token(Base):
     remote_addr = Column(Text)
     acl = Column(ARRAY(Text), nullable=False, server_default='{}')
 
-    session = relationship('Session')
+    session = relationship('Session', passive_deletes=True)
 
 
 class RefreshToken(Base):
@@ -266,7 +275,12 @@ class Policy(Base):
     )
     shared = Column(Boolean, default=False, server_default='false', nullable=False)
 
-    tenant = relationship('Tenant', cascade='all, delete-orphan', single_parent=True)
+    tenant = relationship(
+        'Tenant',
+        cascade='all, delete-orphan',
+        passive_deletes=True,
+        single_parent=True,
+    )
     accesses = relationship('Access', secondary='auth_policy_access', viewonly=True)
 
     @property

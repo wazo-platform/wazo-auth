@@ -86,13 +86,6 @@ class TenantPUTSchema(TenantFullSchema):
     slug = fields.String(dump_only=True)
 
 
-class TenantRawListSchema(TenantFullSchema):
-
-    domain_names = fields.List(
-        fields.String(), default=[], attribute='raw_domain_names'
-    )
-
-
 class BaseListSchema(mallow.ListSchema):
     recurse = fields.Boolean(missing=False)
 
