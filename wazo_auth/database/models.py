@@ -308,7 +308,9 @@ class User(Base):
     password_salt = Column(LargeBinary)
     purpose = Column(
         Text,
-        CheckConstraint("purpose in ('user', 'internal', 'external_api')"),
+        CheckConstraint(
+            "purpose in ('user', 'internal', 'external_api', 'tenant_admin')"
+        ),
         nullable=False,
     )
     enabled = Column(Boolean)

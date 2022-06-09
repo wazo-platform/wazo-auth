@@ -216,6 +216,7 @@ definitions:
         - user
         - internal
         - external_api
+        - tenant_admin
   UserEdit:
     type: object
     properties:
@@ -237,6 +238,7 @@ definitions:
         - user
         - internal
         - external_api
+        - tenant_admin
   UserEmail:
     type: object
     properties:
@@ -277,6 +279,7 @@ definitions:
         - user
         - internal
         - external_api
+        - tenant_admin
   UserResult:
     type: object
     properties:
@@ -294,6 +297,7 @@ definitions:
         - user
         - internal
         - external_api
+        - tenant_admin
       tenant_uuid:
         type: string
       emails:

@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -32,7 +32,12 @@ class Purpose:
 
 class Purposes:
 
-    valid_purposes = ['user', 'internal', 'external_api']
+    valid_purposes = [
+        'user',
+        'internal',
+        'external_api',
+        'tenant_admin',
+    ]
 
     def __init__(self, purposes_config, metadata_plugins):
         self._metadata_plugins = metadata_plugins
@@ -70,6 +75,12 @@ class Purposes:
         if not plugin:
             return
         self._purposes['external_api'].add_metadata_plugin(plugin.obj)
+
+    def _set_default_tenant_admin_purpose(self):
+        plugin = self._get_default_metadata_plugin('default_tenant_admin')
+        if not plugin:
+            return
+        self._purposes['tenant_admin'].add_metadata_plugin(plugin.obj)
 
     def _get_default_metadata_plugin(self, plugin):
         try:
