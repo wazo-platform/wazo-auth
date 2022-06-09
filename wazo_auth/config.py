@@ -4,7 +4,7 @@
 import argparse
 
 from xivo.chain_map import ChainMap
-from xivo.config_helper import read_config_file_hierarchy
+from xivo.config_helper import read_config_file_hierarchy_accumulating_list
 from xivo.xivo_logging import get_log_level_by_name
 
 
@@ -167,7 +167,9 @@ def _get_reinterpreted_raw_values(config):
 
 def get_config(argv):
     cli_config = _parse_cli_args(argv)
-    file_config = read_config_file_hierarchy(ChainMap(cli_config, _DEFAULT_CONFIG))
+    file_config = read_config_file_hierarchy_accumulating_list(
+        ChainMap(cli_config, _DEFAULT_CONFIG)
+    )
     reinterpreted_config = _get_reinterpreted_raw_values(
         ChainMap(cli_config, file_config, _DEFAULT_CONFIG)
     )
