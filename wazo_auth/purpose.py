@@ -39,13 +39,36 @@ class Purposes:
         'tenant_admin',
     ]
 
+    default_metadata_plugins = {
+        'user': 'default_user',
+        'internal': 'default_internal',
+        'external_api': 'default_external_api',
+        'tenant_admin': 'default_tenant_admin',
+    }
+
     def __init__(self, purposes_config, metadata_plugins):
         self._metadata_plugins = metadata_plugins
         self._purposes = {purpose: Purpose(purpose) for purpose in self.valid_purposes}
-        self._set_default_user_purpose()
-        self._set_default_internal_purpose()
-        self._set_default_external_api_purpose()
 
+        self._add_default_metadata_plugins()
+        self._add_metadata_plugins(purposes_config)
+
+    def _add_default_metadata_plugins(self):
+        for purpose_name, plugin_name in self.default_metadata_plugins.items():
+            purpose = self._purposes.get(purpose_name)
+            if not purpose:
+                continue
+            try:
+                plugin = self._metadata_plugins[plugin_name]
+            except KeyError:
+                logger.warning(
+                    "Purposes must have the following metadata plugins enabled: %s",
+                    plugin_name,
+                )
+                continue
+            purpose.add_metadata_plugin(plugin.obj)
+
+    def _add_metadata_plugins(self, purposes_config):
         for purpose_name, plugin_names in purposes_config.items():
             purpose = self._purposes.get(purpose_name)
             if not purpose:
@@ -53,50 +76,15 @@ class Purposes:
                 continue
 
             for plugin_name in plugin_names:
-                plugin = self._get_metadata_plugin(plugin_name)
-                if not plugin:
+                try:
+                    plugin = self._metadata_plugins[plugin_name]
+                except KeyError:
+                    logger.warning(
+                        "A purpose has been assigned to an invalid metadata plugin: %s",
+                        plugin_name,
+                    )
                     continue
                 purpose.add_metadata_plugin(plugin.obj)
-
-    def _set_default_user_purpose(self):
-        plugin = self._get_default_metadata_plugin('default_user')
-        if not plugin:
-            return
-        self._purposes['user'].add_metadata_plugin(plugin.obj)
-
-    def _set_default_internal_purpose(self):
-        plugin = self._get_default_metadata_plugin('default_internal')
-        if not plugin:
-            return
-        self._purposes['internal'].add_metadata_plugin(plugin.obj)
-
-    def _set_default_external_api_purpose(self):
-        plugin = self._get_default_metadata_plugin('default_external_api')
-        if not plugin:
-            return
-        self._purposes['external_api'].add_metadata_plugin(plugin.obj)
-
-    def _set_default_tenant_admin_purpose(self):
-        plugin = self._get_default_metadata_plugin('default_tenant_admin')
-        if not plugin:
-            return
-        self._purposes['tenant_admin'].add_metadata_plugin(plugin.obj)
-
-    def _get_default_metadata_plugin(self, plugin):
-        try:
-            return self._metadata_plugins[plugin]
-        except KeyError:
-            logger.warning(
-                "Purposes must have the following metadata plugins enabled: %s", plugin
-            )
-
-    def _get_metadata_plugin(self, name):
-        try:
-            return self._metadata_plugins[name]
-        except KeyError:
-            logger.warning(
-                "A purpose has been assigned to an invalid metadata plugin: %s", name
-            )
 
     def get(self, name):
         return self._purposes.get(name)
