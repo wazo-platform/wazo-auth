@@ -210,13 +210,7 @@ definitions:
         type: string
         description: The main email address of the new username
       purpose:
-        type: string
-        default: user
-        enum:
-        - user
-        - internal
-        - external_api
-        - tenant_admin
+        $ref: '#/definitions/PurposeDefaultUser'
   UserEdit:
     type: object
     properties:
@@ -232,13 +226,7 @@ definitions:
       enabled:
         type: boolean
       purpose:
-        type: string
-        default: user
-        enum:
-        - user
-        - internal
-        - external_api
-        - tenant_admin
+        $ref: '#/definitions/PurposeDefaultUser'
   UserEmail:
     type: object
     properties:
@@ -274,12 +262,7 @@ definitions:
       uuid:
         type: string
       purpose:
-        type: string
-        enum:
-        - user
-        - internal
-        - external_api
-        - tenant_admin
+        $ref: '#/definitions/Purpose'
   UserResult:
     type: object
     properties:
@@ -292,12 +275,7 @@ definitions:
       lastname:
         type: string
       purpose:
-        type: string
-        enum:
-        - user
-        - internal
-        - external_api
-        - tenant_admin
+        $ref: '#/definitions/Purpose'
       tenant_uuid:
         type: string
       emails:
@@ -306,3 +284,14 @@ definitions:
           $ref: '#/definitions/UserEmail'
       enabled:
         type: boolean
+  Purpose:
+    type: string
+    enum:
+    - user
+    - internal
+    - external_api
+    - tenant_admin
+  PurposeDefaultUser:
+    allOf:
+    - $ref: '#/definitions/Purpose'
+    - default: user
