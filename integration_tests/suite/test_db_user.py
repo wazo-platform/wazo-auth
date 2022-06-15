@@ -8,7 +8,7 @@ from unittest.mock import ANY
 from hamcrest import (
     assert_that,
     calling,
-    contains,
+    contains_exactly,
     contains_inanyorder,
     empty,
     equal_to,
@@ -59,7 +59,9 @@ class TestUserDAO(base.DAOTestCase):
 
         emails = [self._email('foobar@example.com', main=True, confirmed=False)]
         result = self._user_dao.update_emails(user_uuid, emails)
-        assert_that(result, contains(*[has_entries(**email) for email in emails]))
+        assert_that(
+            result, contains_exactly(*[has_entries(**email) for email in emails])
+        )
         assert_that(self._user_dao.get_emails(user_uuid), contains_inanyorder(*result))
 
         emails = [
@@ -230,10 +232,10 @@ class TestUserDAO(base.DAOTestCase):
         result = self._user_dao.list_(uuid=user_uuid)
         assert_that(
             result,
-            contains(
+            contains_exactly(
                 has_entries(
                     username=username,
-                    emails=contains(
+                    emails=contains_exactly(
                         has_entries(address=email_address, confirmed=False, main=True)
                     ),
                 )
@@ -276,10 +278,10 @@ class TestUserDAO(base.DAOTestCase):
             result = self._user_dao.list_(uuid=user_uuid)
             assert_that(
                 result,
-                contains(
+                contains_exactly(
                     has_entries(
                         username=username,
-                        emails=contains(
+                        emails=contains_exactly(
                             has_entries(
                                 uuid=uuid_(), address=email_address, confirmed=True
                             )
@@ -584,10 +586,10 @@ class TestUserDAO(base.DAOTestCase):
 
     def _check_sort(self, column, a, b):
         result = self._user_dao.list_(order=column, direction='asc')
-        assert_that(result, contains(has_entries(uuid=a), has_entries(uuid=b)))
+        assert_that(result, contains_exactly(has_entries(uuid=a), has_entries(uuid=b)))
 
         result = self._user_dao.list_(order=column, direction='desc')
-        assert_that(result, contains(has_entries(uuid=b), has_entries(uuid=a)))
+        assert_that(result, contains_exactly(has_entries(uuid=b), has_entries(uuid=a)))
 
     @fixtures.db.user(email_address='foo@example.com')
     def test_delete(self, user_uuid):

@@ -1,10 +1,10 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from functools import partial
 from hamcrest import (
     assert_that,
-    contains,
+    contains_exactly,
     contains_inanyorder,
     has_entries,
     has_items,
@@ -57,7 +57,7 @@ class TestGroupUserList(base.APIIntegrationTest):
         assert_that(result, has_entries(total=3, filtered=3, items=expected))
 
         result = self.action(order='username', limit=2)
-        expected = contains(self.bar, self.baz)
+        expected = contains_exactly(self.bar, self.baz)
         assert_that(result, has_entries(total=3, filtered=3, items=expected))
 
 
@@ -124,7 +124,7 @@ class TestUserGroupList(base.APIIntegrationTest):
             has_entries(
                 total=self.total,
                 filtered=self.total,
-                items=contains(self.bar, self.baz),
+                items=contains_exactly(self.bar, self.baz),
             ),
         )
 

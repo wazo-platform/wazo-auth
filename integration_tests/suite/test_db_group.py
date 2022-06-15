@@ -1,10 +1,10 @@
-# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
     assert_that,
     calling,
-    contains,
+    contains_exactly,
     contains_inanyorder,
     empty,
     equal_to,
@@ -32,7 +32,7 @@ class TestGroupDAO(base.DAOTestCase):
 
         self._group_dao.add_policy(group_uuid, policy_uuid)
         result = self._policy_dao.list_(group_uuid=group_uuid)
-        assert_that(result, contains(has_properties(uuid=policy_uuid)))
+        assert_that(result, contains_exactly(has_properties(uuid=policy_uuid)))
 
         self._group_dao.add_policy(group_uuid, policy_uuid)  # twice
 
@@ -59,7 +59,7 @@ class TestGroupDAO(base.DAOTestCase):
 
         self._group_dao.add_user(group_uuid, user_uuid)
         result = self._user_dao.list_(group_uuid=group_uuid)
-        assert_that(result, contains(has_entries(uuid=user_uuid)))
+        assert_that(result, contains_exactly(has_entries(uuid=user_uuid)))
 
         self._group_dao.add_user(group_uuid, user_uuid)  # twice
 
@@ -155,15 +155,15 @@ class TestGroupDAO(base.DAOTestCase):
 
         result = self._group_dao.list_(order='name', direction='desc')
         expected = build_list_matcher('foo', 'baz', 'bar')
-        assert_that(result, contains(*expected))
+        assert_that(result, contains_exactly(*expected))
 
         result = self._group_dao.list_(order='name', direction='asc', limit=2)
         expected = build_list_matcher('bar', 'baz')
-        assert_that(result, contains(*expected))
+        assert_that(result, contains_exactly(*expected))
 
         result = self._group_dao.list_(order='name', direction='asc', offset=1)
         expected = build_list_matcher('baz', 'foo')
-        assert_that(result, contains(*expected))
+        assert_that(result, contains_exactly(*expected))
 
     @fixtures.db.group()
     @fixtures.db.policy()

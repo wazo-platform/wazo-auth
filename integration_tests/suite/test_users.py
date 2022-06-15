@@ -7,7 +7,7 @@ import requests
 from hamcrest import (
     assert_that,
     calling,
-    contains,
+    contains_exactly,
     contains_inanyorder,
     contains_string,
     empty,
@@ -165,7 +165,7 @@ class TestUsers(base.APIIntegrationTest):
             assert_that(
                 tenants,
                 has_entries(
-                    items=contains(has_entries(uuid=isolated['uuid'])), total=1
+                    items=contains_exactly(has_entries(uuid=isolated['uuid'])), total=1
                 ),
             )
 
@@ -335,11 +335,14 @@ class TestUsers(base.APIIntegrationTest):
 
             updated_user = self.client.users.get(user['uuid'])
             assert_that(
-                updated_user, has_entries(emails=contains(has_entries(confirmed=True)))
+                updated_user,
+                has_entries(emails=contains_exactly(has_entries(confirmed=True))),
             )
 
             tenants = self.client.users.get_tenants(user['uuid'])
-            assert_that(tenants, has_entries(items=contains(has_entries(uuid=uuid_()))))
+            assert_that(
+                tenants, has_entries(items=contains_exactly(has_entries(uuid=uuid_())))
+            )
 
     def test_register_post_does_not_log_password(self):
         args = {
@@ -463,7 +466,7 @@ class TestUsers(base.APIIntegrationTest):
             ):
                 with self.user(sub_client, username='baz'):
                     result = top_client.users.list()
-                    check_list_result(result, 1, 1, contains, 'foo')
+                    check_list_result(result, 1, 1, contains_exactly, 'foo')
 
                     result = top_client.users.list(recurse=True)
                     check_list_result(
@@ -492,22 +495,26 @@ class TestUsers(base.APIIntegrationTest):
                     result = top_client.users.list(
                         recurse=True, order='username', direction='desc'
                     )
-                    check_list_result(result, 3, 3, contains, 'foo', 'baz', 'bar')
+                    check_list_result(
+                        result, 3, 3, contains_exactly, 'foo', 'baz', 'bar'
+                    )
 
                     result = top_client.users.list(
                         recurse=True, order='username', direction='asc'
                     )
-                    check_list_result(result, 3, 3, contains, 'bar', 'baz', 'foo')
+                    check_list_result(
+                        result, 3, 3, contains_exactly, 'bar', 'baz', 'foo'
+                    )
 
                     result = top_client.users.list(
                         recurse=True, order='username', direction='asc', limit=1
                     )
-                    check_list_result(result, 3, 3, contains, 'bar')
+                    check_list_result(result, 3, 3, contains_exactly, 'bar')
 
                     result = top_client.users.list(
                         recurse=True, order='username', direction='asc', offset=1
                     )
-                    check_list_result(result, 3, 3, contains, 'baz', 'foo')
+                    check_list_result(result, 3, 3, contains_exactly, 'baz', 'foo')
 
                     assert_http_error(400, top_client.users.list, limit='not a number')
                     assert_http_error(400, top_client.users.list, offset=-1)

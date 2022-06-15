@@ -1,10 +1,10 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from functools import partial
 from hamcrest import (
     assert_that,
-    contains,
+    contains_exactly,
     contains_inanyorder,
     empty,
     has_entries,
@@ -60,7 +60,7 @@ class TestGroupPolicyAssociation(base.APIIntegrationTest):
         )
 
         result = self.client.groups.get_policies(group['uuid'])
-        assert_that(result, has_entries(items=contains(policy1)))
+        assert_that(result, has_entries(items=contains_exactly(policy1)))
 
     @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
     @fixtures.http.group(tenant_uuid=SUB_TENANT_UUID)
@@ -100,7 +100,7 @@ class TestGroupPolicyAssociation(base.APIIntegrationTest):
             )
 
             result = client.groups.get_policies(visible_group['uuid'])
-            assert_that(result, has_entries(items=contains(visible_policy)))
+            assert_that(result, has_entries(items=contains_exactly(visible_policy)))
 
         base.assert_http_error(
             404, self.client.groups.add_policy, UNKNOWN_UUID, policy1['uuid']
@@ -116,7 +116,7 @@ class TestGroupPolicyAssociation(base.APIIntegrationTest):
         )  # Twice
 
         result = self.client.groups.get_policies(group['uuid'])
-        assert_that(result, has_entries(items=contains(policy1)))
+        assert_that(result, has_entries(items=contains_exactly(policy1)))
 
     @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
     @fixtures.http.group(tenant_uuid=SUB_TENANT_UUID)
@@ -164,7 +164,7 @@ class TestGroupPolicyAssociation(base.APIIntegrationTest):
         )
 
         result = self.client.groups.get_policies(group['uuid'])
-        assert_that(result, has_entries(items=contains(policy1)))
+        assert_that(result, has_entries(items=contains_exactly(policy1)))
 
         self.client.policies.delete(user_policy['uuid'])
 
@@ -191,7 +191,7 @@ class TestGroupPolicyAssociation(base.APIIntegrationTest):
         assert_that(result, has_entries(total=3, filtered=2, items=expected))
 
         result = action(name='foo')
-        expected = contains(foo)
+        expected = contains_exactly(foo)
         assert_that(result, has_entries(total=3, filtered=1, items=expected))
 
     @fixtures.http.group()
@@ -355,7 +355,7 @@ class TestGroupPolicySlug(base.APIIntegrationTest):
         base.assert_no_error(url, group['uuid'], policy2['slug'])
 
         result = self.client.groups.get_policies(group['uuid'])
-        assert_that(result, has_entries(items=contains(policy1)))
+        assert_that(result, has_entries(items=contains_exactly(policy1)))
 
     @fixtures.http.group()
     def test_delete_multi_tenant(self, group):
@@ -396,7 +396,7 @@ class TestGroupPolicySlug(base.APIIntegrationTest):
         base.assert_no_error(url, group['uuid'], policy['slug'])
 
         result = self.client.groups.get_policies(group['uuid'])
-        assert_that(result, has_entries(items=contains(policy)))
+        assert_that(result, has_entries(items=contains_exactly(policy)))
 
     @fixtures.http.group()
     def test_put_multi_tenant(self, group):
@@ -425,4 +425,4 @@ class TestGroupPolicySlug(base.APIIntegrationTest):
                 policy_slug,
             )
             result = client.groups.get_policies(visible_group['uuid'])
-            assert_that(result, has_entries(items=contains(visible_policy)))
+            assert_that(result, has_entries(items=contains_exactly(visible_policy)))

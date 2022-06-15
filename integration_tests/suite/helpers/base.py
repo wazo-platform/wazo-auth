@@ -14,7 +14,7 @@ from contextlib import contextmanager
 from hamcrest import (
     assert_that,
     calling,
-    contains,
+    contains_exactly,
     greater_than,
     has_length,
     has_properties,
@@ -369,21 +369,21 @@ def assert_no_error(fn, *args, **kwargs):
     return fn(*args, **kwargs)
 
 
-def assert_http_error(status_code, fn, *args, **kwargs):
+def assert_http_error(status_code, http_fn, *args, **kwargs):
     assert_that(
-        calling(fn).with_args(*args, **kwargs),
+        calling(http_fn).with_args(*args, **kwargs),
         raises(requests.HTTPError).matching(
             has_properties('response', has_properties('status_code', status_code))
         ),
     )
 
 
-def assert_sorted(action, order, expected):
-    asc_items = action(order=order, direction='asc')['items']
-    desc_items = action(order=order, direction='desc')['items']
+def assert_sorted(http_fn, order, expected):
+    asc_items = http_fn(order=order, direction='asc')['items']
+    desc_items = http_fn(order=order, direction='desc')['items']
 
     assert_that(
-        asc_items, has_length(greater_than(1)), 'sorting requires atleast 2 items'
+        asc_items, has_length(greater_than(1)), 'sorting requires at least 2 items'
     )
-    assert_that(asc_items, contains(*expected))
-    assert_that(desc_items, contains(*reversed(expected)))
+    assert_that(asc_items, contains_exactly(*expected))
+    assert_that(desc_items, contains_exactly(*reversed(expected)))

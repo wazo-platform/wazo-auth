@@ -10,7 +10,7 @@ from unittest.mock import ANY
 from hamcrest import (
     all_of,
     assert_that,
-    contains,
+    contains_exactly,
     contains_inanyorder,
     empty,
     equal_to,
@@ -101,7 +101,9 @@ class TestPolicies(base.APIIntegrationTest):
             assert_that(
                 response.json(),
                 has_entries(
-                    timestamp=contains(ANY), reason=contains(ANY), status_code=400
+                    timestamp=contains_exactly(ANY),
+                    reason=contains_exactly(ANY),
+                    status_code=400,
                 ),
             )
 
@@ -115,8 +117,8 @@ class TestPolicies(base.APIIntegrationTest):
             assert_that(
                 response.json(),
                 has_entries(
-                    timestamp=contains(ANY),
-                    reason=contains('Invalid value supplied for field: name'),
+                    timestamp=contains_exactly(ANY),
+                    reason=contains_exactly('Invalid value supplied for field: name'),
                     status_code=400,
                 ),
             )
@@ -131,8 +133,10 @@ class TestPolicies(base.APIIntegrationTest):
             assert_that(
                 response.json(),
                 has_entries(
-                    timestamp=contains(ANY),
-                    reason=contains('Invalid value supplied for field: description'),
+                    timestamp=contains_exactly(ANY),
+                    reason=contains_exactly(
+                        'Invalid value supplied for field: description'
+                    ),
                     status_code=400,
                 ),
             )
@@ -240,7 +244,7 @@ class TestPolicies(base.APIIntegrationTest):
             response,
             has_entries(
                 total=3 + NB_DEFAULT_POLICIES,
-                items=contains(one),
+                items=contains_exactly(one),
             ),
         )
 
@@ -264,7 +268,8 @@ class TestPolicies(base.APIIntegrationTest):
             tenant_uuid=SUB_TENANT_UUID, order='name', limit=1
         )
         assert_that(
-            response, has_entries(total=3 + NB_DEFAULT_POLICIES, items=contains(one))
+            response,
+            has_entries(total=3 + NB_DEFAULT_POLICIES, items=contains_exactly(one)),
         )
 
         response = self.client.policies.list(
@@ -486,7 +491,9 @@ class TestPolicies(base.APIIntegrationTest):
             self.client.policies.add_access(policy_in_subtenant['uuid'], '#')
             assert_that(
                 client.policies.get(policy_in_subtenant['uuid']),
-                has_entries(uuid=policy_in_subtenant['uuid'], acl=contains('#')),
+                has_entries(
+                    uuid=policy_in_subtenant['uuid'], acl=contains_exactly('#')
+                ),
             )
 
         self.client.policies.add_access(policy['uuid'], 'new.access.#')

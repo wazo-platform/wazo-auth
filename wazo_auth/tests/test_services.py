@@ -4,7 +4,15 @@
 from unittest import TestCase
 from unittest.mock import Mock, patch, sentinel as s
 
-from hamcrest import assert_that, contains, calling, equal_to, has_entries, not_, raises
+from hamcrest import (
+    assert_that,
+    contains_exactly,
+    calling,
+    equal_to,
+    has_entries,
+    not_,
+    raises,
+)
 from wazo_auth.config import _DEFAULT_CONFIG
 from xivo.mallow import fields
 
@@ -93,7 +101,7 @@ class TestExternalAuthService(BaseServiceTestCase):
         result = self.service.list_(s.user_uuid)
         assert_that(
             result,
-            contains(
+            contains_exactly(
                 {'type': 'auth_1', 'data': {}, 'enabled': True},
                 {'type': 'auth_2', 'data': {}, 'enabled': True},
             ),
@@ -104,7 +112,7 @@ class TestExternalAuthService(BaseServiceTestCase):
         result = self.service.list_(s.user_uuid)
         assert_that(
             result,
-            contains(
+            contains_exactly(
                 {'type': 'auth_1', 'data': {'scope': ['scope']}, 'enabled': True},
                 {'type': 'auth_2', 'data': {}, 'enabled': True},
             ),
@@ -126,7 +134,7 @@ class TestExternalAuthService(BaseServiceTestCase):
         result = self.service.list_(s.user_uuid)
         assert_that(
             result,
-            contains(
+            contains_exactly(
                 {'type': 'auth_1', 'data': {}, 'enabled': True},
                 {'type': 'auth_2', 'data': {}, 'enabled': True},
             ),

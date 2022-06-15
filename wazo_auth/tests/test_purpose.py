@@ -5,7 +5,7 @@ import unittest
 
 from unittest.mock import Mock, sentinel as s
 
-from hamcrest import assert_that, contains, empty, equal_to, not_
+from hamcrest import assert_that, contains_exactly, empty, equal_to, not_
 
 from ..purpose import Purpose, Purposes
 
@@ -22,20 +22,20 @@ class TestPurpose(unittest.TestCase):
     def test_metadata_plugins(self):
         plugin = Mock()
         purpose = Purpose(s.name, [plugin])
-        assert_that(purpose.metadata_plugins, contains(plugin))
+        assert_that(purpose.metadata_plugins, contains_exactly(plugin))
 
     def test_add_metadata_plugin(self):
         purpose = Purpose(s.name)
         plugin = Mock()
         purpose.add_metadata_plugin(plugin)
-        assert_that(purpose.metadata_plugins, contains(plugin))
+        assert_that(purpose.metadata_plugins, contains_exactly(plugin))
 
     def test_add_metadata_plugin_twice(self):
         purpose = Purpose(s.name)
         plugin = Mock()
         purpose.add_metadata_plugin(plugin)
         purpose.add_metadata_plugin(plugin)
-        assert_that(purpose.metadata_plugins, contains(plugin))
+        assert_that(purpose.metadata_plugins, contains_exactly(plugin))
 
     def test_eq(self):
         purpose_1 = Purpose(s.name)

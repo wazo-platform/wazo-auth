@@ -4,7 +4,7 @@
 from unittest import TestCase
 from unittest.mock import sentinel as s, Mock
 
-from hamcrest import assert_that, contains
+from hamcrest import assert_that, contains_exactly
 
 from ..authentication import AuthenticationService
 
@@ -26,7 +26,7 @@ class TestAuthenticationService(TestCase):
 
         result = self.service.verify_auth(args)
 
-        assert_that(result, contains(self.backend, s.original_login))
+        assert_that(result, contains_exactly(self.backend, s.original_login))
 
     def test_verify_auth_with_login_password(self):
         args = {'backend': s.backend_name, 'login': s.login, 'password': s.password}
@@ -34,4 +34,4 @@ class TestAuthenticationService(TestCase):
         self.backend.verify_password.return_value = True
         result = self.service.verify_auth(args)
 
-        assert_that(result, contains(self.backend, s.login))
+        assert_that(result, contains_exactly(self.backend, s.login))
