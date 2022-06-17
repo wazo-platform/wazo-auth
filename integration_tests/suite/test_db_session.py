@@ -1,11 +1,11 @@
-# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
 
 from hamcrest import (
     assert_that,
-    contains,
+    contains_exactly,
     contains_inanyorder,
     equal_to,
     empty,
@@ -49,20 +49,20 @@ class TestSessionDAO(base.DAOTestCase):
         result = self._session_dao.list_(order='mobile', direction='desc')
         assert_that(
             result,
-            contains(
+            contains_exactly(
                 has_entries(uuid=token_1['session_uuid']),
                 has_entries(uuid=token_2['session_uuid']),
             ),
         )
 
         result = self._session_dao.list_(order='mobile', direction='asc', limit=1)
-        assert_that(result, contains(has_entries(uuid=token_2['session_uuid'])))
+        assert_that(result, contains_exactly(has_entries(uuid=token_2['session_uuid'])))
 
         result = self._session_dao.list_(order='mobile', direction='asc', offset=1)
-        assert_that(result, contains(has_entries(uuid=token_1['session_uuid'])))
+        assert_that(result, contains_exactly(has_entries(uuid=token_1['session_uuid'])))
 
         result = self._session_dao.list_(user_uuid=token_1['auth_id'])
-        assert_that(result, contains(has_entries(uuid=token_1['session_uuid'])))
+        assert_that(result, contains_exactly(has_entries(uuid=token_1['session_uuid'])))
 
     @fixtures.db.token(auth_id='', session_uuid=SESSION_UUID_1)
     @fixtures.db.token(auth_id='not-uuid-id', session_uuid=SESSION_UUID_1)

@@ -1,4 +1,4 @@
-# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -6,7 +6,7 @@ import uuid
 from hamcrest import (
     assert_that,
     calling,
-    contains,
+    contains_exactly,
     contains_inanyorder,
     equal_to,
     has_entries,
@@ -257,13 +257,13 @@ class TestExternalAuthDAO(base.DAOTestCase):
             {'type': 'two', 'data': data_two, 'enabled': True},
             {'type': 'one', 'data': data_one, 'enabled': True},
         ]
-        assert_that(result, contains(*expected))
+        assert_that(result, contains_exactly(*expected))
 
         result = self._external_auth_dao.list_(
             user_1_uuid, order='type', direction='asc', limit=1
         )
         expected = [{'type': 'one', 'data': data_one, 'enabled': True}]
-        assert_that(result, contains(*expected))
+        assert_that(result, contains_exactly(*expected))
 
     @fixtures.db.user()
     @fixtures.db.external_auth('foobarcrm')

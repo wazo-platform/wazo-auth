@@ -1,10 +1,10 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
 from hamcrest import (
     assert_that,
-    contains,
+    contains_exactly,
     equal_to,
     has_entries,
     has_properties,
@@ -28,7 +28,7 @@ class TestEmailConfirmation(base.APIIntegrationTest):
         assert_that(
             updated_user,
             has_entries(
-                emails=contains(
+                emails=contains_exactly(
                     has_entries(address='foobar@example.com', confirmed=True)
                 )
             ),
@@ -49,7 +49,7 @@ class TestEmailConfirmation(base.APIIntegrationTest):
         assert_that(
             updated_user,
             has_entries(
-                emails=contains(
+                emails=contains_exactly(
                     has_entries(address='foobar@example.com', confirmed=True)
                 )
             ),
@@ -79,7 +79,7 @@ class TestEmailConfirmation(base.APIIntegrationTest):
         assert_that(
             updated_user,
             has_entries(
-                emails=contains(
+                emails=contains_exactly(
                     has_entries(address='foobar@example.com', confirmed=True)
                 )
             ),

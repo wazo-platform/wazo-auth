@@ -11,7 +11,7 @@ import pytest
 from hamcrest import (
     assert_that,
     calling,
-    contains,
+    contains_exactly,
     contains_inanyorder,
     empty,
     equal_to,
@@ -109,7 +109,7 @@ class TestTenantDAO(base.DAOTestCase):
 
         # Leaves can see themselves only
         result = self._tenant_dao.list_visible_tenants(scoping_tenant_uuid=c_uuid)
-        assert_that(result, contains(has_properties(uuid=c_uuid)))
+        assert_that(result, contains_exactly(has_properties(uuid=c_uuid)))
 
         # An unknown tenant returns nothing
         result = self._tenant_dao.list_visible_tenants(
@@ -200,15 +200,15 @@ class TestTenantDAO(base.DAOTestCase):
 
         result = self._tenant_dao.list_(order='name', direction='desc')
         expected = build_list_matcher('master', 'foo c', 'baz a', 'bar b')
-        assert_that(result, contains(*expected))
+        assert_that(result, contains_exactly(*expected))
 
         result = self._tenant_dao.list_(limit=1, order='name', direction='asc')
         expected = build_list_matcher('bar b')
-        assert_that(result, contains(*expected))
+        assert_that(result, contains_exactly(*expected))
 
         result = self._tenant_dao.list_(offset=1, order='name', direction='asc')
         expected = build_list_matcher('baz a', 'foo c', 'master')
-        assert_that(result, contains(*expected))
+        assert_that(result, contains_exactly(*expected))
 
     def test_list_benchmark(self):
         tenant_uuid = self._create_tenant(name='a')

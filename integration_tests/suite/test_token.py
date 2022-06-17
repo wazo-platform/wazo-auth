@@ -7,7 +7,7 @@ from unittest.mock import ANY
 from hamcrest import (
     assert_that,
     calling,
-    contains,
+    contains_exactly,
     contains_inanyorder,
     empty,
     ends_with,
@@ -126,7 +126,7 @@ class TestTokens(base.APIIntegrationTest):
         def bus_received_msg():
             assert_that(
                 msg_accumulator.accumulate(with_headers=True),
-                contains(
+                contains_exactly(
                     has_entries(
                         message=has_entries(
                             data={
@@ -173,7 +173,7 @@ class TestTokens(base.APIIntegrationTest):
         def bus_received_msg():
             assert_that(
                 msg_accumulator.accumulate(with_headers=True),
-                contains(
+                contains_exactly(
                     has_entries(
                         message=has_entries(
                             name='auth_refresh_token_deleted',
@@ -280,7 +280,7 @@ class TestTokens(base.APIIntegrationTest):
         def bus_received_msg():
             assert_that(
                 msg_accumulator.accumulate(with_headers=True),
-                contains(
+                contains_exactly(
                     has_entries(
                         message=has_entries(
                             data={
@@ -371,7 +371,7 @@ class TestTokens(base.APIIntegrationTest):
         assert_that(
             result,
             has_entries(
-                items=contains(
+                items=contains_exactly(
                     has_entries(client_id=token_1['client_id']),
                     has_entries(client_id=token_2['client_id']),
                     has_entries(client_id=token_3['client_id']),
@@ -385,7 +385,7 @@ class TestTokens(base.APIIntegrationTest):
         assert_that(
             result,
             has_entries(
-                items=contains(
+                items=contains_exactly(
                     has_entries(client_id=token_3['client_id']),
                     has_entries(client_id=token_2['client_id']),
                     has_entries(client_id=token_1['client_id']),
@@ -399,7 +399,7 @@ class TestTokens(base.APIIntegrationTest):
         assert_that(
             result,
             has_entries(
-                items=contains(
+                items=contains_exactly(
                     has_entries(client_id=token_1['client_id']),
                     has_entries(client_id=token_2['client_id']),
                 )
@@ -412,7 +412,7 @@ class TestTokens(base.APIIntegrationTest):
         assert_that(
             result,
             has_entries(
-                items=contains(
+                items=contains_exactly(
                     has_entries(client_id=token_2['client_id']),
                     has_entries(client_id=token_3['client_id']),
                 )
@@ -524,7 +524,7 @@ class TestTokens(base.APIIntegrationTest):
         assert_that(
             result,
             has_entries(
-                items=contains(
+                items=contains_exactly(
                     has_entries(client_id=token_1['client_id']),
                     has_entries(client_id=token_2['client_id']),
                     has_entries(client_id=token_3['client_id']),
@@ -536,7 +536,7 @@ class TestTokens(base.APIIntegrationTest):
         assert_that(
             result,
             has_entries(
-                items=contains(
+                items=contains_exactly(
                     has_entries(client_id=token_3['client_id']),
                     has_entries(client_id=token_2['client_id']),
                     has_entries(client_id=token_1['client_id']),
@@ -548,7 +548,7 @@ class TestTokens(base.APIIntegrationTest):
         assert_that(
             result,
             has_entries(
-                items=contains(
+                items=contains_exactly(
                     has_entries(client_id=token_1['client_id']),
                     has_entries(client_id=token_2['client_id']),
                 )
@@ -559,7 +559,7 @@ class TestTokens(base.APIIntegrationTest):
         assert_that(
             result,
             has_entries(
-                items=contains(
+                items=contains_exactly(
                     has_entries(client_id=token_2['client_id']),
                     has_entries(client_id=token_3['client_id']),
                 )
@@ -583,7 +583,7 @@ class TestTokens(base.APIIntegrationTest):
             assert_that(
                 result,
                 has_entries(
-                    items=contains(
+                    items=contains_exactly(
                         has_entries(
                             client_id='myapp',
                             user_uuid=user['uuid'],

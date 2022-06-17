@@ -4,7 +4,7 @@
 from functools import partial
 from hamcrest import (
     assert_that,
-    contains,
+    contains_exactly,
     contains_inanyorder,
     empty,
     equal_to,
@@ -123,7 +123,7 @@ class TestTenants(base.APIIntegrationTest):
         )
 
         def expected_policies(tenant_uuid):
-            return contains(
+            return contains_exactly(
                 has_entries(
                     slug=ALL_USERS_POLICY_SLUG,
                     tenant_uuid=tenant_uuid,
@@ -223,7 +223,7 @@ class TestTenants(base.APIIntegrationTest):
         def bus_received_msg():
             assert_that(
                 msg_accumulator.accumulate(with_headers=True),
-                contains(
+                contains_exactly(
                     has_entries(
                         message=has_entries(
                             name='auth_tenant_added',
@@ -316,7 +316,9 @@ class TestTenants(base.APIIntegrationTest):
     def test_list(self, foobar, foobaz, foobarbaz):
         top_tenant = self.get_top_tenant()
 
-        def then(result, total=4, filtered=4, item_matcher=contains(top_tenant)):
+        def then(
+            result, total=4, filtered=4, item_matcher=contains_exactly(top_tenant)
+        ):
             assert_that(
                 result, has_entries(items=item_matcher, total=total, filtered=filtered)
             )
@@ -358,15 +360,17 @@ class TestTenants(base.APIIntegrationTest):
         then(result, filtered=1, item_matcher=matcher)
 
         result = self.client.tenants.list(limit=1, offset=1, order='name')
-        matcher = contains(foobarbaz)
+        matcher = contains_exactly(foobarbaz)
         then(result, item_matcher=matcher)
 
         result = self.client.tenants.list(order='slug')
-        matcher = contains(foobar, foobaz, foobarbaz, has_entries(slug='master'))
+        matcher = contains_exactly(
+            foobar, foobaz, foobarbaz, has_entries(slug='master')
+        )
         then(result, item_matcher=matcher)
 
         result = self.client.tenants.list(order='name', direction='desc')
-        matcher = contains(top_tenant, foobaz, foobarbaz, foobar)
+        matcher = contains_exactly(top_tenant, foobaz, foobarbaz, foobar)
         then(result, item_matcher=matcher)
 
         assert_http_error(400, self.client.tenants.list, limit='foo')
@@ -375,7 +379,7 @@ class TestTenants(base.APIIntegrationTest):
         with self.client_in_subtenant() as (client, user, sub_tenant):
             with self.tenant(client, name='subsub') as subsub:
                 result = client.tenants.list()
-                matcher = contains(sub_tenant, subsub)
+                matcher = contains_exactly(sub_tenant, subsub)
                 then(result, total=2, filtered=2, item_matcher=matcher)
 
     @fixtures.http.tenant()
@@ -527,7 +531,7 @@ class TestTenantPolicyAssociation(base.APIIntegrationTest):
         )
 
         result = action(offset=1)
-        expected = contains(
+        expected = contains_exactly(
             has_entries(name='baz'),
             has_entries(name='foo'),
             # default_policies
@@ -545,7 +549,7 @@ class TestTenantPolicyAssociation(base.APIIntegrationTest):
         )
 
         result = action(limit=2)
-        expected = contains(
+        expected = contains_exactly(
             has_entries(name='bar'),
             has_entries(name='baz'),
         )

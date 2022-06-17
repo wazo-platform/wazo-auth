@@ -1,7 +1,7 @@
-# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from hamcrest import assert_that, contains, contains_inanyorder, has_entries
+from hamcrest import assert_that, contains_exactly, contains_inanyorder, has_entries
 from .helpers import base
 from .helpers.base import assert_http_error
 from .helpers.constants import UNKNOWN_UUID
@@ -40,4 +40,6 @@ class TestTenantUser(base.APIIntegrationTest):
             assert_http_error(404, client.tenants.get_users, self.top_tenant_uuid)
 
             result = client.tenants.get_users(subtenant['uuid'])
-            assert_that(result, has_entries(total=1, filtered=1, items=contains(user)))
+            assert_that(
+                result, has_entries(total=1, filtered=1, items=contains_exactly(user))
+            )

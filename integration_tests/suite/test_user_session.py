@@ -8,7 +8,7 @@ import requests
 from hamcrest import (
     assert_that,
     calling,
-    contains,
+    contains_exactly,
     greater_than_or_equal_to,
     has_entries,
     has_items,
@@ -64,7 +64,7 @@ class TestUserSession(base.APIIntegrationTest):
             has_entries(
                 total=1,
                 filtered=1,
-                items=contains(has_entries(uuid=token['session_uuid'])),
+                items=contains_exactly(has_entries(uuid=token['session_uuid'])),
             ),
         )
 
@@ -113,7 +113,7 @@ class TestUserSession(base.APIIntegrationTest):
         def bus_received_msg():
             assert_that(
                 msg_accumulator.accumulate(with_headers=True),
-                contains(
+                contains_exactly(
                     has_entries(
                         message=has_entries(
                             data={

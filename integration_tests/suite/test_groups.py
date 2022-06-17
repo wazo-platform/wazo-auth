@@ -6,7 +6,7 @@ from unittest.mock import ANY
 
 from hamcrest import (
     assert_that,
-    contains,
+    contains_exactly,
     contains_inanyorder,
     equal_to,
     has_entries,
@@ -184,7 +184,7 @@ class TestGroups(base.APIIntegrationTest):
             has_entries(
                 total=3 + NB_DEFAULT_GROUPS,
                 filtered=1,
-                items=contains(one),
+                items=contains_exactly(one),
             ),
         )
 
@@ -204,7 +204,7 @@ class TestGroups(base.APIIntegrationTest):
             has_entries(
                 total=3 + NB_DEFAULT_GROUPS,
                 filtered=1,
-                items=contains(three),
+                items=contains_exactly(three),
             ),
         )
 

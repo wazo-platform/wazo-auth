@@ -5,7 +5,7 @@ import uuid
 
 from hamcrest import (
     assert_that,
-    contains,
+    contains_exactly,
     greater_than_or_equal_to,
     has_entries,
     has_items,
@@ -75,7 +75,9 @@ class TestSessions(base.APIIntegrationTest):
         assert_that(
             response,
             has_entries(
-                total=1, filtered=1, items=contains(has_entries(uuid=session_1['uuid']))
+                total=1,
+                filtered=1,
+                items=contains_exactly(has_entries(uuid=session_1['uuid'])),
             ),
         )
 
@@ -83,7 +85,9 @@ class TestSessions(base.APIIntegrationTest):
         assert_that(
             response,
             has_entries(
-                total=1, filtered=1, items=contains(has_entries(uuid=session_2['uuid']))
+                total=1,
+                filtered=1,
+                items=contains_exactly(has_entries(uuid=session_2['uuid'])),
             ),
         )
 
@@ -167,7 +171,7 @@ class TestSessions(base.APIIntegrationTest):
         def bus_received_msg():
             assert_that(
                 msg_accumulator.accumulate(with_headers=True),
-                contains(
+                contains_exactly(
                     has_entries(
                         message=has_entries(
                             data={

@@ -1,11 +1,11 @@
-# Copyright 2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
 from hamcrest import (
     assert_that,
     calling,
-    contains,
+    contains_exactly,
     empty,
     has_entries,
     has_properties,
@@ -59,7 +59,9 @@ class TestUsers(base.APIIntegrationTest):
         result = self.client.users.get_policies(user['uuid'])
         assert_that(
             result,
-            has_entries(total=1, items=contains(has_entries(name='one')), filtered=1),
+            has_entries(
+                total=1, items=contains_exactly(has_entries(name='one')), filtered=1
+            ),
             'not associated',
         )
 
@@ -99,7 +101,7 @@ class TestUsers(base.APIIntegrationTest):
         )
 
         result = self.client.users.get_policies(user['uuid'])
-        assert_that(result, has_entries(items=contains(policy1)))
+        assert_that(result, has_entries(items=contains_exactly(policy1)))
 
         self.client.policies.delete(user_policy['uuid'])
 
@@ -157,7 +159,7 @@ class TestUserPolicySlug(base.APIIntegrationTest):
         assert_no_error(url, user['uuid'], policy2['slug'])
 
         result = self.client.users.get_policies(user['uuid'])
-        assert_that(result, has_entries(items=contains(policy1)))
+        assert_that(result, has_entries(items=contains_exactly(policy1)))
 
     @fixtures.http.user()
     def test_delete_multi_tenant(self, user):
@@ -199,7 +201,7 @@ class TestUserPolicySlug(base.APIIntegrationTest):
         assert_no_error(url, user['uuid'], policy['slug'])
 
         result = self.client.users.get_policies(user['uuid'])
-        assert_that(result, has_entries(items=contains(policy)))
+        assert_that(result, has_entries(items=contains_exactly(policy)))
 
     @fixtures.http.user()
     def test_put_multi_tenant(self, user):
@@ -229,4 +231,4 @@ class TestUserPolicySlug(base.APIIntegrationTest):
                 policy_slug,
             )
             result = client.users.get_policies(visible_user['uuid'])
-            assert_that(result, has_entries(items=contains(visible_policy)))
+            assert_that(result, has_entries(items=contains_exactly(visible_policy)))

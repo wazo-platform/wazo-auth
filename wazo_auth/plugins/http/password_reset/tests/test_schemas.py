@@ -1,4 +1,4 @@
-# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import unittest
@@ -6,7 +6,7 @@ import unittest
 from hamcrest import (
     assert_that,
     calling,
-    contains,
+    contains_exactly,
     equal_to,
     has_entries,
     has_property,
@@ -41,7 +41,7 @@ class TestSchema(unittest.TestCase):
                 has_property(
                     "messages",
                     has_entries(
-                        _schema=contains('"username" or "email" should be used')
+                        _schema=contains_exactly('"username" or "email" should be used')
                     ),
                 ),
             ),

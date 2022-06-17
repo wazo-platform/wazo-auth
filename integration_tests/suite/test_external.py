@@ -8,7 +8,7 @@ import requests
 
 from hamcrest import (
     assert_that,
-    contains,
+    contains_exactly,
     equal_to,
     greater_than_or_equal_to,
     has_entries,
@@ -37,7 +37,7 @@ class TestExternalAuthAPI(base.ExternalAuthIntegrationTest):
         def bus_received_msg():
             assert_that(
                 msg_accumulator.accumulate(with_headers=True),
-                contains(
+                contains_exactly(
                     has_entries(
                         message=has_entries(
                             data={
@@ -76,7 +76,7 @@ class TestExternalAuthAPI(base.ExternalAuthIntegrationTest):
         def bus_received_msg():
             assert_that(
                 msg_accumulator.accumulate(with_headers=True),
-                contains(
+                contains_exactly(
                     has_entries(
                         message=has_entries(
                             data={
@@ -164,7 +164,9 @@ class TestExternalAuthAPI(base.ExternalAuthIntegrationTest):
         assert_that(
             result,
             has_entries(
-                items=contains(*expected), total=greater_than_or_equal_to(2), filtered=1
+                items=contains_exactly(*expected),
+                total=greater_than_or_equal_to(2),
+                filtered=1,
             ),
         )
 
@@ -211,7 +213,7 @@ class TestExternalAuthAPI(base.ExternalAuthIntegrationTest):
         def bus_received_msg():
             assert_that(
                 msg_accumulator.accumulate(with_headers=True),
-                contains(
+                contains_exactly(
                     has_entries(
                         message=has_entries(
                             data={

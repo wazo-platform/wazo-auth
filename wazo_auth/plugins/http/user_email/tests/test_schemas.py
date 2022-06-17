@@ -1,11 +1,11 @@
-# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
 from hamcrest import (
     assert_that,
     calling,
-    contains,
+    contains_exactly,
     contains_inanyorder,
     equal_to,
     has_entries,
@@ -58,7 +58,9 @@ class TestUserEmailPutSchema(TestCase):
                 ValidationError,
                 has_property(
                     "messages",
-                    has_entries(_schema=contains('Only one address should be main')),
+                    has_entries(
+                        _schema=contains_exactly('Only one address should be main')
+                    ),
                 ),
             ),
         )
@@ -71,7 +73,7 @@ class TestUserEmailPutSchema(TestCase):
                 has_property(
                     "messages",
                     has_entries(
-                        _schema=contains('At least one address should be main')
+                        _schema=contains_exactly('At least one address should be main')
                     ),
                 ),
             ),
@@ -97,7 +99,9 @@ class TestUserEmailPutSchema(TestCase):
                 has_property(
                     "messages",
                     has_entries(
-                        _schema=contains('The same address can only be used once')
+                        _schema=contains_exactly(
+                            'The same address can only be used once'
+                        )
                     ),
                 ),
             ),
@@ -141,7 +145,9 @@ class TestAdminUserEmailPutSchema(TestCase):
                 ValidationError,
                 has_property(
                     "messages",
-                    has_entries(_schema=contains('Only one address should be main')),
+                    has_entries(
+                        _schema=contains_exactly('Only one address should be main')
+                    ),
                 ),
             ),
         )
@@ -154,7 +160,7 @@ class TestAdminUserEmailPutSchema(TestCase):
                 has_property(
                     "messages",
                     has_entries(
-                        _schema=contains('At least one address should be main')
+                        _schema=contains_exactly('At least one address should be main')
                     ),
                 ),
             ),
@@ -180,7 +186,9 @@ class TestAdminUserEmailPutSchema(TestCase):
                 has_property(
                     "messages",
                     has_entries(
-                        _schema=contains('The same address can only be used once')
+                        _schema=contains_exactly(
+                            'The same address can only be used once'
+                        )
                     ),
                 ),
             ),

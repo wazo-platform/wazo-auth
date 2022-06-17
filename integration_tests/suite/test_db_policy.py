@@ -1,11 +1,11 @@
-# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from contextlib import contextmanager
 from hamcrest import (
     assert_that,
     calling,
-    contains,
+    contains_exactly,
     contains_inanyorder,
     empty,
     equal_to,
@@ -155,7 +155,7 @@ class TestPolicyDAO(base.DAOTestCase):
         result = self.list_policy(order='name', direction='asc')
         assert_that(
             result,
-            contains(
+            contains_exactly(
                 a,
                 b,
                 c,
@@ -166,7 +166,7 @@ class TestPolicyDAO(base.DAOTestCase):
         result = self.list_policy(order='name', direction='desc')
         assert_that(
             result,
-            contains(
+            contains_exactly(
                 self._default_master_user_policy_uuid,
                 c,
                 b,
@@ -177,7 +177,7 @@ class TestPolicyDAO(base.DAOTestCase):
         result = self.list_policy(order='description', direction='asc')
         assert_that(
             result,
-            contains(
+            contains_exactly(
                 self._default_master_user_policy_uuid,
                 c,
                 b,
@@ -188,7 +188,7 @@ class TestPolicyDAO(base.DAOTestCase):
         result = self.list_policy(order='description', direction='desc')
         assert_that(
             result,
-            contains(
+            contains_exactly(
                 a,
                 b,
                 c,
@@ -207,12 +207,12 @@ class TestPolicyDAO(base.DAOTestCase):
         )
 
         result = self.list_policy(order='name', direction='asc', limit=2)
-        assert_that(result, contains(a, b))
+        assert_that(result, contains_exactly(a, b))
 
         result = self.list_policy(order='name', direction='asc', offset=1)
         assert_that(
             result,
-            contains(
+            contains_exactly(
                 b,
                 c,
                 self._default_master_user_policy_uuid,
@@ -243,7 +243,7 @@ class TestPolicyDAO(base.DAOTestCase):
     @fixtures.db.policy(config_managed=False)
     def test_list_by_read_only(self, policy_1, policy_2):
         result = self._policy_dao.list_(read_only=True)
-        assert_that(result, contains(has_properties(uuid=policy_1)))
+        assert_that(result, contains_exactly(has_properties(uuid=policy_1)))
 
         result = self._policy_dao.list_(read_only=False)
         assert_that(
