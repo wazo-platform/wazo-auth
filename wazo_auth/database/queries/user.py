@@ -8,6 +8,7 @@ from . import filters
 from ..models import (
     Email,
     Group,
+    GroupPolicy,
     Policy,
     Session,
     Token,
@@ -91,6 +92,22 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             strict_filter = self.new_strict_filter(**kwargs)
             search_filter = self.new_search_filter(**kwargs)
             filter_ = and_(filter_, strict_filter, search_filter)
+
+            policy_uuid = kwargs.get('policy_uuid')
+            if policy_uuid:
+                filter_ = and_(filter_, self._policy_uuid_filter(policy_uuid))
+
+            policy_slug = kwargs.get('policy_slug')
+            if policy_slug:
+                filter_ = and_(filter_, self._policy_slug_filter(policy_slug))
+
+            has_policy_uuid = kwargs.get('has_policy_uuid')
+            if has_policy_uuid:
+                filter_ = and_(filter_, self._has_policy_uuid_filter(has_policy_uuid))
+
+            has_policy_slug = kwargs.get('has_policy_slug')
+            if has_policy_slug:
+                filter_ = and_(filter_, self._has_policy_slug_filter(has_policy_slug))
 
         return self.session.query(User.uuid).outerjoin(Email).filter(filter_).count()
 
@@ -264,6 +281,22 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if tenant_uuid:
             filter_ = and_(filter_, User.tenant_uuid == str(tenant_uuid))
 
+        policy_uuid = kwargs.get('policy_uuid')
+        if policy_uuid:
+            filter_ = and_(filter_, self._policy_uuid_filter(policy_uuid))
+
+        policy_slug = kwargs.get('policy_slug')
+        if policy_slug:
+            filter_ = and_(filter_, self._policy_slug_filter(policy_slug))
+
+        has_policy_uuid = kwargs.get('has_policy_uuid')
+        if has_policy_uuid:
+            filter_ = and_(filter_, self._has_policy_uuid_filter(has_policy_uuid))
+
+        has_policy_slug = kwargs.get('has_policy_slug')
+        if has_policy_slug:
+            filter_ = and_(filter_, self._has_policy_slug_filter(has_policy_slug))
+
         users = []
         query = (
             self.session.query(User)
@@ -353,6 +386,53 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def _delete_all_emails(self, user_uuid):
         self.session.query(Email).filter(Email.user_uuid == str(user_uuid)).delete()
         self.session.flush()
+
+    def _policy_uuid_filter(self, policy_uuid):
+        return self._policy_filter(Policy.uuid == policy_uuid)
+
+    def _policy_slug_filter(self, policy_slug):
+        return self._policy_filter(Policy.slug == policy_slug)
+
+    def _policy_filter(self, filter_):
+        user_policy_subquery = (
+            self.session.query(User.uuid)
+            .join(UserPolicy, User.uuid == UserPolicy.user_uuid)
+            .join(Policy, UserPolicy.policy_uuid == Policy.uuid)
+            .filter(filter_)
+            .subquery()
+        )
+        return User.uuid.in_(user_policy_subquery)
+
+    def _has_policy_uuid_filter(self, has_policy_uuid):
+        return self._has_policy_filter(Policy.uuid == has_policy_uuid)
+
+    def _has_policy_slug_filter(self, has_policy_slug):
+        return self._has_policy_filter(Policy.slug == has_policy_slug)
+
+    def _has_policy_filter(self, filter_):
+        user_policy_subquery = (
+            self.session.query(User.uuid)
+            .join(UserPolicy, User.uuid == UserPolicy.user_uuid)
+            .join(Policy, UserPolicy.policy_uuid == Policy.uuid)
+            .filter(filter_)
+            .subquery()
+        )
+        user_policy_filter = User.uuid.in_(user_policy_subquery)
+        group_policy_subquery = (
+            self.session.query(User.uuid)
+            .join(UserGroup, User.uuid == UserGroup.user_uuid)
+            .join(Group, UserGroup.group_uuid == Group.uuid)
+            .join(GroupPolicy, Group.uuid == GroupPolicy.group_uuid)
+            .join(Policy, GroupPolicy.policy_uuid == Policy.uuid)
+            .filter(filter_)
+            .subquery()
+        )
+        group_policy_filter = User.uuid.in_(group_policy_subquery)
+        filter_ = or_(
+            user_policy_filter.self_group(),
+            group_policy_filter.self_group(),
+        )
+        return filter_
 
     @staticmethod
     def _emails_to_dict(emails):

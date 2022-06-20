@@ -1,5 +1,14 @@
 # Changelog
 
+## 22.09
+
+* The endpoint `GET /users` now accepts the following query string parameters:
+
+  * `policy_uuid`: filter users that have this policy (no indirect relation)
+  * `policy_slug`: idem with policy slug
+  * `has_policy_uuid`: filter users that have this policy, either directly or indirectly via a group policy
+  * `has_policy_slug`: idem with policy slug
+
 ## 22.07
 
 The `POST /0.1/token` endpoint now accepts the following body parameters:

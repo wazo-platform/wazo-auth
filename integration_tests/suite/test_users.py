@@ -448,16 +448,6 @@ class TestUsers(base.APIIntegrationTest):
         assert_that(logs, not_(contains_string(new_password)))
 
     def test_list(self):
-        def check_list_result(result, total, filtered, item_matcher, *usernames):
-            items = item_matcher(
-                *[
-                    has_entries(username=username, enabled=True)
-                    for username in usernames
-                ]
-            )
-            expected = has_entries(total=total, filtered=filtered, items=items)
-            assert_that(result, expected)
-
         with self.client_in_subtenant(username='foo') as (top_client, _, top):
             with self.client_in_subtenant(username='bar', parent_uuid=top['uuid']) as (
                 sub_client,
@@ -521,6 +511,58 @@ class TestUsers(base.APIIntegrationTest):
                     assert_http_error(400, top_client.users.list, direction='up')
                     assert_http_error(400, top_client.users.list, order='lol')
 
+    @fixtures.http.user(username='visible')
+    @fixtures.http.user(username='hidden')
+    @fixtures.http.group()
+    @fixtures.http.policy()
+    @fixtures.http.policy()
+    def test_list_filter_has_policy(
+        self, user, user_hidden, group, user_policy, group_policy
+    ):
+        self.client.users.add_policy(user['uuid'], user_policy['uuid'])
+        self.client.groups.add_policy(group['uuid'], group_policy['uuid'])
+        self.client.groups.add_user(group['uuid'], user['uuid'])
+
+        # test user - policy
+        # uuid
+        result = self.client.users.list(has_policy_uuid=user_policy['uuid'])
+        check_list_result(result, 3, 1, contains_exactly, 'visible')
+        # slug
+        result = self.client.users.list(has_policy_slug=user_policy['slug'])
+        check_list_result(result, 3, 1, contains_exactly, 'visible')
+
+        # test user - group - policy
+        # uuid
+        result = self.client.users.list(has_policy_uuid=group_policy['uuid'])
+        check_list_result(result, 3, 1, contains_exactly, 'visible')
+        # slug
+        result = self.client.users.list(has_policy_slug=group_policy['slug'])
+        check_list_result(result, 3, 1, contains_exactly, 'visible')
+
+    @fixtures.http.user(username='visible')
+    @fixtures.http.user(username='hidden')
+    @fixtures.http.group()
+    @fixtures.http.policy()
+    @fixtures.http.policy()
+    def test_list_filter_policy(
+        self, user, user_hidden, group, user_policy, group_policy
+    ):
+        self.client.users.add_policy(user['uuid'], user_policy['uuid'])
+        self.client.groups.add_policy(group['uuid'], group_policy['uuid'])
+        self.client.groups.add_user(group['uuid'], user['uuid'])
+
+        # test user - policy
+        # uuid
+        result = self.client.users.list(policy_uuid=user_policy['uuid'])
+        check_list_result(result, 3, 1, contains_exactly, 'visible')
+        # slug
+        result = self.client.users.list(policy_slug=user_policy['slug'])
+        check_list_result(result, 3, 1, contains_exactly, 'visible')
+
+        # don't match user - group - policy
+        result = self.client.users.list(policy_uuid=group_policy['uuid'])
+        check_list_result(result, 3, 0, empty)
+
     @fixtures.http.user_register(username='foo', email_address='foo@example.com')
     def test_get(self, user):
         assert_http_error(404, self.client.users.get, UNKNOWN_UUID)
@@ -548,3 +590,11 @@ class TestUsers(base.APIIntegrationTest):
                 ),
             ),
         )
+
+
+def check_list_result(result, total, filtered, item_matcher, *usernames):
+    items = item_matcher(
+        *[has_entries(username=username, enabled=True) for username in usernames]
+    )
+    expected = has_entries(total=total, filtered=filtered, items=items)
+    assert_that(result, expected)
