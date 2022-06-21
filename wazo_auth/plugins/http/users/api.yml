@@ -17,8 +17,8 @@ paths:
       - $ref: '#/parameters/recurse'
       - $ref: '#/parameters/has_policy_slug'
       - $ref: '#/parameters/has_policy_uuid'
-      - $ref: '#/parameters/policy_slug'
-      - $ref: '#/parameters/policy_uuid'
+      - $ref: '#/parameters/search_policy_slug'
+      - $ref: '#/parameters/search_policy_uuid'
       responses:
         '200':
           description: 'The list of user'
@@ -187,12 +187,12 @@ parameters:
     in: query
     type: string
     description: The slug of the policy that the user must have. This includes indirect associations (user in group has policy).
-  policy_uuid:
+  search_policy_uuid:
     name: policy_uuid
     in: query
     type: string
     description: The UUID of the policy that the user must have. This does not include indirect associations (user in group has policy).
-  policy_slug:
+  search_policy_slug:
     name: policy_slug
     in: query
     type: string
