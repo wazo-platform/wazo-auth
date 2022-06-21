@@ -591,6 +591,16 @@ class TestUserDAO(base.DAOTestCase):
         result = self._user_dao.list_(order=column, direction='desc')
         assert_that(result, contains_exactly(has_entries(uuid=b), has_entries(uuid=a)))
 
+    @fixtures.db.user()
+    @fixtures.db.group()
+    @fixtures.db.policy()
+    def test_list_benchmark(self, user_uuid, group_uuid, policy_uuid):
+        self._group_dao.add_user(group_uuid, user_uuid)
+        self._group_dao.add_policy(group_uuid, policy_uuid)
+
+        with self.check_db_requests(nb_requests=1):
+            self._user_dao.list_(has_policy_uuid=policy_uuid)
+
     @fixtures.db.user(email_address='foo@example.com')
     def test_delete(self, user_uuid):
         self._user_dao.delete(user_uuid)
