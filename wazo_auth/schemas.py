@@ -179,6 +179,10 @@ class UserListSchema(BaseListSchema):
         'purpose',
         'email_address',
         'group_uuid',
+        'policy_uuid',
+        'policy_slug',
+        'has_policy_uuid',
+        'has_policy_slug',
     ]
 
 
