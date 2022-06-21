@@ -524,18 +524,14 @@ class TestUsers(base.APIIntegrationTest):
         self.client.groups.add_user(group['uuid'], user['uuid'])
 
         # test user - policy
-        # uuid
         result = self.client.users.list(has_policy_uuid=user_policy['uuid'])
         check_list_result(result, 3, 1, contains_exactly, 'visible')
-        # slug
         result = self.client.users.list(has_policy_slug=user_policy['slug'])
         check_list_result(result, 3, 1, contains_exactly, 'visible')
 
         # test user - group - policy
-        # uuid
         result = self.client.users.list(has_policy_uuid=group_policy['uuid'])
         check_list_result(result, 3, 1, contains_exactly, 'visible')
-        # slug
         result = self.client.users.list(has_policy_slug=group_policy['slug'])
         check_list_result(result, 3, 1, contains_exactly, 'visible')
 
@@ -552,10 +548,8 @@ class TestUsers(base.APIIntegrationTest):
         self.client.groups.add_user(group['uuid'], user['uuid'])
 
         # test user - policy
-        # uuid
         result = self.client.users.list(policy_uuid=user_policy['uuid'])
         check_list_result(result, 3, 1, contains_exactly, 'visible')
-        # slug
         result = self.client.users.list(policy_slug=user_policy['slug'])
         check_list_result(result, 3, 1, contains_exactly, 'visible')
 
