@@ -12,6 +12,8 @@ from flask import Flask
 from flask_cors import CORS
 from flask_restful import Api
 from sqlalchemy.exc import SQLAlchemyError
+from werkzeug.contrib.fixers import ProxyFix
+
 from xivo import http_helpers
 from xivo.http_helpers import ReverseProxied
 
@@ -73,7 +75,7 @@ class CoreRestApi:
     def run(self):
         bind_addr = (self.config['listen'], self.config['port'])
 
-        wsgi_app = ReverseProxied(wsgi.WSGIPathInfoDispatcher({'/': app}))
+        wsgi_app = ReverseProxied(ProxyFix(wsgi.WSGIPathInfoDispatcher({'/': app})))
         self.server = wsgi.WSGIServer(
             bind_addr=bind_addr,
             wsgi_app=wsgi_app,
