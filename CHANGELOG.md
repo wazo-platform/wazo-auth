@@ -1,5 +1,15 @@
 # Changelog
 
+## 22.10
+
+* New configuration has been added to configure number of proxies ahead this service and get the
+  right client IP
+
+  ```
+  rest_api:
+    num_proxies: 1
+  ```
+
 ## 22.09
 
 * The endpoint `GET /users` now accepts the following query string parameters:

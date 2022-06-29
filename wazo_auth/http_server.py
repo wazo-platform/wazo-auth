@@ -75,7 +75,12 @@ class CoreRestApi:
     def run(self):
         bind_addr = (self.config['listen'], self.config['port'])
 
-        wsgi_app = ReverseProxied(ProxyFix(wsgi.WSGIPathInfoDispatcher({'/': app})))
+        wsgi_app = ReverseProxied(
+            ProxyFix(
+                wsgi.WSGIPathInfoDispatcher({'/': app}),
+                num_proxies=self.config['num_proxies'],
+            ),
+        )
         self.server = wsgi.WSGIServer(
             bind_addr=bind_addr,
             wsgi_app=wsgi_app,
