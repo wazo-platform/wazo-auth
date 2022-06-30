@@ -171,6 +171,21 @@ class TestTenantPost(HTTPAppTestCase):
                 invalid_data,
             )
 
+        invalid_data = {'domain_names': [None]}
+        result = self.post(invalid_data)
+        assert_that(result.status_code, equal_to(400), invalid_data)
+        assert_that(
+            result.json,
+            has_entries(
+                error_id='invalid-data',
+                resource='tenants',
+                details=has_entries(
+                    domain_names=has_value(has_entries(constraint_id='not_null')),
+                ),
+            ),
+            invalid_data,
+        )
+
         invalid_domains_types = [
             ('domain_names', {'domain_names': None}),
             ('domain_names', {'domain_names': True}),

@@ -209,11 +209,13 @@ class _BaseParamException(APIException):
 
                 if 'message' in info:
                     return cls(info['message'], {field: info})
-                else:
-                    for sub_field, sub_infos in info.items():
-                        for sub_info in sub_infos:
-                            info = {sub_field: sub_info}
-                            return cls(sub_info['message'], {field: info})
+
+                for sub_field, sub_infos in info.items():
+                    if not isinstance(sub_infos, list):
+                        sub_infos = [sub_infos]
+                    for sub_info in sub_infos:
+                        info = {sub_field: sub_info}
+                        return cls(sub_info['message'], {field: info})
 
 
 class GroupParamException(_BaseParamException):
