@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -136,7 +136,7 @@ class RefreshTokens(_BaseRefreshTokens):
 class Tokens(BaseResource):
     def post(self):
         user_agent = request.headers.get('User-Agent', '')
-        remote_addr = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+        remote_addr = request.remote_addr
 
         try:
             args = schemas.TokenRequestSchema().load(request.get_json(force=True))

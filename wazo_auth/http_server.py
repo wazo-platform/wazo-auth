@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -12,7 +12,10 @@ from flask import Flask
 from flask_cors import CORS
 from flask_restful import Api
 from sqlalchemy.exc import SQLAlchemyError
+from werkzeug.contrib.fixers import ProxyFix
+
 from xivo import http_helpers
+from xivo.http_helpers import ReverseProxied
 
 from wazo_auth.database.helpers import Session
 
@@ -72,7 +75,12 @@ class CoreRestApi:
     def run(self):
         bind_addr = (self.config['listen'], self.config['port'])
 
-        wsgi_app = wsgi.WSGIPathInfoDispatcher({'/': app})
+        wsgi_app = ReverseProxied(
+            ProxyFix(
+                wsgi.WSGIPathInfoDispatcher({'/': app}),
+                num_proxies=self.config['num_proxies'],
+            ),
+        )
         self.server = wsgi.WSGIServer(
             bind_addr=bind_addr,
             wsgi_app=wsgi_app,

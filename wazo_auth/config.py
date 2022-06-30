@@ -74,6 +74,7 @@ _DEFAULT_CONFIG = {
     'backend_policies': {},  # since 21.14: Deprecated
     'rest_api': {
         'max_threads': 25,
+        'num_proxies': 1,
         'listen': '127.0.0.1',
         'port': _DEFAULT_HTTP_PORT,
         'certificate': None,  # Deprecated
