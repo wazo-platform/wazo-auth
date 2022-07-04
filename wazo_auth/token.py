@@ -176,9 +176,9 @@ class ExpiredTokenRemover:
     def _publish_event(self, tokens, sessions, event_class):
         for session in sessions:
             event_args = {
-                'uuid': session['uuid'],
-                'user_uuid': None,
+                'session_uuid': session['uuid'],
                 'tenant_uuid': None,
+                'user_uuid': None,
             }
             for token in tokens:
                 if token['session_uuid'] == session['uuid']:
@@ -189,7 +189,5 @@ class ExpiredTokenRemover:
                 logger.warning(
                     'session without token associated: {}'.format(session['uuid'])
                 )
-            headers = None
-            if event_args['tenant_uuid']:
-                headers = {'tenant_uuid': event_args['tenant_uuid']}
-            self._bus_publisher.publish(event_class(**event_args), headers=headers)
+            event = event_class(**event_args)
+            self._bus_publisher.publish(event)

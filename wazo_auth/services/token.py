@@ -49,16 +49,11 @@ class TokenService(BaseService):
             user_uuid=user_uuid,
             client_id=client_id,
         )
-        tenant_uuid = refresh_token['tenant_uuid']
 
         event = RefreshTokenDeletedEvent(
-            client_id=client_id,
-            user_uuid=user_uuid,
-            tenant_uuid=tenant_uuid,
-            mobile=refresh_token['mobile'],
+            client_id, refresh_token['mobile'], refresh_token['tenant_uuid'], user_uuid
         )
-        self._bus_publisher.publish(event, headers={'tenant_uuid': tenant_uuid})
-
+        self._bus_publisher.publish(event)
         self._dao.refresh_token.delete(tenant_uuids, user_uuid, client_id)
 
     def list_refresh_tokens(
@@ -123,8 +118,10 @@ class TokenService(BaseService):
                     metadata['uuid'],
                 )
             else:
-                event = RefreshTokenCreatedEvent(tenant_uuid=tenant_uuid, **body)
-                self._bus_publisher.publish(event, headers={'tenant_uuid': tenant_uuid})
+                event = RefreshTokenCreatedEvent(
+                    body['client_id'], body['mobile'], tenant_uuid, body['user_uuid']
+                )
+                self._bus_publisher.publish(event)
             token_payload['refresh_token'] = refresh_token
 
         token_uuid, session_uuid = self._dao.token.create(
@@ -134,10 +131,12 @@ class TokenService(BaseService):
 
         user_uuid = auth_id if is_uuid(auth_id) else None
         event = SessionCreatedEvent(
-            session_uuid, user_uuid=user_uuid, **session_payload
+            session_uuid,
+            session_payload.get('mobile', False),
+            session_payload['tenant_uuid'],
+            user_uuid,
         )
-        headers = {'tenant_uuid': tenant_uuid} if tenant_uuid else {}
-        self._bus_publisher.publish(event, headers=headers)
+        self._bus_publisher.publish(event)
 
         return token
 
@@ -174,12 +173,9 @@ class TokenService(BaseService):
             return
 
         event = SessionDeletedEvent(
-            uuid=session['uuid'],
-            user_uuid=token['auth_id'],
-            tenant_uuid=session['tenant_uuid'],
+            session['uuid'], session['tenant_uuid'], token['auth_id']
         )
-        headers = {'tenant_uuid': session['tenant_uuid']}
-        self._bus_publisher.publish(event, headers=headers)
+        self._bus_publisher.publish(event)
 
     def get(self, token_uuid, required_access):
         token_data = self._dao.token.get(token_uuid)

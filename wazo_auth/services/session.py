@@ -32,9 +32,6 @@ class SessionService(BaseService):
             return
 
         event = SessionDeletedEvent(
-            uuid=session['uuid'],
-            user_uuid=token['auth_id'],
-            tenant_uuid=session['tenant_uuid'],
+            session['uuid'], session['tenant_uuid'], token['auth_id']
         )
-        headers = {'tenant_uuid': session['tenant_uuid']}
-        self._bus_publisher.publish(event, headers=headers)
+        self._bus_publisher.publish(event)
