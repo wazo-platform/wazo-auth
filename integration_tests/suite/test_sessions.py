@@ -135,8 +135,8 @@ class TestSessions(base.APIIntegrationTest):
 
     @fixtures.http.session()
     def test_delete_event(self, session):
-        routing_key = 'auth.sessions.*.deleted'
-        msg_accumulator = self.bus.accumulator(routing_key)
+        headers = {'name': 'auth_session_deleted'}
+        msg_accumulator = self.bus.accumulator(headers=headers)
 
         self.client.sessions.delete(session['uuid'])
 
@@ -161,8 +161,8 @@ class TestSessions(base.APIIntegrationTest):
 
     @fixtures.http.user(username='foo', password='bar')
     def test_create_event(self, user):
-        routing_key = 'auth.sessions.*.created'
-        msg_accumulator = self.bus.accumulator(routing_key)
+        headers = {'name': 'auth_session_created'}
+        msg_accumulator = self.bus.accumulator(headers=headers)
 
         session_uuid = self._post_token('foo', 'bar', session_type='Mobile')[
             'session_uuid'
@@ -190,9 +190,8 @@ class TestSessions(base.APIIntegrationTest):
 
     @fixtures.http.user(username='foo', password='bar')
     def test_expire_soon_event_when_token_is_about_to_expire(self, user):
-        routing_key = f'auth.users.{user["uuid"]}.sessions.*.expire_soon'
-        msg_accumulator = self.bus.accumulator(routing_key)
-
+        headers = {'name': 'auth_session_expire_soon'}
+        msg_accumulator = self.bus.accumulator(headers=headers)
         session_uuid = self._post_token('foo', 'bar', expiration=3)['session_uuid']
 
         def bus_received_msg():
@@ -216,8 +215,8 @@ class TestSessions(base.APIIntegrationTest):
 
     @fixtures.http.user(username='foo', password='bar')
     def test_delete_event_when_token_expired(self, user):
-        routing_key = 'auth.sessions.*.deleted'
-        msg_accumulator = self.bus.accumulator(routing_key)
+        headers = {'name': 'auth_session_deleted'}
+        msg_accumulator = self.bus.accumulator(headers=headers)
 
         session_uuid = self._post_token('foo', 'bar', expiration=1)['session_uuid']
 
@@ -242,8 +241,8 @@ class TestSessions(base.APIIntegrationTest):
 
     @fixtures.http.user(username='foo', password='bar')
     def test_delete_event_when_token_deleted(self, user):
-        routing_key = 'auth.sessions.*.deleted'
-        msg_accumulator = self.bus.accumulator(routing_key)
+        headers = {'name': 'auth_session_deleted'}
+        msg_accumulator = self.bus.accumulator(headers=headers)
 
         token = self._post_token('foo', 'bar')
         self.client.token.revoke(token['token'])

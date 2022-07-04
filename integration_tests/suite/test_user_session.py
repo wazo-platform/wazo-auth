@@ -14,6 +14,7 @@ from hamcrest import (
     has_items,
     has_length,
     has_entry,
+    has_item,
 )
 
 from wazo_test_helpers import until
@@ -105,15 +106,15 @@ class TestUserSession(base.APIIntegrationTest):
     @fixtures.http.user(username='username', password='pass')
     @fixtures.http.token(username='username', password='pass')
     def test_delete_event(self, user, token):
-        routing_key = 'auth.sessions.*.deleted'
-        msg_accumulator = self.bus.accumulator(routing_key)
+        headers = {'name': 'auth_session_deleted'}
+        msg_accumulator = self.bus.accumulator(headers=headers)
 
         self.client.users.remove_session(user['uuid'], token['session_uuid'])
 
         def bus_received_msg():
             assert_that(
                 msg_accumulator.accumulate(with_headers=True),
-                contains_exactly(
+                has_item(
                     has_entries(
                         message=has_entries(
                             data={

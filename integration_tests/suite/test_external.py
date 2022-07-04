@@ -28,8 +28,8 @@ class TestExternalAuthAPI(base.ExternalAuthIntegrationTest):
 
     @fixtures.http.user_register()
     def test_create(self, user):
-        routing_key = f'auth.users.{user["uuid"]}.external.foo.created'
-        msg_accumulator = self.bus.accumulator(routing_key)
+        headers = {'name': 'auth_user_external_auth_added'}
+        msg_accumulator = self.bus.accumulator(headers=headers)
 
         result = self.client.external.create('foo', user['uuid'], self.original_data)
         assert_that(result, has_entries(**self.original_data))
@@ -64,8 +64,8 @@ class TestExternalAuthAPI(base.ExternalAuthIntegrationTest):
 
     @fixtures.http.user_register()
     def test_delete(self, user):
-        routing_key = f'auth.users.{user["uuid"]}.external.foo.deleted'
-        msg_accumulator = self.bus.accumulator(routing_key)
+        headers = {'name': 'auth_user_external_auth_deleted'}
+        msg_accumulator = self.bus.accumulator(headers=headers)
 
         self.client.external.create('foo', user['uuid'], self.original_data)
 
@@ -84,7 +84,10 @@ class TestExternalAuthAPI(base.ExternalAuthIntegrationTest):
                                 'external_auth_name': 'foo',
                             }
                         ),
-                        headers=has_key('tenant_uuid'),
+                        headers=has_entries(
+                            name='auth_user_external_auth_deleted',
+                            tenant_uuid=user['tenant_uuid'],
+                        ),
                     )
                 ),
             )
@@ -192,8 +195,8 @@ class TestExternalAuthAPI(base.ExternalAuthIntegrationTest):
 
     @fixtures.http.user()
     def test_external_oauth2(self, user):
-        routing_key = f'auth.users.{user["uuid"]}.external.foo.authorized'
-        msg_accumulator = self.bus.accumulator(routing_key)
+        headers = {'name': 'auth_user_external_auth_authorized'}
+        msg_accumulator = self.bus.accumulator(headers=headers)
         token = 'a-token'
         result = self.client.external.create('foo', user['uuid'], self.original_data)
         time.sleep(1)  # wazo-auth needs some time to connect its websocket
