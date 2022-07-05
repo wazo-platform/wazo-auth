@@ -90,6 +90,7 @@ external_auth_strict_filter = StrictFilter(('type', ExternalAuthType.name, None)
 group_strict_filter = StrictFilter(
     ('uuid', Group.uuid, str),
     ('name', Group.name, None),
+    ('tenant_uuid', Group.tenant_uuid, str),
     ('user_uuid', UserGroup.user_uuid, str),
     ('read_only', Group.system_managed, bool),
 )

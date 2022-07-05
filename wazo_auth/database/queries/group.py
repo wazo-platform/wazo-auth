@@ -145,6 +145,12 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def exists(self, uuid, tenant_uuids=None):
         return self.count(uuid=uuid, tenant_uuids=tenant_uuids) > 0
 
+    def find_by(self, **kwargs):
+        filter_ = self.new_strict_filter(**kwargs)
+        query = self.session.query(Group).filter(filter_)
+        group = query.first()
+        return group
+
     def list_(self, tenant_uuids=None, policy_uuid=None, policy_slug=None, **kwargs):
         search_filter = self.new_search_filter(**kwargs)
         strict_filter = self.new_strict_filter(**kwargs)
@@ -180,16 +186,20 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             for group in query.all()
         ]
 
-    def update(self, group_uuid, tenant_uuids=None, **body):
+    def update(self, group_uuid, name, tenant_uuids=None, **body):
         filter_ = Group.uuid == str(group_uuid)
         if tenant_uuids is not None:
             filter_ = and_(filter_, Group.tenant_uuid.in_(tenant_uuids))
 
+        new_group = {
+            'name': name,
+        }
+        new_group.update(body)
         try:
             affected_rows = (
                 self.session.query(Group)
                 .filter(filter_)
-                .update(body, synchronize_session='fetch')
+                .update(new_group, synchronize_session='fetch')
             )
             if not affected_rows:
                 raise exceptions.UnknownGroupException(group_uuid)
@@ -198,13 +208,10 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         except exc.IntegrityError as e:
             self.session.rollback()
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
-                value = body.get(column)
-                if column:
-                    raise exceptions.ConflictException('groups', column, value)
+                raise exceptions.DuplicateGroupException(name)
             raise
 
-        return {'uuid': str(group_uuid), **body}
+        return {'uuid': str(group_uuid), **new_group}
 
     def remove_policy(self, group_uuid, policy_uuid):
         filter_ = and_(

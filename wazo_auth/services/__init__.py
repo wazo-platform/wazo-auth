@@ -3,6 +3,7 @@
 
 from .all_users import AllUsersService
 from .authentication import AuthenticationService
+from .default_group import DefaultGroupService
 from .default_policy import DefaultPolicyService
 from .email import EmailService
 from .external_auth import ExternalAuthService
@@ -18,6 +19,7 @@ __all__ = [
     'AllUsersService',
     'AuthenticationService',
     'DefaultPolicyService',
+    'DefaultGroupService',
     'EmailService',
     'ExternalAuthService',
     'GroupService',

@@ -355,10 +355,12 @@ class TestTenantService(BaseServiceTestCase):
     def setUp(self):
         super().setUp()
         self.tenant_tree = Mock()
+        self.default_group_service = Mock()
         self.service = services.TenantService(
             self.dao,
             self.tenant_tree,
-            all_users_policies=self.all_users_policies,
+            self.all_users_policies,
+            self.default_group_service,
         )
         self.service._get = Mock()
 
