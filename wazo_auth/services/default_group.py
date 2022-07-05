@@ -34,17 +34,88 @@ class DefaultGroupService:
 
     def _create_group(self, tenant_uuid, group_slug, group):
         logger.debug('Tenant %s: creating group %s', tenant_uuid, group_slug)
-        self._dao.group.create(
+        group = dict(group)
+        policies = group.pop('policies', {})
+        group_uuid = self._dao.group.create(
             name=group_slug,
             tenant_uuid=tenant_uuid,
             system_managed=False,
             **group,
         )
+        enabled_policies = (
+            policy_name for policy_name, enabled in policies.items() if enabled
+        )
+        for policy_name in enabled_policies:
+            logger.debug(
+                'Tenant %s: adding policy %s to group %s',
+                tenant_uuid,
+                policy_name,
+                group_slug,
+            )
+            policy = self._dao.policy.find_by(name=policy_name)
+            if not policy:
+                logger.error(
+                    'Tenant %s: Policy "%s" does not exist. Skipping association with default group "%s"',
+                    tenant_uuid,
+                    policy_name,
+                    group_slug,
+                )
+                continue
+            self._dao.group.add_policy(group_uuid, policy.uuid)
 
     def _update_group(self, tenant_uuid, group_uuid, group_slug, group):
         logger.debug('Tenant %s: updating group %s', tenant_uuid, group_slug)
+        group = dict(group)
+        policies = group.pop('policies', {})
         self._dao.group.update(
             group_uuid,
             name=group_slug,
             **group,
         )
+
+        enabled_policies = (
+            policy_name for policy_name, enabled in policies.items() if enabled
+        )
+        disabled_policies = (
+            policy_name for policy_name, enabled in policies.items() if not enabled
+        )
+        existing_policies = (
+            policy.name for policy in self._dao.policy.list_(group_uuid=group_uuid)
+        )
+        policies_to_add = set(enabled_policies) - set(existing_policies)
+        policies_to_remove = set(disabled_policies) & set(existing_policies)
+        for policy_name in policies_to_add:
+            logger.debug(
+                'Tenant %s: adding policy %s to group %s',
+                tenant_uuid,
+                policy_name,
+                group_slug,
+            )
+            policy = self._dao.policy.find_by(name=policy_name)
+            if not policy:
+                logger.error(
+                    'Tenant %s: Policy "%s" does not exist. Skipping association with default group "%s"',
+                    tenant_uuid,
+                    policy_name,
+                    group_slug,
+                )
+                continue
+            self._dao.group.add_policy(group_uuid, policy.uuid)
+
+        for policy_name in policies_to_remove:
+            logger.debug(
+                'Tenant %s: removing policy %s from group %s',
+                tenant_uuid,
+                policy_name,
+                group_slug,
+            )
+            policy = self._dao.policy.find_by(name=policy_name)
+            if not policy:
+                logger.error(
+                    'Tenant %s: Policy "%s" does not exist. Skipping dissociation with default group "%s"',
+                    tenant_uuid,
+                    policy_name,
+                    group_slug,
+                )
+                continue
+            self._dao.group.remove_policy(group_uuid, policy.uuid)
