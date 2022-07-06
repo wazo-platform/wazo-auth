@@ -27,7 +27,7 @@ class GroupService(BaseService):
     def create(self, **kwargs):
         kwargs.setdefault('system_managed', False)
         uuid = self._dao.group.create(**kwargs)
-        return {'uuid': uuid, 'read_only': kwargs['system_managed'], **kwargs}
+        return self._dao.group.find_by(uuid=uuid)
 
     def delete(self, group_uuid, tenant_uuids):
         if self._dao.group.is_system_managed(group_uuid, tenant_uuids):
@@ -95,7 +95,8 @@ class GroupService(BaseService):
     def update(self, group_uuid, **kwargs):
         if self._dao.group.is_system_managed(group_uuid):
             raise exceptions.SystemGroupForbidden(group_uuid)
-        return self._dao.group.update(group_uuid, **kwargs)
+        self._dao.group.update(group_uuid, **kwargs)
+        return self._dao.group.find_by(uuid=group_uuid)
 
     def assert_group_in_subtenant(self, tenant_uuids, uuid):
         exists = self._dao.group.exists(uuid, tenant_uuids=tenant_uuids)

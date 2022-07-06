@@ -7,10 +7,33 @@ from xivo import mallow_helpers as mallow
 
 BaseSchema = mallow.Schema
 
+SLUG_REGEX = r'^[a-zA-Z0-9_]+$'
+
 
 class GroupRequestSchema(BaseSchema):
 
     name = fields.String(validate=validate.Length(min=1, max=128), required=True)
+    slug = fields.String(
+        validate=[validate.Length(min=1, max=80), validate.Regexp(SLUG_REGEX)],
+        missing=None,
+    )
+
+
+class GroupPutSchema(GroupRequestSchema):
+
+    slug = fields.String(dump_only=True)
+
+
+class GroupFullSchema(BaseSchema):
+    uuid = fields.String(dump_only=True)
+    tenant_uuid = fields.String(dump_only=True)
+    name = fields.String(validate=validate.Length(min=1, max=80), required=True)
+    slug = fields.String(
+        validate=[validate.Length(min=1, max=80), validate.Regexp(SLUG_REGEX)],
+        missing=None,
+    )
+    read_only = fields.Boolean(dump_only=True, attribute='system_managed')
+    system_managed = fields.Boolean(dump_only=True)
 
 
 class TenantAddress(BaseSchema):
@@ -98,11 +121,12 @@ class ExternalListSchema(BaseListSchema):
 
 class GroupListSchema(BaseListSchema):
     read_only = fields.Boolean()
-    sort_columns = ['name', 'uuid', 'read_only']
+    sort_columns = ['name', 'slug', 'uuid', 'read_only']
     default_sort_column = 'name'
     searchable_columns = [
         'uuid',
         'name',
+        'slug',
         'user_uuid',
         'read_only',
         'policy_uuid',

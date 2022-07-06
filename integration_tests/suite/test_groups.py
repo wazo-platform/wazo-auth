@@ -102,6 +102,15 @@ class TestGroups(base.APIIntegrationTest):
             name='another name',
         )
 
+    @fixtures.http.group(slug='ABC')
+    def test_put_slug_is_read_only(self, group):
+        new_body = dict(group)
+        new_body['slug'] = 'DEF'
+
+        result = self.client.groups.edit(group['uuid'], **new_body)
+
+        assert_that(result, has_entries(**group))
+
     @fixtures.http.tenant(uuid=base.SUB_TENANT_UUID)
     @fixtures.http.group(name='one', tenant_uuid=base.SUB_TENANT_UUID)
     @fixtures.http.group(name='two', tenant_uuid=base.SUB_TENANT_UUID)

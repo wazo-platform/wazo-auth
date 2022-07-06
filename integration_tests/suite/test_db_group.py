@@ -1,6 +1,7 @@
 # Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from contextlib import contextmanager
 from hamcrest import (
     assert_that,
     calling,
@@ -11,6 +12,7 @@ from hamcrest import (
     has_entries,
     has_key,
     has_properties,
+    not_,
 )
 from wazo_test_helpers.mock import ANY_UUID
 from wazo_test_helpers.hamcrest.raises import raises
@@ -98,6 +100,7 @@ class TestGroupDAO(base.DAOTestCase):
     @fixtures.db.group(name='foobar', tenant_uuid=TENANT_UUID)
     def test_create(self, tenant_uuid, group_uuid):
         name = 'foobar'
+        slug = 'myslug'
 
         assert_that(group_uuid, equal_to(ANY_UUID))
         filter_ = models.Group.uuid == group_uuid
@@ -106,13 +109,9 @@ class TestGroupDAO(base.DAOTestCase):
 
         assert_that(
             calling(self._group_dao.create).with_args(
-                name, tenant_uuid, system_managed=False
+                name, slug, tenant_uuid, system_managed=False
             ),
-            raises(exceptions.ConflictException).matching(
-                has_properties(
-                    'status_code', 409, 'resource', 'groups', 'details', has_key('name')
-                )
-            ),
+            raises(exceptions.DuplicateGroupException),
         )
 
     @fixtures.db.group()
@@ -198,3 +197,85 @@ class TestGroupDAO(base.DAOTestCase):
 
         nb_deleted = self._group_dao.remove_user(group_uuid, user_uuid)
         assert_that(nb_deleted, equal_to(1))
+
+    @fixtures.db.tenant()
+    @fixtures.db.group(name='foobar')
+    def test_that_two_groups_cannot_have_the_same_name_and_tenant(
+        self, tenant_uuid, group_uuid
+    ):
+        # Same name different tenants no exception
+        assert_that(
+            calling(self.create_and_delete_group).with_args(
+                'foobar', tenant_uuid=tenant_uuid
+            ),
+            not_(raises(exceptions.DuplicateGroupException)),
+        )
+
+        # Same tenant different names no exception
+        assert_that(
+            calling(self.create_and_delete_group).with_args('foobaz'),
+            not_(raises(exceptions.DuplicateGroupException)),
+        )
+
+        # Same name same tenant
+        assert_that(
+            calling(self.create_and_delete_group).with_args('foobar'),
+            raises(exceptions.DuplicateGroupException),
+        )
+
+    @fixtures.db.tenant()
+    @fixtures.db.group(slug='foobar')
+    def test_that_two_groups_cannot_have_the_same_slug_and_tenant(
+        self, tenant_uuid, group_uuid
+    ):
+        # Same slug different tenants no exception
+        assert_that(
+            calling(self.create_and_delete_group).with_args(
+                'foobar', slug='foobar', tenant_uuid=tenant_uuid
+            ),
+            not_(raises(exceptions.DuplicateGroupException)),
+        )
+
+        # Same tenant different slug no exception
+        assert_that(
+            calling(self.create_and_delete_group).with_args('foobaz', slug='foobaz'),
+            not_(raises(exceptions.DuplicateGroupException)),
+        )
+
+        # Same name same tenant
+        assert_that(
+            calling(self.create_and_delete_group).with_args('foobar', slug='foobar'),
+            raises(exceptions.DuplicateGroupException),
+        )
+
+        # Same name case insensitive same tenant
+        assert_that(
+            calling(self.create_and_delete_group).with_args('fooBAR', slug='fooBAR'),
+            raises(exceptions.DuplicateGroupException),
+        )
+
+    def test_group_creation_auto_generates_slug(self):
+        name = 'group-name'
+        with self._new_group(name=name, slug=None) as group_uuid:
+            group = self._group_dao.find_by(uuid=group_uuid)
+            assert_that(group, has_properties(slug=name))
+
+    @contextmanager
+    def _new_group(self, name, slug=None, description=None, acl=None, tenant_uuid=None):
+        tenant_uuid = tenant_uuid or self.top_tenant_uuid
+        acl = acl or []
+        slug = slug or name
+        uuid_ = self._group_dao.create(
+            name=name,
+            slug=slug,
+            tenant_uuid=tenant_uuid,
+            system_managed=False,
+        )
+        try:
+            yield uuid_
+        finally:
+            self._group_dao.delete(uuid_, [tenant_uuid])
+
+    def create_and_delete_group(self, *args, **kwargs):
+        with self._new_group(*args, **kwargs):
+            pass

@@ -1,11 +1,18 @@
 # Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import re
+import random
+import string
+
 from sqlalchemy import and_, exc, text
 from .base import BaseDAO, PaginatorMixin
 from ..models import Email, Group, GroupPolicy, Policy, User, UserGroup
 from . import filters
 from ... import exceptions
+
+MAX_SLUG_LEN = 80
+SLUG_LEN = 3
 
 
 class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
@@ -111,18 +118,20 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             .count()
         )
 
-    def create(self, name, tenant_uuid, system_managed, **ignored):
-        group = Group(name=name, tenant_uuid=tenant_uuid, system_managed=system_managed)
+    def create(self, name, slug, tenant_uuid, system_managed, **ignored):
+        if not slug:
+            slug = self._generate_slug(name)
+
+        group = Group(
+            name=name, slug=slug, tenant_uuid=tenant_uuid, system_managed=system_managed
+        )
         self.session.add(group)
         try:
             self.session.flush()
         except exc.IntegrityError as e:
             self.session.rollback()
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
-                value = locals().get(column)
-                if column:
-                    raise exceptions.ConflictException('groups', column, value)
+                raise exceptions.DuplicateGroupException(name)
             raise
         return group.uuid
 
@@ -179,6 +188,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             {
                 'uuid': group.uuid,
                 'name': group.name,
+                'slug': group.slug,
                 'tenant_uuid': group.tenant_uuid,
                 'system_managed': group.system_managed,
                 'read_only': group.system_managed,
@@ -272,3 +282,26 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             .subquery()
         )
         return Group.uuid.in_(group_policy_subquery)
+
+    def _generate_slug(self, name):
+        if name:
+            slug = _slug_from_name(name)
+            if not self._slug_exist(slug):
+                return slug
+
+        while True:
+            slug = _generate_random_name(SLUG_LEN)
+            if not self._slug_exist(slug):
+                return slug
+
+    def _slug_exist(self, slug):
+        return self.session.query(Policy.slug).filter(Policy.slug == slug).count() > 0
+
+
+def _slug_from_name(name):
+    return re.sub(r'[^a-zA-Z0-9_-]', '', name)[:MAX_SLUG_LEN]
+
+
+def _generate_random_name(length):
+    choices = string.ascii_lowercase + string.digits
+    return ''.join(random.choice(choices) for _ in range(length))

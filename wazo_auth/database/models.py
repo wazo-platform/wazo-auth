@@ -98,6 +98,7 @@ class Group(Base):
         String(38), server_default=text('uuid_generate_v4()'), primary_key=True
     )
     name = Column(Text, unique=True, nullable=False)
+    slug = Column(Text, unique=True, nullable=False)
     tenant_uuid = Column(
         String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False
     )

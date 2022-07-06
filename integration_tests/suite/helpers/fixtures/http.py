@@ -168,6 +168,7 @@ def group(**group_args):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
             group_args.setdefault('name', _random_string(20))
+            group_args.setdefault('slug', group_args['name'].replace('-', '_'))
             group = self.client.groups.new(**group_args)
             args = list(args) + [group]
             try:

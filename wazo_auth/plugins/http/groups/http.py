@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import request
@@ -29,13 +29,13 @@ class Group(_BaseGroupResource):
         tenant_uuids = get_tenant_uuids(recurse=True)
         self.group_service.assert_group_in_subtenant(tenant_uuids, group_uuid)
         try:
-            body = schemas.GroupRequestSchema().load(request.get_json())
+            body = schemas.GroupPutSchema().load(request.get_json())
         except marshmallow.ValidationError as e:
             raise exceptions.GroupParamException.from_errors(e.messages)
 
         body['tenant_uuids'] = tenant_uuids
         group = self.group_service.update(group_uuid, **body)
-        return group, 200
+        return schemas.GroupFullSchema().dump(group), 200
 
 
 class Groups(_BaseGroupResource):
@@ -70,5 +70,5 @@ class Groups(_BaseGroupResource):
             raise exceptions.GroupParamException.from_errors(e.messages)
 
         args['tenant_uuid'] = Tenant.autodetect().uuid
-        result = self.group_service.create(**args)
-        return result, 200
+        group = self.group_service.create(**args)
+        return schemas.GroupFullSchema().dump(group), 200

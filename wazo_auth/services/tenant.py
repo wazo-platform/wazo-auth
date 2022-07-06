@@ -108,8 +108,10 @@ class TenantService(BaseService):
         )
         self._bus_publisher.publish(event, headers={'tenant_uuid': uuid})
 
+        name = f'wazo-all-users-tenant-{uuid}'
         all_users_group_uuid = self._dao.group.create(
-            name=f'wazo-all-users-tenant-{uuid}',
+            name=name,
+            slug=name,
             tenant_uuid=uuid,
             system_managed=True,
         )
