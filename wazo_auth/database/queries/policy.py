@@ -1,9 +1,6 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import random
-import re
-import string
 from sqlalchemy import (
     and_,
     exc,
@@ -21,9 +18,7 @@ from ..models import (
     UserPolicy,
 )
 from ... import exceptions
-
-MAX_SLUG_LEN = 80
-SLUG_LEN = 3
+from ...slug import Slug
 
 
 class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
@@ -490,12 +485,12 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def _generate_slug(self, name):
         if name:
-            slug = _slug_from_name(name)
+            slug = Slug.from_name(name)
             if not self._slug_exist(slug):
                 return slug
 
         while True:
-            slug = _generate_random_name(SLUG_LEN)
+            slug = Slug.random()
             if not self._slug_exist(slug):
                 return slug
 
@@ -509,12 +504,3 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if not tenant_uuids:
             raise Exception(f'Cannot extract requested tenant from "{tenant_uuids}"')
         return tenant_uuids[0]
-
-
-def _slug_from_name(name):
-    return re.sub(r'[^a-zA-Z0-9_-]', '', name)[:MAX_SLUG_LEN]
-
-
-def _generate_random_name(length):
-    choices = string.ascii_lowercase + string.digits
-    return ''.join(random.choice(choices) for _ in range(length))

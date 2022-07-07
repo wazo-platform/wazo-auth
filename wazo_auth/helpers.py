@@ -1,13 +1,16 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-import uuid
 import time
+import uuid
 
 from wazo_auth.database.helpers import commit_or_rollback
 
 logger = logging.getLogger(__name__)
+
+MAX_SLUG_LEN = 80
+SLUG_LEN = 3
 
 
 # NOTE(fblackburn): This helper is used by metadata plugin

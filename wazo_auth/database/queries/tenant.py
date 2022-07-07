@@ -1,10 +1,6 @@
 # Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import random
-import string
-import re
-
 from sqlalchemy.orm import joinedload
 from sqlalchemy import and_, exc, text
 from wazo_auth import schemas
@@ -12,9 +8,7 @@ from .base import BaseDAO, PaginatorMixin
 from ..models import Address, Tenant, User
 from . import filters
 from ... import exceptions
-
-MAX_SLUG_LEN = 10
-SLUG_LEN = 3
+from ...slug import TenantSlug
 
 
 class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
@@ -213,24 +207,14 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def _generate_slug(self, name):
         if name:
-            slug = _slug_from_name(name)
+            slug = TenantSlug.from_name(name)
             if not self._slug_exist(slug):
                 return slug
 
         while True:
-            slug = _generate_random_name(SLUG_LEN)
+            slug = TenantSlug.random(length=3)
             if not self._slug_exist(slug):
                 return slug
 
     def _slug_exist(self, slug):
         return self.session.query(Tenant.slug).filter(Tenant.slug == slug).count() > 0
-
-
-def _slug_from_name(name):
-    return re.sub(r'[^a-zA-Z0-9_]', '', name)[:MAX_SLUG_LEN]
-
-
-def _generate_random_name(length):
-    return ''.join(
-        random.choice(string.ascii_letters + string.digits) for _ in range(length)
-    )

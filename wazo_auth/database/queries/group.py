@@ -1,18 +1,12 @@
 # Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import re
-import random
-import string
-
 from sqlalchemy import and_, exc, text
 from .base import BaseDAO, PaginatorMixin
 from ..models import Email, Group, GroupPolicy, Policy, User, UserGroup
 from . import filters
 from ... import exceptions
-
-MAX_SLUG_LEN = 80
-SLUG_LEN = 3
+from ...slug import Slug
 
 
 class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
@@ -285,23 +279,14 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def _generate_slug(self, name):
         if name:
-            slug = _slug_from_name(name)
+            slug = Slug.from_name(name)
             if not self._slug_exist(slug):
                 return slug
 
         while True:
-            slug = _generate_random_name(SLUG_LEN)
+            slug = Slug.random()
             if not self._slug_exist(slug):
                 return slug
 
     def _slug_exist(self, slug):
         return self.session.query(Policy.slug).filter(Policy.slug == slug).count() > 0
-
-
-def _slug_from_name(name):
-    return re.sub(r'[^a-zA-Z0-9_-]', '', name)[:MAX_SLUG_LEN]
-
-
-def _generate_random_name(length):
-    choices = string.ascii_lowercase + string.digits
-    return ''.join(random.choice(choices) for _ in range(length))
