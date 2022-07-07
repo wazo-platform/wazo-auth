@@ -55,7 +55,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     raise exceptions.UnknownUserException(user_uuid)
             raise
 
-    def count(self, tenant_uuids=None, **kwargs):
+    def count(self, tenant_uuids=None, policy_uuid=None, policy_slug=None, **kwargs):
         filter_ = text('true')
 
         if tenant_uuids is not None:
@@ -68,6 +68,12 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             strict_filter = self.new_strict_filter(**kwargs)
             search_filter = self.new_search_filter(**kwargs)
             filter_ = and_(filter_, strict_filter, search_filter)
+
+            if policy_uuid:
+                filter_ = and_(filter_, self._policy_uuid_filter(policy_uuid))
+
+            if policy_slug:
+                filter_ = and_(filter_, self._policy_slug_filter(policy_slug))
 
         return self.session.query(Group).filter(filter_).count()
 
@@ -134,7 +140,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def exists(self, uuid, tenant_uuids=None):
         return self.count(uuid=uuid, tenant_uuids=tenant_uuids) > 0
 
-    def list_(self, tenant_uuids=None, **kwargs):
+    def list_(self, tenant_uuids=None, policy_uuid=None, policy_slug=None, **kwargs):
         search_filter = self.new_search_filter(**kwargs)
         strict_filter = self.new_strict_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
@@ -143,6 +149,12 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 return []
 
             filter_ = and_(filter_, Group.tenant_uuid.in_(tenant_uuids))
+
+        if policy_uuid:
+            filter_ = and_(filter_, self._policy_uuid_filter(policy_uuid))
+
+        if policy_slug:
+            filter_ = and_(filter_, self._policy_slug_filter(policy_slug))
 
         query = (
             self.session.query(Group)
@@ -232,3 +244,19 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             .filter(Group.tenant_uuid == tenant_uuid)
         )
         return query.first()
+
+    def _policy_uuid_filter(self, policy_uuid):
+        return self._policy_filter(Policy.uuid == policy_uuid)
+
+    def _policy_slug_filter(self, policy_slug):
+        return self._policy_filter(Policy.slug == policy_slug)
+
+    def _policy_filter(self, filter_):
+        group_policy_subquery = (
+            self.session.query(Group.uuid)
+            .join(GroupPolicy, Group.uuid == GroupPolicy.group_uuid)
+            .join(Policy, GroupPolicy.policy_uuid == Policy.uuid)
+            .filter(filter_)
+            .subquery()
+        )
+        return Group.uuid.in_(group_policy_subquery)

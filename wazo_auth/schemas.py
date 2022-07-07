@@ -100,7 +100,14 @@ class GroupListSchema(BaseListSchema):
     read_only = fields.Boolean()
     sort_columns = ['name', 'uuid', 'read_only']
     default_sort_column = 'name'
-    searchable_columns = ['uuid', 'name', 'user_uuid', 'read_only']
+    searchable_columns = [
+        'uuid',
+        'name',
+        'user_uuid',
+        'read_only',
+        'policy_uuid',
+        'policy_slug',
+    ]
 
 
 class UserGroupListSchema(BaseListSchema):

@@ -10,6 +10,11 @@
     num_proxies: 1
   ```
 
+* The endpoint `GET /groups` now accepts the following query string parameters:
+
+  * `policy_uuid`: filter groups that have this policy
+  * `policy_slug`: idem with policy slug
+
 ## 22.09
 
 * The endpoint `GET /users` now accepts the following query string parameters:

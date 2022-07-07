@@ -231,3 +231,28 @@ class TestGroups(base.APIIntegrationTest):
         )['items'][0]
         expected = [one, three, two, autocreated_group]
         base.assert_sorted(action, order='name', expected=expected)
+
+    @fixtures.http.group(groupname='visible')
+    @fixtures.http.group(groupname='hidden')
+    @fixtures.http.policy()
+    def test_list_filter_policy(self, group, group_hidden, group_policy):
+        self.client.groups.add_policy(group['uuid'], group_policy['uuid'])
+
+        response = self.client.groups.list(policy_uuid=group_policy['uuid'])
+        assert_that(
+            response,
+            has_entries(
+                total=2 + NB_DEFAULT_GROUPS,
+                filtered=1,
+                items=contains_inanyorder(group),
+            ),
+        )
+        response = self.client.groups.list(policy_slug=group_policy['slug'])
+        assert_that(
+            response,
+            has_entries(
+                total=2 + NB_DEFAULT_GROUPS,
+                filtered=1,
+                items=contains_inanyorder(group),
+            ),
+        )
