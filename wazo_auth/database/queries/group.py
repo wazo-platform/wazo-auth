@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, text
@@ -55,7 +55,14 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     raise exceptions.UnknownUserException(user_uuid)
             raise
 
-    def count(self, tenant_uuids=None, policy_uuid=None, policy_slug=None, **kwargs):
+    def count(
+        self,
+        tenant_uuids=None,
+        filtered=None,
+        policy_uuid=None,
+        policy_slug=None,
+        **kwargs,
+    ):
         filter_ = text('true')
 
         if tenant_uuids is not None:
@@ -63,7 +70,6 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 return 0
             filter_ = and_(filter_, Group.tenant_uuid.in_(tenant_uuids))
 
-        filtered = kwargs.get('filtered')
         if filtered is not False:
             strict_filter = self.new_strict_filter(**kwargs)
             search_filter = self.new_search_filter(**kwargs)
@@ -77,8 +83,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         return self.session.query(Group).filter(filter_).count()
 
-    def count_policies(self, group_uuid, **kwargs):
-        filtered = kwargs.get('filtered')
+    def count_policies(self, group_uuid, filtered=None, **kwargs):
         if filtered is not False:
             strict_filter = filters.policy_strict_filter.new_filter(**kwargs)
             search_filter = filters.policy_search_filter.new_filter(**kwargs)
