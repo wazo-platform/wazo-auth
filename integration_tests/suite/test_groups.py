@@ -345,7 +345,6 @@ class TestGroups(base.APIIntegrationTest):
             self.client.groups.remove_policy(admin_group_uuid, group_policy['uuid'])
         # restart
         self.restart_auth()
-        self.reset_clients()
         # check policies are still present
         response = self.client.groups.get_policies(
             admin_group_uuid, tenant_uuid=base.SUB_TENANT_UUID

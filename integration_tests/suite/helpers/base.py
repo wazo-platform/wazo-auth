@@ -216,7 +216,8 @@ class BaseIntegrationTest(unittest.TestCase):
 
     @classmethod
     def restart_auth(cls):
-        return cls.asset_cls.restart_auth()
+        cls.asset_cls.restart_auth()
+        cls.reset_clients()
 
     @classmethod
     def restart_postgres(cls):
