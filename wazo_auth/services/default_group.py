@@ -75,13 +75,13 @@ class DefaultGroupService:
         )
 
         enabled_policies = (
-            policy_name for policy_name, enabled in policies.items() if enabled
+            policy_slug for policy_slug, enabled in policies.items() if enabled
         )
         disabled_policies = (
-            policy_name for policy_name, enabled in policies.items() if not enabled
+            policy_slug for policy_slug, enabled in policies.items() if not enabled
         )
         existing_policies = (
-            policy.name for policy in self._dao.policy.list_(group_uuid=group_uuid)
+            policy.slug for policy in self._dao.policy.list_(group_uuid=group_uuid)
         )
         policies_to_add = set(enabled_policies) - set(existing_policies)
         policies_to_remove = set(disabled_policies) & set(existing_policies)
