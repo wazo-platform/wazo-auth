@@ -165,6 +165,7 @@ def group(**group_args):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
             group_args.setdefault('name', _random_string(20))
+            group_args.setdefault('slug', group_args['name'])
             group_args.setdefault('tenant_uuid', self.top_tenant_uuid)
             group_args.setdefault('system_managed', False)
             group_uuid = self._group_dao.create(**group_args)

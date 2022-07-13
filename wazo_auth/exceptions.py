@@ -424,3 +424,15 @@ class DomainAlreadyExistException(APIException):
         error_id = 'conflict'
         resource = 'tenants'
         super().__init__(409, 'Conflict detected', error_id, details, resource)
+
+
+class DuplicateGroupException(TokenServiceException):
+
+    code = 409
+
+    def __init__(self, name):
+        super().__init__()
+        self._name = name
+
+    def __str__(self):
+        return 'Group "{}" already exists'.format(self._name)

@@ -81,10 +81,15 @@ class Controller:
         self._token_service = services.TokenService(
             config, self.dao, self._tenant_tree, self._bus_publisher, self._user_service
         )
+        self._default_group_service = services.DefaultGroupService(
+            self.dao,
+            config['tenant_default_groups'],
+        )
         self._tenant_service = services.TenantService(
             self.dao,
             self._tenant_tree,
             config['all_users_policies'],
+            self._default_group_service,
             self._bus_publisher,
         )
         self._default_policy_service = services.DefaultPolicyService(
@@ -179,6 +184,7 @@ class Controller:
         with db_ready(timeout=self._config['db_connect_retry_timeout_seconds']):
             self._default_policy_service.update_policies()
             self._all_users_service.update_policies()
+            self._default_group_service.update_groups()
             self._default_policy_service.delete_orphan_policies()
             http.init_top_tenant(self.dao)
             if self._config['bootstrap_user_on_startup']:

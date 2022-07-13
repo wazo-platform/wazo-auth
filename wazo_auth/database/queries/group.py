@@ -6,6 +6,7 @@ from .base import BaseDAO, PaginatorMixin
 from ..models import Email, Group, GroupPolicy, Policy, User, UserGroup
 from . import filters
 from ... import exceptions
+from ...slug import Slug
 
 
 class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
@@ -111,18 +112,20 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             .count()
         )
 
-    def create(self, name, tenant_uuid, system_managed, **ignored):
-        group = Group(name=name, tenant_uuid=tenant_uuid, system_managed=system_managed)
+    def create(self, name, slug, tenant_uuid, system_managed, **ignored):
+        if not slug:
+            slug = self._generate_slug(name)
+
+        group = Group(
+            name=name, slug=slug, tenant_uuid=tenant_uuid, system_managed=system_managed
+        )
         self.session.add(group)
         try:
             self.session.flush()
         except exc.IntegrityError as e:
             self.session.rollback()
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
-                value = locals().get(column)
-                if column:
-                    raise exceptions.ConflictException('groups', column, value)
+                raise exceptions.DuplicateGroupException(name)
             raise
         return group.uuid
 
@@ -144,6 +147,12 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def exists(self, uuid, tenant_uuids=None):
         return self.count(uuid=uuid, tenant_uuids=tenant_uuids) > 0
+
+    def find_by(self, **kwargs):
+        filter_ = self.new_strict_filter(**kwargs)
+        query = self.session.query(Group).filter(filter_)
+        group = query.first()
+        return group
 
     def list_(self, tenant_uuids=None, policy_uuid=None, policy_slug=None, **kwargs):
         search_filter = self.new_search_filter(**kwargs)
@@ -173,6 +182,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             {
                 'uuid': group.uuid,
                 'name': group.name,
+                'slug': group.slug,
                 'tenant_uuid': group.tenant_uuid,
                 'system_managed': group.system_managed,
                 'read_only': group.system_managed,
@@ -180,16 +190,20 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             for group in query.all()
         ]
 
-    def update(self, group_uuid, tenant_uuids=None, **body):
+    def update(self, group_uuid, name, tenant_uuids=None, **body):
         filter_ = Group.uuid == str(group_uuid)
         if tenant_uuids is not None:
             filter_ = and_(filter_, Group.tenant_uuid.in_(tenant_uuids))
 
+        new_group = {
+            'name': name,
+        }
+        new_group.update(body)
         try:
             affected_rows = (
                 self.session.query(Group)
                 .filter(filter_)
-                .update(body, synchronize_session='fetch')
+                .update(new_group, synchronize_session='fetch')
             )
             if not affected_rows:
                 raise exceptions.UnknownGroupException(group_uuid)
@@ -198,13 +212,10 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         except exc.IntegrityError as e:
             self.session.rollback()
             if e.orig.pgcode == self._UNIQUE_CONSTRAINT_CODE:
-                column = self.constraint_to_column_map.get(e.orig.diag.constraint_name)
-                value = body.get(column)
-                if column:
-                    raise exceptions.ConflictException('groups', column, value)
+                raise exceptions.DuplicateGroupException(name)
             raise
 
-        return {'uuid': str(group_uuid), **body}
+        return {'uuid': str(group_uuid), **new_group}
 
     def remove_policy(self, group_uuid, policy_uuid):
         filter_ = and_(
@@ -265,3 +276,17 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             .subquery()
         )
         return Group.uuid.in_(group_policy_subquery)
+
+    def _generate_slug(self, name):
+        if name:
+            slug = Slug.from_name(name)
+            if not self._slug_exist(slug):
+                return slug
+
+        while True:
+            slug = Slug.random()
+            if not self._slug_exist(slug):
+                return slug
+
+    def _slug_exist(self, slug):
+        return self.session.query(Policy.slug).filter(Policy.slug == slug).count() > 0

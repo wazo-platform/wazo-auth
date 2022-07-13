@@ -3,9 +3,8 @@
 
 from marshmallow import post_dump
 from xivo.mallow import fields, validate
+from wazo_auth.slug import Slug
 from wazo_auth.schemas import BaseSchema
-
-SLUG_REGEX = r'^[a-zA-Z0-9_]+$'
 
 
 class PolicyFullSchema(BaseSchema):
@@ -14,7 +13,7 @@ class PolicyFullSchema(BaseSchema):
     tenant_uuid = fields.String(dump_only=True, attribute='tenant_uuid_exposed')
     name = fields.String(validate=validate.Length(min=1, max=80), required=True)
     slug = fields.String(
-        validate=[validate.Length(min=1, max=80), validate.Regexp(SLUG_REGEX)],
+        validate=[validate.Length(min=1, max=80), validate.Regexp(Slug.valid_re())],
         missing=None,
     )
     description = fields.String(allow_none=True, missing=None)

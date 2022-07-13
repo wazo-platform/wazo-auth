@@ -12,7 +12,7 @@ from hamcrest import (
 )
 from .helpers import base, fixtures
 from .helpers.base import assert_http_error, assert_no_error, assert_sorted
-from .helpers.constants import UNKNOWN_UUID, NB_DEFAULT_GROUPS
+from .helpers.constants import UNKNOWN_UUID, NB_ALL_USERS_GROUPS
 
 
 @base.use_asset('base')
@@ -68,7 +68,7 @@ class TestUserGroupList(base.APIIntegrationTest):
         self.foo = self.client.groups.new(name='group-foo')
         self.bar = self.client.groups.new(name='group-bar')
         self.baz = self.client.groups.new(name='group-baz')
-        self.total = 3 + NB_DEFAULT_GROUPS
+        self.total = 3 + NB_ALL_USERS_GROUPS
         self.ignored = self.client.groups.new(name='ignored')
         self.user = self.client.users.new(username='alice')
         for group in (self.foo, self.bar, self.baz):

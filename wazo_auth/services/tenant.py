@@ -12,11 +12,13 @@ class TenantService(BaseService):
         dao,
         tenant_tree,
         all_users_policies,
+        default_group_service,
         bus_publisher=None,
     ):
         super().__init__(dao, tenant_tree)
         self._bus_publisher = bus_publisher
         self._all_users_policies = all_users_policies
+        self._default_group_service = default_group_service
 
     def assert_tenant_under(self, scoping_tenant_uuid, tenant_uuid):
         visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
@@ -106,8 +108,10 @@ class TenantService(BaseService):
         )
         self._bus_publisher.publish(event, headers={'tenant_uuid': uuid})
 
+        name = f'wazo-all-users-tenant-{uuid}'
         all_users_group_uuid = self._dao.group.create(
-            name=f'wazo-all-users-tenant-{uuid}',
+            name=name,
+            slug=name,
             tenant_uuid=uuid,
             system_managed=True,
         )
@@ -120,6 +124,8 @@ class TenantService(BaseService):
             if not all_users_policy:
                 raise Exception('All users policy %s not found')
             self._dao.group.add_policy(all_users_group_uuid, all_users_policy.uuid)
+
+        self._default_group_service.update_groups_for_tenant(uuid)
 
         return result
 

@@ -19,6 +19,11 @@ default_policies:
       - integration_tests.access
       - integration_tests.another_access
 
+tenant_default_groups:
+  wazo_default_admin_group:
+    policies:
+      wazo_default_admin_policy: true
+
 bootstrap_user_on_startup: True
 bootstrap_user_username: admin
 bootstrap_user_password: s3cre7

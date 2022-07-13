@@ -4,6 +4,7 @@
 from marshmallow import post_dump, post_load
 from xivo.mallow import fields, validate
 from xivo import mallow_helpers as mallow
+from wazo_auth.slug import Slug, TenantSlug
 
 BaseSchema = mallow.Schema
 
@@ -11,6 +12,27 @@ BaseSchema = mallow.Schema
 class GroupRequestSchema(BaseSchema):
 
     name = fields.String(validate=validate.Length(min=1, max=128), required=True)
+    slug = fields.String(
+        validate=[validate.Length(min=1, max=80), validate.Regexp(Slug.valid_re())],
+        missing=None,
+    )
+
+
+class GroupPutSchema(GroupRequestSchema):
+
+    slug = fields.String(dump_only=True)
+
+
+class GroupFullSchema(BaseSchema):
+    uuid = fields.String(dump_only=True)
+    tenant_uuid = fields.String(dump_only=True)
+    name = fields.String(validate=validate.Length(min=1, max=80), required=True)
+    slug = fields.String(
+        validate=[validate.Length(min=1, max=80), validate.Regexp(Slug.valid_re())],
+        missing=None,
+    )
+    read_only = fields.Boolean(dump_only=True, attribute='system_managed')
+    system_managed = fields.Boolean(dump_only=True)
 
 
 class TenantAddress(BaseSchema):
@@ -46,7 +68,10 @@ class TenantFullSchema(BaseSchema):
         validate=validate.Length(min=1, max=128), default=None, missing=None
     )
     slug = fields.String(
-        validate=[validate.Length(min=1, max=10), validate.Regexp(r'^[a-zA-Z0-9_]+$')],
+        validate=[
+            validate.Length(min=1, max=10),
+            validate.Regexp(TenantSlug.valid_re()),
+        ],
         missing=None,
     )
     contact_uuid = fields.UUID(data_key='contact', missing=None, default=None)
@@ -98,11 +123,12 @@ class ExternalListSchema(BaseListSchema):
 
 class GroupListSchema(BaseListSchema):
     read_only = fields.Boolean()
-    sort_columns = ['name', 'uuid', 'read_only']
+    sort_columns = ['name', 'slug', 'uuid', 'read_only']
     default_sort_column = 'name'
     searchable_columns = [
         'uuid',
         'name',
+        'slug',
         'user_uuid',
         'read_only',
         'policy_uuid',
