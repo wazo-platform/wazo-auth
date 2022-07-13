@@ -56,7 +56,8 @@ class DefaultGroupService:
             policy = self._dao.policy.find_by(slug=policy_slug)
             if not policy:
                 logger.error(
-                    'Tenant %s: Policy "%s" does not exist. Skipping association with default group "%s"',
+                    'Tenant %s: Policy "%s" does not exist. '
+                    'Skipping association with default group "%s"',
                     tenant_uuid,
                     policy_slug,
                     group_slug,
@@ -95,7 +96,8 @@ class DefaultGroupService:
             policy = self._dao.policy.find_by(slug=policy_slug)
             if not policy:
                 logger.error(
-                    'Tenant %s: Policy "%s" does not exist. Skipping association with default group "%s"',
+                    'Tenant %s: Policy "%s" does not exist. '
+                    'Skipping association with default group "%s"',
                     tenant_uuid,
                     policy_slug,
                     group_slug,
@@ -113,7 +115,8 @@ class DefaultGroupService:
             policy = self._dao.policy.find_by(slug=policy_slug)
             if not policy:
                 logger.error(
-                    'Tenant %s: Policy "%s" does not exist. Skipping dissociation with default group "%s"',
+                    'Tenant %s: Policy "%s" does not exist. '
+                    'Skipping dissociation with default group "%s"',
                     tenant_uuid,
                     policy_slug,
                     group_slug,

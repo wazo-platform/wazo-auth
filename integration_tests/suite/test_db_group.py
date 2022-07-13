@@ -10,7 +10,6 @@ from hamcrest import (
     empty,
     equal_to,
     has_entries,
-    has_key,
     has_properties,
     not_,
 )
