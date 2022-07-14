@@ -140,7 +140,7 @@ paths:
         description: The group parameters
         required: true
         schema:
-          $ref: '#/definitions/Group'
+          $ref: '#/definitions/GroupPut'
       responses:
         '200':
           description: "The modified group's data"
@@ -220,6 +220,14 @@ definitions:
       name:
         type: string
       slug:
+        type: string
+        default: <name>
+    required:
+      - name
+  GroupPut:
+    type: object
+    properties:
+      name:
         type: string
     required:
       - name
