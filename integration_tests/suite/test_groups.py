@@ -336,22 +336,26 @@ class TestGroups(base.APIIntegrationTest):
             ),
         )
 
-        # assert policies after restart in subtenant
-        # remove all policies
+    @fixtures.http.tenant(uuid=base.SUB_TENANT_UUID)
+    def test_default_groups_policies_are_restored_after_restart(self, _):
+        admin_group_uuid = self.client.groups.list(
+            tenant_uuid=base.SUB_TENANT_UUID, slug='wazo_default_admin_group'
+        )['items'][0]['uuid']
+
         group_policies = self.client.groups.get_policies(
             admin_group_uuid, tenant_uuid=base.SUB_TENANT_UUID
         )['items']
         for group_policy in group_policies:
             self.client.groups.remove_policy(admin_group_uuid, group_policy['uuid'])
-        # restart
+
         self.restart_auth()
-        # check policies are still present
+
         response = self.client.groups.get_policies(
             admin_group_uuid, tenant_uuid=base.SUB_TENANT_UUID
         )
         assert_that(
             response,
             has_entries(
-                items=contains_inanyorder(has_entries(name='wazo_default_admin_policy'))
+                items=contains_inanyorder(has_entries(slug='wazo_default_admin_policy'))
             ),
         )
