@@ -15,6 +15,11 @@
   * `policy_uuid`: filter groups that have this policy
   * `policy_slug`: idem with policy slug
 
+* The groups endpoints now accept and return the group attribute `slug`:
+
+  * `GET/POST /groups`
+  * `GET/PUT /groups`
+
 ## 22.09
 
 * The endpoint `GET /users` now accepts the following query string parameters:

@@ -289,15 +289,15 @@ class TestGroups(base.APIIntegrationTest):
                 total=NB_DEFAULT_GROUPS,
                 filtered=NB_DEFAULT_GROUPS,
                 items=contains_inanyorder(
-                    has_entries(name=f'wazo-all-users-tenant-{self.top_tenant_uuid}'),
-                    has_entries(name='wazo_default_admin_group'),
+                    has_entries(slug=f'wazo-all-users-tenant-{self.top_tenant_uuid}'),
+                    has_entries(slug='wazo_default_admin_group'),
                 ),
             ),
         )
 
         # assert policies in master tenant
         admin_group_uuid = self.client.groups.list(
-            tenant_uuid=self.top_tenant_uuid, name='wazo_default_admin_group'
+            tenant_uuid=self.top_tenant_uuid, slug='wazo_default_admin_group'
         )['items'][0]['uuid']
         response = self.client.groups.get_policies(
             admin_group_uuid, tenant_uuid=self.top_tenant_uuid
@@ -305,7 +305,7 @@ class TestGroups(base.APIIntegrationTest):
         assert_that(
             response,
             has_entries(
-                items=contains_inanyorder(has_entries(name='wazo_default_admin_policy'))
+                items=contains_inanyorder(has_entries(slug='wazo_default_admin_policy'))
             ),
         )
 
@@ -317,14 +317,14 @@ class TestGroups(base.APIIntegrationTest):
                 total=NB_DEFAULT_GROUPS,
                 filtered=NB_DEFAULT_GROUPS,
                 items=contains_inanyorder(
-                    has_entries(name=f'wazo-all-users-tenant-{base.SUB_TENANT_UUID}'),
-                    has_entries(name='wazo_default_admin_group'),
+                    has_entries(slug=f'wazo-all-users-tenant-{base.SUB_TENANT_UUID}'),
+                    has_entries(slug='wazo_default_admin_group'),
                 ),
             ),
         )
         # assert policies in subtenant
         admin_group_uuid = self.client.groups.list(
-            tenant_uuid=base.SUB_TENANT_UUID, name='wazo_default_admin_group'
+            tenant_uuid=base.SUB_TENANT_UUID, slug='wazo_default_admin_group'
         )['items'][0]['uuid']
         response = self.client.groups.get_policies(
             admin_group_uuid, tenant_uuid=base.SUB_TENANT_UUID
@@ -332,26 +332,30 @@ class TestGroups(base.APIIntegrationTest):
         assert_that(
             response,
             has_entries(
-                items=contains_inanyorder(has_entries(name='wazo_default_admin_policy'))
+                items=contains_inanyorder(has_entries(slug='wazo_default_admin_policy'))
             ),
         )
 
-        # assert policies after restart in subtenant
-        # remove all policies
+    @fixtures.http.tenant(uuid=base.SUB_TENANT_UUID)
+    def test_default_groups_policies_are_restored_after_restart(self, _):
+        admin_group_uuid = self.client.groups.list(
+            tenant_uuid=base.SUB_TENANT_UUID, slug='wazo_default_admin_group'
+        )['items'][0]['uuid']
+
         group_policies = self.client.groups.get_policies(
             admin_group_uuid, tenant_uuid=base.SUB_TENANT_UUID
         )['items']
         for group_policy in group_policies:
             self.client.groups.remove_policy(admin_group_uuid, group_policy['uuid'])
-        # restart
+
         self.restart_auth()
-        # check policies are still present
+
         response = self.client.groups.get_policies(
             admin_group_uuid, tenant_uuid=base.SUB_TENANT_UUID
         )
         assert_that(
             response,
             has_entries(
-                items=contains_inanyorder(has_entries(name='wazo_default_admin_policy'))
+                items=contains_inanyorder(has_entries(slug='wazo_default_admin_policy'))
             ),
         )
