@@ -26,7 +26,7 @@ class DefaultGroupService:
 
     def update_groups_for_tenant(self, tenant_uuid):
         for group_slug, group_args in self._default_groups.items():
-            group = self._dao.group.find_by(name=group_slug, tenant_uuid=tenant_uuid)
+            group = self._dao.group.find_by(slug=group_slug, tenant_uuid=tenant_uuid)
             if group:
                 self._update_group(tenant_uuid, group.uuid, group_slug, group_args)
             else:
