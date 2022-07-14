@@ -219,6 +219,8 @@ definitions:
     properties:
       name:
         type: string
+      slug:
+        type: string
     required:
       - name
   GroupResult:
@@ -227,6 +229,8 @@ definitions:
       uuid:
         type: string
       name:
+        type: string
+      slug:
         type: string
       tenant_uuid:
         type: string
@@ -238,5 +242,6 @@ definitions:
     required:
     - uuid
     - name
+    - slug
     - read_only
     - tenant_uuid
