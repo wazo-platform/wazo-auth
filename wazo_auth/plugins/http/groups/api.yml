@@ -247,9 +247,3 @@ definitions:
         description: '*Deprecated* Please use `read_only`'
       read_only:
         type: boolean
-    required:
-    - uuid
-    - name
-    - slug
-    - read_only
-    - tenant_uuid
