@@ -93,7 +93,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         shared=False,
     ):
         if not slug:
-            slug = self._generate_slug(name)
+            slug = self._generate_slug(name, tenant_uuid)
 
         policy = Policy(
             name=name,
@@ -483,19 +483,24 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         self.session.flush()
         return tpl.id_
 
-    def _generate_slug(self, name):
+    def _generate_slug(self, name, tenant_uuid):
         if name:
             slug = Slug.from_name(name)
-            if not self._slug_exist(slug):
+            if not self._slug_exist(slug, tenant_uuid):
                 return slug
 
         while True:
-            slug = Slug.random()
-            if not self._slug_exist(slug):
+            slug = Slug.random(length=3)
+            if not self._slug_exist(slug, tenant_uuid):
                 return slug
 
-    def _slug_exist(self, slug):
-        return self.session.query(Policy.slug).filter(Policy.slug == slug).count() > 0
+    def _slug_exist(self, slug, tenant_uuid):
+        return (
+            self.session.query(Policy.slug)
+            .filter(Policy.slug == slug)
+            .filter(Policy.tenant_uuid == tenant_uuid)
+            .count()
+        ) > 0
 
     def _extract_requested_tenant_uuid(self, tenant_uuids):
         # NOTE(fblackburn): We rely on implementation detail about tenant_uuids generation to
