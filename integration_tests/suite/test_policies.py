@@ -17,6 +17,7 @@ from hamcrest import (
     has_entries,
     has_item,
     has_items,
+    has_length,
     none,
     not_,
 )
@@ -141,9 +142,19 @@ class TestPolicies(base.APIIntegrationTest):
                 ),
             )
 
+    @fixtures.http.policy(name='dup')
+    def test_post_duplicate_name(self, a):
+        assert_http_error(409, self.client.policies.new, name='dup')
+
     @fixtures.http.policy(slug='dup')
     def test_post_duplicate_slug(self, a):
         assert_http_error(409, self.client.policies.new, name='dup', slug='dup')
+
+    @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http.policy(name='first', slug='first', tenant_uuid=SUB_TENANT_UUID)
+    def test_post_duplicate_slug_across_tenant(self, _, __):
+        with self.policy(self.client, name='first', slug='first') as policy:
+            assert_that(policy, has_entries(slug='first'))
 
     @fixtures.http.policy(slug='top', shared=True)
     def test_post_duplicate_slug_when_top_shared(self, policy):
@@ -158,6 +169,17 @@ class TestPolicies(base.APIIntegrationTest):
             assert_http_error(409, self.client.policies.new, shared=True, **args)
             assert_no_error(self.client.policies.new, shared=False, **args)
         self.client.policies.delete(args['slug'])
+
+    @fixtures.http.policy(slug='first')
+    def test_post_generate_slug(self, _):
+        with self.policy(self.client, name='first') as policy:
+            assert_that(policy, has_entries(slug=has_length(3)))
+
+    @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
+    @fixtures.http.policy(name='first', slug='first', tenant_uuid=SUB_TENANT_UUID)
+    def test_post_generate_slug_other_tenant(self, _, __):
+        with self.policy(self.client, name='first') as policy:
+            assert_that(policy, has_entries(slug='first'))
 
     @fixtures.http.user(username='foo', password='bar')
     def test_post_when_policy_has_more_access_than_token(self, user):
