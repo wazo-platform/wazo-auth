@@ -11,6 +11,7 @@ from hamcrest import (
     equal_to,
     has_entries,
     has_items,
+    has_length,
     not_,
     starts_with,
 )
@@ -50,6 +51,25 @@ class TestGroups(base.APIIntegrationTest):
 
         result = action(foobar['uuid'])
         assert_that(result, equal_to(foobar))
+
+    @fixtures.http.group(name='dup')
+    def test_post_duplicate_name(self, _):
+        base.assert_http_error(409, self.client.groups.new, name='dup')
+
+    @fixtures.http.group(slug='dup')
+    def test_post_duplicate_slug(self, _):
+        base.assert_http_error(409, self.client.groups.new, name='dup', slug='dup')
+
+    @fixtures.http.group(slug='first')
+    def test_post_generate_slug(self, _):
+        with self.group(self.client, name='first') as group:
+            assert_that(group, has_entries(slug=has_length(3)))
+
+    @fixtures.http.tenant(uuid=base.SUB_TENANT_UUID)
+    @fixtures.http.group(name='first', slug='first', tenant_uuid=base.SUB_TENANT_UUID)
+    def test_post_generate_slug_other_tenant(self, _, __):
+        with self.group(self.client, name='first') as group:
+            assert_that(group, has_entries(slug='first'))
 
     @fixtures.http.tenant(uuid=base.SUB_TENANT_UUID)
     @fixtures.http.group(name='foobar')

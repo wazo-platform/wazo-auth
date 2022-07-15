@@ -114,7 +114,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
     def create(self, name, slug, tenant_uuid, system_managed, **ignored):
         if not slug:
-            slug = self._generate_slug(name)
+            slug = self._generate_slug(name, tenant_uuid)
 
         group = Group(
             name=name, slug=slug, tenant_uuid=tenant_uuid, system_managed=system_managed
@@ -277,16 +277,21 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         )
         return Group.uuid.in_(group_policy_subquery)
 
-    def _generate_slug(self, name):
+    def _generate_slug(self, name, tenant_uuid):
         if name:
             slug = Slug.from_name(name)
-            if not self._slug_exist(slug):
+            if not self._slug_exist(slug, tenant_uuid):
                 return slug
 
         while True:
-            slug = Slug.random()
-            if not self._slug_exist(slug):
+            slug = Slug.random(length=3)
+            if not self._slug_exist(slug, tenant_uuid):
                 return slug
 
-    def _slug_exist(self, slug):
-        return self.session.query(Policy.slug).filter(Policy.slug == slug).count() > 0
+    def _slug_exist(self, slug, tenant_uuid):
+        return (
+            self.session.query(Group.slug)
+            .filter(Group.slug == slug)
+            .filter(Group.tenant_uuid == tenant_uuid)
+            .count()
+        ) > 0

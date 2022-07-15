@@ -23,7 +23,7 @@ class Slug:
         assert length < cls._MAX_LENGTH
 
         choices = string.ascii_lowercase + string.digits
-        return ''.join(random.choice(choices) for _ in range(cls._MAX_LENGTH))
+        return ''.join(random.choice(choices) for _ in range(length))
 
 
 class TenantSlug(Slug):
