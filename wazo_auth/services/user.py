@@ -33,7 +33,15 @@ class UserService(BaseService):
 
     def change_password(self, user_uuid, old_password, new_password, reset=False):
         user = self.get_user(user_uuid)
-        if not self.verify_password(user['username'], old_password, reset):
+        login = user['username']
+        if not login:
+            try:
+                login = user['emails'][0]['address']
+            except IndexError:
+                logger.warning('User %s does not have login (username or email)')
+                raise exceptions.AuthenticationFailedException()
+
+        if not self.verify_password(login, old_password, reset):
             raise exceptions.AuthenticationFailedException()
 
         salt, hash_ = self._encrypter.encrypt_password(new_password)

@@ -447,6 +447,18 @@ class TestUsers(base.APIIntegrationTest):
         assert_that(logs, not_(contains_string(old_password)))
         assert_that(logs, not_(contains_string(new_password)))
 
+    @fixtures.http.user(username=None, email_address='u1@example.com', password='pass1')
+    @fixtures.http.user(username=None, email_address='u2@example.com', password='pass2')
+    def test_put_password_when_many_username_to_none(self, user1, user2):
+        old_password = 'pass1'
+        new_password = 'new-pass1'
+        assert_no_error(
+            self.client.users.change_password,
+            user1['uuid'],
+            old_password=old_password,
+            new_password=new_password,
+        )
+
     def test_list(self):
         with self.client_in_subtenant(username='foo') as (top_client, _, top):
             with self.client_in_subtenant(username='bar', parent_uuid=top['uuid']) as (
