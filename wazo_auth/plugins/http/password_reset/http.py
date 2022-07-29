@@ -1,4 +1,4 @@
-# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -29,7 +29,8 @@ class PasswordReset(http.ErrorCatchingResource):
             raise PasswordResetException.from_errors(e.messages)
 
         logger.debug(
-            'resetting password for %s', args['username'] or args['email_address']
+            'resetting password for %s',
+            args['username'] or args['email_address'] or args['login'],
         )
         search_params = {k: v for k, v in args.items() if v}
         users = self.user_service.list_users(**search_params)

@@ -297,6 +297,10 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if has_policy_slug:
             filter_ = and_(filter_, self._has_policy_slug_filter(has_policy_slug))
 
+        login = kwargs.get('login')
+        if login:
+            filter_ = and_(filter_, self._login_filter(login))
+
         users = []
         query = (
             self.session.query(User)
@@ -352,12 +356,15 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return emails
 
     def login_exists(self, login, ignored_user=None):
-        filter_ = or_(User.username == login, Email.address == login)
+        filter_ = self._login_filter(login)
         if ignored_user:
             filter_ = and_(filter_, User.uuid != str(ignored_user))
         query = self.session.query(User.uuid).outerjoin(Email).filter(filter_)
         row = query.first()
         return True if row else False
+
+    def _login_filter(self, login):
+        return or_(User.username == login, Email.address == login)
 
     def _add_user_email(self, user_uuid, args):
         args.setdefault('confirmed', False)

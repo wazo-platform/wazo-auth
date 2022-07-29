@@ -548,6 +548,15 @@ class TestUserDAO(base.DAOTestCase):
             ),
         )
 
+    @fixtures.db.user(username='user1', email_address='user1@example.com')
+    @fixtures.db.user(username='user2', email_address='user2@example.com')
+    def test_user_list_with_login(self, user1, user2):
+        result = self._user_dao.list_(login='user1@example.com')
+        assert_that(result, contains_inanyorder(has_entries(uuid=user1)))
+
+        result = self._user_dao.list_(login='user2')
+        assert_that(result, contains_inanyorder(has_entries(uuid=user2)))
+
     @fixtures.db.user(username='a')
     @fixtures.db.user(username='b')
     @fixtures.db.user(username='c')
