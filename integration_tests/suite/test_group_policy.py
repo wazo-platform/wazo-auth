@@ -230,7 +230,7 @@ class TestGroupPolicyAssociation(base.APIIntegrationTest):
         self.client.groups.add_user(group['uuid'], user['uuid'])
         self.client.groups.add_policy(group['uuid'], policy['uuid'])
 
-        user_client = base.APIAssetLaunchingTestCase.make_auth_client('foo', 'bar')
+        user_client = self.asset_cls.make_auth_client('foo', 'bar')
         token_data = user_client.token.new('wazo_user', expiration=5)
         assert_that(token_data, has_entries(acl=has_items('foobar')))
 
