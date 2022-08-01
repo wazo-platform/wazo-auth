@@ -1,8 +1,6 @@
 # Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from contextlib import contextmanager
-from datetime import datetime
 from unittest.mock import ANY
 from uuid import uuid4
 
@@ -217,19 +215,6 @@ class TestTenantDAO(base.DAOTestCase):
             self._tenant_dao.list_()
 
         self._tenant_dao.delete(tenant_uuid)
-
-    @contextmanager
-    def check_db_requests(self, nb_requests):
-        time_start = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-        nb_logs_start = base.DBAssetLaunchingTestCase.count_database_logs(
-            since=time_start
-        )
-        yield
-        nb_logs_end = base.DBAssetLaunchingTestCase.count_database_logs(
-            since=time_start
-        )
-        nb_db_requests = nb_logs_end - nb_logs_start
-        assert_that(nb_db_requests, equal_to(nb_requests))
 
     @fixtures.db.tenant(name='foobar', domain_names=VALID_DOMAIN_NAMES_1)
     def test_tenant_creation(self, foobar_uuid):

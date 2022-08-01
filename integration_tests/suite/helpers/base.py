@@ -9,12 +9,15 @@ import requests
 import string
 import unittest
 
+from datetime import datetime
+
 from sqlalchemy.exc import UnboundExecutionError
 from contextlib import contextmanager
 from hamcrest import (
     assert_that,
     calling,
     contains_exactly,
+    equal_to,
     greater_than,
     has_length,
     has_properties,
@@ -175,6 +178,15 @@ class DAOTestCase(unittest.TestCase):
     @property
     def session(self):
         return helpers.get_db_session()
+
+    @contextmanager
+    def check_db_requests(self, nb_requests):
+        time_start = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        nb_logs_start = DBAssetLaunchingTestCase.count_database_logs(since=time_start)
+        yield
+        nb_logs_end = DBAssetLaunchingTestCase.count_database_logs(since=time_start)
+        nb_db_requests = nb_logs_end - nb_logs_start
+        assert_that(nb_db_requests, equal_to(nb_requests))
 
 
 class BaseIntegrationTest(unittest.TestCase):
