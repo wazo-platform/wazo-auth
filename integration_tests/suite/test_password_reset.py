@@ -1,4 +1,4 @@
-# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from datetime import datetime
@@ -70,7 +70,7 @@ class TestResetPassword(base.APIIntegrationTest):
         # non-regression: bootstrap user still have password
         assert_no_error(self.client.token.new, 'wazo_user', expiration=1)
 
-    @fixtures.http.user()
+    @fixtures.http.user(username='foobar')
     def test_set_password_does_not_log_password(self, user):
         new_password = '5ecr37'
 
