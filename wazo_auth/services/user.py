@@ -33,11 +33,24 @@ class UserService(BaseService):
 
     def change_password(self, user_uuid, old_password, new_password, reset=False):
         user = self.get_user(user_uuid)
-        if not self.verify_password(user['username'], old_password, reset):
+        login = user['username']
+        if not login:
+            login = self._find_main_email(user)
+
+        if not login:
+            logger.warning('User %s does not have login (username or email)', user_uuid)
+            raise exceptions.AuthenticationFailedException()
+
+        if not self.verify_password(login, old_password, reset):
             raise exceptions.AuthenticationFailedException()
 
         salt, hash_ = self._encrypter.encrypt_password(new_password)
         self._dao.user.change_password(user_uuid, salt, hash_)
+
+    def _find_main_email(self, user):
+        for email in user['emails']:
+            if email['main'] and email['confirmed']:
+                return email['address']
 
     def delete_password(self, **kwargs):
         search_params = {k: v for k, v in kwargs.items() if v}
