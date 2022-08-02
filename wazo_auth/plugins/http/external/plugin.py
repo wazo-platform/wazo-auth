@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from . import http
@@ -16,6 +16,6 @@ class Plugin:
         )
         api.add_resource(
             http.ExternalConfig,
-            '/external/<auth_type>/config',
+            '/external/<string:auth_type>/config',
             resource_class_args=args,
         )
