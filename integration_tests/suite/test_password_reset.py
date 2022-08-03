@@ -20,17 +20,24 @@ from .helpers.base import assert_http_error, assert_no_error
 class TestResetPassword(base.APIIntegrationTest):
     @fixtures.http.user(username='foo', email_address='foo@example.com')
     @fixtures.http.user(username='bar', email_address='bar@example.com')
-    def test_password_reset(self, foo, bar):
+    @fixtures.http.user(username=None, email_address='u3@example.com')
+    @fixtures.http.user(username='u4@example.com', email_address='other@example.com')
+    def test_password_reset(self, foo, bar, u3, u4):
         self.clean_emails()
         self.client.users.reset_password(username='foo')
         self.client.users.reset_password(email='bar@example.com')
+        self.client.users.reset_password(login='u3@example.com')
+        self.client.users.reset_password(login='u4@example.com')
 
         emails = self.get_emails()
 
         assert_that(
             emails,
             contains_inanyorder(
-                contains_string('username: foo'), contains_string('username: bar')
+                contains_string('username: foo'),
+                contains_string('username: bar'),
+                contains_string('username: None'),
+                contains_string('username: u4@example.com'),
             ),
         )
 
@@ -38,7 +45,7 @@ class TestResetPassword(base.APIIntegrationTest):
         for email in emails:
             self._update_password_from_email(email, new_password)
 
-        for username in ('foo', 'bar'):
+        for username in ('foo', 'bar', 'u3@example.com', 'u4@example.com'):
             user_client = self.make_auth_client(username, new_password)
             assert_no_error(user_client.token.new, 'wazo_user', expiration=1)
 

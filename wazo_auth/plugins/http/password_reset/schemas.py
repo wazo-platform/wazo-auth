@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import ValidationError, validates_schema
@@ -17,12 +17,14 @@ class PasswordResetQueryParameters(BaseSchema):
 
     username = fields.String(validate=validate.Length(min=1, max=256), missing=None)
     email_address = fields.Email(data_key='email', missing=None)
+    login = fields.String(validate=validate.Length(min=1, max=256), missing=None)
 
     @validates_schema
     def validate_mutually_exclusive_fields(self, data, **kwargs):
         username = data.get('username')
         email = data.get('email_address')
+        login = data.get('login')
 
-        if (username, email).count(None) != 1:
-            msg = '"username" or "email" should be used'
+        if (username, email, login).count(None) != 2:
+            msg = '"username" or "email" or "login" should be used'
             raise ValidationError(msg)

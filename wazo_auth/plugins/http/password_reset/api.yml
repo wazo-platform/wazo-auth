@@ -5,7 +5,7 @@ paths:
       description: |
         This action will send an email containing instructions to set a new password.
 
-        The username or email address should be supplied as query string to find the user
+        The login or username or email address should be supplied as query string to find the user
       operationId: reset_password
       tags:
         - users
@@ -18,6 +18,10 @@ paths:
           in: query
           type: string
           description: "The user's email address"
+        - name: login
+          in: query
+          type: string
+          description: "The user's login (username or email)"
       responses:
         '204':
           description: A mail will be sent if the username or email were found

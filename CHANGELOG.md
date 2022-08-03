@@ -1,5 +1,9 @@
 # Changelog
 
+## 22.11
+
+* The endpoint `GET /users/password/reset` now accepts `login` query string
+
 ## 22.10
 
 * New configuration has been added to configure number of proxies ahead this service and get the
