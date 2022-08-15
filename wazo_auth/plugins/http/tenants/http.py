@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -25,7 +25,7 @@ class Tenant(BaseResource):
         scoping_tenant = TenantDetector.autodetect()
 
         logger.debug('deleting tenant %s from %s', tenant_uuid, scoping_tenant.uuid)
-        if scoping_tenant.uuid == tenant_uuid:
+        if scoping_tenant.uuid == str(tenant_uuid):
             raise DeleteOwnTenantForbidden(tenant_uuid)
 
         self.tenant_service.delete(scoping_tenant.uuid, tenant_uuid)
