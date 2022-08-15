@@ -1,4 +1,4 @@
-# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -104,9 +104,10 @@ class TestExternalAuthMobile(base.ExternalAuthIntegrationTest):
         # NOTE(sileht): client doesn't have this endpoints has its specific to
         # android application
         headers = self.client.external._get_headers()
-        url = '{}/sender_id'.format(
-            self.client.external._build_url(self.EXTERNAL_AUTH_TYPE, user['uuid'])
+        base_url = self.client.external._build_url(
+            self.EXTERNAL_AUTH_TYPE, user['uuid']
         )
+        url = f'{base_url}/sender_id'
         r = self.client.external.session.get(url, headers=headers)
         if r.status_code != 200:
             self.client.external.raise_from_response(r)

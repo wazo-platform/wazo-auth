@@ -111,7 +111,7 @@ class TestTokens(base.APIIntegrationTest):
 
     @fixtures.http.user(username='foo', password='bar')
     def test_refresh_token_created_event(self, user):
-        routing_key = 'auth.users.{uuid}.tokens.*.created'.format(**user)
+        routing_key = f'auth.users.{user["uuid"]}.tokens.*.created'
         msg_accumulator = self.bus.accumulator(routing_key)
 
         client_id = 'mytestapp'
@@ -154,7 +154,7 @@ class TestTokens(base.APIIntegrationTest):
             client_id=client_id,
         )
 
-        routing_key = 'auth.users.{uuid}.tokens.#'.format(**user)
+        routing_key = f'auth.users.{user["uuid"]}.tokens.#'
         msg_accumulator = self.bus.accumulator(routing_key)
 
         # The same same refresh token is returned, not a new one
@@ -269,10 +269,7 @@ class TestTokens(base.APIIntegrationTest):
     )
     def test_refresh_token_deleted_event(self, user, token):
         client_id = 'foobar'
-        routing_key = 'auth.users.{user_uuid}.tokens.{client_id}.deleted'.format(
-            user_uuid=user['uuid'],
-            client_id=client_id,
-        )
+        routing_key = f'auth.users.{user["uuid"]}.tokens.{client_id}.deleted'
         msg_accumulator = self.bus.accumulator(routing_key)
 
         self.client.token.delete(user['uuid'], client_id)

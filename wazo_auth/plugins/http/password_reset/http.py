@@ -57,7 +57,7 @@ class PasswordReset(http.ErrorCatchingResource):
     def post(self):
         token_id = extract_token_id_from_query_or_header()
         user_uuid = request.args.get('user_uuid')
-        access = 'auth.users.password.reset.{}.create'.format(user_uuid)
+        access = f'auth.users.password.reset.{user_uuid}.create'
 
         if not self.auth_client.token.is_valid(token_id, required_access=access):
             raise Unauthorized(token_id)

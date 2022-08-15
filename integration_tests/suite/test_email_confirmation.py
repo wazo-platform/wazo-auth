@@ -38,8 +38,8 @@ class TestEmailConfirmation(base.APIIntegrationTest):
     def test_email_confirmation_get(self, user):
         email_uuid = user['emails'][0]['uuid']
 
-        url = 'http://{}:{}/0.1/emails/{}/confirm'.format(
-            self.auth_host, self.auth_port, email_uuid
+        url = (
+            f'http://{self.auth_host}:{self.auth_port}/0.1/emails/{email_uuid}/confirm'
         )
         token = self.client._token_id
         response = requests.get(url, params={'token': token})

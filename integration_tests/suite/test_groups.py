@@ -264,7 +264,7 @@ class TestGroups(base.APIIntegrationTest):
     def test_list_sorting(self, _, one, two, three):
         action = partial(self.client.groups.list, tenant_uuid=base.SUB_TENANT_UUID)
         all_users_group = self.client.groups.list(
-            name='wazo-all-users-tenant-{}'.format(base.SUB_TENANT_UUID),
+            name=f'wazo-all-users-tenant-{base.SUB_TENANT_UUID}',
             tenant_uuid=base.SUB_TENANT_UUID,
         )['items'][0]
         admins_group = self.client.groups.list(

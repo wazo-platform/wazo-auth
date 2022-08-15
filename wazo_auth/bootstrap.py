@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import argparse
@@ -164,7 +164,7 @@ def write_private_file(filename, username, content):
         uid = user.pw_uid
         gid = user.pw_gid
     except KeyError:
-        raise Exception('Unknown user {user}'.format(user=username))
+        raise Exception(f'Unknown user {username}')
 
     try:
         os.unlink(filename)

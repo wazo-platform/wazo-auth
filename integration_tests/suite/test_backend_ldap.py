@@ -32,14 +32,14 @@ LDAP_PORT = 1389
 class LDAPHelper:
 
     BASE_DN = 'dc=wazo-auth,dc=wazo,dc=community'
-    ADMIN_DN = 'cn=admin,{}'.format(BASE_DN)
+    ADMIN_DN = f'cn=admin,{BASE_DN}'
     ADMIN_PASSWORD = 'wazopassword'
-    PEOPLE_DN = 'ou=people,{}'.format(BASE_DN)
-    QUEBEC_DN = 'ou=quebec,{}'.format(PEOPLE_DN)
+    PEOPLE_DN = f'ou=people,{BASE_DN}'
+    QUEBEC_DN = f'ou=quebec,{PEOPLE_DN}'
     OU_DN = {'people': PEOPLE_DN, 'quebec': QUEBEC_DN}
     CONFIG_DN = 'cn=config'
     CONFIG_DATABASE_DN = 'olcDatabase={{2}}mdb,{}'.format(CONFIG_DN)
-    CONFIG_ADMIN_DN = 'cn=admin,{}'.format(CONFIG_DN)
+    CONFIG_ADMIN_DN = f'cn=admin,{CONFIG_DN}'
     CONFIG_ADMIN_PASSWORD = 'configpassword'
     setup_ran = False
 
@@ -52,7 +52,7 @@ class LDAPHelper:
         )
 
     def add_contact(self, contact, ou):
-        dn = 'cn={},{}'.format(contact.cn, self.OU_DN[ou])
+        dn = f'cn={contact.cn},{self.OU_DN[ou]}'
         modlist = addModlist(
             {
                 'objectClass': [b'inetOrgPerson'],
@@ -68,7 +68,7 @@ class LDAPHelper:
         self._ldap_obj.add_s(dn, modlist)
 
     def add_contact_without_email(self, contact, ou):
-        dn = 'cn={},{}'.format(contact.cn, self.OU_DN[ou])
+        dn = f'cn={contact.cn},{self.OU_DN[ou]}'
         modlist = addModlist(
             {
                 'objectClass': [b'inetOrgPerson'],
@@ -99,7 +99,7 @@ class LDAPHelper:
 
         new_config = old_config.copy()
         ou = self.OU_DN[affected_ou]
-        user_dn = 'cn={},{}'.format(contact.cn, ou)
+        user_dn = f'cn={contact.cn},{ou}'
 
         new_config['olcAccess'] = new_config.get('olcAccess', [])
         acls = new_config['olcAccess']

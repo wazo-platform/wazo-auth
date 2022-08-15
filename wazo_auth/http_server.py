@@ -23,7 +23,7 @@ VERSION = 0.1
 
 logger = logging.getLogger(__name__)
 app = Flask('wazo-auth')
-api = Api(app, prefix='/{}'.format(VERSION))
+api = Api(app, prefix=f'/{VERSION}')
 
 
 def teardown_appcontext(response_or_exc):
