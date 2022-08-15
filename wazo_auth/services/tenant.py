@@ -41,27 +41,27 @@ class TenantService(BaseService):
         visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
         return self._dao.tenant.count(tenant_uuids=visible_tenants, **kwargs)
 
-    def delete(self, scoping_tenant_uuid, uuid):
+    def delete(self, scoping_tenant_uuid, tenant_uuid):
         visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
-        if str(uuid) not in visible_tenants:
-            raise exceptions.UnknownTenantException(uuid)
+        if str(tenant_uuid) not in visible_tenants:
+            raise exceptions.UnknownTenantException(tenant_uuid)
 
-        result = self._dao.tenant.delete(uuid)
+        result = self._dao.tenant.delete(tenant_uuid)
 
-        event = events.TenantDeletedEvent(str(uuid))
-        headers = {'tenant_uuid': str(uuid)}
+        event = events.TenantDeletedEvent(str(tenant_uuid))
+        headers = {'tenant_uuid': str(tenant_uuid)}
         self._bus_publisher.publish(event, headers=headers)
         return result
 
     def find_top_tenant(self):
         return self.top_tenant_uuid
 
-    def get(self, scoping_tenant_uuid, uuid):
+    def get(self, scoping_tenant_uuid, tenant_uuid):
         visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
-        if str(uuid) not in visible_tenants:
-            raise exceptions.UnknownTenantException(uuid)
+        if str(tenant_uuid) not in visible_tenants:
+            raise exceptions.UnknownTenantException(tenant_uuid)
 
-        return self._get(uuid)
+        return self._get(tenant_uuid)
 
     def get_by_uuid_or_slug(self, scoping_tenant_uuid, id_):
         visible_tenants = self._tenant_tree.list_visible_tenant_uuids_with_slugs(
@@ -73,11 +73,11 @@ class TenantService(BaseService):
 
         raise exceptions.UnknownTenantException(id_)
 
-    def _get(self, uuid):
-        tenants = self._dao.tenant.list_(uuid=uuid, limit=1)
+    def _get(self, tenant_uuid):
+        tenants = self._dao.tenant.list_(uuid=tenant_uuid, limit=1)
         for tenant in tenants:
             return tenant
-        raise exceptions.UnknownTenantException(uuid)
+        raise exceptions.UnknownTenantException(tenant_uuid)
 
     def list_(self, scoping_tenant_uuid, **kwargs):
         visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
