@@ -190,9 +190,7 @@ class TestSessions(base.APIIntegrationTest):
 
     @fixtures.http.user(username='foo', password='bar')
     def test_expire_soon_event_when_token_is_about_to_expire(self, user):
-        routing_key = 'auth.users.{uuid}.sessions.*.expire_soon'.format(
-            uuid=user['uuid']
-        )
+        routing_key = f'auth.users.{user["uuid"]}.sessions.*.expire_soon'
         msg_accumulator = self.bus.accumulator(routing_key)
 
         session_uuid = self._post_token('foo', 'bar', expiration=3)['session_uuid']

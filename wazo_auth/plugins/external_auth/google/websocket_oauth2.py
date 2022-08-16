@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -29,7 +29,7 @@ class WebSocketOAuth2(Thread):
     def run(self, state, user_uuid):
         self.user_uuid = user_uuid
 
-        url = '{}/ws/{}'.format(self.host, state)
+        url = f'{self.host}/ws/{state}'
         self.ws = websocket.WebSocketApp(
             url,
             on_message=self._on_message,

@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -31,7 +31,7 @@ class WebSocketOAuth2(Thread):
         self.user_uuid = user_uuid
 
         self.ws = websocket.WebSocketApp(
-            '{}/ws/{}'.format(self.host, state),
+            f'{self.host}/ws/{state}',
             on_message=self._on_message,
             on_error=self._on_error,
             on_close=self._on_close,
@@ -46,9 +46,7 @@ class WebSocketOAuth2(Thread):
 
     def _on_message(self, message):
         logger.debug(
-            "Confirmation has been received on websocketOAuth, message : {}.".format(
-                message
-            )
+            "Confirmation has been received on websocketOAuth, message : %s.", message
         )
         msg = json.loads(message)
         if self.ws:
@@ -64,7 +62,7 @@ class WebSocketOAuth2(Thread):
         logger.debug("WebsocketOAuth closed.")
 
     def create_first_token(self, user_uuid, code):
-        logger.debug('Trying to fetch token on {}'.format(self.token_url))
+        logger.debug('Trying to fetch token on %s', self.token_url)
         token_data = self.oauth2.fetch_token(
             self.token_url, client_secret=self.client_secret, code=code
         )

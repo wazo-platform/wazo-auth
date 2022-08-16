@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -37,7 +37,7 @@ class TokenDAO(BaseDAO):
         return self.session.query(Tenant).filter(filter_).first().uuid
 
     def get(self, token_uuid):
-        token = self.session.query(TokenModel).get(token_uuid)
+        token = self.session.query(TokenModel).get(str(token_uuid))
         if token:
             return {
                 'uuid': token.uuid,
@@ -56,7 +56,7 @@ class TokenDAO(BaseDAO):
         raise exceptions.UnknownTokenException()
 
     def delete(self, token_uuid):
-        filter_ = TokenModel.uuid == token_uuid
+        filter_ = TokenModel.uuid == str(token_uuid)
 
         session_result = {}
         token = self.session.query(TokenModel).filter(filter_).first()

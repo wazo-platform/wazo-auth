@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -62,7 +62,7 @@ class MicrosoftAuth(http.AuthResource):
         authorization_url, state = self.oauth2.authorization_url(
             self.authorization_base_url
         )
-        logger.debug('Authorization url : {}'.format(authorization_url))
+        logger.debug('Authorization url : %s', authorization_url)
 
         self.websocket = WebSocketOAuth2(
             host=self.websocket_host,

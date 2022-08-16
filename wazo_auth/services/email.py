@@ -1,4 +1,4 @@
-# Copyright 2018-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -83,11 +83,11 @@ class EmailService(BaseService):
             server.sendmail(from_.address, [to.address], msg.as_string())
 
     def _new_email_confirmation_token(self, email_uuid):
-        acl = 'auth.emails.{}.confirm.edit'.format(email_uuid)
+        acl = f'auth.emails.{email_uuid}.confirm.edit'
         return self._new_generic_token(self._confirmation_token_expiration, acl)
 
     def _new_email_reset_token(self, user_uuid):
-        acl = 'auth.users.password.reset.{}.create'.format(user_uuid)
+        acl = f'auth.users.password.reset.{user_uuid}.create'
         return self._new_generic_token(self._reset_token_expiration, acl)
 
     def _new_generic_token(self, expiration, *acl):
