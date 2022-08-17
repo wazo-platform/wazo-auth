@@ -220,6 +220,34 @@ class TestLDAP(BaseLDAPIntegrationTest):
     @fixtures.http.tenant(
         uuid=TENANT_1_UUID,
         slug='mytenant',
+    )
+    @fixtures.http.user(
+        email_address='AWONDERLAND@WAZO-AUTH.COM', tenant_uuid=TENANT_1_UUID
+    )
+    @fixtures.http.ldap_config(
+        tenant_uuid=TENANT_1_UUID,
+        host='slapd',
+        port=LDAP_PORT,
+        user_base_dn='ou=quebec,ou=people,dc=wazo-auth,dc=wazo,dc=community',
+        user_login_attribute='cn',
+        user_email_attribute='mail',
+    )
+    def test_ldap_authentication_works_when_case_sensitive_user_email(
+        self, tenant, user, _
+    ):
+        response = self._post_token(
+            'Alice Wonderland',
+            'awonderland_password',
+            backend='ldap_user',
+            tenant_id=tenant['uuid'],
+        )
+        assert_that(
+            response, has_entries(metadata=has_entries(pbx_user_uuid=user['uuid']))
+        )
+
+    @fixtures.http.tenant(
+        uuid=TENANT_1_UUID,
+        slug='mytenant',
         domain_names=['wazo.community', 'cust-42.myclients.com'],
     )
     @fixtures.http.user(
