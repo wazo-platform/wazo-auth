@@ -146,11 +146,12 @@ class LDAPUser(BaseAuthenticationBackend):
         return self._tenant_service.get_by_uuid_or_slug(None, tenant_id)
 
     def _get_user_by_ldap_attribute(self, user_email, tenant_uuid):
-        for user in self._user_service.list_users(
-            email_address=user_email, tenant_uuid=tenant_uuid
-        ):
-            return user
-
+        for user in self._user_service.list_users(tenant_uuid=tenant_uuid):
+            if 'emails' in user.keys():
+                if user['emails']:
+                    wazo_auth_user_email = user['emails'][0]['address']
+                    if wazo_auth_user_email.lower() == user_email.lower():
+                        return user
         logger.warning(
             '%s does not have an email associated with an auth user', user_email
         )

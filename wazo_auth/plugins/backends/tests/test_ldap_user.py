@@ -188,7 +188,9 @@ class TestVerifyPassword(BaseTestCase):
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
-        self.list_users.return_value = [{'uuid': 'alice-uuid'}]
+        self.list_users.return_value = [
+            {'uuid': 'alice-uuid', 'emails': [{'address': 'foo@example.com'}]}
+        ]
         args = {'tenant_id': 'test'}
 
         result = backend.verify_password('foo', 'bar', args)
@@ -210,15 +212,17 @@ class TestVerifyPassword(BaseTestCase):
 
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
-        wazo_ldap.perform_search.return_value = ('uid=fo\\+o,dc=example,dc=com', Mock())
-        self.list_users.return_value = [{'uuid': 'alice-uuid'}]
+        wazo_ldap.perform_search.return_value = self.search_obj_result
+        self.list_users.return_value = [
+            {'uuid': 'alice-uuid', 'emails': [{'address': 'foo@example.com'}]}
+        ]
         args = {'tenant_id': 'test'}
 
-        result = backend.verify_password('fo+o', 'bar', args)
+        result = backend.verify_password('foo', 'bar', args)
 
         assert_that(result, equal_to(True))
         wazo_ldap.perform_bind.assert_called_once_with(
-            'uid=fo\\+o,dc=example,dc=com', 'bar'
+            'uid=foo,dc=example,dc=com', 'bar'
         )
 
     def test_that_verify_password_escape_filter_chars(self, wazo_ldap):
@@ -235,15 +239,17 @@ class TestVerifyPassword(BaseTestCase):
 
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
-        wazo_ldap.perform_search.return_value = ('uid=fo\\+o,dc=example,dc=com', Mock())
-        self.list_users.return_value = [{'uuid': 'alice-uuid'}]
+        wazo_ldap.perform_search.return_value = self.search_obj_result
+        self.list_users.return_value = [
+            {'uuid': 'alice-uuid', 'emails': [{'address': 'foo@example.com'}]}
+        ]
         args = {'tenant_id': 'test'}
 
-        result = backend.verify_password('fo+o', 'bar', args)
+        result = backend.verify_password('foo', 'bar', args)
 
         assert_that(result, equal_to(True))
         wazo_ldap.perform_search.assert_called_once_with(
-            'uid=fo\\+o,dc=example,dc=com', 0, attrlist=['mail']
+            'uid=foo,dc=example,dc=com', 0, attrlist=['mail']
         )
 
     def test_that_verify_password_calls_return_false_when_no_user_bind(self, wazo_ldap):
@@ -307,7 +313,9 @@ class TestVerifyPassword(BaseTestCase):
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
-        self.list_users.return_value = [{'uuid': 'alice-uuid'}]
+        self.list_users.return_value = [
+            {'uuid': 'alice-uuid', 'emails': [{'address': 'foo@example.com'}]}
+        ]
         args = {'tenant_id': 'test'}
 
         result = backend.verify_password('foo', 'bar', args)
@@ -349,7 +357,9 @@ class TestVerifyPassword(BaseTestCase):
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
-        self.list_users.return_value = [{'uuid': 'alice-uuid'}]
+        self.list_users.return_value = [
+            {'uuid': 'alice-uuid', 'emails': [{'address': 'foo@example.com'}]}
+        ]
         args = {'tenant_id': 'test'}
 
         result = backend.verify_password('foo', 'bar', args)
@@ -383,7 +393,9 @@ class TestVerifyPassword(BaseTestCase):
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
-        self.list_users.return_value = [{'uuid': 'alice-uuid'}]
+        self.list_users.return_value = [
+            {'uuid': 'alice-uuid', 'emails': [{'address': 'foo@example.com'}]}
+        ]
         args = {'domain_name': 'wazo.io'}
 
         result = backend.verify_password('foo', 'bar', args)
