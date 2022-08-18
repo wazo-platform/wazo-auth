@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -40,7 +40,7 @@ class _GroupPolicy(_BaseResource):
         access_check = AccessCheck(token.auth_id, token.session_uuid, token.acl)
         policy = self.policy_service.get(policy_uuid, tenant_uuids)
         for access in policy.acl:
-            if not access_check.matches_required_access(access):
+            if not access_check.may_add_access(access):
                 raise Unauthorized(token.token, required_access=access)
 
         self.group_service.add_policy(group_uuid, policy_uuid)
