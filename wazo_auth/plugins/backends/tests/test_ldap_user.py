@@ -188,7 +188,9 @@ class TestVerifyPassword(BaseTestCase):
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
-        self.list_users.return_value = [{'uuid': 'alice-uuid'}]
+        self.list_users.return_value = [
+            {'uuid': 'alice-uuid', 'emails': [{'address': 'foo@example.com'}]}
+        ]
         args = {'tenant_id': 'test'}
 
         result = backend.verify_password('foo', 'bar', args)
@@ -210,8 +212,13 @@ class TestVerifyPassword(BaseTestCase):
 
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
-        wazo_ldap.perform_search.return_value = ('uid=fo\\+o,dc=example,dc=com', Mock())
-        self.list_users.return_value = [{'uuid': 'alice-uuid'}]
+        wazo_ldap.perform_search.return_value = (
+            'uid=fo\\+o,dc=example,dc=com',
+            {'mail': self.expected_user_email.encode('utf-8')},
+        )
+        self.list_users.return_value = [
+            {'uuid': 'alice-uuid', 'emails': [{'address': 'foo@example.com'}]}
+        ]
         args = {'tenant_id': 'test'}
 
         result = backend.verify_password('fo+o', 'bar', args)
@@ -235,8 +242,13 @@ class TestVerifyPassword(BaseTestCase):
 
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
-        wazo_ldap.perform_search.return_value = ('uid=fo\\+o,dc=example,dc=com', Mock())
-        self.list_users.return_value = [{'uuid': 'alice-uuid'}]
+        wazo_ldap.perform_search.return_value = (
+            'uid=fo\\+o,dc=example,dc=com',
+            {'mail': self.expected_user_email.encode('utf-8')},
+        )
+        self.list_users.return_value = [
+            {'uuid': 'alice-uuid', 'emails': [{'address': 'foo@example.com'}]}
+        ]
         args = {'tenant_id': 'test'}
 
         result = backend.verify_password('fo+o', 'bar', args)
@@ -307,7 +319,9 @@ class TestVerifyPassword(BaseTestCase):
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
-        self.list_users.return_value = [{'uuid': 'alice-uuid'}]
+        self.list_users.return_value = [
+            {'uuid': 'alice-uuid', 'emails': [{'address': 'foo@example.com'}]}
+        ]
         args = {'tenant_id': 'test'}
 
         result = backend.verify_password('foo', 'bar', args)
@@ -349,7 +363,9 @@ class TestVerifyPassword(BaseTestCase):
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
-        self.list_users.return_value = [{'uuid': 'alice-uuid'}]
+        self.list_users.return_value = [
+            {'uuid': 'alice-uuid', 'emails': [{'address': 'foo@example.com'}]}
+        ]
         args = {'tenant_id': 'test'}
 
         result = backend.verify_password('foo', 'bar', args)
@@ -383,10 +399,38 @@ class TestVerifyPassword(BaseTestCase):
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
-        self.list_users.return_value = [{'uuid': 'alice-uuid'}]
+        self.list_users.return_value = [
+            {'uuid': 'alice-uuid', 'emails': [{'address': 'foo@example.com'}]}
+        ]
         args = {'domain_name': 'wazo.io'}
 
         result = backend.verify_password('foo', 'bar', args)
+
+        assert_that(result, equal_to(True))
+
+    def test_that_verify_password_works_using_case_sensitive_email_address(
+        self, wazo_ldap
+    ):
+        backend = LDAPUser()
+        backend.load(
+            {
+                'user_service': self.user_service,
+                'group_service': self.group_service,
+                'ldap_service': self.ldap_service,
+                'tenant_service': self.tenant_service,
+                'purposes': self.purposes,
+            }
+        )
+
+        wazo_ldap = wazo_ldap.return_value
+        wazo_ldap.perform_bind.return_value = True
+        wazo_ldap.perform_search.return_value = self.search_obj_result
+        self.list_users.return_value = [
+            {'uuid': 'alice-uuid', 'emails': [{'address': 'foo@example.com'}]}
+        ]
+        args = {'domain_name': 'wazo.io'}
+
+        result = backend.verify_password('FoO@EXampLE.coM', 'bar', args)
 
         assert_that(result, equal_to(True))
 

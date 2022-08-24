@@ -239,7 +239,12 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         query = (
             self.session.query(User.uuid)
             .outerjoin(Email)
-            .filter(and_(Email.address == login, Email.confirmed.is_(True)))
+            .filter(
+                and_(
+                    Email.address == login,
+                    Email.confirmed.is_(True),
+                )
+            )
         )
         row = query.first()
         if row:

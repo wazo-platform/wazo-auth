@@ -146,11 +146,12 @@ class LDAPUser(BaseAuthenticationBackend):
         return self._tenant_service.get_by_uuid_or_slug(None, tenant_id)
 
     def _get_user_by_ldap_attribute(self, user_email, tenant_uuid):
-        for user in self._user_service.list_users(
-            email_address=user_email, tenant_uuid=tenant_uuid
-        ):
-            return user
-
+        for user in self._user_service.list_users(tenant_uuid=tenant_uuid):
+            user_emails = user.get('emails')
+            if user_emails:
+                for email in user_emails:
+                    if email['address'] == user_email:
+                        return user
         logger.warning(
             '%s does not have an email associated with an auth user', user_email
         )
@@ -172,7 +173,7 @@ class LDAPUser(BaseAuthenticationBackend):
     def _extract_email_attribute(self, ldap_obj, user_email_attribute):
         email = ldap_obj.get(user_email_attribute, None)
         email = email[0] if isinstance(email, list) else email
-        return email.decode('utf-8') if email else None
+        return email.decode('utf-8').lower() if email else None
 
     def _perform_search_attributes(
         self,
