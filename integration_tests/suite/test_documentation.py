@@ -5,7 +5,7 @@ import logging
 import requests
 import yaml
 
-from openapi_spec_validator import validate_v2_spec
+from openapi_spec_validator import validate_spec, openapi_v2_spec_validator
 
 from .helpers import base
 
@@ -18,4 +18,4 @@ class TestDocumentation(base.APIIntegrationTest):
     def test_documentation_errors(self):
         api_url = f'http://{self.auth_host}:{self.auth_port}/0.1/api/api.yml'
         api = requests.get(api_url)
-        validate_v2_spec(yaml.safe_load(api.text))
+        validate_spec(yaml.safe_load(api.text), validator=openapi_v2_spec_validator)
