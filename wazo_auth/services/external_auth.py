@@ -8,7 +8,11 @@ import websocket
 
 from functools import partial
 import marshmallow
-from xivo_bus.resources.auth import events
+from xivo_bus.resources.auth.events import (
+    UserExternalAuthAddedEvent,
+    UserExternalAuthAuthorizedEvent,
+    UserExternalAuthDeletedEvent,
+)
 
 from wazo_auth.exceptions import UnknownUserException
 from wazo_auth.services.helpers import BaseService
@@ -92,9 +96,8 @@ class ExternalAuthService(BaseService):
     def create(self, user_uuid, auth_type, data):
         result = self._dao.external_auth.create(user_uuid, auth_type, data)
         tenant_uuid = self._get_user_tenant_uuid(user_uuid)
-        event = events.UserExternalAuthAdded(user_uuid, auth_type)
-        headers = {'tenant_uuid': tenant_uuid} if tenant_uuid else {}
-        self._bus_publisher.publish(event, headers=headers)
+        event = UserExternalAuthAddedEvent(auth_type, tenant_uuid, user_uuid)
+        self._bus_publisher.publish(event)
         return result
 
     def create_config(self, auth_type, data, tenant_uuid):
@@ -103,9 +106,8 @@ class ExternalAuthService(BaseService):
     def delete(self, user_uuid, auth_type):
         self._dao.external_auth.delete(user_uuid, auth_type)
         tenant_uuid = self._get_user_tenant_uuid(user_uuid)
-        event = events.UserExternalAuthDeleted(user_uuid, auth_type)
-        headers = {'tenant_uuid': tenant_uuid} if tenant_uuid else {}
-        self._bus_publisher.publish(event, headers=headers)
+        event = UserExternalAuthDeletedEvent(auth_type, tenant_uuid, user_uuid)
+        self._bus_publisher.publish(event)
 
     def delete_config(self, auth_type, tenant_uuid):
         self._dao.external_auth.delete_config(auth_type, tenant_uuid)
@@ -148,9 +150,8 @@ class ExternalAuthService(BaseService):
     def register_oauth2_callback(
         self, auth_type, user_uuid, state, cb, *args, **kwargs
     ):
-        event = events.UserExternalAuthAuthorized(user_uuid, auth_type)
         tenant_uuid = self._get_user_tenant_uuid(user_uuid)
-        setattr(event, 'tenant_uuid', tenant_uuid)
+        event = UserExternalAuthAuthorizedEvent(auth_type, tenant_uuid, user_uuid)
         self._oauth2_synchronizer.synchronize(
             event, state, partial(cb, *args, **kwargs)
         )

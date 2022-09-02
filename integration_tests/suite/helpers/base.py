@@ -22,6 +22,7 @@ from hamcrest import (
     has_length,
     has_properties,
 )
+from kombu import Exchange
 from wazo_auth_client import Client
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.raises import raises
@@ -112,7 +113,15 @@ class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
             port = cls.service_port(5672, 'rabbitmq')
         except (NoSuchService, NoSuchPort):
             return WrongClient('rabbitmq')
-        return BusClient.from_connection_fields(host='127.0.0.1', port=port)
+        upstream = Exchange('xivo', 'topic')
+        bus = BusClient.from_connection_fields(
+            host='127.0.0.1',
+            port=port,
+            exchange_name='wazo-headers',
+            exchange_type='headers',
+        )
+        bus.downstream_exchange_declare('wazo-headers', 'headers', upstream)
+        return bus
 
     @classmethod
     def restart_postgres(cls):

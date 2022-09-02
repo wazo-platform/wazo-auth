@@ -11,7 +11,8 @@ from xivo import plugin_helpers
 from xivo.consul_helpers import ServiceCatalogRegistration
 from xivo.status import StatusAggregator
 
-from . import bus, http, services, token, bootstrap
+from . import http, services, token, bootstrap
+from .bus import BusPublisher
 from .database import queries
 from .database.helpers import db_ready, init_db
 from .flask_helpers import Tenant, Token
@@ -50,7 +51,9 @@ class Controller:
 
         self.status_aggregator = StatusAggregator()
         template_formatter = services.helpers.TemplateFormatter(config)
-        self._bus_publisher = bus.BusPublisher(config)
+
+        self._bus_publisher = BusPublisher.from_config(config['uuid'], config['amqp'])
+
         self.dao = queries.DAO.from_defaults()
         self._tenant_tree = services.helpers.TenantTree(self.dao.tenant)
         self._backends = BackendsProxy()
@@ -197,10 +200,9 @@ class Controller:
                     or bootstrap.DEFAULT_POLICY_SLUG,
                 )
 
-        with bus.publisher_thread(self._bus_publisher):
-            with ServiceCatalogRegistration(*self._service_discovery_args):
-                self._expired_token_remover.start()
-                self._rest_api.run()
+        with ServiceCatalogRegistration(*self._service_discovery_args):
+            self._expired_token_remover.start()
+            self._rest_api.run()
 
     def stop(self, reason):
         logger.warning('Stopping wazo-auth: %s', reason)

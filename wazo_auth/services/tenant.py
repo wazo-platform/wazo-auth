@@ -1,7 +1,11 @@
 # Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from xivo_bus.resources.auth import events
+from xivo_bus.resources.auth.events import (
+    TenantCreatedEvent,
+    TenantDeletedEvent,
+    TenantUpdatedEvent,
+)
 from wazo_auth import exceptions
 from wazo_auth.services.helpers import BaseService
 
@@ -48,9 +52,8 @@ class TenantService(BaseService):
 
         result = self._dao.tenant.delete(tenant_uuid)
 
-        event = events.TenantDeletedEvent(str(tenant_uuid))
-        headers = {'tenant_uuid': str(tenant_uuid)}
-        self._bus_publisher.publish(event, headers=headers)
+        event = TenantDeletedEvent(tenant_uuid)
+        self._bus_publisher.publish(event)
         return result
 
     def find_top_tenant(self):
@@ -101,14 +104,16 @@ class TenantService(BaseService):
         self._dao.address.new(tenant_uuid=uuid, **kwargs['address'])
         result = self._get(uuid)
 
-        event = events.TenantCreatedEvent(
-            uuid=str(uuid),
-            name=result['name'],
-            slug=result['slug'],
-            domain_names=result['domain_names'],
+        event = TenantCreatedEvent(
+            {
+                'uuid': uuid,
+                'name': result['name'],
+                'slug': result['slug'],
+                'domain_names': result['domain_names'],
+            },
+            uuid,
         )
-        headers = {'tenant_uuid': str(uuid)}
-        self._bus_publisher.publish(event, headers=headers)
+        self._bus_publisher.publish(event)
 
         name = f'wazo-all-users-tenant-{uuid}'
         all_users_group_uuid = self._dao.group.create(
@@ -145,9 +150,7 @@ class TenantService(BaseService):
             address_id, self._dao.address.update(address_id, **kwargs['address'])
 
         self._dao.tenant.update(tenant_uuid, **kwargs)
-
         result = self._get(tenant_uuid)
-        event = events.TenantUpdatedEvent(str(tenant_uuid), result.get('name'))
-        headers = {'tenant_uuid': str(tenant_uuid)}
-        self._bus_publisher.publish(event, headers=headers)
+        event = TenantUpdatedEvent(result.get('name'), tenant_uuid)
+        self._bus_publisher.publish(event)
         return result

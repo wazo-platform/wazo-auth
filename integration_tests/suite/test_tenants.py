@@ -212,8 +212,8 @@ class TestTenants(base.APIIntegrationTest):
             assert_that(subtenant, has_entries(uuid=uuid_(), **params))
 
     def test_tenant_created_event(self):
-        routing_key = 'auth.tenants.*.created'
-        msg_accumulator = self.bus.accumulator(routing_key)
+        headers = {'name': 'auth_tenant_added'}
+        msg_accumulator = self.bus.accumulator(headers=headers)
         name = 'My tenant'
         slug = 'my_tenant'
         tenant = self.client.tenants.new(
@@ -285,6 +285,31 @@ class TestTenants(base.APIIntegrationTest):
 
         assert_no_error(self.client.tenants.delete, tenant['uuid'])
         assert_http_error(404, self.client.tenants.delete, tenant['uuid'])
+
+    @fixtures.http.tenant(domain_names=VALID_DOMAIN_NAMES_2)
+    def test_tenant_deleted_event(self, tenant):
+        headers = {'name': 'auth_tenant_deleted'}
+        msg_accumulator = self.bus.accumulator(headers=headers)
+
+        self.client.tenants.delete(tenant['uuid'])
+
+        def bus_received_msg():
+            assert_that(
+                msg_accumulator.accumulate(with_headers=True),
+                contains_exactly(
+                    has_entries(
+                        message=has_entries(
+                            name='auth_tenant_deleted',
+                            data=has_entries(
+                                uuid=tenant['uuid'],
+                            ),
+                        ),
+                        headers=has_entry('tenant_uuid', tenant['uuid']),
+                    )
+                ),
+            )
+
+        until.assert_(bus_received_msg, tries=10, interval=0.25)
 
     @fixtures.http.tenant(domain_names=VALID_DOMAIN_NAMES_3)
     def test_delete_tenant_with_children(self, tenant):
@@ -411,6 +436,34 @@ class TestTenants(base.APIIntegrationTest):
                 address=has_entries(**ADDRESS_1),
             ),
         )
+
+    @fixtures.http.tenant(name='foobar')
+    def test_put_event(self, tenant):
+        headers = {'name': 'auth_tenant_updated'}
+        msg_accumulator = self.bus.accumulator(headers=headers)
+
+        assert_no_error(self.client.tenants.edit, tenant['uuid'], name='foo')
+
+        def bus_received_msg():
+            assert_that(
+                msg_accumulator.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries(
+                            data=has_entries(
+                                uuid=tenant['uuid'],
+                                name='foo',
+                            ),
+                        ),
+                        headers=has_entries(
+                            name='auth_tenant_updated',
+                            tenant_uuid=tenant['uuid'],
+                        ),
+                    )
+                ),
+            )
+
+        until.assert_(bus_received_msg, tries=10, interval=0.25)
 
     @fixtures.http.tenant(domain_names=VALID_DOMAIN_NAMES_1)
     @fixtures.http.user()

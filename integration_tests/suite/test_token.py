@@ -111,9 +111,9 @@ class TestTokens(base.APIIntegrationTest):
 
     @fixtures.http.user(username='foo', password='bar')
     def test_refresh_token_created_event(self, user):
-        routing_key = f'auth.users.{user["uuid"]}.tokens.*.created'
-        msg_accumulator = self.bus.accumulator(routing_key)
-
+        msg_accumulator = self.bus.accumulator(
+            headers={'name': 'auth_refresh_token_created'},
+        )
         client_id = 'mytestapp'
         self._post_token(
             'foo',
@@ -136,7 +136,10 @@ class TestTokens(base.APIIntegrationTest):
                                 'mobile': True,
                             }
                         ),
-                        headers=has_entry('tenant_uuid', user['tenant_uuid']),
+                        headers=has_entries(
+                            name='auth_refresh_token_created',
+                            tenant_uuid=user['tenant_uuid'],
+                        ),
                     )
                 ),
             )
@@ -154,8 +157,11 @@ class TestTokens(base.APIIntegrationTest):
             client_id=client_id,
         )
 
-        routing_key = f'auth.users.{user["uuid"]}.tokens.#'
-        msg_accumulator = self.bus.accumulator(routing_key)
+        msg_accumulator = self.bus.accumulator(
+            headers={
+                'name': 'auth_refresh_token_deleted',
+            }
+        )
 
         # The same same refresh token is returned, not a new one
         self._post_token(
@@ -176,15 +182,17 @@ class TestTokens(base.APIIntegrationTest):
                 contains_exactly(
                     has_entries(
                         message=has_entries(
-                            name='auth_refresh_token_deleted',
                             data=has_entries(
                                 client_id=client_id,
                                 user_uuid=user['uuid'],
                                 tenant_uuid=user['tenant_uuid'],
                             ),
                         ),
-                        headers=has_entry('tenant_uuid', user['tenant_uuid']),
-                    )
+                        headers=has_entries(
+                            name='auth_refresh_token_deleted',
+                            tenant_uuid=user['tenant_uuid'],
+                        ),
+                    ),
                 ),
             )
 
@@ -269,8 +277,9 @@ class TestTokens(base.APIIntegrationTest):
     )
     def test_refresh_token_deleted_event(self, user, token):
         client_id = 'foobar'
-        routing_key = f'auth.users.{user["uuid"]}.tokens.{client_id}.deleted'
-        msg_accumulator = self.bus.accumulator(routing_key)
+        msg_accumulator = self.bus.accumulator(
+            headers={'name': 'auth_refresh_token_deleted'}
+        )
 
         self.client.token.delete(user['uuid'], client_id)
 
