@@ -1,6 +1,8 @@
 # Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import uuid
+
 from functools import partial
 from hamcrest import (
     assert_that,
@@ -13,6 +15,9 @@ from hamcrest import (
 from .helpers import base, fixtures
 from .helpers.base import assert_http_error, assert_no_error, assert_sorted
 from .helpers.constants import UNKNOWN_UUID, NB_ALL_USERS_GROUPS
+
+TENANT_UUID_1 = str(uuid.uuid4())
+TENANT_UUID_2 = str(uuid.uuid4())
 
 
 @base.use_asset('base')
@@ -202,3 +207,14 @@ class TestUserGroupAssociation(base.APIIntegrationTest):
                 assert_http_error(404, action, visible_group['uuid'], user1['uuid'])
 
                 assert_no_error(action, visible_group['uuid'], user3['uuid'])
+
+    @fixtures.http.tenant(uuid=TENANT_UUID_1)
+    @fixtures.http.tenant(uuid=TENANT_UUID_2)
+    @fixtures.http.user(tenant_uuid=TENANT_UUID_1)
+    @fixtures.http.group(tenant_uuid=TENANT_UUID_2)
+    def test_put_user_in_group_with_mismatching_tenants_raises_400_http_error(
+        self, _, __, user, group
+    ):
+        action = self.client.groups.add_user
+
+        assert_http_error(400, action, group['uuid'], user['uuid'])
