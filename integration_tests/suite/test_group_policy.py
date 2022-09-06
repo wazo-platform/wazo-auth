@@ -1,6 +1,8 @@
 # Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import uuid
+
 from functools import partial
 from hamcrest import (
     assert_that,
@@ -19,6 +21,9 @@ from .helpers.constants import (
     UNKNOWN_SLUG,
     UNKNOWN_UUID,
 )
+
+
+TENANT_UUID_1 = str(uuid.uuid4())
 
 
 @base.use_asset('base')
@@ -223,10 +228,11 @@ class TestGroupPolicyAssociation(base.APIIntegrationTest):
         expected = contains_inanyorder(baz, foo)
         assert_that(result, has_entries(total=3, filtered=3, items=expected))
 
-    @fixtures.http.group(name='one')
+    @fixtures.http.tenant(uuid=TENANT_UUID_1)
+    @fixtures.http.group(name='one', tenant_uuid=TENANT_UUID_1)
     @fixtures.http.policy(name='main', acl=['foobar'])
-    @fixtures.http.user_register(username='foo', password='bar')
-    def test_generated_acl(self, group, policy, user):
+    @fixtures.http.user(username='foo', password='bar', tenant_uuid=TENANT_UUID_1)
+    def test_generated_acl(self, _, group, policy, user):
         self.client.groups.add_user(group['uuid'], user['uuid'])
         self.client.groups.add_policy(group['uuid'], policy['uuid'])
 

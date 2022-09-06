@@ -434,17 +434,3 @@ class UnauthorizedResourcesMutualAccessAttemptException(APIException):
         }
         resource = 'groups'
         super().__init__(error_code, error_msg, error_id, error_details, resource)
-
-
-class UnauthorizedAccessToResourceException(APIException):
-    def __init__(self, resource_uuid, resource):
-        error_code = 404
-        error_id = 'forbidden-access'
-        error_msg = (
-            f'Administrator does not have access to resource with uuid: {resource_uuid}'
-        )
-        error_details = {
-            'resource_uuid': resource_uuid,
-            'resource_name': resource,
-        }
-        super().__init__(error_code, error_msg, error_id, error_details, resource)
