@@ -421,3 +421,16 @@ class DuplicateGroupException(TokenServiceException):
 
     def __str__(self):
         return f'Group "{self._name}" already exists'
+
+
+class UnauthorizedResourcesMutualAccessAttemptException(APIException):
+    def __init__(self, user_tenant_uuid, group_tenant_uuid):
+        error_code = 400
+        error_id = 'missmatching-tenant'
+        error_msg = 'Ressources are not in the same tenant'
+        error_details = {
+            'user_tenant_uuid': user_tenant_uuid,
+            'group_tenant_uuid': group_tenant_uuid,
+        }
+        resource = 'groups'
+        super().__init__(error_code, error_msg, error_id, error_details, resource)

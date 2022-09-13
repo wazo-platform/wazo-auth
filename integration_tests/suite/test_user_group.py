@@ -1,6 +1,8 @@
 # Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import uuid
+
 from functools import partial
 from hamcrest import (
     assert_that,
@@ -13,6 +15,9 @@ from hamcrest import (
 from .helpers import base, fixtures
 from .helpers.base import assert_http_error, assert_no_error, assert_sorted
 from .helpers.constants import UNKNOWN_UUID, NB_ALL_USERS_GROUPS
+
+TENANT_UUID_1 = str(uuid.uuid4())
+TENANT_UUID_2 = str(uuid.uuid4())
 
 
 @base.use_asset('base')
@@ -131,11 +136,12 @@ class TestUserGroupList(base.APIIntegrationTest):
 
 @base.use_asset('base')
 class TestUserGroupAssociation(base.APIIntegrationTest):
-    @fixtures.http.user_register()
-    @fixtures.http.user_register()
-    @fixtures.http.group()
+    @fixtures.http.tenant(uuid=TENANT_UUID_1)
+    @fixtures.http.user(tenant_uuid=TENANT_UUID_1)
+    @fixtures.http.user(tenant_uuid=TENANT_UUID_1)
+    @fixtures.http.group(tenant_uuid=TENANT_UUID_1)
     @fixtures.http.group(name='all-users-group', read_only=True)
-    def test_delete(self, user1, user2, group, all_users_group):
+    def test_delete(self, _, user1, user2, group, all_users_group):
         action = self.client.groups.remove_user
 
         self.client.groups.add_user(group['uuid'], user1['uuid'])
@@ -159,21 +165,32 @@ class TestUserGroupAssociation(base.APIIntegrationTest):
         with self.client_in_subtenant() as (client, user3, _):
             action = client.groups.remove_user
 
-            self.client.groups.add_user(group['uuid'], user3['uuid'])
+            assert_http_error(
+                400, self.client.groups.add_user, group['uuid'], user3['uuid']
+            )
 
             # group not visible to this sub tenant
             assert_http_error(404, action, group['uuid'], user3['uuid'])
 
             # user not visible to this sub tenant can be deleted
             with self.group(client, name='foo') as visible_group:
-                self.client.groups.add_user(visible_group['uuid'], user1['uuid'])
+                assert_http_error(
+                    400,
+                    self.client.groups.add_user,
+                    visible_group['uuid'],
+                    user1['uuid'],
+                )
                 assert_no_error(action, visible_group['uuid'], user1['uuid'])
 
-    @fixtures.http.user_register()
-    @fixtures.http.user_register()
-    @fixtures.http.group()
-    @fixtures.http.group(name='all-users-group', read_only=True)
-    def test_put(self, user1, user2, group, all_users_group):
+    @fixtures.http.tenant(uuid=TENANT_UUID_1)
+    @fixtures.http.tenant(uuid=TENANT_UUID_2)
+    @fixtures.http.user(tenant_uuid=TENANT_UUID_1)
+    @fixtures.http.user(tenant_uuid=TENANT_UUID_2)
+    @fixtures.http.group(tenant_uuid=TENANT_UUID_1)
+    @fixtures.http.group(
+        name='all-users-group', read_only=True, tenant_uuid=TENANT_UUID_2
+    )
+    def test_put(self, _, __, user1, user2, group, all_users_group):
         action = self.client.groups.add_user
 
         assert_http_error(404, action, UNKNOWN_UUID, user1['uuid'])
@@ -202,3 +219,16 @@ class TestUserGroupAssociation(base.APIIntegrationTest):
                 assert_http_error(404, action, visible_group['uuid'], user1['uuid'])
 
                 assert_no_error(action, visible_group['uuid'], user3['uuid'])
+
+    @fixtures.http.tenant(uuid=TENANT_UUID_1)
+    @fixtures.http.tenant(uuid=TENANT_UUID_2)
+    @fixtures.http.user(tenant_uuid=TENANT_UUID_1)
+    @fixtures.http.user(tenant_uuid=TENANT_UUID_2)
+    @fixtures.http.group(tenant_uuid=TENANT_UUID_2)
+    def test_put_user_in_group_with_mismatching_tenants_raises_400_http_error(
+        self, _, __, user1, user2, group
+    ):
+        action = self.client.groups.add_user
+
+        assert_http_error(400, action, group['uuid'], user1['uuid'])
+        assert_no_error(action, group['uuid'], user2['uuid'])

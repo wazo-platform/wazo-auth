@@ -37,6 +37,16 @@ class GroupUser(_BaseResource):
         self.user_service.assert_user_in_subtenant(scoping_tenant.uuid, user_uuid)
         self.group_service.assert_group_in_subtenant(tenant_uuids, group_uuid)
 
+        user_tenant_uuid = self.user_service.get_user(user_uuid)['tenant_uuid']
+        group_tenant_uuid = self.group_service.get(group_uuid, tenant_uuids)[
+            'tenant_uuid'
+        ]
+
+        if user_tenant_uuid != group_tenant_uuid:
+            raise exceptions.UnauthorizedResourcesMutualAccessAttemptException(
+                user_tenant_uuid, group_tenant_uuid
+            )
+
         logger.debug('associating group %s user %s', group_uuid, user_uuid)
         self.group_service.add_user(group_uuid, user_uuid)
         return '', 204
