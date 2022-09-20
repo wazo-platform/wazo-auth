@@ -1,5 +1,9 @@
 # Changelog
 
+## 22.13
+
+* Adding a user to a group in `/user_group` endpoint should fail now when the two resources do not have/belong to the same tenant; it raises a 400 HTTP error
+
 ## 22.11
 
 * The endpoint `GET /users/password/reset` now accepts `login` query string
