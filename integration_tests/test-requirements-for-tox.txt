@@ -1,8 +1,9 @@
+importlib_metadata<5.0.0  # from kombu - https://github.com/celery/kombu/issues/1600
 kombu
 mock
-pytest
 openapi-spec-validator
 pyhamcrest
+pytest
 python-ldap
 
 # for database tests
