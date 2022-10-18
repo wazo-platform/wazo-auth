@@ -1,5 +1,20 @@
 # Changelog
 
+## 23.01
+
+* Configuration key `amqp` deprecated in favor of `bus`
+* Added `bus` configuration key to configure rabbitmq
+
+```
+bus:
+  host: localhost
+  port: 5673
+  username: guest
+  password: guest
+  vhost: ''
+  exchange_name: wazo-headers
+```
+
 ## 22.17
 
 * Added a new endpoint to retrieve the list of connected users registered with the specified auth type
