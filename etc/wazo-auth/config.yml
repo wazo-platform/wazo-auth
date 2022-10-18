@@ -70,10 +70,12 @@ google:
   token_url: 'https://www.googleapis.com/oauth2/v4/token'
   websocket_host: 'wss://oauth.wazo.io'
 
-amqp:
-  uri: amqp://guest:guest@localhost:5672/
-  exchange_name: xivo
-  exchange_type: topic
+bus:
+  username: guest
+  password: guest
+  host: localhost
+  port: 5672
+  exchange_name: wazo-headers
 
 # Local SMTP configuration
 smtp:

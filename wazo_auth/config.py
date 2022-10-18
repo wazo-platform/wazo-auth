@@ -101,10 +101,13 @@ _DEFAULT_CONFIG = {
         'retry_interval': 2,
         'extra_tags': [],
     },
-    'amqp': {
-        'uri': 'amqp://guest:guest@localhost:5672/',
-        'exchange_name': 'xivo',
-        'exchange_type': 'topic',
+    'bus': {
+        'host': 'localhost',
+        'port': 5672,
+        'username': 'guest',
+        'password': 'guest',
+        'exchange_name': 'wazo-headers',
+        'exchange_type': 'headers',
     },
     'smtp': {'hostname': 'localhost', 'port': 25},
     'db_connect_retry_timeout_seconds': 300,
