@@ -45,14 +45,14 @@ class Controller:
             config.get('uuid'),
             config['consul'],
             config['service_discovery'],
-            config['amqp'],
+            config['bus'],
             partial(self_check, config),
         ]
 
         self.status_aggregator = StatusAggregator()
         template_formatter = services.helpers.TemplateFormatter(config)
 
-        self._bus_publisher = BusPublisher.from_config(config['uuid'], config['amqp'])
+        self._bus_publisher = BusPublisher.from_config(config['uuid'], config['bus'])
 
         self.dao = queries.DAO.from_defaults()
         self._tenant_tree = services.helpers.TenantTree(self.dao.tenant)
