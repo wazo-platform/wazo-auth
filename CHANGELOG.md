@@ -1,5 +1,21 @@
 # Changelog
 
+## 22.15
+
+* Bus configuration keys changed:
+
+  * `amqp` configuration key dropped
+  * `bus` configuration key added
+
+  ```
+  bus:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    exchange_name: wazo-headers
+  ```
+
 ## 22.13
 
 * Adding a user to a group in `/user_group` endpoint should fail now when the two resources do not have/belong to the same tenant; it raises a 400 HTTP error
