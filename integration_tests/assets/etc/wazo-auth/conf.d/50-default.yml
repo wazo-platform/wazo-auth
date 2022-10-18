@@ -5,8 +5,8 @@ rest_api:
 
 db_uri: postgresql://asterisk:proformatique@postgres:5432
 
-amqp:
-  uri: amqp://guest:guest@rabbitmq:5672/
+bus:
+  host: rabbitmq
 
 smtp:
   hostname: smtp
