@@ -95,6 +95,31 @@ paths:
           schema:
             $ref: '#/definitions/Error'
 
+  /external/{auth_type}/users:
+    get:
+      description: '**Required ACL**: `auth.{auth_type}.external.users`'
+      summary: 'Retrieves the list of connected users to this external source'
+      tags:
+        - external
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+        - $ref: '#/parameters/auth_type'
+        - $ref: '#/parameters/recurse'
+        - $ref: '#/parameters/limit'
+        - $ref: '#/parameters/offset'
+      responses:
+        '200':
+          schema:
+            $ref: '#/definitions/ExternalAuthUserList'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/Error'
+
   /users/{user_uuid}/external:
     get:
       tags:
@@ -178,6 +203,28 @@ definitions:
       fcm_api_key:
         description: The API key to use for Firebase Cloud Messaging
         type: string
+  ExternalAuthUser:
+    type: string
+    format: uuid
+  ExternalAuthUserList:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: The number of connected external auth users.
+      filtered:
+        type: integer
+        description: The number of external auth matching the searched term.
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/ExternalAuthUser'
+        description: A paginated list of connected external auth users
+    required:
+    - filtered
+    - total
+    - items
+
 parameters:
   auth_type:
     name: auth_type

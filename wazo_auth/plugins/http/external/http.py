@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import current_app, request
@@ -67,3 +67,26 @@ class ExternalConfig(http.AuthResource):
         tenant_uuid = Tenant.autodetect().uuid
         self.external_auth_service.delete_config(auth_type, tenant_uuid=tenant_uuid)
         return '', 204
+
+
+class ExternalUsers(http.AuthResource):
+    def __init__(self, external_auth_service):
+        self.service = external_auth_service
+
+    @http.required_acl('auth.{auth_type}.external.users')
+    def get(self, auth_type):
+        try:
+            list_params = schemas.BaseListSchema().load(request.args)
+        except marshmallow.ValidationError as e:
+            raise exceptions.InvalidListParamException(e.messages)
+
+        tenant_uuid = Tenant.autodetect().uuid
+
+        total = self.service.count_connected_users(
+            auth_type, tenant_uuid, **list_params
+        )
+        uuids = self.service.list_connected_users(auth_type, tenant_uuid, **list_params)
+
+        response = {'filtered': total, 'total': total, 'items': uuids}
+
+        return response, 200

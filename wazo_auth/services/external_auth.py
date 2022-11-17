@@ -93,6 +93,18 @@ class ExternalAuthService(BaseService):
         self._populate_enabled_external_auth()
         return self._dao.external_auth.count(user_uuid, **kwargs)
 
+    def count_connected_users(
+        self, auth_type, scoping_tenant_uuid=None, recurse=False, **kwargs
+    ):
+        self._populate_enabled_external_auth()
+
+        if scoping_tenant_uuid:
+            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(
+                scoping_tenant_uuid, recurse
+            )
+
+        return self._dao.external_auth.count_connected_users(auth_type, **kwargs)
+
     def create(self, user_uuid, auth_type, data):
         result = self._dao.external_auth.create(user_uuid, auth_type, data)
         tenant_uuid = self._get_user_tenant_uuid(user_uuid)
@@ -117,6 +129,18 @@ class ExternalAuthService(BaseService):
 
     def get_config(self, auth_type, tenant_uuid):
         return self._dao.external_auth.get_config(auth_type, tenant_uuid)
+
+    def list_connected_users(
+        self, auth_type, scoping_tenant_uuid=None, recurse=True, **kwargs
+    ):
+        self._populate_enabled_external_auth()
+
+        if scoping_tenant_uuid:
+            kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(
+                scoping_tenant_uuid, recurse
+            )
+
+        return self._dao.external_auth.list_connected_users(auth_type, **kwargs)
 
     def list_(self, user_uuid, **kwargs):
         self._populate_enabled_external_auth()

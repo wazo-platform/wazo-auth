@@ -19,3 +19,9 @@ class Plugin:
             '/external/<string:auth_type>/config',
             resource_class_args=args,
         )
+
+        api.add_resource(
+            http.ExternalUsers,
+            '/external/<string:auth_type>/users',
+            resource_class_args=args,
+        )
