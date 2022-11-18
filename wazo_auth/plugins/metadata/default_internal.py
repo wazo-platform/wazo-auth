@@ -5,4 +5,7 @@ from wazo_auth import BaseMetadata
 
 
 class DefaultInternal(BaseMetadata):
-    pass
+    def get_token_metadata(self, login, args):
+        metadata = super().get_token_metadata(login, args)
+        metadata.update(purpose='internal')
+        return metadata

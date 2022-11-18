@@ -17,5 +17,6 @@ class DefaultUser(BaseMetadata):
             'auth_id': default_metadata['auth_id'],
             'pbx_user_uuid': default_metadata['uuid'],
             'xivo_uuid': default_metadata['xivo_uuid'],
+            'purpose': 'user',
         }
         return metadata
