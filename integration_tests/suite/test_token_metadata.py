@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that, has_entries
@@ -9,7 +9,7 @@ from .helpers import fixtures, base
 class TestDefaultTokenMetadata(base.APIIntegrationTest):
     @fixtures.http.user(username='foobar', password='s3cr37', purpose='user')
     @fixtures.http.group()
-    def test_token_metadata(self, user, group):
+    def test_user_purpose_metadata(self, user, group):
         self.client.groups.add_user(group['uuid'], user['uuid'])
 
         token_data = self._post_token(user['username'], 's3cr37')
@@ -22,6 +22,7 @@ class TestDefaultTokenMetadata(base.APIIntegrationTest):
                 auth_id=user['uuid'],
                 pbx_user_uuid=user['uuid'],
                 xivo_uuid='the-predefined-xivo-uuid',
+                purpose='user',
             ),
         )
 
@@ -37,6 +38,7 @@ class TestDefaultTokenMetadata(base.APIIntegrationTest):
                 auth_id=user['uuid'],
                 pbx_user_uuid=None,
                 xivo_uuid='the-predefined-xivo-uuid',
+                purpose='internal',
             ),
         )
 
@@ -52,5 +54,6 @@ class TestDefaultTokenMetadata(base.APIIntegrationTest):
                 auth_id=user['uuid'],
                 pbx_user_uuid=None,
                 xivo_uuid='the-predefined-xivo-uuid',
+                purpose='external_api',
             ),
         )
