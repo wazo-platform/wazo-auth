@@ -1,0 +1,17 @@
+version: '3'
+services:
+  sync:
+    depends_on:
+      - auth
+      - oauth2sync
+      - postgres
+      - rabbitmq
+      - smtp
+      - slapd
+    environment:
+      TARGETS: "slapd:1389 auth:9497 oauth2sync:80 postgres:5432 rabbitmq:5672 smtp:25"
+
+  auth:
+    volumes:
+      - "./etc/wazo-auth/conf.d/asset.base.yml:/etc/wazo-auth/conf.d/asset.base.yml"
+      - "./etc/wazo-auth/conf.d/asset.metadata.yml:/etc/wazo-auth/conf.d/asset.metadata.yml"

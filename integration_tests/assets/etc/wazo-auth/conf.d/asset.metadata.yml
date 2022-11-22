@@ -1,0 +1,5 @@
+enabled_metadata_plugins:
+  user_admin_status: True
+
+purpose_metadata_mapping:
+  user: [user_admin_status]
