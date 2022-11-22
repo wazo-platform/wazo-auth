@@ -57,3 +57,43 @@ class TestDefaultTokenMetadata(base.APIIntegrationTest):
                 purpose='external_api',
             ),
         )
+
+
+@base.use_asset('metadata')
+class TestUserAdminStatusMetadata(base.MetadataIntegrationTest):
+    @fixtures.http.user(username='foobar', password='s3cr37', purpose='user')
+    def test_admin_status_metadata_when_not_admin(self, user):
+        token_data = self._post_token(user['username'], 's3cr37')
+
+        assert_that(
+            token_data['metadata'],
+            has_entries(
+                uuid=user['uuid'],
+                tenant_uuid=self.top_tenant_uuid,
+                auth_id=user['uuid'],
+                pbx_user_uuid=user['uuid'],
+                xivo_uuid='the-predefined-xivo-uuid',
+                purpose='user',
+                admin=False,
+            )
+        )
+
+    @fixtures.http.user(username='foobar', password='s3cr37', purpose='user')
+    def test_admin_status_metadata_when_admin(self, user):
+        admin_policy = self.client.policies.get('wazo_default_admin_policy')
+        self.client.users.add_policy(user['uuid'], admin_policy['uuid'])
+
+        token_data = self._post_token(user['username'], 's3cr37')
+
+        assert_that(
+            token_data['metadata'],
+            has_entries(
+                uuid=user['uuid'],
+                tenant_uuid=self.top_tenant_uuid,
+                auth_id=user['uuid'],
+                pbx_user_uuid=user['uuid'],
+                xivo_uuid='the-predefined-xivo-uuid',
+                purpose='user',
+                admin=True,
+            )
+        )

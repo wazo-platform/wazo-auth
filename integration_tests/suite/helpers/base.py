@@ -153,6 +153,10 @@ class ExternalAuthAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
     asset = 'external_auth'
 
 
+class MetadataAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
+    asset = 'metadata'
+
+
 class DAOTestCase(unittest.TestCase):
 
     unknown_uuid = '00000000-0000-0000-0000-000000000000'
@@ -294,6 +298,13 @@ class BaseIntegrationTest(unittest.TestCase):
 class ExternalAuthIntegrationTest(BaseIntegrationTest):
 
     asset_cls = ExternalAuthAssetLaunchingTestCase
+    username = 'admin'
+    password = 's3cre7'
+
+
+class MetadataIntegrationTest(BaseIntegrationTest):
+
+    asset_cls = MetadataAssetLaunchingTestCase
     username = 'admin'
     password = 's3cre7'
 

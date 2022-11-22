@@ -39,3 +39,12 @@ def external_auth():
         yield
     finally:
         asset.ExternalAuthAssetLaunchingTestCase.tearDownClass()
+
+
+@pytest.fixture(scope='session')
+def metadata():
+    asset.MetadataAssetLaunchingTestCase.setUpClass()
+    try:
+        yield
+    finally:
+        asset.MetadataAssetLaunchingTestCase.tearDownClass()
