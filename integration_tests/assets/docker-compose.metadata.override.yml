@@ -13,5 +13,4 @@ services:
 
   auth:
     volumes:
-      - "./etc/wazo-auth/conf.d/asset.base.yml:/etc/wazo-auth/conf.d/asset.base.yml"
       - "./etc/wazo-auth/conf.d/asset.metadata.yml:/etc/wazo-auth/conf.d/asset.metadata.yml"
