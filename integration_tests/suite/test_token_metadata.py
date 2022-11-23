@@ -75,7 +75,7 @@ class TestUserAdminStatusMetadata(base.MetadataIntegrationTest):
                 xivo_uuid='the-predefined-xivo-uuid',
                 purpose='user',
                 admin=False,
-            )
+            ),
         )
 
     @fixtures.http.user(username='foobar', password='s3cr37', purpose='user')
@@ -95,5 +95,25 @@ class TestUserAdminStatusMetadata(base.MetadataIntegrationTest):
                 xivo_uuid='the-predefined-xivo-uuid',
                 purpose='user',
                 admin=True,
-            )
+            ),
+        )
+
+    @fixtures.http.user(username='foobar', password='s3cre37', purpose='user')
+    def test_admin_status_metadata_when_in_admin_group(self, user):
+        group = self.client.groups.list(search='wazo_default_admin_group')['items'][0]
+        self.client.groups.add_user(group['uuid'], user['uuid'])
+
+        token_data = self._post_token(user['username'], 's3cre37')
+
+        assert_that(
+            token_data['metadata'],
+            has_entries(
+                uuid=user['uuid'],
+                tenant_uuid=self.top_tenant_uuid,
+                auth_id=user['uuid'],
+                pbx_user_uuid=user['uuid'],
+                xivo_uuid='the-predefined-xivo-uuid',
+                purpose='user',
+                admin=True,
+            ),
         )
