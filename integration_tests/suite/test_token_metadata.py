@@ -103,7 +103,10 @@ class TestUserAdminStatusMetadata(base.MetadataIntegrationTest):
         group = self.client.groups.list(search='wazo_default_admin_group')['items'][0]
         self.client.groups.add_user(group['uuid'], user['uuid'])
 
-        token_data = self._post_token(user['username'], 's3cre37')
+        try:
+            token_data = self._post_token(user['username'], 's3cre37')
+        finally:
+            self.client.groups.remove_user(group['uuid'], user['uuid'])
 
         assert_that(
             token_data['metadata'],
