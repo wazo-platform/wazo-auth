@@ -109,6 +109,7 @@ paths:
         - $ref: '#/parameters/offset'
       responses:
         '200':
+          description: 'The list of external auth connected users'
           schema:
             $ref: '#/definitions/ExternalAuthUserList'
         '401':
@@ -176,6 +177,34 @@ definitions:
         type: object
       plugin_info:
         type: object
+  ExternalAuthUser:
+    type: string
+    format: uuid
+    example: [
+      210ef281-4201-4f95-952f-5f8d5211e085,
+      28e6f253-a19d-458d-8b52-2ba6feb788bc,
+      e72fe53d-3981-4c51-a488-e06ca94fcbb1
+    ]
+  ExternalAuthUserList:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: The number of connected external auth users.
+        example: 3
+      filtered:
+        type: integer
+        description: The number of external auth matching the searched term.
+        example: 3
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/ExternalAuthUser'
+        description: A paginated list of connected external auth users
+    required:
+    - filtered
+    - total
+    - items
   ExternalConfig:
     type: object
     properties:
@@ -203,27 +232,6 @@ definitions:
       fcm_api_key:
         description: The API key to use for Firebase Cloud Messaging
         type: string
-  ExternalAuthUser:
-    type: string
-    format: uuid
-  ExternalAuthUserList:
-    type: object
-    properties:
-      total:
-        type: integer
-        description: The number of connected external auth users.
-      filtered:
-        type: integer
-        description: The number of external auth matching the searched term.
-      items:
-        type: array
-        items:
-          $ref: '#/definitions/ExternalAuthUser'
-        description: A paginated list of connected external auth users
-    required:
-    - filtered
-    - total
-    - items
 
 parameters:
   auth_type:
