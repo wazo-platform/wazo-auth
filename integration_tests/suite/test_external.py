@@ -9,6 +9,7 @@ import requests
 from hamcrest import (
     assert_that,
     contains_exactly,
+    contains_inanyorder,
     equal_to,
     greater_than_or_equal_to,
     has_entries,
@@ -170,6 +171,38 @@ class TestExternalAuthAPI(base.ExternalAuthIntegrationTest):
                 items=contains_exactly(*expected),
                 total=greater_than_or_equal_to(2),
                 filtered=1,
+            ),
+        )
+
+    @fixtures.http.session()
+    @fixtures.http.user_register(username='test', password='secret')
+    def test_list_connected_users(self, session1, user2):
+        self.client.external.create('foo', session1['user_uuid'], {})
+        self.client.external.create('foo', user2['uuid'], {})
+
+        results = self.client.external.list_connected_users('foo')
+        assert_that(
+            results,
+            has_entries(
+                total=equal_to(1),
+                filtered=equal_to(1),
+                items=contains_inanyorder(session1['user_uuid']),
+            ),
+        )
+
+        client = self.make_auth_client(username=user2['username'], password='secret')
+        token = client.token.new()
+        try:
+            results = self.client.external.list_connected_users('foo', recurse=True)
+        finally:
+            client.token.revoke(token['token'])
+
+        assert_that(
+            results,
+            has_entries(
+                total=2,
+                filtered=2,
+                items=contains_inanyorder(session1['user_uuid'], user2['uuid']),
             ),
         )
 
