@@ -87,12 +87,12 @@ confd_db_uri: postgresql://asterisk:proformatique@localhost/asterisk?application
 service_discovery:
   enabled: false
 
-# Example of service discovery settings
+# Example settings to enable service discovery
 #
 # Necessary to use service discovery
 # consul:
 #   scheme: http
-#   host: localhost
+#   host: consul.example.com
 #   port: 8500
 #   token: 'the_one_ring'
 #
