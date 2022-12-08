@@ -11,9 +11,6 @@ amqp:
 smtp:
   hostname: smtp
 
-service_discovery:
-  enabled: false
-
 enabled_http_plugins:
   user_registration: true
 

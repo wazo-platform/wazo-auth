@@ -90,12 +90,15 @@ _DEFAULT_CONFIG = {
             ],
         },
     },
-    'consul': {'scheme': 'http', 'host': 'localhost', 'port': 8500},
+    'consul': {
+        'scheme': 'http',
+        'port': 8500,
+    },
     'service_discovery': {
+        'enabled': False,
         'advertise_address': 'auto',
         'advertise_address_interface': 'eth0',
         'advertise_port': _DEFAULT_HTTP_PORT,
-        'enabled': True,
         'ttl_interval': 30,
         'refresh_interval': 27,
         'retry_interval': 2,
