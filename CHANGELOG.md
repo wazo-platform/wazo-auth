@@ -1,5 +1,11 @@
 # Changelog
 
+## 22.17
+
+* Added a new endpoint to retrieve the list of connected users registered with the specified auth type
+
+  * `GET /external/{auth_type}/users`
+
 ## 22.13
 
 * Adding a user to a group in `/user_group` endpoint should fail now when the two resources do not have/belong to the same tenant; it raises a 400 HTTP error

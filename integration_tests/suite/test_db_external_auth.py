@@ -10,6 +10,7 @@ from hamcrest import (
     contains_inanyorder,
     equal_to,
     has_entries,
+    has_length,
     has_properties,
 )
 from wazo_test_helpers.hamcrest.raises import raises
@@ -19,6 +20,8 @@ from wazo_auth.database import models
 from .helpers import fixtures, base
 
 SESSION_UUID_1 = str(uuid.uuid4())
+USER_UUID_1 = str(uuid.uuid4())
+USER_UUID_2 = str(uuid.uuid4())
 
 
 @base.use_asset('database')
@@ -64,6 +67,21 @@ class TestExternalAuthDAO(base.DAOTestCase):
         assert_that(result, equal_to(2))
         result = self._external_auth_dao.count(user_1_uuid, type='two', filtered=True)
         assert_that(result, equal_to(1))
+
+    @fixtures.db.user(uuid=USER_UUID_1)
+    @fixtures.db.user(uuid=USER_UUID_2)
+    @fixtures.db.token(auth_id=USER_UUID_1)
+    @fixtures.db.token(auth_id=USER_UUID_2)
+    @fixtures.db.external_auth('foobarcrm')
+    def test_count_connected_users(self, user1_uuid, user2_uuid, *_):
+        self._external_auth_dao.create(user1_uuid, 'foobarcrm', 'some-data')
+
+        result = self._external_auth_dao.count_connected_users('foobarcrm')
+        assert_that(result, equal_to(1))
+
+        self._external_auth_dao.create(user2_uuid, 'foobarcrm', 'some-other-data')
+        result = self._external_auth_dao.count_connected_users('foobarcrm')
+        assert_that(result, equal_to(2))
 
     @fixtures.db.user()
     def test_create(self, user_uuid):
@@ -264,6 +282,44 @@ class TestExternalAuthDAO(base.DAOTestCase):
         )
         expected = [{'type': 'one', 'data': data_one, 'enabled': True}]
         assert_that(result, contains_exactly(*expected))
+
+    @fixtures.db.user(uuid=USER_UUID_1)
+    @fixtures.db.user(uuid=USER_UUID_2)
+    @fixtures.db.user()
+    @fixtures.db.external_auth('foobarcrm')
+    @fixtures.db.token(auth_id=USER_UUID_1)
+    @fixtures.db.token(auth_id=USER_UUID_2)
+    def test_list_connected_users(self, user1_uuid, user2_uuid, user3_uuid, *ignored):
+        self._external_auth_dao.create(user1_uuid, 'foobarcrm', {})
+
+        results = self._external_auth_dao.list_connected_users('foobarcrm')
+        expected = [user1_uuid]
+        assert_that(results, contains_inanyorder(*expected))
+
+        self._external_auth_dao.create(user2_uuid, 'foobarcrm', {})
+        results = self._external_auth_dao.list_connected_users('foobarcrm')
+        expected = [user1_uuid, user2_uuid]
+        assert_that(results, contains_inanyorder(*expected))
+
+        self._external_auth_dao.create(user3_uuid, 'foobarcrm', {})
+        results = self._external_auth_dao.list_connected_users('foobarcrm')
+        expected = [user1_uuid, user2_uuid]
+        assert_that(results, contains_inanyorder(*expected))
+
+        results = self._external_auth_dao.list_connected_users('foobarcrm', limit=1)
+        assert_that(results, has_length(1))
+
+        results = self._external_auth_dao.list_connected_users('foobarcrm', offset=1)
+        assert_that(results, has_length(1))
+
+        assert_that(
+            calling(self._external_auth_dao.list_connected_users).with_args(
+                'the_unknown_service'
+            ),
+            raises(exceptions.UnknownExternalAuthTypeException).matching(
+                has_properties(status_code=404, resource='external')
+            ),
+        )
 
     @fixtures.db.user()
     @fixtures.db.external_auth('foobarcrm')

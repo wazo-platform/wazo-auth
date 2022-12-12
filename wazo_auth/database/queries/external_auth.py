@@ -1,14 +1,16 @@
-# Copyright 2016-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
-from sqlalchemy import and_, exc
+from sqlalchemy import and_, exc, select, join, alias
 from .base import BaseDAO, PaginatorMixin
 from . import filters
 from ..models import (
     ExternalAuthConfig,
     ExternalAuthType,
+    Session,
     Tenant,
+    Token,
     User,
     UserExternalAuth,
 )
@@ -33,6 +35,9 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             filter_ = and_(base_filter, search_filter, strict_filter)
 
         return self.session.query(ExternalAuthType).filter(filter_).count()
+
+    def count_connected_users(self, auth_type, **kwargs):
+        return self._connected_users_query(auth_type, **kwargs).count()
 
     def create(self, user_uuid, auth_type, data):
         serialized_data = json.dumps(data)
@@ -198,6 +203,15 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         return result
 
+    def list_connected_users(self, auth_type, **kwargs):
+        self._assert_type_exists(auth_type)
+        query = self._connected_users_query(auth_type, **kwargs)
+        query = self._paginator.update_query(
+            query, offset=kwargs.get('offset'), limit=kwargs.get('limit')
+        )
+
+        return [uuid for uuid, in query.all()]
+
     def update(self, user_uuid, auth_type, data):
         self.delete(user_uuid, auth_type)
         result = self.create(user_uuid, auth_type, data)
@@ -223,6 +237,34 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def _assert_user_exists(self, user_uuid):
         if self.session.query(User).filter(User.uuid == str(user_uuid)).count() == 0:
             raise exceptions.UnknownUserException(user_uuid)
+
+    def _connected_users_query(self, auth_type, **kwargs):
+        filter_ = and_(
+            ExternalAuthType.enabled.is_(True),
+            ExternalAuthType.name == auth_type,
+        )
+
+        tenant_uuids = kwargs.get('tenant_uuids')
+        if tenant_uuids is not None:
+            filter_ = and_(filter_, User.tenant_uuid.in_(tenant_uuids))
+
+        # Subquery to find users session
+        sessions_query = alias(
+            select([Token.auth_id]).select_from(join(Token, Session))
+        )
+
+        query = (
+            self.session.query(UserExternalAuth.user_uuid)
+            .outerjoin(ExternalAuthType)
+            .outerjoin(User)
+            .join(
+                sessions_query, sessions_query.c.auth_id == UserExternalAuth.user_uuid
+            )
+            .filter(filter_)
+            .distinct()
+        )
+
+        return query
 
     def _find_type(self, auth_type):
         type_ = (
