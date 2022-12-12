@@ -186,7 +186,9 @@ class TestExternalAuthAPI(base.ExternalAuthIntegrationTest):
             has_entries(
                 total=equal_to(1),
                 filtered=equal_to(1),
-                items=contains_inanyorder(session1['user_uuid']),
+                items=contains_inanyorder(
+                    has_entries(uuid=session1['user_uuid']),
+                ),
             ),
         )
 
@@ -202,7 +204,10 @@ class TestExternalAuthAPI(base.ExternalAuthIntegrationTest):
             has_entries(
                 total=2,
                 filtered=2,
-                items=contains_inanyorder(session1['user_uuid'], user2['uuid']),
+                items=contains_inanyorder(
+                    has_entries(uuid=session1['user_uuid']),
+                    has_entries(uuid=user2['uuid']),
+                ),
             ),
         )
 

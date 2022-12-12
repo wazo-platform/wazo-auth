@@ -85,8 +85,11 @@ class ExternalUsers(http.AuthResource):
         total = self.service.count_connected_users(
             auth_type, tenant_uuid, **list_params
         )
-        uuids = self.service.list_connected_users(auth_type, tenant_uuid, **list_params)
+        users = self.service.list_connected_users(auth_type, tenant_uuid, **list_params)
 
-        response = {'filtered': total, 'total': total, 'items': uuids}
-
+        response = {
+            'filtered': total,
+            'total': total,
+            'items': [{'uuid': user} for user in users],
+        }
         return response, 200
