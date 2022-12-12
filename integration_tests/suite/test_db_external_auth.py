@@ -312,6 +312,15 @@ class TestExternalAuthDAO(base.DAOTestCase):
         results = self._external_auth_dao.list_connected_users('foobarcrm', offset=1)
         assert_that(results, has_length(1))
 
+        assert_that(
+            calling(self._external_auth_dao.list_connected_users).with_args(
+                'the_unknown_service'
+            ),
+            raises(exceptions.UnknownExternalAuthTypeException).matching(
+                has_properties(status_code=404, resource='external')
+            ),
+        )
+
     @fixtures.db.user()
     @fixtures.db.external_auth('foobarcrm')
     def test_update(self, user_uuid, _):

@@ -180,6 +180,10 @@ class TestExternalAuthAPI(base.ExternalAuthIntegrationTest):
         self.client.external.create('foo', session1['user_uuid'], {})
         self.client.external.create('foo', user2['uuid'], {})
 
+        base.assert_http_error(
+            404, self.client.external.list_connected_users, 'unknown'
+        )
+
         results = self.client.external.list_connected_users('foo')
         assert_that(
             results,

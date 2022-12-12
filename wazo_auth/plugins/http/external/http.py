@@ -82,10 +82,10 @@ class ExternalUsers(http.AuthResource):
 
         tenant_uuid = Tenant.autodetect().uuid
 
+        users = self.service.list_connected_users(auth_type, tenant_uuid, **list_params)
         total = self.service.count_connected_users(
             auth_type, tenant_uuid, **list_params
         )
-        users = self.service.list_connected_users(auth_type, tenant_uuid, **list_params)
 
         response = {
             'filtered': total,

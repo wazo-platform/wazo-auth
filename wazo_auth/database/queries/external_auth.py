@@ -204,6 +204,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return result
 
     def list_connected_users(self, auth_type, **kwargs):
+        self._assert_type_exists(auth_type)
         query = self._connected_users_query(auth_type, **kwargs)
         query = self._paginator.update_query(
             query, offset=kwargs.get('offset'), limit=kwargs.get('limit')
