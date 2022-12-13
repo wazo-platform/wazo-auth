@@ -73,7 +73,7 @@ class ExternalUsers(http.AuthResource):
     def __init__(self, external_auth_service):
         self.service = external_auth_service
 
-    @http.required_acl('auth.{auth_type}.external.users')
+    @http.required_acl('auth.{auth_type}.external.users.read')
     def get(self, auth_type):
         try:
             list_params = schemas.BaseListSchema().load(request.args)
