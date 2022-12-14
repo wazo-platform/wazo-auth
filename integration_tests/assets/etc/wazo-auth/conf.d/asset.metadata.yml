@@ -1,0 +1,18 @@
+enabled_metadata_plugins:
+  user_admin_status: True
+
+purpose_metadata_mapping:
+  user: [user_admin_status]
+
+default_policies:
+  wazo_default_admin_policy:
+    description: 'Default Wazo policy for administrators'
+
+tenant_default_groups:
+  wazo_default_admin_group:
+    policies:
+      wazo_default_admin_policy: True
+
+bootstrap_user_on_startup: True
+bootstrap_user_username: admin
+bootstrap_user_password: s3cre7
