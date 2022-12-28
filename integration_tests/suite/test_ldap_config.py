@@ -7,7 +7,7 @@ from hamcrest import (
     has_key,
     not_,
 )
-from integration_tests.suite.helpers.constants import UNKNOWN_TENANT
+from .helpers.constants import UNKNOWN_TENANT
 
 from .helpers import base
 from .helpers import fixtures
