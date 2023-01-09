@@ -1,4 +1,4 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -70,8 +70,6 @@ class TestExternalAuthDAO(base.DAOTestCase):
 
     @fixtures.db.user(uuid=USER_UUID_1)
     @fixtures.db.user(uuid=USER_UUID_2)
-    @fixtures.db.token(auth_id=USER_UUID_1)
-    @fixtures.db.token(auth_id=USER_UUID_2)
     @fixtures.db.external_auth('foobarcrm')
     def test_count_connected_users(self, user1_uuid, user2_uuid, *_):
         self._external_auth_dao.create(user1_uuid, 'foobarcrm', 'some-data')
@@ -287,8 +285,6 @@ class TestExternalAuthDAO(base.DAOTestCase):
     @fixtures.db.user(uuid=USER_UUID_2)
     @fixtures.db.user()
     @fixtures.db.external_auth('foobarcrm')
-    @fixtures.db.token(auth_id=USER_UUID_1)
-    @fixtures.db.token(auth_id=USER_UUID_2)
     def test_list_connected_users(self, user1_uuid, user2_uuid, user3_uuid, *ignored):
         self._external_auth_dao.create(user1_uuid, 'foobarcrm', {})
 
@@ -303,7 +299,12 @@ class TestExternalAuthDAO(base.DAOTestCase):
 
         self._external_auth_dao.create(user3_uuid, 'foobarcrm', {})
         results = self._external_auth_dao.list_connected_users('foobarcrm')
-        expected = [user1_uuid, user2_uuid]
+        expected = [user1_uuid, user2_uuid, user3_uuid]
+        assert_that(results, contains_inanyorder(*expected))
+
+        self._external_auth_dao.delete(user2_uuid, 'foobarcrm')
+        results = self._external_auth_dao.list_connected_users('foobarcrm')
+        expected = [user1_uuid, user3_uuid]
         assert_that(results, contains_inanyorder(*expected))
 
         results = self._external_auth_dao.list_connected_users('foobarcrm', limit=1)
