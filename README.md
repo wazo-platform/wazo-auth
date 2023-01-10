@@ -1,4 +1,5 @@
-![Wazo Logo](https://github.com/wazo-platform/wazo-platform.org/raw/master/static/images/logo.png)
+<p align="center"><img src="https://github.com/wazo-platform/wazo-platform.org/raw/master/static/images/logo.png" height="200"></p>
+
 # wazo-auth
 
 [![Build Status](https://jenkins.wazo.community/buildStatus/icon?job=wazo-auth)](https://jenkins.wazo.community/job/wazo-auth)
