@@ -1,16 +1,14 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
-from sqlalchemy import and_, exc, select, join, alias
+from sqlalchemy import and_, exc
 from .base import BaseDAO, PaginatorMixin
 from . import filters
 from ..models import (
     ExternalAuthConfig,
     ExternalAuthType,
-    Session,
     Tenant,
-    Token,
     User,
     UserExternalAuth,
 )
@@ -248,20 +246,11 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if tenant_uuids is not None:
             filter_ = and_(filter_, User.tenant_uuid.in_(tenant_uuids))
 
-        # Subquery to find users session
-        sessions_query = alias(
-            select([Token.auth_id]).select_from(join(Token, Session))
-        )
-
         query = (
             self.session.query(UserExternalAuth.user_uuid)
             .outerjoin(ExternalAuthType)
             .outerjoin(User)
-            .join(
-                sessions_query, sessions_query.c.auth_id == UserExternalAuth.user_uuid
-            )
             .filter(filter_)
-            .distinct()
         )
 
         return query

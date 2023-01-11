@@ -1,4 +1,4 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -10,6 +10,7 @@ from hamcrest import (
     assert_that,
     contains_exactly,
     contains_inanyorder,
+    empty,
     equal_to,
     greater_than_or_equal_to,
     has_entries,
@@ -174,44 +175,34 @@ class TestExternalAuthAPI(base.ExternalAuthIntegrationTest):
             ),
         )
 
-    @fixtures.http.session()
-    @fixtures.http.user_register(username='test', password='secret')
-    def test_list_connected_users(self, session1, user2):
-        self.client.external.create('foo', session1['user_uuid'], {})
-        self.client.external.create('foo', user2['uuid'], {})
+    @fixtures.http.user_register()
+    def test_list_connected_users(self, user):
+        self.client.external.create('foo', user['uuid'], {})
 
         base.assert_http_error(
             404, self.client.external.list_connected_users, 'unknown'
         )
 
-        results = self.client.external.list_connected_users('foo')
+        results = self.client.external.list_connected_users('foo', recurse=True)
         assert_that(
             results,
             has_entries(
                 total=equal_to(1),
                 filtered=equal_to(1),
                 items=contains_inanyorder(
-                    has_entries(uuid=session1['user_uuid']),
+                    has_entries(uuid=user['uuid']),
                 ),
             ),
         )
 
-        client = self.make_auth_client(username=user2['username'], password='secret')
-        token = client.token.new()
-        try:
-            results = self.client.external.list_connected_users('foo', recurse=True)
-        finally:
-            client.token.revoke(token['token'])
-
+        self.client.external.delete('foo', user['uuid'])
+        results = self.client.external.list_connected_users('foo', recurse=True)
         assert_that(
             results,
             has_entries(
-                total=2,
-                filtered=2,
-                items=contains_inanyorder(
-                    has_entries(uuid=session1['user_uuid']),
-                    has_entries(uuid=user2['uuid']),
-                ),
+                total=equal_to(0),
+                filtered=equal_to(0),
+                items=empty(),
             ),
         )
 

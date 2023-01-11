@@ -1,5 +1,9 @@
 # Changelog
 
+## 23.01
+
+* `GET /external/{auth_type}/users`: no longer discards user without an active session with the stack, all users with a token with the service will be returned
+
 ## 22.17
 
 * Added a new endpoint to retrieve the list of connected users registered with the specified auth type
