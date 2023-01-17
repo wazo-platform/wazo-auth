@@ -1,4 +1,4 @@
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import abc
@@ -65,7 +65,9 @@ class BaseMetadata(metaclass=abc.ABCMeta):
 
         These data are used in the body of the GET and POST of the /token
         """
-        user_uuid = self._user_service.get_user_uuid_by_login(login)
+        user_uuid = self._user_service.get_user_uuid_by_login(
+            login, case_sensitive=args.pop('case_sensitive', True)
+        )
         user = self._user_service.list_users(uuid=user_uuid)[0]
         metadata = {
             'uuid': user['uuid'],

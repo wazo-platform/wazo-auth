@@ -1,4 +1,4 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import ldap
@@ -137,6 +137,15 @@ class BaseLDAPIntegrationTest(base.BaseIntegrationTest):
             search_only=False,
         ),
         Contact(
+            cn='Boba Fett',
+            uid='bfett',
+            password='bobafett_password',
+            mail='bobafett@wazo-auth.com',
+            login_attribute='cn',
+            employee_type='human',
+            search_only=False,
+        ),
+        Contact(
             cn='Humpty Dumpty',
             uid='humptydumpty',
             password='humptydumpty_password',
@@ -233,6 +242,9 @@ class TestLDAP(BaseLDAPIntegrationTest):
     @fixtures.http.user(
         email_address='jsparrow@wazo-auth.com', tenant_uuid=TENANT_1_UUID
     )
+    @fixtures.http.user(
+        email_address='BObAFett@wazo-auth.com', tenant_uuid=TENANT_1_UUID
+    )
     @fixtures.http.ldap_config(
         tenant_uuid=TENANT_1_UUID,
         host='slapd',
@@ -244,7 +256,7 @@ class TestLDAP(BaseLDAPIntegrationTest):
         user_email_attribute='mail',
     )
     def test_ldap_authentication_works_when_login_with_case_sensitive_email_address(
-        self, tenant, user, _
+        self, tenant, user1, user2, _
     ):
         response = self._post_token(
             'JSparrow@WAZO-auth.com',
@@ -253,7 +265,14 @@ class TestLDAP(BaseLDAPIntegrationTest):
             tenant_id=tenant['uuid'],
         )
         assert_that(
-            response, has_entries(metadata=has_entries(pbx_user_uuid=user['uuid']))
+            response, has_entries(metadata=has_entries(pbx_user_uuid=user1['uuid']))
+        )
+
+        response = self._post_token(
+            'bobafett@wazo-auth.com',
+            'bobafett_password',
+            backend='ldap_user',
+            tenant_id=tenant['uuid'],
         )
 
     @fixtures.http.tenant(
