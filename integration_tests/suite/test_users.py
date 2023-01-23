@@ -1,4 +1,4 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from datetime import datetime
@@ -290,7 +290,9 @@ class TestUsers(base.APIIntegrationTest):
     def test_put_with_same_login(self, u1, *_):
         uuid = u1['uuid']
         assert_http_error(409, self.client.users.edit, uuid, username='u2@example.com')
+        assert_http_error(409, self.client.users.edit, uuid, username='U2@exAmple.com')
         assert_http_error(409, self.client.users.edit, uuid, username='u3@example.com')
+        assert_http_error(409, self.client.users.edit, uuid, username='U3@exAmple.com')
 
     def test_register_post(self):
         args = {

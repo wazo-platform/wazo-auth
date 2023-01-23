@@ -1,4 +1,4 @@
-# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that, contains_inanyorder, empty, has_entries
@@ -70,11 +70,13 @@ class TestEmails(base.APIIntegrationTest):
     @fixtures.http.user(username='bar', email_address='bar@example.com')
     def test_duplicate_email(self, foo, bar):
         duplicated_emails = [
-            {'address': 'bar@example.com', 'main': True, 'confirmed': True}
+            {'address': 'bar@example.com', 'main': True, 'confirmed': True},
+            {'address': 'bAr@example.com', 'main': True, 'confirmed': True},
         ]
-        assert_http_error(
-            409, self.client.users.update_emails, foo['uuid'], duplicated_emails
-        )
+        for duplicate in duplicated_emails:
+            assert_http_error(
+                409, self.client.users.update_emails, foo['uuid'], [duplicate]
+            )
 
     @fixtures.http.user()
     @fixtures.http.user(username='u2@example.com')
@@ -88,8 +90,20 @@ class TestEmails(base.APIIntegrationTest):
         email = {'address': 'u2@example.com', 'main': True, 'confirmed': False}
         assert_http_error(409, self.client.users.update_emails, uuid, [email])
 
+        email = {'address': 'U2@exAmple.com', 'main': True, 'confirmed': True}
+        assert_http_error(409, self.client.users.update_emails, uuid, [email])
+
+        email = {'address': 'U2@exAmple.com', 'main': True, 'confirmed': False}
+        assert_http_error(409, self.client.users.update_emails, uuid, [email])
+
         email = {'address': 'u3@example.com', 'main': True, 'confirmed': True}
         assert_http_error(409, self.client.users.update_emails, uuid, [email])
 
         email = {'address': 'u3@example.com', 'main': True, 'confirmed': False}
+        assert_http_error(409, self.client.users.update_emails, uuid, [email])
+
+        email = {'address': 'U3@exAmple.com', 'main': True, 'confirmed': True}
+        assert_http_error(409, self.client.users.update_emails, uuid, [email])
+
+        email = {'address': 'U3@exAmple.com', 'main': True, 'confirmed': False}
         assert_http_error(409, self.client.users.update_emails, uuid, [email])
