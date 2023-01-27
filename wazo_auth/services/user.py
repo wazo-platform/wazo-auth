@@ -107,8 +107,8 @@ class UserService(BaseService):
             return user
         raise exceptions.UnknownUserException(user_uuid)
 
-    def get_user_uuid_by_login(self, login, case_sensitive=True):
-        return self._dao.user.get_user_uuid_by_login(login, case_sensitive)
+    def get_user_uuid_by_login(self, login):
+        return self._dao.user.get_user_uuid_by_login(login)
 
     def list_groups(self, user_uuid, **kwargs):
         return self._dao.group.list_(user_uuid=user_uuid, **kwargs)

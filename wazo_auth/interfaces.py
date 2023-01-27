@@ -65,9 +65,7 @@ class BaseMetadata(metaclass=abc.ABCMeta):
 
         These data are used in the body of the GET and POST of the /token
         """
-        user_uuid = self._user_service.get_user_uuid_by_login(
-            login, case_sensitive=args.pop('case_sensitive', True)
-        )
+        user_uuid = self._user_service.get_user_uuid_by_login(login)
         user = self._user_service.list_users(uuid=user_uuid)[0]
         metadata = {
             'uuid': user['uuid'],

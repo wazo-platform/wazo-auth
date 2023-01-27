@@ -27,9 +27,7 @@ class LDAPUser(BaseAuthenticationBackend):
     def get_acl(self, login, args):
         backend_acl = args.get('acl', [])
         login_to_use = args.get('user_email') or login
-        user_uuid = self._user_service.get_user_uuid_by_login(
-            login_to_use, case_sensitive=False
-        )
+        user_uuid = self._user_service.get_user_uuid_by_login(login_to_use)
         group_acl = self._group_service.get_acl(user_uuid)
         user_acl = self._user_service.get_acl(user_uuid)
         return backend_acl + group_acl + user_acl
@@ -38,9 +36,7 @@ class LDAPUser(BaseAuthenticationBackend):
         args['case_sensitive'] = False
         metadata = super().get_metadata(login, args)
         login_to_use = args.get('user_email') or login
-        user_uuid = self._user_service.get_user_uuid_by_login(
-            login_to_use, case_sensitive=False
-        )
+        user_uuid = self._user_service.get_user_uuid_by_login(login_to_use)
         metadata['auth_id'] = user_uuid
         purpose = self._user_service.list_users(uuid=user_uuid)[0]['purpose']
         for plugin in self._purposes.get(purpose).metadata_plugins:

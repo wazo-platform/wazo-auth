@@ -232,14 +232,11 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             raise exceptions.UnknownUserUUIDException(user_uuid)
         return row.password_hash, row.password_salt
 
-    def get_user_uuid_by_login(self, login, case_sensitive=True):
+    def get_user_uuid_by_login(self, login):
         if not login:
             raise exceptions.UnknownLoginException(login)
 
-        email_filter = Email.address == login
-        if not case_sensitive:
-            email_filter = func.lower(Email.address) == func.lower(login)
-
+        email_filter = func.lower(Email.address) == func.lower(login)
         query = (
             self.session.query(User.uuid)
             .outerjoin(Email)
@@ -254,10 +251,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if row:
             return row.uuid
 
-        username_filter = User.username == login
-        if not case_sensitive:
-            username_filter = func.lower(User.username) == func.lower(login)
-
+        username_filter = func.lower(User.username) == func.lower(login)
         query = self.session.query(User.uuid).filter(and_(username_filter))
         row = query.first()
         if not row:
