@@ -87,7 +87,7 @@ enabled_http_plugins:
 ```sh
 apt-get install libldap2-dev libpq-dev python-dev libffi-dev libyaml-dev libsasl2-dev
 pip install tox
-tox --recreate -e py37
+tox --recreate -e py39
 ```
 
 ### Running integration tests
