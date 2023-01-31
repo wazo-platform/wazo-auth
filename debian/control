@@ -2,7 +2,7 @@ Source: wazo-auth
 Section: python
 Priority: extra
 Maintainer: Wazo Maintainers <dev.wazo@gmail.com>
-Build-Depends: debhelper (>= 10), dh-python, python3-all, python3-setuptools
+Build-Depends: debhelper (>= 12), dh-python, python3-all, python3-setuptools
 Standards-Version: 3.9.6
 X-Python-Version: >= 3.9
 
