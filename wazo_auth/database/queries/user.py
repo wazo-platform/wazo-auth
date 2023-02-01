@@ -371,7 +371,10 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return True if row else False
 
     def _login_filter(self, login):
-        return or_(User.username == login, Email.address == login)
+        return or_(
+            func.lower(User.username) == login.lower(),
+            func.lower(Email.address) == login.lower(),
+        )
 
     def _add_user_email(self, user_uuid, args):
         args.setdefault('confirmed', False)

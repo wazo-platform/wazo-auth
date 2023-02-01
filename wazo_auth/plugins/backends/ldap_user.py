@@ -155,8 +155,12 @@ class LDAPUser(BaseAuthenticationBackend):
             user_emails = user.get('emails')
             if user_emails:
                 for email in user_emails:
-                    if caseless_equal(email['address'], user_email):
+                    if caseless_equal(email.get('address', ''), user_email):
                         return user
+            username = user.get('username')
+            if username:
+                if caseless_equal(username, user_email):
+                    return user
         logger.warning(
             '%s does not have an email associated with an auth user', user_email
         )

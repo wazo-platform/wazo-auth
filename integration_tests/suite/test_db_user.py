@@ -1,4 +1,4 @@
-# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -690,13 +690,25 @@ class TestUserDAO(base.DAOTestCase):
         result = self._user_dao.login_exists('u1@example.com')
         assert_that(result, equal_to(True))
 
+        result = self._user_dao.login_exists('U1@exAmple.com')
+        assert_that(result, equal_to(True))
+
         result = self._user_dao.login_exists('u2@example.com')
+        assert_that(result, equal_to(True))
+
+        result = self._user_dao.login_exists('U2@exAmple.com')
         assert_that(result, equal_to(True))
 
         result = self._user_dao.login_exists('u3@example.com')
         assert_that(result, equal_to(True))
 
+        result = self._user_dao.login_exists('U3@exAmple.com')
+        assert_that(result, equal_to(True))
+
         result = self._user_dao.login_exists('u4@example.com')
+        assert_that(result, equal_to(True))
+
+        result = self._user_dao.login_exists('U4@exAmple.com')
         assert_that(result, equal_to(True))
 
         result = self._user_dao.login_exists('unknown@example.com')

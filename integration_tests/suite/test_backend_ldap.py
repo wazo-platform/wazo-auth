@@ -140,8 +140,8 @@ class BaseLDAPIntegrationTest(base.BaseIntegrationTest):
             cn='Boba Fett',
             uid='bfett',
             password='bobafett_password',
-            mail='bobafett@wazo-auth.com',
-            login_attribute='cn',
+            mail='bobaFett@wazo-auth.com',
+            login_attribute='mail',
             employee_type='human',
             search_only=False,
         ),
@@ -238,6 +238,7 @@ class TestLDAP(BaseLDAPIntegrationTest):
     @fixtures.http.tenant(
         uuid=TENANT_1_UUID,
         slug='mytenant',
+        domain_names=['wazo.community'],
     )
     @fixtures.http.user(
         email_address='jsparrow@wazo-auth.com', tenant_uuid=TENANT_1_UUID
@@ -262,7 +263,7 @@ class TestLDAP(BaseLDAPIntegrationTest):
             'JSparrow@WAZO-auth.com',
             'jsparrow_password',
             backend='ldap_user',
-            tenant_id=tenant['uuid'],
+            domain_name=tenant['domain_names'][0],
         )
         assert_that(
             response, has_entries(metadata=has_entries(pbx_user_uuid=user1['uuid']))
@@ -272,7 +273,36 @@ class TestLDAP(BaseLDAPIntegrationTest):
             'bobafett@wazo-auth.com',
             'bobafett_password',
             backend='ldap_user',
-            tenant_id=tenant['uuid'],
+            domain_name=tenant['domain_names'][0],
+        )
+
+    @fixtures.http.tenant(
+        uuid=TENANT_1_UUID,
+        slug='mytenant',
+        domain_names=['wazo.community', 'cust-42.myclients.com'],
+    )
+    @fixtures.http.user(username='bobafett@wazo-auth.com', tenant_uuid=TENANT_1_UUID)
+    @fixtures.http.ldap_config(
+        tenant_uuid=TENANT_1_UUID,
+        host='slapd',
+        port=LDAP_PORT,
+        bind_dn='cn=wazo_auth,ou=people,dc=wazo-auth,dc=wazo,dc=community',
+        bind_password='S3cr$t',
+        user_base_dn='ou=quebec,ou=people,dc=wazo-auth,dc=wazo,dc=community',
+        user_login_attribute='mail',
+        user_email_attribute='mail',
+    )
+    def test_ldap_authentication_when_user_has_no_email_address_but_username(
+        self, tenant, user, _
+    ):
+        response = self._post_token(
+            'bobafett@wazo-auth.com',
+            'bobafett_password',
+            backend='ldap_user',
+            domain_name=tenant['domain_names'][0],
+        )
+        assert_that(
+            response, has_entries(metadata=has_entries(pbx_user_uuid=user['uuid']))
         )
 
     @fixtures.http.tenant(
