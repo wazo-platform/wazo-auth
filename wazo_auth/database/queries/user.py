@@ -1,7 +1,7 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from sqlalchemy import and_, or_, exc, text
+from sqlalchemy import and_, or_, exc, func, text
 from sqlalchemy.orm import joinedload
 from .base import BaseDAO, PaginatorMixin
 from . import filters
@@ -236,12 +236,13 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if not login:
             raise exceptions.UnknownLoginException(login)
 
+        email_filter = func.lower(Email.address) == func.lower(login)
         query = (
             self.session.query(User.uuid)
             .outerjoin(Email)
             .filter(
                 and_(
-                    Email.address == login,
+                    email_filter,
                     Email.confirmed.is_(True),
                 )
             )
@@ -250,7 +251,8 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if row:
             return row.uuid
 
-        query = self.session.query(User.uuid).filter(and_(User.username == login))
+        username_filter = func.lower(User.username) == func.lower(login)
+        query = self.session.query(User.uuid).filter(and_(username_filter))
         row = query.first()
         if not row:
             raise exceptions.UnknownLoginException(login)

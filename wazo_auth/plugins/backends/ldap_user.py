@@ -1,4 +1,4 @@
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import ldap
@@ -9,6 +9,10 @@ from ldap.dn import escape_dn_chars
 from wazo_auth import BaseAuthenticationBackend
 
 logger = logging.getLogger(__name__)
+
+
+def caseless_equal(str1: str, str2: str):
+    return str1.casefold() == str2.casefold()
 
 
 class LDAPUser(BaseAuthenticationBackend):
@@ -29,6 +33,7 @@ class LDAPUser(BaseAuthenticationBackend):
         return backend_acl + group_acl + user_acl
 
     def get_metadata(self, login, args):
+        args['case_sensitive'] = False
         metadata = super().get_metadata(login, args)
         login_to_use = args.get('user_email') or login
         user_uuid = self._user_service.get_user_uuid_by_login(login_to_use)
@@ -150,7 +155,7 @@ class LDAPUser(BaseAuthenticationBackend):
             user_emails = user.get('emails')
             if user_emails:
                 for email in user_emails:
-                    if email['address'] == user_email:
+                    if caseless_equal(email['address'], user_email):
                         return user
         logger.warning(
             '%s does not have an email associated with an auth user', user_email
