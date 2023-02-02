@@ -12,6 +12,9 @@ import sqlalchemy as sa
 revision = '8a04704df15a'
 down_revision = '07a6bb53c284'
 
+USERNAME_IDX = 'auth_user_username_key'
+EMAIL_IDX = 'auth_email_address_key'
+
 users_tbl = sa.sql.table(
     'auth_user',
     sa.Column('uuid'),
@@ -55,9 +58,15 @@ def fix_duplicate(duplicates, table, field_name):
         duplicate_counter = 0
         for dup_user in duplicate[1:]:
             new_value = f"duplicate{duplicate_counter}_{dup_user['value']}"
-            print('Renaming duplicate {} {} to {}'.format(field_name, dup_user['value'], new_value))
-            query = sa.sql.update(table).where(table.c.uuid == dup_user['uuid']).values(
-                **{field_name: new_value}
+            print(
+                'Renaming duplicate {} {} to {}'.format(
+                    field_name, dup_user['value'], new_value
+                )
+            )
+            query = (
+                sa.sql.update(table)
+                .where(table.c.uuid == dup_user['uuid'])
+                .values(**{field_name: new_value})
             )
             op.get_bind().execute(query)
             duplicate_counter += 1
@@ -69,6 +78,16 @@ def upgrade():
     duplicate_emails = find_duplicates(find_all_emails())
     fix_duplicate(duplicate_emails, email_tbl, 'address')
 
+    op.drop_index(USERNAME_IDX, 'auth_user')
+    op.create_index(
+        USERNAME_IDX, 'auth_user', [sa.text('lower(username)')], unique=True
+    )
+    op.drop_index(EMAIL_IDX, 'auth_email')
+    op.create_index(EMAIL_IDX, 'auth_email', [sa.text('lower(address)')], unique=True)
+
 
 def downgrade():
-    pass
+    op.drop_index(USERNAME_IDX, 'auth_user')
+    op.execute(f'CREATE UNIQUE INDEX {USERNAME_IDX} ON auth_user (username);')
+    op.drop_index(EMAIL_IDX, 'auth_email')
+    op.execute(f'CREATE UNIQUE INDEX {EMAIL_IDX} ON auth_email (address);')
