@@ -86,16 +86,12 @@ definitions:
     properties:
       scope:
         description: Scope permissions requested
-        example:
-          - offline_access
-          - Contacts.Read
         type: array
         items:
           type: string
         default:
-          scope:
-            - offline_access
-            - Contacts.Read
+          - offline_access
+          - Contacts.Read
   MicrosoftPostResult:
     type: object
     required:

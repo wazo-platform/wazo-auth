@@ -86,16 +86,12 @@ definitions:
     properties:
       scope:
         description: Scope permissions requested
-        example:
-          - https://www.googleapis.com/auth/userinfo.profile
-          - https://www.googleapis.com/auth/contacts
         type: array
         items:
           type: string
         default:
-          scope:
-            - https://www.googleapis.com/auth/userinfo.profile
-            - https://www.googleapis.com/auth/contacts
+          - https://www.googleapis.com/auth/userinfo.profile
+          - https://www.googleapis.com/auth/contacts
   GooglePostResult:
     type: object
     required:
