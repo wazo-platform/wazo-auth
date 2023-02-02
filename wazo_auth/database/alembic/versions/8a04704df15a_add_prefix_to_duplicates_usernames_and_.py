@@ -78,16 +78,16 @@ def upgrade():
     duplicate_emails = find_duplicates(find_all_emails())
     fix_duplicate(duplicate_emails, email_tbl, 'address')
 
-    op.drop_index(USERNAME_IDX, 'auth_user')
+    op.drop_constraint(USERNAME_IDX, 'auth_user')
     op.create_index(
         USERNAME_IDX, 'auth_user', [sa.text('lower(username)')], unique=True
     )
-    op.drop_index(EMAIL_IDX, 'auth_email')
+    op.drop_constraint(EMAIL_IDX, 'auth_email')
     op.create_index(EMAIL_IDX, 'auth_email', [sa.text('lower(address)')], unique=True)
 
 
 def downgrade():
     op.drop_index(USERNAME_IDX, 'auth_user')
-    op.execute(f'CREATE UNIQUE INDEX {USERNAME_IDX} ON auth_user (username);')
+    op.create_unique_constraint(USERNAME_IDX, 'auth_user', ['username'])
     op.drop_index(EMAIL_IDX, 'auth_email')
-    op.execute(f'CREATE UNIQUE INDEX {EMAIL_IDX} ON auth_email (address);')
+    op.create_unique_constraint(EMAIL_IDX, 'auth_email', ['address'])

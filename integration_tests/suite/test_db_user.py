@@ -316,7 +316,7 @@ class TestUserDAO(base.DAOTestCase):
         assert_that(
             calling(self._user_dao.create).with_args(
                 username='bar',
-                email_address='foobar@example.com',
+                email_address='fooBar@example.com',
                 tenant_uuid=self.top_tenant_uuid,
                 hash_='hash_two',
                 salt=self.salt,

@@ -1,4 +1,4 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import (
@@ -50,11 +50,12 @@ class Address(Base):
 class Email(Base):
 
     __tablename__ = 'auth_email'
+    __table_args__ = (Index('auth_email_address_key', func.lower('address'), unique=True),)
 
     uuid = Column(
         String(38), server_default=text('uuid_generate_v4()'), primary_key=True
     )
-    address = Column(Text, unique=True, nullable=False)
+    address = Column(Text, nullable=False)
     confirmed = Column(Boolean, nullable=False, default=False)
     main = Column(Boolean, nullable=False, default=False)
     user_uuid = Column(
@@ -298,11 +299,12 @@ class Policy(Base):
 class User(Base):
 
     __tablename__ = 'auth_user'
+    __table_args__ = (Index('auth_user_username_key', func.lower('username'), unique=True),)
 
     uuid = Column(
         String(38), server_default=text('uuid_generate_v4()'), primary_key=True
     )
-    username = Column(String(256), unique=True)
+    username = Column(String(256))
     firstname = Column(Text)
     lastname = Column(Text)
     password_hash = Column(Text)
