@@ -8,7 +8,6 @@ from wazo_auth.schemas import BaseSchema
 
 
 class PolicyFullSchema(BaseSchema):
-
     uuid = fields.String(dump_only=True)
     tenant_uuid = fields.String(dump_only=True, attribute='tenant_uuid_exposed')
     name = fields.String(validate=validate.Length(min=1, max=80), required=True)
@@ -28,7 +27,6 @@ class PolicyFullSchema(BaseSchema):
 
 
 class PolicyPutSchema(PolicyFullSchema):
-
     slug = fields.String(dump_only=True)
     shared = fields.String(dump_only=True)
 

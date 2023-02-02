@@ -1,4 +1,4 @@
-# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest.mock import ANY
@@ -253,7 +253,6 @@ class TestTenantDAO(base.DAOTestCase):
 
     @fixtures.db.tenant(name='foobar', domain_names=VALID_DOMAIN_NAMES_1)
     def test_tenants_with_duplicate_domain_names_creation_raises_409(self, foobar_uuid):
-
         uuid = uuid4()
         assert_that(
             calling(self._create_tenant).with_args(uuid=uuid, domain_names=['wazo.io']),
@@ -283,7 +282,6 @@ class TestTenantDAO(base.DAOTestCase):
 
     @fixtures.db.tenant(domain_names=VALID_DOMAIN_NAMES_1)
     def test_delete_tenant_with_children(self, tenant_uuid):
-
         a_uuid = self._create_tenant(
             name='a', parent_uuid=tenant_uuid, domain_names=VALID_DOMAIN_NAMES_2
         )
@@ -358,7 +356,6 @@ class TestTenantDAO(base.DAOTestCase):
     def _assert_tenant_matches(
         self, uuid, name, parent_uuid=ANY_UUID, slug=ANY, domain_names=None
     ):
-
         assert_that(uuid, equal_to(ANY_UUID))
         s = self._tenant_dao.session
         tenant = (
@@ -377,7 +374,6 @@ class TestTenantDAO(base.DAOTestCase):
         )
 
         if domain_names:
-
             filter_ = models.Domain.name.in_(domain_names)
             names = s.query(models.Domain.name).filter(filter_).all()
             names = [name[0] for name in names]
@@ -413,7 +409,6 @@ class TestTenantDAO(base.DAOTestCase):
 
     @fixtures.db.tenant(name='1', uuid=TENANT_UUID_1, domain_names=VALID_DOMAIN_NAMES_1)
     def test_update_tenant_domain_names(self, *_):
-
         self._tenant_dao.update(
             TENANT_UUID_1, name='1-updated', domain_names=['wazo.io']
         )
@@ -425,7 +420,6 @@ class TestTenantDAO(base.DAOTestCase):
     @fixtures.db.tenant(name='1', uuid=TENANT_UUID_1, domain_names=VALID_DOMAIN_NAMES_1)
     @fixtures.db.tenant(name='2', uuid=TENANT_UUID_2, domain_names=VALID_DOMAIN_NAMES_2)
     def test_update_tenant_with_duplicate_domain_names_raises_409(self, *_):
-
         assert_that(
             calling(self._tenant_dao.update).with_args(
                 tenant_uuid=TENANT_UUID_2, domain_names=['wazo.io']

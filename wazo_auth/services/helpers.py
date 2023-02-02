@@ -1,4 +1,4 @@
-# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -29,7 +29,6 @@ class BaseService:
 
 
 class TemplateLoader(BaseLoader):
-
     _templates = {
         'email_confirmation': 'email_confirmation_template',
         'email_confirmation_get_body': 'email_confirmation_get_response_body_template',

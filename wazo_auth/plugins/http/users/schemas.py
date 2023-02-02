@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo.mallow import fields
@@ -7,7 +7,6 @@ from wazo_auth.schemas import BaseSchema
 
 
 class _BaseUserSchema(BaseSchema):
-
     username = fields.String(
         validate=validate.Length(min=1, max=256), missing=None, allow_none=True
     )
@@ -20,7 +19,6 @@ class _BaseUserSchema(BaseSchema):
 
 
 class UserPostSchema(_BaseUserSchema):
-
     uuid = fields.UUID()
     password = fields.String(validate=validate.Length(min=1), allow_none=True)
     email_address = fields.Email(allow_none=True)
@@ -31,6 +29,5 @@ class UserPutSchema(_BaseUserSchema):
 
 
 class ChangePasswordSchema(BaseSchema):
-
     old_password = fields.String(validate=validate.Length(min=1), required=True)
     new_password = fields.String(validate=validate.Length(min=1), required=True)

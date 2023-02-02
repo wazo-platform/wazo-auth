@@ -215,7 +215,6 @@ class UserService(BaseService):
 
 
 class PasswordEncrypter:
-
     _salt_len = 64
     _hash_algo = 'sha512'
     _iterations = 250000

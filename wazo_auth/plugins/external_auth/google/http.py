@@ -1,4 +1,4 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -27,7 +27,6 @@ os.environ['OAUTHLIB_IGNORE_SCOPE_CHANGE'] = '1'
 
 
 class GoogleAuth(http.AuthResource):
-
     auth_type = 'google'
 
     def __init__(self, external_auth_service, user_service, config):

@@ -26,7 +26,6 @@ USER_UUID_2 = str(uuid.uuid4())
 
 @base.use_asset('database')
 class TestExternalAuthDAO(base.DAOTestCase):
-
     auth_type = 'foobarcrm'
     data = {
         'string_value': 'an_important_value',

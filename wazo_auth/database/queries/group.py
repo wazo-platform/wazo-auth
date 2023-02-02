@@ -1,4 +1,4 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, text
@@ -10,7 +10,6 @@ from ...slug import Slug
 
 
 class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
-
     constraint_to_column_map = {'auth_group_name_key': 'name'}
     search_filter = filters.group_search_filter
     strict_filter = filters.group_strict_filter

@@ -1,4 +1,4 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import post_dump, post_load
@@ -10,7 +10,6 @@ BaseSchema = mallow.Schema
 
 
 class GroupRequestSchema(BaseSchema):
-
     name = fields.String(validate=validate.Length(min=1, max=128), required=True)
     slug = fields.String(
         validate=[validate.Length(min=1, max=80), validate.Regexp(Slug.valid_re())],
@@ -19,7 +18,6 @@ class GroupRequestSchema(BaseSchema):
 
 
 class GroupPutSchema(GroupRequestSchema):
-
     slug = fields.String(dump_only=True)
 
 
@@ -36,7 +34,6 @@ class GroupFullSchema(BaseSchema):
 
 
 class TenantAddress(BaseSchema):
-
     line_1 = fields.String(
         validate=validate.Length(min=1, max=256), missing=None, default=None
     )
@@ -61,7 +58,6 @@ empty_tenant_address = TenantAddress().dump({})
 
 
 class TenantFullSchema(BaseSchema):
-
     uuid = fields.UUID(missing=None)
     parent_uuid = fields.UUID(dump_only=True)
     name = fields.String(
@@ -107,7 +103,6 @@ class TenantFullSchema(BaseSchema):
 
 
 class TenantPUTSchema(TenantFullSchema):
-
     slug = fields.String(dump_only=True)
 
 

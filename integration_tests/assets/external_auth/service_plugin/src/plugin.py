@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -19,7 +19,6 @@ def new_state():
 
 
 class FooService(http.AuthResource):
-
     auth_type = 'foo'
     states = {}
 
@@ -59,7 +58,6 @@ class FooService(http.AuthResource):
 
 
 class BarService(http.AuthResource):
-
     auth_type = 'bar'
 
     def __init__(self, external_auth_service):
@@ -86,7 +84,6 @@ class BarService(http.AuthResource):
 
 
 class BarSafeData(Schema):
-
     scope = fields.List(fields.String)
 
     @pre_load
@@ -95,7 +92,6 @@ class BarSafeData(Schema):
 
 
 class BarPlugin(object):
-
     plugin_info = {'foo': 'bar'}
 
     def load(self, dependencies):

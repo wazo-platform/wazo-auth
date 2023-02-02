@@ -272,7 +272,6 @@ class TestExternalAuthAPI(base.ExternalAuthIntegrationTest):
 
 @base.use_asset('external_auth')
 class TestExternalAuthConfigAPI(base.ExternalAuthIntegrationTest):
-
     EXTERNAL_AUTH_TYPE = 'an-external-auth-type'
     SECRET = {'client_id': 'a-client-id', 'client_secret': 'a-client-secret'}
 

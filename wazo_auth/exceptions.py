@@ -28,7 +28,6 @@ class TokenServiceException(Exception):
 
 
 class AuthenticationFailedException(TokenServiceException):
-
     code = 401
     _msg = 'Authentication Failed'
 
@@ -206,37 +205,30 @@ class _BaseParamException(APIException):
 
 
 class GroupParamException(_BaseParamException):
-
     resource = 'groups'
 
 
 class InitParamException(_BaseParamException):
-
     resource = 'init'
 
 
 class TenantParamException(_BaseParamException):
-
     resource = 'tenants'
 
 
 class PasswordChangeException(_BaseParamException):
-
     resource = 'users'
 
 
 class UserParamException(_BaseParamException):
-
     resource = 'users'
 
 
 class EmailUpdateException(_BaseParamException):
-
     resource = 'emails'
 
 
 class InvalidInputException(TokenServiceException):
-
     code = 400
 
     def __init__(self, field):
@@ -248,7 +240,6 @@ class InvalidInputException(TokenServiceException):
 
 
 class InvalidLimitException(TokenServiceException):
-
     code = 400
 
     def __init__(self, limit):
@@ -260,7 +251,6 @@ class InvalidLimitException(TokenServiceException):
 
 
 class InvalidOffsetException(TokenServiceException):
-
     code = 400
 
     def __init__(self, offset):
@@ -272,7 +262,6 @@ class InvalidOffsetException(TokenServiceException):
 
 
 class InvalidSortColumnException(TokenServiceException):
-
     code = 400
 
     def __init__(self, field):
@@ -284,7 +273,6 @@ class InvalidSortColumnException(TokenServiceException):
 
 
 class InvalidSortDirectionException(TokenServiceException):
-
     code = 400
 
     def __init__(self, direction):
@@ -310,7 +298,6 @@ class MasterTenantConflictException(APIException):
 
 
 class DuplicatePolicyException(TokenServiceException):
-
     code = 409
 
     def __init__(self, name):
@@ -330,7 +317,6 @@ class DuplicatedRefreshTokenException(Exception):
 
 
 class DuplicateAccessException(TokenServiceException):
-
     code = 409
 
     def __init__(self, access):
@@ -342,7 +328,6 @@ class DuplicateAccessException(TokenServiceException):
 
 
 class UnknownPolicyException(TokenServiceException):
-
     code = 404
 
     def __init__(self, policy_uuid):
@@ -353,7 +338,6 @@ class UnknownPolicyException(TokenServiceException):
 
 
 class ReadOnlyPolicyException(TokenServiceException):
-
     code = 403
 
     def __init__(self, policy_uuid):
@@ -364,7 +348,6 @@ class ReadOnlyPolicyException(TokenServiceException):
 
 
 class UnknownTokenException(TokenServiceException):
-
     code = 404
 
     def __str__(self):
@@ -372,7 +355,6 @@ class UnknownTokenException(TokenServiceException):
 
 
 class MissingAccessTokenException(TokenServiceException):
-
     code = 403
 
     def __init__(self, required_access):
@@ -385,7 +367,6 @@ class MissingAccessTokenException(TokenServiceException):
 
 
 class MissingTenantTokenException(TokenServiceException):
-
     code = 403
 
     def __init__(self, tenant_uuid):
@@ -412,7 +393,6 @@ class DomainAlreadyExistException(APIException):
 
 
 class DuplicateGroupException(TokenServiceException):
-
     code = 409
 
     def __init__(self, name):

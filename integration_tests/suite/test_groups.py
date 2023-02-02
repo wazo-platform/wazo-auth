@@ -1,4 +1,4 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from functools import partial
@@ -25,7 +25,6 @@ from .helpers.constants import (
 
 @base.use_asset('base')
 class TestGroups(base.APIIntegrationTest):
-
     invalid_bodies = [{}, {'name': None}, {'name': 42}, {'not name': 'foobar'}]
 
     @fixtures.http.group(name='foobar')

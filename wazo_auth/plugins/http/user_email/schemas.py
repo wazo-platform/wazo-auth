@@ -1,4 +1,4 @@
-# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import post_load, validates_schema, ValidationError
@@ -7,14 +7,12 @@ from wazo_auth.schemas import BaseSchema
 
 
 class _AdminEmailSchema(BaseSchema):
-
     address = fields.Email(required=True)
     confirmed = fields.Boolean(missing=None, allow_none=True)
     main = fields.Boolean(missing=False)
 
 
 class _UserEmailSchema(BaseSchema):
-
     address = fields.Email(required=True)
     main = fields.Boolean(missing=False)
 

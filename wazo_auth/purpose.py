@@ -1,4 +1,4 @@
-# Copyright 2018-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -31,7 +31,6 @@ class Purpose:
 
 
 class Purposes:
-
     valid_purposes = ['user', 'internal', 'external_api']
 
     def __init__(self, purposes_config, metadata_plugins):

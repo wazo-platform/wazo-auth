@@ -1,4 +1,4 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -11,7 +11,6 @@ from wazo_auth.tests.test_http import HTTPAppTestCase
 
 
 class TestTenantPost(HTTPAppTestCase):
-
     url = '/0.1/tenants'
 
     def setUp(self):
