@@ -40,9 +40,13 @@ def find_all_emails():
 
 def find_duplicates(results):
     duplicates = {}
-    only_lowercase_values = [value.lower() for (_, value) in results]
+    only_lowercase_values = [
+        value.lower() for (_, value) in results if value is not None
+    ]
 
     for uuid, value in results:
+        if value is None:
+            continue
         lower_value = value.lower()
         value_count = only_lowercase_values.count(lower_value)
         if value_count > 1:
