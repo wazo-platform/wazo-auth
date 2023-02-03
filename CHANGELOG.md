@@ -1,5 +1,11 @@
 # Changelog
 
+## 23.02
+
+* Username and e-mail addresses are now unique in a case insensitive way. This means that a user
+  with username `Bob` is now considered the same as a user with the username `bob`. Duplicates that
+  may be already present in the database will be prefixed with `duplicateXX`, `XX` being the occurence.
+
 ## 23.01
 
 * `GET /external/{auth_type}/users`: no longer discards user without an active session with the stack, all users with a token with the service will be returned
