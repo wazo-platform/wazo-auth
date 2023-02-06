@@ -33,7 +33,6 @@ USER_UUID = '00000000-0000-4000-9000-111111111111'
 
 @base.use_asset('database')
 class TestUserDAO(base.DAOTestCase):
-
     salt = os.urandom(64)
 
     @staticmethod

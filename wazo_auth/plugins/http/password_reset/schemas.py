@@ -1,4 +1,4 @@
-# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import ValidationError, validates_schema
@@ -7,14 +7,12 @@ from xivo.mallow import fields, validate
 
 
 class PasswordResetPostParameters(BaseSchema):
-
     password = fields.String(
         validate=validate.Length(min=1), required=True, allow_none=True
     )
 
 
 class PasswordResetQueryParameters(BaseSchema):
-
     username = fields.String(validate=validate.Length(min=1, max=256), missing=None)
     email_address = fields.Email(data_key='email', missing=None)
     login = fields.String(validate=validate.Length(min=1, max=256), missing=None)

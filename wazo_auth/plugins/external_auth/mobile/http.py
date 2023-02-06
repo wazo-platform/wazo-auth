@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -21,7 +21,6 @@ class MobileSchema(schemas.BaseSchema):
 
 
 class MobileAuthSenderID(http.AuthResource):
-
     auth_type = 'mobile'
 
     def __init__(self, external_auth_service, user_service):
@@ -36,7 +35,6 @@ class MobileAuthSenderID(http.AuthResource):
 
 
 class MobileAuth(http.AuthResource):
-
     auth_type = 'mobile'
 
     def __init__(self, external_auth_service, config):

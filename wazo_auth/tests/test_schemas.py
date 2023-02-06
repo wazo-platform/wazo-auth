@@ -1,4 +1,4 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -9,7 +9,6 @@ from .. import schemas
 
 
 class _Address:
-
     _fields = ['line_1', 'line_2', 'city', 'state', 'country', 'zip_code']
 
     def __init__(self, **kwargs):

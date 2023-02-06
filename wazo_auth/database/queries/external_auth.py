@@ -16,7 +16,6 @@ from ... import exceptions
 
 
 class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
-
     search_filter = filters.external_auth_search_filter
     strict_filter = filters.external_auth_strict_filter
     column_map = {'type': ExternalAuthType.name}

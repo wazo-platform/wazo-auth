@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, text
@@ -11,7 +11,6 @@ from ..models import RefreshToken
 
 
 class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
-
     strict_filter = filters.refresh_token_strict_filter
     search_filter = filters.refresh_token_search_filter
     column_map = {

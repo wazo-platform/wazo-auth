@@ -1,4 +1,4 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, or_, text
@@ -75,7 +75,6 @@ class _TenantStrictFilter(StrictFilter):
 
 
 class FilterMixin:
-
     search_filter = SearchFilter()
     strict_filter = StrictFilter()
 

@@ -30,7 +30,6 @@ RFC_DN_MAX_LENGTH = 253
 
 
 class Address(Base):
-
     __tablename__ = 'auth_address'
 
     id_ = Column(Integer, name='id', primary_key=True)
@@ -48,9 +47,10 @@ class Address(Base):
 
 
 class Email(Base):
-
     __tablename__ = 'auth_email'
-    __table_args__ = (Index('auth_email_address_key', func.lower('address'), unique=True),)
+    __table_args__ = (
+        Index('auth_email_address_key', func.lower('address'), unique=True),
+    )
 
     uuid = Column(
         String(38), server_default=text('uuid_generate_v4()'), primary_key=True
@@ -66,7 +66,6 @@ class Email(Base):
 
 
 class ExternalAuthConfig(Base):
-
     __tablename__ = 'auth_external_auth_config'
 
     tenant_uuid = Column(
@@ -81,7 +80,6 @@ class ExternalAuthConfig(Base):
 
 
 class ExternalAuthType(Base):
-
     __tablename__ = 'auth_external_auth_type'
 
     uuid = Column(
@@ -92,7 +90,6 @@ class ExternalAuthType(Base):
 
 
 class Group(Base):
-
     __tablename__ = 'auth_group'
 
     uuid = Column(
@@ -109,7 +106,6 @@ class Group(Base):
 
 
 class GroupPolicy(Base):
-
     __tablename__ = 'auth_group_policy'
 
     policy_uuid = Column(
@@ -121,7 +117,6 @@ class GroupPolicy(Base):
 
 
 class Tenant(Base):
-
     __tablename__ = 'auth_tenant'
 
     uuid = Column(
@@ -170,7 +165,6 @@ class Tenant(Base):
 
 
 class Domain(Base):
-
     __tablename__ = 'auth_tenant_domain'
     uuid = Column(
         String(36), server_default=text('uuid_generate_v4()'), primary_key=True
@@ -183,7 +177,6 @@ class Domain(Base):
 
 
 class Token(Base):
-
     __tablename__ = 'auth_token'
     __table_args__ = (Index('auth_token__idx__session_uuid', 'session_uuid'),)
 
@@ -207,7 +200,6 @@ class Token(Base):
 
 
 class RefreshToken(Base):
-
     __tablename__ = 'auth_refresh_token'
     __table_args__ = (UniqueConstraint('client_id', 'user_uuid'),)
 
@@ -238,7 +230,6 @@ class RefreshToken(Base):
 
 
 class Session(Base):
-
     __tablename__ = 'auth_session'
 
     uuid = Column(
@@ -253,7 +244,6 @@ class Session(Base):
 
 
 class Policy(Base):
-
     __tablename__ = 'auth_policy'
     __table_args__ = (
         UniqueConstraint('name', 'tenant_uuid'),
@@ -297,9 +287,10 @@ class Policy(Base):
 
 
 class User(Base):
-
     __tablename__ = 'auth_user'
-    __table_args__ = (Index('auth_user_username_key', func.lower('username'), unique=True),)
+    __table_args__ = (
+        Index('auth_user_username_key', func.lower('username'), unique=True),
+    )
 
     uuid = Column(
         String(38), server_default=text('uuid_generate_v4()'), primary_key=True
@@ -323,7 +314,6 @@ class User(Base):
 
 
 class UserExternalAuth(Base):
-
     __tablename__ = 'auth_user_external_auth'
     __table_args__ = (schema.UniqueConstraint('user_uuid', 'external_auth_type_uuid'),)
 
@@ -339,7 +329,6 @@ class UserExternalAuth(Base):
 
 
 class UserGroup(Base):
-
     __tablename__ = 'auth_user_group'
 
     user_uuid = Column(
@@ -351,7 +340,6 @@ class UserGroup(Base):
 
 
 class UserPolicy(Base):
-
     __tablename__ = 'auth_user_policy'
 
     user_uuid = Column(
@@ -363,7 +351,6 @@ class UserPolicy(Base):
 
 
 class Access(Base):
-
     __tablename__ = 'auth_access'
     __table_args__ = (UniqueConstraint('access'),)
 
@@ -372,7 +359,6 @@ class Access(Base):
 
 
 class PolicyAccess(Base):
-
     __tablename__ = 'auth_policy_access'
 
     policy_uuid = Column(
@@ -386,7 +372,6 @@ class PolicyAccess(Base):
 
 
 class LDAPConfig(Base):
-
     __tablename__ = 'auth_ldap_config'
 
     tenant_uuid = Column(

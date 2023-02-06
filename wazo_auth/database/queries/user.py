@@ -20,7 +20,6 @@ from ... import exceptions
 
 
 class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
-
     constraint_to_column_map = {
         'auth_user_pkey': 'uuid',
         'auth_user_username_key': 'username',

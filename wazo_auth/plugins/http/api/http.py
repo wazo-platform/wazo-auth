@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import yaml
@@ -12,7 +12,6 @@ from xivo.rest_api_helpers import load_all_api_specs
 
 
 class Swagger(Resource):
-
     api_filename = "api.yml"
 
     def get(self):

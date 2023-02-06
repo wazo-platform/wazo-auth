@@ -30,7 +30,6 @@ LDAP_PORT = 1389
 
 
 class LDAPHelper:
-
     BASE_DN = 'dc=wazo-auth,dc=wazo,dc=community'
     ADMIN_DN = f'cn=admin,{BASE_DN}'
     ADMIN_PASSWORD = 'wazopassword'
@@ -112,7 +111,6 @@ class LDAPHelper:
 
 @base.use_asset('base')
 class BaseLDAPIntegrationTest(base.BaseIntegrationTest):
-
     asset_cls = base.APIAssetLaunchingTestCase
     username = 'admin'
     password = 's3cre7'

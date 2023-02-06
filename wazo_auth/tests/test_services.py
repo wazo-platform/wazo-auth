@@ -1,4 +1,4 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -73,7 +73,6 @@ class BaseServiceTestCase(TestCase):
 
 class TestExternalAuthService(BaseServiceTestCase):
     class Auth1SafeFields(BaseSchema):
-
         scope = fields.List(fields.String)
 
     def setUp(self):

@@ -1,4 +1,4 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -64,7 +64,6 @@ use_asset = pytest.mark.usefixtures
 
 
 class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
-
     assets_root = os.path.join(os.path.dirname(__file__), '../..', 'assets')
     service = 'auth'
     auth_host = '127.0.0.1'
@@ -158,7 +157,6 @@ class MetadataAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
 
 
 class DAOTestCase(unittest.TestCase):
-
     unknown_uuid = '00000000-0000-0000-0000-000000000000'
 
     def setUp(self):
@@ -296,21 +294,18 @@ class BaseIntegrationTest(unittest.TestCase):
 
 
 class ExternalAuthIntegrationTest(BaseIntegrationTest):
-
     asset_cls = ExternalAuthAssetLaunchingTestCase
     username = 'admin'
     password = 's3cre7'
 
 
 class MetadataIntegrationTest(BaseIntegrationTest):
-
     asset_cls = MetadataAssetLaunchingTestCase
     username = 'admin'
     password = 's3cre7'
 
 
 class APIIntegrationTest(BaseIntegrationTest):
-
     asset_cls = APIAssetLaunchingTestCase
     username = 'admin'
     password = 's3cre7'

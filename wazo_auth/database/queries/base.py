@@ -1,4 +1,4 @@
-# Copyright 2017-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from .. import helpers
@@ -6,7 +6,6 @@ from ... import exceptions
 
 
 class QueryPaginator:
-
     _valid_directions = ['asc', 'desc']
 
     def __init__(self, column_map):
@@ -61,7 +60,6 @@ class QueryPaginator:
 
 
 class PaginatorMixin:
-
     column_map = {}
 
     def __init__(self, *args, **kwargs):
@@ -70,7 +68,6 @@ class PaginatorMixin:
 
 
 class BaseDAO:
-
     _UNIQUE_CONSTRAINT_CODE = '23505'
     _FKEY_CONSTRAINT_CODE = '23503'
 

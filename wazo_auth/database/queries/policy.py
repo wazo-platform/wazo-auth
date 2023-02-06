@@ -1,4 +1,4 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import (
@@ -22,7 +22,6 @@ from ...slug import Slug
 
 
 class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
-
     search_filter = filters.policy_search_filter
     strict_filter = filters.policy_strict_filter
     column_map = {

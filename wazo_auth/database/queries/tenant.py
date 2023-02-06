@@ -1,4 +1,4 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy.orm import joinedload
@@ -12,7 +12,6 @@ from ...slug import TenantSlug
 
 
 class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
-
     constraint_to_column_map = {
         'auth_tenant_name_key': 'name',
         'auth_tenant_slug_key': 'slug',

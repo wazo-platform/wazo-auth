@@ -1,4 +1,4 @@
-# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 
 class Tenant:
-
     token_service = None
     user_service = None
     tenant_service = None
@@ -73,7 +72,6 @@ class Tenant:
 
 
 class Token:
-
     token_service = None
 
     @classmethod

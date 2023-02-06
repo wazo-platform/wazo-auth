@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import text, and_
@@ -9,7 +9,6 @@ from ...helpers import is_uuid
 
 
 class SessionDAO(PaginatorMixin, BaseDAO):
-
     column_map = {'mobile': Session.mobile}
 
     def list_(self, tenant_uuids=None, user_uuid=None, **kwargs):
