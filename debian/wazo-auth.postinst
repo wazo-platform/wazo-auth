@@ -31,10 +31,6 @@ case "$1" in
             # Add nginx configuration on new installations
             ln -sf  /etc/nginx/locations/https-available/$DAEMONNAME \
                     /etc/nginx/locations/https-enabled/$DAEMONNAME
-        elif dpkg --compare-versions "${previous_version}" lt '20.06'; then
-            if getent group www-data | grep -q $USER; then
-                deluser --quiet $USER www-data
-            fi
         fi
 
         db_get wazo-auth/db-skip
