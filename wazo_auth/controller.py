@@ -214,7 +214,9 @@ class Controller:
     def stop(self, reason):
         logger.warning('Stopping wazo-auth: %s', reason)
         self._expired_token_remover.stop()
-        self._stopping_thread = threading.Thread(target=self._rest_api.stop, name=reason)
+        self._stopping_thread = threading.Thread(
+            target=self._rest_api.stop, name=reason
+        )
         self._stopping_thread.start()
 
     def _loaded_plugins_names(self, backends):
