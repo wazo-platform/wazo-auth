@@ -1,9 +1,10 @@
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 import signal
 import sys
+import threading
 
 from functools import partial
 
@@ -23,8 +24,8 @@ from .service_discovery import self_check
 logger = logging.getLogger(__name__)
 
 
-def _sigterm_handler(controller, signum, frame):
-    controller.stop(reason='SIGTERM')
+def _signal_handler(controller, signum, frame):
+    controller.stop(reason=signal.Signals(signum).name)
 
 
 def _check_required_config_for_other_threads(config):
@@ -39,6 +40,7 @@ class Controller:
     def __init__(self, config):
         init_db(config['db_uri'], max_connections=config['rest_api']['max_threads'])
         self._config = config
+        self._stopping_thread = None
         _check_required_config_for_other_threads(config)
         self._service_discovery_args = [
             'wazo-auth',
@@ -182,7 +184,8 @@ class Controller:
         )
 
     def run(self):
-        signal.signal(signal.SIGTERM, partial(_sigterm_handler, self))
+        signal.signal(signal.SIGTERM, partial(_signal_handler, self))
+        signal.signal(signal.SIGINT, partial(_signal_handler, self))
 
         with db_ready(timeout=self._config['db_connect_retry_timeout_seconds']):
             self._default_policy_service.update_policies()
@@ -200,14 +203,19 @@ class Controller:
                     or bootstrap.DEFAULT_POLICY_SLUG,
                 )
 
-        with ServiceCatalogRegistration(*self._service_discovery_args):
-            self._expired_token_remover.start()
-            self._rest_api.run()
+        try:
+            with ServiceCatalogRegistration(*self._service_discovery_args):
+                self._expired_token_remover.start()
+                self._rest_api.run()
+        finally:
+            if self._stopping_thread:
+                self._stopping_thread.join()
 
     def stop(self, reason):
         logger.warning('Stopping wazo-auth: %s', reason)
         self._expired_token_remover.stop()
-        self._rest_api.stop()
+        self._stopping_thread = threading.Thread(target=self._rest_api.stop, name=reason)
+        self._stopping_thread.start()
 
     def _loaded_plugins_names(self, backends):
         return [backend.name for backend in backends]
