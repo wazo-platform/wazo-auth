@@ -31,6 +31,7 @@ RFC_DN_MAX_LENGTH = 253
 
 class Address(Base):
     __tablename__ = 'auth_address'
+    __table_args__ = (Index('auth_address__idx__tenant_uuid', 'tenant_uuid'),)
 
     id_ = Column(Integer, name='id', primary_key=True)
     tenant_uuid = Column(
@@ -50,6 +51,7 @@ class Email(Base):
     __tablename__ = 'auth_email'
     __table_args__ = (
         Index('auth_email_address_key', func.lower('address'), unique=True),
+        Index('auth_email__idx__user_uuid', 'user_uuid'),
     )
 
     uuid = Column(
@@ -67,6 +69,7 @@ class Email(Base):
 
 class ExternalAuthConfig(Base):
     __tablename__ = 'auth_external_auth_config'
+    __table_args__ = (Index('auth_external_auth_config__idx__type_uuid', 'type_uuid'),)
 
     tenant_uuid = Column(
         String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), primary_key=True
@@ -91,6 +94,7 @@ class ExternalAuthType(Base):
 
 class Group(Base):
     __tablename__ = 'auth_group'
+    __table_args__ = (Index('auth_group__idx__tenant_uuid', 'tenant_uuid'),)
 
     uuid = Column(
         String(38), server_default=text('uuid_generate_v4()'), primary_key=True
@@ -118,6 +122,10 @@ class GroupPolicy(Base):
 
 class Tenant(Base):
     __tablename__ = 'auth_tenant'
+    __table_args__ = (
+        Index('auth_tenant__idx__contact_uuid', 'contact_uuid'),
+        Index('auth_tenant__idx__parent_uuid', 'parent_uuid'),
+    )
 
     uuid = Column(
         String(38), server_default=text('uuid_generate_v4()'), primary_key=True
@@ -166,6 +174,8 @@ class Tenant(Base):
 
 class Domain(Base):
     __tablename__ = 'auth_tenant_domain'
+    __table_args__ = (Index('auth_tenant_domain__idx__tenant_uuid', 'tenant_uuid'),)
+
     uuid = Column(
         String(36), server_default=text('uuid_generate_v4()'), primary_key=True
     )
@@ -201,7 +211,10 @@ class Token(Base):
 
 class RefreshToken(Base):
     __tablename__ = 'auth_refresh_token'
-    __table_args__ = (UniqueConstraint('client_id', 'user_uuid'),)
+    __table_args__ = (
+        UniqueConstraint('client_id', 'user_uuid'),
+        Index('auth_refresh_token__idx__user_uuid', 'user_uuid'),
+    )
 
     uuid = Column(
         String(36), server_default=text('uuid_generate_v4()'), primary_key=True
@@ -231,6 +244,7 @@ class RefreshToken(Base):
 
 class Session(Base):
     __tablename__ = 'auth_session'
+    __table_args__ = (Index('auth_session__idx__tenant_uuid', 'tenant_uuid'),)
 
     uuid = Column(
         String(36), server_default=text('uuid_generate_v4()'), primary_key=True
@@ -248,6 +262,7 @@ class Policy(Base):
     __table_args__ = (
         UniqueConstraint('name', 'tenant_uuid'),
         Index('auth_policy__idx__slug', func.lower('slug'), 'tenant_uuid', unique=True),
+        Index('auth_policy__idx__tenant_uuid', 'tenant_uuid'),
     )
 
     uuid = Column(
@@ -290,6 +305,7 @@ class User(Base):
     __tablename__ = 'auth_user'
     __table_args__ = (
         Index('auth_user_username_key', func.lower('username'), unique=True),
+        Index('auth_user__idx__tenant_uuid', 'tenant_uuid'),
     )
 
     uuid = Column(
