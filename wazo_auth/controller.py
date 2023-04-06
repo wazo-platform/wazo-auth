@@ -188,10 +188,11 @@ class Controller:
         signal.signal(signal.SIGINT, partial(_signal_handler, self))
 
         with db_ready(timeout=self._config['db_connect_retry_timeout_seconds']):
-            self._default_policy_service.update_policies()
-            self._all_users_service.update_policies()
-            self._default_group_service.update_groups()
-            self._default_policy_service.delete_orphan_policies()
+            if self._config['update_policy_on_startup']:
+                self._default_policy_service.update_policies()
+                self._all_users_service.update_policies()
+                self._default_group_service.update_groups()
+                self._default_policy_service.delete_orphan_policies()
             http.init_top_tenant(self.dao)
             if self._config['bootstrap_user_on_startup']:
                 bootstrap.create_initial_user(
