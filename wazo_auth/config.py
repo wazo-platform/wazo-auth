@@ -1,4 +1,4 @@
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import argparse
@@ -14,6 +14,7 @@ _DEFAULT_CONFIG = {
     'user': 'wazo-auth',
     'config_file': '/etc/wazo-auth/config.yml',
     'extra_config_files': '/etc/wazo-auth/conf.d',
+    'update_policy_on_startup': True,
     'log_level': 'info',
     'log_filename': '/var/log/wazo-auth.log',
     'default_token_lifetime': TWO_HOURS,
