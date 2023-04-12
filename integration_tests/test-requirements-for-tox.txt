@@ -1,6 +1,4 @@
-importlib_metadata<5.0.0  # from kombu - https://github.com/celery/kombu/issues/1600
 kombu
-mock
 openapi-spec-validator
 pyhamcrest
 pytest
@@ -13,10 +11,10 @@ https://github.com/wazo-platform/wazo-confd-client/archive/master.zip
 https://github.com/wazo-platform/wazo-test-helpers/archive/master.zip
 https://github.com/wazo-platform/xivo-lib-python/archive/master.zip
 https://github.com/wazo-platform/xivo-bus/archive/master.zip
-sqlalchemy==1.2.18
-jinja2==2.10
+sqlalchemy<2.0
+jinja2==2.11.3
 psycopg2-binary
-stevedore==1.29.0
-unidecode==1.0.23
-marshmallow==3.10.0
-python-consul==0.7.1
+stevedore
+unidecode
+marshmallow
+python-consul==1.1.0

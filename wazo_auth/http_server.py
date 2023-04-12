@@ -1,4 +1,4 @@
-# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -12,7 +12,7 @@ from flask import Flask
 from flask_cors import CORS
 from flask_restful import Api
 from sqlalchemy.exc import SQLAlchemyError
-from werkzeug.contrib.fixers import ProxyFix
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from xivo import http_helpers
 from xivo.http_helpers import ReverseProxied
@@ -74,11 +74,13 @@ class CoreRestApi:
 
     def run(self):
         bind_addr = (self.config['listen'], self.config['port'])
-
+        num_proxies = self.config['num_proxies']
         wsgi_app = ReverseProxied(
             ProxyFix(
                 wsgi.WSGIPathInfoDispatcher({'/': app}),
-                num_proxies=self.config['num_proxies'],
+                x_for=num_proxies,
+                x_proto=num_proxies,
+                x_host=num_proxies,
             ),
         )
         self.server = wsgi.WSGIServer(
@@ -102,10 +104,7 @@ class CoreRestApi:
         for route in http_helpers.list_routes(app):
             logger.debug(route)
 
-        try:
-            self.server.start()
-        except KeyboardInterrupt:
-            self.server.stop()
+        self.server.start()
 
     def stop(self):
         if self.server:
