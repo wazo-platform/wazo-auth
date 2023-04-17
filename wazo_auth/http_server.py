@@ -3,11 +3,11 @@
 
 import logging
 import os
+import fastwsgi
 
 from datetime import timedelta
 from functools import partial
 
-from cheroot import wsgi
 from flask import Flask
 from flask_cors import CORS
 from flask_restful import Api
@@ -76,15 +76,13 @@ class CoreRestApi:
         bind_addr = (self.config['listen'], self.config['port'])
 
         wsgi_app = ReverseProxied(
-            ProxyFix(
-                wsgi.WSGIPathInfoDispatcher({'/': app}),
-                num_proxies=self.config['num_proxies'],
-            ),
+            ProxyFix(app),
         )
-        self.server = wsgi.WSGIServer(
-            bind_addr=bind_addr,
-            wsgi_app=wsgi_app,
-            numthreads=self.config['max_threads'],
+        self.server = fastwsgi.server
+        self.server.init(
+            wsgi_app,
+            self.config['listen'],
+            self.config['port'],
         )
         if self.config['certificate'] and self.config['private_key']:
             logger.warning(
@@ -103,10 +101,10 @@ class CoreRestApi:
             logger.debug(route)
 
         try:
-            self.server.start()
+            self.server.run()
         except KeyboardInterrupt:
-            self.server.stop()
+            self.server.close()
 
     def stop(self):
         if self.server:
-            self.server.stop()
+            self.server.close()
