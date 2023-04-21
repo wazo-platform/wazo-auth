@@ -144,9 +144,23 @@ def _parse_cli_args(argv):
         default=False,
         help="Upgrade database on startup if needed",
     )
+    parser.add_argument(
+        '--listen-port',
+        action='store',
+        help='Port on which the rest API will listen',
+    )
+    parser.add_argument(
+        '--log-file',
+        action='store',
+        help='The log filename to log to',
+    )
     parsed_args = parser.parse_args(argv)
 
     result = {}
+    if parsed_args.listen_port:
+        result['rest_api'] = {'listen': parsed_args.listen_port}
+    if parsed_args.log_file:
+        result['log_filename'] = parsed_args.log_file
     if parsed_args.config_file:
         result['config_file'] = parsed_args.config_file
     if parsed_args.user:
