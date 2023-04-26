@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -91,7 +90,7 @@ class BarSafeData(Schema):
         return data or {}
 
 
-class BarPlugin(object):
+class BarPlugin:
     plugin_info = {'foo': 'bar'}
 
     def load(self, dependencies):
@@ -105,7 +104,7 @@ class BarPlugin(object):
         )
 
 
-class FooPlugin(object):
+class FooPlugin:
     def load(self, dependencies):
         api = dependencies['api']
         args = (dependencies['external_auth_service'],)
