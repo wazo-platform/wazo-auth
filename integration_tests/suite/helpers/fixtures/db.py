@@ -1,4 +1,4 @@
-# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -41,9 +41,7 @@ def email(**email_args):
     def decorator(decorated):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
-            email_args.setdefault(
-                'address', '{}@{}'.format(_random_string(5), _random_string(5))
-            )
+            email_args.setdefault('address', f'{_random_string(5)}@{_random_string(5)}')
 
             def create_user():
                 user_args = {
@@ -232,9 +230,7 @@ def user(**user_args):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
             user_args.setdefault('username', _random_string(20))
-            user_args.setdefault(
-                'email_address', '{}@example.com'.format(_random_string(50))
-            )
+            user_args.setdefault('email_address', f'{_random_string(50)}@example.com')
             user_args.setdefault('hash_', _random_string(64))
             user_args.setdefault('salt', A_SALT)
             user_args.setdefault('firstname', _random_string(20))

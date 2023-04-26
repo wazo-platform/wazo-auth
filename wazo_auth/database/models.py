@@ -157,7 +157,7 @@ class Tenant(Base):
 
     @domain_names.setter
     def domain_names(self, value):
-        current_names = set(domain.name for domain in self.domains)
+        current_names = {domain.name for domain in self.domains}
         new_names = set(value)
         missing_names = new_names - current_names
         domains = set()

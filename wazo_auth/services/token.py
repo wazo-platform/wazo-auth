@@ -1,4 +1,4 @@
-# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -238,7 +238,7 @@ class TokenService(BaseService):
         user_uuid = token['metadata'].get('uuid')
         if not user_uuid:
             # Fallback on the token data since this is not a user token
-            visible_tenants = set(t['uuid'] for t in token['metadata']['tenants'])
+            visible_tenants = {t['uuid'] for t in token['metadata']['tenants']}
             if tenant not in visible_tenants:
                 raise MissingTenantTokenException(tenant)
             else:

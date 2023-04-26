@@ -37,7 +37,7 @@ class LDAPHelper:
     QUEBEC_DN = f'ou=quebec,{PEOPLE_DN}'
     OU_DN = {'people': PEOPLE_DN, 'quebec': QUEBEC_DN}
     CONFIG_DN = 'cn=config'
-    CONFIG_DATABASE_DN = 'olcDatabase={{2}}mdb,{}'.format(CONFIG_DN)
+    CONFIG_DATABASE_DN = f'olcDatabase={{2}}mdb,{CONFIG_DN}'
     CONFIG_ADMIN_DN = f'cn=admin,{CONFIG_DN}'
     CONFIG_ADMIN_PASSWORD = 'configpassword'
     setup_ran = False
@@ -103,9 +103,9 @@ class LDAPHelper:
         new_config['olcAccess'] = new_config.get('olcAccess', [])
         acls = new_config['olcAccess']
         acls.insert(
-            0, f'to attrs=mail by dn.exact="{user_dn}" {acl} by * write'.encode('utf-8')
+            0, f'to attrs=mail by dn.exact="{user_dn}" {acl} by * write'.encode()
         )
-        acls.append('to * by self read by users read by * read'.encode('utf-8'))
+        acls.append(b'to * by self read by users read by * read')
         self._ldap_admin_obj.add_s(self.CONFIG_DATABASE_DN, addModlist(new_config))
 
 
