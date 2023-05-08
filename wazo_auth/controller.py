@@ -38,7 +38,7 @@ def _check_required_config_for_other_threads(config):
 
 class Controller:
     def __init__(self, config):
-        init_db(config['db_uri'], max_connections=config['rest_api']['max_threads'])
+        init_db(config['db_uri'], pool_size=config['rest_api']['max_threads'])
         self._config = config
         self._stopping_thread = None
         _check_required_config_for_other_threads(config)
