@@ -1,5 +1,13 @@
 # Changelog
 
+## 23.07
+
+* The following CLI options have been added
+  * `--listen-port` will override the HTTP server listening port
+  * `--log-file` will override the log filename
+* `update_policy_on_startup` can now be disabled from the configuration file
+* `token_cleanup_interval` will now disable the cleanup mechanism if set to `0`
+
 ## 23.02
 
 * Username and e-mail addresses are now unique in a case insensitive way. This means that a user
