@@ -111,18 +111,22 @@ class ExpiredTokenRemover:
         self._bus_publisher = bus_publisher
         self._cleanup_interval = config['token_cleanup_interval']
         self._debug = config['debug']
+        if self._cleanup_interval < 1:
+            return
 
         self._tombstone = threading.Event()
         self._thread = threading.Thread(target=self._loop)
         self._thread.daemon = True
 
     def start(self):
-        self._thread.start()
+        if self._cleanup_interval > 0:
+            self._thread.start()
 
     def stop(self):
-        self._tombstone.set()
-        self._thread.join()
-        self._tombstone.clear()
+        if self._cleanup_interval > 0:
+            self._tombstone.set()
+            self._thread.join()
+            self._tombstone.clear()
 
     def _loop(self):
         while not self._tombstone.is_set():

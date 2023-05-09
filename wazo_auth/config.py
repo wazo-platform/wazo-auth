@@ -1,4 +1,4 @@
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import argparse
@@ -14,6 +14,7 @@ _DEFAULT_CONFIG = {
     'user': 'wazo-auth',
     'config_file': '/etc/wazo-auth/config.yml',
     'extra_config_files': '/etc/wazo-auth/conf.d',
+    'update_policy_on_startup': True,
     'log_level': 'info',
     'log_filename': '/var/log/wazo-auth.log',
     'default_token_lifetime': TWO_HOURS,
@@ -143,9 +144,23 @@ def _parse_cli_args(argv):
         default=False,
         help="Upgrade database on startup if needed",
     )
+    parser.add_argument(
+        '--listen-port',
+        action='store',
+        help='Port on which the rest API will listen',
+    )
+    parser.add_argument(
+        '--log-file',
+        action='store',
+        help='The log filename to log to',
+    )
     parsed_args = parser.parse_args(argv)
 
     result = {}
+    if parsed_args.listen_port:
+        result['rest_api'] = {'listen': parsed_args.listen_port}
+    if parsed_args.log_file:
+        result['log_filename'] = parsed_args.log_file
     if parsed_args.config_file:
         result['config_file'] = parsed_args.config_file
     if parsed_args.user:
