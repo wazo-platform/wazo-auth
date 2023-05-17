@@ -14,10 +14,17 @@ from hamcrest import (
 
 from .helpers import fixtures, base
 from .helpers.base import assert_http_error, assert_no_error
+import pytest
+from requests import HTTPError
 
 
 @base.use_asset('base')
 class TestResetPassword(base.APIIntegrationTest):
+    def setUp(self):
+        super().setUp()
+        users = self.client.users.list()
+        print("users: ", users)
+
     @fixtures.http.user(username='foo', email_address='foo@example.com')
     @fixtures.http.user(username='bar', email_address='bar@example.com')
     @fixtures.http.user(username=None, email_address='u3@example.com')
@@ -75,14 +82,14 @@ class TestResetPassword(base.APIIntegrationTest):
             ),
         )
         new_password = '5ecr37'
-        email = next(emails)
+        email = emails[0]
         token, user_uuid = self._get_reset_token_from_email(email)
-        self.client.users.set_password(user_uuid, password, token)
+        self.client.users.set_password(user_uuid, new_password, token)
         # second time token has been revoked
         new_new_password = 'abcdef5'
         with pytest.raises(HTTPError) as exc_info:
             self.client.users.set_password(user_uuid, new_new_password, token)
-        assert exc_info.status == 401
+        assert exc_info.value.response.status_code == 401
 
     @fixtures.http.user(username='foobar')
     def test_set_password(self, user):

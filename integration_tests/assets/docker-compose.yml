@@ -52,5 +52,7 @@ services:
 
   smtp:
     image: munkyboy/fakesmtp
+    ulimits:
+      nofile: 65536
     ports:
       - "25"
