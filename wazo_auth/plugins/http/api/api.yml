@@ -4,12 +4,13 @@ info:
   title: wazo-auth
   description: "Wazo's authentication service"
   contact:
-    name: Wazo dev team
-    url: http://wazo.community
+    name: Wazo Dev Team
+    url: https://wazo-platform.org/
     email: dev@wazo.community
-  license:
-    name: GPL-3.0-or-later
-    url: http://www.gnu.org/licenses/gpl-3.0.html
+  x-logo:
+    url: "https://wazo-platform.org/images/logo-black.svg"
+    backgroundColor: "#FAFAFA"
+    altText: "Wazo Logo"
 x-xivo-port: 9497
 x-xivo-name: auth
 basePath: /0.1
