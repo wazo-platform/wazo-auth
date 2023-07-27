@@ -105,6 +105,21 @@ class UnknownLDAPConfigException(APIException):
         super().__init__(404, msg, 'unknown-ldap-config', details, 'ldap_config')
 
 
+class DuplicatedCASConfigException(Exception):
+    def __init__(self, tenant_uuid):
+        self.tenant_uuid = tenant_uuid
+        super().__init__(
+            f'Duplicated CAS config for tenant_uuid {tenant_uuid}',
+        )
+
+
+class UnknownCASConfigException(APIException):
+    def __init__(self, tenant_uuid):
+        msg = f'No CAS config found for this tenant: "{tenant_uuid}"'
+        details = {'uuid': str(tenant_uuid)}
+        super().__init__(404, msg, 'unknown-cas-config', details, 'cas_config')
+
+
 class UnknownExternalAuthTypeException(APIException):
     def __init__(self, auth_type):
         msg = f'No such auth type: "{auth_type}"'
