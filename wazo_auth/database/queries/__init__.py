@@ -1,7 +1,8 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from .address import AddressDAO
+from .cas_config import CASConfigDAO
 from .email import EmailDAO
 from .external_auth import ExternalAuthDAO
 from .group import GroupDAO
@@ -18,6 +19,7 @@ class DAO:
     def __init__(
         self,
         address,
+        cas_config,
         email,
         external_auth,
         group,
@@ -30,6 +32,7 @@ class DAO:
         user,
     ):
         self.address = address
+        self.cas_config = cas_config
         self.email = email
         self.external_auth = external_auth
         self.group = group
@@ -45,6 +48,7 @@ class DAO:
     def from_defaults(cls):
         return cls(
             address=AddressDAO(),
+            cas_config=CASConfigDAO(),
             email=EmailDAO(),
             external_auth=ExternalAuthDAO(),
             group=GroupDAO(),

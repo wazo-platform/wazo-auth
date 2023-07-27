@@ -409,3 +409,17 @@ class LDAPConfig(Base):
     user_login_attribute = Column(String(64), nullable=False)
     user_email_attribute = Column(String(64), nullable=False)
     search_filters = Column(Text, nullable=True)
+
+
+class CASConfig(Base):
+    __tablename__ = 'auth_cas_config'
+
+    tenant_uuid = Column(
+        String(38),
+        ForeignKey('auth_tenant.uuid', ondelete='CASCADE'),
+        nullable=False,
+        primary_key=True,
+    )
+    server_url = Column(String(512), nullable=False)
+    service_url = Column(String(512), nullable=False)
+    user_email_attribute = Column(String(64), nullable=False)
