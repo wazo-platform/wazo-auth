@@ -18,6 +18,7 @@ class TokenRequestSchema(BaseSchema):
     refresh_token = fields.String()
     tenant_id = fields.String()
     domain_name = fields.String()
+    ticket = fields.String()
 
     @validates_schema
     def check_access_type_usage(self, data, **kwargs):
@@ -66,6 +67,16 @@ class TokenRequestSchema(BaseSchema):
             raise ValidationError(
                 '"client_id" must be specified when using a "refresh_token"'
             )
+
+    @validates_schema
+    def check_ticket_backend_usage(self, data, **kwargs):
+        backend = data.get('backend')
+        if not backend == 'cas':
+            return
+
+        ticket = data.get('ticket')
+        if not ticket:
+            raise ValidationError('"ticket" must be specified when using the "cas" backend')
 
 
 class RefreshTokenListSchema(BaseListSchema):

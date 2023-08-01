@@ -40,7 +40,7 @@ paths:
             domain_name:
               type: string
               description: |
-                The `domain_name` must match a tenant's domain_name entry to find the appropriate ldap configuration.
+                The `domain_name` must match a tenant's domain_name entry to find the appropriate LDAP or CAS configuration.
             expiration:
               type: integer
             access_type:
@@ -70,6 +70,12 @@ paths:
                 The `refresh_token` can be used to get a new access token without using the username/password.
                 This is useful for client application that should not store the username and password once the
                 user has logged in a first time.
+            ticket:
+              type: string
+              description: |
+                The `ticket` field is used instead of credentials when using the `cas` backend.
+
+                *Required when using the `cas` backend*
       responses:
         '200':
           description: "The created token's data"
