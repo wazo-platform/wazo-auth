@@ -36,6 +36,7 @@ _DEFAULT_CONFIG = {
     'enabled_http_plugins': {
         'api': True,
         'backends': True,
+        'cas_config': True,
         'config': True,
         'email_confirm': True,
         'external': True,
@@ -58,6 +59,7 @@ _DEFAULT_CONFIG = {
         'users': True,
     },
     'enabled_backend_plugins': {
+        'cas_user': True,
         'ldap_user': True,
         'wazo_user': True,
     },

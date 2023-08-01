@@ -107,6 +107,7 @@ class Controller:
         )
 
         ldap_service = services.LDAPService(self.dao, self._tenant_tree)
+        cas_service = services.CASService(self.dao, self._tenant_tree)
 
         self._metadata_plugins = plugin_helpers.load(
             namespace='wazo_auth.metadata',
@@ -133,6 +134,7 @@ class Controller:
                 'group_service': group_service,
                 'tenant_service': self._tenant_service,
                 'ldap_service': ldap_service,
+                'cas_service': cas_service,
                 'purposes': self._purposes,
                 'config': config,
             },
@@ -156,6 +158,7 @@ class Controller:
             'session_service': session_service,
             'template_formatter': template_formatter,
             'ldap_service': ldap_service,
+            'cas_service': cas_service,
         }
         Tenant.setup(self._token_service, self._user_service, self._tenant_service)
         Token.setup(self._token_service)

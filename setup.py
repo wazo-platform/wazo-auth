@@ -1,4 +1,4 @@
-# Copyright 2016-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from setuptools import find_packages
@@ -29,12 +29,14 @@ setup(
         'wazo_auth.backends': [
             'wazo_user = wazo_auth.plugins.backends.wazo_user:WazoUser',
             'ldap_user = wazo_auth.plugins.backends.ldap_user:LDAPUser',
+            'cas_user = wazo_auth.plugins.backends.cas_user:CASUser',
             'broken_init = wazo_auth.plugins.backends.broken:BrokenInitBackend',
             'broken_verify_password = wazo_auth.plugins.backends.broken:BrokenVerifyPasswordBackend',  # noqa
         ],
         'wazo_auth.http': [
             'api = wazo_auth.plugins.http.api.plugin:Plugin',
             'backends = wazo_auth.plugins.http.backends.plugin:Plugin',
+            'cas_config = wazo_auth.plugins.http.cas_config.plugin:Plugin',
             'config = wazo_auth.plugins.http.config.plugin:Plugin',
             'email_confirm = wazo_auth.plugins.http.email_confirm.plugin:Plugin',
             'external = wazo_auth.plugins.http.external.plugin:Plugin',
