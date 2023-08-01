@@ -1,8 +1,9 @@
-# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from .all_users import AllUsersService
 from .authentication import AuthenticationService
+from .cas import CASService
 from .default_group import DefaultGroupService
 from .default_policy import DefaultPolicyService
 from .email import EmailService
@@ -18,6 +19,7 @@ from .user import UserService, PasswordEncrypter
 __all__ = [
     'AllUsersService',
     'AuthenticationService',
+    'CASService',
     'DefaultPolicyService',
     'DefaultGroupService',
     'EmailService',
