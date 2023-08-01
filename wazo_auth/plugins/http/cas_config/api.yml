@@ -1,0 +1,96 @@
+paths:
+  /backends/cas:
+    get:
+      security:
+        - wazo_auth_token: []
+      produces:
+        - application/json
+      summary: |
+        Get current tenant's CAS backend configuration. If there is no configuration,
+        all the fields will be `null`.
+      description: '**Required ACL:** `auth.backends.cas.read`'
+      operationId: getCASBackendConfig
+      tags:
+        - backends
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+      responses:
+        '200':
+          description: The CAS backend configuration
+          schema:
+            $ref: '#/definitions/CASBackendConfig'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      security:
+        - wazo_auth_token: []
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Update current tenant's CAS backend configuration
+      description: '**Required ACL:** `auth.backends.cas.update'
+      operationId: updateCASBackendConfig
+      tags:
+        - backends
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+        - name: body
+          in: body
+          description: The CAS backend configuration
+          required: true
+          schema:
+            $ref: '#/definitions/CASBackendConfigEdit'
+      responses:
+        '200':
+          description: The CAS backend configuration has been updated
+          schema:
+            $ref: '#/definitions/CASBackendConfig'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      security:
+        - wazo_auth_token: []
+      summary: Delete current tenant's CAS backend configuration
+      description: '**Required ACL:** `auth.backends.cas.delete`'
+      operationId: deleteCASBackendConfig
+      tags:
+        - backends
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+      responses:
+        '204':
+          description: The CAS backend configuration has been deleted
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+definitions:
+  CASBackendConfig:
+    type: object
+    required:
+      - server_url
+      - user_email_attribute
+    properties:
+      tenant_uuid:
+        type: string
+        readOnly: true
+      server_url:
+        type: string
+        description: |
+          The CAS server URL
+      service_url:
+        type: string
+        description: |
+          The CAS application service URL
+      user_email_attribute:
+        type: string
+        description: The attribute of the email address in the CAS schema.
+        example: mail
+  CASBackendConfigEdit:
+    allOf:
+      - $ref: '#/definitions/CASBackendConfig'
