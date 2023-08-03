@@ -1,4 +1,4 @@
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -134,6 +134,14 @@ class RefreshTokens(_BaseRefreshTokens):
 
 
 class Tokens(BaseResource):
+    def _get_login_password(self):
+        if request.authorization:
+            login = request.authorization.username
+            password = request.authorization.password
+            logger.info('Token creation request for login "%s"', login)
+            return login, password
+        return None, None
+
     def post(self):
         user_agent = request.headers.get('User-Agent', '')
         remote_addr = request.remote_addr
@@ -143,10 +151,10 @@ class Tokens(BaseResource):
         except marshmallow.ValidationError as e:
             return http._error(400, str(e.messages))
 
-        if request.authorization:
-            args['login'] = request.authorization.username
-            args['password'] = request.authorization.password
-            logger.info('Token creation request for login "%s"', args['login'])
+        login, password = self._get_login_password()
+        if login and password:
+            args['login'] = login
+            args['password'] = password
 
         session_type = request.headers.get('Wazo-Session-Type', '').lower()
         args['mobile'] = True if session_type == 'mobile' else False
