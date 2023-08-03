@@ -6,6 +6,8 @@ import marshmallow
 
 from flask import request
 
+from base64 import b64decode
+
 from wazo_auth import exceptions, http
 from wazo_auth.flask_helpers import Tenant
 from . import schemas
@@ -135,12 +137,32 @@ class RefreshTokens(_BaseRefreshTokens):
 
 class Tokens(BaseResource):
     def _get_login_password(self):
-        if request.authorization:
-            login = request.authorization.username
-            password = request.authorization.password
-            logger.info('Token creation request for login "%s"', login)
-            return login, password
-        return None, None
+        error = None, None
+
+        authorization = request.headers.get('Authorization')
+        if not authorization:
+            return error
+
+        if not authorization.startswith('Basic '):
+            return error
+
+        _, encoded_login_password = authorization.split('Basic ', 1)
+        login_password = b64decode(encoded_login_password)
+
+        charsets = ['latin', 'utf-8']
+        for charset in charsets:
+            try:
+                login_password = login_password.decode(charset)
+                break
+            except UnicodeDecodeError:
+                continue
+        else:
+            return error
+
+        if ':' not in login_password:
+            return error
+
+        return login_password.split(':', 1)
 
     def post(self):
         user_agent = request.headers.get('User-Agent', '')
