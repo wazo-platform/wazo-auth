@@ -1,4 +1,4 @@
-# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import pytest
@@ -57,6 +57,15 @@ class TestTokens(base.APIIntegrationTest):
         client.password = 'pass2'
         token_data = client.token.new(expiration=1)
         assert_that(token_data, has_entries(metadata=has_entries(uuid=u2['uuid'])))
+
+    @fixtures.http.user(username=None, email_address='u1@example.com', password='pépé')
+    def test_unicode_password(self, u1):
+        client = Client('localhost', port=self.auth_port, prefix=None, https=False)
+
+        client.username = 'u1@example.com'
+        client.password = 'pépé'
+        token_data = client.token.new(expiration=1)
+        assert_that(token_data, has_entries(metadata=has_entries(uuid=u1['uuid'])))
 
     @fixtures.http.user(username='foo', password='bar')
     @fixtures.http.token(

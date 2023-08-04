@@ -1,10 +1,12 @@
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 import marshmallow
 
 from flask import request
+
+from base64 import b64decode
 
 from wazo_auth import exceptions, http
 from wazo_auth.flask_helpers import Tenant
@@ -134,6 +136,37 @@ class RefreshTokens(_BaseRefreshTokens):
 
 
 class Tokens(BaseResource):
+    def _get_login_password(self):
+        # This method is a workaround to fix broken werkzeug helper
+        # `request.authorization` with version:
+        # 1.0.1 (bullseye) and 2.0.2 (bullseye-backports)
+        error = None, None
+
+        authorization = request.headers.get('Authorization')
+        if not authorization:
+            return error
+
+        if not authorization.startswith('Basic '):
+            return error
+
+        _, encoded_login_password = authorization.split('Basic ', 1)
+        login_password = b64decode(encoded_login_password)
+
+        charsets = ['latin', 'utf-8']
+        for charset in charsets:
+            try:
+                login_password = login_password.decode(charset)
+                break
+            except UnicodeDecodeError:
+                continue
+        else:
+            return error
+
+        if ':' not in login_password:
+            return error
+
+        return login_password.split(':', 1)
+
     def post(self):
         user_agent = request.headers.get('User-Agent', '')
         remote_addr = request.remote_addr
@@ -143,10 +176,10 @@ class Tokens(BaseResource):
         except marshmallow.ValidationError as e:
             return http._error(400, str(e.messages))
 
-        if request.authorization:
-            args['login'] = request.authorization.username
-            args['password'] = request.authorization.password
-            logger.info('Token creation request for login "%s"', args['login'])
+        login, password = self._get_login_password()
+        if login and password:
+            args['login'] = login
+            args['password'] = password
 
         session_type = request.headers.get('Wazo-Session-Type', '').lower()
         args['mobile'] = True if session_type == 'mobile' else False
