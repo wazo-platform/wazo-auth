@@ -137,6 +137,9 @@ class RefreshTokens(_BaseRefreshTokens):
 
 class Tokens(BaseResource):
     def _get_login_password(self):
+        # This method is a workaround to fix broken werkzeug helper
+        # `request.authorization` with version:
+        # 1.0.1 (bullseye) and 2.0.2 (bullseye-backports)
         error = None, None
 
         authorization = request.headers.get('Authorization')
