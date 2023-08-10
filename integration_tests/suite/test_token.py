@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import pytest
+import requests
+from base64 import b64encode
 
 from unittest.mock import ANY
 from hamcrest import (
@@ -66,6 +68,21 @@ class TestTokens(base.APIIntegrationTest):
         client.password = 'pépé'
         token_data = client.token.new(expiration=1)
         assert_that(token_data, has_entries(metadata=has_entries(uuid=u1['uuid'])))
+
+        for charset in ['latin', 'utf-8']:
+            encoded_credentials = b64encode(
+                f'{client.username}:{client.password}'.encode(charset)
+            )
+            headers = {
+                'Authorization': b'Basic ' + encoded_credentials,
+                'Content-Type': 'application/json',
+            }
+            response = requests.post(
+                client.token.base_url, headers=headers, json={'expiration': 1}
+            )
+            assert_that(
+                response, has_properties(status_code=200), f'failed for {charset}'
+            )
 
     @fixtures.http.user(username='foo', password='bar')
     @fixtures.http.token(
