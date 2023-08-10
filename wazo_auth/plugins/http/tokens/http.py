@@ -152,7 +152,7 @@ class Tokens(BaseResource):
         _, encoded_login_password = authorization.split('Basic ', 1)
         login_password = b64decode(encoded_login_password)
 
-        charsets = ['latin', 'utf-8']
+        charsets = ['utf-8', 'latin']
         for charset in charsets:
             try:
                 login_password = login_password.decode(charset)
