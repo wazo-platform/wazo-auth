@@ -193,10 +193,20 @@ class Tokens(BaseResource):
             exceptions.InvalidUsernamePassword,
             exceptions.UnknownRefreshToken,
         ) as e:
-            logger.info('failed login %s from %s %s', e, remote_addr, user_agent)
+            logger.info(
+                'Failed login: %s from %s using agent "%s"', e, remote_addr, user_agent
+            )
             return http._error(401, 'Authentication Failed')
 
         token = self._token_service.new_token(backend, login, args)
+        redacted_token_id = 'XXXXXXXX-XXXX-XXXX-XXXX-XXXX' + token.token[-8:]
+        logger.info(
+            'Successful login: %s got token %s from %s using agent "%s"',
+            login,
+            redacted_token_id,
+            remote_addr,
+            user_agent,
+        )
 
         return {'data': token.to_dict()}, 200
 
