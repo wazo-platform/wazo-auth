@@ -4,11 +4,7 @@
 import pytest
 import re
 import requests
-from asyncio import Future
 from base64 import b64encode
-from contextlib import contextmanager
-from datetime import datetime
-from typing import ContextManager
 
 from unittest.mock import ANY
 from hamcrest import (
@@ -33,16 +29,6 @@ from wazo_auth_client import Client
 from .helpers import fixtures, base
 from .helpers.base import assert_http_error
 from .helpers.constants import UNKNOWN_UUID
-
-
-@contextmanager
-def capture_logs(asset_cls, service_name: "str | None" = None) -> ContextManager[str]:
-    time_start = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-    result = Future()
-    try:
-        yield result
-    finally:
-        result.set_result(asset_cls.service_logs(service_name, since=time_start))
 
 
 @base.use_asset('base')
@@ -106,7 +92,7 @@ class TestTokens(base.APIIntegrationTest):
         client.username = 'u1@example.com'
         client.password = 'invalid'
 
-        with capture_logs(self.asset_cls, service_name='auth') as auth_logs:
+        with self.asset_cls.capture_logs(service_name='auth') as auth_logs:
             assert_http_error(401, client.token.new, expiration=1)
 
         assert re.search(
@@ -120,7 +106,7 @@ class TestTokens(base.APIIntegrationTest):
         client.username = 'u1@example.com'
         client.password = 'pass'
 
-        with capture_logs(self.asset_cls, service_name='auth') as auth_logs:
+        with self.asset_cls.capture_logs(service_name='auth') as auth_logs:
             token_data = client.token.new(expiration=1)
 
         token_id = 'XXXXXXXX-XXXX-XXXX-XXXX-XXXX' + token_data['token'][-8:]

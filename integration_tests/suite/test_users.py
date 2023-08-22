@@ -1,7 +1,6 @@
 # Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from datetime import datetime
 import json
 import requests
 from hamcrest import (
@@ -228,11 +227,11 @@ class TestUsers(base.APIIntegrationTest):
             'password': 's3cr37',
         }
 
-        time_start = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-        with self.user(self.client, **args):
-            pass
-        logs = self.service_logs('auth', since=time_start)
-        assert_that(logs, not_(contains_string(args['password'])))
+        with self.asset_cls.capture_logs(service_name='auth') as logs:
+            with self.user(self.client, **args):
+                pass
+
+        assert_that(logs.result(), not_(contains_string(args['password'])))
 
     @fixtures.http.user(username='user1@example.com')
     @fixtures.http.user(email_address='user2@example.com')
@@ -354,11 +353,11 @@ class TestUsers(base.APIIntegrationTest):
             'password': 's3cr37',
         }
 
-        time_start = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-        with self.user(self.client, register=True, **args):
-            pass
-        logs = self.service_logs('auth', since=time_start)
-        assert_that(logs, not_(contains_string(args['password'])))
+        with self.asset_cls.capture_logs(service_name='auth') as logs:
+            with self.user(self.client, register=True, **args):
+                pass
+
+        assert_that(logs.result(), not_(contains_string(args['password'])))
 
     def test_register_error_then_no_user_created(self):
         args = {
@@ -437,17 +436,18 @@ class TestUsers(base.APIIntegrationTest):
 
     @fixtures.http.user_register(password='secret')
     def test_put_password_does_not_log_password(self, user):
-        time_start = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
         old_password = 'secret'
         new_password = 'NewPass'
-        self.client.users.change_password(
-            user['uuid'],
-            old_password=old_password,
-            new_password=new_password,
-        )
-        logs = self.service_logs('auth', since=time_start)
-        assert_that(logs, not_(contains_string(old_password)))
-        assert_that(logs, not_(contains_string(new_password)))
+
+        with self.asset_cls.capture_logs(service_name='auth') as logs:
+            self.client.users.change_password(
+                user['uuid'],
+                old_password=old_password,
+                new_password=new_password,
+            )
+
+        assert_that(logs.result(), not_(contains_string(old_password)))
+        assert_that(logs.result(), not_(contains_string(new_password)))
 
     @fixtures.http.user(username=None, email_address='u1@example.com', password='pass1')
     @fixtures.http.user(username=None, email_address='u2@example.com', password='pass2')
