@@ -1,7 +1,6 @@
-# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from datetime import datetime
 import yaml
 from hamcrest import (
     assert_that,
@@ -81,11 +80,10 @@ class TestResetPassword(base.APIIntegrationTest):
     def test_set_password_does_not_log_password(self, user):
         new_password = '5ecr37'
 
-        time_start = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-        self.client.users.set_password(user['uuid'], new_password)
+        with self.asset_cls.capture_logs(service_name='auth') as logs:
+            self.client.users.set_password(user['uuid'], new_password)
 
-        logs = self.service_logs('auth', since=time_start)
-        assert_that(logs, not_(contains_string(new_password)))
+        assert_that(logs.result(), not_(contains_string(new_password)))
 
     @fixtures.http.user(username='foo', email_address='foo@example.com')
     def test_password_reset_do_not_create_session_with_invalid_user_uuid(self, foo):
