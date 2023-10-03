@@ -8,4 +8,4 @@ RUN python setup.py install
 
 COPY . /usr/src/wazo-auth
 WORKDIR /usr/src/wazo-auth
-RUN python setup.py develop
+RUN python3 -m pip install -e .
