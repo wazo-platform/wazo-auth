@@ -43,6 +43,8 @@ paths:
                 The `domain_name` must match a tenant's domain_name entry to find the appropriate ldap configuration.
             expiration:
               type: integer
+              default: 7200
+              description: Expiration time in seconds.
             access_type:
               type: string
               description: |
