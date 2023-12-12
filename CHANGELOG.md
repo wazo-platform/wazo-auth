@@ -1,5 +1,10 @@
 # Changelog
 
+## 23.17
+
+* Tokens now have a maximum expiration time of 10 years.
+
+
 ## 23.07
 
 * The following CLI options have been added
