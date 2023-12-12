@@ -44,6 +44,7 @@ paths:
             expiration:
               type: integer
               default: 7200
+              maximum: 315360000
               description: Expiration time in seconds.
             access_type:
               type: string

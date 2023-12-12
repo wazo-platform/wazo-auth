@@ -9,10 +9,12 @@ from xivo.mallow.validate import Length, Range, OneOf
 
 from wazo_auth.schemas import BaseListSchema, BaseSchema
 
+TEN_YEARS = 3600 * 24 * 365 * 10
+
 
 class TokenRequestSchema(BaseSchema):
     backend = fields.String(missing='wazo_user')
-    expiration = fields.Integer(validate=Range(min=1))
+    expiration = fields.Integer(validate=Range(min=1, max=TEN_YEARS))
     access_type = fields.String(validate=OneOf(['online', 'offline']))
     client_id = fields.String(validate=Length(min=1, max=1024))
     refresh_token = fields.String()

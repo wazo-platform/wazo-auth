@@ -33,6 +33,21 @@ from .helpers.constants import UNKNOWN_UUID
 
 @base.use_asset('base')
 class TestTokens(base.APIIntegrationTest):
+    @fixtures.http.user(username='large', password='expiration')
+    def test_that_large_expiration_returns_a_400(self, _):
+        client = Client(
+            'localhost',
+            port=self.auth_port,
+            prefix=None,
+            https=False,
+            username='large',
+            password='expiration',
+        )
+        try:
+            client.token.new(backend='wazo_user', expiration=9999999999999999999999)
+        except HTTPError as e:
+            assert e.response.status_code == 400
+
     @fixtures.http.user(email_address='u1@example.com', password='bar')
     def test_that_the_email_can_be_used_to_get_a_token(self, u1):
         client = Client(
