@@ -1,4 +1,4 @@
-# Copyright 2017-2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from . import http
@@ -13,9 +13,4 @@ class Plugin:
             http.TenantUsers,
             '/tenants/<uuid:tenant_uuid>/users',
             resource_class_args=args,
-        )
-        api.add_resource(
-            http.UserTenants,
-            '/users/<uuid:user_uuid>/tenants',
-            resource_class_args=(dependencies['user_service'],),
         )

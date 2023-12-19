@@ -190,12 +190,6 @@ class TenantListSchema(BaseListSchema):
     ]
 
 
-class UserTenantListSchema(BaseListSchema):
-    sort_columns = ['name']
-    default_sort_column = 'name'
-    searchable_columns = ['uuid', 'uuids', 'name']
-
-
 class UserListSchema(BaseListSchema):
     sort_columns = ['username', 'firstname', 'lastname']
     default_sort_column = 'username'

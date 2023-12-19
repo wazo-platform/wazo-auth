@@ -74,9 +74,6 @@ class UserService(BaseService):
     def count_policies(self, user_uuid, **kwargs):
         return self._dao.user.count_policies(user_uuid, **kwargs)
 
-    def count_tenants(self, user_uuid, **kwargs):
-        return len(self.list_tenants(user_uuid, **kwargs))
-
     def count_users(self, scoping_tenant_uuid=None, recurse=False, **kwargs):
         if scoping_tenant_uuid:
             kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(
@@ -118,11 +115,6 @@ class UserService(BaseService):
 
     def list_policies(self, user_uuid, **kwargs):
         return self._dao.policy.list_(user_uuid=user_uuid, **kwargs)
-
-    def list_tenants(self, user_uuid, **kwargs):
-        tenant_uuid = self.get_user(user_uuid)['tenant_uuid']
-        tenant_uuids = self._tenant_tree.list_visible_tenants(tenant_uuid)
-        return self._dao.tenant.list_(uuids=tenant_uuids, **kwargs)
 
     def list_users(self, scoping_tenant_uuid=None, recurse=False, **kwargs):
         if scoping_tenant_uuid:
