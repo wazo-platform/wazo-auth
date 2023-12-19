@@ -220,17 +220,3 @@ class GroupUserListSchema(BaseListSchema):
         'email_address',
         'group_uuid',
     ]
-
-
-class TenantUserListSchema(BaseListSchema):
-    sort_columns = ['username']
-    default_sort_column = 'username'
-    searchable_columns = [
-        'uuid',
-        'username',
-        'firstname',
-        'lastname',
-        'purpose',
-        'email_address',
-        'group_uuid',
-    ]

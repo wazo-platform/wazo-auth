@@ -1,4 +1,4 @@
-# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo_bus.resources.auth.events import (
@@ -33,13 +33,6 @@ class TenantService(BaseService):
         self.assert_tenant_under(scoping_tenant_uuid, tenant_uuid)
         tenant_uuids = [str(tenant_uuid)]
         return self._dao.policy.count(tenant_uuids=tenant_uuids, **kwargs)
-
-    def count_users(self, tenant_uuid, **kwargs):
-        result = self._dao.tenant.count_users(tenant_uuid, **kwargs)
-        if not result and not self._dao.tenant.exists(tenant_uuid):
-            raise exceptions.UnknownTenantException(tenant_uuid)
-
-        return result
 
     def count(self, scoping_tenant_uuid, **kwargs):
         visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
@@ -92,9 +85,6 @@ class TenantService(BaseService):
             tenant_uuid=tenant_uuid,
             **kwargs,
         )
-
-    def list_users(self, tenant_uuid, **kwargs):
-        return self._dao.user.list_(tenant_uuid=tenant_uuid, **kwargs)
 
     def list_sub_tenants(self, tenant_uuid):
         return self._tenant_tree.list_visible_tenants(tenant_uuid)
