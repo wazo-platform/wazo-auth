@@ -158,12 +158,6 @@ class GroupPolicyListSchema(BaseListSchema):
     searchable_columns = ['uuid', 'name', 'user_uuid', 'group_uuid', 'tenant_uuid']
 
 
-class TenantPolicyListSchema(BaseListSchema):
-    sort_columns = ['name', 'description', 'uuid']
-    default_sort_column = 'name'
-    searchable_columns = ['uuid', 'name', 'user_uuid', 'group_uuid', 'tenant_uuid']
-
-
 class UserPolicyListSchema(BaseListSchema):
     sort_columns = ['name', 'description', 'uuid']
     default_sort_column = 'name'

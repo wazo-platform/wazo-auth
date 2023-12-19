@@ -46,8 +46,6 @@ _DEFAULT_CONFIG = {
         'policies': True,
         'sessions': True,
         'status': True,
-        'tenant_policy': True,
-        'tenant_user': True,
         'tenants': True,
         'tokens': True,
         'user_email': True,

@@ -225,38 +225,6 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             self._set_shared_exposed(policy)
         return policies
 
-    def list_without_relations(self, **kwargs):
-        if 'read_only' in kwargs:
-            raise NotImplementedError('read_only filter')
-        if 'tenant_uuid_exposed' in kwargs:
-            raise NotImplementedError('tenant_uuid_exposed filter')
-        if 'shared_exposed' in kwargs:
-            raise NotImplementedError('shared_exposed filter')
-
-        tenant_uuid = kwargs.pop('tenant_uuid', None)
-
-        search_filter = self.new_search_filter(**kwargs)
-        strict_filter = self.new_strict_filter(**kwargs)
-        filter_ = and_(strict_filter, search_filter)
-
-        if tenant_uuid:
-            tenant_uuid = str(tenant_uuid)
-            read_only_filter = or_(
-                Policy.tenant_uuid == tenant_uuid,
-                self._read_only_filter(tenant_uuid),
-            )
-            filter_ = and_(filter_, read_only_filter)
-
-        query = self.session.query(Policy).filter(filter_).group_by(Policy)
-        query = self._paginator.update_query(query, **kwargs)
-        policies = query.all()
-        tenant_uuids = [tenant_uuid] if tenant_uuid else None
-        for policy in policies:
-            self._set_tenant_uuid_exposed(policy, tenant_uuids)
-            self._set_read_only(policy)
-            self._set_shared_exposed(policy)
-        return policies
-
     def _read_only_filter(self, tenant_uuid):
         filter_ = Policy.config_managed.is_(True)
         tenant_branch_query = self._reverse_tenant_tree_query(tenant_uuid)
