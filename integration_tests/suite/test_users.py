@@ -14,7 +14,6 @@ from hamcrest import (
     is_not,
     has_entries,
     has_item,
-    has_items,
     has_key,
     not_,
 )
@@ -119,12 +118,6 @@ class TestUsers(base.APIIntegrationTest):
                 ),
             )
 
-            # TODO move this assertion to the user tenant tests
-            tenants = self.client.users.get_tenants(user['uuid'])
-            assert_that(
-                tenants['items'], has_items(has_entries(uuid=self.top_tenant_uuid))
-            )
-
             wazo_all_users_group = self.client.groups.list(
                 name=f'wazo-all-users-tenant-{self.top_tenant_uuid}',
                 tenant_uuid=self.top_tenant_uuid,
@@ -156,15 +149,6 @@ class TestUsers(base.APIIntegrationTest):
                             confirmed=True,
                         )
                     ),
-                ),
-            )
-
-            # TODO move this assertion to the user tenant tests
-            tenants = self.client.users.get_tenants(user['uuid'])
-            assert_that(
-                tenants,
-                has_entries(
-                    items=contains_exactly(has_entries(uuid=isolated['uuid'])), total=1
                 ),
             )
 
@@ -338,11 +322,6 @@ class TestUsers(base.APIIntegrationTest):
             assert_that(
                 updated_user,
                 has_entries(emails=contains_exactly(has_entries(confirmed=True))),
-            )
-
-            tenants = self.client.users.get_tenants(user['uuid'])
-            assert_that(
-                tenants, has_entries(items=contains_exactly(has_entries(uuid=uuid_())))
             )
 
     def test_register_post_does_not_log_password(self):

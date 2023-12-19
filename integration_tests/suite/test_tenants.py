@@ -1,7 +1,6 @@
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from functools import partial
 from hamcrest import (
     assert_that,
     contains_exactly,
@@ -20,13 +19,9 @@ from .helpers.base import (
     ADDRESS_NULL,
     assert_http_error,
     assert_no_error,
-    assert_sorted,
-    SUB_TENANT_UUID,
 )
 from .helpers.constants import (
     ALL_USERS_POLICY_SLUG,
-    DEFAULT_POLICIES_SLUG,
-    NB_DEFAULT_POLICIES,
     UNKNOWN_UUID,
 )
 
@@ -203,7 +198,7 @@ class TestTenants(base.APIIntegrationTest):
         slug = ALL_USERS_POLICY_SLUG
         for tenant_uuid in tenant_uuids:
             assert_that(
-                self.client.tenants.get_policies(tenant_uuid)['items'],
+                self.client.policies.list(tenant_uuid=tenant_uuid)['items'],
                 has_item(has_entries(slug=slug, tenant_uuid=tenant_uuid)),
             )
 
@@ -508,127 +503,3 @@ class TestTenants(base.APIIntegrationTest):
         result = self.client.tenants.edit(tenant['uuid'], **new_body)
 
         assert_that(result, has_entries(**tenant))
-
-
-@base.use_asset('base')
-class TestTenantPolicyAssociation(base.APIIntegrationTest):
-    @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
-    @fixtures.http.policy(name='foo', tenant_uuid=SUB_TENANT_UUID)
-    @fixtures.http.policy(name='bar', tenant_uuid=SUB_TENANT_UUID)
-    @fixtures.http.policy(name='baz', tenant_uuid=SUB_TENANT_UUID)
-    def test_policy_list(self, _, foo, bar, baz):
-        assert_http_error(404, self.client.tenants.get_policies, UNKNOWN_UUID)
-        with self.client_in_subtenant(parent_uuid=SUB_TENANT_UUID) as (
-            client,
-            _,
-            sub_tenant,
-        ):
-            assert_http_error(404, client.tenants.get_policies, SUB_TENANT_UUID)
-
-        action = partial(self.client.tenants.get_policies, SUB_TENANT_UUID)
-
-        result = action()
-        expected = contains_inanyorder(
-            has_entries(name='foo'),
-            has_entries(name='bar'),
-            has_entries(name='baz'),
-            *[has_entries(name=slug) for slug in DEFAULT_POLICIES_SLUG],
-        )
-        assert_that(
-            result,
-            has_entries(
-                total=3 + NB_DEFAULT_POLICIES,
-                filtered=3 + NB_DEFAULT_POLICIES,
-                items=expected,
-            ),
-        )
-
-        result = action(search='ba')
-        expected = contains_inanyorder(
-            has_entries(name='bar'),
-            has_entries(name='baz'),
-        )
-        assert_that(
-            result,
-            has_entries(total=3 + NB_DEFAULT_POLICIES, filtered=2, items=expected),
-        )
-
-    @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
-    @fixtures.http.policy(name='foo', tenant_uuid=SUB_TENANT_UUID)
-    @fixtures.http.policy(name='bar', tenant_uuid=SUB_TENANT_UUID)
-    @fixtures.http.policy(name='baz', tenant_uuid=SUB_TENANT_UUID)
-    def test_policy_list_sorting(self, _, foo, bar, baz):
-        action = partial(self.client.tenants.get_policies, SUB_TENANT_UUID)
-
-        expected = [
-            has_entries(name='bar'),
-            has_entries(name='baz'),
-            has_entries(name='foo'),
-            # default_policies
-            has_entries(name='wazo-all-users-policy'),
-            has_entries(name='wazo_default_admin_policy'),
-            has_entries(name='wazo_default_user_policy'),
-        ]
-        assert_sorted(action, order='name', expected=expected)
-
-    @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
-    @fixtures.http.policy(name='foo', tenant_uuid=SUB_TENANT_UUID)
-    @fixtures.http.policy(name='bar', tenant_uuid=SUB_TENANT_UUID)
-    @fixtures.http.policy(name='baz', tenant_uuid=SUB_TENANT_UUID)
-    def test_list_paginating(self, _, foo, bar, baz):
-        action = partial(
-            self.client.tenants.get_policies,
-            SUB_TENANT_UUID,
-            order='name',
-            direction='asc',
-        )
-
-        result = action(offset=1)
-        expected = contains_exactly(
-            has_entries(name='baz'),
-            has_entries(name='foo'),
-            # default_policies
-            has_entries(name='wazo-all-users-policy'),
-            has_entries(name='wazo_default_admin_policy'),
-            has_entries(name='wazo_default_user_policy'),
-        )
-        assert_that(
-            result,
-            has_entries(
-                total=3 + NB_DEFAULT_POLICIES,
-                filtered=3 + NB_DEFAULT_POLICIES,
-                items=expected,
-            ),
-        )
-
-        result = action(limit=2)
-        expected = contains_exactly(
-            has_entries(name='bar'),
-            has_entries(name='baz'),
-        )
-        assert_that(
-            result,
-            has_entries(
-                total=3 + NB_DEFAULT_POLICIES,
-                filtered=3 + NB_DEFAULT_POLICIES,
-                items=expected,
-            ),
-        )
-
-    @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
-    @fixtures.http.policy(slug='top_shared', shared=True)
-    @fixtures.http.policy(slug='child', tenant_uuid=SUB_TENANT_UUID)
-    def test_policy_list_with_shared(self, *args):
-        result = self.client.tenants.get_policies(SUB_TENANT_UUID)
-        assert_that(
-            result,
-            has_entries(
-                total=2 + NB_DEFAULT_POLICIES,
-                filtered=2 + NB_DEFAULT_POLICIES,
-                items=contains_inanyorder(
-                    has_entries(slug='top_shared'),
-                    has_entries(slug='child'),
-                    *[has_entries(name=slug) for slug in DEFAULT_POLICIES_SLUG],
-                ),
-            ),
-        )

@@ -1,4 +1,4 @@
-# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from contextlib import contextmanager
@@ -307,38 +307,11 @@ class TestPolicyDAO(base.DAOTestCase):
             ),
         ]
 
-        result = self._policy_dao.list_without_relations(tenant_uuid=TENANT_UUID_2)
-        assert_that(result, contains_inanyorder(*expected))
-
         result = self._policy_dao.list_(tenant_uuids=[TENANT_UUID_2])
         assert_that(result, contains_inanyorder(*expected))
 
         result = self._policy_dao.count(search=None, tenant_uuids=[TENANT_UUID_2])
         assert_that(result, equal_to(len(expected)))
-
-    # fmt: off
-    @fixtures.db.tenant(name='top', uuid=TENANT_UUID_1)
-    @fixtures.db.tenant(name='child', uuid=TENANT_UUID_2, parent_uuid=TENANT_UUID_1)
-    @fixtures.db.policy(slug='top-managed', tenant_uuid=TENANT_UUID_1, config_managed=True)
-    @fixtures.db.policy(slug='child-normal', tenant_uuid=TENANT_UUID_2)
-    # fmt: on
-    def test_list_without_relations_with_config_managed(self, *_):
-        result = self._policy_dao.list_without_relations(tenant_uuid=TENANT_UUID_2)
-        assert_that(
-            result,
-            contains_inanyorder(
-                has_properties(
-                    slug='top-managed',
-                    read_only=True,
-                    tenant_uuid_exposed=TENANT_UUID_2,
-                ),
-                has_properties(
-                    slug='child-normal',
-                    read_only=False,
-                    tenant_uuid_exposed=TENANT_UUID_2,
-                ),
-            ),
-        )
 
     @fixtures.db.user()
     @fixtures.db.policy(name='a')
