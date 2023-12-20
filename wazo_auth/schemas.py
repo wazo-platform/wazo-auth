@@ -158,12 +158,6 @@ class GroupPolicyListSchema(BaseListSchema):
     searchable_columns = ['uuid', 'name', 'user_uuid', 'group_uuid', 'tenant_uuid']
 
 
-class TenantPolicyListSchema(BaseListSchema):
-    sort_columns = ['name', 'description', 'uuid']
-    default_sort_column = 'name'
-    searchable_columns = ['uuid', 'name', 'user_uuid', 'group_uuid', 'tenant_uuid']
-
-
 class UserPolicyListSchema(BaseListSchema):
     sort_columns = ['name', 'description', 'uuid']
     default_sort_column = 'name'
@@ -190,12 +184,6 @@ class TenantListSchema(BaseListSchema):
     ]
 
 
-class UserTenantListSchema(BaseListSchema):
-    sort_columns = ['name']
-    default_sort_column = 'name'
-    searchable_columns = ['uuid', 'uuids', 'name']
-
-
 class UserListSchema(BaseListSchema):
     sort_columns = ['username', 'firstname', 'lastname']
     default_sort_column = 'username'
@@ -215,20 +203,6 @@ class UserListSchema(BaseListSchema):
 
 
 class GroupUserListSchema(BaseListSchema):
-    sort_columns = ['username']
-    default_sort_column = 'username'
-    searchable_columns = [
-        'uuid',
-        'username',
-        'firstname',
-        'lastname',
-        'purpose',
-        'email_address',
-        'group_uuid',
-    ]
-
-
-class TenantUserListSchema(BaseListSchema):
     sort_columns = ['username']
     default_sort_column = 'username'
     searchable_columns = [

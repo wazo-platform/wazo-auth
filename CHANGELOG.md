@@ -1,9 +1,16 @@
 # Changelog
 
+## 24.01
+
+* The following deprecated endpoints have been removed
+
+  * GET `0.1/tenants/<tenant_uuid>/policies`
+  * GET `0.1/tenants/<tenant_uuid>/users`
+  * GET `0.1/users/<user_uuid>/tenants`
+
 ## 23.17
 
 * Tokens now have a maximum expiration time of 10 years.
-
 
 ## 23.07
 
