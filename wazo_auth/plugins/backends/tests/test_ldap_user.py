@@ -1,11 +1,10 @@
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import unittest
+from unittest.mock import Mock, call, patch
+
 import ldap
-
-from unittest.mock import call, Mock, patch
-
 from hamcrest import assert_that, equal_to, has_entries, has_items
 
 from wazo_auth.plugins.backends.ldap_user import LDAPUser, _WazoLDAP

@@ -2,19 +2,21 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
-from unittest.mock import Mock, patch, sentinel as s
+from unittest.mock import Mock, patch
+from unittest.mock import sentinel as s
 
 from hamcrest import (
     assert_that,
-    contains_exactly,
     calling,
+    contains_exactly,
     equal_to,
     has_entries,
     not_,
     raises,
 )
-from wazo_auth.config import _DEFAULT_CONFIG
 from xivo.mallow import fields
+
+from wazo_auth.config import _DEFAULT_CONFIG
 
 from .. import exceptions, services
 from ..database import queries

@@ -3,11 +3,11 @@
 
 import logging
 import time
-
 from contextlib import contextmanager
 from datetime import datetime, timedelta
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.orm import scoped_session, sessionmaker
 
 logger = logging.getLogger(__name__)
 

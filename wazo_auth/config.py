@@ -7,7 +7,6 @@ from xivo.chain_map import ChainMap
 from xivo.config_helper import read_config_file_hierarchy_accumulating_list
 from xivo.xivo_logging import get_log_level_by_name
 
-
 TWO_HOURS = 60 * 60 * 2
 _DEFAULT_HTTP_PORT = 9497
 _DEFAULT_CONFIG = {

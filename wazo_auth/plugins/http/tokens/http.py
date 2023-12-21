@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-import marshmallow
-
-from flask import request
-
 from base64 import b64decode
+
+import marshmallow
+from flask import request
 
 from wazo_auth import exceptions, http
 from wazo_auth.flask_helpers import Tenant
+
 from . import schemas
 
 logger = logging.getLogger(__name__)

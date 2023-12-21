@@ -1,16 +1,15 @@
-# Copyright 2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2022-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import marshmallow
-
 from flask import request
+from xivo.auth_verifier import required_acl
+
 from wazo_auth import exceptions
 from wazo_auth.flask_helpers import Tenant
 from wazo_auth.http import AuthResource
 
-from xivo.auth_verifier import required_acl
-
-from .schemas import ldap_config_schema, ldap_config_edit_schema
+from .schemas import ldap_config_edit_schema, ldap_config_schema
 
 
 class LDAPConfig(AuthResource):

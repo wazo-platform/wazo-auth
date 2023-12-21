@@ -3,6 +3,7 @@
 
 from unittest import TestCase
 from uuid import UUID
+
 from hamcrest import assert_that, equal_to, has_entries
 
 from .. import schemas

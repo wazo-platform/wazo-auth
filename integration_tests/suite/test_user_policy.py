@@ -1,4 +1,4 @@
-# Copyright 2021-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -11,8 +11,9 @@ from hamcrest import (
     has_properties,
 )
 from wazo_test_helpers.hamcrest.raises import raises
-from .helpers import fixtures, base
-from .helpers.base import assert_http_error, assert_no_error, SUB_TENANT_UUID
+
+from .helpers import base, fixtures
+from .helpers.base import SUB_TENANT_UUID, assert_http_error, assert_no_error
 from .helpers.constants import UNKNOWN_SLUG, UNKNOWN_UUID
 
 

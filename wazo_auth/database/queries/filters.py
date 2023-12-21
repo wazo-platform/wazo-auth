@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, or_, text
+
 from ..models import (
     Domain,
     Email,

@@ -6,8 +6,8 @@ Revises: None
 """
 
 from alembic import op
+from sqlalchemy import Integer, String, Text, text
 from sqlalchemy.schema import Column
-from sqlalchemy import Integer, String, text, Text
 
 # revision identifiers, used by Alembic.
 revision = '223324065345'

@@ -17,7 +17,8 @@ from wazo_test_helpers.hamcrest.raises import raises
 
 from wazo_auth import exceptions
 from wazo_auth.database import models
-from .helpers import fixtures, base
+
+from .helpers import base, fixtures
 
 SESSION_UUID_1 = str(uuid.uuid4())
 USER_UUID_1 = str(uuid.uuid4())

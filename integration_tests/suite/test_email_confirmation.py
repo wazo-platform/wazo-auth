@@ -1,4 +1,4 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -10,7 +10,8 @@ from hamcrest import (
     has_properties,
     starts_with,
 )
-from .helpers import fixtures, base
+
+from .helpers import base, fixtures
 from .helpers.base import assert_http_error, assert_no_error
 from .helpers.constants import UNKNOWN_UUID
 

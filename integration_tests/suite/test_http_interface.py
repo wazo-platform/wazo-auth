@@ -1,10 +1,9 @@
-# Copyright 2015-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import logging
 import time
 import uuid
-import logging
-
 from datetime import datetime, timedelta
 from unittest.mock import ANY
 
@@ -21,14 +20,14 @@ from hamcrest import (
     not_,
     raises,
 )
-
 from wazo_auth_client import exceptions
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.uuid_ import uuid_
-from wazo_auth.database import helpers
-from wazo_auth.database import models
-from .helpers import fixtures, base
-from .helpers.constants import UNKNOWN_TENANT, ISO_DATETIME
+
+from wazo_auth.database import helpers, models
+
+from .helpers import base, fixtures
+from .helpers.constants import ISO_DATETIME, UNKNOWN_TENANT
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)

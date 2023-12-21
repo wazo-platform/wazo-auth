@@ -1,20 +1,20 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import argparse
 import os
 import random
 import string
+import sys
 import tempfile
 import traceback
-import sys
+from pwd import getpwnam
+
 from xivo.config_helper import parse_config_file, read_config_file_hierarchy
 
 from wazo_auth import services
 from wazo_auth.database import queries
-from wazo_auth.database.helpers import init_db, commit_or_rollback
-
-from pwd import getpwnam
+from wazo_auth.database.helpers import commit_or_rollback, init_db
 
 DEFAULT_WAZO_AUTH_CONFIG_FILE = '/etc/wazo-auth/config.yml'
 

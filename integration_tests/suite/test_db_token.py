@@ -1,4 +1,4 @@
-# Copyright 2019-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -16,6 +16,7 @@ from hamcrest import (
 
 from wazo_auth import exceptions
 from wazo_auth.database import models
+
 from .helpers import base, fixtures
 
 SESSION_UUID_1 = str(uuid.uuid4())

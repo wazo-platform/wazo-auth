@@ -7,9 +7,10 @@ import time
 from datetime import datetime
 from threading import Thread
 
-from flask import request
 import marshmallow
+from flask import request
 from requests_oauthlib import OAuth2Session
+
 from wazo_auth import http
 from wazo_auth.exceptions import UserParamException
 from wazo_auth.flask_helpers import Tenant

@@ -1,4 +1,4 @@
-# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -7,11 +7,12 @@ from hamcrest import (
     assert_that,
     contains_exactly,
     contains_inanyorder,
-    equal_to,
     empty,
+    equal_to,
     has_entries,
     has_items,
 )
+
 from .helpers import base, fixtures
 
 TENANT_UUID_1 = str(uuid.uuid4())

@@ -3,8 +3,8 @@
 
 import logging
 
-from flask import request
 import marshmallow
+from flask import request
 
 from wazo_auth import exceptions, http
 from wazo_auth.plugin_helpers.flask import extract_connection_params

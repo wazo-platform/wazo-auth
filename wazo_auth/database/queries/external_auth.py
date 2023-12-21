@@ -2,9 +2,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
+
 from sqlalchemy import and_, exc
-from .base import BaseDAO, PaginatorMixin
-from . import filters
+
+from ... import exceptions
 from ..models import (
     ExternalAuthConfig,
     ExternalAuthType,
@@ -12,7 +13,8 @@ from ..models import (
     User,
     UserExternalAuth,
 )
-from ... import exceptions
+from . import filters
+from .base import BaseDAO, PaginatorMixin
 
 
 class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):

@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import abc
-import os
 import logging
+import os
 
 DEFAULT_XIVO_UUID = os.getenv('XIVO_UUID')
 logger = logging.getLogger(__name__)

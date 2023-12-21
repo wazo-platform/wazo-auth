@@ -1,11 +1,11 @@
-# Copyright 2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2022-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import exc
 
-from .base import BaseDAO
-from ..models import LDAPConfig
 from ... import exceptions
+from ..models import LDAPConfig
+from .base import BaseDAO
 
 
 class LDAPConfigDAO(BaseDAO):

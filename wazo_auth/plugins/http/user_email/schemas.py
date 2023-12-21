@@ -1,8 +1,9 @@
 # Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from marshmallow import post_load, validates_schema, ValidationError
+from marshmallow import ValidationError, post_load, validates_schema
 from xivo.mallow import fields
+
 from wazo_auth.schemas import BaseSchema
 
 

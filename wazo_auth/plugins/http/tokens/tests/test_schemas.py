@@ -1,11 +1,10 @@
-# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
 
+from hamcrest import assert_that, calling, has_key, has_properties, not_
 from marshmallow.exceptions import ValidationError
-
-from hamcrest import assert_that, calling, has_properties, has_key, not_
 from wazo_test_helpers.hamcrest.raises import raises
 
 from ..schemas import TokenRequestSchema

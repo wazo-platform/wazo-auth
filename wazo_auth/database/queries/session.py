@@ -1,11 +1,11 @@
 # Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from sqlalchemy import text, and_
+from sqlalchemy import and_, text
 
-from .base import BaseDAO, PaginatorMixin
-from ..models import Session, Token
 from ...helpers import is_uuid
+from ..models import Session, Token
+from .base import BaseDAO, PaginatorMixin
 
 
 class SessionDAO(PaginatorMixin, BaseDAO):

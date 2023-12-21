@@ -5,7 +5,6 @@ from unittest.mock import ANY
 from uuid import uuid4
 
 import pytest
-
 from hamcrest import (
     assert_that,
     calling,
@@ -17,15 +16,13 @@ from hamcrest import (
     has_properties,
     raises,
 )
-
 from wazo_test_helpers.mock import ANY_UUID
+
 from wazo_auth import exceptions
 from wazo_auth.database import models
 
-from .helpers import fixtures, base, constants
-from .helpers.base import (
-    assert_no_error,
-)
+from .helpers import base, constants, fixtures
+from .helpers.base import assert_no_error
 
 TENANT_UUID = '00000000-0000-4000-9000-000000000000'
 USER_UUID = '00000000-0000-4000-9000-111111111111'

@@ -5,8 +5,8 @@ Revises: 548fcce8aad9
 
 """
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects.postgresql import ARRAY
 
 # revision identifiers, used by Alembic.

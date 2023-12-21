@@ -15,11 +15,12 @@ from hamcrest import (
     not_,
     starts_with,
 )
+
 from .helpers import base, fixtures
 from .helpers.constants import (
-    UNKNOWN_UUID,
     NB_DEFAULT_GROUPS,
     NB_DEFAULT_GROUPS_NOT_READONLY,
+    UNKNOWN_UUID,
 )
 
 

@@ -5,7 +5,6 @@ import time
 from uuid import uuid4
 
 import requests
-
 from hamcrest import (
     assert_that,
     contains_exactly,

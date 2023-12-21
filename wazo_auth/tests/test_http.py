@@ -2,16 +2,16 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
-from unittest.mock import ANY, Mock, sentinel as s, patch
+from unittest.mock import ANY, Mock, patch
+from unittest.mock import sentinel as s
 
-from hamcrest import any_of, assert_that, equal_to, has_entries, has_entry
 from flask import Flask
 from flask_restful import Api
-
+from hamcrest import any_of, assert_that, equal_to, has_entries, has_entry
 from xivo import plugin_helpers
 
-from ..config import _DEFAULT_CONFIG
 from .. import services
+from ..config import _DEFAULT_CONFIG
 
 initialized = False
 

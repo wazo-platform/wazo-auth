@@ -5,9 +5,9 @@ from sqlalchemy import and_, exc, text
 
 from wazo_auth import exceptions
 
+from ..models import RefreshToken
 from . import filters
 from .base import BaseDAO, PaginatorMixin
-from ..models import RefreshToken
 
 
 class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):

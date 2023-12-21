@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import post_dump, post_load
-from xivo.mallow import fields, validate
 from xivo import mallow_helpers as mallow
+from xivo.mallow import fields, validate
+
 from wazo_auth.slug import Slug, TenantSlug
 
 BaseSchema = mallow.Schema

@@ -1,12 +1,11 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
-import requests
-
 from functools import partial
 from unittest.mock import ANY
 
+import requests
 from hamcrest import (
     all_of,
     assert_that,
@@ -22,19 +21,19 @@ from hamcrest import (
     not_,
 )
 from wazo_test_helpers.hamcrest.uuid_ import uuid_
-from .helpers import base
+
+from .helpers import base, fixtures
 from .helpers.base import (
-    assert_no_error,
-    assert_http_error,
-    assert_sorted,
     SUB_TENANT_UUID,
+    assert_http_error,
+    assert_no_error,
+    assert_sorted,
 )
-from .helpers import fixtures
 from .helpers.constants import (
-    UNKNOWN_UUID,
-    UNKNOWN_SLUG,
-    NB_DEFAULT_POLICIES,
     ALL_USERS_POLICY_SLUG,
+    NB_DEFAULT_POLICIES,
+    UNKNOWN_SLUG,
+    UNKNOWN_UUID,
 )
 
 

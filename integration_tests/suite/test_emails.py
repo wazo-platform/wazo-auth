@@ -3,7 +3,8 @@
 
 from hamcrest import assert_that, contains_inanyorder, empty, has_entries
 from wazo_test_helpers.hamcrest.uuid_ import uuid_
-from .helpers import fixtures, base
+
+from .helpers import base, fixtures
 from .helpers.base import assert_http_error
 from .helpers.constants import UNKNOWN_UUID
 

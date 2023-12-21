@@ -9,7 +9,6 @@ from alembic import op
 from sqlalchemy import String
 from sqlalchemy.schema import Column, ForeignKey
 
-
 # revision identifiers, used by Alembic.
 revision = '4d994bfa20e0'
 down_revision = 'a514118b80b8'

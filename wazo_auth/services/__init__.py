@@ -1,4 +1,4 @@
-# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from .all_users import AllUsersService
@@ -13,7 +13,7 @@ from .policy import PolicyService
 from .session import SessionService
 from .tenant import TenantService
 from .token import TokenService
-from .user import UserService, PasswordEncrypter
+from .user import PasswordEncrypter, UserService
 
 __all__ = [
     'AllUsersService',

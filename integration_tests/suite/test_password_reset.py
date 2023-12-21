@@ -11,7 +11,7 @@ from hamcrest import (
     not_,
 )
 
-from .helpers import fixtures, base
+from .helpers import base, fixtures
 from .helpers.base import assert_http_error, assert_no_error
 
 

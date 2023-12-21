@@ -1,8 +1,8 @@
 # Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import time
 import logging
+import time
 
 from xivo_bus.resources.auth.events import (
     RefreshTokenCreatedEvent,
@@ -11,8 +11,8 @@ from xivo_bus.resources.auth.events import (
     SessionDeletedEvent,
 )
 
-from wazo_auth.token import Token
 from wazo_auth.services.helpers import BaseService
+from wazo_auth.token import Token
 
 from ..exceptions import (
     DuplicatedRefreshTokenException,

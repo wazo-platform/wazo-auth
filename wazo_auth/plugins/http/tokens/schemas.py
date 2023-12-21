@@ -3,9 +3,8 @@
 
 from marshmallow import validates_schema
 from marshmallow.exceptions import ValidationError
-
 from xivo.mallow import fields
-from xivo.mallow.validate import Length, Range, OneOf
+from xivo.mallow.validate import Length, OneOf, Range
 
 from wazo_auth.schemas import BaseListSchema, BaseSchema
 

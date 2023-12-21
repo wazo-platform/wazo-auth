@@ -5,8 +5,8 @@ Revises: 191d15471531
 
 """
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.schema import Column
 
 # revision identifiers, used by Alembic.

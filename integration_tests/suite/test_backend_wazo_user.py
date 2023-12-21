@@ -1,10 +1,11 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that, has_entries, has_item
-from .helpers import fixtures, base
-from .helpers.base import assert_http_error
 from wazo_test_helpers.hamcrest.uuid_ import uuid_
+
+from .helpers import base, fixtures
+from .helpers.base import assert_http_error
 
 
 @base.use_asset('base')

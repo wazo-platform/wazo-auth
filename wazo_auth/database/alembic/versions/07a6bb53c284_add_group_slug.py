@@ -7,9 +7,9 @@ Revises: e1b78cd7c702
 
 import random
 import re
-import sqlalchemy as sa
 import string
 
+import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.

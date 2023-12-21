@@ -6,11 +6,9 @@ import random
 import string
 import time
 import uuid
-
 from functools import wraps
 
 from wazo_auth.database import models
-
 
 A_SALT = os.urandom(64)
 

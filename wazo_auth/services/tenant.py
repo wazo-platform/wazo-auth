@@ -6,6 +6,7 @@ from xivo_bus.resources.auth.events import (
     TenantDeletedEvent,
     TenantUpdatedEvent,
 )
+
 from wazo_auth import exceptions
 from wazo_auth.services.helpers import BaseService
 

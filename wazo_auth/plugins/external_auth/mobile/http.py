@@ -3,8 +3,8 @@
 
 import logging
 
-from flask import request
 import marshmallow
+from flask import request
 from xivo.mallow import fields
 
 from wazo_auth import exceptions, http, schemas
