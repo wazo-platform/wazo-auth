@@ -1,4 +1,4 @@
-# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -69,7 +69,7 @@ class EmailService(BaseService):
         body = self._formatter.format_password_reset_email(template_context)
         subject = self._formatter.format_password_reset_subject(template_context)
         to = EmailDestination(username, email_address)
-        self._send_msg(to, self._confirmation_from, subject, body)
+        self._send_msg(to, self._password_reset_from, subject, body)
 
     def _send_msg(self, to, from_, subject, body):
         msg = MIMEText(body)
