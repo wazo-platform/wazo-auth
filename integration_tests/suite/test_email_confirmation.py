@@ -1,4 +1,4 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -60,6 +60,17 @@ class TestEmailConfirmation(base.APIIntegrationTest):
         email_uuid = user['emails'][0]['uuid']
 
         self.client.users.request_confirmation_email(user['uuid'], email_uuid)
+
+        expected_url = (
+            f'https://127.0.0.1:{self.auth_port}/0.1/emails/.*/confirm\\?token=.*'
+        )
+        self.assert_last_email(
+            from_name='confirmation_from_name_sentinel',
+            from_address='confirmation_from_address_sentinel@example.com',
+            to_name=user['username'],
+            to_address='foobar@example.com',
+            body_contains=expected_url,
+        )
 
         url = self.get_last_email_url()
         url = url.replace('https://', 'http://')

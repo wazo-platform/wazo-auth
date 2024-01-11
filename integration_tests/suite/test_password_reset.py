@@ -1,4 +1,4 @@
-# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import yaml
@@ -38,6 +38,13 @@ class TestResetPassword(base.APIIntegrationTest):
                 contains_string('username: None'),
                 contains_string('username: u4@example.com'),
             ),
+        )
+
+        self.assert_last_email(
+            from_name='password_reset_from_name_sentinel',
+            from_address='password_reset_from_address_sentinel@example.com',
+            to_name=f'''"{u4['username']}"''',
+            to_address='other@example.com',
         )
 
         new_password = '5ecr37'
