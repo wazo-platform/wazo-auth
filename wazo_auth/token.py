@@ -193,5 +193,10 @@ class ExpiredTokenRemover:
                 logger.warning(
                     'session without token associated: {}'.format(session['uuid'])
                 )
-            event = event_class(**event_args)
-            self._bus_publisher.publish(event)
+
+            try:
+                event = event_class(**event_args)
+            except ValueError:
+                logger.debug('session has no tenant_uuid: {}'.format(session['uuid']))
+            else:
+                self._bus_publisher.publish(event)
