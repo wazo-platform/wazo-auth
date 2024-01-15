@@ -1,4 +1,4 @@
-# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import pytest
@@ -36,7 +36,7 @@ class TestTokens(base.APIIntegrationTest):
     @fixtures.http.user(username='large', password='expiration')
     def test_that_large_expiration_returns_a_400(self, _):
         client = Client(
-            'localhost',
+            '127.0.0.1',
             port=self.auth_port,
             prefix=None,
             https=False,
@@ -51,7 +51,7 @@ class TestTokens(base.APIIntegrationTest):
     @fixtures.http.user(email_address='u1@example.com', password='bar')
     def test_that_the_email_can_be_used_to_get_a_token(self, u1):
         client = Client(
-            'localhost',
+            '127.0.0.1',
             port=self.auth_port,
             prefix=None,
             https=False,
@@ -64,7 +64,7 @@ class TestTokens(base.APIIntegrationTest):
     @fixtures.http.user(username=None, email_address='u1@example.com', password='pass1')
     @fixtures.http.user(username=None, email_address='u2@example.com', password='pass2')
     def test_that_the_email_can_be_used_to_get_a_token_when_many_users(self, u1, u2):
-        client = Client('localhost', port=self.auth_port, prefix=None, https=False)
+        client = Client('127.0.0.1', port=self.auth_port, prefix=None, https=False)
 
         client.username = 'u1@example.com'
         client.password = 'pass1'
@@ -78,7 +78,7 @@ class TestTokens(base.APIIntegrationTest):
 
     @fixtures.http.user(username=None, email_address='u1@example.com', password='pépé')
     def test_unicode_password(self, u1):
-        client = Client('localhost', port=self.auth_port, prefix=None, https=False)
+        client = Client('127.0.0.1', port=self.auth_port, prefix=None, https=False)
 
         client.username = 'u1@example.com'
         client.password = 'pépé'
@@ -102,7 +102,7 @@ class TestTokens(base.APIIntegrationTest):
 
     @fixtures.http.user(username=None, email_address='u1@example.com', password='pass')
     def test_username_is_logged_on_failed_attempts(self, u1):
-        client = Client('localhost', port=self.auth_port, prefix=None, https=False)
+        client = Client('127.0.0.1', port=self.auth_port, prefix=None, https=False)
 
         client.username = 'u1@example.com'
         client.password = 'invalid'
@@ -116,7 +116,7 @@ class TestTokens(base.APIIntegrationTest):
 
     @fixtures.http.user(username=None, email_address='u1@example.com', password='pass')
     def test_username_is_logged_on_successful_attempts(self, u1):
-        client = Client('localhost', port=self.auth_port, prefix=None, https=False)
+        client = Client('127.0.0.1', port=self.auth_port, prefix=None, https=False)
 
         client.username = 'u1@example.com'
         client.password = 'pass'
