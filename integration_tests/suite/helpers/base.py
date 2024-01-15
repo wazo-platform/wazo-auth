@@ -1,10 +1,11 @@
-# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 import os
 import pytest
 import random
+import re
 import requests
 import string
 import unittest
@@ -310,12 +311,50 @@ class APIIntegrationTest(BaseIntegrationTest):
     username = 'admin'
     password = 's3cre7'
 
+    def assert_last_email(
+        self,
+        from_name,
+        from_address,
+        to_name,
+        to_address,
+        body_contains=None,
+    ):
+        assert (
+            self.get_last_email_from() == f'{from_name} <{from_address}>'
+        ), self.get_last_email_from()
+        assert (
+            self.get_last_email_to() == f'{to_name} <{to_address}>'
+        ), self.get_last_email_to()
+        if body_contains:
+            assert re.search(
+                body_contains, self.get_last_email_body(), re.MULTILINE
+            ), self.get_last_email_body()
+
     def get_last_email_url(self):
         last_email = self.get_emails()[-1]
         email_urls = [
             line for line in last_email.split('\n') if line.startswith('https://')
         ]
         return email_urls[-1]
+
+    def get_last_email_from(self):
+        last_email = self.get_emails()[-1]
+        email_froms = [
+            line for line in last_email.split('\n') if line.startswith('From: ')
+        ]
+        return email_froms[-1][6:]
+
+    def get_last_email_to(self):
+        last_email = self.get_emails()[-1]
+        email_froms = [
+            line for line in last_email.split('\n') if line.startswith('To: ')
+        ]
+        return email_froms[-1][4:]
+
+    def get_last_email_body(self):
+        last_email = self.get_emails()[-1]
+        headers, body = last_email.split('\n\n', 1)
+        return body
 
     def get_emails(self):
         return [self._email_body(f) for f in self._get_email_filenames()]
