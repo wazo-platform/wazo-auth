@@ -197,6 +197,12 @@ class ExpiredTokenRemover:
             try:
                 event = event_class(**event_args)
             except ValueError:
-                logger.debug('session has no tenant_uuid: {}'.format(session['uuid']))
+                cls_name = self.__class__.__name__
+                event_name = event_class.name
+                logger.debug(
+                    '{} failed to publish event `{}`, session has no tenant_uuid: {}'.format(
+                        cls_name, event_name, session['uuid']
+                    )
+                )
             else:
                 self._bus_publisher.publish(event)
