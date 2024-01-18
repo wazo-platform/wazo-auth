@@ -141,7 +141,7 @@ class ExpiredTokenRemover:
                 log_level = logging.WARNING
             else:
                 log_level = logging.DEBUG
-            logger.log(log_level, "ExpiredTokenRemover tooks %s seconds", elapsed)
+            logger.log(log_level, "ExpiredTokenRemover took %s seconds", elapsed)
 
             if elapsed < self._cleanup_interval:
                 self._tombstone.wait(self._cleanup_interval - elapsed)
