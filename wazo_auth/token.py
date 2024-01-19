@@ -190,19 +190,16 @@ class ExpiredTokenRemover:
                     event_args['tenant_uuid'] = token['metadata'].get('tenant_uuid')
                     break
             else:
-                logger.warning(
-                    'session without token associated: {}'.format(session['uuid'])
-                )
+                logger.warning('session without token associated: %s', session['uuid'])
 
             try:
                 event = event_class(**event_args)
             except ValueError:
-                cls_name = self.__class__.__name__
-                event_name = event_class.name
                 logger.debug(
-                    '{} failed to publish event `{}`, session has no tenant_uuid: {}'.format(
-                        cls_name, event_name, session['uuid']
-                    )
+                    '%s failed to publish event `%s`, session has no tenant_uuid: %s',
+                    self.__class__.__name__,
+                    event_class.name,
+                    session['uuid'],
                 )
             else:
                 self._bus_publisher.publish(event)
