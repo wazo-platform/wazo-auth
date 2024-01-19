@@ -1,11 +1,13 @@
-# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import time
 import uuid
 
 from hamcrest import (
     assert_that,
     contains_exactly,
+    contains_string,
     greater_than_or_equal_to,
     has_entries,
     has_items,
@@ -13,6 +15,8 @@ from hamcrest import (
     not_,
     has_entry,
 )
+from wazo_auth.database.helpers import get_db_session
+from wazo_auth.database.queries.token import TokenDAO
 
 from wazo_test_helpers import until
 from .helpers import base, fixtures
@@ -23,6 +27,27 @@ TENANT_UUID_2 = str(uuid.uuid4())
 
 @base.use_asset('base')
 class TestSessions(base.APIIntegrationTest):
+    @property
+    def session(self):
+        return get_db_session()
+
+    def _create_generic_token(self, expiration: int) -> str:
+        now = int(time.time())
+        token_payload = {
+            'auth_id': 'wazo-auth',
+            'pbx_user_uuid': None,
+            'xivo_uuid': None,
+            'expire_t': now + expiration,
+            'issued_t': now,
+            'acl': [],
+            'metadata': {},
+            'user_agent': 'wazo-auth-agent',
+            'remote_addr': '',
+        }
+        _, session_uuid = TokenDAO().create(token_payload, {})
+        self.session.commit()  # force update in database
+        return session_uuid
+
     @fixtures.http.session(mobile=False)
     @fixtures.http.session(mobile=True)
     def test_list(self, session_1, session_2):
@@ -265,3 +290,15 @@ class TestSessions(base.APIIntegrationTest):
             )
 
         until.assert_(bus_received_msg, tries=10, interval=0.25)
+
+    def test_handle_generic_tokens_when_expired(self):
+        assert self.client.config.get()['debug'] is True, 'debug must be set to true'
+
+        test_start: int = time.time()
+        session_uuid: str = self._create_generic_token(expiration=3)
+
+        def assert_log_message():
+            logs = self.service_logs(service_name='auth', since=test_start)
+            assert_that(logs, contains_string(session_uuid))
+
+        until.assert_(assert_log_message, tries=10, interval=0.5)

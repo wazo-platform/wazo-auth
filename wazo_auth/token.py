@@ -141,7 +141,7 @@ class ExpiredTokenRemover:
                 log_level = logging.WARNING
             else:
                 log_level = logging.DEBUG
-            logger.log(log_level, "ExpiredTokenRemover tooks %s seconds", elapsed)
+            logger.log(log_level, "ExpiredTokenRemover took %s seconds", elapsed)
 
             if elapsed < self._cleanup_interval:
                 self._tombstone.wait(self._cleanup_interval - elapsed)
@@ -190,8 +190,16 @@ class ExpiredTokenRemover:
                     event_args['tenant_uuid'] = token['metadata'].get('tenant_uuid')
                     break
             else:
-                logger.warning(
-                    'session without token associated: {}'.format(session['uuid'])
+                logger.warning('session without token associated: %s', session['uuid'])
+
+            try:
+                event = event_class(**event_args)
+            except ValueError:
+                logger.debug(
+                    '%s failed to publish event `%s`, session has no tenant_uuid: %s',
+                    self.__class__.__name__,
+                    event_class.name,
+                    session['uuid'],
                 )
-            event = event_class(**event_args)
-            self._bus_publisher.publish(event)
+            else:
+                self._bus_publisher.publish(event)

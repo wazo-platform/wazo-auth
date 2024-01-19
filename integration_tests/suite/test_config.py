@@ -1,4 +1,4 @@
-# Copyright 2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
@@ -20,30 +20,25 @@ class TestConfig(base.APIIntegrationTest):
         assert_that(result, has_key('rest_api'))
 
     def test_update_config(self):
-        debug_true_config = [
+        previous_value = self.client.config.get()['debug']
+        patch_data = [
             {
                 'op': 'replace',
                 'path': '/debug',
-                'value': True,
-            }
-        ]
-        debug_false_config = [
-            {
-                'op': 'replace',
-                'path': '/debug',
-                'value': False,
-            }
+                'value': not previous_value,
+            },
         ]
 
-        debug_true_patched_config = self.client.config.patch(debug_true_config)
-        debug_true_config = self.client.config.get()
-        assert_that(debug_true_config, has_entry('debug', True))
-        assert_that(debug_true_patched_config, equal_to(debug_true_config))
+        patched_config = self.client.config.patch(patch_data)
+        config = self.client.config.get()
+        assert_that(config, has_entry('debug', not previous_value))
+        assert_that(patched_config, equal_to(config))
 
-        debug_false_patched_config = self.client.config.patch(debug_false_config)
-        debug_false_config = self.client.config.get()
-        assert_that(debug_false_config, has_entry('debug', False))
-        assert_that(debug_false_patched_config, equal_to(debug_false_config))
+        patch_data[0]['value'] = previous_value
+        patched_config = self.client.config.patch(patch_data)
+        config = self.client.config.get()
+        assert_that(config, has_entry('debug', previous_value))
+        assert_that(patched_config, equal_to(config))
 
     def test_restrict_only_top_tenant(self):
         top_tenant_uuid = self.get_top_tenant()['uuid']
