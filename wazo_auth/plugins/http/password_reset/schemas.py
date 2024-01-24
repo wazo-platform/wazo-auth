@@ -1,9 +1,10 @@
-# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import ValidationError, validates_schema
-from wazo_auth.schemas import BaseSchema
 from xivo.mallow import fields, validate
+
+from wazo_auth.schemas import BaseSchema
 
 
 class PasswordResetPostParameters(BaseSchema):

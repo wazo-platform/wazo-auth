@@ -1,9 +1,9 @@
-# Copyright 2018-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import unittest
-
-from unittest.mock import Mock, sentinel as s
+from unittest.mock import Mock
+from unittest.mock import sentinel as s
 
 from hamcrest import assert_that, contains_exactly, empty, equal_to, not_
 

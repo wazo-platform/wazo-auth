@@ -1,12 +1,13 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
 import time
 
-from .base import BaseDAO
-from ..models import Session, Tenant, Token as TokenModel
 from ... import exceptions
+from ..models import Session, Tenant
+from ..models import Token as TokenModel
+from .base import BaseDAO
 
 
 class TokenDAO(BaseDAO):

@@ -1,11 +1,12 @@
-# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
-
-from unittest.mock import ANY, Mock, patch, sentinel as s
+from unittest.mock import ANY, Mock, patch
+from unittest.mock import sentinel as s
 
 from hamcrest import assert_that, equal_to, has_entries, has_value, starts_with
+
 from wazo_auth.config import _DEFAULT_CONFIG
 from wazo_auth.tests.test_http import HTTPAppTestCase
 

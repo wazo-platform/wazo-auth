@@ -1,7 +1,8 @@
-# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from contextlib import contextmanager
+
 from hamcrest import (
     assert_that,
     calling,
@@ -13,9 +14,11 @@ from hamcrest import (
     not_,
 )
 from wazo_test_helpers.hamcrest.raises import raises
+
 from wazo_auth import exceptions
-from .helpers import fixtures, base
-from .helpers.constants import UNKNOWN_UUID, UNKNOWN_SLUG
+
+from .helpers import base, fixtures
+from .helpers.constants import UNKNOWN_SLUG, UNKNOWN_UUID
 
 TENANT_UUID_1 = '00000000-0000-4000-a000-000000000001'
 TENANT_UUID_2 = '00000000-0000-4000-a000-000000000002'

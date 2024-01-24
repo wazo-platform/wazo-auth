@@ -3,17 +3,15 @@
 
 import logging
 import os
-import pytest
 import random
 import re
-import requests
 import string
 import unittest
-
+from contextlib import contextmanager
 from datetime import datetime
 
-from sqlalchemy.exc import UnboundExecutionError
-from contextlib import contextmanager
+import pytest
+import requests
 from hamcrest import (
     assert_that,
     calling,
@@ -24,9 +22,9 @@ from hamcrest import (
     has_properties,
 )
 from kombu import Exchange
+from sqlalchemy.exc import UnboundExecutionError
 from wazo_auth_client import Client
 from wazo_test_helpers import until
-from wazo_test_helpers.hamcrest.raises import raises
 from wazo_test_helpers.asset_launching_test_case import (
     AssetLaunchingTestCase,
     NoSuchPort,
@@ -34,16 +32,18 @@ from wazo_test_helpers.asset_launching_test_case import (
     WrongClient,
 )
 from wazo_test_helpers.bus import BusClient
-from wazo_auth.database import queries, helpers
+from wazo_test_helpers.hamcrest.raises import raises
+
+from wazo_auth.database import helpers, queries
 from wazo_auth.database.queries import (
     group,
     ldap_config,
     policy,
+    refresh_token,
+    session,
     tenant,
     token,
     user,
-    refresh_token,
-    session,
 )
 
 from .constants import DB_URI

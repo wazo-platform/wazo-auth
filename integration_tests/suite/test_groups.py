@@ -1,4 +1,4 @@
-# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from functools import partial
@@ -15,11 +15,12 @@ from hamcrest import (
     not_,
     starts_with,
 )
+
 from .helpers import base, fixtures
 from .helpers.constants import (
-    UNKNOWN_UUID,
     NB_DEFAULT_GROUPS,
     NB_DEFAULT_GROUPS_NOT_READONLY,
+    UNKNOWN_UUID,
 )
 
 

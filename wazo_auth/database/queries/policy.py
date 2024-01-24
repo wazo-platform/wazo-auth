@@ -1,24 +1,13 @@
-# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from sqlalchemy import (
-    and_,
-    exc,
-    or_,
-    text,
-)
-from .base import BaseDAO, PaginatorMixin
-from . import filters
-from ..models import (
-    Access,
-    GroupPolicy,
-    Policy,
-    PolicyAccess,
-    Tenant,
-    UserPolicy,
-)
+from sqlalchemy import and_, exc, or_, text
+
 from ... import exceptions
 from ...slug import Slug
+from ..models import Access, GroupPolicy, Policy, PolicyAccess, Tenant, UserPolicy
+from . import filters
+from .base import BaseDAO, PaginatorMixin
 
 
 class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):

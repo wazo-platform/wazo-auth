@@ -1,7 +1,8 @@
-# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
+
 import requests
 from hamcrest import (
     assert_that,
@@ -11,18 +12,19 @@ from hamcrest import (
     contains_string,
     empty,
     equal_to,
-    is_not,
     has_entries,
     has_item,
     has_key,
+    is_not,
     not_,
 )
 from wazo_test_helpers import until
-from wazo_test_helpers.hamcrest.uuid_ import uuid_
 from wazo_test_helpers.hamcrest.raises import raises
-from .helpers import fixtures, base
-from .helpers.constants import UNKNOWN_UUID
+from wazo_test_helpers.hamcrest.uuid_ import uuid_
+
+from .helpers import base, fixtures
 from .helpers.base import assert_http_error, assert_no_error
+from .helpers.constants import UNKNOWN_UUID
 
 
 @base.use_asset('base')

@@ -1,16 +1,10 @@
-# Copyright 2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2022-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from hamcrest import (
-    assert_that,
-    has_entries,
-    has_key,
-    not_,
-)
-from .helpers.constants import UNKNOWN_TENANT
+from hamcrest import assert_that, has_entries, has_key, not_
 
-from .helpers import base
-from .helpers import fixtures
+from .helpers import base, fixtures
+from .helpers.constants import UNKNOWN_TENANT
 
 
 @base.use_asset('base')

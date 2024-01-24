@@ -1,8 +1,7 @@
-# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
-
 from unittest.mock import ANY
 
 from hamcrest import (
@@ -18,14 +17,14 @@ from hamcrest import (
     not_,
 )
 from sqlalchemy import and_, func
-
 from wazo_test_helpers.hamcrest.raises import raises
+from wazo_test_helpers.hamcrest.uuid_ import uuid_
 from wazo_test_helpers.mock import ANY_UUID
+
 from wazo_auth import exceptions
 from wazo_auth.database import models
-from wazo_test_helpers.hamcrest.uuid_ import uuid_
 
-from .helpers import fixtures, base
+from .helpers import base, fixtures
 from .helpers.constants import UNKNOWN_UUID
 
 USER_UUID = '00000000-0000-4000-9000-111111111111'

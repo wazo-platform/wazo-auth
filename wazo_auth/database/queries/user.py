@@ -1,10 +1,10 @@
-# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from sqlalchemy import and_, or_, exc, func, text
+from sqlalchemy import and_, exc, func, or_, text
 from sqlalchemy.orm import joinedload
-from .base import BaseDAO, PaginatorMixin
-from . import filters
+
+from ... import exceptions
 from ..models import (
     Email,
     Group,
@@ -16,7 +16,8 @@ from ..models import (
     UserGroup,
     UserPolicy,
 )
-from ... import exceptions
+from . import filters
+from .base import BaseDAO, PaginatorMixin
 
 
 class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):

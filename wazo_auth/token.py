@@ -3,13 +3,12 @@
 
 import logging
 import os
-import time
 import threading
-
+import time
 from datetime import datetime
 
-from xivo.auth_verifier import AccessCheck
 from wazo_bus.resources.auth.events import SessionDeletedEvent, SessionExpireSoonEvent
+from xivo.auth_verifier import AccessCheck
 
 from wazo_auth.database.helpers import Session
 

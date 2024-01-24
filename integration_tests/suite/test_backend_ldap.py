@@ -1,13 +1,13 @@
-# Copyright 2016-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+
+import time
+from collections import namedtuple
 
 import ldap
 import requests
-import time
-
-from collections import namedtuple
+from hamcrest import assert_that, calling, has_entries, raises
 from ldap.modlist import addModlist
-from hamcrest import assert_that, has_entries, calling, raises
 
 from .helpers import base, fixtures
 

@@ -1,4 +1,4 @@
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import argparse
@@ -6,7 +6,6 @@ import argparse
 from xivo.chain_map import ChainMap
 from xivo.config_helper import read_config_file_hierarchy_accumulating_list
 from xivo.xivo_logging import get_log_level_by_name
-
 
 TWO_HOURS = 60 * 60 * 2
 _DEFAULT_HTTP_PORT = 9497

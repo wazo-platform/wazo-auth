@@ -1,9 +1,9 @@
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import abc
-import os
 import logging
+import os
 
 DEFAULT_XIVO_UUID = os.getenv('XIVO_UUID')
 logger = logging.getLogger(__name__)
