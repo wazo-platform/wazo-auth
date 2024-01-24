@@ -4,10 +4,9 @@ Revision ID: c11c395a7b6
 Revises: ca69b099820
 
 """
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.schema import Column
-
 
 # revision identifiers, used by Alembic.
 revision = 'c11c395a7b6'

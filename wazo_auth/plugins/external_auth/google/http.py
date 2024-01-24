@@ -1,4 +1,4 @@
-# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -10,6 +10,7 @@ from threading import Thread
 from flask import request
 from marshmallow import ValidationError
 from requests_oauthlib import OAuth2Session
+
 from wazo_auth import http
 from wazo_auth.exceptions import UserParamException
 from wazo_auth.flask_helpers import Tenant

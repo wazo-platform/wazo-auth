@@ -1,11 +1,13 @@
-# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 import random
 import string
-from marshmallow import Schema, fields, pre_load
+
 from flask import request
+from marshmallow import Schema, fields, pre_load
+
 from wazo_auth import http
 
 logger = logging.getLogger(__name__)

@@ -10,7 +10,8 @@ from hamcrest import (
     has_properties,
     starts_with,
 )
-from .helpers import fixtures, base
+
+from .helpers import base, fixtures
 from .helpers.base import assert_http_error, assert_no_error
 from .helpers.constants import UNKNOWN_UUID
 

@@ -1,8 +1,9 @@
 # Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from wazo_auth.services.helpers import BaseService
 from wazo_bus.resources.auth.events import SessionDeletedEvent
+
+from wazo_auth.services.helpers import BaseService
 
 
 class SessionService(BaseService):

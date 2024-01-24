@@ -1,4 +1,4 @@
-# Copyright 2016-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import argparse
@@ -6,7 +6,6 @@ import sys
 import time
 
 import psycopg2
-
 from xivo import db_helper
 from xivo.user_rights import change_user
 from xivo.xivo_logging import setup_logging

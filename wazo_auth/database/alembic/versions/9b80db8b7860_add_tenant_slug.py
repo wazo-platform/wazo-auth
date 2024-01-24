@@ -6,11 +6,11 @@ Revises: 67013e93544f
 """
 
 import random
-import string
 import re
+import string
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = '9b80db8b7860'

@@ -5,8 +5,8 @@ Revises: ffe8284b62d9
 
 """
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = '50de5600b678'

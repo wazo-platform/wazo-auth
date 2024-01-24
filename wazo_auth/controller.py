@@ -1,23 +1,22 @@
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 import signal
 import sys
 import threading
-
 from functools import partial
 
 from xivo import plugin_helpers
 from xivo.consul_helpers import ServiceCatalogRegistration
 from xivo.status import StatusAggregator
 
-from . import http, services, token, bootstrap
+from . import bootstrap, http, services, token
 from .bus import BusPublisher
 from .database import queries
 from .database.helpers import db_ready, init_db
 from .flask_helpers import Tenant, Token
-from .http_server import api, CoreRestApi
+from .http_server import CoreRestApi, api
 from .purpose import Purposes
 from .service_discovery import self_check
 

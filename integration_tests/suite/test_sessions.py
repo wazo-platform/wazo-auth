@@ -10,15 +10,16 @@ from hamcrest import (
     contains_string,
     greater_than_or_equal_to,
     has_entries,
+    has_entry,
     has_items,
     has_length,
     not_,
-    has_entry,
 )
+from wazo_test_helpers import until
+
 from wazo_auth.database.helpers import get_db_session
 from wazo_auth.database.queries.token import TokenDAO
 
-from wazo_test_helpers import until
 from .helpers import base, fixtures
 
 TENANT_UUID_1 = str(uuid.uuid4())

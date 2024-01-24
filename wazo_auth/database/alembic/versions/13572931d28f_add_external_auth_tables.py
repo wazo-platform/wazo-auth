@@ -4,8 +4,8 @@ Revision ID: 13572931d28f
 Revises: 4edfead052cd
 
 """
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.schema import Column
 
 # revision identifiers, used by Alembic.

@@ -1,4 +1,4 @@
-# Copyright 2015-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import (
@@ -8,22 +8,16 @@ from hamcrest import (
     empty,
     equal_to,
     has_entries,
-    has_item,
     has_entry,
+    has_item,
     is_,
 )
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.uuid_ import uuid_
-from .helpers import fixtures, base
-from .helpers.base import (
-    ADDRESS_NULL,
-    assert_http_error,
-    assert_no_error,
-)
-from .helpers.constants import (
-    ALL_USERS_POLICY_SLUG,
-    UNKNOWN_UUID,
-)
+
+from .helpers import base, fixtures
+from .helpers.base import ADDRESS_NULL, assert_http_error, assert_no_error
+from .helpers.constants import ALL_USERS_POLICY_SLUG, UNKNOWN_UUID
 
 ADDRESS_1 = {
     'line_1': 'Here',

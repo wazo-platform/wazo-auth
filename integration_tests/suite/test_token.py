@@ -1,12 +1,12 @@
 # Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import pytest
 import re
-import requests
 from base64 import b64encode
-
 from unittest.mock import ANY
+
+import pytest
+import requests
 from hamcrest import (
     assert_that,
     calling,
@@ -16,17 +16,17 @@ from hamcrest import (
     ends_with,
     equal_to,
     has_entries,
+    has_entry,
     has_key,
     has_properties,
     not_,
-    has_entry,
 )
 from requests.exceptions import HTTPError
-from wazo_test_helpers.hamcrest.raises import raises
-from wazo_test_helpers import until
 from wazo_auth_client import Client
+from wazo_test_helpers import until
+from wazo_test_helpers.hamcrest.raises import raises
 
-from .helpers import fixtures, base
+from .helpers import base, fixtures
 from .helpers.base import assert_http_error
 from .helpers.constants import UNKNOWN_UUID
 

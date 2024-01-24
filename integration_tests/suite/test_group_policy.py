@@ -1,27 +1,23 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
-
 from functools import partial
+
 from hamcrest import (
     assert_that,
     contains_exactly,
     contains_inanyorder,
     empty,
     has_entries,
-    has_items,
     has_item,
+    has_items,
     not_,
 )
+
 from .helpers import base, fixtures
 from .helpers.base import SUB_TENANT_UUID
-from .helpers.constants import (
-    ALL_USERS_POLICY_SLUG,
-    UNKNOWN_SLUG,
-    UNKNOWN_UUID,
-)
-
+from .helpers.constants import ALL_USERS_POLICY_SLUG, UNKNOWN_SLUG, UNKNOWN_UUID
 
 TENANT_UUID_1 = str(uuid.uuid4())
 

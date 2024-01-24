@@ -8,8 +8,9 @@ Revises: 9b80db8b7860
 import random
 import re
 import string
-from alembic import op
+
 import sqlalchemy as sa
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = '23a680f792f5'

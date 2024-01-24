@@ -1,4 +1,4 @@
-# Copyright 2015-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import functools
@@ -7,23 +7,23 @@ import time
 
 from flask import current_app
 from flask_restful import Resource
-from xivo.rest_api_helpers import handle_api_exception
-from xivo.auth_verifier import (
-    AuthVerifier,
-    extract_token_id_from_query_or_header,
-    required_acl as _required_acl,
-    required_tenant,
-    Unauthorized,
-)
 from wazo_auth_client.exceptions import (
     InvalidTokenException,
     MissingPermissionsTokenException,
 )
-from wazo_auth.database.helpers import commit_or_rollback
 from werkzeug.local import LocalProxy as Proxy
+from xivo.auth_verifier import (
+    AuthVerifier,
+    Unauthorized,
+    extract_token_id_from_query_or_header,
+)
+from xivo.auth_verifier import required_acl as _required_acl
+from xivo.auth_verifier import required_tenant
+from xivo.rest_api_helpers import handle_api_exception
+
+from wazo_auth.database.helpers import commit_or_rollback
 
 from . import exceptions
-
 from .http_server import app
 
 logger = logging.getLogger(__name__)

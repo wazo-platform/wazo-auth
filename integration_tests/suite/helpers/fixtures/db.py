@@ -1,4 +1,4 @@
-# Copyright 2019-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -6,11 +6,9 @@ import random
 import string
 import time
 import uuid
-
 from functools import wraps
 
 from wazo_auth.database import models
-
 
 A_SALT = os.urandom(64)
 

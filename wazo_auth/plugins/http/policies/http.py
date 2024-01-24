@@ -1,12 +1,13 @@
-# Copyright 2017-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import marshmallow
 from flask import request
 from xivo.auth_verifier import AccessCheck, Unauthorized
-import marshmallow
 
 from wazo_auth import exceptions, http, schemas
 from wazo_auth.flask_helpers import Tenant, Token, get_tenant_uuids
+
 from .schemas import policy_full_schema, policy_put_schema
 
 
