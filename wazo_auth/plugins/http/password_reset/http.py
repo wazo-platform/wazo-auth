@@ -77,6 +77,9 @@ class PasswordReset(http.ErrorCatchingResource):
                 user_uuid, None, args['password'], reset=True
             )
 
+        # reset token shouldn't be reused
+        self.auth_client.token.revoke(token_id)
+
         return '', 204
 
     def _extract_email(self, user):

@@ -53,6 +53,12 @@ class AuthClientFacade:
             except exceptions.MissingAccessTokenException:
                 return False
 
+        def revoke(self, token_id):
+            try:
+                current_app.config['token_service'].remove_token(token_id)
+            except exceptions.UnknownTokenException:
+                raise Unauthorized(token_id)
+
         def get(self, token_id, required_access=None):
             try:
                 return (

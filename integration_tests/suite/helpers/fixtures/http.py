@@ -5,6 +5,9 @@ import random
 import string
 from contextlib import contextmanager
 from functools import wraps
+import logging
+
+logger = logging.getLogger(__name__)
 
 import requests
 
@@ -75,7 +78,9 @@ def user(**user_args):
                 try:
                     self.client.users.delete(user['uuid'])
                 except requests.HTTPError:
-                    pass
+                    logger.exception("Failed to delete user")
+                    # pass
+                    raise
             return result
 
         return wrapper
