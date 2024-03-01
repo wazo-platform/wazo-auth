@@ -1,4 +1,4 @@
-# Copyright 2020-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -13,14 +13,11 @@ class AllUsersService:
         self._dao = dao
         self._all_users_policies = all_users_policies
 
-    def update_policies(self):
-        top_tenant_uuid = self._dao.tenant.find_top_tenant()
-        tenants = self._dao.tenant.list_visible_tenants(top_tenant_uuid)
-        tenant_uuids = [tenant.uuid for tenant in tenants]
+    def update_policies(self, tenant_uuids):
         logger.debug(
             'all_users: found %s policies to apply to all users of %s tenants',
             len(self._all_users_policies),
-            len(tenants),
+            len(tenant_uuids),
         )
         policies = self.find_policies()
         for tenant_uuid in tenant_uuids:

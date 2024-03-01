@@ -1,4 +1,4 @@
-# Copyright 2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2022-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -13,15 +13,13 @@ class DefaultGroupService:
         self._dao = dao
         self._default_groups = default_groups
 
-    def update_groups(self):
+    def update_groups(self, tenant_uuids):
         logger.debug(
             'Found %s groups to apply in every tenant',
             len(self._default_groups),
         )
-        top_tenant_uuid = self._dao.tenant.find_top_tenant()
-        tenants = self._dao.tenant.list_visible_tenants(top_tenant_uuid)
-        for tenant in tenants:
-            self.update_groups_for_tenant(tenant.uuid)
+        for tenant_uuid in tenant_uuids:
+            self.update_groups_for_tenant(tenant_uuid)
         commit_or_rollback()
 
     def update_groups_for_tenant(self, tenant_uuid):
