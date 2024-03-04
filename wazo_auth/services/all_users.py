@@ -20,8 +20,13 @@ class AllUsersService:
             len(tenant_uuids),
         )
         policies = self.find_policies()
+        current_group_policy_associations = (
+            self._dao.group.get_all_policy_associations()
+        )
         for tenant_uuid in tenant_uuids:
-            self.associate_policies_for_tenant(tenant_uuid, policies)
+            self.associate_policies_for_tenant(
+                tenant_uuid, policies, current_group_policy_associations
+            )
 
         commit_or_rollback()
 
@@ -40,10 +45,15 @@ class AllUsersService:
 
         return policies
 
-    def associate_policies_for_tenant(self, tenant_uuid, policies):
+    def associate_policies_for_tenant(
+        self, tenant_uuid, policies, current_group_policy_associations
+    ):
         all_users_group = self._dao.group.get_all_users_group(tenant_uuid)
         for policy in policies:
+            if (all_users_group.uuid, policy.uuid) in current_group_policy_associations:
+                continue
             self._associate_policy(tenant_uuid, policy.uuid, all_users_group.uuid)
+            current_group_policy_associations.add((all_users_group.uuid, policy.uuid))
 
         existing_policies = self._dao.policy.list_(tenant_uuid=tenant_uuid)
         policies_to_dissociate = [

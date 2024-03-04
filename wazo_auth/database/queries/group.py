@@ -154,6 +154,12 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         group = query.first()
         return group
 
+    def get_all_policy_associations(self):
+        result = self.session.query(
+            GroupPolicy.group_uuid, GroupPolicy.policy_uuid
+        ).all()
+        return {(row.group_uuid, row.policy_uuid) for row in result}
+
     def list_(self, tenant_uuids=None, policy_uuid=None, policy_slug=None, **kwargs):
         search_filter = self.new_search_filter(**kwargs)
         strict_filter = self.new_strict_filter(**kwargs)
