@@ -18,13 +18,17 @@ class DefaultGroupService:
             'Found %s groups to apply in every tenant',
             len(self._default_groups),
         )
+        groups = self._dao.group.find_all_by(slug=list(self._default_groups.keys()))
+        group_by_slug_tenant = {
+            (group.slug, group.tenant_uuid): group for group in groups
+        }
         for tenant_uuid in tenant_uuids:
-            self.update_groups_for_tenant(tenant_uuid)
+            self.update_groups_for_tenant(tenant_uuid, group_by_slug_tenant)
         commit_or_rollback()
 
-    def update_groups_for_tenant(self, tenant_uuid):
+    def update_groups_for_tenant(self, tenant_uuid, group_by_slug_tenant):
         for group_slug, group_args in self._default_groups.items():
-            group = self._dao.group.find_by(slug=group_slug, tenant_uuid=tenant_uuid)
+            group = group_by_slug_tenant.get((group_slug, tenant_uuid))
             if group:
                 self._update_group(tenant_uuid, group.uuid, group_slug, group_args)
             else:
