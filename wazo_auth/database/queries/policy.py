@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, or_, text
-from sqlalchemy.orm import joinedload
 
 from ... import exceptions
 from ...slug import Slug
@@ -167,7 +166,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def is_associated(self, uuid):
         return self._is_associated_user(uuid) or self._is_associated_group(uuid)
 
-    def list_(self, tenant_uuids=None, with_groups=None, **kwargs):
+    def list_(self, tenant_uuids=None, **kwargs):
         strict_filter = self.new_strict_filter(**kwargs)
         search_filter = self.new_search_filter(**kwargs)
         filter_ = and_(strict_filter, search_filter)
@@ -199,12 +198,9 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         filter_ = and_(filter_, read_only_filter)
 
-        query = self.session.query(Policy)
-        if with_groups:
-            query = query.options(joinedload('groups'))
-
         query = (
-            query.outerjoin(
+            self.session.query(Policy)
+            .outerjoin(
                 UserPolicy,
             )
             .outerjoin(

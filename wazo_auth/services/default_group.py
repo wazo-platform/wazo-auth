@@ -23,7 +23,7 @@ class DefaultGroupService:
         group_by_slug_tenant = {
             (group.slug, group.tenant_uuid): group for group in groups
         }
-        policies = self._dao.policy.list_(with_groups=True)
+        policies = self._dao.policy.list_()
         policies_by_group = defaultdict(list)
         for policy in policies:
             for group in policy.groups:
