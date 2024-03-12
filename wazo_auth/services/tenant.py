@@ -111,7 +111,7 @@ class TenantService(BaseService):
                 raise Exception('All users policy %s not found')
             self._dao.group.add_policy(all_users_group_uuid, all_users_policy.uuid)
 
-        self._default_group_service.update_groups_for_tenant(uuid)
+        self._default_group_service.update_groups([uuid])
 
         return result
 

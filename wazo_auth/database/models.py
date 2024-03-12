@@ -1,4 +1,4 @@
-# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import (
@@ -289,6 +289,7 @@ class Policy(Base):
         single_parent=True,
     )
     accesses = relationship('Access', secondary='auth_policy_access', viewonly=True)
+    groups = relationship('Group', secondary='auth_group_policy', viewonly=True)
 
     @property
     def acl(self):

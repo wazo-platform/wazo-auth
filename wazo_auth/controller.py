@@ -188,10 +188,7 @@ class Controller:
 
         with db_ready(timeout=self._config['db_connect_retry_timeout_seconds']):
             if self._config['update_policy_on_startup']:
-                self._default_policy_service.update_policies()
-                self._all_users_service.update_policies()
-                self._default_group_service.update_groups()
-                self._default_policy_service.delete_orphan_policies()
+                self._update_policy_on_startup()
             http.init_top_tenant(self.dao)
             if self._config['bootstrap_user_on_startup']:
                 bootstrap.create_initial_user(
@@ -221,6 +218,16 @@ class Controller:
 
     def _loaded_plugins_names(self, backends):
         return [backend.name for backend in backends]
+
+    def _update_policy_on_startup(self):
+        top_tenant_uuid = self.dao.tenant.find_top_tenant()
+        visible_tenants = self.dao.tenant.list_visible_tenants(top_tenant_uuid)
+        tenant_uuids = [tenant.uuid for tenant in visible_tenants]
+
+        self._default_policy_service.update_policies(top_tenant_uuid)
+        self._all_users_service.update_policies(tenant_uuids)
+        self._default_group_service.update_groups(tenant_uuids)
+        self._default_policy_service.delete_orphan_policies()
 
 
 class BackendsProxy:

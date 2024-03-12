@@ -260,6 +260,19 @@ class TestGroupDAO(base.DAOTestCase):
             group = self._group_dao.find_by(uuid=group_uuid)
             assert_that(group, has_properties(slug=name))
 
+    @fixtures.db.group(slug='foobar')
+    @fixtures.db.group(slug='foobaz')
+    @fixtures.db.group(slug='foobarbaz')
+    def test_group_find_all_by_multiple_slug(self, g1_uuid, g2_uuid, g3_uuid):
+        result = self._group_dao.find_all_by(slug=['foobar', 'foobarbaz'])
+        assert_that(
+            result,
+            contains_inanyorder(
+                has_properties(uuid=g1_uuid, slug='foobar'),
+                has_properties(uuid=g3_uuid, slug='foobarbaz'),
+            ),
+        )
+
     @contextmanager
     def _new_group(self, name, slug=None, description=None, acl=None, tenant_uuid=None):
         tenant_uuid = tenant_uuid or self.top_tenant_uuid

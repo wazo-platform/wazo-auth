@@ -200,10 +200,18 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         query = (
             self.session.query(Policy)
-            .outerjoin(UserPolicy)
-            .outerjoin(GroupPolicy)
-            .filter(filter_)
-            .group_by(Policy)
+            .outerjoin(
+                UserPolicy,
+            )
+            .outerjoin(
+                GroupPolicy,
+            )
+            .filter(
+                filter_,
+            )
+            .group_by(
+                Policy,
+            )
         )
         query = self._paginator.update_query(query, **kwargs)
 

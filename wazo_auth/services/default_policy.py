@@ -1,4 +1,4 @@
-# Copyright 2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -13,8 +13,7 @@ class DefaultPolicyService:
         self._dao = dao
         self._default_policies = default_policies
 
-    def update_policies(self):
-        top_tenant_uuid = self._dao.tenant.find_top_tenant()
+    def update_policies(self, top_tenant_uuid):
         logger.debug(
             'default_policies: found %s policies to apply',
             len(self._default_policies),

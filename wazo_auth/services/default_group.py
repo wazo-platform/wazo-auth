@@ -1,7 +1,8 @@
-# Copyright 2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2022-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
+from collections import defaultdict
 
 from wazo_auth.database.helpers import commit_or_rollback
 
@@ -13,22 +14,36 @@ class DefaultGroupService:
         self._dao = dao
         self._default_groups = default_groups
 
-    def update_groups(self):
+    def update_groups(self, tenant_uuids):
         logger.debug(
             'Found %s groups to apply in every tenant',
             len(self._default_groups),
         )
-        top_tenant_uuid = self._dao.tenant.find_top_tenant()
-        tenants = self._dao.tenant.list_visible_tenants(top_tenant_uuid)
-        for tenant in tenants:
-            self.update_groups_for_tenant(tenant.uuid)
+        groups = self._dao.group.find_all_by(slug=list(self._default_groups.keys()))
+        group_by_slug_tenant = {
+            (group.slug, group.tenant_uuid): group for group in groups
+        }
+        policies = self._dao.policy.list_()
+        policies_by_group = defaultdict(list)
+        for policy in policies:
+            for group in policy.groups:
+                policies_by_group[group.uuid].append(policy.slug)
+
+        for tenant_uuid in tenant_uuids:
+            self.update_groups_for_tenant(
+                tenant_uuid, group_by_slug_tenant, policies_by_group
+            )
         commit_or_rollback()
 
-    def update_groups_for_tenant(self, tenant_uuid):
+    def update_groups_for_tenant(
+        self, tenant_uuid, group_by_slug_tenant, policies_by_group
+    ):
         for group_slug, group_args in self._default_groups.items():
-            group = self._dao.group.find_by(slug=group_slug, tenant_uuid=tenant_uuid)
+            group = group_by_slug_tenant.get((group_slug, tenant_uuid))
             if group:
-                self._update_group(tenant_uuid, group.uuid, group_slug, group_args)
+                self._update_group(
+                    tenant_uuid, group.uuid, group_slug, group_args, policies_by_group
+                )
             else:
                 self._create_group(tenant_uuid, group_slug, group_args)
 
@@ -65,7 +80,9 @@ class DefaultGroupService:
                 continue
             self._dao.group.add_policy(group_uuid, policy.uuid)
 
-    def _update_group(self, tenant_uuid, group_uuid, group_slug, group):
+    def _update_group(
+        self, tenant_uuid, group_uuid, group_slug, group, policies_by_group
+    ):
         logger.debug('Tenant %s: updating group %s', tenant_uuid, group_slug)
         group = dict(group)
         policies = group.pop('policies', {})
@@ -81,9 +98,7 @@ class DefaultGroupService:
         disabled_policies = (
             policy_slug for policy_slug, enabled in policies.items() if not enabled
         )
-        existing_policies = (
-            policy.slug for policy in self._dao.policy.list_(group_uuid=group_uuid)
-        )
+        existing_policies = set(policies_by_group.get(group_uuid) or [])
         policies_to_add = set(enabled_policies) - set(existing_policies)
         policies_to_remove = set(disabled_policies) & set(existing_policies)
         for policy_slug in policies_to_add:
