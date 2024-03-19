@@ -52,6 +52,7 @@ setup(
             'user_registration = wazo_auth.plugins.http.user_registration.plugin:Plugin',
             'user_session = wazo_auth.plugins.http.user_session.plugin:Plugin',
             'users = wazo_auth.plugins.http.users.plugin:Plugin',
+            'saml = wazo_auth.plugins.http.saml.plugin:Plugin',
         ],
         'wazo_auth.external_auth': [
             'google = wazo_auth.plugins.external_auth.google.plugin:GooglePlugin',
