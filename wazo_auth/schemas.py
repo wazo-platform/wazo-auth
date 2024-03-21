@@ -11,6 +11,7 @@ BaseSchema = mallow.Schema
 
 
 # This class should be moved to mallow_helpers
+# Copied from https://github.com/marshmallow-code/marshmallow/issues/133
 class MultiDictAwareList(mallow.fields.List):
     def _deserialize(self, value, attr, data, **kwargs):
         if isinstance(data, dict) and hasattr(data, 'getlist'):
@@ -182,7 +183,7 @@ class UserSessionListSchema(BaseListSchema):
 
 
 class TenantListSchema(BaseListSchema):
-    uuids = MultiDictAwareList(fields.String)
+    uuids = MultiDictAwareList(fields.String, validate=validate.Length(max=25))
     sort_columns = ['name', 'slug']
     default_sort_column = 'name'
     searchable_columns = [

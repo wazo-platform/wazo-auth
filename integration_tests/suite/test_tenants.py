@@ -1,6 +1,8 @@
 # Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from uuid import uuid4
+
 from hamcrest import (
     assert_that,
     contains_exactly,
@@ -357,6 +359,10 @@ class TestTenants(base.APIIntegrationTest):
         result = self.client.tenants.list(uuids=[foobaz_uuid, foobar_uuid])
         matcher = contains_inanyorder(foobaz, foobar)
         then(result, filtered=2, item_matcher=matcher)
+
+        assert_http_error(
+            400, self.client.tenants.list, uuids=[str(uuid4()) for _ in range(26)]
+        )
 
         result = self.client.tenants.list(slug='ccc')
         matcher = contains_inanyorder(foobarbaz)
