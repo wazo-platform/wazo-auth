@@ -338,6 +338,7 @@ class TestTenants(base.APIIntegrationTest):
             )
 
         foobaz_uuid = foobaz['uuid']
+        foobar_uuid = foobar['uuid']
         foobar['domain_names'] = contains_inanyorder(*foobar['domain_names'])
         foobaz['domain_names'] = contains_inanyorder(*foobaz['domain_names'])
         foobarbaz['domain_names'] = contains_inanyorder(*foobarbaz['domain_names'])
@@ -352,6 +353,10 @@ class TestTenants(base.APIIntegrationTest):
         result = self.client.tenants.list(uuid=foobaz_uuid)
         matcher = contains_inanyorder(foobaz)
         then(result, filtered=1, item_matcher=matcher)
+
+        result = self.client.tenants.list(uuids=[foobaz_uuid, foobar_uuid])
+        matcher = contains_inanyorder(foobaz, foobar)
+        then(result, filtered=2, item_matcher=matcher)
 
         result = self.client.tenants.list(slug='ccc')
         matcher = contains_inanyorder(foobarbaz)

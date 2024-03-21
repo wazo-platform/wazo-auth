@@ -10,6 +10,14 @@ from wazo_auth.slug import Slug, TenantSlug
 BaseSchema = mallow.Schema
 
 
+# This class should be moved to mallow_helpers
+class MultiDictAwareList(mallow.fields.List):
+    def _deserialize(self, value, attr, data, **kwargs):
+        if isinstance(data, dict) and hasattr(data, 'getlist'):
+            value = data.getlist(attr)
+        return super()._deserialize(value, attr, data, **kwargs)
+
+
 class GroupRequestSchema(BaseSchema):
     name = fields.String(validate=validate.Length(min=1, max=128), required=True)
     slug = fields.String(
@@ -174,6 +182,7 @@ class UserSessionListSchema(BaseListSchema):
 
 
 class TenantListSchema(BaseListSchema):
+    uuids = MultiDictAwareList(fields.String)
     sort_columns = ['name', 'slug']
     default_sort_column = 'name'
     searchable_columns = [
