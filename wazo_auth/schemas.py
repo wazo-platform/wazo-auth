@@ -174,6 +174,7 @@ class UserSessionListSchema(BaseListSchema):
 
 
 class TenantListSchema(BaseListSchema):
+    uuids = fields.MultiDictAwareList(fields.String, validate=validate.Length(max=25))
     sort_columns = ['name', 'slug']
     default_sort_column = 'name'
     searchable_columns = [
