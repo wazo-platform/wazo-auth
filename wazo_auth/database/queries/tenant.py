@@ -26,7 +26,9 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return self.count([str(tenant_uuid)]) > 0
 
     def count(self, tenant_uuids, **kwargs):
-        filter_ = Tenant.uuid.in_(tenant_uuids)
+        filter_ = text('true')
+        if tenant_uuids is not None:
+            filter_ = Tenant.uuid.in_(tenant_uuids)
 
         filtered = kwargs.get('filtered')
         if filtered is not False:

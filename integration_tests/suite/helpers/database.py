@@ -37,17 +37,58 @@ class Database:
     def connect(self, db=None):
         return self._engine.connect()
 
-    def recreate(self):
-        engine = self.create_engine("postgres", isolate=True)
-        connection = engine.connect()
-        connection.execute(
-            f"""
-            SELECT pg_terminate_backend(pg_stat_activity.pid)
-            FROM pg_stat_activity
-            WHERE pg_stat_activity.datname = '{self.db}'
-            AND pid <> pg_backend_pid()
-            """
+    def inject_sql(self, sql):
+        with self.connect() as connection:
+            return connection.execute(sql)
+
+    def current_summary(self):
+        query = sa.text(
+            "SELECT tablename FROM pg_catalog.pg_tables "
+            "WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema';"
         )
-        connection.execute(f"DROP DATABASE IF EXISTS {self.db}")
-        connection.execute(f"CREATE DATABASE {self.db} TEMPLATE {self.TEMPLATE}")
-        connection.close()
+        with self.connect() as connection:
+            result = connection.execute(query)
+            table_names = {row.tablename for row in result}
+            tables_counts = {
+                table_name: self._count_table_rows(connection, table_name)
+                for table_name in table_names
+            }
+        return DBSummary(tables_counts)
+
+    def _count_table_rows(self, connection, table_name: str) -> int:
+        query = sa.text(f"SELECT COUNT(*) FROM {table_name};")
+        count = connection.execute(query).scalar()
+        return count
+
+
+class DBSummary:
+    def __init__(self, tables):
+        self._tables = tables
+
+    def diff(self, other_summary):
+        '''Returns current summary minus another summary'''
+        left = self._tables
+        right = other_summary._tables
+        diff = {
+            table_name: left[table_name] - right[table_name]
+            for table_name in set(left) | set(right)
+            if left.get(table_name) != right.get(table_name)
+        }
+        return DBSummary(diff)
+
+    def __mul__(self, multiplier):
+        return DBSummary(
+            {
+                table_name: value * multiplier
+                for table_name, value in self._tables.items()
+            }
+        )
+
+    def __eq__(self, other):
+        return self._tables == other._tables
+
+    def __repr__(self):
+        return repr(self._tables)
+
+    def __str__(self):
+        return str(self._tables)

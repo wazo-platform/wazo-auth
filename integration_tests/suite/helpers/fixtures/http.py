@@ -33,6 +33,75 @@ def tenant(**tenant_args):
     return decorator
 
 
+def bulk_tenants(**tenant_args):
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            if parent_name := tenant_args.get('parent_name'):
+                candidates = self.client.tenants.list(search=parent_name)['items']
+                parent_tenant = [
+                    candidate
+                    for candidate in candidates
+                    if candidate['name'] == parent_name
+                ][0]
+                tenant_args['parent_uuid'] = parent_tenant['uuid']
+            parent_uuid = tenant_args.setdefault('parent_uuid', self.top_tenant_uuid)
+            db = self.asset_cls.make_db_client()
+            before = db.current_summary()
+            api_tenant_args = {
+                'name': 'bulk-tenants-api',
+                'slug': 'tapi',
+            }
+
+            try:
+                # inject one tenant through API
+                self.client.tenants.new(**api_tenant_args)
+
+                api_diff = db.current_summary().diff(before)
+
+                # inject many tenants through DB
+                line = '''
+                INSERT INTO "auth_tenant" VALUES (DEFAULT, 'bulk-tenants-{index:0=5}', NULL, NULL,
+                    (SELECT uuid FROM auth_tenant WHERE uuid = '{parent_uuid}'), 't{index:0=5}');
+                INSERT INTO "auth_group" VALUES (DEFAULT, 'bulk-tenants-{index:0=5}-1',
+                    (SELECT uuid FROM auth_tenant WHERE name = 'bulk-tenants-{index:0=5}'),
+                    DEFAULT, 'g{index:0=5}1');
+                INSERT INTO "auth_group" VALUES (DEFAULT, 'bulk-tenants-{index:0=5}-2',
+                    (SELECT uuid FROM auth_tenant WHERE name = 'bulk-tenants-{index:0=5}'),
+                    DEFAULT, 'g{index:0=5}2');
+                INSERT INTO "auth_group_policy" VALUES (
+                    (SELECT uuid FROM auth_group WHERE name = 'bulk-tenants-{index:0=5}-1'),
+                    (SELECT uuid from auth_policy WHERE name = 'wazo-all-users-policy')
+                );
+                INSERT INTO "auth_group_policy" VALUES (
+                    (SELECT uuid FROM auth_group WHERE name = 'bulk-tenants-{index:0=5}-2'),
+                    (SELECT uuid from auth_policy WHERE name = 'wazo_default_admin_policy')
+                );'''
+                lines = (
+                    line.format(index=index, parent_uuid=parent_uuid)
+                    for index in range(4999)
+                )
+                sql = '\n'.join(lines)
+                db.inject_sql(sql)
+
+                db_diff = db.current_summary().diff(before)
+                assert db_diff == (api_diff * 5000), (
+                    f'Database data injection does not represent API side-effects'
+                    f': API = {api_diff * 5000}, DB = {db_diff}'
+                )
+
+                result = decorated(self, *args, **kwargs)
+            finally:
+                sql = '''DELETE FROM "auth_tenant" WHERE name LIKE 'bulk-tenants-%%';'''
+                db.inject_sql(sql)
+
+            return result
+
+        return wrapper
+
+    return decorator
+
+
 def token(**token_args):
     def decorator(decorated):
         @wraps(decorated)

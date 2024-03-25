@@ -31,7 +31,11 @@ class TenantService(BaseService):
             raise exceptions.UnknownTenantException(tenant_uuid)
 
     def count(self, scoping_tenant_uuid, **kwargs):
-        visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
+        top_tenant_uuid = self.find_top_tenant()
+        if scoping_tenant_uuid == top_tenant_uuid:
+            visible_tenants = None
+        else:
+            visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
         return self._dao.tenant.count(tenant_uuids=visible_tenants, **kwargs)
 
     def delete(self, scoping_tenant_uuid, tenant_uuid):
@@ -72,7 +76,11 @@ class TenantService(BaseService):
         raise exceptions.UnknownTenantException(tenant_uuid)
 
     def list_(self, scoping_tenant_uuid, **kwargs):
-        visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
+        top_tenant_uuid = self.find_top_tenant()
+        if scoping_tenant_uuid == top_tenant_uuid:
+            visible_tenants = None
+        else:
+            visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
         return self._dao.tenant.list_(tenant_uuids=visible_tenants, **kwargs)
 
     def list_sub_tenants(self, tenant_uuid):
