@@ -29,6 +29,18 @@ class TestTenants(base.APIIntegrationTest):
         assert timer.last < 5
         assert result['total'] >= 5000
 
+    @fixtures.http.bulk_tenants()
+    def test_create_tenant(self):
+        with codetiming.Timer() as timer:
+            tenant = self.client.tenants.new(
+                name='performance-tenant-creation', slug='perftc'
+            )
+
+        try:
+            assert timer.last < 0.1
+        finally:
+            self.client.tenants.delete(tenant['uuid'])
+
     # TODO: test tenant creation performance
     # TODO: test subtenant creation performance
     # TODO: detect changes in database after rollback
