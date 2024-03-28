@@ -55,5 +55,3 @@ class TestTenants(base.APIIntegrationTest):
             assert timer.last < 0.1
         finally:
             self.client.tenants.delete(tenant['uuid'])
-
-    # TODO: detect changes in database after rollback

@@ -95,6 +95,11 @@ def bulk_tenants(**tenant_args):
                 sql = '''DELETE FROM "auth_tenant" WHERE name LIKE 'bulk-tenants-%%';'''
                 db.inject_sql(sql)
 
+                final_diff = db.current_summary().diff(before)
+                assert (
+                    not final_diff
+                ), f'Fixture removal did not restore database as before: {final_diff}'
+
             return result
 
         return wrapper
