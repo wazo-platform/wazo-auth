@@ -423,3 +423,37 @@ class TestTenantDAO(base.DAOTestCase):
             ),
             raises(exceptions.DomainAlreadyExistException),
         )
+
+    @fixtures.db.tenant(name='1', uuid=TENANT_UUID_1)
+    @fixtures.db.tenant(name='2', uuid=TENANT_UUID_2, parent_uuid=TENANT_UUID_1)
+    @fixtures.db.tenant(name='3', uuid=TENANT_UUID_3, parent_uuid=TENANT_UUID_2)
+    @fixtures.db.tenant(name='4', uuid=TENANT_UUID_4, parent_uuid=TENANT_UUID_1)
+    def test_is_subtenant(self, *_):
+        '''
+        master - 1 - 2 - 3
+        |          L 4
+        '''
+        top_tenant_uuid = self._top_tenant_uuid()
+        assert self._tenant_dao.is_subtenant(TENANT_UUID_1, top_tenant_uuid)
+        assert self._tenant_dao.is_subtenant(TENANT_UUID_1, TENANT_UUID_1)
+        assert self._tenant_dao.is_subtenant(TENANT_UUID_2, top_tenant_uuid)
+        assert self._tenant_dao.is_subtenant(TENANT_UUID_2, TENANT_UUID_1)
+        assert self._tenant_dao.is_subtenant(TENANT_UUID_3, top_tenant_uuid)
+        assert self._tenant_dao.is_subtenant(TENANT_UUID_3, TENANT_UUID_1)
+        assert self._tenant_dao.is_subtenant(TENANT_UUID_3, TENANT_UUID_2)
+        assert self._tenant_dao.is_subtenant(TENANT_UUID_4, top_tenant_uuid)
+        assert self._tenant_dao.is_subtenant(TENANT_UUID_4, TENANT_UUID_1)
+
+        assert not self._tenant_dao.is_subtenant(TENANT_UUID_1, TENANT_UUID_2)
+        assert not self._tenant_dao.is_subtenant(TENANT_UUID_1, TENANT_UUID_3)
+        assert not self._tenant_dao.is_subtenant(TENANT_UUID_2, TENANT_UUID_3)
+        assert not self._tenant_dao.is_subtenant(TENANT_UUID_2, TENANT_UUID_4)
+        assert not self._tenant_dao.is_subtenant(TENANT_UUID_3, TENANT_UUID_4)
+        assert not self._tenant_dao.is_subtenant(TENANT_UUID_4, TENANT_UUID_2)
+
+        assert not self._tenant_dao.is_subtenant('unknown', top_tenant_uuid)
+        assert not self._tenant_dao.is_subtenant('unknown', TENANT_UUID_1)
+        assert not self._tenant_dao.is_subtenant('unknown', TENANT_UUID_4)
+        assert not self._tenant_dao.is_subtenant(top_tenant_uuid, 'unknown')
+        assert not self._tenant_dao.is_subtenant(TENANT_UUID_1, 'unknown')
+        assert not self._tenant_dao.is_subtenant(TENANT_UUID_4, 'unknown')

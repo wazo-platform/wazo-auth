@@ -1,4 +1,4 @@
-# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -37,8 +37,7 @@ class Tenant:
         if specified_tenant == user_tenant:
             return cls(user_tenant)
 
-        sub_tenants = cls._get_all_sub_tenants(user_tenant)
-        if specified_tenant in sub_tenants:
+        if cls._is_subtenant(specified_tenant, user_tenant):
             return cls(specified_tenant)
 
         raise tenant_helpers.UnauthorizedTenant(specified_tenant)
@@ -58,8 +57,8 @@ class Tenant:
         return user['tenant_uuid']
 
     @classmethod
-    def _get_all_sub_tenants(cls, tenant_uuid):
-        return cls.tenant_service.list_sub_tenants(tenant_uuid)
+    def _is_subtenant(cls, child_uuid, parent_uuid):
+        return cls.tenant_service.is_subtenant(child_uuid, parent_uuid)
 
     @classmethod
     def setup(cls, token_service, user_service, tenant_service):

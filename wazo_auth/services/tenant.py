@@ -1,6 +1,8 @@
 # Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import logging
+
 from wazo_bus.resources.auth.events import (
     TenantCreatedEvent,
     TenantDeletedEvent,
@@ -9,6 +11,8 @@ from wazo_bus.resources.auth.events import (
 
 from wazo_auth import exceptions
 from wazo_auth.services.helpers import BaseService
+
+logger = logging.getLogger(__name__)
 
 
 class TenantService(BaseService):
@@ -121,6 +125,13 @@ class TenantService(BaseService):
 
         self._default_group_service.create_groups_for_new_tenant(uuid)
 
+        return result
+
+    def is_subtenant(self, child_uuid, parent_uuid):
+        result = self._dao.tenant.is_subtenant(child_uuid, parent_uuid)
+        logger.debug(
+            'Is tenant %s subtenant of %s? %s', child_uuid, parent_uuid, result
+        )
         return result
 
     def update(self, scoping_tenant_uuid, tenant_uuid, **kwargs):

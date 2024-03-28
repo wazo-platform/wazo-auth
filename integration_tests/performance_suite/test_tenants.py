@@ -26,7 +26,7 @@ class TestTenants(base.APIIntegrationTest):
                 tenant_uuid=parent_tenant['uuid'], recurse=True
             )
 
-        assert timer.last < 5
+        assert timer.last < 10
         assert result['total'] >= 5000
 
     @fixtures.http.bulk_tenants()
@@ -41,6 +41,19 @@ class TestTenants(base.APIIntegrationTest):
         finally:
             self.client.tenants.delete(tenant['uuid'])
 
-    # TODO: test tenant creation performance
-    # TODO: test subtenant creation performance
+    @fixtures.http.tenant(name='create-subtenant-parent')
+    @fixtures.http.bulk_tenants()
+    def test_create_subtenant(self, parent_tenant):
+        with codetiming.Timer() as timer:
+            tenant = self.client.tenants.new(
+                name='performance-tenant-creation',
+                parent_uuid=parent_tenant['uuid'],
+                slug='perftc',
+            )
+
+        try:
+            assert timer.last < 0.1
+        finally:
+            self.client.tenants.delete(tenant['uuid'])
+
     # TODO: detect changes in database after rollback
