@@ -35,6 +35,9 @@ class DefaultGroupService:
             )
         commit_or_rollback()
 
+    def create_groups_for_new_tenant(self, tenant_uuid):
+        self.update_groups_for_tenant(tenant_uuid, {}, {})
+
     def update_groups_for_tenant(
         self, tenant_uuid, group_by_slug_tenant, policies_by_group
     ):

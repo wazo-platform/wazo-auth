@@ -26,7 +26,9 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return self.count([str(tenant_uuid)]) > 0
 
     def count(self, tenant_uuids, **kwargs):
-        filter_ = Tenant.uuid.in_(tenant_uuids)
+        filter_ = text('true')
+        if tenant_uuids is not None:
+            filter_ = Tenant.uuid.in_(tenant_uuids)
 
         filtered = kwargs.get('filtered')
         if filtered is not False:
@@ -124,6 +126,41 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             .filter(Address.tenant_uuid == str(tenant_uuid))
             .scalar()
         )
+
+    def is_subtenant(self, child_uuid, parent_uuid):
+        if parent_uuid is None or child_uuid is None:
+            return False
+
+        if parent_uuid == child_uuid:
+            return True
+
+        if not self.exists(child_uuid):
+            return False
+
+        top_tenant_uuid = self.find_top_tenant()
+        if parent_uuid == top_tenant_uuid:
+            return True
+
+        parent_tenants = (
+            self.session.query(Tenant.uuid)
+            .filter(Tenant.uuid == str(child_uuid))
+            .cte(recursive=True)
+        )
+        parent_tenants = parent_tenants.union_all(
+            self.session.query(Tenant.parent_uuid).filter(
+                and_(
+                    Tenant.uuid == parent_tenants.c.uuid,
+                    Tenant.uuid != parent_uuid,  # stop recursion on expected parent
+                    Tenant.uuid != Tenant.parent_uuid,  # stop recursion on top tenant
+                )
+            )
+        )
+
+        result = (
+            self.session.query(parent_tenants.c.uuid).select_from(parent_tenants).all()
+        )
+        uuid_chain = [row[0] for row in result]
+        return child_uuid in uuid_chain and parent_uuid in uuid_chain
 
     def list_visible_tenants(self, scoping_tenant_uuid=None):
         query = self._tenant_query(scoping_tenant_uuid)

@@ -1,3 +1,4 @@
+codetiming
 kombu
 openapi-spec-validator<0.6.0  # dependency conflict on requests version (>2.31.0) with wazo clients (=2.25.1)
 pyhamcrest

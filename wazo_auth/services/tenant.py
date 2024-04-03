@@ -1,6 +1,8 @@
 # Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import logging
+
 from wazo_bus.resources.auth.events import (
     TenantCreatedEvent,
     TenantDeletedEvent,
@@ -9,6 +11,8 @@ from wazo_bus.resources.auth.events import (
 
 from wazo_auth import exceptions
 from wazo_auth.services.helpers import BaseService
+
+logger = logging.getLogger(__name__)
 
 
 class TenantService(BaseService):
@@ -25,13 +29,12 @@ class TenantService(BaseService):
         self._all_users_policies = all_users_policies
         self._default_group_service = default_group_service
 
-    def assert_tenant_under(self, scoping_tenant_uuid, tenant_uuid):
-        visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
-        if str(tenant_uuid) not in visible_tenants:
-            raise exceptions.UnknownTenantException(tenant_uuid)
-
     def count(self, scoping_tenant_uuid, **kwargs):
-        visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
+        top_tenant_uuid = self.find_top_tenant()
+        if scoping_tenant_uuid == top_tenant_uuid:
+            visible_tenants = None
+        else:
+            visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
         return self._dao.tenant.count(tenant_uuids=visible_tenants, **kwargs)
 
     def delete(self, scoping_tenant_uuid, tenant_uuid):
@@ -72,7 +75,11 @@ class TenantService(BaseService):
         raise exceptions.UnknownTenantException(tenant_uuid)
 
     def list_(self, scoping_tenant_uuid, **kwargs):
-        visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
+        top_tenant_uuid = self.find_top_tenant()
+        if scoping_tenant_uuid == top_tenant_uuid:
+            visible_tenants = None
+        else:
+            visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
         return self._dao.tenant.list_(tenant_uuids=visible_tenants, **kwargs)
 
     def list_sub_tenants(self, tenant_uuid):
@@ -111,8 +118,15 @@ class TenantService(BaseService):
                 raise Exception('All users policy %s not found')
             self._dao.group.add_policy(all_users_group_uuid, all_users_policy.uuid)
 
-        self._default_group_service.update_groups([uuid])
+        self._default_group_service.create_groups_for_new_tenant(uuid)
 
+        return result
+
+    def is_subtenant(self, child_uuid, parent_uuid):
+        result = self._dao.tenant.is_subtenant(child_uuid, parent_uuid)
+        logger.debug(
+            'Is tenant %s subtenant of %s? %s', child_uuid, parent_uuid, result
+        )
         return result
 
     def update(self, scoping_tenant_uuid, tenant_uuid, **kwargs):
