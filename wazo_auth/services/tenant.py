@@ -29,11 +29,6 @@ class TenantService(BaseService):
         self._all_users_policies = all_users_policies
         self._default_group_service = default_group_service
 
-    def assert_tenant_under(self, scoping_tenant_uuid, tenant_uuid):
-        visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
-        if str(tenant_uuid) not in visible_tenants:
-            raise exceptions.UnknownTenantException(tenant_uuid)
-
     def count(self, scoping_tenant_uuid, **kwargs):
         top_tenant_uuid = self.find_top_tenant()
         if scoping_tenant_uuid == top_tenant_uuid:
