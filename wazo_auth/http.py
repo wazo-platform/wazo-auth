@@ -1,11 +1,15 @@
 # Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import cProfile
 import functools
 import logging
+import os
+import os.path
 import time
+from datetime import datetime
 
-from flask import current_app
+from flask import current_app, request
 from flask_restful import Resource
 from wazo_auth_client.exceptions import (
     InvalidTokenException,
@@ -96,11 +100,39 @@ def handle_manager_exception(func):
     return wrapper
 
 
-class ErrorCatchingResource(Resource):
+def trigger_profiling(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        if not current_app.config.get('profiling_enabled'):
+            return func(*args, **kwargs)
+
+        directory = '/tmp/wazo-profiling'
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        with cProfile.Profile() as profile:
+            result = func(*args, **kwargs)
+
+        timestamp = datetime.now()
+        request_path = 'api_auth' + request.path.replace('/', '_')
+        file_name = f'{timestamp.isoformat()}-{request_path}.profile'
+        profile.dump_stats(f'{directory}/{file_name}')
+        return result
+
+    return wrapper
+
+
+class ProfilingResource(Resource):
+    method_decorators = [
+        trigger_profiling,
+    ] + Resource.method_decorators
+
+
+class ErrorCatchingResource(ProfilingResource):
     method_decorators = [
         handle_manager_exception,
         handle_api_exception,
-    ] + Resource.method_decorators
+    ] + ProfilingResource.method_decorators
 
 
 class AuthResource(ErrorCatchingResource):

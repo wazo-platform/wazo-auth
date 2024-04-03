@@ -1,5 +1,13 @@
 # Changelog
 
+## 24.06
+
+* The config has new available keys:
+
+  * `profiling_enabled: bool`
+
+Those keys may also be configured with PATCH `/0.1/config`.
+
 ## 24.01
 
 * The following deprecated endpoints have been removed
