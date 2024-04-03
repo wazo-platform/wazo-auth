@@ -26,7 +26,7 @@ class TestTenants(base.APIIntegrationTest):
                 tenant_uuid=parent_tenant['uuid'], recurse=True
             )
 
-        assert timer.last < 10
+        assert timer.last < 1
         assert result['total'] >= 5000
 
     @fixtures.http.bulk_tenants()

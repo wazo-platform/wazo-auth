@@ -41,6 +41,14 @@ class Database:
         with self.connect() as connection:
             return connection.execute(sql)
 
+    def inject_sql_raw(self, sql):
+        '''This allows sending SQL queries without starting a new transaction.
+        This is useful for running e.g. VACUUM'''
+
+        engine = self.create_engine(isolate=True)
+        with engine.connect() as connection:
+            return connection.execute(sql)
+
     def current_summary(self):
         query = sa.text(
             "SELECT tablename FROM pg_catalog.pg_tables "

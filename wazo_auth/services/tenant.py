@@ -30,12 +30,7 @@ class TenantService(BaseService):
         self._default_group_service = default_group_service
 
     def count(self, scoping_tenant_uuid, **kwargs):
-        top_tenant_uuid = self.find_top_tenant()
-        if scoping_tenant_uuid == top_tenant_uuid:
-            visible_tenants = None
-        else:
-            visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
-        return self._dao.tenant.count(tenant_uuids=visible_tenants, **kwargs)
+        return self._dao.tenant.count(scoping_tenant_uuid, **kwargs)
 
     def delete(self, scoping_tenant_uuid, tenant_uuid):
         visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
@@ -75,12 +70,7 @@ class TenantService(BaseService):
         raise exceptions.UnknownTenantException(tenant_uuid)
 
     def list_(self, scoping_tenant_uuid, **kwargs):
-        top_tenant_uuid = self.find_top_tenant()
-        if scoping_tenant_uuid == top_tenant_uuid:
-            visible_tenants = None
-        else:
-            visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
-        return self._dao.tenant.list_(tenant_uuids=visible_tenants, **kwargs)
+        return self._dao.tenant.list_(scoping_tenant_uuid, **kwargs)
 
     def list_sub_tenants(self, tenant_uuid):
         return self._tenant_tree.list_visible_tenants(tenant_uuid)
