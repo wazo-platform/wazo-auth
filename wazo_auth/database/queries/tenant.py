@@ -27,8 +27,8 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             self.session.query(Tenant).filter(Tenant.uuid == tenant_uuid).first()
         )
 
-    def count(self, scoping_tenant_uuid, **kwargs):
-        query = self._tenant_query(scoping_tenant_uuid)
+    def count(self, top_tenant_uuid, scoping_tenant_uuid=None, **kwargs):
+        query = self._tenant_query(top_tenant_uuid, scoping_tenant_uuid)
         filter_ = text('true')
         filtered = kwargs.get('filtered')
         if filtered is not False:
@@ -163,13 +163,12 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return child_uuid in uuid_chain and parent_uuid in uuid_chain
 
     def list_visible_tenants(self, scoping_tenant_uuid=None):
-        query = self._tenant_query(scoping_tenant_uuid)
+        top_tenant_uuid = self.find_top_tenant()
+        query = self._tenant_query(top_tenant_uuid, scoping_tenant_uuid)
         return query.all()
 
-    def list_(self, scoping_tenant_uuid=None, **kwargs):
-        top_tenant_uuid = self.find_top_tenant()
-        scoping_tenant_uuid = scoping_tenant_uuid or top_tenant_uuid
-        query = self._tenant_query(scoping_tenant_uuid)
+    def list_(self, top_tenant_uuid, scoping_tenant_uuid=None, **kwargs):
+        query = self._tenant_query(top_tenant_uuid, scoping_tenant_uuid)
         filter_ = text('true')
 
         search_filter = self.new_search_filter(**kwargs)
@@ -214,8 +213,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     raise exceptions.DomainAlreadyExistException(domain_names)
             raise
 
-    def _tenant_query(self, scoping_tenant_uuid):
-        top_tenant_uuid = self.find_top_tenant()
+    def _tenant_query(self, top_tenant_uuid, scoping_tenant_uuid=None):
         if scoping_tenant_uuid is None:
             scoping_tenant_uuid = top_tenant_uuid
 
