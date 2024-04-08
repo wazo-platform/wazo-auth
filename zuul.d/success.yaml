@@ -1,0 +1,6 @@
+---
+- hosts: all
+  tasks:
+    - name: Success
+      assert:
+        that: True
