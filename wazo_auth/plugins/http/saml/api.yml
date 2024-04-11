@@ -1,0 +1,34 @@
+paths:
+  /saml/sso:
+    description: |
+      Returns the information that the client needs to use to authenticate
+      using the configured identity provider
+    operationId: samlSSO
+    tags:
+    - token
+    - saml
+    responses:
+      '303':
+        description: |
+          The `Location` header contains the URL of the identity provider that should be
+          used by the client to authenticate.
+  /saml/acs:
+    consumes:
+    - application/samlmetadata+xml
+    produces:
+    - application/json
+    description: |
+      Receives the SAML response created by the identity provider.
+
+      The user's email address from the SAML response is used to find
+      the matching wazo-auth user and generate an access token for that
+      user.
+    operationId: createTokenSAML
+    tags:
+    - token
+    - saml
+    parameters:
+    - name: body
+      in: body
+      description: The SAML response
+      required: true
