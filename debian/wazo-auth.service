@@ -9,6 +9,7 @@ ExecStart=/usr/bin/wazo-auth
 ExecStartPost=/usr/bin/wazo-auth-wait
 Restart=on-failure
 RestartSec=5
+SyslogIdentifier=wazo-auth
 
 [Install]
 WantedBy=multi-user.target
