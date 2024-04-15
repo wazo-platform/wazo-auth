@@ -1,6 +1,6 @@
 paths:
   /saml/sso:
-    get: 
+    get:
       description: |
         Returns the information that the client needs to use to authenticate
         using the configured identity provider
