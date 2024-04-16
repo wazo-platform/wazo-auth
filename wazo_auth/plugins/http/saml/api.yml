@@ -13,6 +13,10 @@ paths:
           description: |
             The `Location` header contains the URL of the identity provider that should be
             used by the client to authenticate.
+        '500':
+          description: |
+            Please ask your admin to configure the
+
   /saml/acs:
     post:
       consumes:
