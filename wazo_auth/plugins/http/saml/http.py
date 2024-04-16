@@ -1,9 +1,15 @@
 # Copyright 2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from flask import request
+import logging
+
+from flask import redirect, request
+from saml2.client import Saml2Client
+from saml2.config import Config as SAMLConfig
 
 from wazo_auth import http
+
+logger = logging.getLogger(__name__)
 
 
 class SAMLACS(http.ErrorCatchingResource):
@@ -56,5 +62,10 @@ class SAMLSSO(http.ErrorCatchingResource):
         self._config = config
         self._backend = wazo_user_backend
 
-    def post(self):
-        pass
+    def get(self):
+        saml_config = SAMLConfig()
+        saml_config.load(self._config['saml'])
+        saml_client = Saml2Client(config=saml_config)
+        idps = saml_client.metadata.with_descriptor('idpsso')
+        for idp in idps:
+            return redirect(idp, code=303)
