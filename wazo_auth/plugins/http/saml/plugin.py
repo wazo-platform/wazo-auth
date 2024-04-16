@@ -12,7 +12,7 @@ class Plugin:
             dependencies['user_service'],
             dependencies['authentication_service'],
             dependencies['config'],
-            dependencies['backend_proxy'],
+            dependencies['backends'],
         )
 
         api.add_resource(
