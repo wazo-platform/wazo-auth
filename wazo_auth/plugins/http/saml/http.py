@@ -5,11 +5,11 @@ import logging
 
 from flask import redirect, request
 from saml2.client import Saml2Client
-from saml2.config import Config
+from saml2.config import Config as SAMLConfig
 
 from wazo_auth import http
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class SAMLACS(http.ErrorCatchingResource):
@@ -63,11 +63,9 @@ class SAMLSSO(http.ErrorCatchingResource):
         self._backend = wazo_user_backend
 
     def get(self):
-        where_to: str = 'saml location'
-        return redirect(where_to, 303)
-
-
-class SP:
-    def __init__(self, wazo_auth_config):
-        _config = Config(wazo_auth_config.saml)
-        self.sp = Saml2Client(_config)
+        saml_config = SAMLConfig()
+        saml_config.load(self._config['saml'])
+        saml_client = Saml2Client(config=saml_config)
+        idps = saml_client.metadata.with_descriptor('idpsso')
+        for idp in idps:
+            return redirect(idp, code=303)
