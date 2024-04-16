@@ -117,7 +117,6 @@ class Controller:
                 'token_service': self._token_service,
                 'backends': self._backends,
                 'config': config,
-                'backend_proxy': self._backends,
             },
         )
 
