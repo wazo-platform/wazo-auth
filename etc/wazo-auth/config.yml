@@ -135,3 +135,4 @@ saml:
   metadata:
     local:
       - 'pki/saml.xml'
+  xmlsec_binary: '/usr/bin/xmlsec1'

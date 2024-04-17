@@ -3,13 +3,18 @@
 
 import logging
 
-from flask import redirect, request
+from flask import Response, request
+from saml2 import BINDING_HTTP_REDIRECT, element_to_extension_element, xmldsig
 from saml2.client import Saml2Client
-from saml2.config import Config
+from saml2.config import Config as SAMLConfig
+from saml2.extension.pefim import SPCertEnc
+from saml2.s_utils import rndstr
+from saml2.saml import NAMEID_FORMAT_PERSISTENT
+from saml2.samlp import Extensions
 
 from wazo_auth import http
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class SAMLACS(http.ErrorCatchingResource):
@@ -62,12 +67,61 @@ class SAMLSSO(http.ErrorCatchingResource):
         self._config = config
         self._backend = wazo_user_backend
 
+    def _getSamlRequest(self, saml_client, saml_config):
+        idps = saml_client.metadata.identity_providers()
+
+        # just single IDP IDP supported
+        entity_id = idps[0]
+
+        # Picks a binding to use for sending the Request to the IDP
+        _binding, destination = saml_client.pick_binding(
+            "single_sign_on_service",
+            [BINDING_HTTP_REDIRECT],
+            "idpsso",
+            entity_id=entity_id,
+        )
+        logger.debug("binding: %s, destination: %s", _binding, destination)
+        # Binding here is the response binding that is which binding the
+        # IDP should use to return the response.
+        acs = saml_client.config.getattr("endpoints", "sp")[
+            "assertion_consumer_service"
+        ]
+        # just pick one
+        return_binding = acs[0]
+
+        extensions = None
+        if saml_client.config.generate_cert_func is not None:
+            cert_str, req_key_str = saml_client.config.generate_cert_func()
+            spcertenc = SPCertEnc(
+                x509_data=xmldsig.X509Data(
+                    x509_certificate=xmldsig.X509Certificate(text=cert_str)
+                )
+            )
+            extensions = Extensions(
+                extension_elements=[element_to_extension_element(spcertenc)]
+            )
+
+        req_id, req = saml_client.create_authn_request(
+            destination,
+            binding=return_binding,
+            extensions=extensions,
+            nameid_format=NAMEID_FORMAT_PERSISTENT,
+        )
+        _rstate = rndstr()
+        http_args = saml_client.apply_binding(
+            _binding, f"{req}", destination, relay_state=_rstate, sigalg=""
+        )
+
+        return http_args
+
     def get(self):
-        where_to: str = 'saml location'
-        return redirect(where_to, 303)
+        saml_config = SAMLConfig()
+        logger.info('SAML config: %s' % self._config['saml'])
+        saml_config.load(self._config['saml'])
+        saml_client = Saml2Client(config=saml_config)
 
-
-class SP:
-    def __init__(self, wazo_auth_config):
-        _config = Config(wazo_auth_config.saml)
-        self.sp = Saml2Client(_config)
+        http_args = self._getSamlRequest(saml_client, saml_config)
+        return Response(
+            http_args['url'],
+            http_args['status'],
+        )
