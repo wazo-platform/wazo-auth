@@ -23,20 +23,20 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     column_map = {'name': Tenant.name, 'slug': Tenant.slug}
 
     def exists(self, tenant_uuid):
-        return self.count([str(tenant_uuid)]) > 0
+        return bool(
+            self.session.query(Tenant).filter(Tenant.uuid == tenant_uuid).first()
+        )
 
-    def count(self, tenant_uuids, **kwargs):
+    def count(self, top_tenant_uuid, scoping_tenant_uuid=None, **kwargs):
+        query = self._tenant_query(top_tenant_uuid, scoping_tenant_uuid)
         filter_ = text('true')
-        if tenant_uuids is not None:
-            filter_ = Tenant.uuid.in_(tenant_uuids)
-
         filtered = kwargs.get('filtered')
         if filtered is not False:
             strict_filter = self.new_strict_filter(**kwargs)
             search_filter = self.new_search_filter(**kwargs)
             filter_ = and_(filter_, strict_filter, search_filter)
 
-        return self.session.query(Tenant).filter(filter_).count()
+        return query.filter(filter_).count()
 
     def count_users(self, tenant_uuid, **kwargs):
         filtered = kwargs.get('filtered')
@@ -163,29 +163,26 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return child_uuid in uuid_chain and parent_uuid in uuid_chain
 
     def list_visible_tenants(self, scoping_tenant_uuid=None):
-        query = self._tenant_query(scoping_tenant_uuid)
+        top_tenant_uuid = self.find_top_tenant()
+        query = self._tenant_query(top_tenant_uuid, scoping_tenant_uuid)
         return query.all()
 
-    def list_(self, **kwargs):
-        schema = schemas.TenantFullSchema()
+    def list_(self, top_tenant_uuid, scoping_tenant_uuid=None, **kwargs):
+        query = self._tenant_query(top_tenant_uuid, scoping_tenant_uuid)
         filter_ = text('true')
-
-        tenant_uuids = kwargs.get('tenant_uuids')
-        if tenant_uuids is not None:
-            filter_ = Tenant.uuid.in_(tenant_uuids)
 
         search_filter = self.new_search_filter(**kwargs)
         strict_filter = self.new_strict_filter(**kwargs)
         filter_ = and_(filter_, strict_filter, search_filter)
 
         query = (
-            self.session.query(Tenant)
-            .filter(filter_)
+            query.filter(filter_)
             .options(joinedload('address'))
             .options(joinedload('domains'))
         )
         query = self._paginator.update_query(query, **kwargs)
 
+        schema = schemas.TenantFullSchema()
         return [schema.dump(row) for row in query.all()]
 
     def update(
@@ -216,8 +213,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     raise exceptions.DomainAlreadyExistException(domain_names)
             raise
 
-    def _tenant_query(self, scoping_tenant_uuid):
-        top_tenant_uuid = self.find_top_tenant()
+    def _tenant_query(self, top_tenant_uuid, scoping_tenant_uuid=None):
         if scoping_tenant_uuid is None:
             scoping_tenant_uuid = top_tenant_uuid
 

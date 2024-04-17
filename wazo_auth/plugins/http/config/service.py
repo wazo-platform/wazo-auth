@@ -1,8 +1,10 @@
-# Copyright 2020-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 import threading
+
+from flask import current_app
 
 
 class ConfigService:
@@ -23,6 +25,9 @@ class ConfigService:
             self._update_debug(config['debug'])
             self._config['debug'] = config['debug']
 
+            self._update_profiling(config['profiling_enabled'])
+            self._config['profiling_enabled'] = config['profiling_enabled']
+
     def _update_debug(self, debug):
         if debug:
             self._enable_debug()
@@ -36,3 +41,6 @@ class ConfigService:
     def _disable_debug(self):
         root_logger = logging.getLogger()
         root_logger.setLevel(self._config['log_level'])
+
+    def _update_profiling(self, enabled):
+        current_app.config['profiling_enabled'] = enabled

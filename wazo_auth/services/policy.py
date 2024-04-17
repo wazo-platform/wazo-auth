@@ -1,4 +1,4 @@
-# Copyright 2018-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from wazo_auth import exceptions
@@ -42,7 +42,9 @@ class PolicyService(BaseService):
         return self._dao.policy.list_(**kwargs)
 
     def list_tenants(self, policy_uuid, **kwargs):
-        return self._dao.tenant.list_(policy_uuid=policy_uuid, **kwargs)
+        return self._dao.tenant.list_(
+            self.top_tenant_uuid, policy_uuid=policy_uuid, **kwargs
+        )
 
     def update(self, policy_uuid, tenant_uuids, **body):
         policy = self._dao.policy.find_by(uuid=policy_uuid)

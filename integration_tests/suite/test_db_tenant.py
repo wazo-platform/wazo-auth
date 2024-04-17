@@ -128,37 +128,51 @@ class TestTenantDAO(base.DAOTestCase):
     @fixtures.db.tenant(name='a', slug='zzz', domain_names=VALID_DOMAIN_NAMES_1)
     @fixtures.db.tenant(name='b', slug='yyy', domain_names=VALID_DOMAIN_NAMES_2)
     @fixtures.db.tenant(name='c', slug='xxx', domain_names=VALID_DOMAIN_NAMES_3)
-    def test_count(self, *tenants):
+    def test_count(self, a, b, c):
         top_tenant_uuid = self._top_tenant_uuid()
-        visible_tenants = tenants + (top_tenant_uuid,)
-        total = len(tenants) + 1  # a, b, c and the master tenant
+        total = 4  # a, b, c and the master tenant
 
-        result = self._tenant_dao.count(visible_tenants)
+        result = self._tenant_dao.count(top_tenant_uuid)
         assert_that(result, equal_to(total))
 
-        result = self._tenant_dao.count(visible_tenants, search='b', filtered=False)
+        result = self._tenant_dao.count(top_tenant_uuid, search='b', filtered=False)
         assert_that(result, equal_to(total))
 
-        result = self._tenant_dao.count(visible_tenants, search='b')
+        result = self._tenant_dao.count(top_tenant_uuid, search='b')
         assert_that(result, equal_to(1))
 
-        result = self._tenant_dao.count(visible_tenants, name='b', filtered=False)
+        result = self._tenant_dao.count(top_tenant_uuid, name='b', filtered=False)
         assert_that(result, equal_to(total))
 
-        result = self._tenant_dao.count(visible_tenants, name='b')
+        result = self._tenant_dao.count(top_tenant_uuid, name='b')
         assert_that(result, equal_to(1))
 
-        result = self._tenant_dao.count(visible_tenants, domain_name='shopify.ca')
+        result = self._tenant_dao.count(top_tenant_uuid, domain_name='shopify.ca')
         assert_that(result, equal_to(1))
 
-        result = self._tenant_dao.count(visible_tenants, domain_name='google.ca')
+        result = self._tenant_dao.count(top_tenant_uuid, domain_name='google.ca')
         assert_that(result, equal_to(1))
 
-        result = self._tenant_dao.count(visible_tenants, domain_name='outlook.fr')
+        result = self._tenant_dao.count(top_tenant_uuid, domain_name='outlook.fr')
         assert_that(result, equal_to(1))
 
-        result = self._tenant_dao.count(visible_tenants, search='yahoo')
+        result = self._tenant_dao.count(top_tenant_uuid, search='yahoo')
         assert_that(result, equal_to(2))
+
+        result = self._tenant_dao.count(top_tenant_uuid, scoping_tenant_uuid=b)
+        assert_that(result, equal_to(1))
+
+    def test_count_benchmark(self):
+        tenant_uuid = self._create_tenant(name='a')
+        top_tenant_uuid = self._top_tenant_uuid()
+
+        with self.check_db_requests(nb_requests=1):
+            self._tenant_dao.count(top_tenant_uuid)
+
+        with self.check_db_requests(nb_requests=1):
+            self._tenant_dao.count(top_tenant_uuid, scoping_tenant_uuid=tenant_uuid)
+
+        self._tenant_dao.delete(tenant_uuid)
 
     @fixtures.db.tenant(name='baz a', domain_names=VALID_DOMAIN_NAMES_1)
     @fixtures.db.tenant(name='bar b', domain_names=VALID_DOMAIN_NAMES_2)
@@ -169,47 +183,57 @@ class TestTenantDAO(base.DAOTestCase):
         def build_list_matcher(*names):
             return [has_entries(name=name, address=base.ADDRESS_NULL) for name in names]
 
-        result = self._tenant_dao.list_()
+        top_tenant_uuid = self._top_tenant_uuid()
+
+        result = self._tenant_dao.list_(top_tenant_uuid)
         expected = build_list_matcher('foo c', 'bar b', 'baz a', 'master')
         assert_that(result, contains_inanyorder(*expected))
 
-        result = self._tenant_dao.list_(tenant_uuids=[a, b])
-        expected = build_list_matcher('bar b', 'baz a')
+        result = self._tenant_dao.list_(top_tenant_uuid, scoping_tenant_uuid=a)
+        expected = build_list_matcher('baz a')
         assert_that(result, contains_inanyorder(*expected))
 
-        result = self._tenant_dao.list_()
+        result = self._tenant_dao.list_(top_tenant_uuid)
         expected = build_list_matcher('foo c', 'bar b', 'baz a', 'master')
         assert_that(result, contains_inanyorder(*expected))
 
-        result = self._tenant_dao.list_(search='ba')
+        result = self._tenant_dao.list_(top_tenant_uuid, search='ba')
         expected = build_list_matcher('bar b', 'baz a')
         assert_that(result, contains_inanyorder(*expected))
 
-        result = self._tenant_dao.list_(search='yahoo')
+        result = self._tenant_dao.list_(top_tenant_uuid, search='yahoo')
         expected = build_list_matcher('bar b', 'foo c')
         assert_that(result, contains_inanyorder(*expected))
 
-        result = self._tenant_dao.list_(domain_name='outlook.fr')
+        result = self._tenant_dao.list_(top_tenant_uuid, domain_name='outlook.fr')
         expected = build_list_matcher('foo c')
         assert_that(result, contains_inanyorder(*expected))
 
-        result = self._tenant_dao.list_(order='name', direction='desc')
+        result = self._tenant_dao.list_(top_tenant_uuid, order='name', direction='desc')
         expected = build_list_matcher('master', 'foo c', 'baz a', 'bar b')
         assert_that(result, contains_exactly(*expected))
 
-        result = self._tenant_dao.list_(limit=1, order='name', direction='asc')
+        result = self._tenant_dao.list_(
+            top_tenant_uuid, limit=1, order='name', direction='asc'
+        )
         expected = build_list_matcher('bar b')
         assert_that(result, contains_exactly(*expected))
 
-        result = self._tenant_dao.list_(offset=1, order='name', direction='asc')
+        result = self._tenant_dao.list_(
+            top_tenant_uuid, offset=1, order='name', direction='asc'
+        )
         expected = build_list_matcher('baz a', 'foo c', 'master')
         assert_that(result, contains_exactly(*expected))
 
     def test_list_benchmark(self):
         tenant_uuid = self._create_tenant(name='a')
+        top_tenant_uuid = self._top_tenant_uuid()
 
         with self.check_db_requests(nb_requests=1):
-            self._tenant_dao.list_()
+            self._tenant_dao.list_(top_tenant_uuid)
+
+        with self.check_db_requests(nb_requests=1):
+            self._tenant_dao.list_(top_tenant_uuid, scoping_tenant_uuid=tenant_uuid)
 
         self._tenant_dao.delete(tenant_uuid)
 
@@ -396,12 +420,13 @@ class TestTenantDAO(base.DAOTestCase):
     @fixtures.db.tenant(name='3', uuid=TENANT_UUID_3, parent_uuid=TENANT_UUID_1)
     @fixtures.db.tenant(name='4', uuid=TENANT_UUID_4, parent_uuid=TENANT_UUID_2)
     def test_tenant_query_always_return_scoped_tenant_first(self, *_):
-        result = self._tenant_dao._tenant_query(TENANT_UUID_2)
+        top_tenant_uuid = self._top_tenant_uuid()
+        result = self._tenant_dao._tenant_query(top_tenant_uuid, TENANT_UUID_2)
         assert_that(result[0], has_properties(name='2'))
 
         self._tenant_dao.update(TENANT_UUID_2, name='2-updated')
 
-        result = self._tenant_dao._tenant_query(TENANT_UUID_2)
+        result = self._tenant_dao._tenant_query(top_tenant_uuid, TENANT_UUID_2)
         assert_that(result[0], has_properties(name='2-updated'))
 
     @fixtures.db.tenant(name='1', uuid=TENANT_UUID_1, domain_names=VALID_DOMAIN_NAMES_1)

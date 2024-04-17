@@ -5,6 +5,7 @@ import logging
 import os
 import random
 import re
+import shutil
 import string
 import unittest
 from contextlib import contextmanager
@@ -292,6 +293,29 @@ class BaseIntegrationTest(unittest.TestCase):
             except Exception:
                 pass
             self.client.policies.delete(policy['uuid'])
+
+    @contextmanager
+    def profiling_enabled(self):
+        self.client.config.patch(
+            [{'op': 'replace', 'path': '/profiling_enabled', 'value': True}]
+        )
+        yield
+        self.client.config.patch(
+            [{'op': 'replace', 'path': '/profiling_enabled', 'value': False}]
+        )
+
+        container_directory = '/tmp/wazo-profiling'
+        random_strings = "".join(
+            random.choice(string.ascii_lowercase) for _ in range(8)
+        )
+        local_directory = os.getenv(
+            'WAZO_TEST_PROFILING_DIR', f'/tmp/wazo-profiling-{random_strings}'
+        )
+        if os.path.exists(local_directory):
+            shutil.rmtree(local_directory)
+        self.asset_cls.docker_copy_from_container(
+            container_directory, local_directory, 'auth'
+        )
 
 
 class ExternalAuthIntegrationTest(BaseIntegrationTest):

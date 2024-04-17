@@ -80,6 +80,15 @@ enabled_http_plugins:
   user_registration: true
 ```
 
+## Profiling
+
+If you need to profile an API to understand why it is slow, you can use the
+setting `profiling_enabled: true`, or enable it live with `PATCH /0.1/config`.
+
+When profiling is enabled, the profiles will be logged in `/tmp/wazo-profiling`,
+one file per request. Profiles are Python profiles from the module `cProfile`.
+Profiles can then be analyzed with CLI or GUI tools like `snakeviz`.
+
 ## Testing
 
 ### Running unit tests
@@ -121,6 +130,30 @@ ab -n1000 -c25 -A 'alice:alice' -p /tmp/body.json -T 'application/json' "http://
 ```
 
 This line will start 25 process creating 1000 tokens with the username and password alice alice
+
+## Performance tests
+
+### Adding a test
+
+Performance tests are similar to integration tests and may be added to `integration_tests/performance_suite`.
+
+### Profiling
+
+Integration/performance tests may be used to profile specific API endpoints. To do so:
+
+```
+    with self.profiling_enabled():
+        result = self.client.tenants.list(...)
+```
+
+This will enable the configuration option `profiling_enabled` in the service
+and produce profiling files in `/tmp/wazo-profiling` on the container and in
+`/tmp/wazo-profiling-*` on the host filesystem.
+
+The output directory for profile files in tests can be configured with the
+env variable `WAZO_TEST_PROFILING_DIR`.
+
+The profile files can then be analyzed with visual tools like `snakeviz`.
 
 ## How to get help
 
