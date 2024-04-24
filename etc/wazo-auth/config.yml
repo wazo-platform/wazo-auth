@@ -120,7 +120,7 @@ service_discovery:
 #   extra_tags: []
 
 saml:
-  entityid: 'ENTITY_ID'
+  entityid: 'spn:4967b7d6-9b99-464d-b41e-16a3f6ffe7be'
   service:
     sp:
       want_response_signed: True,
@@ -128,10 +128,11 @@ saml:
       logout_requests_signed: False,
       endpoints:
         assertion_consumer_service:
-          - ('https://STACK_URL/acs/post', 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST')
+          - ('https://wazo.praha/acs/post', 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST')
         single_logout_service:
-          - ('STACK_URL/slo/redirect', 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect'),
-          - ('STACK_URL/slo/post', 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST'),
+          - ('https://wazo.praha/slo/redirect', 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect')
+          - ('https://wazo.praha/slo/post', 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST')
   metadata:
     local:
-      - 'pki/saml.xml'
+      - '/etc/wazo-auth/pki/saml.xml'
+  xmlsec_binary: '/usr/bin/xmlsec1'
