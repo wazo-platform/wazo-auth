@@ -69,17 +69,21 @@ class SAMLSSO(http.ErrorCatchingResource):
         self._config = config
         self._backend = wazo_user_backend
         if 'saml' in self._config:
-            self._saml_config = SAMLConfig()
-            if isinstance(
-                self._config['saml']['service']['sp']['endpoints'][
-                    'assertion_consumer_service'
-                ][0],
-                str,
-            ):
-                self._saml_config.load(self._updateConfig(self._config['saml']))
-            else:
-                self._saml_config.load(self._config['saml'])
-            self._saml_client = Saml2Client(config=self._saml_config)
+            try:
+                self._saml_config = SAMLConfig()
+                if isinstance(
+                    self._config['saml']['service']['sp']['endpoints'][
+                        'assertion_consumer_service'
+                    ][0],
+                    str,
+                ):
+                    self._saml_config.load(self._updateConfig(self._config['saml']))
+                else:
+                    self._saml_config.load(self._config['saml'])
+                self._saml_client = Saml2Client(config=self._saml_config)
+            except Exception as inst:
+                logger.error('Error during SAML client init')
+                logger.exception(inst)
         else:
             logger.warn(
                 'SAML config is missing, won\'t be able to provide SAML related services'
