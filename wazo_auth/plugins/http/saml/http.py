@@ -5,9 +5,22 @@
 import ast
 import logging
 
-from flask import redirect, request
+from flask import Response, request
+from saml2 import (
+    BINDING_HTTP_POST,
+    BINDING_HTTP_REDIRECT,
+    element_to_extension_element,
+    xmldsig,
+)
 from saml2.client import Saml2Client
 from saml2.config import Config as SAMLConfig
+from saml2.extension.pefim import SPCertEnc
+from saml2.httputil import ServiceError
+from saml2.response import VerificationError
+from saml2.s_utils import UnknownPrincipal, UnsupportedBinding, rndstr
+from saml2.saml import NAMEID_FORMAT_PERSISTENT
+from saml2.samlp import Extensions
+from saml2.sigver import SignatureError
 
 from wazo_auth import http
 
@@ -25,19 +38,92 @@ class SAMLACS(http.ErrorCatchingResource):
             config  # Can be used to access to content of the configuration files
         )
         self._backend_proxy = backend_proxy
+        if 'saml' in self._config:
+            try:
+                self._saml_config = SAMLConfig()
+                if isinstance(
+                    self._config['saml']['service']['sp']['endpoints'][
+                        'assertion_consumer_service'
+                    ][0],
+                    str,
+                ):
+                    self._saml_config.load(self._updateConfig(self._config['saml']))
+                else:
+                    self._saml_config.load(self._config['saml'])
+                self._saml_client = Saml2Client(config=self._saml_config)
+                logger.info(
+                    '####################### SAML config : %s' % vars(self._saml_config)
+                )
+            except Exception as inst:
+                logger.error('Error during SAML client init')
+                logger.exception(inst)
+        else:
+            logger.warn(
+                'SAML config is missing, won\'t be able to provide SAML related services'
+            )
+
+    def _extractTuplesFromListOfStrings(self, ls):
+        e = [tuple(i.removeprefix('(').removesuffix(')').split(',')) for i in ls]
+        return [
+            (ast.literal_eval(i[0].strip()), ast.literal_eval(i[1].strip())) for i in e
+        ]
+
+    def _updateConfig(self, config):
+        acs = self._extractTuplesFromListOfStrings(
+            config['service']['sp']['endpoints']['assertion_consumer_service']
+        )
+        slo = self._extractTuplesFromListOfStrings(
+            config['service']['sp']['endpoints']['single_logout_service']
+        )
+        u_config = {'assertion_consumer_service': acs, 'single_logout_service': slo}
+        config['service']['sp']['endpoints'].update(u_config)
+        return config
 
     def post(self):
         # Do you SAML validation here
         # Find the user's email adress from the SAML document. The username could also
         # be used if Wazo and the identity provider are configured with the same username
-        login = email_address = 'alice@wazo.io'
-        backend_name = 'wazo_user'
-        args = {
-            'user_agent': request.headers.get('User-Agent', ''),
-            'login': email_address,
-            'mobile': True,
-            'remote_addr': request.remote_addr,
-        }
+        # backend_name = 'wazo_user'
+        # args = {
+        #     'user_agent': request.headers.get('User-Agent', ''),
+        #     'mobile': True,
+        #     'remote_addr': request.remote_addr,
+        # }
+
+        try:
+            conv_info = {
+                "remote_addr": request.remote_addr,
+                "request_uri": request.url,
+                "entity_id": self._saml_client.config.entityid,
+                "endpoints": self._saml_client.config.getattr("endpoints", "sp"),
+            }
+
+            self.response = self._saml_client.parse_authn_request_response(
+                request.form['SAMLResponse'],
+                BINDING_HTTP_POST,
+                None,
+                None,
+                conv_info=conv_info,
+            )
+        except UnknownPrincipal as excp:
+            logger.error("UnknownPrincipal: %s", excp)
+            resp = ServiceError(f"UnknownPrincipal: {excp}")
+            return resp(self.environ, self.start_response)
+        except UnsupportedBinding as excp:
+            logger.error("UnsupportedBinding: %s", excp)
+            resp = ServiceError(f"UnsupportedBinding: {excp}")
+            return resp(self.environ, self.start_response)
+        except VerificationError as err:
+            resp = ServiceError(f"Verification error: {err}")
+            return resp(self.environ, self.start_response)
+        except SignatureError as err:
+            resp = ServiceError(f"Signature error: {err}")
+            return resp(self.environ, self.start_response)
+        except Exception as err:
+            resp = ServiceError(f"Other error: {err}")
+            return resp(self.environ, self.start_response)
+
+        logger.info("Response: %s", self.response)
 
         # The following headers are expected on the ACS request
         # User-Agent
@@ -48,10 +134,11 @@ class SAMLACS(http.ErrorCatchingResource):
         # access_type: online or offline
         # client_id: required if access_type is offline to create a request token
 
-        token = self._token_service.new_token(
-            self._backend_proxy.get(backend_name), login, args
-        )
-        return {'data': token.to_dict()}, 200
+        # token = self._token_service.new_token(
+        #     self._backend_proxy.get(backend_name), login, args
+        # )
+        # return {'data': token.to_dict()}, 200
+        return {'data': 'request processed'}, 200
 
 
 class SAMLSSO(http.ErrorCatchingResource):
@@ -140,7 +227,6 @@ class SAMLSSO(http.ErrorCatchingResource):
         http_args = saml_client.apply_binding(
             _binding, f"{req}", destination, relay_state=_rstate, sigalg=""
         )
-
         return http_args
 
     def get(self):
