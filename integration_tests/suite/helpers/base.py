@@ -68,7 +68,6 @@ use_asset = pytest.mark.usefixtures
 class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
     assets_root = os.path.join(os.path.dirname(__file__), '../..', 'assets')
     service = 'auth'
-    auth_host = '127.0.0.1'
 
     @classmethod
     def setUpClass(cls):
@@ -97,7 +96,7 @@ class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
             kwargs['username'] = username
             kwargs['password'] = password
 
-        return Client(cls.auth_host, **kwargs)
+        return Client('127.0.0.1', **kwargs)
 
     @classmethod
     def make_db_client(cls):
@@ -227,17 +226,13 @@ class BaseIntegrationTest(unittest.TestCase):
         cls.bus = cls.asset_cls.make_bus_client()
         cls.database = cls.asset_cls.make_db_client()
 
-    @property
-    def auth_host(self):
-        return self.asset_cls.auth_host
+    @classmethod
+    def auth_port(cls):
+        return cls.asset_cls.service_port(9497, 'auth')
 
-    @property
-    def auth_port(self):
-        return self.asset_cls.service_port(9497, 'auth')
-
-    @property
-    def oauth2_port(self):
-        return self.asset_cls.service_port(80, 'oauth2sync')
+    @classmethod
+    def oauth2_port(cls):
+        return cls.asset_cls.service_port(80, 'oauth2sync')
 
     @classmethod
     def restart_auth(cls):

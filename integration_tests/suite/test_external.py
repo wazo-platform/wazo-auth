@@ -264,7 +264,7 @@ class TestExternalAuthAPI(base.ExternalAuthIntegrationTest):
         until.assert_(bus_received_msg, tries=10, interval=0.25)
 
     def authorize_oauth2(self, auth_type, state, token):
-        url = f'http://127.0.0.1:{self.oauth2_port}/{auth_type}/authorize/{state}'
+        url = f'http://127.0.0.1:{self.oauth2_port()}/{auth_type}/authorize/{state}'
         result = requests.get(url, params={'access_token': token})
         result.raise_for_status()
 

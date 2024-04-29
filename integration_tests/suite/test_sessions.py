@@ -28,10 +28,6 @@ TENANT_UUID_2 = str(uuid.uuid4())
 
 @base.use_asset('base')
 class TestSessions(base.APIIntegrationTest):
-    @property
-    def session(self):
-        return get_db_session()
-
     def _create_generic_token(self, expiration: int) -> str:
         now = int(time.time())
         token_payload = {
@@ -46,7 +42,7 @@ class TestSessions(base.APIIntegrationTest):
             'remote_addr': '',
         }
         _, session_uuid = TokenDAO().create(token_payload, {})
-        self.session.commit()  # force update in database
+        get_db_session().commit()  # force update in database
         return session_uuid
 
     @fixtures.http.session(mobile=False)

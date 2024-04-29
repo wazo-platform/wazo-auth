@@ -16,6 +16,6 @@ logger.setLevel(logging.INFO)
 @base.use_asset('base')
 class TestDocumentation(base.APIIntegrationTest):
     def test_documentation_errors(self):
-        api_url = f'http://{self.auth_host}:{self.auth_port}/0.1/api/api.yml'
+        api_url = f'http://127.0.0.1:{self.auth_port()}/0.1/api/api.yml'
         api = requests.get(api_url)
         validate_spec(yaml.safe_load(api.text), validator=openapi_v2_spec_validator)

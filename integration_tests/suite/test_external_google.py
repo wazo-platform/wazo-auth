@@ -117,7 +117,7 @@ class TestAuthGoogle(base.APIIntegrationTest):
         )
 
     def _simulate_user_authentication(self, state):
-        authorize_url = AUTHORIZE_URL.format(port=self.oauth2_port, state=state)
+        authorize_url = AUTHORIZE_URL.format(port=self.oauth2_port(), state=state)
         response = requests.get(authorize_url)
         response.raise_for_status()
 

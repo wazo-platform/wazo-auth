@@ -38,10 +38,7 @@ class TestEmailConfirmation(base.APIIntegrationTest):
     @fixtures.http.user_register(email_address='foobar@example.com')
     def test_email_confirmation_get(self, user):
         email_uuid = user['emails'][0]['uuid']
-
-        url = (
-            f'http://{self.auth_host}:{self.auth_port}/0.1/emails/{email_uuid}/confirm'
-        )
+        url = f'http://127.0.0.1:{self.auth_port()}/0.1/emails/{email_uuid}/confirm'
         token = self.client._token_id
         response = requests.get(url, params={'token': token})
         assert_that(response.status_code, equal_to(200))
@@ -63,7 +60,7 @@ class TestEmailConfirmation(base.APIIntegrationTest):
         self.client.users.request_confirmation_email(user['uuid'], email_uuid)
 
         expected_url = (
-            f'https://127.0.0.1:{self.auth_port}/0.1/emails/.*/confirm\\?token=.*'
+            f'https://127.0.0.1:{self.auth_port()}/0.1/emails/.*/confirm\\?token=.*'
         )
         self.assert_last_email(
             from_name='confirmation_from_name_sentinel',
