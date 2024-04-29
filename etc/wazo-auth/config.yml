@@ -126,6 +126,7 @@ saml:
       want_response_signed: True,
       authn_requests_signed: True,
       logout_requests_signed: False,
+      allow_unsolicited: True,
       endpoints:
         assertion_consumer_service:
           - ('https://wazo.praha/acs/post', 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST')
