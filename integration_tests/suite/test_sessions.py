@@ -17,7 +17,6 @@ from hamcrest import (
 )
 from wazo_test_helpers import until
 
-from wazo_auth.database.helpers import get_db_session
 from wazo_auth.database.queries.token import TokenDAO
 
 from .helpers import base, fixtures
@@ -42,7 +41,7 @@ class TestSessions(base.APIIntegrationTest):
             'remote_addr': '',
         }
         _, session_uuid = TokenDAO().create(token_payload, {})
-        get_db_session().commit()  # force update in database
+        self.session.commit()  # force update in database
         return session_uuid
 
     @fixtures.http.session(mobile=False)
