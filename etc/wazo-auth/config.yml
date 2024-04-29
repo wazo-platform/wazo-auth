@@ -136,3 +136,5 @@ saml:
     local:
       - '/etc/wazo-auth/pki/saml.xml'
   xmlsec_binary: '/usr/bin/xmlsec1'
+  key_file: "/etc/wazo-auth/pki/server.key"
+  cert_file: "/etc/wazo-auth/pki/server.crt"
