@@ -79,7 +79,7 @@ class TestUsers(base.APIIntegrationTest):
             'password': 's3cr37',
         }
 
-        url = f'http://{self.auth_host}:{self.auth_port}/0.1/users'
+        url = f'http://127.0.0.1:{self.auth_port()}/0.1/users'
         result = requests.post(
             url,
             headers={'Content-Type': 'application/json'},

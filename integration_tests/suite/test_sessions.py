@@ -17,7 +17,6 @@ from hamcrest import (
 )
 from wazo_test_helpers import until
 
-from wazo_auth.database.helpers import get_db_session
 from wazo_auth.database.queries.token import TokenDAO
 
 from .helpers import base, fixtures
@@ -28,10 +27,6 @@ TENANT_UUID_2 = str(uuid.uuid4())
 
 @base.use_asset('base')
 class TestSessions(base.APIIntegrationTest):
-    @property
-    def session(self):
-        return get_db_session()
-
     def _create_generic_token(self, expiration: int) -> str:
         now = int(time.time())
         token_payload = {

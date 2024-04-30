@@ -63,7 +63,7 @@ class TestCore(base.APIIntegrationTest):
         )
 
     def test_backends(self):
-        url = f'http://{self.auth_host}:{self.auth_port}/0.1/backends'
+        url = f'http://127.0.0.1:{self.auth_port()}/0.1/backends'
         response = requests.get(url, verify=False)
         backends = ['broken_init', 'broken_verify_password', 'wazo_user', 'ldap_user']
         assert_that(response.json()['data'], contains_inanyorder(*backends))
@@ -134,7 +134,7 @@ class TestCore(base.APIIntegrationTest):
         )
 
     def test_that_no_type_returns_400(self):
-        url = f'http://{self.auth_host}:{self.auth_port}/0.1/token'
+        url = f'http://127.0.0.1:{self.auth_port()}/0.1/token'
         s = requests.Session()
         s.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         s.auth = requests.auth.HTTPBasicAuth('foo', 'bar')

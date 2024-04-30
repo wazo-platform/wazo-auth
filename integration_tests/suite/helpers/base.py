@@ -23,7 +23,6 @@ from hamcrest import (
     has_properties,
 )
 from kombu import Exchange
-from sqlalchemy.exc import UnboundExecutionError
 from wazo_auth_client import Client
 from wazo_test_helpers import until
 from wazo_test_helpers.asset_launching_test_case import (
@@ -68,22 +67,6 @@ use_asset = pytest.mark.usefixtures
 class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
     assets_root = os.path.join(os.path.dirname(__file__), '../..', 'assets')
     service = 'auth'
-    auth_host = '127.0.0.1'
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        port = cls.service_port(5432, 'postgres')
-        db_uri = DB_URI.format(port=port)
-        helpers.init_db(db_uri)
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            helpers.deinit_db()
-        except UnboundExecutionError:
-            pass
-        super().tearDownClass()
 
     @classmethod
     def make_auth_client(cls, username=None, password=None):
@@ -97,7 +80,7 @@ class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
             kwargs['username'] = username
             kwargs['password'] = password
 
-        return Client(cls.auth_host, **kwargs)
+        return Client('127.0.0.1', **kwargs)
 
     @classmethod
     def make_db_client(cls):
@@ -107,6 +90,16 @@ class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
             return WrongClient('postgres')
         db_uri = DB_URI.format(port=port)
         return Database(db_uri, db='asterisk')
+
+    @classmethod
+    def make_db_session(cls):
+        try:
+            port = cls.service_port(5432, 'postgres')
+        except (NoSuchService, NoSuchPort):
+            return WrongClient('postgres')
+
+        helpers.init_db(DB_URI.format(port=port))
+        return helpers.Session
 
     @classmethod
     def make_bus_client(cls):
@@ -160,9 +153,18 @@ class MetadataAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
 
 class DAOTestCase(unittest.TestCase):
     unknown_uuid = '00000000-0000-0000-0000-000000000000'
+    asset_cls = DBAssetLaunchingTestCase
+
+    @classmethod
+    def setUpClass(cls):
+        cls.Session = cls.asset_cls.make_db_session()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.Session.get_bind().dispose()
+        cls.Session.remove()
 
     def setUp(self):
-        self.Session = helpers.Session
         self._address_dao = queries.AddressDAO()
         self._email_dao = queries.EmailDAO()
         self._external_auth_dao = queries.ExternalAuthDAO()
@@ -190,14 +192,14 @@ class DAOTestCase(unittest.TestCase):
 
     @property
     def session(self):
-        return helpers.get_db_session()
+        return self.Session()
 
     @contextmanager
     def check_db_requests(self, nb_requests):
         time_start = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-        nb_logs_start = DBAssetLaunchingTestCase.count_database_logs(since=time_start)
+        nb_logs_start = self.asset_cls.count_database_logs(since=time_start)
         yield
-        nb_logs_end = DBAssetLaunchingTestCase.count_database_logs(since=time_start)
+        nb_logs_end = self.asset_cls.count_database_logs(since=time_start)
         nb_db_requests = nb_logs_end - nb_logs_start
         assert_that(nb_db_requests, equal_to(nb_requests))
 
@@ -216,6 +218,12 @@ class BaseIntegrationTest(unittest.TestCase):
         super().setUpClass()
         cls.reset_clients()
         cls.top_tenant_uuid = cls.get_top_tenant()['uuid']
+        cls.Session = cls.asset_cls.make_db_session()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.Session.get_bind().dispose()
+        cls.Session.remove()
 
     @classmethod
     def reset_clients(cls):
@@ -226,18 +234,19 @@ class BaseIntegrationTest(unittest.TestCase):
         cls.admin_user_uuid = token['metadata']['uuid']
         cls.bus = cls.asset_cls.make_bus_client()
         cls.database = cls.asset_cls.make_db_client()
+        cls.Session = cls.asset_cls.make_db_session()
 
     @property
-    def auth_host(self):
-        return self.asset_cls.auth_host
+    def session(self):
+        return self.Session()
 
-    @property
-    def auth_port(self):
-        return self.asset_cls.service_port(9497, 'auth')
+    @classmethod
+    def auth_port(cls):
+        return cls.asset_cls.service_port(9497, 'auth')
 
-    @property
-    def oauth2_port(self):
-        return self.asset_cls.service_port(80, 'oauth2sync')
+    @classmethod
+    def oauth2_port(cls):
+        return cls.asset_cls.service_port(80, 'oauth2sync')
 
     @classmethod
     def restart_auth(cls):

@@ -88,7 +88,7 @@ class TestPolicies(base.APIIntegrationTest):
             [None],
         ]
 
-        url = f'http://{self.auth_host}:{self.auth_port}/0.1/policies'
+        url = f'http://127.0.0.1:{self.auth_port()}/0.1/policies'
         headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
