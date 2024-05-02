@@ -51,9 +51,6 @@ class SAMLACS(http.ErrorCatchingResource):
                 else:
                     self._saml_config.load(self._config['saml'])
                 self._saml_client = Saml2Client(config=self._saml_config)
-                logger.info(
-                    '####################### SAML config : %s' % vars(self._saml_config)
-                )
             except Exception as inst:
                 logger.error('Error during SAML client init')
                 logger.exception(inst)
@@ -230,6 +227,16 @@ class SAMLSSO(http.ErrorCatchingResource):
         return http_args
 
     def get(self):
+        if hasattr(self, '_saml_client'):
+            http_args = self._getSamlRequest(self._saml_client, self._saml_config)
+            return Response(headers=http_args['headers'], status=http_args['status'])
+        else:
+            return Response(
+                status=500,
+                response='SAML configuration missing or SAML client init failed',
+            )
+
+    def post(self):
         if hasattr(self, '_saml_client'):
             http_args = self._getSamlRequest(self._saml_client, self._saml_config)
             return Response(headers=http_args['headers'], status=http_args['status'])

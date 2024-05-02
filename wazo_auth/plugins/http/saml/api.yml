@@ -1,13 +1,23 @@
 paths:
   /saml/sso:
-    get:
+    post:
+      consumes:
+      - multipart/form-data
       description: |
-        Returns the information that the client needs to use to authenticate
-        using the configured identity provider
+        Returns the information (SAML request and redirect location) that
+        the client needs to use to authenticate using the configured identity
+        provider
       operationId: samlSSO
       tags:
       - token
       - saml
+      parameters:
+      - description: SAML SSO Login context
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SAMLLoginContext'
       responses:
         '303':
           description: |
@@ -15,16 +25,46 @@ paths:
             used by the client to authenticate.
         '500':
           description: |
-            Please ask your admin to configure the
+            Please ask your admin to configure the SAML SSO
 
   /saml/acs:
     post:
       consumes:
-      - application/samlmetadata+xml
+      - multipart/form-data
+      description: |
+        Receives the SAML response created by the identity provider.
+
+        The internal cache allows to retrieve the context and redirect the browser
+        to process the login.
+      operationId: processACS
+      tags:
+      - token
+      - saml
+      parameters:
+      - name: body
+        in: body
+        description: The SAML response
+        required: true
+        schema:
+          $ref: '#/definitions/SAMLResponse'
+      responses:
+        '303':
+          description: Redirect browser to process the login.
+        '404':
+          description: Context of the response not found
+        '500':
+          description: Error while processing the SAML response
+          schema:
+            $ref: '#/definitions/Error'
+
+  /saml/token:
+    post:
+      consumes:
+      - application/json
       produces:
       - application/json
       description: |
-        Receives the SAML response created by the identity provider.
+        Receives the session id of a successful login.
 
         The user's email address from the SAML response is used to find
         the matching wazo-auth user and generate an access token for that
@@ -58,7 +98,23 @@ definitions:
   SAMLResponse:
     properties:
       response:
-        description: The SAML response
+        description: Encoded SAML XML response
+        type: string
+      token:
+        description: Reponse token
+        type: string
+    required:
+    - response
+    - token
+    type: object
+
+  SAMLLoginContext:
+    properties:
+      session_id:
+        description: UUID to correlate request-response
+        type: string
+      redirect_url:
+        description: Where to redirect the browser once the login succeeded
         type: string
     required:
     - response
