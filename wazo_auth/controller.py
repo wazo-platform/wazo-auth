@@ -78,6 +78,7 @@ class Controller:
         )
         group_service = services.GroupService(self.dao, self._tenant_tree)
         policy_service = services.PolicyService(self.dao, self._tenant_tree)
+        self._saml_service = services.SAMLService(self._config)
         session_service = services.SessionService(
             self.dao, self._tenant_tree, self._bus_publisher
         )
@@ -155,6 +156,7 @@ class Controller:
             'session_service': session_service,
             'template_formatter': template_formatter,
             'ldap_service': ldap_service,
+            'saml_service': self._saml_service,
         }
         Tenant.setup(self._token_service, self._user_service, self._tenant_service)
         Token.setup(self._token_service)
