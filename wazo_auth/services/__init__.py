@@ -10,6 +10,7 @@ from .external_auth import ExternalAuthService
 from .group import GroupService
 from .ldap import LDAPService
 from .policy import PolicyService
+from .saml import SAMLService
 from .session import SessionService
 from .tenant import TenantService
 from .token import TokenService
@@ -26,6 +27,7 @@ __all__ = [
     'LDAPService',
     'PasswordEncrypter',
     'PolicyService',
+    'SAMLService',
     'SessionService',
     'TenantService',
     'TokenService',

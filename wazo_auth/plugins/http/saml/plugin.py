@@ -11,6 +11,7 @@ class Plugin:
             dependencies['token_service'],
             dependencies['user_service'],
             dependencies['authentication_service'],
+            dependencies['saml_service'],
             dependencies['config'],
             dependencies['backends'],
         )

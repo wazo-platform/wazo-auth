@@ -101,7 +101,7 @@ definitions:
         description: Encoded SAML XML response
         type: string
       token:
-        description: Reponse token
+        description: Response token
         type: string
     required:
     - response
@@ -110,7 +110,7 @@ definitions:
 
   SAMLLoginContext:
     properties:
-      session_id:
+      saml_session_id:
         description: UUID to correlate request-response
         type: string
       redirect_url:
