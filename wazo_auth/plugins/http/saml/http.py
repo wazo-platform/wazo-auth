@@ -108,7 +108,9 @@ class SAMLSSO(http.ErrorCatchingResource):
     def post(self):
         try:
             # http_args = self._getSamlRequest(self._saml_client, self._saml_config)
-            http_args = self._saml_service.initFlow()
+            http_args = self._saml_service.prepareRedirectResponse(
+                request.form['saml_session_id'], request.form['redirect_url']
+            )
             return Response(headers=http_args['headers'], status=http_args['status'])
         except Exception as excp:
             logger.error("Failed to process initial SAML SSO post because of: %s", excp)
