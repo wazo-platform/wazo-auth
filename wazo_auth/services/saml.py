@@ -3,28 +3,30 @@
 
 import ast
 import logging
+from dataclasses import dataclass
+from datetime import datetime, timezone
 
-from saml2 import (
-    BINDING_HTTP_POST,
-    BINDING_HTTP_REDIRECT,
-    element_to_extension_element,
-    xmldsig,
-)
+from saml2 import BINDING_HTTP_POST
 from saml2.client import Saml2Client
 from saml2.config import Config as SAMLConfig
-from saml2.extension.pefim import SPCertEnc
-from saml2.s_utils import rndstr
-from saml2.saml import NAMEID_FORMAT_PERSISTENT
-from saml2.samlp import Extensions
 
 from wazo_auth.services.helpers import BaseService
 
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class SamlAuthContext:
+    redirect_url: str
+    tenant: str
+    start_time: datetime = datetime.now(timezone.utc)
+
+
 class SAMLService(BaseService):
     def __init__(self, config):
         self._config = config
+        self._outstanding_requests = {}
+
         if 'saml' in self._config:
             try:
                 self._saml_config = SAMLConfig()
@@ -66,46 +68,14 @@ class SAMLService(BaseService):
         config['service']['sp']['endpoints'].update(u_config)
         return config
 
-    def initFlow(self):
-        idps = self._saml_client.metadata.identity_providers()
+    def prepareRedirectResponse(
+        self, samlSessionId, redirectUrl, tenantId='wazoTestTenant'
+    ):
+        reqid, info = self._saml_client.prepare_for_authenticate(relay_state=tenantId)
 
-        entity_id = idps[0]
-
-        _binding, destination = self._saml_client.pick_binding(
-            "single_sign_on_service",
-            [BINDING_HTTP_REDIRECT],
-            "idpsso",
-            entity_id=entity_id,
-        )
-        logger.debug("binding: %s, destination: %s", _binding, destination)
-        acs = self._saml_client.config.getattr("endpoints", "sp")[
-            "assertion_consumer_service"
-        ]
-        _, return_binding = acs[0]
-
-        extensions = None
-        if self._saml_client.config.generate_cert_func is not None:
-            cert_str, req_key_str = self._saml_client.config.generate_cert_func()
-            spcertenc = SPCertEnc(
-                x509_data=xmldsig.X509Data(
-                    x509_certificate=xmldsig.X509Certificate(text=cert_str)
-                )
-            )
-            extensions = Extensions(
-                extension_elements=[element_to_extension_element(spcertenc)]
-            )
-
-        req_id, req = self._saml_client.create_authn_request(
-            destination,
-            binding=return_binding,
-            extensions=extensions,
-            nameid_format=NAMEID_FORMAT_PERSISTENT,
-        )
-        _rstate = rndstr()
-        http_args = self._saml_client.apply_binding(
-            _binding, f"{req}", destination, relay_state=_rstate, sigalg=""
-        )
-        return http_args
+        self._outstanding_requests[reqid] = SamlAuthContext(redirectUrl, tenantId)
+        location = [i for i in info['headers'] if i[0] == 'Location'][0][1]
+        return {"headers": [("Location", location)], "status": 303}
 
     def processAuthResponse(self, url, remote_addr, form_data):
         conv_info = {
@@ -116,9 +86,9 @@ class SAMLService(BaseService):
         }
 
         response = self._saml_client.parse_authn_request_response(
-            form_data,
+            form_data['SAMLResponse'],
             BINDING_HTTP_POST,
-            None,
+            self._outstanding_requests,
             None,
             conv_info=conv_info,
         )
