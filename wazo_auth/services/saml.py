@@ -1,7 +1,6 @@
 # Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import ast
 import logging
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
@@ -32,52 +31,54 @@ class SAMLService(BaseService):
         self._config = config
         self._outstanding_requests: dict[Any, SamlAuthContext] = {}
         self._session_request_mapping: dict[str, str] = {}
+        self._saml_clients: dict[str, Saml2Client] = {}
 
-        if 'saml' in self._config:
-            try:
-                self._saml_config = SAMLConfig()
-                if isinstance(
-                    self._config['saml']['service']['sp']['endpoints'][
-                        'assertion_consumer_service'
-                    ][0],
-                    str,
-                ):
-                    self._saml_config.load(self._updateConfig(self._config['saml']))
-                else:
-                    self._saml_config.load(self._config['saml'])
-                self._saml_client = Saml2Client(config=self._saml_config)
-                logger.info(
-                    '####################### SAML config : %s' % vars(self._saml_config)
-                )
-            except Exception as inst:
-                logger.error('Error during SAML client init')
-                logger.exception(inst)
-        else:
-            logger.warn(
-                'SAML config is missing, won\'t be able to provide SAML related services'
+        self._init_clients()
+
+    def _init_clients(self):
+        key_file = self._config['saml']['key_file']
+        cert_file = self._config['saml']['cert_file']
+        if not key_file or not cert_file:
+            raise Exception(
+                '"key_file" or "cert_file" are missing from the SAML configuration'
             )
 
-    def _extractTuplesFromListOfStrings(self, ls):
-        e = [tuple(i.removeprefix('(').removesuffix(')').split(',')) for i in ls]
-        return [
-            (ast.literal_eval(i[0].strip()), ast.literal_eval(i[1].strip())) for i in e
-        ]
+        global_saml_config = {
+            'xmlsec_binary': self._config['saml'].get('xmlsec_binary'),
+            'key_file': key_file,
+            'cert_file': cert_file,
+        }
+        logger.debug('Global SAML config: %s', global_saml_config)
+        tenant_configs = self._config['saml']['tenants']
+        if not tenant_configs:
+            logger.debug('No SAML configuration found for any tenant')
+            return
 
-    def _updateConfig(self, config):
-        acs = self._extractTuplesFromListOfStrings(
-            config['service']['sp']['endpoints']['assertion_consumer_service']
-        )
-        slo = self._extractTuplesFromListOfStrings(
-            config['service']['sp']['endpoints']['single_logout_service']
-        )
-        u_config = {'assertion_consumer_service': acs, 'single_logout_service': slo}
-        config['service']['sp']['endpoints'].update(u_config)
-        return config
+        for tenant_identifier, raw_saml_config in tenant_configs.items():
+            raw_saml_config['relay_state'] = tenant_identifier
+            raw_saml_config.update(global_saml_config)
+            try:
+                saml_config = SAMLConfig()
+                saml_config.load(raw_saml_config)
+                saml_client = Saml2Client(config=saml_config)
+                logger.info(
+                    '####################### SAML config : %s', vars(saml_config)
+                )
+                self._saml_clients[tenant_identifier] = saml_client
+            except Exception as inst:
+                logger.error(
+                    'Error during SAML client init for tenant %s', tenant_identifier
+                )
+                logger.exception(inst)
+
+    def get_client(self, tenant_identifier):
+        return self._saml_clients[tenant_identifier]
 
     def prepareRedirectResponse(
         self, samlSessionId, redirectUrl, tenantId='wazoTestTenant'
     ):
-        reqid, info = self._saml_client.prepare_for_authenticate(relay_state=tenantId)
+        client = self.get_client(tenantId)
+        reqid, info = client.prepare_for_authenticate(relay_state=tenantId)
 
         self._outstanding_requests[reqid] = SamlAuthContext(
             samlSessionId, redirectUrl, tenantId
@@ -86,14 +87,15 @@ class SAMLService(BaseService):
         return {"headers": [("Location", location)], "status": 303}
 
     def processAuthResponse(self, url, remote_addr, form_data):
+        saml_client = self.get_client(form_data.get('RelayState'))
         conv_info = {
             "remote_addr": remote_addr,
             "request_uri": url,
-            "entity_id": self._saml_client.config.entityid,
-            "endpoints": self._saml_client.config.getattr("endpoints", "sp"),
+            "entity_id": saml_client.config.entityid,
+            "endpoints": saml_client.config.getattr("endpoints", "sp"),
         }
 
-        response: None | AuthnResponse = self._saml_client.parse_authn_request_response(
+        response: None = saml_client.parse_authn_request_response(
             form_data['SAMLResponse'],
             BINDING_HTTP_POST,
             self._outstanding_requests,

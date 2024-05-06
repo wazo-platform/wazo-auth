@@ -121,6 +121,12 @@ _DEFAULT_CONFIG = {
     'bootstrap_user_on_startup': False,
     'bootstrap_user_username': None,
     'bootstrap_user_password': None,
+    'saml': {
+        'tenants': {},
+        'xmlsec_binary': '/usr/bin/xmlsec1',
+        'key_file': '/var/lib/wazo-auth/saml/server.key',
+        'cert_file': '/var/lib/wazo-auth/saml/server.crt',
+    },
 }
 
 
