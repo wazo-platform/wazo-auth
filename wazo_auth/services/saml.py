@@ -5,6 +5,7 @@ import ast
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import Any, Optional
 
 from saml2 import BINDING_HTTP_POST
 from saml2.client import Saml2Client
@@ -17,15 +18,17 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class SamlAuthContext:
+    saml_session_id: str
     redirect_url: str
     tenant: str
+    response: Optional[str] = None
     start_time: datetime = datetime.now(timezone.utc)
 
 
 class SAMLService(BaseService):
     def __init__(self, config):
         self._config = config
-        self._outstanding_requests = {}
+        self._outstanding_requests: dict[Any, SamlAuthContext] = {}
 
         if 'saml' in self._config:
             try:
@@ -73,7 +76,9 @@ class SAMLService(BaseService):
     ):
         reqid, info = self._saml_client.prepare_for_authenticate(relay_state=tenantId)
 
-        self._outstanding_requests[reqid] = SamlAuthContext(redirectUrl, tenantId)
+        self._outstanding_requests[reqid] = SamlAuthContext(
+            samlSessionId, redirectUrl, tenantId
+        )
         location = [i for i in info['headers'] if i[0] == 'Location'][0][1]
         return {"headers": [("Location", location)], "status": 303}
 
@@ -94,4 +99,12 @@ class SAMLService(BaseService):
         )
 
         logger.debug('SAML SP response: %s ' % response)
-        return response
+        logger.info('SAML response AVA: %s ' % response.ava)
+
+        sessionData: Optional[SamlAuthContext] = self._outstanding_requests.get(
+            response.session_id()
+        )
+        if sessionData:
+            return sessionData.redirect_url
+        else:
+            return None
