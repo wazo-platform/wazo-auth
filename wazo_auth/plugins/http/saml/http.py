@@ -4,7 +4,7 @@
 
 import logging
 
-from flask import Response, request
+from flask import Response, redirect, request
 from saml2.httputil import ServiceError
 from saml2.response import VerificationError
 from saml2.s_utils import UnknownPrincipal, UnsupportedBinding
@@ -46,7 +46,7 @@ class SAMLACS(http.ErrorCatchingResource):
         # }
 
         try:
-            self.response = self._saml_service.processAuthResponse(
+            response = self._saml_service.processAuthResponse(
                 request.url, request.remote_addr, request.form
             )
         except UnknownPrincipal as excp:
@@ -70,8 +70,6 @@ class SAMLACS(http.ErrorCatchingResource):
             resp = ServiceError(f"Other error: {err}")
             return resp(self.environ, self.start_response)
 
-        logger.info("Response: %s", self.response)
-
         # The following headers are expected on the ACS request
         # User-Agent
         # Wazo-Session-Type
@@ -85,7 +83,8 @@ class SAMLACS(http.ErrorCatchingResource):
         #     self._backend_proxy.get(backend_name), login, args
         # )
         # return {'data': token.to_dict()}, 200
-        return {'data': 'request processed'}, 200
+        logger.debug('ASC Post response: %s' % response)
+        return redirect(response)
 
 
 class SAMLSSO(http.ErrorCatchingResource):
