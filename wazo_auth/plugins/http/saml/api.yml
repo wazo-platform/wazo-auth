@@ -116,9 +116,13 @@ definitions:
       redirect_url:
         description: Where to redirect the browser once the login succeeded
         type: string
+      tenant_id:
+        description: The identifier for the tenant
+        type: string
     required:
     - saml_session_id
     - redirect_url
+    - tenant_id
     type: object
 
   SAMLSessionId:
