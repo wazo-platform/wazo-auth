@@ -26,3 +26,9 @@ class Plugin:
             '/saml/sso',
             resource_class_args=args,
         )
+
+        api.add_resource(
+            http.SAMLTOKEN,
+            '/saml/token',
+            resource_class_args=args,
+        )
