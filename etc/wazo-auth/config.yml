@@ -118,24 +118,3 @@ service_discovery:
 #   # The time interval to detect that the service is running when starting
 #   retry_interval: 2
 #   extra_tags: []
-
-saml:
-  entityid: 'spn:4967b7d6-9b99-464d-b41e-16a3f6ffe7be'
-  service:
-    sp:
-      want_response_signed: True,
-      authn_requests_signed: True,
-      logout_requests_signed: False,
-      allow_unsolicited: True,
-      endpoints:
-        assertion_consumer_service:
-          - ('https://wazo.praha/acs/post', 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST')
-        single_logout_service:
-          - ('https://wazo.praha/slo/redirect', 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect')
-          - ('https://wazo.praha/slo/post', 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST')
-  metadata:
-    local:
-      - '/etc/wazo-auth/pki/saml.xml'
-  xmlsec_binary: '/usr/bin/xmlsec1'
-  key_file: "/etc/wazo-auth/pki/server.key"
-  cert_file: "/etc/wazo-auth/pki/server.crt"
