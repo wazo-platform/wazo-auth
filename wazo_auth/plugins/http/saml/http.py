@@ -41,6 +41,7 @@ class SAMLACS(http.ErrorCatchingResource):
             response = self._saml_service.processAuthResponse(
                 request.url, request.remote_addr, request.form
             )
+        # TODO all error handling here need work. self.environ does not exists
         except UnknownPrincipal as excp:
             logger.error("UnknownPrincipal: %s", excp)
             resp = ServiceError(f"UnknownPrincipal: {excp}")
