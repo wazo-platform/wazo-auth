@@ -121,37 +121,31 @@ class SAMLTOKEN(http.ErrorCatchingResource):
             raise exceptions.UserParamException.from_errors(e.messages)
 
         if args.get('saml_session_id'):
-            userLogin: Optional[str] = self._saml_service.getUserLogin(
+            login: Optional[str] = self._saml_service.getUserLogin(
                 args.get('saml_session_id')
             )
-            return {'token': userLogin}
+            backend_name = 'wazo_user'
+            args = {
+                'user_agent': request.headers.get('User-Agent', ''),
+                'mobile': False,
+                'remote_addr': request.remote_addr,
+                'backend': backend_name,
+            }
+            token = self._token_service.new_token(
+                self._backend[backend_name].obj, login[0], args
+            )
+            redacted_token_id = 'XXXXXXXX-XXXX-XXXX-XXXX-XXXX' + token.token[-8:]
+            logger.info(
+                'Successful login: %s got token %s from %s using agent "%s"',
+                login,
+                redacted_token_id,
+                args['remote_addr'],
+                args['user_agent'],
+            )
+
+            return {'data': token.to_dict()}, 200
         else:
             return Response(
                 status=400,
                 response='Session id missing',
             )
-
-        # Do you SAML validation here
-        # Find the user's email adress from the SAML document. The username could also
-        # be used if Wazo and the identity provider are configured with the same username
-        # backend_name = 'wazo_user'
-        # args = {
-        #     'user_agent': request.headers.get('User-Agent', ''),
-        #     'mobile': True,
-        #     'remote_addr': request.remote_addr,
-        # }        try:
-        # http_args = self._getSamlRequest(self._saml_client, self._saml_config)
-
-        # The following headers are expected on the ACS request
-        # User-Agent
-        # Wazo-Session-Type
-        # The following values should be added to the ACS payload by the Agent
-        # backend: defaults to wazo_user
-        # expiration: token validity in seconds
-        # access_type: online or offline
-        # client_id: required if access_type is offline to create a request token
-
-        # token = self._token_service.new_token(
-        #     self._backend_proxy.get(backend_name), login, args
-        # )
-        # return {'data': token.to_dict()}, 200
