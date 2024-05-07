@@ -79,7 +79,7 @@ paths:
         description: The SAML response
         required: true
         schema:
-          $ref: '#/definitions/SAMLResponse'
+          $ref: '#/definitions/SAMLSessionId'
       responses:
         '200':
           description: The created token's data
@@ -117,5 +117,15 @@ definitions:
         description: Where to redirect the browser once the login succeeded
         type: string
     required:
-    - response
+    - saml_session_id
+    - redirect_url
+    type: object
+
+  SAMLSessionId:
+    properties:
+      saml_session_id:
+        description: UUID to correlate request-response
+        type: string
+    required:
+    - saml_session_id
     type: object

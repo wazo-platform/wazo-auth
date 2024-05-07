@@ -3,13 +3,14 @@
 
 import ast
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from typing import Any, Optional
 
 from saml2 import BINDING_HTTP_POST
 from saml2.client import Saml2Client
 from saml2.config import Config as SAMLConfig
+from saml2.response import AuthnResponse
 
 from wazo_auth.services.helpers import BaseService
 
@@ -21,7 +22,8 @@ class SamlAuthContext:
     saml_session_id: str
     redirect_url: str
     tenant: str
-    response: Optional[str] = None
+    login: Optional[str] = None
+    response: Optional[AuthnResponse] = None
     start_time: datetime = datetime.now(timezone.utc)
 
 
@@ -29,6 +31,7 @@ class SAMLService(BaseService):
     def __init__(self, config):
         self._config = config
         self._outstanding_requests: dict[Any, SamlAuthContext] = {}
+        self._session_request_mapping: dict[str, str] = {}
 
         if 'saml' in self._config:
             try:
@@ -90,7 +93,7 @@ class SAMLService(BaseService):
             "endpoints": self._saml_client.config.getattr("endpoints", "sp"),
         }
 
-        response = self._saml_client.parse_authn_request_response(
+        response: None | AuthnResponse = self._saml_client.parse_authn_request_response(
             form_data['SAMLResponse'],
             BINDING_HTTP_POST,
             self._outstanding_requests,
@@ -105,6 +108,22 @@ class SAMLService(BaseService):
             response.session_id()
         )
         if sessionData:
+            update = {'response': response, 'login': response.ava['name']}
+            self._outstanding_requests[response.session_id()] = replace(
+                sessionData, **update
+            )
             return sessionData.redirect_url
+        else:
+            return None
+
+    def getUserLogin(self, samlSessionId):
+        logger.warn('sessions %s ' % self._outstanding_requests)
+        for key in self._outstanding_requests:
+            if self._outstanding_requests[key].saml_session_id == samlSessionId:
+                reqid = key
+        sessionData: Optional[SamlAuthContext] = self._outstanding_requests.get(reqid)
+        logger.warn('sessionData : %s' % sessionData)
+        if sessionData:
+            return sessionData.login
         else:
             return None
