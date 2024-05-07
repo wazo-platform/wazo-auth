@@ -86,7 +86,9 @@ class SAMLSSO(http.ErrorCatchingResource):
     def post(self):
         try:
             http_args = self._saml_service.prepareRedirectResponse(
-                request.form['saml_session_id'], request.form['redirect_url']
+                request.form['saml_session_id'],
+                request.form['redirect_url'],
+                request.form['tenant_id'],
             )
             return Response(headers=http_args['headers'], status=http_args['status'])
         except Exception as excp:
