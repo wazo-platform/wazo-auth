@@ -42,13 +42,10 @@ class SAMLService(BaseService):
                     ][0],
                     str,
                 ):
-                    self._saml_config.load(self._updateConfig(self._config['saml']))
+                    self._saml_config.load(self._update_config(self._config['saml']))
                 else:
                     self._saml_config.load(self._config['saml'])
                 self._saml_client = Saml2Client(config=self._saml_config)
-                logger.info(
-                    '####################### SAML config : %s' % vars(self._saml_config)
-                )
             except Exception as inst:
                 logger.error('Error during SAML client init')
                 logger.exception(inst)
@@ -57,24 +54,24 @@ class SAMLService(BaseService):
                 'SAML config is missing, won\'t be able to provide SAML related services'
             )
 
-    def _extractTuplesFromListOfStrings(self, ls):
+    def _extract_tuples_from_list_of_strings(self, ls):
         e = [tuple(i.removeprefix('(').removesuffix(')').split(',')) for i in ls]
         return [
             (ast.literal_eval(i[0].strip()), ast.literal_eval(i[1].strip())) for i in e
         ]
 
-    def _updateConfig(self, config):
-        acs = self._extractTuplesFromListOfStrings(
+    def _update_config(self, config):
+        acs = self._extract_tuples_from_list_of_strings(
             config['service']['sp']['endpoints']['assertion_consumer_service']
         )
-        slo = self._extractTuplesFromListOfStrings(
+        slo = self._extract_tuples_from_list_of_strings(
             config['service']['sp']['endpoints']['single_logout_service']
         )
         u_config = {'assertion_consumer_service': acs, 'single_logout_service': slo}
         config['service']['sp']['endpoints'].update(u_config)
         return config
 
-    def prepareRedirectResponse(
+    def prepare_redirect_response(
         self, samlSessionId, redirectUrl, tenantId='wazoTestTenant'
     ):
         reqid, info = self._saml_client.prepare_for_authenticate(relay_state=tenantId)
@@ -85,7 +82,7 @@ class SAMLService(BaseService):
         location = [i for i in info['headers'] if i[0] == 'Location'][0][1]
         return {"headers": [("Location", location)], "status": 303}
 
-    def processAuthResponse(self, url, remote_addr, form_data):
+    def process_auth_response(self, url, remote_addr, form_data):
         conv_info = {
             "remote_addr": remote_addr,
             "request_uri": url,
@@ -101,8 +98,8 @@ class SAMLService(BaseService):
             conv_info=conv_info,
         )
 
-        logger.debug('SAML SP response: %s ' % response)
-        logger.info('SAML response AVA: %s ' % response.ava)
+        logger.debug(f'SAML SP response: {response}')
+        logger.info(f'SAML response AVA: {response.ava}')
 
         sessionData: Optional[SamlAuthContext] = self._outstanding_requests.get(
             response.session_id()
@@ -116,13 +113,13 @@ class SAMLService(BaseService):
         else:
             return None
 
-    def getUserLogin(self, samlSessionId):
-        logger.warn('sessions %s ' % self._outstanding_requests)
+    def get_user_login(self, samlSessionId):
+        logger.warn(f'sessions {self._outstanding_requests}')
         for key in self._outstanding_requests:
             if self._outstanding_requests[key].saml_session_id == samlSessionId:
                 reqid = key
         sessionData: Optional[SamlAuthContext] = self._outstanding_requests.get(reqid)
-        logger.warn('sessionData : %s' % sessionData)
+        logger.warn(f'sessionData : {sessionData}')
         if sessionData:
             return sessionData.login
         else:

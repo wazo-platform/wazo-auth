@@ -38,31 +38,33 @@ class SAMLACS(http.ErrorCatchingResource):
 
     def post(self):
         try:
-            response = self._saml_service.processAuthResponse(
+            response = self._saml_service.process_auth_response(
                 request.url, request.remote_addr, request.form
             )
         except UnknownPrincipal as excp:
-            logger.error("UnknownPrincipal: %s", excp)
+            logger.error(f"UnknownPrincipal: {excp}")
             resp = ServiceError(f"UnknownPrincipal: {excp}")
             return resp(self.environ, self.start_response)
         except UnsupportedBinding as excp:
-            logger.error("UnsupportedBinding: %s", excp)
+            logger.error(
+                f"UnsupportedBinding: {excp}",
+            )
             resp = ServiceError(f"UnsupportedBinding: {excp}")
             return resp(self.environ, self.start_response)
         except VerificationError as err:
-            logger.warn("Verification error: %s", err)
+            logger.warn(f"Verification error: {err}")
             resp = ServiceError(f"Verification error: {err}")
             return resp(self.environ, self.start_response)
         except SignatureError as err:
-            logger.warn("Signature error: %s", err)
+            logger.warn(f"Signature error: {err}")
             resp = ServiceError(f"Signature error: {err}")
             return resp(self.environ, self.start_response)
         except Exception as err:
-            logger.error("SAML unexpected error: %s" % err)
+            logger.error(f"SAML unexpected error: {err}")
             resp = ServiceError(f"Other error: {err}")
             return resp(self.environ, self.start_response)
 
-        logger.debug('ASC Post response: %s' % response)
+        logger.debug(f'ASC Post response: {response}')
         return redirect(response)
 
 
@@ -85,12 +87,12 @@ class SAMLSSO(http.ErrorCatchingResource):
 
     def post(self):
         try:
-            http_args = self._saml_service.prepareRedirectResponse(
+            http_args = self._saml_service.prepare_redirect_response(
                 request.form['saml_session_id'], request.form['redirect_url']
             )
             return Response(headers=http_args['headers'], status=http_args['status'])
         except Exception as excp:
-            logger.error("Failed to process initial SAML SSO post because of: %s", excp)
+            logger.error(f"Failed to process initial SAML SSO post because of: {excp}")
             return Response(
                 status=500,
                 response='SAML configuration missing or SAML client init failed',
@@ -121,7 +123,7 @@ class SAMLTOKEN(http.ErrorCatchingResource):
             raise exceptions.UserParamException.from_errors(e.messages)
 
         if args.get('saml_session_id'):
-            login: Optional[str] = self._saml_service.getUserLogin(
+            login: Optional[str] = self._saml_service.get_user_login(
                 args.get('saml_session_id')
             )
             backend_name = 'wazo_user'
@@ -136,11 +138,15 @@ class SAMLTOKEN(http.ErrorCatchingResource):
             )
             redacted_token_id = 'XXXXXXXX-XXXX-XXXX-XXXX-XXXX' + token.token[-8:]
             logger.info(
-                'Successful login: %s got token %s from %s using agent "%s"',
-                login,
-                redacted_token_id,
-                args['remote_addr'],
-                args['user_agent'],
+                (
+                    'Successful login: {login} got token {redacted_id} from {remote_addr} '
+                    'using agent "{user_agent}"'
+                ).format(
+                    login=login,
+                    redacted_id=redacted_token_id,
+                    remote_addr=args['remote_addr'],
+                    user_agent=args['user_agent'],
+                )
             )
 
             return {'data': token.to_dict()}, 200
