@@ -16,6 +16,7 @@ class TokenRequestSchema(BaseSchema):
     expiration = fields.Integer(validate=Range(min=1, max=TEN_YEARS))
     access_type = fields.String(validate=OneOf(['online', 'offline']))
     client_id = fields.String(validate=Length(min=1, max=1024))
+    saml_session_id = fields.String(validate=Length(min=1, max=1024))
     refresh_token = fields.String()
     tenant_id = fields.String()
     domain_name = fields.String()
@@ -66,6 +67,16 @@ class TokenRequestSchema(BaseSchema):
         if not client_id:
             raise ValidationError(
                 '"client_id" must be specified when using a "refresh_token"'
+            )
+
+    @validates_schema
+    def check_saml_sesssion_id_or_credentials(self, data, **kwargs):
+        saml_session_id = data.get('saml_session_id')
+        refresh_token = data.get('refresh_token')
+
+        if saml_session_id and refresh_token:
+            raise ValidationError(
+                'Cannot use a "saml_session_id" and a "refresh_token" at the same time'
             )
 
 

@@ -13,7 +13,6 @@ class Plugin:
             dependencies['authentication_service'],
             dependencies['saml_service'],
             dependencies['config'],
-            dependencies['backends'],
         )
 
         api.add_resource(
@@ -24,11 +23,5 @@ class Plugin:
         api.add_resource(
             http.SAMLSSO,
             '/saml/sso',
-            resource_class_args=args,
-        )
-
-        api.add_resource(
-            http.SAMLTOKEN,
-            '/saml/token',
             resource_class_args=args,
         )

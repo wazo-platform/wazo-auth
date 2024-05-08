@@ -16,10 +16,19 @@ logger = logging.getLogger(__name__)
 
 
 class BaseResource(http.ErrorCatchingResource):
-    def __init__(self, token_service, user_service, authentication_service):
+    def __init__(
+        self,
+        token_service,
+        user_service,
+        saml_service,
+        authentication_service,
+        backends,
+    ):
         self._token_service = token_service
         self._user_service = user_service
+        self._saml_service = saml_service
         self._authentication_service = authentication_service
+        self._backends = backends
 
 
 class _BaseRefreshTokens(http.AuthResource):
@@ -186,17 +195,27 @@ class Tokens(BaseResource):
         args['user_agent'] = user_agent
         args['remote_addr'] = remote_addr
 
-        try:
-            backend, login = self._authentication_service.verify_auth(args)
-        except (
-            exceptions.NoSuchBackendException,
-            exceptions.InvalidUsernamePassword,
-            exceptions.UnknownRefreshToken,
-        ) as e:
-            logger.info(
-                'Failed login: %s from %s using agent "%s"', e, remote_addr, user_agent
-            )
-            return http._error(401, 'Authentication Failed')
+        if saml_session_id := args.get('saml_session_id'):
+            saml_login = self._saml_service.getUserLogin(saml_session_id)
+            if not saml_login:
+                return http._error(401, 'Authentication Failed')
+            login = args['login'] = saml_login[0]
+            backend = self._backends['wazo_user'].obj
+        else:
+            try:
+                backend, login = self._authentication_service.verify_auth(args)
+            except (
+                exceptions.NoSuchBackendException,
+                exceptions.InvalidUsernamePassword,
+                exceptions.UnknownRefreshToken,
+            ) as e:
+                logger.info(
+                    'Failed login: %s from %s using agent "%s"',
+                    e,
+                    remote_addr,
+                    user_agent,
+                )
+                return http._error(401, 'Authentication Failed')
 
         token = self._token_service.new_token(backend, login, args)
         redacted_token_id = 'XXXXXXXX-XXXX-XXXX-XXXX-XXXX' + token.token[-8:]
