@@ -1,4 +1,4 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from . import http
@@ -10,7 +10,9 @@ class Plugin:
         args = (
             dependencies['token_service'],
             dependencies['user_service'],
+            dependencies['saml_service'],
             dependencies['authentication_service'],
+            dependencies['backends'],
         )
 
         api.add_resource(

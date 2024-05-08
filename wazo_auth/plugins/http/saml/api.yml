@@ -57,43 +57,6 @@ paths:
           schema:
             $ref: '#/definitions/Error'
 
-  /saml/token:
-    post:
-      consumes:
-      - application/json
-      produces:
-      - application/json
-      description: |
-        Receives the session id of a successful login.
-
-        The user's email address from the SAML response is used to find
-        the matching wazo-auth user and generate an access token for that
-        user.
-      operationId: createTokenSAML
-      tags:
-      - token
-      - saml
-      parameters:
-      - name: body
-        in: body
-        description: The SAML response
-        required: true
-        schema:
-          $ref: '#/definitions/SAMLSessionId'
-      responses:
-        '200':
-          description: The created token's data
-          schema:
-            $ref: '#/definitions/Token'
-        '400':
-          description: Invalid expiration or missing field
-          schema:
-            $ref: '#/definitions/Error'
-        '500':
-          description: System related token generation error
-          schema:
-            $ref: '#/definitions/Error'
-
 definitions:
   SAMLResponse:
     properties:
