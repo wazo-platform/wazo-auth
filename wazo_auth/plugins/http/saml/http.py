@@ -32,7 +32,7 @@ class SAMLACS(http.ErrorCatchingResource):
 
     def post(self):
         try:
-            response = self._saml_service.processAuthResponse(
+            response = self._saml_service.process_auth_response(
                 request.url, request.remote_addr, request.form
             )
         # TODO all error handling here need work. self.environ does not exists
@@ -53,11 +53,11 @@ class SAMLACS(http.ErrorCatchingResource):
             resp = ServiceError(f"Signature error: {err}")
             return resp(self.environ, self.start_response)
         except Exception as err:
-            logger.error("SAML unexpected error: %s" % err)
+            logger.error("SAML unexpected error: %s", err)
             resp = ServiceError(f"Other error: {err}")
             return resp(self.environ, self.start_response)
 
-        logger.debug('ASC Post response: %s' % response)
+        logger.debug('ASC Post response: %s', response)
         return redirect(response)
 
 
@@ -78,7 +78,7 @@ class SAMLSSO(http.ErrorCatchingResource):
 
     def post(self):
         try:
-            http_args = self._saml_service.prepareRedirectResponse(
+            http_args = self._saml_service.prepare_redirect_response(
                 request.form['saml_session_id'],
                 request.form['redirect_url'],
                 request.form['tenant_id'],
