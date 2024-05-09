@@ -196,7 +196,7 @@ class Tokens(BaseResource):
         args['remote_addr'] = remote_addr
 
         if saml_session_id := args.get('saml_session_id'):
-            saml_login = self._saml_service.getUserLogin(saml_session_id)
+            saml_login = self._saml_service.get_user_login(saml_session_id)
             if not saml_login:
                 return http._error(401, 'Authentication Failed')
             login = args['login'] = saml_login[0]

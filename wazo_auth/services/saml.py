@@ -61,9 +61,7 @@ class SAMLService(BaseService):
                 saml_config = SAMLConfig()
                 saml_config.load(raw_saml_config)
                 saml_client = Saml2Client(config=saml_config)
-                logger.info(
-                    '####################### SAML config : %s', vars(saml_config)
-                )
+                logger.info('SAML config : %s', vars(saml_config))
                 self._saml_clients[tenant_identifier] = saml_client
             except Exception as inst:
                 logger.error(
@@ -74,7 +72,7 @@ class SAMLService(BaseService):
     def get_client(self, tenant_identifier):
         return self._saml_clients[tenant_identifier]
 
-    def prepareRedirectResponse(
+    def prepare_redirect_response(
         self, samlSessionId, redirectUrl, tenantId='wazoTestTenant'
     ):
         client = self.get_client(tenantId)
@@ -86,7 +84,7 @@ class SAMLService(BaseService):
         location = [i for i in info['headers'] if i[0] == 'Location'][0][1]
         return {"headers": [("Location", location)], "status": 303}
 
-    def processAuthResponse(self, url, remote_addr, form_data):
+    def process_auth_response(self, url, remote_addr, form_data):
         saml_client = self.get_client(form_data.get('RelayState'))
         conv_info = {
             "remote_addr": remote_addr,
@@ -103,8 +101,8 @@ class SAMLService(BaseService):
             conv_info=conv_info,
         )
 
-        logger.debug('SAML SP response: %s ' % response)
-        logger.info('SAML response AVA: %s ' % response.ava)
+        logger.debug('SAML SP response: %s', response)
+        logger.info('SAML response AVA: %s', response.ava)
 
         sessionData: Optional[SamlAuthContext] = self._outstanding_requests.get(
             response.session_id()
@@ -118,13 +116,13 @@ class SAMLService(BaseService):
         else:
             return None
 
-    def getUserLogin(self, samlSessionId):
-        logger.warn('sessions %s ' % self._outstanding_requests)
+    def get_user_login(self, samlSessionId):
+        logger.warn('sessions %s', self._outstanding_requests)
         for key in self._outstanding_requests:
             if self._outstanding_requests[key].saml_session_id == samlSessionId:
                 reqid = key
         sessionData: Optional[SamlAuthContext] = self._outstanding_requests.get(reqid)
-        logger.warn('sessionData : %s' % sessionData)
+        logger.warn('sessionData : %s', sessionData)
         if sessionData:
             return sessionData.login
         else:
