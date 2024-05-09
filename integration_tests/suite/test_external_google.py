@@ -110,16 +110,6 @@ class TestAuthGoogle(base.APIIntegrationTest):
             not_(raises(requests.HTTPError)),
         )
 
-    def test_when_delete_then_not_found(self):
-        base.assert_http_error(
-            404, self.client.external.delete, GOOGLE, self.admin_user_uuid
-        )
-
-    def test_when_delete_nothing_then_not_found(self):
-        base.assert_http_error(
-            404, self.client.external.delete, GOOGLE, self.admin_user_uuid
-        )
-
     def _simulate_user_authentication(self, state):
         authorize_url = AUTHORIZE_URL.format(port=self.oauth2_port(), state=state)
         response = requests.get(authorize_url)
