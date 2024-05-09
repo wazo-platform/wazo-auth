@@ -99,12 +99,16 @@ class TestAuthMicrosoft(base.APIIntegrationTest):
         )
 
     def test_when_create_then_url_returned(self):
-        response = self.client.external.create(MICROSOFT, self.admin_user_uuid, {})
+        result = self.client.external.create(MICROSOFT, self.admin_user_uuid, {})
 
-        assert_that(response, has_key('authorization_url'))
+        assert_that(result, has_key('authorization_url'))
+
+        # Avoid race condition before teardown
+        self._simulate_user_authentication(result['state'])
 
     def test_when_create_twice_without_authorize_then_not_created(self):
-        self.client.external.create(MICROSOFT, self.admin_user_uuid, {})
+        result = self.client.external.create(MICROSOFT, self.admin_user_uuid, {})
+        self._simulate_user_authentication(result['state'])
 
         assert_that(
             calling(self.client.external.create).with_args(
