@@ -39,7 +39,8 @@ Depends: ${python3:Depends},
          wazo-bus-python3,
          xivo-lib-python-python3,
          wazo-auth-client-python3,
-         xivo-libdao-python3
+         xivo-libdao-python3,
+         xmlsec1
 Description: Wazo PBX's authentication service
  Wazo is a system based on a powerful IPBX, to bring an easy to
  install solution for telephony and related services.
