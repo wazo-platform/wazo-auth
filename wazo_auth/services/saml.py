@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
+import secrets
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from typing import Any, Optional
@@ -73,10 +74,10 @@ class SAMLService(BaseService):
 
     def prepare_redirect_response(
         self,
-        saml_session_id,
         redirect_url,
         domain,
     ):
+        saml_session_id = secrets.token_urlsafe(16)
         client = self.get_client(domain)
         reqid, info = client.prepare_for_authenticate(relay_state=domain)
 
@@ -86,7 +87,7 @@ class SAMLService(BaseService):
             domain,
         )
         location = [i for i in info['headers'] if i[0] == 'Location'][0][1]
-        return {"headers": [("Location", location)], "status": 303}
+        return location, saml_session_id
 
     def process_auth_response(self, url, remote_addr, form_data):
         saml_client = self.get_client(form_data.get('RelayState'))
