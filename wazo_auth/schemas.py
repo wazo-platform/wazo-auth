@@ -9,6 +9,10 @@ from wazo_auth.slug import Slug, TenantSlug
 
 BaseSchema = mallow.Schema
 
+DOMAIN_RE = (
+    r'^(?=.{1,253}\.?$)(?:(?!(-|_)|[^.]+_)[A-Za-z0-9-_]{1,}(?<!-)(?:\.|$)){2,63}$'
+)
+
 
 class GroupRequestSchema(BaseSchema):
     name = fields.String(validate=validate.Length(min=1, max=128), required=True)
@@ -76,11 +80,7 @@ class TenantFullSchema(BaseSchema):
         validate=validate.Length(min=1, max=32), default=None, missing=None
     )
     domain_names = fields.List(
-        fields.String(
-            validate=validate.Regexp(
-                r'^(?=.{1,253}\.?$)(?:(?!(-|_)|[^.]+_)[A-Za-z0-9-_]{1,}(?<!-)(?:\.|$)){2,63}$'
-            ),
-        ),
+        fields.String(validate=validate.Regexp(DOMAIN_RE)),
         missing=[],
         default=[],
         allow_none=False,
