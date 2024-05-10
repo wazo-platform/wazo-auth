@@ -4,7 +4,7 @@
 import logging
 import secrets
 from dataclasses import dataclass, replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 from saml2 import BINDING_HTTP_POST
@@ -35,6 +35,9 @@ class SAMLService(BaseService):
         self._saml_clients: dict[str, Saml2Client] = {}
 
         self._init_clients()
+        self._saml_session_lifetime = timedelta(
+            seconds=config['saml']['saml_session_lifetime_seconds']
+        )
 
     def _init_clients(self):
         key_file = self._config['saml']['key_file']
@@ -131,3 +134,11 @@ class SAMLService(BaseService):
             return session_data.login
         else:
             return None
+
+    def clean_pending_requests(self, now=datetime.now(timezone.utc)):
+        for k in list(self._outstanding_requests.keys()):
+            if (
+                self._outstanding_requests[k].start_time + self._saml_session_lifetime
+                > now
+            ):
+                del self._outstanding_requests[k]
