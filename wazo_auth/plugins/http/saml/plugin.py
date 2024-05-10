@@ -7,21 +7,14 @@ from . import http
 class Plugin:
     def load(self, dependencies):
         api = dependencies['api']
-        args = (
-            dependencies['token_service'],
-            dependencies['user_service'],
-            dependencies['authentication_service'],
-            dependencies['saml_service'],
-            dependencies['config'],
-        )
 
         api.add_resource(
             http.SAMLACS,
             '/saml/acs',
-            resource_class_args=args,
+            resource_class_args=(dependencies['saml_service'],),
         )
         api.add_resource(
             http.SAMLSSO,
             '/saml/sso',
-            resource_class_args=args,
+            resource_class_args=(dependencies['saml_service'],),
         )

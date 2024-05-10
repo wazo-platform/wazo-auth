@@ -12,23 +12,14 @@ from saml2.sigver import SignatureError
 
 from wazo_auth import http
 
+from .schemas import SAMLSSOSchema
+
 logger = logging.getLogger(__name__)
 
 
 class SAMLACS(http.ErrorCatchingResource):
-    def __init__(
-        self,
-        token_service,
-        user_service,
-        auth_service,
-        saml_service,
-        config,
-    ):
-        self._token_service = token_service
-        self._user_service = user_service
-        self._auth_service = auth_service
+    def __init__(self, saml_service):
         self._saml_service = saml_service
-        self._config = config
 
     def post(self):
         try:
@@ -62,28 +53,21 @@ class SAMLACS(http.ErrorCatchingResource):
 
 
 class SAMLSSO(http.ErrorCatchingResource):
-    def __init__(
-        self,
-        token_service,
-        user_service,
-        auth_service,
-        saml_service,
-        config,
-    ):
-        self._token_service = token_service
-        self._user_service = user_service
-        self._auth_service = auth_service
+    def __init__(self, saml_service):
         self._saml_service = saml_service
-        self._config = config
+        self._schema = SAMLSSOSchema()
 
     def post(self):
+        args = self._schema.load(request.get_json())
         try:
-            http_args = self._saml_service.prepare_redirect_response(
-                request.form['saml_session_id'],
-                request.form['redirect_url'],
-                request.form['domain'],
+            location, saml_session_id = self._saml_service.prepare_redirect_response(
+                args['redirect_url'],
+                args['domain'],
             )
-            return Response(headers=http_args['headers'], status=http_args['status'])
+            return {
+                'location': location,
+                'saml_session_id': saml_session_id,
+            }
         except Exception as excp:
             logger.error("Failed to process initial SAML SSO post because of: %s", excp)
             return Response(

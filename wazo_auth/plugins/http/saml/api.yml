@@ -2,12 +2,16 @@ paths:
   /saml/sso:
     post:
       consumes:
-      - multipart/form-data
+      - application/json
+      produces:
+      - application/json
       description: |
         Returns the information (SAML request and redirect location) that
         the client needs to use to authenticate using the configured identity
-        provider
+        provider. The redirection does not happen automatically, the client
+        has to use the `location` provided in the body of the response.
       operationId: samlSSO
+      summary: Initiate a SAML authentication process
       tags:
       - token
       - saml
@@ -19,10 +23,12 @@ paths:
         schema:
           $ref: '#/definitions/SAMLLoginContext'
       responses:
-        '303':
+        '201':
           description: |
             The `Location` header contains the URL of the identity provider that should be
             used by the client to authenticate.
+          schema:
+            $ref: '#/definitions/SAMLSSOResponse'
         '500':
           description: |
             Please ask your admin to configure the SAML SSO
@@ -70,12 +76,22 @@ definitions:
     - response
     - token
     type: object
+  SAMLSSOResponse:
+    type: object
+    properties:
+      location:
+        description: |
+          The URL that the client should open to complete the authentication
+          request
+        type: string
+      saml_session_id:
+        type: string
+        description: |
+          The saml_session_id needs to be used to create a wazo-auth token
+          once the SAML authentication has been completed successfully
 
   SAMLLoginContext:
     properties:
-      saml_session_id:
-        description: UUID to correlate request-response
-        type: string
       redirect_url:
         description: Where to redirect the browser once the login succeeded
         type: string
@@ -83,16 +99,6 @@ definitions:
         description: The domain name of the tenant
         type: string
     required:
-    - saml_session_id
     - redirect_url
     - domain
-    type: object
-
-  SAMLSessionId:
-    properties:
-      saml_session_id:
-        description: UUID to correlate request-response
-        type: string
-    required:
-    - saml_session_id
     type: object
