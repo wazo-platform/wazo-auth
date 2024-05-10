@@ -10,8 +10,8 @@ paths:
         the client needs to use to authenticate using the configured identity
         provider. The redirection does not happen automatically, the client
         has to use the `location` provided in the body of the response.
+      summary: Creates and returns context and redirects to IdP login page
       operationId: samlSSO
-      summary: Initiate a SAML authentication process
       tags:
       - token
       - saml
@@ -42,6 +42,7 @@ paths:
 
         The internal cache allows to retrieve the context and redirect the browser
         to process the login.
+      summary: Processes the IdP response and redirects to requested URL
       operationId: processACS
       tags:
       - token
