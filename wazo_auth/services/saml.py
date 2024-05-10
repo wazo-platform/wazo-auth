@@ -109,15 +109,15 @@ class SAMLService(BaseService):
         logger.debug('SAML SP response: %s', response)
         logger.info('SAML response AVA: %s', response.ava)
 
-        sessionData: Optional[SamlAuthContext] = self._outstanding_requests.get(
+        session_data: Optional[SamlAuthContext] = self._outstanding_requests.get(
             response.session_id()
         )
-        if sessionData:
+        if session_data:
             update = {'response': response, 'login': response.ava['name']}
             self._outstanding_requests[response.session_id()] = replace(
-                sessionData, **update
+                session_data, **update
             )
-            return sessionData.redirect_url
+            return session_data.redirect_url
         else:
             return None
 
@@ -126,9 +126,9 @@ class SAMLService(BaseService):
         for key in self._outstanding_requests:
             if self._outstanding_requests[key].saml_session_id == saml_session_id:
                 reqid = key
-        sessionData: Optional[SamlAuthContext] = self._outstanding_requests.get(reqid)
-        logger.warn('sessionData : %s', sessionData)
-        if sessionData:
-            return sessionData.login
+        session_data: Optional[SamlAuthContext] = self._outstanding_requests.get(reqid)
+        logger.warn('session_data : %s', session_data)
+        if session_data:
+            return session_data.login
         else:
             return None
