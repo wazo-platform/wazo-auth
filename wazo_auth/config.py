@@ -123,7 +123,7 @@ _DEFAULT_CONFIG = {
     'bootstrap_user_password': None,
     'saml': {
         'domains': {},
-        'saml_session_lifetime_seconds': 300,
+        'saml_session_lifetime_seconds': 600,
         'xmlsec_binary': '/usr/bin/xmlsec1',
         'key_file': '/var/lib/wazo-auth/saml/server.key',
         'cert_file': '/var/lib/wazo-auth/saml/server.crt',
