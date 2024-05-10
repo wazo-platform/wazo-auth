@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class SamlAuthContext:
     saml_session_id: str
     redirect_url: str
-    tenant: str
+    domain: str
     login: Optional[str] = None
     response: Optional[AuthnResponse] = None
     start_time: datetime = datetime.now(timezone.utc)
@@ -49,37 +49,41 @@ class SAMLService(BaseService):
             'cert_file': cert_file,
         }
         logger.debug('Global SAML config: %s', global_saml_config)
-        tenant_configs = self._config['saml']['tenants']
-        if not tenant_configs:
-            logger.debug('No SAML configuration found for any tenant')
+        domain_configs = self._config['saml']['domains']
+        if not domain_configs:
+            logger.debug('No SAML configuration found for any domain')
             return
 
-        for tenant_identifier, raw_saml_config in tenant_configs.items():
-            raw_saml_config['relay_state'] = tenant_identifier
+        for domain, raw_saml_config in domain_configs.items():
+            # TODO(pc-m): Check that the configured domains exists for a tenant
+            raw_saml_config['relay_state'] = domain
             raw_saml_config.update(global_saml_config)
             try:
                 saml_config = SAMLConfig()
                 saml_config.load(raw_saml_config)
                 saml_client = Saml2Client(config=saml_config)
                 logger.info('SAML config : %s', vars(saml_config))
-                self._saml_clients[tenant_identifier] = saml_client
+                self._saml_clients[domain] = saml_client
             except Exception as inst:
-                logger.error(
-                    'Error during SAML client init for tenant %s', tenant_identifier
-                )
+                logger.error('Error during SAML client init for domain %s', domain)
                 logger.exception(inst)
 
-    def get_client(self, tenant_identifier):
-        return self._saml_clients[tenant_identifier]
+    def get_client(self, domain):
+        return self._saml_clients[domain]
 
     def prepare_redirect_response(
-        self, samlSessionId, redirectUrl, tenantId='wazoTestTenant'
+        self,
+        saml_session_id,
+        redirect_url,
+        domain,
     ):
-        client = self.get_client(tenantId)
-        reqid, info = client.prepare_for_authenticate(relay_state=tenantId)
+        client = self.get_client(domain)
+        reqid, info = client.prepare_for_authenticate(relay_state=domain)
 
         self._outstanding_requests[reqid] = SamlAuthContext(
-            samlSessionId, redirectUrl, tenantId
+            saml_session_id,
+            redirect_url,
+            domain,
         )
         location = [i for i in info['headers'] if i[0] == 'Location'][0][1]
         return {"headers": [("Location", location)], "status": 303}
@@ -116,10 +120,10 @@ class SAMLService(BaseService):
         else:
             return None
 
-    def get_user_login(self, samlSessionId):
+    def get_user_login(self, saml_session_id):
         logger.warn('sessions %s', self._outstanding_requests)
         for key in self._outstanding_requests:
-            if self._outstanding_requests[key].saml_session_id == samlSessionId:
+            if self._outstanding_requests[key].saml_session_id == saml_session_id:
                 reqid = key
         sessionData: Optional[SamlAuthContext] = self._outstanding_requests.get(reqid)
         logger.warn('sessionData : %s', sessionData)
