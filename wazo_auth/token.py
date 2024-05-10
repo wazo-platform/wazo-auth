@@ -206,4 +206,4 @@ class ExpiredTokenRemover:
                 self._bus_publisher.publish(event)
 
     def _purge_expired_saml_sessions(self):
-        self._saml_service.clean_expired_requests()
+        self._saml_service.clean_pending_requests()
