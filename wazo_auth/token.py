@@ -105,7 +105,7 @@ class Token:
 
 
 class ExpiredTokenRemover:
-    def __init__(self, config, dao, bus_publisher):
+    def __init__(self, config, dao, bus_publisher, saml_service):
         self._dao = dao
         self._bus_publisher = bus_publisher
         self._cleanup_interval = config['token_cleanup_interval']
@@ -116,6 +116,7 @@ class ExpiredTokenRemover:
         self._tombstone = threading.Event()
         self._thread = threading.Thread(target=self._loop)
         self._thread.daemon = True
+        self._saml_service = saml_service
 
     def start(self):
         if self._cleanup_interval > 0:
