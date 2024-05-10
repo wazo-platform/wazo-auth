@@ -63,11 +63,10 @@ class SAMLService(BaseService):
                 saml_config = SAMLConfig()
                 saml_config.load(raw_saml_config)
                 saml_client = Saml2Client(config=saml_config)
-                logger.info('SAML config : %s', vars(saml_config))
+                logger.debug('SAML config : %s', vars(saml_config))
                 self._saml_clients[domain] = saml_client
-            except Exception as inst:
-                logger.error('Error during SAML client init for domain %s', domain)
-                logger.exception(inst)
+            except Exception:
+                logger.exception('Error during SAML client init for domain %s', domain)
 
     def get_client(self, domain):
         return self._saml_clients[domain]
@@ -122,12 +121,12 @@ class SAMLService(BaseService):
             return None
 
     def get_user_login(self, saml_session_id):
-        logger.warn('sessions %s', self._outstanding_requests)
+        logger.debug('sessions %s', self._outstanding_requests)
         for key in self._outstanding_requests:
             if self._outstanding_requests[key].saml_session_id == saml_session_id:
                 reqid = key
         session_data: Optional[SamlAuthContext] = self._outstanding_requests.get(reqid)
-        logger.warn('session_data : %s', session_data)
+        logger.debug('session_data : %s', session_data)
         if session_data:
             return session_data.login
         else:
