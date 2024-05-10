@@ -133,6 +133,7 @@ class ExpiredTokenRemover:
 
             self._tokens_cleanup()
             self._tokens_notice()
+            self._purge_expired_saml_sessions()
 
             elapsed = time.monotonic() - started
 
@@ -202,3 +203,6 @@ class ExpiredTokenRemover:
                 )
             else:
                 self._bus_publisher.publish(event)
+
+    def _purge_expired_saml_sessions(self):
+        self._saml_service.clean_expired_requests()
