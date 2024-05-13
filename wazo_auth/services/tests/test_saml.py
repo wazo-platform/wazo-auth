@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from datetime import datetime
+from typing import Optional
 from unittest import TestCase
 from unittest.mock import Mock, patch
 
@@ -21,11 +22,13 @@ class TestSAMLService(TestCase):
 
     def _get_auth_context(
         self,
+        saml_id: str = 'saml_id',
         redirect_url: str = 'some_url',
         domain: str = 'some_domain',
+        login: Optional[str] = None,
         date: datetime = datetime.fromisoformat('2000-01-01 00:00:02'),
     ) -> SamlAuthContext:
-        return SamlAuthContext('saml_id', redirect_url, domain, None, None, date)
+        return SamlAuthContext(saml_id, redirect_url, domain, login, None, date)
 
     def test_clean_pending_requests(self):
         expired_date: datetime = datetime.fromisoformat('2000-01-01 00:00:02')
@@ -83,3 +86,15 @@ class TestSAMLService(TestCase):
         updated_req: SamlAuthContext = self.service._outstanding_requests[req_key]
         assert_that(updated_req.login, is_('testname'))
         assert_that(updated_req.response, is_(response))
+
+    def test_remove_context_data_on_login_retrieval(self):
+        saml_id = 'sd1'
+        req_key = 'kid1'
+        login = 'user1'
+        cached_req = self._get_auth_context(saml_id=saml_id, login=login)
+        self.service._outstanding_requests = {req_key: cached_req}
+
+        result = self.service.get_user_login_and_remove_context(saml_id)
+
+        assert_that(result, is_(login))
+        assert_that(len(self.service._outstanding_requests), is_(0))
