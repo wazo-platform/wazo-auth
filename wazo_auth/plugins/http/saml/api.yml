@@ -11,9 +11,8 @@ paths:
         provider. The redirection does not happen automatically, the client
         has to use the `location` provided in the body of the response.
         provider
-      summary: Saves context and redirects to IdP login page
+      summary: Creates and returns context and redirects to IdP login page
       operationId: samlSSO
-      summary: Initiate a SAML authentication process
       tags:
       - token
       - saml
