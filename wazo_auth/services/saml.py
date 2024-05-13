@@ -31,7 +31,6 @@ class SAMLService(BaseService):
     def __init__(self, config):
         self._config = config
         self._outstanding_requests: dict[Any, SamlAuthContext] = {}
-        self._session_request_mapping: dict[str, str] = {}
         self._saml_clients: dict[str, Saml2Client] = {}
 
         self._init_clients()
