@@ -123,14 +123,15 @@ class SAMLService(BaseService):
         else:
             return None
 
-    def get_user_login(self, saml_session_id):
+    def get_user_login_and_remove_context(self, saml_session_id):
         logger.debug('sessions %s', self._outstanding_requests)
         for key in self._outstanding_requests:
             if self._outstanding_requests[key].saml_session_id == saml_session_id:
                 reqid = key
         session_data: Optional[SamlAuthContext] = self._outstanding_requests.get(reqid)
-        logger.debug('session_data : %s', session_data)
         if session_data:
+            logger.debug('session_data : %s', session_data)
+            del self._outstanding_requests[reqid]
             return session_data.login
         else:
             return None
