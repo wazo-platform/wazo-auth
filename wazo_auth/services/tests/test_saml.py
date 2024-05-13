@@ -18,7 +18,7 @@ class TestSAMLService(TestCase):
         self.config['saml']['saml_session_lifetime_seconds'] = self.lifetime
         self.service = SAMLService(self.config)
 
-    def test_(self):
+    def test_clean_pending_requests(self):
         expired_date: datetime = datetime.fromisoformat('2000-01-01 00:00:02')
         expired: SamlAuthContext = SamlAuthContext(
             'saml_id', 'some_url', 'some_tenant', None, None, expired_date
