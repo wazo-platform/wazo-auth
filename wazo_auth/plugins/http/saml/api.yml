@@ -29,9 +29,11 @@ paths:
             used by the client to authenticate.
           schema:
             $ref: '#/definitions/SAMLSSOResponse'
+        '400':
+          description: Missing or wrong parameters.
         '500':
           description: |
-            Please ask your admin to configure the SAML SSO
+            Failed to initialize SAML SSO. Please check your stack configuration.
 
   /saml/acs:
     post:
@@ -57,8 +59,12 @@ paths:
       responses:
         '303':
           description: Redirect browser to process the login.
+        '400':
+          description: Missing or wrong parameters.
         '404':
           description: Context of the response not found
+          schema:
+            $ref: '#/definitions/Error'
         '500':
           description: Error while processing the SAML response
           schema:

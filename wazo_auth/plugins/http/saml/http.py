@@ -3,14 +3,15 @@
 
 
 import logging
+from datetime import datetime, timezone
 
+import marshmallow
 from flask import Response, redirect, request
-from saml2.httputil import ServiceError
 from saml2.response import VerificationError
 from saml2.s_utils import UnknownPrincipal, UnsupportedBinding
 from saml2.sigver import SignatureError
 
-from wazo_auth import http
+from wazo_auth import exceptions, http
 
 from .schemas import SAMLSSOSchema
 
@@ -22,34 +23,47 @@ class SAMLACS(http.ErrorCatchingResource):
         self._saml_service = saml_service
 
     def post(self):
+        if (
+            request.form.get('RelayState') is None
+            or request.form.get('SAMLResponse') is None
+        ):
+            logger.info('ACS response request failed: Missing or wrong parameters')
+            raise exceptions.InvalidInputException('RelayState and/or SAMLResponse')
         try:
             response = self._saml_service.process_auth_response(
                 request.url, request.remote_addr, request.form
             )
-        # TODO all error handling here need work. self.environ does not exists
+            if response:
+                logger.debug('ASC Post response: %s', response)
+                return redirect(response)
+            else:
+                logger.warn('ACS response request failed: Context not found')
+                return self._format_failed_reply(404, 'Context not found')
         except UnknownPrincipal as excp:
-            logger.error("UnknownPrincipal: %s", excp)
-            resp = ServiceError(f"UnknownPrincipal: {excp}")
-            return resp(self.environ, self.start_response)
+            logger.info(f"UnknownPrincipal: {excp}")
+            return self._format_failed_reply(500, 'Unknown principal')
         except UnsupportedBinding as excp:
-            logger.error("UnsupportedBinding: %s", excp)
-            resp = ServiceError(f"UnsupportedBinding: {excp}")
-            return resp(self.environ, self.start_response)
+            logger.info("UnsupportedBinding: %s", excp)
+            return self._format_failed_reply(500, 'Unsupported binding')
         except VerificationError as err:
-            logger.warn("Verification error: %s", err)
-            resp = ServiceError(f"Verification error: {err}")
-            return resp(self.environ, self.start_response)
+            logger.info("Verification error: %s", err)
+            return self._format_failed_reply(500, 'Verification error')
         except SignatureError as err:
-            logger.warn("Signature error: %s", err)
-            resp = ServiceError(f"Signature error: {err}")
-            return resp(self.environ, self.start_response)
+            logger.info("Signature error: %s", err)
+            return self._format_failed_reply(500, 'Signature error')
         except Exception as err:
             logger.error("SAML unexpected error: %s", err)
-            resp = ServiceError(f"Other error: {err}")
-            return resp(self.environ, self.start_response)
+            return self._format_failed_reply(500, 'Unexpected error')
 
-        logger.debug('ASC Post response: %s', response)
-        return redirect(response)
+    def _format_failed_reply(self, code: int, msg: str) -> Response:
+        return Response(
+            status=code,
+            response={
+                'reason': [msg],
+                'timestamp': [datetime.now(timezone.utc)],
+                'status_code': code,
+            },
+        )
 
 
 class SAMLSSO(http.ErrorCatchingResource):
@@ -58,7 +72,14 @@ class SAMLSSO(http.ErrorCatchingResource):
         self._schema = SAMLSSOSchema()
 
     def post(self):
-        args = self._schema.load(request.get_json())
+        try:
+            args = self._schema.load(request.get_json())
+        except marshmallow.ValidationError as e:
+            for field in e.messages:
+                logger.info(
+                    f"SSO redirect failed because of missing parameter: {field}"
+                )
+                raise exceptions.InvalidInputException(field)
         try:
             location, saml_session_id = self._saml_service.prepare_redirect_response(
                 args['redirect_url'],
