@@ -1,5 +1,15 @@
 # Changelog
 
+## 24.07
+
+* The external API `POST /external/mobile/config` accepts a new key:
+
+  * `fcm_service_account_info`
+
+* The external API `POST /external/mobile/config` has a deprecated key:
+
+  * `fcm_api_key`
+
 ## 24.06
 
 * The config has new available keys:
