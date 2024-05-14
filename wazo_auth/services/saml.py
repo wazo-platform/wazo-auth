@@ -3,8 +3,9 @@
 
 import logging
 import secrets
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, replace, field
 from datetime import datetime, timedelta, timezone
+from functools import partial
 from typing import Any, Optional
 
 from saml2 import BINDING_HTTP_POST
@@ -24,7 +25,7 @@ class SamlAuthContext:
     domain: str
     login: Optional[str] = None
     response: Optional[AuthnResponse] = None
-    start_time: datetime = datetime.now(timezone.utc)
+    start_time: datetime = field(default_factory = partial(datetime.now, timezone.utc))
 
 
 class SAMLService(BaseService):
@@ -135,7 +136,8 @@ class SAMLService(BaseService):
         else:
             return None
 
-    def clean_pending_requests(self, now=datetime.now(timezone.utc)):
+    def clean_pending_requests(self, maybe_now: Optional[datetime] = None) -> None:
+        now: datetime = maybe_now or datetime.now(timezone.utc)
         for k in list(self._outstanding_requests.keys()):
             if (
                 self._outstanding_requests[k].start_time + self._saml_session_lifetime
