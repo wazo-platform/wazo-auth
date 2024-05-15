@@ -5,8 +5,9 @@ from datetime import datetime
 from typing import Optional
 from unittest import TestCase
 from unittest.mock import Mock, patch
+from unittest.mock import sentinel as s
 
-from hamcrest import assert_that, is_
+from hamcrest import assert_that, has_length, is_
 
 from wazo_auth.config import _DEFAULT_CONFIG
 from wazo_auth.services.tenant import TenantService
@@ -89,14 +90,31 @@ class TestSAMLService(TestCase):
         assert_that(updated_req.login, is_('testname'))
         assert_that(updated_req.response, is_(response))
 
-    def test_remove_context_data_on_login_retrieval(self):
-        saml_id = 'sd1'
-        req_key = 'kid1'
-        login = 'user1'
-        cached_req = self._get_auth_context(saml_id=saml_id, login=login)
-        self.service._outstanding_requests = {req_key: cached_req}
+    def test_get_user_login_and_remove_contrext(self):
+        saml_context = SamlAuthContext(
+            saml_session_id=s.session_1,
+            redirect_url=s.redirect_url,
+            domain=s.domain,
+            login=s.login_1,
+        )
+        ignored_saml_context = SamlAuthContext(
+            s.session2,
+            s.redirect_url,
+            s.domain,
+            s.login2,
+        )
 
-        result = self.service.get_user_login_and_remove_context(saml_id)
+        self.service._outstanding_requests = {
+            s.req_id: saml_context,
+            s.other_req_id: ignored_saml_context,
+        }
+        samples = [
+            ('unknown', None),
+            (s.session_1, s.login_1),
+            (None, None),
+        ]
+        for saml_session_id, expected in samples:
+            result = self.service.get_user_login_and_remove_context(saml_session_id)
+            assert_that(result, is_(expected))
 
-        assert_that(result, is_(login))
-        assert_that(len(self.service._outstanding_requests), is_(0))
+        assert_that(self.service._outstanding_requests, has_length(1))
