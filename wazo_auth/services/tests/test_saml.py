@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 from hamcrest import assert_that, is_
 
 from wazo_auth.config import _DEFAULT_CONFIG
+from wazo_auth.services.tenant import TenantService
 
 from ..saml import SamlAuthContext, SAMLService
 
@@ -17,7 +18,8 @@ class TestSAMLService(TestCase):
         self.lifetime = 10
         self.config = _DEFAULT_CONFIG
         self.config['saml']['saml_session_lifetime_seconds'] = self.lifetime
-        self.service = SAMLService(self.config)
+        self.tenant_service_mock = Mock(TenantService)
+        self.service = SAMLService(self.config, self.tenant_service_mock)
 
     def _get_auth_context(
         self,
