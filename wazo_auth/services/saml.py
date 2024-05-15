@@ -29,10 +29,11 @@ class SamlAuthContext:
 
 
 class SAMLService(BaseService):
-    def __init__(self, config):
+    def __init__(self, config, tenant_service):
         self._config = config
         self._outstanding_requests: dict[Any, SamlAuthContext] = {}
         self._saml_clients: dict[str, Saml2Client] = {}
+        self._tenant_service = tenant_service
 
         self._init_clients()
         self._saml_session_lifetime = timedelta(
@@ -59,7 +60,12 @@ class SAMLService(BaseService):
             return
 
         for domain, raw_saml_config in domain_configs.items():
-            # TODO(pc-m): Check that the configured domains exists for a tenant
+            matching_tenants = self._tenant_service.list_(
+                domain_name=domain, scoping_tenant_uuid=None
+            )
+            if not matching_tenants:
+                logger.info('Ignoring SAML config for "%s" no matching tenant', domain)
+                continue
             raw_saml_config['relay_state'] = domain
             raw_saml_config.update(global_saml_config)
             try:
