@@ -78,7 +78,6 @@ class Controller:
         )
         group_service = services.GroupService(self.dao, self._tenant_tree)
         policy_service = services.PolicyService(self.dao, self._tenant_tree)
-        self._saml_service = services.SAMLService(self._config)
         session_service = services.SessionService(
             self.dao, self._tenant_tree, self._bus_publisher
         )
@@ -97,6 +96,7 @@ class Controller:
             self._default_group_service,
             self._bus_publisher,
         )
+        self._saml_service = services.SAMLService(self._config, self._tenant_service)
         self._default_policy_service = services.DefaultPolicyService(
             self.dao,
             config['default_policies'],
