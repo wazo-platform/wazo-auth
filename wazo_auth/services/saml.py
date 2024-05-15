@@ -3,7 +3,7 @@
 
 import logging
 import secrets
-from dataclasses import dataclass, replace, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
 from functools import partial
 from typing import Any, Optional
@@ -25,7 +25,7 @@ class SamlAuthContext:
     domain: str
     login: Optional[str] = None
     response: Optional[AuthnResponse] = None
-    start_time: datetime = field(default_factory = partial(datetime.now, timezone.utc))
+    start_time: datetime = field(default_factory=partial(datetime.now, timezone.utc))
 
 
 class SAMLService(BaseService):
@@ -129,18 +129,13 @@ class SAMLService(BaseService):
         else:
             return None
 
-    def get_user_login_and_remove_context(self, saml_session_id):
+    def get_user_login_and_remove_context(self, saml_session_id: str) -> Optional[str]:
         logger.debug('sessions %s', self._outstanding_requests)
-        for key in self._outstanding_requests:
-            if self._outstanding_requests[key].saml_session_id == saml_session_id:
-                reqid = key
-        session_data: Optional[SamlAuthContext] = self._outstanding_requests.get(reqid)
-        if session_data:
-            logger.debug('session_data : %s', session_data)
-            del self._outstanding_requests[reqid]
-            return session_data.login
-        else:
-            return None
+        reqid = self._reqid_by_saml_session_id(saml_session_id)
+        session_data: Optional[SamlAuthContext] = self._outstanding_requests.pop(
+            reqid, None
+        )
+        return session_data.login if session_data else None
 
     def clean_pending_requests(self, maybe_now: Optional[datetime] = None) -> None:
         now: datetime = maybe_now or datetime.now(timezone.utc)
@@ -150,3 +145,9 @@ class SAMLService(BaseService):
                 > now
             ):
                 del self._outstanding_requests[k]
+
+    def _reqid_by_saml_session_id(self, saml_session_id: str) -> Optional[str]:
+        for reqid, saml_context in self._outstanding_requests.items():
+            if saml_context.saml_session_id == saml_session_id:
+                return reqid
+        return None
