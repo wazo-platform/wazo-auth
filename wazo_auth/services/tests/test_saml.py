@@ -4,6 +4,7 @@
 from datetime import datetime
 from unittest import TestCase
 from unittest.mock import Mock, patch
+from unittest.mock import sentinel as s
 
 from hamcrest import assert_that, is_
 
@@ -85,3 +86,30 @@ class TestSAMLService(TestCase):
         updated_req: SamlAuthContext = self.service._outstanding_requests[req_key]
         assert_that(updated_req.login, is_('testname'))
         assert_that(updated_req.response, is_(response))
+
+    def test_get_user_login(self):
+        saml_context = SamlAuthContext(
+            saml_session_id=s.session_1,
+            redirect_url=s.redirect_url,
+            domain=s.domain,
+            login=s.login_1,
+        )
+        ignored_saml_context = SamlAuthContext(
+            s.session2,
+            s.redirect_url,
+            s.domain,
+            s.login2,
+        )
+
+        self.service._outstanding_requests = {
+            s.req_id: saml_context,
+            s.other_req_id: ignored_saml_context,
+        }
+        samples = [
+            ('unknown', None),
+            (s.session_1, s.login_1),
+            (None, None),
+        ]
+        for saml_session_id, expected in samples:
+            result = self.service.get_user_login(saml_session_id)
+            assert_that(result, is_(expected))

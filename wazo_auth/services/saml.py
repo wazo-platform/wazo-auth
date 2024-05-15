@@ -129,17 +129,12 @@ class SAMLService(BaseService):
         else:
             return None
 
-    def get_user_login(self, saml_session_id):
+    def get_user_login(self, saml_session_id: str) -> Optional[str]:
         logger.debug('sessions %s', self._outstanding_requests)
-        for key in self._outstanding_requests:
-            if self._outstanding_requests[key].saml_session_id == saml_session_id:
-                reqid = key
+        reqid = self._reqid_by_saml_session_id(saml_session_id)
         session_data: Optional[SamlAuthContext] = self._outstanding_requests.get(reqid)
         logger.debug('session_data : %s', session_data)
-        if session_data:
-            return session_data.login
-        else:
-            return None
+        return session_data.login if session_data else None
 
     def clean_pending_requests(self, now=datetime.now(timezone.utc)):
         for k in list(self._outstanding_requests.keys()):
@@ -148,3 +143,9 @@ class SAMLService(BaseService):
                 > now
             ):
                 del self._outstanding_requests[k]
+
+    def _reqid_by_saml_session_id(self, saml_session_id: str) -> Optional[str]:
+        for reqid, saml_context in self._outstanding_requests.items():
+            if saml_context.saml_session_id == saml_session_id:
+                return reqid
+        return None
