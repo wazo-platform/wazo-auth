@@ -4,7 +4,8 @@
 
 import logging
 
-from flask import Response, redirect, request
+import marshmallow
+from flask import redirect, request
 from saml2.httputil import ServiceError
 from saml2.response import VerificationError
 from saml2.s_utils import UnknownPrincipal, UnsupportedBinding
@@ -58,7 +59,11 @@ class SAMLSSO(http.ErrorCatchingResource):
         self._schema = SAMLSSOSchema()
 
     def post(self):
-        args = self._schema.load(request.get_json())
+        try:
+            args = self._schema.load(request.get_json())
+        except marshmallow.ValidationError as e:
+            return http._error(400, str(e))
+
         try:
             location, saml_session_id = self._saml_service.prepare_redirect_response(
                 args['redirect_url'],
@@ -70,7 +75,7 @@ class SAMLSSO(http.ErrorCatchingResource):
             }
         except Exception as excp:
             logger.error("Failed to process initial SAML SSO post because of: %s", excp)
-            return Response(
-                status=500,
-                response='SAML configuration missing or SAML client init failed',
+            return http._error(
+                500,
+                'SAML configuration missing or SAML client init failed',
             )

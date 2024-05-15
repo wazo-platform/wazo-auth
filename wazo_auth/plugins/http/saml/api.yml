@@ -30,6 +30,10 @@ paths:
             used by the client to authenticate.
           schema:
             $ref: '#/definitions/SAMLSSOResponse'
+        '400':
+          description: Invalid parameters
+          schema:
+            $ref: '#/definitions/APIError'
         '500':
           description: |
             Please ask your admin to configure the SAML SSO
