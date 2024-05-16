@@ -3,14 +3,15 @@
 
 
 import logging
+from datetime import datetime, timezone
 
 import marshmallow
-from flask import redirect, request
+from flask import Response, redirect, request
 from saml2.response import VerificationError
 from saml2.s_utils import UnknownPrincipal, UnsupportedBinding
 from saml2.sigver import SignatureError
 
-from wazo_auth import http
+from wazo_auth import exceptions, http
 
 from .schemas import SAMLSSOSchema
 
@@ -27,7 +28,7 @@ class SAMLACS(http.ErrorCatchingResource):
             or request.form.get('SAMLResponse') is None
         ):
             logger.info('ACS response request failed: Missing or wrong parameters')
-            return http._error(400, 'RelayState and/or SAMLResponse')
+            raise exceptions.InvalidInputException('RelayState and/or SAMLResponse')
         try:
             response = self._saml_service.process_auth_response(
                 request.url, request.remote_addr, request.form
@@ -37,22 +38,32 @@ class SAMLACS(http.ErrorCatchingResource):
                 return redirect(response)
             else:
                 logger.warn('ACS response request failed: Context not found')
-                return http._error(404, 'Context not found')
+                return self._format_failed_reply(404, 'Context not found')
         except UnknownPrincipal as excp:
             logger.info(f"UnknownPrincipal: {excp}")
-            return http._error(500, 'Unknown principal')
+            return self._format_failed_reply(500, 'Unknown principal')
         except UnsupportedBinding as excp:
             logger.info("UnsupportedBinding: %s", excp)
-            return http._error(500, 'Unsupported binding')
+            return self._format_failed_reply(500, 'Unsupported binding')
         except VerificationError as err:
             logger.info("Verification error: %s", err)
-            return http._error(500, 'Verification error')
+            return self._format_failed_reply(500, 'Verification error')
         except SignatureError as err:
             logger.info("Signature error: %s", err)
-            return http._error(500, 'Signature error')
+            return self._format_failed_reply(500, 'Signature error')
         except Exception as err:
             logger.error("SAML unexpected error: %s", err)
-            return http._error(500, 'Unexpected error')
+            return self._format_failed_reply(500, 'Unexpected error')
+
+    def _format_failed_reply(self, code: int, msg: str) -> Response:
+        return Response(
+            status=code,
+            response={
+                'reason': [msg],
+                'timestamp': [datetime.now(timezone.utc)],
+                'status_code': code,
+            },
+        )
 
 
 class SAMLSSO(http.ErrorCatchingResource):
@@ -64,8 +75,11 @@ class SAMLSSO(http.ErrorCatchingResource):
         try:
             args = self._schema.load(request.get_json())
         except marshmallow.ValidationError as e:
-            return http._error(400, str(e))
-
+            for field in e.messages:
+                logger.info(
+                    f"SSO redirect failed because of missing parameter: {field}"
+                )
+                raise exceptions.InvalidInputException(field)
         try:
             location, saml_session_id = self._saml_service.prepare_redirect_response(
                 args['redirect_url'],
@@ -77,6 +91,7 @@ class SAMLSSO(http.ErrorCatchingResource):
             }
         except Exception as excp:
             logger.error("Failed to process initial SAML SSO post because of: %s", excp)
-            return http._error(
-                500, 'SAML configuration missing or SAML client init failed'
+            return Response(
+                status=500,
+                response='SAML configuration missing or SAML client init failed',
             )
