@@ -1,12 +1,13 @@
 # Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+from __future__ import annotations
 
 import logging
 import secrets
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
 from functools import partial
-from typing import Any, Optional
+from typing import Any
 
 from saml2 import BINDING_HTTP_POST
 from saml2.client import Saml2Client
@@ -23,8 +24,8 @@ class SamlAuthContext:
     saml_session_id: str
     redirect_url: str
     domain: str
-    login: Optional[str] = None
-    response: Optional[AuthnResponse] = None
+    login: str | None = None
+    response: AuthnResponse | None = None
     start_time: datetime = field(default_factory=partial(datetime.now, timezone.utc))
 
 
@@ -117,7 +118,7 @@ class SAMLService(BaseService):
         logger.debug('SAML SP response: %s', response)
         logger.info('SAML response AVA: %s', response.ava)
 
-        session_data: Optional[SamlAuthContext] = self._outstanding_requests.get(
+        session_data: SamlAuthContext | None = self._outstanding_requests.get(
             response.session_id()
         )
         if session_data:
@@ -132,7 +133,7 @@ class SAMLService(BaseService):
     def get_user_login_and_remove_context(self, saml_session_id: str) -> str | None:
         logger.debug('sessions %s', self._outstanding_requests)
         reqid = self._reqid_by_saml_session_id(saml_session_id)
-        session_data: Optional[SamlAuthContext] = self._outstanding_requests.pop(
+        session_data: SamlAuthContext | None = self._outstanding_requests.pop(
             reqid, None
         )
         return session_data.login if session_data else None
