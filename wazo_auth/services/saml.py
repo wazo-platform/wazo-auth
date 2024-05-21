@@ -77,13 +77,13 @@ class SAMLService(BaseService):
             except Exception:
                 logger.exception('Error during SAML client init for domain %s', domain)
 
-    def get_client(self, domain):
+    def get_client(self, domain: str):
         return self._saml_clients[domain]
 
     def prepare_redirect_response(
         self,
-        redirect_url,
-        domain,
+        redirect_url: str,
+        domain: str,
     ):
         saml_session_id = secrets.token_urlsafe(16)
         client = self.get_client(domain)
@@ -129,7 +129,7 @@ class SAMLService(BaseService):
         else:
             return None
 
-    def get_user_login_and_remove_context(self, saml_session_id: str) -> Optional[str]:
+    def get_user_login_and_remove_context(self, saml_session_id: str) -> str | None:
         logger.debug('sessions %s', self._outstanding_requests)
         reqid = self._reqid_by_saml_session_id(saml_session_id)
         session_data: Optional[SamlAuthContext] = self._outstanding_requests.pop(
@@ -137,7 +137,7 @@ class SAMLService(BaseService):
         )
         return session_data.login if session_data else None
 
-    def clean_pending_requests(self, maybe_now: Optional[datetime] = None) -> None:
+    def clean_pending_requests(self, maybe_now: datetime | None = None) -> None:
         now: datetime = maybe_now or datetime.now(timezone.utc)
         for k in list(self._outstanding_requests.keys()):
             if (
@@ -146,7 +146,7 @@ class SAMLService(BaseService):
             ):
                 del self._outstanding_requests[k]
 
-    def _reqid_by_saml_session_id(self, saml_session_id: str) -> Optional[str]:
+    def _reqid_by_saml_session_id(self, saml_session_id: str) -> str | None:
         for reqid, saml_context in self._outstanding_requests.items():
             if saml_context.saml_session_id == saml_session_id:
                 return reqid
