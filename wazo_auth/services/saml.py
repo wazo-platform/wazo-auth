@@ -7,7 +7,7 @@ import secrets
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
 from functools import partial
-from typing import Any
+from typing import Any, TypedDict
 
 from saml2 import BINDING_HTTP_POST
 from saml2.client import Saml2Client
@@ -27,6 +27,11 @@ class SamlAuthContext:
     login: str | None = None
     response: AuthnResponse | None = None
     start_time: datetime = field(default_factory=partial(datetime.now, timezone.utc))
+
+
+class SAMLACSFormData(TypedDict):
+    RelayState: str
+    SAMLResponse: str
 
 
 class SAMLService(BaseService):
@@ -98,8 +103,10 @@ class SAMLService(BaseService):
         location = [i for i in info['headers'] if i[0] == 'Location'][0][1]
         return location, saml_session_id
 
-    def process_auth_response(self, url, remote_addr, form_data):
-        saml_client = self.get_client(form_data.get('RelayState'))
+    def process_auth_response(
+        self, url: str, remote_addr: str, form_data: SAMLACSFormData
+    ) -> str | None:
+        saml_client = self.get_client(form_data['RelayState'])
         conv_info = {
             "remote_addr": remote_addr,
             "request_uri": url,
