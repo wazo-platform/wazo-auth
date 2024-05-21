@@ -12,6 +12,7 @@ from saml2.s_utils import UnknownPrincipal, UnsupportedBinding
 from saml2.sigver import SignatureError
 
 from wazo_auth import exceptions, http
+from wazo_auth.services.saml import SAMLService
 
 from .schemas import SAMLSSOSchema
 
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class SAMLACS(http.ErrorCatchingResource):
-    def __init__(self, saml_service):
+    def __init__(self, saml_service: SAMLService):
         self._saml_service = saml_service
 
     def post(self):
@@ -67,7 +68,7 @@ class SAMLACS(http.ErrorCatchingResource):
 
 
 class SAMLSSO(http.ErrorCatchingResource):
-    def __init__(self, saml_service):
+    def __init__(self, saml_service: SAMLService):
         self._saml_service = saml_service
         self._schema = SAMLSSOSchema()
 
