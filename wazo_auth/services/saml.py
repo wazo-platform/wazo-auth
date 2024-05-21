@@ -107,7 +107,7 @@ class SAMLService(BaseService):
             "endpoints": saml_client.config.getattr("endpoints", "sp"),
         }
 
-        response: None = saml_client.parse_authn_request_response(
+        response = saml_client.parse_authn_request_response(
             form_data['SAMLResponse'],
             BINDING_HTTP_POST,
             self._outstanding_requests,
