@@ -15,6 +15,7 @@ from saml2.config import Config as SAMLConfig
 from saml2.response import AuthnResponse
 
 from wazo_auth.services.helpers import BaseService
+from wazo_auth.services.tenant import TenantService
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +35,23 @@ class SAMLACSFormData(TypedDict):
     SAMLResponse: str
 
 
+RawSAMLConfig = dict[str, Any]
+
+
+class WazoSAMLConfig(TypedDict):
+    saml_session_lifetime_seconds: int
+    key_file: str
+    cert_file: str
+    xmlsec_binary: str
+    domains: dict[str, RawSAMLConfig]
+
+
+class Config(TypedDict, total=False):
+    saml: WazoSAMLConfig
+
+
 class SAMLService(BaseService):
-    def __init__(self, config, tenant_service):
+    def __init__(self, config: Config, tenant_service: TenantService):
         self._config = config
         self._outstanding_requests: dict[Any, SamlAuthContext] = {}
         self._saml_clients: dict[str, Saml2Client] = {}
