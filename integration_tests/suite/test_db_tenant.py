@@ -268,7 +268,11 @@ class TestTenantDAO(base.DAOTestCase):
         # Only one "master" tenant can exist
         uuid = uuid4()
         assert_that(
-            calling(self._create_tenant).with_args(uuid=uuid, parent_uuid=uuid),
+            calling(self._create_tenant).with_args(
+                uuid=uuid,
+                parent_uuid=uuid,
+                default_authentication_method='native',
+            ),
             raises(exceptions.MasterTenantConflictException),
         )
 
@@ -276,7 +280,11 @@ class TestTenantDAO(base.DAOTestCase):
     def test_tenants_with_duplicate_domain_names_creation_raises_409(self, foobar_uuid):
         uuid = uuid4()
         assert_that(
-            calling(self._create_tenant).with_args(uuid=uuid, domain_names=['wazo.io']),
+            calling(self._create_tenant).with_args(
+                uuid=uuid,
+                domain_names=['wazo.io'],
+                default_authentication_method='native',
+            ),
             raises(exceptions.DomainAlreadyExistException),
         )
 
@@ -406,6 +414,7 @@ class TestTenantDAO(base.DAOTestCase):
         kwargs.setdefault('slug', None)
         kwargs.setdefault('contact_uuid', None)
         kwargs.setdefault('domain_names', [])
+        kwargs.setdefault('default_authentication_method', 'native')
         return self._tenant_dao.create(**kwargs)
 
     def _top_tenant_uuid(self):
@@ -424,7 +433,11 @@ class TestTenantDAO(base.DAOTestCase):
         result = self._tenant_dao._tenant_query(top_tenant_uuid, TENANT_UUID_2)
         assert_that(result[0], has_properties(name='2'))
 
-        self._tenant_dao.update(TENANT_UUID_2, name='2-updated')
+        self._tenant_dao.update(
+            TENANT_UUID_2,
+            name='2-updated',
+            default_authentication_method='native',
+        )
 
         result = self._tenant_dao._tenant_query(top_tenant_uuid, TENANT_UUID_2)
         assert_that(result[0], has_properties(name='2-updated'))
@@ -432,7 +445,10 @@ class TestTenantDAO(base.DAOTestCase):
     @fixtures.db.tenant(name='1', uuid=TENANT_UUID_1, domain_names=VALID_DOMAIN_NAMES_1)
     def test_update_tenant_domain_names(self, *_):
         self._tenant_dao.update(
-            TENANT_UUID_1, name='1-updated', domain_names=['wazo.io']
+            TENANT_UUID_1,
+            name='1-updated',
+            default_authentication_method='native',
+            domain_names=['wazo.io'],
         )
 
         self._assert_tenant_matches(
@@ -444,7 +460,9 @@ class TestTenantDAO(base.DAOTestCase):
     def test_update_tenant_with_duplicate_domain_names_raises_409(self, *_):
         assert_that(
             calling(self._tenant_dao.update).with_args(
-                tenant_uuid=TENANT_UUID_2, domain_names=['wazo.io']
+                tenant_uuid=TENANT_UUID_2,
+                default_authentication_method='native',
+                domain_names=['wazo.io'],
             ),
             raises(exceptions.DomainAlreadyExistException),
         )

@@ -79,6 +79,11 @@ class TenantFullSchema(BaseSchema):
     phone = fields.String(
         validate=validate.Length(min=1, max=32), default=None, missing=None
     )
+    default_authentication_method = fields.String(
+        missing='native',
+        validate=validate.OneOf(['native']),
+        allow_none=False,
+    )
     domain_names = fields.List(
         fields.String(validate=validate.Regexp(DOMAIN_RE)),
         missing=[],

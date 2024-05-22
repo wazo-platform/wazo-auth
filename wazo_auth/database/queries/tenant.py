@@ -70,6 +70,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             phone=kwargs['phone'],
             contact_uuid=kwargs['contact_uuid'],
             parent_uuid=str(kwargs['parent_uuid']),
+            default_authentication_method=kwargs['default_authentication_method'],
         )
         if uuid_:
             tenant.uuid = str(uuid_)
@@ -192,6 +193,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         phone=None,
         domain_names=None,
         contact_uuid=None,
+        default_authentication_method=None,
         **kwargs
     ):
         try:
@@ -200,6 +202,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             tenant.contact_uuid = contact_uuid
             tenant.phone = phone
             tenant.name = name
+            tenant.default_authentication_method = default_authentication_method
             self.session.flush()
         except exc.IntegrityError as e:
             self.session.rollback()

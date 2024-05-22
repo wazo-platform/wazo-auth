@@ -43,6 +43,7 @@ class TestTenants(base.APIIntegrationTest):
         phone=PHONE_1,
         slug='slug1',
         domain_names=VALID_DOMAIN_NAMES_1,
+        default_authentication_method='native',
     )
     @fixtures.http.tenant(
         uuid='6668ca15-6d9e-4000-b2ec-731bc7316767',
@@ -61,6 +62,7 @@ class TestTenants(base.APIIntegrationTest):
                 parent_uuid=self.top_tenant_uuid,
                 address=has_entries(**ADDRESS_NULL),
                 domain_names=is_(empty()),
+                default_authentication_method='native',
             ),
         )
         assert_that(
@@ -72,6 +74,7 @@ class TestTenants(base.APIIntegrationTest):
                 parent_uuid=self.top_tenant_uuid,
                 address=has_entries(**ADDRESS_NULL),
                 domain_names=contains_inanyorder(*VALID_DOMAIN_NAMES_2),
+                default_authentication_method='native',
             ),
         )
 
@@ -85,6 +88,7 @@ class TestTenants(base.APIIntegrationTest):
                 parent_uuid=self.top_tenant_uuid,
                 address=has_entries(**ADDRESS_1),
                 domain_names=contains_inanyorder(*VALID_DOMAIN_NAMES_1),
+                default_authentication_method='native',
             ),
         )
 
@@ -268,6 +272,23 @@ class TestTenants(base.APIIntegrationTest):
                 400, self.client.tenants.new, domain_names=invalid_domain_name
             )
 
+    def test_post_invalid_default_authentication_method(self):
+        invalid_values = [
+            None,
+            False,
+            True,
+            42,
+            ['native'],
+            'not-native',
+            '',
+        ]
+        for invalid_auth_method in invalid_values:
+            assert_http_error(
+                400,
+                self.client.tenants.new,
+                default_authentication_method=invalid_auth_method,
+            )
+
     @fixtures.http.tenant(domain_names=VALID_DOMAIN_NAMES_2)
     def test_delete(self, tenant):
         with self.client_in_subtenant() as (client, user, sub_tenant):
@@ -414,11 +435,27 @@ class TestTenants(base.APIIntegrationTest):
         body = {'name': name, 'address': ADDRESS_1, 'contact': user['uuid']}
         body_with_unknown_contact = dict(body)
         body_with_unknown_contact['contact'] = UNKNOWN_UUID
+        invalid_auth_methods = [
+            None,
+            False,
+            True,
+            42,
+            ['native'],
+            'not-native',
+            '',
+        ]
 
         with self.client_in_subtenant() as (client, _, sub_tenant):
             assert_http_error(404, client.tenants.edit, tenant['uuid'], **body)
             assert_no_error(client.tenants.edit, sub_tenant['uuid'], **body)
 
+        for auth_method in invalid_auth_methods:
+            assert_http_error(
+                400,
+                self.client.tenants.edit,
+                tenant['uuid'],
+                default_authentication_method=auth_method,
+            )
         assert_http_error(400, self.client.tenants.edit, tenant['uuid'], name=False)
         assert_http_error(404, self.client.tenants.edit, UNKNOWN_UUID, **body)
         assert_http_error(

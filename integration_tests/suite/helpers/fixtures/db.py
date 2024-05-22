@@ -209,6 +209,7 @@ def tenant(**tenant_args):
             tenant_args.setdefault('phone', None)
             tenant_args.setdefault('contact_uuid', None)
             tenant_args.setdefault('parent_uuid', self.top_tenant_uuid)
+            tenant_args.setdefault('default_authentication_method', 'native')
 
             tenant_uuid = self._tenant_dao.create(**tenant_args)
             self.session.begin_nested()

@@ -1,5 +1,12 @@
 # Changelog
 
+## 24.08
+
+* The `tenants` resource now has the `default_authentication_method` field which can contain the following values
+
+  * `native`
+
+
 ## 24.07
 
 * The external API `POST /external/mobile/config` accepts a new key:

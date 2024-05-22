@@ -135,6 +135,11 @@ class Tenant(Base):
     phone = Column(Text)
     contact_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='SET NULL'))
     parent_uuid = Column(String(38), ForeignKey('auth_tenant.uuid'), nullable=False)
+    default_authentication_method = Column(
+        Text,
+        CheckConstraint("default_authentication_method in ('native')"),
+        nullable=False,
+    )
     domains = relationship(
         'Domain',
         cascade="all, delete-orphan",
