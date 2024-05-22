@@ -1,4 +1,4 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -6,10 +6,11 @@ import logging
 from flask import request
 from marshmallow import ValidationError
 
-from wazo_auth import exceptions, http, schemas
+from wazo_auth import exceptions, http
 from wazo_auth.flask_helpers import Tenant as TenantDetector
 
 from .exceptions import DeleteOwnTenantForbidden
+from .schemas import TenantFullSchema, TenantListSchema, TenantPUTSchema
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ class Tenant(BaseResource):
     def put(self, tenant_uuid):
         scoping_tenant = TenantDetector.autodetect()
         try:
-            args = schemas.TenantPUTSchema().load(request.get_json())
+            args = TenantPUTSchema().load(request.get_json())
         except ValidationError as e:
             raise exceptions.TenantParamException.from_errors(e.messages)
 
@@ -54,7 +55,7 @@ class Tenants(BaseResource):
     def get(self):
         scoping_tenant = TenantDetector.autodetect()
         try:
-            list_params = schemas.TenantListSchema().load(request.args)
+            list_params = TenantListSchema().load(request.args)
         except ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 
@@ -79,7 +80,7 @@ class Tenants(BaseResource):
             request.get_json(force=True),
         )
         try:
-            args = schemas.TenantFullSchema().load(request.get_json())
+            args = TenantFullSchema().load(request.get_json())
         except ValidationError as e:
             raise exceptions.TenantParamException.from_errors(e.messages)
 

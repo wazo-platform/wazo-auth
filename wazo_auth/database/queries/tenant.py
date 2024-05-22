@@ -4,7 +4,7 @@
 from sqlalchemy import and_, exc, text
 from sqlalchemy.orm import joinedload
 
-from wazo_auth import schemas
+from wazo_auth.plugins.http.tenants import schemas
 
 from ... import exceptions
 from ...slug import TenantSlug
