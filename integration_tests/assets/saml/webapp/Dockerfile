@@ -1,5 +1,10 @@
 FROM --platform=$BUILDPLATFORM python:3.10-alpine AS builder
 
+RUN addgroup -S nonroot \
+    && adduser -S nonroot -G nonroot
+
+USER nonroot
+
 WORKDIR /app
 
 COPY requirements.txt /app
