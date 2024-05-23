@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 from flask import Flask, render_template
+from flask_wtf.csrf import CSRFProtect
 
 app = Flask(__name__)
-
+csrf = CSRFProtect()
+csrf.init_app(app)
 
 @app.route("/")
 def index():
@@ -16,4 +18,4 @@ def acs():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=8800)
+    app.run(debug=False, host="0.0.0.0", port=8800)
