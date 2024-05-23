@@ -4,6 +4,7 @@ openapi-spec-validator<0.6.0  # dependency conflict on requests version (>2.31.0
 pyhamcrest
 pytest
 python-ldap
+pytest-playwright
 
 # for database tests
 https://github.com/wazo-platform/wazo-lib-rest-client/archive/master.zip
