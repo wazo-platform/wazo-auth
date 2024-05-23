@@ -101,9 +101,17 @@ tox --recreate -e py39
 
 ### Running integration tests
 
+You need a SAML test account and configuration, you need to replace the configuration
+file ./integration_tests/assets/var/lib/wazo-auth/saml/saml.xml and set following
+environment variables:
+WAZO_SAML_LOGIN
+WAZO_SAML_PASSWORD
+
 ```sh
+playwright install
 tox -e integration
 ```
+Note: The `playwright install` command installs the required browsers to run tests.
 
 ### Load testing
 

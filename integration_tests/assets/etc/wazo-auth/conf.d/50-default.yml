@@ -26,3 +26,19 @@ default_policies:
       - 'default.admin.policy'
 
 default_user_policy: wazo_default_user_policy
+
+saml:
+  domains:
+    example.com:
+      entityid: 'https://es.dev.wazo.io'
+      service:
+        sp:
+          want_response_signed: True,
+          authn_requests_signed: True,
+          logout_requests_signed: False,
+          endpoints:
+            assertion_consumer_service:
+              - ['https://stack.wazo.local/api/auth/0.1/saml/acs', 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST']
+      metadata:
+        local:
+          - '/var/lib/wazo-auth/saml/saml.xml'

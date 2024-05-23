@@ -7,6 +7,8 @@ services:
       - rabbitmq
       - smtp
       - slapd
+      - proxy
+      - samlwebapp
     environment:
       TARGETS: "slapd:1389 auth:9497 oauth2sync:80 postgres:5432 rabbitmq:5672 smtp:25"
 
