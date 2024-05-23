@@ -64,7 +64,7 @@ class TenantFullSchema(BaseSchema):
     )
     default_authentication_method = fields.String(
         missing='native',
-        validate=validate.OneOf(['native', 'ldap']),
+        validate=validate.OneOf(['native', 'ldap', 'saml']),
         allow_none=False,
     )
     domain_names = fields.List(

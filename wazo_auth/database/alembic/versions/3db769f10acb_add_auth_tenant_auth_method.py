@@ -22,7 +22,7 @@ def upgrade():
         sa.Column(
             column_name,
             sa.Text,
-            sa.CheckConstraint(f"{column_name} in ('native', 'ldap')"),
+            sa.CheckConstraint(f"{column_name} in ('native', 'ldap', 'saml')"),
             server_default='native',
             nullable=False,
         ),

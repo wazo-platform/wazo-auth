@@ -43,7 +43,6 @@ class TestTenants(base.APIIntegrationTest):
         phone=PHONE_1,
         slug='slug1',
         domain_names=VALID_DOMAIN_NAMES_1,
-        default_authentication_method='native',
     )
     @fixtures.http.tenant(
         uuid='6668ca15-6d9e-4000-b2ec-731bc7316767',
@@ -52,7 +51,7 @@ class TestTenants(base.APIIntegrationTest):
         domain_names=VALID_DOMAIN_NAMES_2,
         default_authentication_method='ldap',
     )
-    @fixtures.http.tenant(slug='slug3')
+    @fixtures.http.tenant(slug='slug3', default_authentication_method='saml')
     def test_post(self, foobar, foobaz, other):
         assert_that(
             other,
@@ -63,7 +62,7 @@ class TestTenants(base.APIIntegrationTest):
                 parent_uuid=self.top_tenant_uuid,
                 address=has_entries(**ADDRESS_NULL),
                 domain_names=is_(empty()),
-                default_authentication_method='native',
+                default_authentication_method='saml',
             ),
         )
         assert_that(

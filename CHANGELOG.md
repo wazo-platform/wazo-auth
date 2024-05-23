@@ -6,6 +6,7 @@
 
   * `native`
   * `ldap`
+  * `saml`
 
 
 ## 24.07

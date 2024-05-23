@@ -137,7 +137,7 @@ class Tenant(Base):
     parent_uuid = Column(String(38), ForeignKey('auth_tenant.uuid'), nullable=False)
     default_authentication_method = Column(
         Text,
-        CheckConstraint("default_authentication_method in ('native', 'ldap')"),
+        CheckConstraint("default_authentication_method in ('native', 'ldap', 'saml')"),
         nullable=False,
     )
     domains = relationship(
