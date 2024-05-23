@@ -78,7 +78,7 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
 
   samlwebapp:
-    image: wazoplatform/wazo-saml-sso-webapp
+    image: wazoplatform/wazo-saml-sso-webapp:local
     ports:
       - "8800"
     labels:
