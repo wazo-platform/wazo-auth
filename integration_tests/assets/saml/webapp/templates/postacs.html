@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>POST ACS handling</title>
+
+<body>
+
+	<h1>Wazo SAML Post ACS handling</h1>
+
+	<h2>Token</h2>
+	<p id="token">not yet known</p>
+	<h2>Expires :</h2>
+	<p id="expires">not yet known</p>
+
+	<script type="text/javascript">
+    	let saml_session_id = localStorage.getItem("wazo-saml-session-id");
+		fetch("https://stack.wazo.local/api/auth/0.1/token", {
+  			method: "POST",
+  			body: JSON.stringify({'saml_session_id': saml_session_id}),
+  			headers: {
+   				"Content-type": "application/json"
+  			}
+		})
+  		.then((response) => response.json())
+  		.then((json) => {
+			console.log(json)
+			document.getElementById('token').innerHTML = json.data.token.substring(0,5) + "...";
+			document.getElementById('expires').innerHTML = json.data.expires_at;
+		})
+		.catch((error) => {
+			console.error('Failed: ', error);
+			document.getElementById('token').innerHTML = 'Failed with error: ' + error;
+			document.getElementById('expires').innerHTML = 'Failed';
+		});
+
+	</script>
+
+</body>
+
+</html>
