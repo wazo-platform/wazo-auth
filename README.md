@@ -113,6 +113,13 @@ tox -e integration
 ```
 Note: The `playwright install` command installs the required browsers to run tests.
 
+Playwright can be executed with headed browser and in a slowmotion mode, you
+need to uncomment some lines in tox.ini integration section and run:
+`tox -e integration -- suite/test_saml.py --headed --slowmo 1000`
+
+You can also use the GUI debugger - another modification available in tox.ini is
+required.
+
 ### Load testing
 
 It is possible to test wazo-auth with [ab](https://httpd.apache.org/docs/2.4/programs/ab.html).
