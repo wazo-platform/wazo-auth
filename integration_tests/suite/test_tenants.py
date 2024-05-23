@@ -50,6 +50,7 @@ class TestTenants(base.APIIntegrationTest):
         name='foobaz',
         slug='slug2',
         domain_names=VALID_DOMAIN_NAMES_2,
+        default_authentication_method='ldap',
     )
     @fixtures.http.tenant(slug='slug3')
     def test_post(self, foobar, foobaz, other):
@@ -74,7 +75,7 @@ class TestTenants(base.APIIntegrationTest):
                 parent_uuid=self.top_tenant_uuid,
                 address=has_entries(**ADDRESS_NULL),
                 domain_names=contains_inanyorder(*VALID_DOMAIN_NAMES_2),
-                default_authentication_method='native',
+                default_authentication_method='ldap',
             ),
         )
 
@@ -432,7 +433,12 @@ class TestTenants(base.APIIntegrationTest):
     @fixtures.http.user()
     def test_put(self, tenant, user):
         name = 'foobar'
-        body = {'name': name, 'address': ADDRESS_1, 'contact': user['uuid']}
+        body = {
+            'name': name,
+            'address': ADDRESS_1,
+            'contact': user['uuid'],
+            'default_authentication_method': 'ldap',
+        }
         body_with_unknown_contact = dict(body)
         body_with_unknown_contact['contact'] = UNKNOWN_UUID
         invalid_auth_methods = [
@@ -471,6 +477,7 @@ class TestTenants(base.APIIntegrationTest):
                 name=name,
                 contact=user['uuid'],
                 address=has_entries(**ADDRESS_1),
+                default_authentication_method='ldap',
             ),
         )
 

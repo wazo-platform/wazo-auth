@@ -5,6 +5,7 @@
 * The `tenants` resource now has the `default_authentication_method` field which can contain the following values
 
   * `native`
+  * `ldap`
 
 
 ## 24.07
