@@ -18,8 +18,6 @@ class TestSamlService(APIIntegrationTest):
     @pytest.fixture(autouse=True)
     def setup(self, page: Page):
         self.page = page
-
-    def setUp(self) -> None:
         self.login = os.environ['WAZO_SAML_LOGIN']
         self.password = os.environ['WAZO_SAML_PASSWORD']
 
@@ -53,9 +51,9 @@ class TestSamlService(APIIntegrationTest):
         expect(page.locator("h1"), "Error while opening the test page").to_contain_text(
             "Wazo SAML login"
         )
-        searchLoginBtn: str = '#login_btn'
-        page.wait_for_selector(searchLoginBtn)
-        page.click(searchLoginBtn)
+        search_login_btn: str = '#login_btn'
+        page.wait_for_selector(search_login_btn)
+        page.click(search_login_btn)
         expect(page, "Unable to get Microsoft login page").to_have_title(
             "Sign in to your account"
         )
