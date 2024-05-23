@@ -5,7 +5,7 @@ import os
 from typing import Any
 
 import pytest
-from playwright.sync_api import Page
+from playwright.sync_api import Page, expect
 
 from wazo_auth.database.queries.user import UserDAO
 
@@ -48,6 +48,31 @@ class TestSamlService(APIIntegrationTest):
     def _reload_saml_config(self) -> None:
         self.restart_auth()
 
+    def _click_login(self, page):
+        page.goto("https://app.wazo.local/")
+        expect(page.locator("h1"), "Error while opening the test page").to_contain_text(
+            "Wazo SAML login"
+        )
+        searchLoginBtn: str = '#login_btn'
+        page.wait_for_selector(searchLoginBtn)
+        page.click(searchLoginBtn)
+        expect(page, "Unable to get Microsoft login page").to_have_title(
+            "Sign in to your account"
+        )
+
+    def _login(self, page, login, password):
+        page.get_by_placeholder("Email address, phone number").fill(login)
+        page.get_by_role("button", name="Next").click()
+        expect(page.get_by_role("heading"), "Failed to submit login").to_contain_text(
+            "Enter password"
+        )
+        page.get_by_placeholder("Password").fill(password)
+        page.get_by_role("button", name="Sign in").click()
+        expect(
+            page.get_by_role("heading"), "Failed to submit password"
+        ).to_contain_text("Stay signed in?")
+        page.get_by_role("button", name="No").click()
+
     @pytest.mark.only_browser("chromium")
     @pytest.mark.browser_context_args(
         timezone_id="Europe/London", locale="en-GB", ignore_https_errors=True
@@ -58,3 +83,11 @@ class TestSamlService(APIIntegrationTest):
         self._create_user(self.login)
         self._reload_saml_config()
         self._accept_self_signed_certificate_on_stack()
+        self._click_login(self.page)
+        self._login(self.page, self.login, self.password)
+        expect(self.page.locator("h1"), "SSO handling failed").to_contain_text(
+            "Wazo SAML Post ACS handling"
+        )
+        expect(
+            self.page.locator("#token"), "Failed to retrieve token"
+        ).not_to_contain_text("not yet known")
