@@ -5,8 +5,7 @@ import time
 from collections import namedtuple
 
 import ldap
-import requests
-from hamcrest import assert_that, calling, has_entries, raises
+from hamcrest import assert_that, has_entries
 from ldap.modlist import addModlist
 from wazo_test_helpers.hamcrest.uuid_ import uuid_
 
@@ -421,19 +420,14 @@ class TestLDAP(BaseLDAPIntegrationTest):
             response, has_entries(metadata=has_entries(pbx_user_uuid=user['uuid']))
         )
 
-        args = (
+        assert_http_error(
+            400,
+            self._post_token,
             'Alice Wonderland',
             'awonderland_password',
-        )
-
-        assert_that(
-            calling(self._post_token).with_args(
-                *args,
-                backend='ldap_user',
-                tenant_id=tenant['uuid'],
-                domain_name='cust-42.myclients.com',
-            ),
-            raises(requests.HTTPError, pattern='400'),
+            backend='ldap_user',
+            tenant_id=tenant['uuid'],
+            domain_name='cust-42.myclients.com',
         )
 
     @fixtures.http.user(
@@ -441,17 +435,13 @@ class TestLDAP(BaseLDAPIntegrationTest):
         authentication_method='ldap',
     )
     def test_ldap_authentication_user_cannot_read_ldap_email(self, _):
-        args = [
+        assert_http_error(
+            401,
+            self._post_token,
             'The White Queen',
             'whitequeen_password',
-        ]
-        assert_that(
-            calling(self._post_token).with_args(
-                *args,
-                backend='ldap_user',
-                tenant_id=self.top_tenant_uuid,
-            ),
-            raises(requests.HTTPError, pattern='401'),
+            backend='ldap_user',
+            tenant_id=self.top_tenant_uuid,
         )
 
     @fixtures.http.tenant(
@@ -477,12 +467,13 @@ class TestLDAP(BaseLDAPIntegrationTest):
         user_email_attribute='mail',
     )
     def test_ldap_authentication_multi_tenant(self, _, __, tenant2, ___):
-        args = ('Lewis Carroll', 'lewiscarroll_password')
-        assert_that(
-            calling(self._post_token).with_args(
-                *args, backend='ldap_user', tenant_id=tenant2['slug']
-            ),
-            raises(requests.HTTPError, pattern='401'),
+        assert_http_error(
+            401,
+            self._post_token,
+            'Lewis Carroll',
+            'lewiscarroll_password',
+            backend='ldap_user',
+            tenant_id=tenant2['slug'],
         )
 
     @fixtures.http.user(
@@ -490,12 +481,13 @@ class TestLDAP(BaseLDAPIntegrationTest):
         authentication_method='ldap',
     )
     def test_ldap_authentication_fail_when_wrong_password(self, _):
-        args = ('Alice Wonderland', 'wrong_password')
-        assert_that(
-            calling(self._post_token).with_args(
-                *args, backend='ldap_user', tenant_id=self.top_tenant_uuid
-            ),
-            raises(requests.HTTPError, pattern='401'),
+        assert_http_error(
+            401,
+            self._post_token,
+            'Alice Wonderland',
+            'wrong_password',
+            backend='ldap_user',
+            tenant_id=self.top_tenant_uuid,
         )
 
     @fixtures.http.user(
@@ -503,12 +495,13 @@ class TestLDAP(BaseLDAPIntegrationTest):
         authentication_method='ldap',
     )
     def test_ldap_authentication_fails_when_no_email_in_ldap(self, _):
-        args = ('Humpty Dumpty', 'humptydumpty_password')
-        assert_that(
-            calling(self._post_token).with_args(
-                *args, backend='ldap_user', tenant_id=self.top_tenant_uuid
-            ),
-            raises(requests.HTTPError, pattern='401'),
+        assert_http_error(
+            401,
+            self._post_token,
+            'Humpty Dumpty',
+            'humptydumpty_password',
+            backend='ldap_user',
+            tenant_id=self.top_tenant_uuid,
         )
 
     @fixtures.http.user(
@@ -516,12 +509,13 @@ class TestLDAP(BaseLDAPIntegrationTest):
         authentication_method='ldap',
     )
     def test_ldap_authentication_fails_when_no_email_in_user(self, _):
-        args = ('Lewis Carroll', 'lewiscarroll_password')
-        assert_that(
-            calling(self._post_token).with_args(
-                *args, backend='ldap_user', tenant_id=self.top_tenant_uuid
-            ),
-            raises(requests.HTTPError, pattern='401'),
+        assert_http_error(
+            401,
+            self._post_token,
+            'Lewis Carroll',
+            'lewiscarroll_password',
+            backend='ldap_user',
+            tenant_id=self.top_tenant_uuid,
         )
 
 
@@ -596,12 +590,13 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
         user_email_attribute='mail',
     )
     def test_ldap_authentication_multi_tenant(self, _, __, tenant2, ___):
-        args = ('lewiscarroll@wazo-auth.com', 'lewiscarroll_password')
-        assert_that(
-            calling(self._post_token).with_args(
-                *args, backend='ldap_user', tenant_id=tenant2['slug']
-            ),
-            raises(requests.HTTPError, pattern='401'),
+        assert_http_error(
+            401,
+            self._post_token,
+            'lewiscarroll@wazo-auth.com',
+            'lewiscarroll_password',
+            backend='ldap_user',
+            tenant_id=tenant2['slug'],
         )
 
     @fixtures.http.user(
@@ -609,12 +604,13 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
         authentication_method='ldap',
     )
     def test_ldap_authentication_fail_when_wrong_password(self, _):
-        args = ('awonderland', 'wrong_password')
-        assert_that(
-            calling(self._post_token).with_args(
-                *args, backend='ldap_user', tenant_id=self.top_tenant_uuid
-            ),
-            raises(requests.HTTPError, pattern='401'),
+        assert_http_error(
+            401,
+            self._post_token,
+            'awonderland',
+            'wrong_password',
+            backend='ldap_user',
+            tenant_id=self.top_tenant_uuid,
         )
 
     @fixtures.http.user(
@@ -622,12 +618,13 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
         authentication_method='ldap',
     )
     def test_ldap_authentication_fails_when_no_email_in_ldap(self, _):
-        args = ('humptydumpty', 'humptydumpty_password')
-        assert_that(
-            calling(self._post_token).with_args(
-                *args, backend='ldap_user', tenant_id=self.top_tenant_uuid
-            ),
-            raises(requests.HTTPError, pattern='401'),
+        assert_http_error(
+            401,
+            self._post_token,
+            'humptydumpty',
+            'humptydumpty_password',
+            backend='ldap_user',
+            tenant_id=self.top_tenant_uuid,
         )
 
     @fixtures.http.user(
@@ -635,12 +632,13 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
         authentication_method='ldap',
     )
     def test_ldap_authentication_fails_when_no_email_in_user(self, _):
-        args = ('lewiscarroll', 'lewiscarroll_password')
-        assert_that(
-            calling(self._post_token).with_args(
-                *args, backend='ldap_user', tenant_id=self.top_tenant_uuid
-            ),
-            raises(requests.HTTPError, pattern='401'),
+        assert_http_error(
+            401,
+            self._post_token,
+            'lewiscarroll',
+            'lewiscarroll_password',
+            backend='ldap_user',
+            tenant_id=self.top_tenant_uuid,
         )
 
     @fixtures.http.user(
@@ -648,12 +646,13 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
         authentication_method='ldap',
     )
     def test_ldap_authentication_search_filter_does_not_match_employee_type(self, _):
-        args = ('cheshirecat', 'cheshirecat_password')
-        assert_that(
-            calling(self._post_token).with_args(
-                *args, backend='ldap_user', tenant_id=self.top_tenant_uuid
-            ),
-            raises(requests.HTTPError, pattern='401'),
+        assert_http_error(
+            401,
+            self._post_token,
+            'cheshirecat',
+            'cheshirecat_password',
+            backend='ldap_user',
+            tenant_id=self.top_tenant_uuid,
         )
 
 
