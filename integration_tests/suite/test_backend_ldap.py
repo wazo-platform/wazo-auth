@@ -239,12 +239,17 @@ class TestLDAP(BaseLDAPIntegrationTest):
         uuid=TENANT_1_UUID,
         slug='mytenant',
         domain_names=['wazo.community'],
+        default_authentication_method='ldap',
     )
     @fixtures.http.user(
-        email_address='jsparrow@wazo-auth.com', tenant_uuid=TENANT_1_UUID
+        email_address='jsparrow@wazo-auth.com',
+        tenant_uuid=TENANT_1_UUID,
+        authentication_method='ldap',
     )
     @fixtures.http.user(
-        email_address='BObAFett@wazo-auth.com', tenant_uuid=TENANT_1_UUID
+        email_address='BObAFett@wazo-auth.com',
+        tenant_uuid=TENANT_1_UUID,
+        authentication_method='ldap',
     )
     @fixtures.http.ldap_config(
         tenant_uuid=TENANT_1_UUID,
@@ -280,6 +285,7 @@ class TestLDAP(BaseLDAPIntegrationTest):
         uuid=TENANT_1_UUID,
         slug='mytenant',
         domain_names=['wazo.community', 'cust-42.myclients.com'],
+        default_authentication_method='ldap',
     )
     @fixtures.http.user(username='bobafett@wazo-auth.com', tenant_uuid=TENANT_1_UUID)
     @fixtures.http.ldap_config(
@@ -371,6 +377,7 @@ class TestLDAP(BaseLDAPIntegrationTest):
         uuid=TENANT_1_UUID,
         slug='mytenant',
         domain_names=['wazo.community', 'cust-42.myclients.com'],
+        default_authentication_method='ldap',
     )
     @fixtures.http.user(
         email_address='awonderland@wazo-auth.com', tenant_uuid=TENANT_1_UUID
@@ -429,7 +436,10 @@ class TestLDAP(BaseLDAPIntegrationTest):
             raises(requests.HTTPError, pattern='400'),
         )
 
-    @fixtures.http.user(email_address='whitequeen@wazo-auth.com')
+    @fixtures.http.user(
+        email_address='whitequeen@wazo-auth.com',
+        authentication_method='ldap',
+    )
     def test_ldap_authentication_user_cannot_read_ldap_email(self, _):
         args = [
             'The White Queen',
@@ -444,11 +454,18 @@ class TestLDAP(BaseLDAPIntegrationTest):
             raises(requests.HTTPError, pattern='401'),
         )
 
-    @fixtures.http.tenant(uuid=TENANT_1_UUID)
-    @fixtures.http.user(
-        email_address='lewiscarroll@wazo-auth.com', tenant_uuid=TENANT_1_UUID
+    @fixtures.http.tenant(
+        uuid=TENANT_1_UUID,
+        default_authentication_method='ldap',
     )
-    @fixtures.http.tenant(uuid=TENANT_2_UUID)
+    @fixtures.http.user(
+        email_address='lewiscarroll@wazo-auth.com',
+        tenant_uuid=TENANT_1_UUID,
+    )
+    @fixtures.http.tenant(
+        uuid=TENANT_2_UUID,
+        default_authentication_method='ldap',
+    )
     @fixtures.http.ldap_config(
         tenant_uuid=TENANT_2_UUID,
         host='slapd',
@@ -468,7 +485,10 @@ class TestLDAP(BaseLDAPIntegrationTest):
             raises(requests.HTTPError, pattern='401'),
         )
 
-    @fixtures.http.user(email_address='awonderland@wazo-auth.com')
+    @fixtures.http.user(
+        email_address='awonderland@wazo-auth.com',
+        authentication_method='ldap',
+    )
     def test_ldap_authentication_fail_when_wrong_password(self, _):
         args = ('Alice Wonderland', 'wrong_password')
         assert_that(
@@ -478,7 +498,10 @@ class TestLDAP(BaseLDAPIntegrationTest):
             raises(requests.HTTPError, pattern='401'),
         )
 
-    @fixtures.http.user(email_address='humptydumpty@wazo-auth.com')
+    @fixtures.http.user(
+        email_address='humptydumpty@wazo-auth.com',
+        authentication_method='ldap',
+    )
     def test_ldap_authentication_fails_when_no_email_in_ldap(self, _):
         args = ('Humpty Dumpty', 'humptydumpty_password')
         assert_that(
@@ -488,7 +511,10 @@ class TestLDAP(BaseLDAPIntegrationTest):
             raises(requests.HTTPError, pattern='401'),
         )
 
-    @fixtures.http.user(email_address=None)
+    @fixtures.http.user(
+        email_address=None,
+        authentication_method='ldap',
+    )
     def test_ldap_authentication_fails_when_no_email_in_user(self, _):
         args = ('Lewis Carroll', 'lewiscarroll_password')
         assert_that(
@@ -517,7 +543,10 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
         )
         self.addCleanup(self.client.ldap_config.delete, ldap_config['tenant_uuid'])
 
-    @fixtures.http.user(email_address='awonderland@wazo-auth.com')
+    @fixtures.http.user(
+        email_address='awonderland@wazo-auth.com',
+        authentication_method='ldap',
+    )
     def test_ldap_authentication(self, user):
         response = self._post_token(
             'awonderland',
@@ -529,7 +558,10 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
             response, has_entries(metadata=has_entries(pbx_user_uuid=user['uuid']))
         )
 
-    @fixtures.http.user(email_address='whitequeen@wazo-auth.com')
+    @fixtures.http.user(
+        email_address='whitequeen@wazo-auth.com',
+        authentication_method='ldap',
+    )
     def test_ldap_authentication_user_cannot_read_ldap_email(self, user):
         response = self._post_token(
             'whitequeen',
@@ -541,11 +573,18 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
             response, has_entries(metadata=has_entries(pbx_user_uuid=user['uuid']))
         )
 
-    @fixtures.http.tenant(uuid=TENANT_1_UUID)
-    @fixtures.http.user(
-        email_address='lewiscarroll@wazo-auth.com', tenant_uuid=TENANT_1_UUID
+    @fixtures.http.tenant(
+        uuid=TENANT_1_UUID,
+        default_authentication_method='ldap',
     )
-    @fixtures.http.tenant(uuid=TENANT_2_UUID)
+    @fixtures.http.user(
+        email_address='lewiscarroll@wazo-auth.com',
+        tenant_uuid=TENANT_1_UUID,
+    )
+    @fixtures.http.tenant(
+        uuid=TENANT_2_UUID,
+        default_authentication_method='ldap',
+    )
     @fixtures.http.ldap_config(
         tenant_uuid=TENANT_2_UUID,
         host='slapd',
@@ -565,7 +604,10 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
             raises(requests.HTTPError, pattern='401'),
         )
 
-    @fixtures.http.user(email_address='awonderland@wazo-auth.com')
+    @fixtures.http.user(
+        email_address='awonderland@wazo-auth.com',
+        authentication_method='ldap',
+    )
     def test_ldap_authentication_fail_when_wrong_password(self, _):
         args = ('awonderland', 'wrong_password')
         assert_that(
@@ -575,7 +617,10 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
             raises(requests.HTTPError, pattern='401'),
         )
 
-    @fixtures.http.user(email_address='humptydumpty@wazo-auth.com')
+    @fixtures.http.user(
+        email_address='humptydumpty@wazo-auth.com',
+        authentication_method='ldap',
+    )
     def test_ldap_authentication_fails_when_no_email_in_ldap(self, _):
         args = ('humptydumpty', 'humptydumpty_password')
         assert_that(
@@ -585,7 +630,10 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
             raises(requests.HTTPError, pattern='401'),
         )
 
-    @fixtures.http.user(email_address=None)
+    @fixtures.http.user(
+        email_address=None,
+        authentication_method='ldap',
+    )
     def test_ldap_authentication_fails_when_no_email_in_user(self, _):
         args = ('lewiscarroll', 'lewiscarroll_password')
         assert_that(
@@ -595,7 +643,10 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
             raises(requests.HTTPError, pattern='401'),
         )
 
-    @fixtures.http.user(email_address='cheshirecat@wazo-auth.com')
+    @fixtures.http.user(
+        email_address='cheshirecat@wazo-auth.com',
+        authentication_method='ldap',
+    )
     def test_ldap_authentication_search_filter_does_not_match_employee_type(self, _):
         args = ('cheshirecat', 'cheshirecat_password')
         assert_that(
@@ -621,7 +672,10 @@ class TestLDAPRefreshToken(BaseLDAPIntegrationTest):
         )
         self.addCleanup(self.client.ldap_config.delete, ldap_config['tenant_uuid'])
 
-    @fixtures.http.user(email_address='awonderland@wazo-auth.com')
+    @fixtures.http.user(
+        email_address='awonderland@wazo-auth.com',
+        authentication_method='ldap',
+    )
     def test_ldap_login_with_refresh_token(self, user):
         client_id = 'my-test'
         args = ('Alice Wonderland', 'awonderland_password')
