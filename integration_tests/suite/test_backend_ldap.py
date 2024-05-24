@@ -8,8 +8,10 @@ import ldap
 import requests
 from hamcrest import assert_that, calling, has_entries, raises
 from ldap.modlist import addModlist
+from wazo_test_helpers.hamcrest.uuid_ import uuid_
 
 from .helpers import base, fixtures
+from .helpers.base import assert_http_error
 
 Contact = namedtuple(
     'Contact',
@@ -302,6 +304,68 @@ class TestLDAP(BaseLDAPIntegrationTest):
         assert_that(
             response, has_entries(metadata=has_entries(pbx_user_uuid=user['uuid']))
         )
+
+    @fixtures.http.tenant(
+        uuid=TENANT_1_UUID,
+        slug='mytenant',
+        domain_names=['wazo.community', 'cust-42.myclients.com'],
+        default_authentication_method='native',
+    )
+    @fixtures.http.user(
+        username='bobafett@wazo-auth.com',
+        tenant_uuid=TENANT_1_UUID,
+        authentication_method='default',
+    )
+    @fixtures.http.user(
+        email_address='jsparrow@wazo-auth.com',
+        tenant_uuid=TENANT_1_UUID,
+        authentication_method='ldap',
+    )
+    @fixtures.http.ldap_config(
+        tenant_uuid=TENANT_1_UUID,
+        host='slapd',
+        port=LDAP_PORT,
+        bind_dn='cn=wazo_auth,ou=people,dc=wazo-auth,dc=wazo,dc=community',
+        bind_password='S3cr$t',
+        user_base_dn='ou=quebec,ou=people,dc=wazo-auth,dc=wazo,dc=community',
+        user_login_attribute='mail',
+        user_email_attribute='mail',
+    )
+    def test_ldap_authentication_when_not_authorized(
+        self,
+        tenant,
+        *_,
+    ):
+        # tenant = native, user = default
+        assert_http_error(
+            401,
+            self._post_token,
+            'bobafett@wazo-auth.com',
+            'bobafett_password',
+            backend='ldap_user',
+            domain_name=tenant['domain_names'][0],
+        )
+
+        # tenant = native, user = ldap
+        response = self._post_token(
+            'JSparrow@WAZO-auth.com',
+            'jsparrow_password',
+            backend='ldap_user',
+            tenant_id=tenant['slug'],
+        )
+        assert_that(response, has_entries(token=uuid_()))
+
+        tenant['default_authentication_method'] = 'ldap'
+        self.client.tenants.edit(tenant['uuid'], **tenant)
+
+        # tenant = ldap, user = default
+        response = self._post_token(
+            'bobafett@wazo-auth.com',
+            'bobafett_password',
+            backend='ldap_user',
+            tenant_id=tenant['slug'],
+        )
+        assert_that(response, has_entries(token=uuid_()))
 
     @fixtures.http.tenant(
         uuid=TENANT_1_UUID,

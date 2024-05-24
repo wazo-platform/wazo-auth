@@ -152,7 +152,18 @@ class LDAPUser(BaseAuthenticationBackend):
         return self._tenant_service.get_by_uuid_or_slug(None, tenant_id)
 
     def _get_user_by_ldap_attribute(self, user_email, tenant_uuid):
+        tenant = self._tenant_service.get(None, tenant_uuid)
+        default_authentication_method = tenant['default_authentication_method']
+
+        def ldap_authorized(user):
+            if user['authentication_method'] == 'ldap':
+                return True
+            elif user['authentication_method'] == 'default':
+                return default_authentication_method == 'ldap'
+
         for user in self._user_service.list_users(tenant_uuid=tenant_uuid):
+            if not ldap_authorized(user):
+                continue
             user_emails = user.get('emails')
             if user_emails:
                 for email in user_emails:

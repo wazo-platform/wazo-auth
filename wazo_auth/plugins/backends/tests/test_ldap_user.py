@@ -16,7 +16,11 @@ class BaseTestCase(unittest.TestCase):
         self.user_service = Mock()
         self.user_service.list_users = Mock()
         self.user_service.list_users.return_value = [
-            {'uuid': 'alice-uuid', 'purpose': 'user'}
+            {
+                'uuid': 'alice-uuid',
+                'purpose': 'user',
+                'authentication_method': 'ldap',
+            }
         ]
         self.user_service.get_acl = Mock()
         self.user_service.get_acl.return_value = ['acl1']
@@ -54,8 +58,12 @@ class BaseTestCase(unittest.TestCase):
                     'stackoverflow.com',
                 ],
                 'name': '1234',
+                'default_authentication_method': 'ldap',
             }
         ]
+        self.tenant_service.get.return_value = {
+            'default_authentication_method': 'ldap',
+        }
 
         user_metadata_plugin = Mock()
         user_metadata_plugin.get_token_metadata = Mock()
@@ -188,7 +196,11 @@ class TestVerifyPassword(BaseTestCase):
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
         self.list_users.return_value = [
-            {'uuid': 'alice-uuid', 'emails': [{'address': 'foo@example.com'}]}
+            {
+                'uuid': 'alice-uuid',
+                'emails': [{'address': 'foo@example.com'}],
+                'authentication_method': 'ldap',
+            }
         ]
         args = {'tenant_id': 'test'}
 
@@ -216,7 +228,11 @@ class TestVerifyPassword(BaseTestCase):
             {'mail': self.expected_user_email.encode('utf-8')},
         )
         self.list_users.return_value = [
-            {'uuid': 'alice-uuid', 'emails': [{'address': 'foo@example.com'}]}
+            {
+                'uuid': 'alice-uuid',
+                'emails': [{'address': 'foo@example.com'}],
+                'authentication_method': 'ldap',
+            }
         ]
         args = {'tenant_id': 'test'}
 
@@ -246,7 +262,11 @@ class TestVerifyPassword(BaseTestCase):
             {'mail': self.expected_user_email.encode('utf-8')},
         )
         self.list_users.return_value = [
-            {'uuid': 'alice-uuid', 'emails': [{'address': 'foo@example.com'}]}
+            {
+                'uuid': 'alice-uuid',
+                'emails': [{'address': 'foo@example.com'}],
+                'authentication_method': 'ldap',
+            }
         ]
         args = {'tenant_id': 'test'}
 
@@ -319,7 +339,11 @@ class TestVerifyPassword(BaseTestCase):
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
         self.list_users.return_value = [
-            {'uuid': 'alice-uuid', 'emails': [{'address': 'foo@example.com'}]}
+            {
+                'uuid': 'alice-uuid',
+                'emails': [{'address': 'foo@example.com'}],
+                'authentication_method': 'ldap',
+            }
         ]
         args = {'tenant_id': 'test'}
 
@@ -363,7 +387,11 @@ class TestVerifyPassword(BaseTestCase):
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
         self.list_users.return_value = [
-            {'uuid': 'alice-uuid', 'emails': [{'address': 'foo@example.com'}]}
+            {
+                'uuid': 'alice-uuid',
+                'emails': [{'address': 'foo@example.com'}],
+                'authentication_method': 'ldap',
+            }
         ]
         args = {'tenant_id': 'test'}
 
@@ -399,7 +427,11 @@ class TestVerifyPassword(BaseTestCase):
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
         self.list_users.return_value = [
-            {'uuid': 'alice-uuid', 'emails': [{'address': 'foo@example.com'}]}
+            {
+                'uuid': 'alice-uuid',
+                'emails': [{'address': 'foo@example.com'}],
+                'authentication_method': 'ldap',
+            }
         ]
         args = {'domain_name': 'wazo.io'}
 
@@ -425,7 +457,11 @@ class TestVerifyPassword(BaseTestCase):
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
         self.list_users.return_value = [
-            {'uuid': 'alice-uuid', 'emails': [{'address': 'foo@example.com'}]}
+            {
+                'uuid': 'alice-uuid',
+                'emails': [{'address': 'foo@example.com'}],
+                'authentication_method': 'ldap',
+            }
         ]
         args = {'domain_name': 'wazo.io'}
 
