@@ -7,3 +7,5 @@ build
 coverage.xml
 dist
 unit-tests.xml
+integration_tests/assets/saml/config/saml.json
+integration_tests/assets/var/lib/wazo-auth/saml/saml.xml

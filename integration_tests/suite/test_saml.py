@@ -1,7 +1,7 @@
 # Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import os
+import json
 from typing import Any
 
 import pytest
@@ -18,8 +18,16 @@ class TestSamlService(APIIntegrationTest):
     @pytest.fixture(autouse=True)
     def setup(self, page: Page):
         self.page = page
-        self.login = os.environ['WAZO_SAML_LOGIN']
-        self.password = os.environ['WAZO_SAML_PASSWORD']
+        try:
+            samlTestConfig = json.load(open('assets/saml/config/saml.json'))
+            self.login = samlTestConfig['login']
+            self.password = samlTestConfig['password']
+        except FileNotFoundError as e:
+            pytest.fail(f"Unable to load SAML test config ({e})")
+        except ValueError as e:
+            pytest.fail(f"Unable to parse SAML test config credentials ({e})")
+        except Exception as e:
+            pytest.fail(f"Unexpected error while loading SAML test config ({e})")
 
     def _setup_tenant_and_domain(self, domain_name: str) -> None:
         self.tenant = self.client.tenants.new(
