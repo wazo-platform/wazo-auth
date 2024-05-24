@@ -101,11 +101,15 @@ tox --recreate -e py39
 
 ### Running integration tests
 
-You need a SAML test account and configuration, you need to replace the configuration
-file ./integration_tests/assets/var/lib/wazo-auth/saml/saml.xml and set following
-environment variables:
-WAZO_SAML_LOGIN
-WAZO_SAML_PASSWORD
+You need a SAML test account and configuration, you need to create a configuration
+file .integration_tests/asses/saml/config/saml.json with following json:
+```json
+{
+  "login": "entraLogin",
+  "password": "entraPwd"
+}
+```
+then run
 
 ```sh
 playwright install
