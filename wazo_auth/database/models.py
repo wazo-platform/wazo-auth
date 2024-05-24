@@ -327,6 +327,13 @@ class User(Base):
         CheckConstraint("purpose in ('user', 'internal', 'external_api')"),
         nullable=False,
     )
+    authentication_method = Column(
+        Text,
+        CheckConstraint(
+            "default_authentication_method in ('default', 'native', 'ldap', 'saml')"
+        ),
+        nullable=False,
+    )
     enabled = Column(Boolean)
     tenant_uuid = Column(
         String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=False

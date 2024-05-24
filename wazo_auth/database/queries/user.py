@@ -159,6 +159,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             'purpose': kwargs['purpose'],
             'enabled': kwargs.get('enabled'),
             'tenant_uuid': kwargs['tenant_uuid'],
+            'authentication_method': kwargs['authentication_method'],
         }
         uuid = kwargs.get('uuid')
         if uuid:
@@ -210,6 +211,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             'emails': emails,
             'enabled': user.enabled,
             'tenant_uuid': user.tenant_uuid,
+            'authentication_method': user.authentication_method,
         }
 
     def delete(self, user_uuid):
@@ -340,6 +342,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     'lastname': user.lastname,
                     'purpose': user.purpose,
                     'tenant_uuid': user.tenant_uuid,
+                    'authentication_method': user.authentication_method,
                 }
             )
 

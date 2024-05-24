@@ -13,3 +13,4 @@ class UserRegisterPostSchema(BaseSchema):
     lastname = fields.String(missing=None)
     email_address = fields.Email(required=True)
     purpose = fields.Constant('user')
+    authentication_method = fields.Constant('default')

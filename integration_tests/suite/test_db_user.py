@@ -224,6 +224,7 @@ class TestUserDAO(base.DAOTestCase):
             hash_=hash_,
             salt=self.salt,
             purpose='user',
+            authentication_method='default',
         )['uuid']
 
         assert_that(user_uuid, equal_to(ANY_UUID))
@@ -248,6 +249,7 @@ class TestUserDAO(base.DAOTestCase):
                 hash_='',
                 salt=b'',
                 purpose='user',
+                authentication_method='default',
             ),
             raises(
                 exceptions.ConflictException,
@@ -269,6 +271,7 @@ class TestUserDAO(base.DAOTestCase):
             hash_=hash_,
             salt=self.salt,
             purpose='user',
+            authentication_method='default',
             email_confirmed=True,
         )['uuid']
 
@@ -299,6 +302,7 @@ class TestUserDAO(base.DAOTestCase):
                 hash_='hash_two',
                 salt=self.salt,
                 purpose='user',
+                authentication_method='default',
                 tenant_uuid=self.top_tenant_uuid,
             ),
             raises(
@@ -319,6 +323,7 @@ class TestUserDAO(base.DAOTestCase):
                 hash_='hash_two',
                 salt=self.salt,
                 purpose='user',
+                authentication_method='default',
             ),
             raises(
                 exceptions.ConflictException,

@@ -219,6 +219,23 @@ class TestUsers(base.APIIntegrationTest):
 
         assert_that(logs.result(), not_(contains_string(args['password'])))
 
+    def test_post_authentication_method(self):
+        invalid_values = [
+            None,
+            False,
+            True,
+            42,
+            ['native'],
+            'not-native',
+            '',
+        ]
+        for invalid_auth_method in invalid_values:
+            assert_http_error(
+                400,
+                self.client.users.new,
+                authentication_method=invalid_auth_method,
+            )
+
     @fixtures.http.user(username='user1@example.com')
     @fixtures.http.user(email_address='user2@example.com')
     def test_post_with_same_login(self, *_):
@@ -229,7 +246,11 @@ class TestUsers(base.APIIntegrationTest):
         assert_http_error(409, self.client.users.new, email_address='user2@example.com')
 
     @fixtures.http.user(
-        username='foobar', firstname='foo', lastname='bar', purpose='user'
+        username='foobar',
+        firstname='foo',
+        lastname='bar',
+        purpose='user',
+        authenticaton_method='default',
     )
     def test_put(self, user):
         user_uuid = user['uuid']
@@ -238,7 +259,17 @@ class TestUsers(base.APIIntegrationTest):
             'firstname': 'baz',
             'purpose': 'external_api',
             'enabled': False,
+            'authentication_method': 'native',
         }
+        invalid_authentication_methods = [
+            None,
+            False,
+            True,
+            42,
+            ['native'],
+            'not-native',
+            '',
+        ]
 
         assert_http_error(404, self.client.users.edit, UNKNOWN_UUID, **body)
         with self.client_in_subtenant() as (client, bob, isolated):
@@ -251,6 +282,16 @@ class TestUsers(base.APIIntegrationTest):
                 **body,
             )
             assert_no_error(self.client.users.edit, bob['uuid'], **body)
+
+        for authentication_method in invalid_authentication_methods:
+            payload = dict(body)
+            payload['authentication_method'] = authentication_method
+            assert_http_error(
+                400,
+                self.client.users.edit,
+                user['uuid'],
+                **payload,
+            )
 
         result = self.client.users.edit(user_uuid, **body)
         assert_that(

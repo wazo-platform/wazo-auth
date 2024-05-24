@@ -15,6 +15,10 @@ class _BaseUserSchema(BaseSchema):
     purpose = fields.String(
         missing='user', validate=validate.OneOf(['user', 'internal', 'external_api'])
     )
+    authentication_method = fields.String(
+        missing='default',
+        validate=validate.OneOf(['default', 'native', 'ldap', 'saml']),
+    )
     enabled = fields.Boolean(missing=True)
 
 

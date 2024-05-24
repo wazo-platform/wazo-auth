@@ -198,6 +198,7 @@ class Controller:
                     self._config['bootstrap_user_username'],
                     self._config['bootstrap_user_password'],
                     self._config.get('bootstrap_user_purpose') or bootstrap.PURPOSE,
+                    bootstrap.AUTHENTICATION_METHOD,
                     self._config.get('bootstrap_user_policy_slug')
                     or bootstrap.DEFAULT_POLICY_SLUG,
                 )

@@ -46,6 +46,7 @@ def email(**email_args):
                     'username': _random_string(5),
                     'purpose': 'user',
                     'tenant_uuid': self.top_tenant_uuid,
+                    'authentication_method': 'default',
                 }
                 user = self._user_dao.create(**user_args)
                 return user['uuid']
@@ -237,6 +238,7 @@ def user(**user_args):
             user_args.setdefault('purpose', 'user')
             user_args.setdefault('enabled', True)
             user_args.setdefault('tenant_uuid', self.top_tenant_uuid)
+            user_args.setdefault('authentication_method', 'default')
             user_uuid = self._user_dao.create(**user_args)['uuid']
             self.session.begin_nested()
             args = list(args) + [user_uuid]

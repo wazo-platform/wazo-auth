@@ -99,6 +99,7 @@ class TestUserResource(HTTPAppTestCase):
             lastname=None,
             enabled=True,
             purpose='user',
+            authentication_method='default',
             tenant_uuid=TENANT,
             **body
         )

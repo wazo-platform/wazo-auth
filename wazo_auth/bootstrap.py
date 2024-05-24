@@ -32,6 +32,7 @@ USER = 'wazo-auth'
 USERNAME = 'wazo-auth-cli'
 PURPOSE = 'internal'
 DEFAULT_POLICY_SLUG = 'wazo_default_master_user_policy'
+AUTHENTICATION_METHOD = 'native'
 
 ERROR_MSG = '''\
 Failed to bootstrap wazo-auth. Error is logged at {log_file}.
@@ -88,6 +89,7 @@ def main():
                 args.username,
                 args.password,
                 args.purpose,
+                AUTHENTICATION_METHOD,
                 args.policy_slug,
             )
         except Exception:
@@ -103,7 +105,9 @@ def get_database_uri_from_config():
     return wazo_auth_config['db_uri']
 
 
-def create_initial_user(db_uri, username, password, purpose, policy_slug):
+def create_initial_user(
+    db_uri, username, password, purpose, authentication_method, policy_slug
+):
     init_db(db_uri)
     dao = queries.DAO.from_defaults()
     tenant_tree = services.helpers.TenantTree(dao.tenant)
@@ -118,7 +122,11 @@ def create_initial_user(db_uri, username, password, purpose, policy_slug):
         raise Exception(f'User {username} already exists with different credential')
 
     user = user_service.new_user(
-        enabled=True, username=username, password=password, purpose=purpose
+        enabled=True,
+        username=username,
+        password=password,
+        purpose=purpose,
+        authentication_method=authentication_method,
     )
     policy_uuid = policy_service.list(slug=policy_slug)[0].uuid
     user_service.add_policy(user['uuid'], policy_uuid)
@@ -137,6 +145,7 @@ def complete():
             wazo_auth_cli_config['auth']['username'],
             wazo_auth_cli_config['auth']['password'],
             PURPOSE,
+            AUTHENTICATION_METHOD,
             DEFAULT_POLICY_SLUG,
         )
     else:
@@ -146,6 +155,7 @@ def complete():
             USERNAME,
             password,
             PURPOSE,
+            AUTHENTICATION_METHOD,
             DEFAULT_POLICY_SLUG,
         )
 

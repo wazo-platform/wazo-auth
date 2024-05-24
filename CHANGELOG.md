@@ -8,6 +8,14 @@
   * `ldap`
   * `saml`
 
+* The `users` resource now has the `authentication_method` field which can contain the following values
+
+  * `default`
+  * `native`
+  * `ldap`
+  * `saml`
+
+
 
 ## 24.07
 
