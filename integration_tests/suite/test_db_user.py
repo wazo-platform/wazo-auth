@@ -662,28 +662,43 @@ class TestUserDAO(base.DAOTestCase):
     @fixtures.db.user(username='u2', email_address='u2@example.com', email_confirmed=True)
     @fixtures.db.user(username='u3', email_address='u3@example.com', email_confirmed=False)
     # fmt: on
-    def test_get_user_uuid_by_login(self, u1, u2, u3):
-        result = self._user_dao.get_user_uuid_by_login('u1')
-        assert_that(result, equal_to(u1))
+    def test_get_user_by_login(self, u1, u2, u3):
+        result = self._user_dao.get_user_by_login('u1')
+        assert_that(result, has_properties(uuid=u1))
 
-        result = self._user_dao.get_user_uuid_by_login('u2@example.com')
-        assert_that(result, equal_to(u2))
+        result = self._user_dao.get_user_by_login('u2@example.com')
+        assert_that(result, has_properties(uuid=u2))
 
         assert_that(
-            calling(self._user_dao.get_user_uuid_by_login).with_args('u3@example.com'),
+            calling(self._user_dao.get_user_by_login).with_args('u3@example.com'),
             raises(exceptions.UnknownLoginException),
         )
 
         assert_that(
-            calling(self._user_dao.get_user_uuid_by_login).with_args('u0'),
+            calling(self._user_dao.get_user_by_login).with_args('u0'),
             raises(exceptions.UnknownLoginException),
         )
 
     @fixtures.db.user(username='u1@example.com')
     @fixtures.db.user(email_address='u1@example.com', email_confirmed=True)
-    def test_get_user_uuid_by_login_returns_email_first(self, u1, u2):
-        result = self._user_dao.get_user_uuid_by_login('u1@example.com')
-        assert_that(result, equal_to(u2))
+    def test_get_user_by_login_returns_email_first(self, u1, u2):
+        result = self._user_dao.get_user_by_login('u1@example.com')
+        assert_that(result, has_properties(uuid=u2))
+
+    @fixtures.db.user(username='u1', enabled=False)
+    @fixtures.db.user(
+        email_address='u2@example.com', email_confirmed=True, enabled=False
+    )
+    def test_get_user_by_login_disabled_user(self, u1, u2):
+        assert_that(
+            calling(self._user_dao.get_user_by_login).with_args('u1'),
+            raises(exceptions.UnknownLoginException),
+        )
+
+        assert_that(
+            calling(self._user_dao.get_user_by_login).with_args('u2@example.com'),
+            raises(exceptions.UnknownLoginException),
+        )
 
     @fixtures.db.user(username='u1@example.com', enabled=True)
     @fixtures.db.user(username='u2@example.com', enabled=False)

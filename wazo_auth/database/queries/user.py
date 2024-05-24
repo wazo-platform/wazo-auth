@@ -234,31 +234,33 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             raise exceptions.UnknownUserUUIDException(user_uuid)
         return row.password_hash, row.password_salt
 
-    def get_user_uuid_by_login(self, login):
+    def get_user_by_login(self, login):
         if not login:
             raise exceptions.UnknownLoginException(login)
 
-        email_filter = func.lower(Email.address) == func.lower(login)
-        query = (
-            self.session.query(User.uuid)
-            .outerjoin(Email)
-            .filter(
-                and_(
-                    email_filter,
-                    Email.confirmed.is_(True),
+        ordered_filters = [
+            and_(
+                func.lower(Email.address) == func.lower(login),
+                Email.confirmed.is_(True),
+            ),
+            func.lower(User.username) == func.lower(login),
+        ]
+        for filter_ in ordered_filters:
+            query = (
+                self.session.query(User)
+                .outerjoin(Email)
+                .filter(
+                    and_(
+                        filter_,
+                        User.enabled.is_(True),
+                    )
                 )
             )
-        )
-        row = query.first()
-        if row:
-            return row.uuid
+            row = query.first()
+            if row:
+                return row
 
-        username_filter = func.lower(User.username) == func.lower(login)
-        query = self.session.query(User.uuid).filter(and_(username_filter))
-        row = query.first()
-        if not row:
-            raise exceptions.UnknownLoginException(login)
-        return row.uuid
+        raise exceptions.UnknownLoginException(login)
 
     def get_emails(self, user_uuid):
         user = self.session.query(User).filter(User.uuid == str(user_uuid)).first()

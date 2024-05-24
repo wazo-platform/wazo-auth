@@ -1,11 +1,15 @@
 # Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from uuid import uuid4
+
 from hamcrest import assert_that, has_entries, has_item
 from wazo_test_helpers.hamcrest.uuid_ import uuid_
 
 from .helpers import base, fixtures
 from .helpers.base import assert_http_error
+
+NEW_TENANT_UUID = str(uuid4())
 
 
 @base.use_asset('base')
@@ -37,6 +41,59 @@ class TestWazoUserBackend(base.APIIntegrationTest):
         assert_http_error(
             401, self._post_token, 'not-foobar', 's3cr37', backend='wazo_user'
         )
+
+    @fixtures.http.tenant(uuid=NEW_TENANT_UUID, default_authentication_method='saml')
+    @fixtures.http.user(
+        username='u1',
+        password='s3cr37',
+        authentication_method='ldap',
+        tenant_uuid=NEW_TENANT_UUID,
+    )
+    @fixtures.http.user(
+        username='u2',
+        password='s3cr37',
+        authentication_method='default',
+        tenant_uuid=NEW_TENANT_UUID,
+    )
+    def test_wrong_authentication_method(self, tenant, u1, u2):
+        # u1 uses ldap not native
+        assert_http_error(
+            401,
+            self._post_token,
+            'u1',
+            's3cr37',
+            backend='wazo_user',
+        )
+        # u2 uses saml (from the tenant) not native
+        assert_http_error(
+            401,
+            self._post_token,
+            'u2',
+            's3cr37',
+            backend='wazo_user',
+        )
+
+        tenant['default_authentication_method'] = 'native'
+        self.client.tenants.edit(tenant['uuid'], **tenant)
+
+        # u1 uses ldap not native
+        assert_http_error(
+            401,
+            self._post_token,
+            'u1',
+            's3cr37',
+            backend='wazo_user',
+        )
+        # u2 now uses native from the tenant
+        response = self._post_token('u2', 's3cr37', backend='wazo_user')
+        assert_that(response, has_entries(token=uuid_()))
+
+        u1['authentication_method'] = 'native'
+        self.client.users.edit(u1['uuid'], **u1)
+
+        # u1 now uses native
+        response = self._post_token('u1', 's3cr37', backend='wazo_user')
+        assert_that(response, has_entries(token=uuid_()))
 
     @fixtures.http.tenant()
     # extra tenant: "master" tenant
