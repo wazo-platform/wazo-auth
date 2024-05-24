@@ -31,8 +31,8 @@ class TestSamlService(APIIntegrationTest):
             'username': login,
             'firstname': 'saml',
             'lastname': 'test user',
-            'password_hash': 'hash',
-            'password_salt': 'salt',
+            'password_hash': 'hash',  # NOSONAR
+            'password_salt': 'salt',  # NOSONAR
             'purpose': 'user',
             'enabled': True,
             'tenant_uuid': self.tenant['uuid'],
