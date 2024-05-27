@@ -33,6 +33,7 @@ setup(
         ],
         'wazo_auth.http': [
             'api = wazo_auth.plugins.http.api.plugin:Plugin',
+            'authentication_methods = wazo_auth.plugins.http.authentication_methods.plugin:Plugin',
             'backends = wazo_auth.plugins.http.backends.plugin:Plugin',
             'config = wazo_auth.plugins.http.config.plugin:Plugin',
             'email_confirm = wazo_auth.plugins.http.email_confirm.plugin:Plugin',

@@ -1,0 +1,37 @@
+paths:
+  /authentication_methods:
+    get:
+      tags:
+        - users
+        - tenants
+      security:
+        - wazo_auth_token: []
+      description: |
+        Returns a list of valid authentication methods that are available
+      summary: List Authentication Methods
+      responses:
+        '200':
+          description: The authentication method list
+          schema:
+            $ref: '#/definitions/AuthenticationMethodList'
+definitions:
+  AuthenticationMethodList:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: The number of authentication methods
+      filtered:
+        type: integer
+        description: The number of authentication methods matching the searched term
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/AuthenticationMethod'
+        description: A paginated list of authentication methods
+  AuthenticationMethod:
+    type: object
+    properties:
+      name:
+        type: string
+        description: The name of the authentication method
