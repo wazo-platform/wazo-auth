@@ -266,7 +266,6 @@ class TestLDAP(BaseLDAPIntegrationTest):
         response = self._post_token(
             'JSparrow@WAZO-auth.com',
             'jsparrow_password',
-            backend='ldap_user',
             domain_name=tenant['domain_names'][0],
         )
         assert_that(
@@ -276,7 +275,6 @@ class TestLDAP(BaseLDAPIntegrationTest):
         response = self._post_token(
             'bobafett@wazo-auth.com',
             'bobafett_password',
-            backend='ldap_user',
             domain_name=tenant['domain_names'][0],
         )
 
@@ -303,7 +301,6 @@ class TestLDAP(BaseLDAPIntegrationTest):
         response = self._post_token(
             'bobafett@wazo-auth.com',
             'bobafett_password',
-            backend='ldap_user',
             domain_name=tenant['domain_names'][0],
         )
         assert_that(
@@ -347,7 +344,6 @@ class TestLDAP(BaseLDAPIntegrationTest):
             self._post_token,
             'bobafett@wazo-auth.com',
             'bobafett_password',
-            backend='ldap_user',
             domain_name=tenant['domain_names'][0],
         )
 
@@ -355,7 +351,6 @@ class TestLDAP(BaseLDAPIntegrationTest):
         response = self._post_token(
             'JSparrow@WAZO-auth.com',
             'jsparrow_password',
-            backend='ldap_user',
             tenant_id=tenant['slug'],
         )
         assert_that(response, has_entries(token=uuid_()))
@@ -367,7 +362,6 @@ class TestLDAP(BaseLDAPIntegrationTest):
         response = self._post_token(
             'bobafett@wazo-auth.com',
             'bobafett_password',
-            backend='ldap_user',
             tenant_id=tenant['slug'],
         )
         assert_that(response, has_entries(token=uuid_()))
@@ -393,7 +387,6 @@ class TestLDAP(BaseLDAPIntegrationTest):
         response = self._post_token(
             'Alice Wonderland',
             'awonderland_password',
-            backend='ldap_user',
             tenant_id=tenant['uuid'],
         )
         assert_that(
@@ -403,7 +396,6 @@ class TestLDAP(BaseLDAPIntegrationTest):
         response = self._post_token(
             'Alice Wonderland',
             'awonderland_password',
-            backend='ldap_user',
             tenant_id=tenant['slug'],
         )
         assert_that(
@@ -413,7 +405,6 @@ class TestLDAP(BaseLDAPIntegrationTest):
         response = self._post_token(
             'Alice Wonderland',
             'awonderland_password',
-            backend='ldap_user',
             domain_name='cust-42.myclients.com',
         )
         assert_that(
@@ -425,7 +416,6 @@ class TestLDAP(BaseLDAPIntegrationTest):
             self._post_token,
             'Alice Wonderland',
             'awonderland_password',
-            backend='ldap_user',
             tenant_id=tenant['uuid'],
             domain_name='cust-42.myclients.com',
         )
@@ -440,7 +430,6 @@ class TestLDAP(BaseLDAPIntegrationTest):
             self._post_token,
             'The White Queen',
             'whitequeen_password',
-            backend='ldap_user',
             tenant_id=self.top_tenant_uuid,
         )
 
@@ -472,7 +461,6 @@ class TestLDAP(BaseLDAPIntegrationTest):
             self._post_token,
             'Lewis Carroll',
             'lewiscarroll_password',
-            backend='ldap_user',
             tenant_id=tenant2['slug'],
         )
 
@@ -486,7 +474,6 @@ class TestLDAP(BaseLDAPIntegrationTest):
             self._post_token,
             'Alice Wonderland',
             'wrong_password',
-            backend='ldap_user',
             tenant_id=self.top_tenant_uuid,
         )
 
@@ -500,7 +487,6 @@ class TestLDAP(BaseLDAPIntegrationTest):
             self._post_token,
             'Humpty Dumpty',
             'humptydumpty_password',
-            backend='ldap_user',
             tenant_id=self.top_tenant_uuid,
         )
 
@@ -514,7 +500,6 @@ class TestLDAP(BaseLDAPIntegrationTest):
             self._post_token,
             'Lewis Carroll',
             'lewiscarroll_password',
-            backend='ldap_user',
             tenant_id=self.top_tenant_uuid,
         )
 
@@ -545,7 +530,6 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
         response = self._post_token(
             'awonderland',
             'awonderland_password',
-            backend='ldap_user',
             tenant_id=self.top_tenant_uuid,
         )
         assert_that(
@@ -560,7 +544,6 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
         response = self._post_token(
             'whitequeen',
             'whitequeen_password',
-            backend='ldap_user',
             tenant_id=self.top_tenant_uuid,
         )
         assert_that(
@@ -595,7 +578,6 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
             self._post_token,
             'lewiscarroll@wazo-auth.com',
             'lewiscarroll_password',
-            backend='ldap_user',
             tenant_id=tenant2['slug'],
         )
 
@@ -609,7 +591,6 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
             self._post_token,
             'awonderland',
             'wrong_password',
-            backend='ldap_user',
             tenant_id=self.top_tenant_uuid,
         )
 
@@ -623,7 +604,6 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
             self._post_token,
             'humptydumpty',
             'humptydumpty_password',
-            backend='ldap_user',
             tenant_id=self.top_tenant_uuid,
         )
 
@@ -637,7 +617,6 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
             self._post_token,
             'lewiscarroll',
             'lewiscarroll_password',
-            backend='ldap_user',
             tenant_id=self.top_tenant_uuid,
         )
 
@@ -651,7 +630,6 @@ class TestLDAPServiceUser(BaseLDAPIntegrationTest):
             self._post_token,
             'cheshirecat',
             'cheshirecat_password',
-            backend='ldap_user',
             tenant_id=self.top_tenant_uuid,
         )
 
@@ -680,7 +658,6 @@ class TestLDAPRefreshToken(BaseLDAPIntegrationTest):
         args = ('Alice Wonderland', 'awonderland_password')
         refresh_token = self._post_token(
             *args,
-            backend='ldap_user',
             client_id=client_id,
             access_type='offline',
             tenant_id=self.top_tenant_uuid,
@@ -689,7 +666,6 @@ class TestLDAPRefreshToken(BaseLDAPIntegrationTest):
         response = self._post_token(
             None,
             None,
-            backend='ldap_user',
             expiration=1,
             refresh_token=refresh_token,
             client_id=client_id,

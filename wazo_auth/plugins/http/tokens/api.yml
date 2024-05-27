@@ -8,11 +8,9 @@ paths:
       summary: Creates a token
       description: |
         Creates a valid token for the supplied username and password combination or refresh_token
-        using the specified backend.
+        using the configured authentication method.
 
         The user's email address can be used instead of the username if the email address is confirmed.
-
-        The stock backends are: ``wazo_user``, ``ldap_user``.
 
         Creating  a token with the `access_type` *offline* will also create a refresh token which can be used
         to create a new token without specifying the username and password.
@@ -34,9 +32,6 @@ paths:
         schema:
           type: object
           properties:
-            backend:
-              type: string
-              default: wazo_user
             domain_name:
               type: string
               description: |

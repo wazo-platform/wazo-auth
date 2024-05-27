@@ -1,32 +1,98 @@
-# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
-from wazo_auth.exceptions import InvalidUsernamePassword, NoSuchBackendException
+from wazo_auth.exceptions import (
+    InvalidUsernamePassword,
+    NoMatchingSAMLSession,
+    NoSuchBackendException,
+    UnauthorizedAuthenticationMethod,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class AuthenticationService:
-    def __init__(self, dao, backends):
+    def __init__(self, dao, backends, tenant_service, saml_service):
         self._dao = dao
         self._backends = backends
+        self._tenant_service = tenant_service
+        self._saml_service = saml_service
 
     def verify_auth(self, args):
-        refresh_token = args.get('refresh_token')
-        if refresh_token:
-            refresh_token_data = self._dao.refresh_token.get(
-                refresh_token, args['client_id']
-            )
-            backend = self._get_backend(refresh_token_data['backend_name'])
-            return backend, refresh_token_data['login']
-        else:
-            backend = self._get_backend(args['backend'])
+        if saml_session_id := args.get('saml_session_id'):
+            backend, login = self.verify_saml(saml_session_id)
+            args['login'] = login
+        elif refresh_token := args.get('refresh_token'):
+            backend, login = self.verify_refresh_token(refresh_token, args['client_id'])
+            args['login'] = login
+        elif 'domain_name' in args or 'tenant_id' in args:
+            backend = self._get_backend('ldap_user')
             login = args.get('login', '')
             if not backend.verify_password(login, args.pop('password', ''), args):
                 raise InvalidUsernamePassword(login)
-            return backend, login
+            authorized_authentication_method = self._authorized_authentication_method(
+                args['user_email']
+            )
+            if authorized_authentication_method != 'ldap':
+                raise UnauthorizedAuthenticationMethod(authorized_authentication_method)
+        else:
+            login = args.get('login', '')
+            authorized_authentication_method = self._authorized_authentication_method(
+                login
+            )
+            logger.debug('Verifying %s login', authorized_authentication_method)
+            if authorized_authentication_method == 'native':
+                backend = self._get_backend('wazo_user')
+            else:
+                raise UnauthorizedAuthenticationMethod(authorized_authentication_method)
+
+            # There's no password verification when using a refresh token or SAML
+            if not backend.verify_password(login, args.pop('password', ''), args):
+                raise InvalidUsernamePassword(login)
+
+        return backend, login
+
+    def verify_saml(self, saml_session_id):
+        logger.debug('verifying SAML login')
+        saml_login = self._saml_service.get_user_login_and_remove_context(
+            saml_session_id,
+        )
+        if not saml_login:
+            raise NoMatchingSAMLSession(saml_session_id)
+
+        login = saml_login[0]
+        if (
+            authorized_authentication_method := self._authorized_authentication_method(
+                login
+            )
+        ) != 'saml':
+            raise UnauthorizedAuthenticationMethod(authorized_authentication_method)
+
+        # There's no SAML backend
+        backend = backend = self._get_backend('wazo_user')
+
+        return backend, login
+
+    def verify_refresh_token(self, refresh_token, client_id):
+        logger.debug('verifying refresh token login')
+        refresh_token_data = self._dao.refresh_token.get(
+            refresh_token,
+            client_id,
+        )
+        login = refresh_token_data['login']
+        authorized_authentication_method = self._authorized_authentication_method(login)
+        if authorized_authentication_method == 'native':
+            backend = self._get_backend('wazo_user')
+        elif authorized_authentication_method == 'ldap':
+            backend = self._get_backend('ldap_user')
+        elif authorized_authentication_method == 'saml':
+            backend = self._get_backend('wazo_user')
+        else:
+            raise UnauthorizedAuthenticationMethod(authorized_authentication_method)
+
+        return backend, login
 
     def _get_backend(self, backend_name):
         try:
@@ -34,3 +100,10 @@ class AuthenticationService:
         except KeyError:
             logger.debug('backend not found: "%s"', backend_name)
             raise NoSuchBackendException(backend_name)
+
+    def _authorized_authentication_method(self, login):
+        user = self._dao.user.get_user_by_login(login)
+        if user.authentication_method != 'default':
+            return user.authentication_method
+        tenant = self._tenant_service.get(None, user.tenant_uuid)
+        return tenant['default_authentication_method']

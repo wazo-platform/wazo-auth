@@ -44,7 +44,7 @@ class TestTokens(base.APIIntegrationTest):
             password='expiration',
         )
         try:
-            client.token.new(backend='wazo_user', expiration=9999999999999999999999)
+            client.token.new(expiration=9999999999999999999999)
         except HTTPError as e:
             assert e.response.status_code == 400
 
@@ -58,7 +58,7 @@ class TestTokens(base.APIIntegrationTest):
             username='u1@example.com',
             password='bar',
         )
-        token_data = client.token.new(backend='wazo_user', expiration=1)
+        token_data = client.token.new(expiration=1)
         assert_that(token_data, has_entries(token=not_(None)))
 
     @fixtures.http.user(username=None, email_address='u1@example.com', password='pass1')

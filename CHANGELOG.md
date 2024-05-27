@@ -2,6 +2,8 @@
 
 ## 24.08
 
+* The `backend` parameter during token creation is now ignored. The configured authentication method of the user or tenant is used instead.
+
 * The `tenants` resource now has the `default_authentication_method` field which can contain the following values
 
   * `native`

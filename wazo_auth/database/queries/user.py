@@ -279,6 +279,9 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             )
         return result
 
+    def get(self, uuid):
+        return self.session.query(User).filter(User.uuid == uuid).first()
+
     def list_(self, **kwargs):
         search_filter = self.new_search_filter(**kwargs)
         strict_filter = self.new_strict_filter(**kwargs)
