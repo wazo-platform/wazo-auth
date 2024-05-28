@@ -10,5 +10,5 @@ class Plugin:
 
         api.add_resource(
             http.AuthenticationMethods,
-            '/authentication_methods',
+            '/idp',
         )

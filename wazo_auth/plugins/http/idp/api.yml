@@ -1,0 +1,37 @@
+paths:
+  /idp:
+    get:
+      tags:
+        - users
+        - tenants
+      security:
+        - wazo_auth_token: []
+      description: |
+        Returns a list of valid identity provider types that are available
+      summary: List identity provider types
+      responses:
+        '200':
+          description: The identity provider type list
+          schema:
+            $ref: '#/definitions/IDPList'
+definitions:
+  IDPList:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: The number of identity provider types
+      filtered:
+        type: integer
+        description: The number of identity provider types matching the searched term
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/IDP'
+        description: A paginated list of authentication methods
+  IDP:
+    type: object
+    properties:
+      type:
+        type: string
+        description: The type of identity provider

@@ -9,7 +9,7 @@ from .helpers import base
 @base.use_asset('base')
 class TestAuthenticationMethods(base.APIIntegrationTest):
     def test_authentication_backend_list(self):
-        response = self.client.authentication_methods.list()
+        response = self.client.idp.list()
 
         assert_that(
             response,

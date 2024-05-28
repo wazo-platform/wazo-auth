@@ -2,7 +2,7 @@
 
 ## 24.08
 
-* The `GET /authentication_methods` resource has been added
+* The `GET /idp` resource has been added
 
 * The `backend` parameter during token creation is now ignored. The configured authentication method of the user or tenant is used instead.
 

@@ -36,7 +36,7 @@ _DEFAULT_CONFIG = {
     'oauth2_synchronization_redirect_url_template': 'https://oauth.wazo.io/{auth_type}/authorize',
     'enabled_http_plugins': {
         'api': True,
-        'authentication_methods': True,
+        'idp': True,
         'backends': True,
         'config': True,
         'email_confirm': True,

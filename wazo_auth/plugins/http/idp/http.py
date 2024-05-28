@@ -3,7 +3,7 @@
 
 from wazo_auth import http
 
-AUTHENTICATION_METHODS = [
+IDP_TYPES = [
     'native',
     'ldap',
     'saml',
@@ -12,6 +12,6 @@ AUTHENTICATION_METHODS = [
 
 class AuthenticationMethods(http.ErrorCatchingResource):
     def get(self):
-        items = AUTHENTICATION_METHODS
+        items = IDP_TYPES
         count = len(items)
         return {'total': count, 'filtered': count, 'items': items}
