@@ -6,7 +6,7 @@ from .helpers.base import assert_http_error
 
 @base.use_asset('base')
 class TestSAML(base.APIIntegrationTest):
-    def test_sso_missing_redirect_url(self):
+    def test_sso_missing_redirect_url_param(self):
         assert_http_error(
             400,
             self.client.saml.sso,
@@ -14,7 +14,7 @@ class TestSAML(base.APIIntegrationTest):
             redirect_url=None            
         )
         
-    def test_sso_missing_domain(self):
+    def test_sso_missing_domain_param(self):
         assert_http_error(
             400,
             self.client.saml.sso,
@@ -22,7 +22,7 @@ class TestSAML(base.APIIntegrationTest):
             redirect_url='https://example.com/acs'
         )
 
-    def test_sso_unparsable_domain(self):
+    def test_sso_unparsable_domain_param(self):
         assert_http_error(
             400,
             self.client.saml.sso,
@@ -38,7 +38,7 @@ class TestSAML(base.APIIntegrationTest):
             redirect_url='https://example.com/acs'
         )
 
-    def test_acs_missing_response(self):
+    def test_acs_missing_response_param(self):
         assert_http_error(
             400,
             self.client.saml.acs,
@@ -46,7 +46,7 @@ class TestSAML(base.APIIntegrationTest):
             token='token'
         )
         
-    def test_acs_missing_token(self):
+    def test_acs_missing_token_param(self):
         assert_http_error(
             400,
             self.client.saml.acs,
