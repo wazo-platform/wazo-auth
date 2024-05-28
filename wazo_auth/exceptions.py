@@ -102,6 +102,13 @@ class UnknownExternalAuthConfigException(APIException):
         super().__init__(404, msg, 'unknown-external-auth', details, auth_type)
 
 
+class UnknownIDPType(APIException):
+    def __init__(self, idp_type):
+        msg = f'No such IDP type: "{idp_type}"'
+        details = {'idp_type': idp_type}
+        super().__init__(404, msg, 'unknown-idp-type', details, 'idp')
+
+
 class DuplicatedLDAPConfigException(Exception):
     def __init__(self, tenant_uuid):
         self.tenant_uuid = tenant_uuid

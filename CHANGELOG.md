@@ -2,7 +2,10 @@
 
 ## 24.08
 
-* The `GET /idp` resource has been added
+* The following resources have been added
+  * GET `0.1/idp`
+  * PUT `0.1/idp/<idp_type>/users/<user_uuid>`
+  * DELETE `0.1/idp/<idp_type>/users/<user_uuid>`
 
 * The `backend` parameter during token creation is now ignored. The configured authentication method of the user or tenant is used instead.
 

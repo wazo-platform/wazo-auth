@@ -2,8 +2,7 @@ paths:
   /idp:
     get:
       tags:
-        - users
-        - tenants
+        - idp
       security:
         - wazo_auth_token: []
       description: |
@@ -14,6 +13,45 @@ paths:
           description: The identity provider type list
           schema:
             $ref: '#/definitions/IDPList'
+  /idp/{idp_type}/users/{user_uuid}:
+    put:
+      tags:
+        - users
+        - idp
+      security:
+        - wazo_auth_token: []
+      operationId: addUserIDP
+      description: '**Required ACL:** `auth.idp.{idp_type}.users.{user_uuid}.create`'
+      summary: Associate user to a IDP
+      parameters:
+        - $ref: '#/parameters/idp_type'
+        - $ref: '#/parameters/user_uuid'
+      responses:
+        '204':
+          description: The user has been assigned
+        '404':
+          description: User or IDP not found
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      tags:
+        - users
+        - idp
+      security:
+        - wazo_auth_token: []
+      operationId: removeIDPUser
+      description: '**Required ACL:** `auth.idp.{idp_type}.users.{user_uuid}.delete`'
+      summary: Dissocuate a user from an IDP
+      parameters:
+        - $ref: '#/parameters/idp_type'
+        - $ref: '#/parameters/user_uuid'
+      responses:
+        '204':
+          description: The user has been unassigned
+        '404':
+          description: User or IDP not found
+          schema:
+            $ref: '#/definitions/Error'
 definitions:
   IDPList:
     type: object
@@ -35,3 +73,9 @@ definitions:
       type:
         type: string
         description: The type of identity provider
+  idp_type:
+    name: idp_type
+    in: path
+    type: string
+    description: The type of IDP
+    required: true

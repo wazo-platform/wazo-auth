@@ -9,6 +9,15 @@ class Plugin:
         api = dependencies['api']
 
         api.add_resource(
-            http.AuthenticationMethods,
+            http.IDPList,
             '/idp',
+        )
+
+        api.add_resource(
+            http.IDPUser,
+            '/idp/<idp_type>/users/<uuid:user_uuid>',
+            resource_class_args=(
+                dependencies['user_service'],
+                dependencies['idp_service'],
+            ),
         )

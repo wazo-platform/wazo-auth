@@ -108,6 +108,7 @@ class Controller:
             self.dao,
             config['all_users_policies'],
         )
+        self._idp_service = services.IDPService(self.dao, self._tenant_tree)
 
         ldap_service = services.LDAPService(self.dao, self._tenant_tree)
 
@@ -151,6 +152,7 @@ class Controller:
             'email_service': email_service,
             'external_auth_service': external_auth_service,
             'group_service': group_service,
+            'idp_service': self._idp_service,
             'user_service': self._user_service,
             'token_service': self._token_service,
             'token_manager': self._token_service,  # For compatibility only
