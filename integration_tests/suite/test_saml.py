@@ -22,6 +22,22 @@ class TestSAML(base.APIIntegrationTest):
             redirect_url='https://example.com/acs'
         )
 
+    def test_sso_unparsable_domain(self):
+        assert_http_error(
+            400,
+            self.client.saml.sso,
+            domain='notadomain',
+            redirect_url='https://example.com/acs'
+        )
+
+    def test_sso_unknown_domain_for_tenant(self):
+        assert_http_error(
+            500,
+            self.client.saml.sso,
+            domain='unknown.com',
+            redirect_url='https://example.com/acs'
+        )
+
     def test_acs_missing_response(self):
         assert_http_error(
             400,

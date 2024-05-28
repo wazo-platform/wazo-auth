@@ -78,7 +78,7 @@ class SAMLSSO(http.ErrorCatchingResource):
         except marshmallow.ValidationError as e:
             for field in e.messages:
                 logger.info(
-                    f"SSO redirect failed because of missing parameter: {field}"
+                    f"SSO redirect failed because of missing or wrong value of parameter: {field}"
                 )
                 raise exceptions.InvalidInputException(field)
         try:
