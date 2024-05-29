@@ -14,12 +14,13 @@ class TestAuthenticationMethods(base.APIIntegrationTest):
         assert_that(
             response,
             has_entries(
-                total=3,
-                filtered=3,
+                total=4,
+                filtered=4,
                 items=contains_inanyorder(
                     'ldap',
                     'native',
                     'saml',
+                    'default',
                 ),
             ),
         )

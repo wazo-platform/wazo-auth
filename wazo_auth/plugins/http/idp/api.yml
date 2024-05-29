@@ -13,6 +13,29 @@ paths:
           description: The identity provider type list
           schema:
             $ref: '#/definitions/IDPList'
+  /idp/{idp_type}/users:
+    put:
+      operationId: updateUsersIDP
+      summary: Associate multiple users to a IDP
+      parameters:
+        - $ref: '#/parameters/idp_type'
+        - name: body
+          in: body
+          description: Users to be associated
+          required: true
+          schema:
+            $ref: '#/definitions/IDPUsers'
+      responses:
+        '204':
+          description: Users are associated to the IDP
+        '400':
+          description: Invalid body
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: IDP or user not found
+          schema:
+            $ref: '#/definitions/Error'
   /idp/{idp_type}/users/{user_uuid}:
     put:
       tags:
@@ -67,12 +90,27 @@ definitions:
         items:
           $ref: '#/definitions/IDP'
         description: A paginated list of authentication methods
+  IDPUsers:
+    properties:
+      users:
+        items:
+          $ref: '#/definitions/IDPUser'
+        type: array
+    required:
+      - users
+  IDPUser:
+    properties:
+      uuid:
+        type: string
+    required:
+      - uuid
   IDP:
     type: object
     properties:
       type:
         type: string
         description: The type of identity provider
+parameters:
   idp_type:
     name: idp_type
     in: path
