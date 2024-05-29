@@ -478,6 +478,19 @@ def assert_http_error(status_code, http_fn, *args, **kwargs):
     )
 
 
+def assert_http_error_partial_body(status_code, json, http_fn, *args, **kwargs) -> None:
+    with pytest.raises(requests.HTTPError) as excinfo:
+        http_fn(*args, **kwargs)
+
+    assert_that(excinfo.value.response.status_code, equal_to(status_code))
+    try:
+        response_json = excinfo.value.response.json()
+        del response_json['timestamp']
+        assert_that(response_json, equal_to(json))
+    except KeyError as e:
+        pytest.fail(f'{e} field missing in the response error message')
+
+
 def assert_sorted(http_fn, order, expected):
     asc_items = http_fn(order=order, direction='asc')['items']
     desc_items = http_fn(order=order, direction='desc')['items']

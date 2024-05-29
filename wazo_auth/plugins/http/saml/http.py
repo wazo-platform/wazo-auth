@@ -29,7 +29,7 @@ class SAMLACS(http.ErrorCatchingResource):
             or request.form.get('SAMLResponse') is None
         ):
             logger.info('ACS response request failed: Missing or wrong parameters')
-            raise exceptions.InvalidInputException('RelayState and/or SAMLResponse')
+            raise exceptions.SAMLParamException('RelayState and/or SAMLResponse')
         try:
             response = self._saml_service.process_auth_response(
                 request.url, request.remote_addr, request.form
@@ -80,7 +80,7 @@ class SAMLSSO(http.ErrorCatchingResource):
                 logger.info(
                     f"SSO redirect failed because of missing or wrong value of parameter: {field}"
                 )
-                raise exceptions.InvalidInputException(field)
+                raise exceptions.SAMLParamException(field)
         try:
             location, saml_session_id = self._saml_service.prepare_redirect_response(
                 args['redirect_url'],
@@ -92,7 +92,6 @@ class SAMLSSO(http.ErrorCatchingResource):
             }
         except Exception as excp:
             logger.error("Failed to process initial SAML SSO post because of: %s", excp)
-            return Response(
-                status=500,
-                response='SAML configuration missing or SAML client init failed',
+            raise exceptions.SAMLConfigurationError(
+                domain=args['domain'],
             )

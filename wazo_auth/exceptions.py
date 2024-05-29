@@ -228,6 +228,10 @@ class EmailUpdateException(_BaseParamException):
     resource = 'emails'
 
 
+class SAMLParamException(_BaseParamException):
+    resource = 'saml'
+
+
 class InvalidInputException(TokenServiceException):
     code = 400
 
@@ -413,4 +417,16 @@ class UnauthorizedResourcesMutualAccessAttemptException(APIException):
             'group_tenant_uuid': group_tenant_uuid,
         }
         resource = 'groups'
+        super().__init__(error_code, error_msg, error_id, error_details, resource)
+
+
+class SAMLConfigurationError(APIException):
+    def __init__(self, domain):
+        error_code = 500
+        error_id = 'configuration-error'
+        error_msg = 'SAML client for domain not found or failed'
+        error_details = {
+            'domain': domain,
+        }
+        resource = 'saml'
         super().__init__(error_code, error_msg, error_id, error_details, resource)
