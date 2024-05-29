@@ -10,7 +10,7 @@ from .helpers.base import assert_http_error_partial_body
 @base.use_asset('base')
 class TestSAML(base.APIIntegrationTest):
     def _expected_dict(
-        self, message: str, error_id: str, resource: str, details: dict[str, Any]=None
+        self, message: str, error_id: str, resource: str, details: dict[str, Any] = None
     ) -> dict[str, Any]:
         return {
             'message': message,
@@ -31,7 +31,7 @@ class TestSAML(base.APIIntegrationTest):
     def test_sso_missing_domain_param(self) -> None:
         assert_http_error_partial_body(
             400,
-            self._expected_dict('domain', 'invalid-data',  'saml'),
+            self._expected_dict('domain', 'invalid-data', 'saml'),
             self.client.saml.sso,
             domain=None,
             redirect_url='https://example.com/acs',
@@ -40,7 +40,7 @@ class TestSAML(base.APIIntegrationTest):
     def test_sso_unparsable_domain_param(self) -> None:
         assert_http_error_partial_body(
             400,
-            self._expected_dict('domain', 'invalid-data',  'saml'),
+            self._expected_dict('domain', 'invalid-data', 'saml'),
             self.client.saml.sso,
             domain='notadomain',
             redirect_url='https://example.com/acs',
@@ -51,7 +51,7 @@ class TestSAML(base.APIIntegrationTest):
             500,
             self._expected_dict(
                 'SAML client for domain not found or failed',
-                'configuration-error',                
+                'configuration-error',
                 'saml',
                 details={'domain': 'unknown.com'},
             ),
@@ -64,7 +64,7 @@ class TestSAML(base.APIIntegrationTest):
         assert_http_error_partial_body(
             400,
             self._expected_dict(
-                'RelayState and/or SAMLResponse', 'invalid-data',  'saml'
+                'RelayState and/or SAMLResponse', 'invalid-data', 'saml'
             ),
             self.client.saml.acs,
             response=None,
@@ -75,7 +75,7 @@ class TestSAML(base.APIIntegrationTest):
         assert_http_error_partial_body(
             400,
             self._expected_dict(
-                'RelayState and/or SAMLResponse', 'invalid-data',  'saml'
+                'RelayState and/or SAMLResponse', 'invalid-data', 'saml'
             ),
             self.client.saml.acs,
             response='response',

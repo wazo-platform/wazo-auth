@@ -420,7 +420,11 @@ class UnauthorizedResourcesMutualAccessAttemptException(APIException):
         super().__init__(error_code, error_msg, error_id, error_details, resource)
 
 
-class SAMLConfigurationError(APIException):
+class SAMLException(APIException):
+    resource = 'saml'
+
+
+class SAMLConfigurationError(SAMLException):
     def __init__(self, domain):
         error_code = 500
         error_id = 'configuration-error'
@@ -428,5 +432,15 @@ class SAMLConfigurationError(APIException):
         error_details = {
             'domain': domain,
         }
-        resource = 'saml'
-        super().__init__(error_code, error_msg, error_id, error_details, resource)
+        super().__init__(error_code, error_msg, error_id, error_details, self.resource)
+
+
+class SAMLProcessingError(SAMLException):
+    def __init__(self, error, code=500):
+        error_code = code
+        error_id = 'processing-error'
+        error_msg = 'SAML processing failed'
+        error_details = {
+            'error': error,
+        }
+        super().__init__(error_code, error_msg, error_id, error_details, self.resource)

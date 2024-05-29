@@ -3,10 +3,9 @@
 
 
 import logging
-from datetime import datetime, timezone
 
 import marshmallow
-from flask import Response, redirect, request
+from flask import redirect, request
 from saml2.response import VerificationError
 from saml2.s_utils import UnknownPrincipal, UnsupportedBinding
 from saml2.sigver import SignatureError
@@ -39,32 +38,22 @@ class SAMLACS(http.ErrorCatchingResource):
                 return redirect(response)
             else:
                 logger.warn('ACS response request failed: Context not found')
-                return self._format_failed_reply(404, 'Context not found')
+                raise exceptions.SAMLProcessingError('Context not found', 404)
         except UnknownPrincipal as excp:
             logger.info(f"UnknownPrincipal: {excp}")
-            return self._format_failed_reply(500, 'Unknown principal')
+            raise exceptions.SAMLProcessingError('Unknown principal')
         except UnsupportedBinding as excp:
             logger.info("UnsupportedBinding: %s", excp)
-            return self._format_failed_reply(500, 'Unsupported binding')
+            raise exceptions.SAMLProcessingError('Unsupported binding')
         except VerificationError as err:
             logger.info("Verification error: %s", err)
-            return self._format_failed_reply(500, 'Verification error')
+            raise exceptions.SAMLProcessingError('Verification error')
         except SignatureError as err:
             logger.info("Signature error: %s", err)
-            return self._format_failed_reply(500, 'Signature error')
+            raise exceptions.SAMLProcessingError('Signature error')
         except Exception as err:
             logger.error("SAML unexpected error: %s", err)
-            return self._format_failed_reply(500, 'Unexpected error')
-
-    def _format_failed_reply(self, code: int, msg: str) -> Response:
-        return Response(
-            status=code,
-            response={
-                'reason': [msg],
-                'timestamp': [datetime.now(timezone.utc)],
-                'status_code': code,
-            },
-        )
+            raise exceptions.SAMLProcessingError('Unexpected error')
 
 
 class SAMLSSO(http.ErrorCatchingResource):
