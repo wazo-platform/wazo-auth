@@ -60,24 +60,24 @@ class TestSAML(base.APIIntegrationTest):
             redirect_url='https://example.com/acs',
         )
 
-    def test_acs_missing_response_param(self) -> None:
+    def test_acs_missing_saml_response_param(self) -> None:
         assert_http_error_partial_body(
             400,
             self._expected_dict(
                 'RelayState and/or SAMLResponse', 'invalid-data', 'saml'
             ),
             self.client.saml.acs,
-            response=None,
-            token='token',
+            saml_response=None,
+            relay_state='state',
         )
 
-    def test_acs_missing_token_param(self) -> None:
+    def test_acs_missing_relay_state_param(self) -> None:
         assert_http_error_partial_body(
             400,
             self._expected_dict(
                 'RelayState and/or SAMLResponse', 'invalid-data', 'saml'
             ),
             self.client.saml.acs,
-            response='response',
-            token=None,
+            saml_response='response',
+            relay_state=None,
         )
