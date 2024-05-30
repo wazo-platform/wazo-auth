@@ -182,9 +182,6 @@ Requires following environment variables to be set:
 WAZO_SAML_LOGIN
 WAZO_SAML_PASSWORD
 
-### Adding a test
-You need to mark the test using `@pytest.mark.wazo_test_functional`.
-
 ## How to get help
 
 If you ever need help from the Wazo Platform community, the following resources are available:
