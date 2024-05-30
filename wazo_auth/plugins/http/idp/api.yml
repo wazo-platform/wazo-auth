@@ -17,6 +17,8 @@ paths:
     put:
       operationId: updateUsersIDP
       summary: Associate multiple users to a IDP
+      tags:
+        - idp
       parameters:
         - $ref: '#/parameters/idp_type'
         - name: body
