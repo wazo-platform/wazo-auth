@@ -19,9 +19,9 @@ class TestSamlService(APIIntegrationTest):
     def setup(self, page: Page):
         self.page = page
         try:
-            samlTestConfig = json.load(open('assets/saml/config/saml.json'))
-            self.login = samlTestConfig['login']
-            self.password = samlTestConfig['password']
+            saml_test_config = json.load(open('assets/saml/config/saml.json'))
+            self.login = saml_test_config['login']
+            self.password = saml_test_config['password']
         except FileNotFoundError as e:
             pytest.fail(f"Unable to load SAML test config ({e})")
         except ValueError as e:
