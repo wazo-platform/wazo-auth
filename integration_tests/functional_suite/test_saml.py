@@ -6,10 +6,11 @@ from typing import Any
 
 import pytest
 from playwright.sync_api import Page, expect
-from suite.helpers import base
-from suite.helpers.base import APIIntegrationTest
 
 from wazo_auth.database.queries.user import UserDAO
+
+from .helpers import base
+from .helpers.base import APIIntegrationTest
 
 
 @base.use_asset('base')
