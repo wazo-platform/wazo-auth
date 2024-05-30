@@ -1,0 +1,29 @@
+---
+- hosts: all
+  vars:
+    saml_json_conf_dir: '{{ zuul.project.src_dir }}/integration_tests/assets/saml/config/'
+    saml_json_conf_file: '{{ saml_json_conf_dir}}/saml.json'
+  tasks:
+    - name: Create directory for SAML credentials file
+      file:
+        path: '{{ saml_json_conf_dir }}'
+        state: directory
+
+    - name: Prepare saml.json with SAML credentials
+      copy:
+        content: |
+          {
+            "login": "{{ saml.login }}",
+            "password": "{{ saml.password }}"
+          }
+        dest: '{{ saml_json_conf_file }}'
+
+    - name: Validate saml.json creation
+      stat:
+        path: '{{ saml_json_conf_file }}'
+        checksum_algorithm: md5
+      register: hash_check
+
+    - name: Show md5 of saml config
+      debug:
+        var: hash_check.checksum

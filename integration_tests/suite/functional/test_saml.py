@@ -6,11 +6,10 @@ from typing import Any
 
 import pytest
 from playwright.sync_api import Page, expect
+from suite.helpers import base
+from suite.helpers.base import APIIntegrationTest
 
 from wazo_auth.database.queries.user import UserDAO
-
-from .helpers import base
-from .helpers.base import APIIntegrationTest
 
 
 @base.use_asset('base')
@@ -79,6 +78,7 @@ class TestSamlService(APIIntegrationTest):
         ).to_contain_text("Stay signed in?")
         page.get_by_role("button", name="No").click()
 
+    @pytest.mark.wazo_test_functional
     @pytest.mark.only_browser("chromium")
     @pytest.mark.browser_context_args(
         timezone_id="Europe/London", locale="en-GB", ignore_https_errors=True
