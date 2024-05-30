@@ -41,6 +41,7 @@
     name: auth-tox-integration
     description: Run auth integration tests
     parent: wazo-tox-integration-py39
+    pre-run: zuul.d/integration-pre-run.yaml
     timeout: 10800
     vars:
       integration_test_timeout: 60
