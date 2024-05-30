@@ -50,6 +50,7 @@
     description: Run auth functional tests
     parent: wazo-tox-integration-py39
     pre-run: zuul.d/functional-pre-run.yaml
+    tox_envlist: functional
     timeout: 10800
     vars:
       integration_test_timeout: 60
