@@ -5,7 +5,7 @@ import json
 from typing import Any
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import qPage, expect
 
 from wazo_auth.database.queries.user import UserDAO
 
@@ -79,12 +79,10 @@ class TestSamlService(APIIntegrationTest):
         ).to_contain_text("Stay signed in?")
         page.get_by_role("button", name="No").click()
 
-    @pytest.mark.wazo_test_functional
     @pytest.mark.only_browser("chromium")
     @pytest.mark.browser_context_args(
         timezone_id="Europe/London", locale="en-GB", ignore_https_errors=True
     )
-    @pytest.mark.browser_args(host_resolver_rules="MAP 127.0.0.1 *.wazo.local")
     def test_login(self) -> None:
         self._setup_tenant_and_domain("example.com")
         self._create_user(self.login)
