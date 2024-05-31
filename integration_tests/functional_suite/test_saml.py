@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
+import os
+import pathlib
 from typing import Any
 
 import pytest
@@ -18,16 +20,25 @@ class TestSamlService(APIIntegrationTest):
     @pytest.fixture(autouse=True)
     def setup(self, page: Page):
         self.page = page
-        try:
-            saml_test_config = json.load(open('assets/saml/config/saml.json'))
-            self.login = saml_test_config['login']
-            self.password = saml_test_config['password']
-        except FileNotFoundError as e:
-            pytest.fail(f"Unable to load SAML test config ({e})")
-        except ValueError as e:
-            pytest.fail(f"Unable to parse SAML test config credentials ({e})")
-        except Exception as e:
-            pytest.fail(f"Unexpected error while loading SAML test config ({e})")
+        conf_file = (
+            pathlib.Path(__file__).parent.parent / 'assets/saml/config/saml.json'
+        )
+        if conf_file.exists():
+            try:
+                with conf_file.open('r') as conf_file_stream:
+                    saml_test_config = json.load(conf_file_stream)
+                self.login = saml_test_config['login']
+                self.password = saml_test_config['password']
+            except FileNotFoundError as e:
+                pytest.fail(f"Unable to load SAML test config ({e})")
+            except ValueError as e:
+                pytest.fail(f"Unable to parse SAML test config credentials ({e})")
+            except Exception as e:
+                pytest.fail(f"Unexpected error while loading SAML test config ({e})")
+        if 'WAZO_SAML_LOGIN' in os.environ:
+            self.login = os.environ['WAZO_SAML_LOGIN']
+        if 'WAZO_SAML_PASSWORD' in os.environ:
+            self.password = os.environ['WAZO_SAML_PASSWORD']
 
     def _setup_tenant_and_domain(self, domain_name: str) -> None:
         self.tenant = self.client.tenants.new(
