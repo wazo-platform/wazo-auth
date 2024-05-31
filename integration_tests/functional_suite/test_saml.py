@@ -5,7 +5,7 @@ import json
 from typing import Any
 
 import pytest
-from playwright.sync_api import qPage, expect
+from playwright.sync_api import Page, expect
 
 from wazo_auth.database.queries.user import UserDAO
 
