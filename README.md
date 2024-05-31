@@ -101,9 +101,28 @@ tox --recreate -e py39
 
 ### Running integration tests
 
+You need a SAML test account and configuration, you need to create a configuration
+file .integration_tests/asses/saml/config/saml.json with following json:
+```json
+{
+  "login": "entraLogin",
+  "password": "entraPwd"
+}
+```
+then run
+
 ```sh
+playwright install
 tox -e integration
 ```
+Note: The `playwright install` command installs the required browsers to run tests.
+
+Playwright can be executed with headed browser and in a slowmotion mode, you
+need to uncomment some lines in tox.ini integration section and run:
+`tox -e integration -- suite/test_saml.py --headed --slowmo 1000`
+
+You can also use the GUI debugger - another modification available in tox.ini is
+required.
 
 ### Load testing
 
@@ -154,6 +173,14 @@ The output directory for profile files in tests can be configured with the
 env variable `WAZO_TEST_PROFILING_DIR`.
 
 The profile files can then be analyzed with visual tools like `snakeviz`.
+
+## Functional tests
+
+Can be run using tox -e functional.
+
+Requires following environment variables to be set:
+WAZO_SAML_LOGIN
+WAZO_SAML_PASSWORD
 
 ## How to get help
 

@@ -62,3 +62,13 @@ def mark_logs(request):
     request.cls.asset_cls.mark_logs_test_start(test_name)
     yield
     request.cls.asset_cls.mark_logs_test_end(test_name)
+
+
+@pytest.fixture(scope="session")
+def browser_type_launch_args(
+    browser_type_launch_args: dict,
+):
+    return {
+        **browser_type_launch_args,
+        'args': ["--host-resolver-rules=MAP *.wazo.local 127.0.0.1"],
+    }

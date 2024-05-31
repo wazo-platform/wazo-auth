@@ -34,10 +34,10 @@ class TestSAMLService(TestCase):
         return SamlAuthContext(saml_id, redirect_url, domain, login, None, date)
 
     def test_clean_pending_requests(self):
-        expired_date: datetime = datetime.fromisoformat('2000-01-01 00:00:02')
+        expired_date: datetime = datetime.fromisoformat('2000-01-01 00:00:00')
         expired: SamlAuthContext = self._get_auth_context(date=expired_date)
 
-        pending_date: datetime = datetime.fromisoformat('2000-01-01 00:00:01')
+        pending_date: datetime = datetime.fromisoformat('2000-01-01 00:00:02')
         pending: SamlAuthContext = self._get_auth_context(date=pending_date)
 
         self.service._outstanding_requests = {'id1': expired, 'id2': pending}
