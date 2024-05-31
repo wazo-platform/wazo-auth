@@ -164,10 +164,11 @@ class SAMLService(BaseService):
     def clean_pending_requests(self, maybe_now: datetime | None = None) -> None:
         now: datetime = maybe_now or datetime.now(timezone.utc)
         for k in list(self._outstanding_requests.keys()):
-            if (
+            expire_at: datetime = (
                 self._outstanding_requests[k].start_time + self._saml_session_lifetime
-                > now
-            ):
+            )
+            if now > expire_at:
+                logger.debug(f"Removing SAML context: {self._outstanding_requests}")
                 del self._outstanding_requests[k]
 
     def _reqid_by_saml_session_id(self, saml_session_id: str) -> str | None:
