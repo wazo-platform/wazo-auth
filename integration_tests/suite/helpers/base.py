@@ -226,9 +226,24 @@ class BaseIntegrationTest(unittest.TestCase):
         cls.Session.remove()
 
     @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        # cls.reset_clients()
+
+    def setUp(self):
+        super().setUp()
+        print("Starting test case")
+        token = self.client.token.new(expiration=7200)
+        print("token=", token)
+        self.client.set_token(token['token'])
+        self.admin_token = token['token']
+        self.admin_user_uuid = token['metadata']['uuid']
+
+    @classmethod
     def reset_clients(cls):
         cls.client = cls.asset_cls.make_auth_client(cls.username, cls.password)
         token = cls.client.token.new(expiration=7200)
+        print("token=", token)
         cls.client.set_token(token['token'])
         cls.admin_token = token['token']
         cls.admin_user_uuid = token['metadata']['uuid']
