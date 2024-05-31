@@ -1,4 +1,4 @@
-# Copyright 2020-2021 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from typing import Any
@@ -35,6 +35,15 @@ class TestSAML(base.APIIntegrationTest):
             self.client.saml.sso,
             domain=None,
             redirect_url='https://example.com/acs',
+        )
+
+    def test_sso_missing_all_params(self) -> None:
+        assert_http_error_partial_body(
+            400,
+            self._expected_dict('redirect_url', 'invalid-data', 'saml'),
+            self.client.saml.sso,
+            domain=None,
+            redirect_url=None,
         )
 
     def test_sso_unparsable_domain_param(self) -> None:
@@ -79,5 +88,16 @@ class TestSAML(base.APIIntegrationTest):
             ),
             self.client.saml.acs,
             saml_response='response',
+            relay_state=None,
+        )
+
+    def test_acs_missing_all_params(self) -> None:
+        assert_http_error_partial_body(
+            400,
+            self._expected_dict(
+                'RelayState and/or SAMLResponse', 'invalid-data', 'saml'
+            ),
+            self.client.saml.acs,
+            saml_response=None,
             relay_state=None,
         )
