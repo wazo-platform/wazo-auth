@@ -8,7 +8,7 @@
         - auth-tox-integration
     wazo-gate:
       jobs:
-        - auth-tox-integration
+        - auth-tox-integration-saml
 
 - secret:
     name: saml
@@ -37,13 +37,21 @@
           V5l5YH7RHL8S2x95JOrAeDarWLyTRiMkr/WasIru23RFjA154aQa1j+SN2KwaQ=
 
 - job:
-    name: auth-tox-integration
-    description: Run auth integration tests
+    name: auth-tox-integration-saml
+    description: Run auth integration tests including SAML tests
     parent: wazo-tox-integration-py39
-    pre-run: zuul.d/integration-pre-run.yaml    
+    pre-run: zuul.d/integration-pre-run.yaml
     timeout: 10800
     vars:
       integration_test_timeout: 60
     secrets:
       - name: saml
         secret: saml
+
+- job:
+    name: auth-tox-integration
+    description: Run auth integration tests
+    parent: wazo-tox-integration-py39
+    timeout: 10800
+    vars:
+      integration_test_timeout: 60
