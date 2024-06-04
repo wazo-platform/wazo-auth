@@ -38,14 +38,6 @@
           V5l5YH7RHL8S2x95JOrAeDarWLyTRiMkr/WasIru23RFjA154aQa1j+SN2KwaQ=
 
 - job:
-    name: auth-tox-integration
-    description: Run auth integration tests
-    parent: wazo-tox-integration-py39
-    timeout: 10800
-    vars:
-      integration_test_timeout: 60
-
-- job:
     name: auth-tox-functional
     description: Run auth functional tests
     parent: wazo-tox-integration-py39

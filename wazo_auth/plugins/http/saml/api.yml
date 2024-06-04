@@ -73,15 +73,15 @@ paths:
 definitions:
   SAMLResponse:
     properties:
-      response:
+      SAMLResponse:
         description: Encoded SAML XML response
         type: string
-      token:
-        description: Response token
+      RelayState:
+        description: Relay state parameter
         type: string
     required:
-    - response
-    - token
+    - SAMLResponse
+    - RelayState
     type: object
   SAMLSSOResponse:
     type: object
