@@ -54,3 +54,6 @@
     vars:
       tox_envlist: functional
       integration_test_timeout: 60
+    secrets:
+      - name: saml
+        secret: saml
