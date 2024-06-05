@@ -73,7 +73,7 @@ class TestSAMLService(TestCase):
         self.service._outstanding_requests = {req_key: cached_req}
 
         response = Mock()
-        response.ava = {'name': 'testname'}
+        response.ava = {'name': ['testname']}
         response.session_id.return_value = req_key
         mock_client = Mock()
         mock_client.parse_authn_request_response.return_value = response
