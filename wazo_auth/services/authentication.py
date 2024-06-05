@@ -2,19 +2,32 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
+from collections.abc import Mapping
 
+import stevedore
+
+from wazo_auth.database.queries import DAO
 from wazo_auth.exceptions import (
     InvalidUsernamePassword,
     NoMatchingSAMLSession,
     NoSuchBackendException,
     UnauthorizedAuthenticationMethod,
 )
+from wazo_auth.interfaces import BaseAuthenticationBackend
+from wazo_auth.services.saml import SAMLService
+from wazo_auth.services.tenant import TenantService
 
 logger = logging.getLogger(__name__)
 
 
 class AuthenticationService:
-    def __init__(self, dao, backends, tenant_service, saml_service):
+    def __init__(
+        self,
+        dao: DAO,
+        backends: Mapping[str, stevedore.extension.Extension],
+        tenant_service: TenantService,
+        saml_service: SAMLService,
+    ):
         self._dao = dao
         self._backends = backends
         self._tenant_service = tenant_service
@@ -94,7 +107,7 @@ class AuthenticationService:
 
         return backend, login
 
-    def _get_backend(self, backend_name):
+    def _get_backend(self, backend_name: str) -> BaseAuthenticationBackend:
         try:
             return self._backends[backend_name].obj
         except KeyError:
