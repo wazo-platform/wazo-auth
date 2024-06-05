@@ -33,7 +33,7 @@ LDAP_KWARGS = {
     'host': 'slapd',
     'port': LDAP_PORT,
     'bind_dn': 'cn=wazo_auth,ou=people,dc=wazo-auth,dc=wazo,dc=community',
-    'bind_password': 'S3cr$t',
+    'bind_password': 'S3cr$t',  # NOSONAR
     'user_base_dn': 'ou=quebec,ou=people,dc=wazo-auth,dc=wazo,dc=community',
     'user_login_attribute': 'mail',
     'user_email_attribute': 'mail',
