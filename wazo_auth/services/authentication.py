@@ -83,7 +83,7 @@ class AuthenticationService:
             raise UnauthorizedAuthenticationMethod(authorized_authentication_method)
 
         # There's no SAML backend
-        backend = backend = self._get_backend('wazo_user')
+        backend = self._get_backend('wazo_user')
 
         return backend, saml_login
 
