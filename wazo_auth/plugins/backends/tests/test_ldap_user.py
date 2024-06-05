@@ -9,6 +9,12 @@ from hamcrest import assert_that, equal_to, has_entries, has_items
 
 from wazo_auth.plugins.backends.ldap_user import LDAPUser, _WazoLDAP
 
+ALICE_PAYLOAD = {
+    'uuid': 'alice-uuid',
+    'emails': [{'address': 'foo@example.com'}],
+    'authentication_method': 'ldap',
+}
+
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
@@ -195,13 +201,7 @@ class TestVerifyPassword(BaseTestCase):
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
-        self.list_users.return_value = [
-            {
-                'uuid': 'alice-uuid',
-                'emails': [{'address': 'foo@example.com'}],
-                'authentication_method': 'ldap',
-            }
-        ]
+        self.list_users.return_value = [ALICE_PAYLOAD]
         args = {'tenant_id': 'test'}
 
         result = backend.verify_password('foo', 'bar', args)
@@ -227,13 +227,7 @@ class TestVerifyPassword(BaseTestCase):
             'uid=fo\\+o,dc=example,dc=com',
             {'mail': self.expected_user_email.encode('utf-8')},
         )
-        self.list_users.return_value = [
-            {
-                'uuid': 'alice-uuid',
-                'emails': [{'address': 'foo@example.com'}],
-                'authentication_method': 'ldap',
-            }
-        ]
+        self.list_users.return_value = [ALICE_PAYLOAD]
         args = {'tenant_id': 'test'}
 
         result = backend.verify_password('fo+o', 'bar', args)
@@ -261,13 +255,7 @@ class TestVerifyPassword(BaseTestCase):
             'uid=fo\\+o,dc=example,dc=com',
             {'mail': self.expected_user_email.encode('utf-8')},
         )
-        self.list_users.return_value = [
-            {
-                'uuid': 'alice-uuid',
-                'emails': [{'address': 'foo@example.com'}],
-                'authentication_method': 'ldap',
-            }
-        ]
+        self.list_users.return_value = [ALICE_PAYLOAD]
         args = {'tenant_id': 'test'}
 
         result = backend.verify_password('fo+o', 'bar', args)
@@ -338,13 +326,7 @@ class TestVerifyPassword(BaseTestCase):
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
-        self.list_users.return_value = [
-            {
-                'uuid': 'alice-uuid',
-                'emails': [{'address': 'foo@example.com'}],
-                'authentication_method': 'ldap',
-            }
-        ]
+        self.list_users.return_value = [ALICE_PAYLOAD]
         args = {'tenant_id': 'test'}
 
         result = backend.verify_password('foo', 'bar', args)
@@ -386,13 +368,7 @@ class TestVerifyPassword(BaseTestCase):
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
-        self.list_users.return_value = [
-            {
-                'uuid': 'alice-uuid',
-                'emails': [{'address': 'foo@example.com'}],
-                'authentication_method': 'ldap',
-            }
-        ]
+        self.list_users.return_value = [ALICE_PAYLOAD]
         args = {'tenant_id': 'test'}
 
         result = backend.verify_password('foo', 'bar', args)
@@ -426,13 +402,7 @@ class TestVerifyPassword(BaseTestCase):
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
-        self.list_users.return_value = [
-            {
-                'uuid': 'alice-uuid',
-                'emails': [{'address': 'foo@example.com'}],
-                'authentication_method': 'ldap',
-            }
-        ]
+        self.list_users.return_value = [ALICE_PAYLOAD]
         args = {'domain_name': 'wazo.io'}
 
         result = backend.verify_password('foo', 'bar', args)
@@ -456,13 +426,7 @@ class TestVerifyPassword(BaseTestCase):
         wazo_ldap = wazo_ldap.return_value
         wazo_ldap.perform_bind.return_value = True
         wazo_ldap.perform_search.return_value = self.search_obj_result
-        self.list_users.return_value = [
-            {
-                'uuid': 'alice-uuid',
-                'emails': [{'address': 'foo@example.com'}],
-                'authentication_method': 'ldap',
-            }
-        ]
+        self.list_users.return_value = [ALICE_PAYLOAD]
         args = {'domain_name': 'wazo.io'}
 
         result = backend.verify_password('FoO@EXampLE.coM', 'bar', args)

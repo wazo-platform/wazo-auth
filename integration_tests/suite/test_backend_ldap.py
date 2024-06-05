@@ -29,6 +29,16 @@ TENANT_1_UUID = '2ec55cd6-c465-47a9-922f-569b404c48b8'
 TENANT_2_UUID = '402f2ee0-2af9-4b87-80ce-9d9e94f620e5'
 LDAP_PORT = 1389
 
+LDAP_KWARGS = {
+    'host': 'slapd',
+    'port': LDAP_PORT,
+    'bind_dn': 'cn=wazo_auth,ou=people,dc=wazo-auth,dc=wazo,dc=community',
+    'bind_password': 'S3cr$t',
+    'user_base_dn': 'ou=quebec,ou=people,dc=wazo-auth,dc=wazo,dc=community',
+    'user_login_attribute': 'mail',
+    'user_email_attribute': 'mail',
+}
+
 
 class LDAPHelper:
     BASE_DN = 'dc=wazo-auth,dc=wazo,dc=community'
@@ -250,16 +260,7 @@ class TestLDAP(BaseLDAPIntegrationTest):
         tenant_uuid=TENANT_1_UUID,
         authentication_method='ldap',
     )
-    @fixtures.http.ldap_config(
-        tenant_uuid=TENANT_1_UUID,
-        host='slapd',
-        port=LDAP_PORT,
-        bind_dn='cn=wazo_auth,ou=people,dc=wazo-auth,dc=wazo,dc=community',
-        bind_password='S3cr$t',
-        user_base_dn='ou=quebec,ou=people,dc=wazo-auth,dc=wazo,dc=community',
-        user_login_attribute='mail',
-        user_email_attribute='mail',
-    )
+    @fixtures.http.ldap_config(tenant_uuid=TENANT_1_UUID, **LDAP_KWARGS)
     def test_ldap_authentication_works_when_login_with_case_sensitive_email_address(
         self, tenant, user1, user2, _
     ):
@@ -285,16 +286,7 @@ class TestLDAP(BaseLDAPIntegrationTest):
         default_authentication_method='ldap',
     )
     @fixtures.http.user(username='bobafett@wazo-auth.com', tenant_uuid=TENANT_1_UUID)
-    @fixtures.http.ldap_config(
-        tenant_uuid=TENANT_1_UUID,
-        host='slapd',
-        port=LDAP_PORT,
-        bind_dn='cn=wazo_auth,ou=people,dc=wazo-auth,dc=wazo,dc=community',
-        bind_password='S3cr$t',
-        user_base_dn='ou=quebec,ou=people,dc=wazo-auth,dc=wazo,dc=community',
-        user_login_attribute='mail',
-        user_email_attribute='mail',
-    )
+    @fixtures.http.ldap_config(tenant_uuid=TENANT_1_UUID, **LDAP_KWARGS)
     def test_ldap_authentication_when_user_has_no_email_address_but_username(
         self, tenant, user, _
     ):
@@ -323,16 +315,7 @@ class TestLDAP(BaseLDAPIntegrationTest):
         tenant_uuid=TENANT_1_UUID,
         authentication_method='ldap',
     )
-    @fixtures.http.ldap_config(
-        tenant_uuid=TENANT_1_UUID,
-        host='slapd',
-        port=LDAP_PORT,
-        bind_dn='cn=wazo_auth,ou=people,dc=wazo-auth,dc=wazo,dc=community',
-        bind_password='S3cr$t',
-        user_base_dn='ou=quebec,ou=people,dc=wazo-auth,dc=wazo,dc=community',
-        user_login_attribute='mail',
-        user_email_attribute='mail',
-    )
+    @fixtures.http.ldap_config(tenant_uuid=TENANT_1_UUID, **LDAP_KWARGS)
     def test_ldap_authentication_when_not_authorized(
         self,
         tenant,
