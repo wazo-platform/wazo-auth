@@ -113,7 +113,7 @@ class AuthenticationService:
             logger.debug('backend not found: "%s"', backend_name)
             raise NoSuchBackendException(backend_name)
 
-    def _authorized_authentication_method(self, login):
+    def _authorized_authentication_method(self, login: str):
         user = self._dao.user.get_user_by_login(login)
         if user.authentication_method != 'default':
             return user.authentication_method
