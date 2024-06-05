@@ -6,6 +6,8 @@ from flask import request
 
 from wazo_auth import exceptions, http
 from wazo_auth.flask_helpers import Tenant
+from wazo_auth.services.idp import IDPService
+from wazo_auth.services.user import UserService
 
 from .schemas import IDPUsersSchema
 
@@ -26,7 +28,7 @@ class IDPList(http.AuthResource):
 
 
 class _BaseIDPUser(http.AuthResource):
-    def __init__(self, user_service, idp_service):
+    def __init__(self, user_service: UserService, idp_service: IDPService):
         self._user_service = user_service
         self._idp_service = idp_service
 
