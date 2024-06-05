@@ -145,7 +145,7 @@ class SAMLService(BaseService):
             response.session_id()
         )
         if session_data:
-            update = {'response': response, 'login': response.ava['name']}
+            update = {'response': response, 'login': response.ava['name'][0]}
             self._outstanding_requests[response.session_id()] = replace(
                 session_data, **update
             )

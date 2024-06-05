@@ -75,10 +75,9 @@ class AuthenticationService:
         if not saml_login:
             raise NoMatchingSAMLSession(saml_session_id)
 
-        login = saml_login[0]
         if (
             authorized_authentication_method := self._authorized_authentication_method(
-                login
+                saml_login
             )
         ) != 'saml':
             raise UnauthorizedAuthenticationMethod(authorized_authentication_method)
@@ -86,7 +85,7 @@ class AuthenticationService:
         # There's no SAML backend
         backend = backend = self._get_backend('wazo_user')
 
-        return backend, login
+        return backend, saml_login
 
     def verify_refresh_token(self, refresh_token, client_id):
         logger.debug('verifying refresh token login')
