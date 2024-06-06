@@ -1,4 +1,4 @@
-# Copyright 2017-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unidecode import unidecode
@@ -13,6 +13,18 @@ class NoSuchBackendException(Exception):
 class InvalidUsernamePassword(Exception):
     def __init__(self, login):
         super().__init__(f'unknown username or password for login {login}')
+
+
+class NoMatchingSAMLSession(Exception):
+    def __init__(self, saml_session_id):
+        super().__init__(f'unknown saml_session_id {saml_session_id}')
+
+
+class UnauthorizedAuthenticationMethod(Exception):
+    def __init__(self, authorized_authentication_method):
+        super().__init__(
+            f'unauthorized authentication method should use {authorized_authentication_method}'
+        )
 
 
 class UnknownRefreshToken(APIException):
@@ -88,6 +100,13 @@ class UnknownExternalAuthConfigException(APIException):
         msg = f'No config found for this external auth type: "{auth_type}"'
         details = {'type': str(auth_type)}
         super().__init__(404, msg, 'unknown-external-auth', details, auth_type)
+
+
+class UnknownIDPType(APIException):
+    def __init__(self, idp_type):
+        msg = f'No such IDP type: "{idp_type}"'
+        details = {'idp_type': idp_type}
+        super().__init__(404, msg, 'unknown-idp-type', details, 'idp')
 
 
 class DuplicatedLDAPConfigException(Exception):

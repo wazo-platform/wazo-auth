@@ -8,6 +8,7 @@ from .default_policy import DefaultPolicyService
 from .email import EmailService
 from .external_auth import ExternalAuthService
 from .group import GroupService
+from .idp import IDPService
 from .ldap import LDAPService
 from .policy import PolicyService
 from .saml import SAMLService
@@ -24,6 +25,7 @@ __all__ = [
     'EmailService',
     'ExternalAuthService',
     'GroupService',
+    'IDPService',
     'LDAPService',
     'PasswordEncrypter',
     'PolicyService',

@@ -58,8 +58,23 @@ class Controller:
         self.dao = queries.DAO.from_defaults()
         self._tenant_tree = services.helpers.TenantTree(self.dao.tenant)
         self._backends = BackendsProxy()
+        self._default_group_service = services.DefaultGroupService(
+            self.dao,
+            config['tenant_default_groups'],
+        )
+        self._tenant_service = services.TenantService(
+            self.dao,
+            self._tenant_tree,
+            config['all_users_policies'],
+            self._default_group_service,
+            self._bus_publisher,
+        )
+        self._saml_service = services.SAMLService(self._config, self._tenant_service)
         authentication_service = services.AuthenticationService(
-            self.dao, self._backends
+            self.dao,
+            self._backends,
+            self._tenant_service,
+            self._saml_service,
         )
         email_service = services.EmailService(
             self.dao, self._tenant_tree, config, template_formatter
@@ -85,18 +100,6 @@ class Controller:
         self._token_service = services.TokenService(
             config, self.dao, self._tenant_tree, self._bus_publisher, self._user_service
         )
-        self._default_group_service = services.DefaultGroupService(
-            self.dao,
-            config['tenant_default_groups'],
-        )
-        self._tenant_service = services.TenantService(
-            self.dao,
-            self._tenant_tree,
-            config['all_users_policies'],
-            self._default_group_service,
-            self._bus_publisher,
-        )
-        self._saml_service = services.SAMLService(self._config, self._tenant_service)
         self._default_policy_service = services.DefaultPolicyService(
             self.dao,
             config['default_policies'],
@@ -105,6 +108,7 @@ class Controller:
             self.dao,
             config['all_users_policies'],
         )
+        self._idp_service = services.IDPService(self.dao, self._tenant_tree)
 
         ldap_service = services.LDAPService(self.dao, self._tenant_tree)
 
@@ -148,6 +152,7 @@ class Controller:
             'email_service': email_service,
             'external_auth_service': external_auth_service,
             'group_service': group_service,
+            'idp_service': self._idp_service,
             'user_service': self._user_service,
             'token_service': self._token_service,
             'token_manager': self._token_service,  # For compatibility only
@@ -198,6 +203,7 @@ class Controller:
                     self._config['bootstrap_user_username'],
                     self._config['bootstrap_user_password'],
                     self._config.get('bootstrap_user_purpose') or bootstrap.PURPOSE,
+                    bootstrap.AUTHENTICATION_METHOD,
                     self._config.get('bootstrap_user_policy_slug')
                     or bootstrap.DEFAULT_POLICY_SLUG,
                 )

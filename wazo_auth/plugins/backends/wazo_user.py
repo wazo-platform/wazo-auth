@@ -1,4 +1,4 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -13,6 +13,7 @@ class WazoUser(BaseAuthenticationBackend):
         super().load(dependencies)
         self._user_service = dependencies['user_service']
         self._group_service = dependencies['group_service']
+        self._tenant_service = dependencies['tenant_service']
         self._purposes = dependencies['purposes']
 
     def get_acl(self, login, args):

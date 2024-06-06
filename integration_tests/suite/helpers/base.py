@@ -290,7 +290,7 @@ class BaseIntegrationTest(unittest.TestCase):
         policy = self.client.policies.new(name=random_string(5), acl=['#'])
         self.client.users.add_policy(user['uuid'], policy['uuid'])
         client = self.asset_cls.make_auth_client(username, password)
-        token = client.token.new(backend='wazo_user', expiration=3600)['token']
+        token = client.token.new(expiration=3600)['token']
         client.set_token(token)
 
         try:

@@ -1,5 +1,30 @@
 # Changelog
 
+## 24.08
+
+* The following resources have been added
+  * GET `0.1/idp`
+  * PUT `0.1/idp/<idp_type>/users/<user_uuid>`
+  * DELETE `0.1/idp/<idp_type>/users/<user_uuid>`
+  * PUT `0.1/idp/<idp_type>/users`
+
+* The `backend` parameter during token creation is now ignored. The configured authentication method of the user or tenant is used instead.
+
+* The `tenants` resource now has the `default_authentication_method` field which can contain the following values
+
+  * `native`
+  * `ldap`
+  * `saml`
+
+* The `users` resource now has the `authentication_method` field which can contain the following values
+
+  * `default`
+  * `native`
+  * `ldap`
+  * `saml`
+
+
+
 ## 24.07
 
 * The external API `POST /external/mobile/config` accepts a new key:

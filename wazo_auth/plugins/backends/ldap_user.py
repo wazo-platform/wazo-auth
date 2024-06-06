@@ -153,8 +153,7 @@ class LDAPUser(BaseAuthenticationBackend):
 
     def _get_user_by_ldap_attribute(self, user_email, tenant_uuid):
         for user in self._user_service.list_users(tenant_uuid=tenant_uuid):
-            user_emails = user.get('emails')
-            if user_emails:
+            if user_emails := user.get('emails'):
                 for email in user_emails:
                     if caseless_equal(email.get('address', ''), user_email):
                         return user
