@@ -55,6 +55,7 @@ class TestSamlService(APIIntegrationTest):
             'purpose': 'user',
             'enabled': True,
             'tenant_uuid': self.tenant['uuid'],
+            'authentication_method': 'saml',
         }
         UserDAO().create(**user)
         self.session.commit()
