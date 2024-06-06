@@ -9,7 +9,7 @@ import shutil
 import string
 import unittest
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 import requests
@@ -207,7 +207,7 @@ class DAOTestCase(unittest.TestCase):
 
     @contextmanager
     def check_db_requests(self, nb_requests):
-        time_start = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        time_start = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
         nb_logs_start = self.asset_cls.count_database_logs(since=time_start)
         yield
         nb_logs_end = self.asset_cls.count_database_logs(since=time_start)
