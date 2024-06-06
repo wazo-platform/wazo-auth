@@ -1,0 +1,111 @@
+paths:
+  /saml/sso:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      description: |
+        Returns the information (SAML request and redirect location) that
+        the client needs to use to authenticate using the configured identity
+        provider. The redirection does not happen automatically, the client
+        has to use the `location` provided in the body of the response.
+      summary: Creates and returns context and redirects to IdP login page
+      operationId: samlSSO
+      tags:
+      - token
+      - saml
+      parameters:
+      - description: SAML SSO Login context
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SAMLLoginContext'
+      responses:
+        '201':
+          description: |
+            The `Location` header contains the URL of the identity provider that should be
+            used by the client to authenticate.
+          schema:
+            $ref: '#/definitions/SAMLSSOResponse'
+        '400':
+          description: Missing or wrong parameters.
+        '500':
+          description: |
+            Failed to initialize SAML SSO. Please check your stack configuration.
+
+  /saml/acs:
+    post:
+      consumes:
+      - multipart/form-data
+      description: |
+        Receives the SAML response created by the identity provider.
+
+        The internal cache allows to retrieve the context and redirect the browser
+        to process the login.
+      summary: Processes the IdP response and redirects to requested URL
+      operationId: processACS
+      tags:
+      - token
+      - saml
+      parameters:
+      - name: body
+        in: body
+        description: The SAML response
+        required: true
+        schema:
+          $ref: '#/definitions/SAMLResponse'
+      responses:
+        '303':
+          description: Redirect browser to process the login.
+        '400':
+          description: Missing or wrong parameters.
+        '404':
+          description: Context of the response not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Error while processing the SAML response
+          schema:
+            $ref: '#/definitions/Error'
+
+definitions:
+  SAMLResponse:
+    properties:
+      SAMLResponse:
+        description: Encoded SAML XML response
+        type: string
+      RelayState:
+        description: Relay state parameter
+        type: string
+    required:
+    - SAMLResponse
+    - RelayState
+    type: object
+  SAMLSSOResponse:
+    type: object
+    properties:
+      location:
+        description: |
+          The URL that the client should open to complete the authentication
+          request
+        type: string
+      saml_session_id:
+        type: string
+        description: |
+          The saml_session_id needs to be used to create a wazo-auth token
+          once the SAML authentication has been completed successfully
+
+  SAMLLoginContext:
+    properties:
+      redirect_url:
+        description: Where to redirect the browser once the login succeeded
+        type: string
+      domain:
+        description: The domain name of the tenant
+        type: string
+    required:
+    - redirect_url
+    - domain
+    type: object

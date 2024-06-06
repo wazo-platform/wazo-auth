@@ -36,6 +36,7 @@ _DEFAULT_CONFIG = {
     'oauth2_synchronization_redirect_url_template': 'https://oauth.wazo.io/{auth_type}/authorize',
     'enabled_http_plugins': {
         'api': True,
+        'idp': True,
         'backends': True,
         'config': True,
         'email_confirm': True,
@@ -55,6 +56,7 @@ _DEFAULT_CONFIG = {
         'user_registration': False,
         'user_session': True,
         'users': True,
+        'saml': True,
     },
     'enabled_backend_plugins': {
         'ldap_user': True,
@@ -120,6 +122,13 @@ _DEFAULT_CONFIG = {
     'bootstrap_user_on_startup': False,
     'bootstrap_user_username': None,
     'bootstrap_user_password': None,
+    'saml': {
+        'domains': {},
+        'saml_session_lifetime_seconds': 600,
+        'xmlsec_binary': '/usr/bin/xmlsec1',
+        'key_file': '/var/lib/wazo-auth/saml/server.key',
+        'cert_file': '/var/lib/wazo-auth/saml/server.crt',
+    },
 }
 
 

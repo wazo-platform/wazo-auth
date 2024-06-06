@@ -75,6 +75,7 @@ class TestTenantPost(HTTPAppTestCase):
             phone=None,
             contact_uuid=None,
             parent_uuid=s.tenant_uuid,
+            default_authentication_method='native',
             domain_names=['wazo.io'],
             address=dict(
                 line_1=None,
@@ -249,6 +250,7 @@ class TestTenantPost(HTTPAppTestCase):
             phone=None,
             contact_uuid=None,
             parent_uuid=s.tenant_uuid,
+            default_authentication_method='native',
             domain_names=sorted(list(set(duplicate_domain_names))),
             address=dict(
                 line_1=None,

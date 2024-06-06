@@ -24,7 +24,7 @@ COPY ./templates /var/lib/wazo-auth/templates
 RUN true \
     && adduser --quiet --system --group --home /var/lib/wazo-auth wazo-auth \
     && apt-get -q update \
-    && apt-get -yq install --no-install-recommends libldap2-dev libsasl2-dev \
+    && apt-get -yq install --no-install-recommends libldap2-dev libsasl2-dev xmlsec1 \
     && mkdir -p /etc/wazo-auth/conf.d \
     && mkdir -p /etc/wazo-auth/templates.d \
     && install -o wazo-auth -g wazo-auth /dev/null /var/log/wazo-auth.log \

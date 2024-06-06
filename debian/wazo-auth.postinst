@@ -9,6 +9,9 @@ USER='wazo-auth'
 HOME="/var/lib/${USER}"
 GROUP=$USER
 LOG_FILENAME="/var/log/${DAEMONNAME}.log"
+SAML_DIR="${HOME}/saml"
+KEY_FILE="${SAML_DIR}/server.key"
+CERT_FILE="${SAML_DIR}/server.crt"
 
 case "$1" in
     configure)
@@ -32,6 +35,20 @@ case "$1" in
             ln -sf  /etc/nginx/locations/https-available/$DAEMONNAME \
                     /etc/nginx/locations/https-enabled/$DAEMONNAME
         fi
+
+        if [ ! -e "${SAML_DIR}" ]; then
+            mkdir -p "${SAML_DIR}"
+            chown $USER:$GROUP "$SAML_DIR"
+        fi
+
+        if [ ! -e "$KEY_FILE" -o ! -e "$CERT_FILE" ] ; then
+            config="${SAML_DIR}/openssl-x509.conf"
+            openssl req -x509 -sha256 -nodes -days 825 -newkey rsa:2048 -config "$config" -keyout "${KEY_FILE}" -out "${CERT_FILE}"
+        fi
+
+        chown $USER:$GROUP "${KEY_FILE}" "${CERT_FILE}"
+        chmod 640 "${KEY_FILE}"
+        chmod 644 "${CERT_FILE}"
 
         db_get wazo-auth/db-skip
         db_skip="$RET"

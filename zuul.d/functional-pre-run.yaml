@@ -1,0 +1,61 @@
+---
+- hosts: all
+  vars:
+    saml_json_conf_dir: '{{ zuul.project.src_dir }}/integration_tests/assets/saml/config/'
+    saml_json_conf_file: '{{ saml_json_conf_dir}}/saml.json'
+  tasks:
+    - name: Create directory for SAML credentials file
+      file:
+        path: '{{ saml_json_conf_dir }}'
+        state: directory
+
+    - name: Prepare saml.json with SAML credentials
+      copy:
+        content: |
+          {
+            "login": "{{ saml.login }}",
+            "password": "{{ saml.password }}"
+          }
+        dest: '{{ saml_json_conf_file }}'
+
+    - name: Validate saml.json creation
+      stat:
+        path: '{{ saml_json_conf_file }}'
+        checksum_algorithm: md5
+      register: hash_check
+
+    - name: Show md5 of saml config
+      debug:
+        var: hash_check.checksum
+
+    - name: Install playwright dependencies
+      become: yes
+      apt:
+        state: present
+        name:
+          - libnss3
+          - libnspr4
+          - libatk1.0-0
+          - libatk-bridge2.0-0
+          - libcups2
+          - libdrm2
+          - libatspi2.0-0
+          - libx11-6
+          - libxcomposite1
+          - libxdamage1
+          - libxext6
+          - libxfixes3
+          - libxrandr2
+          - libgbm1
+          - libxcb1
+          - libxkbcommon0
+          - libpango-1.0-0
+          - libcairo2
+          - libasound2
+          - libx11-xcb1
+          - libxcursor1
+          - libxi6
+          - libgtk-3-0
+          - libpangocairo-1.0-0
+          - libcairo-gobject2
+          - libgdk-pixbuf-2.0-0

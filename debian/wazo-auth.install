@@ -1,2 +1,3 @@
 etc/*  etc/
 templates/* var/lib/wazo-auth/templates/
+openssl-x509.conf var/lib/wazo-auth/saml

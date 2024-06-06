@@ -6,7 +6,7 @@ from flask import request
 
 from wazo_auth import exceptions, http
 from wazo_auth.plugin_helpers.flask import extract_connection_params
-from wazo_auth.schemas import TenantFullSchema
+from wazo_auth.plugins.http.tenants.schemas import TenantFullSchema
 
 from .schemas import UserRegisterPostSchema
 

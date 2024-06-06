@@ -18,12 +18,21 @@ class _Address:
 
 
 class _Tenant:
-    def __init__(self, contact=None, uuid=None, name=None, address=None, slug=None):
+    def __init__(
+        self,
+        contact=None,
+        uuid=None,
+        name=None,
+        address=None,
+        slug=None,
+        default_authentication_method=None,
+    ):
         self.uuid = uuid
         self.name = name
         self.address = address
         self.contact_uuid = contact
         self.slug = slug
+        self.default_authentication_method = default_authentication_method
 
 
 class TestTenantSchema(TestCase):
@@ -45,6 +54,7 @@ class TestTenantSchema(TestCase):
                     'slug': 'slug',
                     'contact': None,
                     'phone': None,
+                    'default_authentication_method': None,
                     'domain_names': [],
                     'address': {
                         'line_1': None,
@@ -98,15 +108,30 @@ class TestTenantSchema(TestCase):
 
         assert_that(result, has_entries(contact=contact))
 
-    def test_uuid(self):
+    def test_load_default_values(self):
         body = {'name': 'foobar', 'slug': 'slug'}
 
         result = self.schema.load(body)
+        print(result)
 
-        assert_that(result, has_entries(uuid=None, name='foobar'))
+        assert_that(
+            result,
+            has_entries(
+                uuid=None,
+                name='foobar',
+                default_authentication_method='native',
+            ),
+        )
 
         uuid_ = body['uuid'] = 'c5b146ac-a442-4d65-a087-09a5f943ca53'
 
         result = self.schema.load(body)
 
-        assert_that(result, has_entries(uuid=UUID(uuid_), name='foobar'))
+        assert_that(
+            result,
+            has_entries(
+                uuid=UUID(uuid_),
+                name='foobar',
+                default_authentication_method='native',
+            ),
+        )

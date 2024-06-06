@@ -8,11 +8,9 @@ paths:
       summary: Creates a token
       description: |
         Creates a valid token for the supplied username and password combination or refresh_token
-        using the specified backend.
+        using the configured authentication method.
 
         The user's email address can be used instead of the username if the email address is confirmed.
-
-        The stock backends are: ``wazo_user``, ``ldap_user``.
 
         Creating  a token with the `access_type` *offline* will also create a refresh token which can be used
         to create a new token without specifying the username and password.
@@ -34,9 +32,6 @@ paths:
         schema:
           type: object
           properties:
-            backend:
-              type: string
-              default: wazo_user
             domain_name:
               type: string
               description: |
@@ -73,6 +68,12 @@ paths:
                 The `refresh_token` can be used to get a new access token without using the username/password.
                 This is useful for client application that should not store the username and password once the
                 user has logged in a first time.
+            saml_session_id:
+              type: string
+              description: |
+                The `saml_session_id` can be used to get a new access token or refresh token instead of using
+                the username/password. It can be created using the `/saml/sso` and `/saml/acs` resources. A token
+                created this way has the same properties as another token created using this API.
       responses:
         '200':
           description: "The created token's data"

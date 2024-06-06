@@ -210,57 +210,53 @@ definitions:
     required:
       - old_password
       - new_password
+  UserBase:
+    type: object
+    properties:
+      username:
+        type: string
+        description: The username that will identify that new username
+      firstname:
+        type: string
+        description: "The user's firstname"
+      lastname:
+        type: string
+        description: "The user's lastname"
+      enabled:
+        type: boolean
+      purpose:
+        type: string
+        default: user
+        enum:
+        - user
+        - internal
+        - external_api
+      authentication_method:
+        type: string
+        default: default
+        description: The authentication method allowed for this user. Using "default" will use the tenant's default_authentication_method value for this user.
+        enum:
+          - default
+          - native
+          - ldap
+          - saml
   UserCreate:
-    type: object
-    properties:
-      uuid:
-        type: string
-        description: "The user's UUID"
-      username:
-        type: string
-        description: The username that will identify that new username
-      password:
-        type: string
-        description: The password of the newly created username
-      firstname:
-        type: string
-        description: "The user's firstname"
-      lastname:
-        type: string
-        description: "The user's lastname"
-      enabled:
-        type: boolean
-      email_address:
-        type: string
-        description: The main email address of the new username
-      purpose:
-        type: string
-        default: user
-        enum:
-        - user
-        - internal
-        - external_api
+    allOf:
+      - $ref: '#/definitions/UserBase'
+      - type: object
+        properties:
+          uuid:
+            type: string
+            description: "The user's UUID"
+          password:
+            type: string
+            description: The password of the newly created username
+          email_address:
+            type: string
+            description: The main email address of the new username
   UserEdit:
-    type: object
-    properties:
-      username:
-        type: string
-        description: The username that will identify that new username
-      firstname:
-        type: string
-        description: "The user's firstname"
-      lastname:
-        type: string
-        description: "The user's lastname"
-      enabled:
-        type: boolean
-      purpose:
-        type: string
-        default: user
-        enum:
-        - user
-        - internal
-        - external_api
+    allOf:
+      - $ref: '#/definitions/UserBase'
   UserEmail:
     type: object
     properties:
@@ -301,6 +297,15 @@ definitions:
         - user
         - internal
         - external_api
+      authentication_method:
+        type: string
+        default: default
+        description: The authentication method allowed for this user. Using "default" will use the tenant's default_authentication_method value for this user.
+        enum:
+          - default
+          - native
+          - ldap
+          - saml
   UserResult:
     type: object
     properties:

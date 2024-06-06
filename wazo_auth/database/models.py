@@ -135,6 +135,11 @@ class Tenant(Base):
     phone = Column(Text)
     contact_uuid = Column(String(38), ForeignKey('auth_user.uuid', ondelete='SET NULL'))
     parent_uuid = Column(String(38), ForeignKey('auth_tenant.uuid'), nullable=False)
+    default_authentication_method = Column(
+        Text,
+        CheckConstraint("default_authentication_method in ('native', 'ldap', 'saml')"),
+        nullable=False,
+    )
     domains = relationship(
         'Domain',
         cascade="all, delete-orphan",
@@ -320,6 +325,13 @@ class User(Base):
     purpose = Column(
         Text,
         CheckConstraint("purpose in ('user', 'internal', 'external_api')"),
+        nullable=False,
+    )
+    authentication_method = Column(
+        Text,
+        CheckConstraint(
+            "default_authentication_method in ('default', 'native', 'ldap', 'saml')"
+        ),
         nullable=False,
     )
     enabled = Column(Boolean)

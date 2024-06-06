@@ -33,6 +33,7 @@ setup(
         ],
         'wazo_auth.http': [
             'api = wazo_auth.plugins.http.api.plugin:Plugin',
+            'idp = wazo_auth.plugins.http.idp.plugin:Plugin',
             'backends = wazo_auth.plugins.http.backends.plugin:Plugin',
             'config = wazo_auth.plugins.http.config.plugin:Plugin',
             'email_confirm = wazo_auth.plugins.http.email_confirm.plugin:Plugin',
@@ -52,6 +53,7 @@ setup(
             'user_registration = wazo_auth.plugins.http.user_registration.plugin:Plugin',
             'user_session = wazo_auth.plugins.http.user_session.plugin:Plugin',
             'users = wazo_auth.plugins.http.users.plugin:Plugin',
+            'saml = wazo_auth.plugins.http.saml.plugin:Plugin',
         ],
         'wazo_auth.external_auth': [
             'google = wazo_auth.plugins.external_auth.google.plugin:GooglePlugin',

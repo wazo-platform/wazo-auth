@@ -9,6 +9,33 @@
     wazo-gate:
       jobs:
         - auth-tox-integration
+        - auth-tox-functional
+
+- secret:
+    name: saml
+    data:
+      login: !encrypted/pkcs1-oaep
+        - kJIzs5to/HYDpV20fA8DvlVOlvbdQRDjKOkr8ysHNHR60Rc99I57Y8LwDuwQi7Z5vUJGD
+          hTSzwSgEV6g/Zp9aDwi72KT0IK9BQtRKK5kM+JQks6/9ocYLNe9/neuwEr3hLr7oilJMl
+          q3zvisruT4Uiygg/++5iQ6hQ53aMta5nJ0o2znZwy8Ppe+PSNOt2gm3CDpuSMMFfiN1ah
+          iKt69dPRqGgLVMEGj73l8kwfA4jTP2XjEjPGSrMndHCEyH4Z0BAYS1iKO1b1wqj+80BKZ
+          fbHuQF0dq7zfshLLztWOrYwWJnDd3frX+PL65mjlMpTF/n6P+o1lSs+q7yt5CaoxfD+Vf
+          BHrD10BmBGvG1JUmahNwQejGddx8nLUNC4IBsvrTOr3hfGTTPjZKQM2idWHiCIRQq4tQ4
+          /qzI5eQmQkvQh7kNHAopNmta10lmxTXjJqLlf52iqYZv74Tyw4NE0y4AYAcqxx1CZ/EEF
+          rmlhvuR/9vVrJ91cErflbeENKZ5K4ZcnfC8BoNveUYKxRG9ObsuZngCzai8OrRfMRVANI
+          u1RnMcBHzcFZFK5Gwqp3LwRASLvNjA/glzN0LJk9TR2kJAZ47cAo8gxrIhtMIlo9Gnso7
+          kbq5zRkZ4ZWujHCatifxiGaGWZfmrzseXHhB+UwYFdgGkA/48Ch5RG6nr6iLkM=
+      password: !encrypted/pkcs1-oaep
+        - nZOqDz5skVAgJYd287z/KzvmIhtkzoRM1lu/Os5Tn/XBqcbHFNPIaNiWCgaP9w78qkWsd
+          QPQBMuzp/EifD7MVXM2lFqmCeOtXmDxSw5nm43JVCI7e+T12NsMrR7hbk08atCaxSNBx0
+          UcfR2MTcxqkN1UjGr6+Kyqk0wkxrZirmHdBVeNohDw9cRBkqO1CfpL+JpovWkTTh46T/2
+          lCvSOxMaMA90gCdS1fk4VCXJRS/kLI8kRPOmo7hyehO6JgqsL5tiraCejJI2iTYBWKUON
+          d+ZZwcRMEKzXy7FDRnE2nDv5xiN+78QzmWovqyamFhGymmCBVPHBFBHtlEmgz6jS7f6Ck
+          79H9Btm3i5g+J1HWwgROhwzW8YUeJjQyi6Lz4wxgGqsIzG5DrnCJ/fLWbB1YRgpGTFVn/
+          uGuzbIseRwjKaJW0eEj/EAjVG5Ydbjip+IW5e3DnVBtc13CvVcy67sXW6DhHAwlMUWfBf
+          IxbU0QBpUsEhWaB3Kss4qcPB8Hd+jPcZf+z6d5Go/nonQIHr4onq+97CgCFjXJjpi/y5Y
+          Kmf94yuWcA3mrEmjJq6CKQjO5R/kgOSV27k4bZ3/IfdnWSvw2mNJbIciNJCoTnMVoZAei
+          V5l5YH7RHL8S2x95JOrAeDarWLyTRiMkr/WasIru23RFjA154aQa1j+SN2KwaQ=
 
 - job:
     name: auth-tox-integration
@@ -17,3 +44,16 @@
     timeout: 10800
     vars:
       integration_test_timeout: 60
+
+- job:
+    name: auth-tox-functional
+    description: Run auth functional tests
+    parent: wazo-tox-integration-py39
+    pre-run: zuul.d/functional-pre-run.yaml
+    timeout: 10800
+    vars:
+      tox_envlist: functional
+      integration_test_timeout: 60
+    secrets:
+      - name: saml
+        secret: saml

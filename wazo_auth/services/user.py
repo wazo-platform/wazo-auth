@@ -1,4 +1,4 @@
-# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import binascii
@@ -105,7 +105,10 @@ class UserService(BaseService):
         raise exceptions.UnknownUserException(user_uuid)
 
     def get_user_uuid_by_login(self, login):
-        return self._dao.user.get_user_uuid_by_login(login)
+        return self._dao.user.get_user_by_login(login).uuid
+
+    def get_user_by_login(self, login):
+        return self._dao.user.get_user_by_login(login)
 
     def list_groups(self, user_uuid, **kwargs):
         return self._dao.group.list_(user_uuid=user_uuid, **kwargs)
@@ -184,12 +187,10 @@ class UserService(BaseService):
             return True
 
         try:
-            user_uuid = self._dao.user.get_user_uuid_by_login(login)
-            hash_, salt = self._dao.user.get_credentials(user_uuid)
-        except (
-            exceptions.UnknownLoginException,
-            exceptions.UnknownUserUUIDException,
-        ):
+            user = self._dao.user.get_user_by_login(login)
+            hash_ = user.password_hash
+            salt = user.password_salt
+        except exceptions.UnknownLoginException:
             hash_ = self._unknown_user_hash
             salt = self._unknown_user_salt
 

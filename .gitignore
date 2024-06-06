@@ -7,3 +7,4 @@ build
 coverage.xml
 dist
 unit-tests.xml
+integration_tests/assets/saml/config/saml.json

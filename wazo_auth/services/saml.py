@@ -1,0 +1,178 @@
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
+# SPDX-License-Identifier: GPL-3.0-or-later
+from __future__ import annotations
+
+import logging
+import secrets
+from dataclasses import dataclass, field, replace
+from datetime import datetime, timedelta, timezone
+from functools import partial
+from typing import Any, TypedDict
+
+from saml2 import BINDING_HTTP_POST
+from saml2.client import Saml2Client
+from saml2.config import Config as SAMLConfig
+from saml2.response import AuthnResponse
+
+from wazo_auth.services.helpers import BaseService
+from wazo_auth.services.tenant import TenantService
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class SamlAuthContext:
+    saml_session_id: str
+    redirect_url: str
+    domain: str
+    login: str | None = None
+    response: AuthnResponse | None = None
+    start_time: datetime = field(default_factory=partial(datetime.now, timezone.utc))
+
+
+class SAMLACSFormData(TypedDict):
+    RelayState: str
+    SAMLResponse: str
+
+
+RawSAMLConfig = dict[str, Any]
+
+
+class WazoSAMLConfig(TypedDict):
+    saml_session_lifetime_seconds: int
+    key_file: str
+    cert_file: str
+    xmlsec_binary: str
+    domains: dict[str, RawSAMLConfig]
+
+
+class Config(TypedDict, total=False):
+    saml: WazoSAMLConfig
+
+
+class SAMLService(BaseService):
+    def __init__(self, config: Config, tenant_service: TenantService):
+        self._config = config
+        self._outstanding_requests: dict[Any, SamlAuthContext] = {}
+        self._saml_clients: dict[str, Saml2Client] = {}
+        self._tenant_service = tenant_service
+
+        self._init_clients()
+        self._saml_session_lifetime = timedelta(
+            seconds=config['saml']['saml_session_lifetime_seconds']
+        )
+
+    def _init_clients(self):
+        key_file = self._config['saml']['key_file']
+        cert_file = self._config['saml']['cert_file']
+        if not key_file or not cert_file:
+            raise Exception(
+                '"key_file" or "cert_file" are missing from the SAML configuration'
+            )
+
+        global_saml_config = {
+            'xmlsec_binary': self._config['saml'].get('xmlsec_binary'),
+            'key_file': key_file,
+            'cert_file': cert_file,
+        }
+        logger.debug('Global SAML config: %s', global_saml_config)
+        domain_configs = self._config['saml']['domains']
+        if not domain_configs:
+            logger.debug('No SAML configuration found for any domain')
+            return
+
+        for domain, raw_saml_config in domain_configs.items():
+            matching_tenants = self._tenant_service.list_(
+                domain_name=domain, scoping_tenant_uuid=None
+            )
+            if not matching_tenants:
+                logger.info('Ignoring SAML config for "%s" no matching tenant', domain)
+                continue
+            raw_saml_config['relay_state'] = domain
+            raw_saml_config.update(global_saml_config)
+            try:
+                saml_config = SAMLConfig()
+                saml_config.load(raw_saml_config)
+                saml_client = Saml2Client(config=saml_config)
+                logger.debug('SAML config : %s', vars(saml_config))
+                self._saml_clients[domain] = saml_client
+            except Exception:
+                logger.exception('Error during SAML client init for domain %s', domain)
+
+    def get_client(self, domain: str):
+        return self._saml_clients[domain]
+
+    def prepare_redirect_response(
+        self,
+        redirect_url: str,
+        domain: str,
+    ):
+        saml_session_id = secrets.token_urlsafe(16)
+        client = self.get_client(domain)
+        reqid, info = client.prepare_for_authenticate(relay_state=domain)
+
+        self._outstanding_requests[reqid] = SamlAuthContext(
+            saml_session_id,
+            redirect_url,
+            domain,
+        )
+        location = [i for i in info['headers'] if i[0] == 'Location'][0][1]
+        return location, saml_session_id
+
+    def process_auth_response(
+        self, url: str, remote_addr: str, form_data: SAMLACSFormData
+    ) -> str | None:
+        saml_client = self.get_client(form_data['RelayState'])
+        conv_info = {
+            "remote_addr": remote_addr,
+            "request_uri": url,
+            "entity_id": saml_client.config.entityid,
+            "endpoints": saml_client.config.getattr("endpoints", "sp"),
+        }
+
+        response = saml_client.parse_authn_request_response(
+            form_data['SAMLResponse'],
+            BINDING_HTTP_POST,
+            self._outstanding_requests,
+            None,
+            conv_info=conv_info,
+        )
+
+        logger.debug('SAML SP response: %s', response)
+        logger.info('SAML response AVA: %s', response.ava)
+
+        session_data: SamlAuthContext | None = self._outstanding_requests.get(
+            response.session_id()
+        )
+        if session_data:
+            update = {'response': response, 'login': response.ava['name'][0]}
+            self._outstanding_requests[response.session_id()] = replace(
+                session_data, **update
+            )
+            return session_data.redirect_url
+        else:
+            return None
+
+    def get_user_login_and_remove_context(self, saml_session_id: str) -> str | None:
+        logger.debug('sessions %s', self._outstanding_requests)
+        reqid = self._reqid_by_saml_session_id(saml_session_id)
+        session_data: SamlAuthContext | None = self._outstanding_requests.pop(
+            reqid, None
+        )
+        return session_data.login if session_data else None
+
+    def clean_pending_requests(self, maybe_now: datetime | None = None) -> None:
+        now: datetime = maybe_now or datetime.now(timezone.utc)
+        for k in list(self._outstanding_requests.keys()):
+            expire_at: datetime = (
+                self._outstanding_requests[k].start_time + self._saml_session_lifetime
+            )
+            if now > expire_at:
+                logger.debug(f"Removing SAML context: {self._outstanding_requests}")
+                del self._outstanding_requests[k]
+
+    def _reqid_by_saml_session_id(self, saml_session_id: str) -> str | None:
+        for reqid, saml_context in self._outstanding_requests.items():
+            if saml_context.saml_session_id == saml_session_id:
+                return reqid
+        return None
