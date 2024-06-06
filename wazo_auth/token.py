@@ -5,7 +5,7 @@ import logging
 import os
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 from wazo_bus.resources.auth.events import SessionDeletedEvent, SessionExpireSoonEvent
 from xivo.auth_verifier import AccessCheck
@@ -77,7 +77,7 @@ class Token:
     def _format_utc_time(t):
         if not t:
             return None
-        return datetime.utcfromtimestamp(t).isoformat()
+        return datetime.fromtimestamp(t, timezone.utc).isoformat()
 
     def to_dict(self):
         result = {
