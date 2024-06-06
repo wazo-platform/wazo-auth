@@ -1,14 +1,35 @@
+- secret:
+    name: mattermost_auth
+    data:
+      api_key: !encrypted/pkcs1-oaep
+        - Hwb1zY4fGHCgTyLsNYuQaf1DgaEwV35MDmyJpcR1wCJUs1coZhAEBKeATG6xAJLIPIvLw
+          RgIkv98tdWEa9yfHBU8P8YlLAzjOl0K6Ni8sa4y3QKAb/kLSR301Myl93dWfP9HQI5OcL
+          Ar8tipsTd2H0TFBwjfP2StNK7xcgwQGZaWzPggZNR68eOAxTvpqCQKyn5axVJsoGItdqu
+          npmJdGBsSdgR6xBtENnn2krlGgdpUWTiKhabPcs1fkNKuwY3OuoUeNW6XdYcsg4fKX4Ye
+          /fOPTGxZ7+z4RB0TZ5hQOfM+VqdSwoIhnOlgzn8iVuFuw/fn4fSicRhrJ9cxX8G6knFtx
+          Ov1pexWCs0Fxuqooe/FdQC87AaMbLq++3hdJ0sPno22xF7b8+ltoOwPQEaOYJgc5/x9qX
+          qdTx5oXk3RrI13d+GM4/DQp/VQ7WGZ2lDGSCNCceZf+0rCv32OR4IlG1CgCwwDt2SNpPx
+          rk6U4OW58Ywz2tqdGQPkGdYc0RONLxyHPks2b+Tm4ke3sWuiHpPAymUPKruU0fi644CrC
+          a1yw5QAsp+tNUpDkwsfTcnISn2SEuAKcrvju+F3XylFe/LeMzQBTNicMqOattUsFeETCf
+          cnennL+ddYvulEESn6IbRSgSyJV43JvTsrIWe5dI5iE320+Z5HnzRDxpOfGigI=
+
 - project:
     templates:
-      - wazo-tox-linters-310
-      - wazo-tox-py39
+      # - wazo-tox-linters-310
+      # - wazo-tox-py39
       - debian-packaging-bullseye
-    wazo-check:
-      jobs:
-        - auth-tox-integration
+      # - wazo-tox-performance-py39  # add alert-mm.yaml
+    # wazo-check:
+    #   jobs:
+    #     - auth-tox-integration
     wazo-gate:
       jobs:
-        - auth-tox-integration
+        # - auth-tox-integration
+        - auth-tox-performance
+        - auth-fail  # explicitly fail to test auth-tox-performance in a trusted context
+    experimental:
+      jobs:
+        - auth-tox-performance
 
 - job:
     name: auth-tox-integration
@@ -17,3 +38,20 @@
     timeout: 10800
     vars:
       integration_test_timeout: 60
+
+- job:
+    name: auth-tox-performance
+    parent: wazo-tox-integration-py39
+    vars:
+      docker_install_siblings: true
+      tox_envlist: performance
+    secrets:
+      - name: mattermost
+        secret: mattermost_auth
+    post-run: zuul.d/alert-mm.yaml
+    nodeset: vm-debian-11-m1m
+
+- job:
+    name: auth-fail
+    run: zuul.d/fail.yaml
+    nodeset: pod-debian-11
