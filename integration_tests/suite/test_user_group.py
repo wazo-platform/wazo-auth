@@ -219,7 +219,7 @@ class TestUserGroupAssociation(base.APIIntegrationTest):
             has_entries(items=contains_inanyorder(has_entries(uuid=user1['uuid']))),
         )
 
-        with self.client_in_subtenant() as (client, user3, __):
+        with self.client_in_subtenant() as (client, user3, ___):
             action = client.groups.add_user
 
             # group not visible to this sub tenant
