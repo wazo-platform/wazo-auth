@@ -28,4 +28,4 @@ stevedore==3.2.2
 tenacity==6.2.0
 unidecode==1.2.0
 websocket-client==0.57.0
-werkzeug==1.0.1
+werkzeug==3.0.3
