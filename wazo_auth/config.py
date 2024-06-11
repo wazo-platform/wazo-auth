@@ -25,6 +25,7 @@ _DEFAULT_CONFIG = {
     'password_reset_from_address': 'noreply@wazo.community',
     'password_reset_email_template': '/var/lib/wazo-auth/templates/password_reset_email.jinja',
     'password_reset_email_subject_template': '/var/lib/wazo-auth/templates/password_reset_email_subject.jinja',  # noqa
+    'email_notification_module': 'email_notification',
     'email_confirmation_expiration': 172800,
     'email_confirmation_template': '/var/lib/wazo-auth/templates/email_confirmation.jinja',
     'email_confirmation_subject_template': '/var/lib/wazo-auth/templates/email_confirmation_subject.jinja',  # noqa
@@ -61,6 +62,9 @@ _DEFAULT_CONFIG = {
     'enabled_backend_plugins': {
         'ldap_user': True,
         'wazo_user': True,
+    },
+    'enabled_service_plugins': {
+        'email_notification': True,
     },
     'enabled_metadata_plugins': {
         'default_user': True,

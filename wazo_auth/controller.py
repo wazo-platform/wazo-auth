@@ -76,9 +76,19 @@ class Controller:
             self._tenant_service,
             self._saml_service,
         )
-        email_service = services.EmailService(
-            self.dao, self._tenant_tree, config, template_formatter
+
+        self._service_plugins = plugin_helpers.load(
+            namespace='wazo_auth.services',
+            names=self._config['enabled_service_plugins'],
+            dependencies={
+                'dao': self.dao,
+                'tenant_uuid': self._tenant_tree,
+                'template_formatter': template_formatter,
+                'config': config,
+            },
         )
+        email_notification_plugin = config['email_notification_module']
+        email_service = self._service_plugins[email_notification_plugin].obj
         enabled_external_auth_plugins = [
             name
             for name, value in config['enabled_external_auth_plugins'].items()
