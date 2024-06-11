@@ -64,6 +64,9 @@ _DEFAULT_CONFIG = {
         'ldap_user': True,
         'wazo_user': True,
     },
+    'enabled_service_plugins': {
+        'email_notification': True,
+    },
     'enabled_metadata_plugins': {
         'default_user': True,
         'default_internal': True,

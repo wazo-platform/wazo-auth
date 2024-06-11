@@ -81,7 +81,15 @@ class Controller:
             self._tenant_service,
             self._saml_service,
         )
-        email_service = services.EmailService(self.dao, config, template_formatter)
+        self._service_plugins = plugin_helpers.load(
+            namespace='wazo_auth.services',
+            names=self._config['enabled_service_plugins'],
+            dependencies={
+                'dao': self.dao,
+                'template_formatter': template_formatter,
+                'config': config,
+            },
+        )
         enabled_external_auth_plugins = [
             name
             for name, value in config['enabled_external_auth_plugins'].items()
@@ -149,7 +157,7 @@ class Controller:
             'authentication_service': authentication_service,
             'backends': self._backends,
             'config': config,
-            'email_service': email_service,
+            'email_service': self._service_plugins['email_notification'],
             'external_auth_service': external_auth_service,
             'group_service': group_service,
             'idp_service': self._idp_service,
