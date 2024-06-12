@@ -55,10 +55,10 @@ class TenantService(BaseService):
         return self._get(tenant_uuid)
 
     def get_by_uuid_or_slug(self, scoping_tenant_uuid, id_):
-        visible_tenants = self.list_visible_tenant_uuids_with_slugs(scoping_tenant_uuid)
-        for tenant_uuid, tenant_slug in visible_tenants:
-            if tenant_uuid == id_ or tenant_slug == id_:
-                return self._get(tenant_uuid)
+        visible_tenants = self._dao.tenant.list_visible_tenants(scoping_tenant_uuid)
+        for tenant in visible_tenants:
+            if tenant.uuid == id_ or tenant.slug == id_:
+                return self._get(tenant.uuid)
 
         raise exceptions.UnknownTenantException(id_)
 

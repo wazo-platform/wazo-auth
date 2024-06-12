@@ -27,10 +27,6 @@ class BaseService:
             self._top_tenant_uuid = self._dao.tenant.find_top_tenant()
         return self._top_tenant_uuid
 
-    def list_visible_tenant_uuids_with_slugs(self, scoping_tenant_uuid):
-        visible_tenants = self._dao.tenant.list_visible_tenants(scoping_tenant_uuid)
-        return [(tenant.uuid, tenant.slug) for tenant in visible_tenants]
-
 
 class TemplateLoader(BaseLoader):
     _templates = {
