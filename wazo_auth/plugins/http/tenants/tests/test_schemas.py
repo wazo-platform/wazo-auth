@@ -112,7 +112,6 @@ class TestTenantSchema(TestCase):
         body = {'name': 'foobar', 'slug': 'slug'}
 
         result = self.schema.load(body)
-        print(result)
 
         assert_that(
             result,
