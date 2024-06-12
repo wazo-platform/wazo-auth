@@ -27,7 +27,8 @@ class SessionService(BaseService):
         return self._dao.session.list_(**kwargs)
 
     def delete(self, scoping_tenant_uuid, session_uuid):
-        tenant_uuids = self.list_visible_tenants(scoping_tenant_uuid)
+        visible_tenants = self._dao.tenant.list_visible_tenants(scoping_tenant_uuid)
+        tenant_uuids = [tenant.uuid for tenant in visible_tenants]
         session, token = self._dao.session.delete(session_uuid, tenant_uuids)
         if not token:
             return

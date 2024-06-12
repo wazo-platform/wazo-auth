@@ -200,7 +200,8 @@ class UserService(BaseService):
         return hash_ == self._encrypter.compute_password_hash(password, salt)
 
     def assert_user_in_subtenant(self, scoping_tenant_uuid, user_uuid):
-        tenant_uuids = self.list_visible_tenants(scoping_tenant_uuid)
+        visible_tenants = self._dao.tenant.list_visible_tenants(scoping_tenant_uuid)
+        tenant_uuids = [tenant.uuid for tenant in visible_tenants]
         user_exists = self._dao.user.exists(user_uuid, tenant_uuids=tenant_uuids)
         if not user_exists:
             raise exceptions.UnknownUserException(user_uuid)

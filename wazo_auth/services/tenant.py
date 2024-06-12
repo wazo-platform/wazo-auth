@@ -76,7 +76,8 @@ class TenantService(BaseService):
         )
 
     def list_sub_tenants(self, tenant_uuid):
-        return self.list_visible_tenants(tenant_uuid)
+        visible_tenants = self._dao.tenant.list_visible_tenants(tenant_uuid)
+        return [tenant.uuid for tenant in visible_tenants]
 
     def new(self, **kwargs):
         uuid = self._dao.tenant.create(**kwargs)

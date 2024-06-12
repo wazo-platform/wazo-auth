@@ -15,20 +15,17 @@ class BaseService:
         self._top_tenant_uuid = None
 
     def _get_scoped_tenant_uuids(self, scoping_tenant_uuid, recurse):
-        if recurse:
-            return self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
+        if not recurse:
+            return [scoping_tenant_uuid]
 
-        return [scoping_tenant_uuid]
+        visible_tenants = self._dao.tenant.list_visible_tenants(scoping_tenant_uuid)
+        return [tenant.uuid for tenant in visible_tenants]
 
     @property
     def top_tenant_uuid(self):
         if not self._top_tenant_uuid:
             self._top_tenant_uuid = self._dao.tenant.find_top_tenant()
         return self._top_tenant_uuid
-
-    def list_visible_tenants(self, scoping_tenant_uuid):
-        visible_tenants = self._dao.tenant.list_visible_tenants(scoping_tenant_uuid)
-        return [tenant.uuid for tenant in visible_tenants]
 
     def list_visible_tenant_uuids_with_slugs(self, scoping_tenant_uuid):
         visible_tenants = self._dao.tenant.list_visible_tenants(scoping_tenant_uuid)
