@@ -1,4 +1,4 @@
-# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -85,6 +85,9 @@ class TemplateFormatter:
 class TenantTree:
     def __init__(self, tenant_dao):
         self._tenant_dao = tenant_dao
+
+    def is_subtenant(self, child_uuid, parent_uuid):
+        return self._tenant_dao.is_subtenant(child_uuid, parent_uuid)
 
     def list_visible_tenants(self, scoping_tenant_uuid):
         visible_tenants = self._tenant_dao.list_visible_tenants(scoping_tenant_uuid)

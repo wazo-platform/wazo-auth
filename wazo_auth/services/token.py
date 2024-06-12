@@ -244,5 +244,5 @@ class TokenService(BaseService):
             else:
                 return
 
-        if not self._user_service.user_has_sub_tenant(user_uuid, tenant):
+        if not self._user_service.user_has_subtenant(user_uuid, tenant):
             raise MissingTenantTokenException(tenant)
