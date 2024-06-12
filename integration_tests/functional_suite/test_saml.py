@@ -67,9 +67,13 @@ class TestSamlService(APIIntegrationTest):
         self.restart_auth()
 
     def _click_login(self, page):
-        page.goto("https://app.wazo.local/")
+        port = self.asset_cls.service_port(443, 'proxy')
+        page.goto(f"https://app.wazo.local:{port}/")
         expect(page.locator("h1"), "Error while opening the test page").to_contain_text(
             "Wazo SAML login"
+        )
+        page.locator('#redirect-url').fill(
+            f'https://app.wazo.local:{port}/postacs.html'
         )
         search_login_btn: str = '#login_btn'
         page.wait_for_selector(search_login_btn)
