@@ -160,13 +160,6 @@ class TokenService(BaseService):
         token = Token(token_uuid, session_uuid=session_uuid, **token_args)
         return token
 
-    def _get_tenant_list(self, tenant_uuid):
-        if not tenant_uuid:
-            return []
-
-        tenant_uuids = self._tenant_tree.list_visible_tenants(tenant_uuid)
-        return [{'uuid': uuid} for uuid in tenant_uuids]
-
     def remove_token(self, token_uuid):
         token, session = self._dao.token.delete(token_uuid)
         if not session:
