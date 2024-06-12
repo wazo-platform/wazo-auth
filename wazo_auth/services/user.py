@@ -179,7 +179,7 @@ class UserService(BaseService):
 
     def user_has_subtenant(self, user_uuid, tenant_uuid):
         user = self.get_user(user_uuid)
-        return self.is_subtenant(tenant_uuid, user['tenant_uuid'])
+        return self._dao.tenant.is_subtenant(tenant_uuid, user['tenant_uuid'])
 
     def verify_password(self, login, password, reset=False):
         if reset:

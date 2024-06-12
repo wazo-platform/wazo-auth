@@ -26,9 +26,6 @@ class BaseService:
             self._top_tenant_uuid = self._dao.tenant.find_top_tenant()
         return self._top_tenant_uuid
 
-    def is_subtenant(self, child_uuid, parent_uuid):
-        return self._dao.tenant.is_subtenant(child_uuid, parent_uuid)
-
     def list_visible_tenants(self, scoping_tenant_uuid):
         visible_tenants = self._dao.tenant.list_visible_tenants(scoping_tenant_uuid)
         return [tenant.uuid for tenant in visible_tenants]
