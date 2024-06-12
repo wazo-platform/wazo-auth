@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 
 
 class TokenService(BaseService):
-    def __init__(self, config, dao, tenant_tree, bus_publisher, user_service):
-        super().__init__(dao, tenant_tree)
+    def __init__(self, config, dao, bus_publisher, user_service):
+        super().__init__(dao)
         self._deprecated_backend_policies = config.get('backend_policies', {})
         self._default_user_policy = config.get('default_user_policy')
         self._default_expiration = config['default_token_lifetime']

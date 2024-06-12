@@ -10,10 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 class BaseService:
-    def __init__(self, dao, tenant_tree):
+    def __init__(self, dao):
         self._dao = dao
         self._top_tenant_uuid = None
-        self._tenant_tree = tenant_tree
 
     def _get_scoped_tenant_uuids(self, scoping_tenant_uuid, recurse):
         if recurse:
@@ -26,6 +25,17 @@ class BaseService:
         if not self._top_tenant_uuid:
             self._top_tenant_uuid = self._dao.tenant.find_top_tenant()
         return self._top_tenant_uuid
+
+    def is_subtenant(self, child_uuid, parent_uuid):
+        return self._dao.tenant.is_subtenant(child_uuid, parent_uuid)
+
+    def list_visible_tenants(self, scoping_tenant_uuid):
+        visible_tenants = self._dao.tenant.list_visible_tenants(scoping_tenant_uuid)
+        return [tenant.uuid for tenant in visible_tenants]
+
+    def list_visible_tenant_uuids_with_slugs(self, scoping_tenant_uuid):
+        visible_tenants = self._dao.tenant.list_visible_tenants(scoping_tenant_uuid)
+        return [(tenant.uuid, tenant.slug) for tenant in visible_tenants]
 
 
 class TemplateLoader(BaseLoader):
@@ -80,19 +90,3 @@ class TemplateFormatter:
     def format_password_reset_subject(self, context):
         template = self.environment.get_template('reset_password_subject')
         return template.render(**context)
-
-
-class TenantTree:
-    def __init__(self, tenant_dao):
-        self._tenant_dao = tenant_dao
-
-    def is_subtenant(self, child_uuid, parent_uuid):
-        return self._tenant_dao.is_subtenant(child_uuid, parent_uuid)
-
-    def list_visible_tenants(self, scoping_tenant_uuid):
-        visible_tenants = self._tenant_dao.list_visible_tenants(scoping_tenant_uuid)
-        return [tenant.uuid for tenant in visible_tenants]
-
-    def list_visible_tenant_uuids_with_slugs(self, scoping_tenant_uuid):
-        visible_tenants = self._tenant_dao.list_visible_tenants(scoping_tenant_uuid)
-        return [(tenant.uuid, tenant.slug) for tenant in visible_tenants]

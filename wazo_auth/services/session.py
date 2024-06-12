@@ -7,8 +7,8 @@ from wazo_auth.services.helpers import BaseService
 
 
 class SessionService(BaseService):
-    def __init__(self, dao, tenant_tree, bus_publisher):
-        super().__init__(dao, tenant_tree)
+    def __init__(self, dao, bus_publisher):
+        super().__init__(dao)
         self._bus_publisher = bus_publisher
 
     def count(self, scoping_tenant_uuid, recurse=False, **kwargs):
@@ -27,7 +27,7 @@ class SessionService(BaseService):
         return self._dao.session.list_(**kwargs)
 
     def delete(self, scoping_tenant_uuid, session_uuid):
-        tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
+        tenant_uuids = self.list_visible_tenants(scoping_tenant_uuid)
         session, token = self._dao.session.delete(session_uuid, tenant_uuids)
         if not token:
             return

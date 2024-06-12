@@ -56,7 +56,6 @@ class Controller:
         self._bus_publisher = BusPublisher.from_config(config['uuid'], config['amqp'])
 
         self.dao = queries.DAO.from_defaults()
-        self._tenant_tree = services.helpers.TenantTree(self.dao.tenant)
         self._backends = BackendsProxy()
         self._default_group_service = services.DefaultGroupService(
             self.dao,
@@ -64,7 +63,6 @@ class Controller:
         )
         self._tenant_service = services.TenantService(
             self.dao,
-            self._tenant_tree,
             config['all_users_policies'],
             self._default_group_service,
             self._bus_publisher,
@@ -76,9 +74,7 @@ class Controller:
             self._tenant_service,
             self._saml_service,
         )
-        email_service = services.EmailService(
-            self.dao, self._tenant_tree, config, template_formatter
-        )
+        email_service = services.EmailService(self.dao, config, template_formatter)
         enabled_external_auth_plugins = [
             name
             for name, value in config['enabled_external_auth_plugins'].items()
@@ -86,19 +82,16 @@ class Controller:
         ]
         external_auth_service = services.ExternalAuthService(
             self.dao,
-            self._tenant_tree,
             config,
             self._bus_publisher,
             enabled_external_auth_plugins,
         )
-        group_service = services.GroupService(self.dao, self._tenant_tree)
-        policy_service = services.PolicyService(self.dao, self._tenant_tree)
-        session_service = services.SessionService(
-            self.dao, self._tenant_tree, self._bus_publisher
-        )
-        self._user_service = services.UserService(self.dao, self._tenant_tree)
+        group_service = services.GroupService(self.dao)
+        policy_service = services.PolicyService(self.dao)
+        session_service = services.SessionService(self.dao, self._bus_publisher)
+        self._user_service = services.UserService(self.dao)
         self._token_service = services.TokenService(
-            config, self.dao, self._tenant_tree, self._bus_publisher, self._user_service
+            config, self.dao, self._bus_publisher, self._user_service
         )
         self._default_policy_service = services.DefaultPolicyService(
             self.dao,
@@ -108,9 +101,9 @@ class Controller:
             self.dao,
             config['all_users_policies'],
         )
-        self._idp_service = services.IDPService(self.dao, self._tenant_tree)
+        self._idp_service = services.IDPService(self.dao)
 
-        ldap_service = services.LDAPService(self.dao, self._tenant_tree)
+        ldap_service = services.LDAPService(self.dao)
 
         self._metadata_plugins = plugin_helpers.load(
             namespace='wazo_auth.metadata',

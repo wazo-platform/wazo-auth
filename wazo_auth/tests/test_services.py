@@ -79,10 +79,7 @@ class TestExternalAuthService(BaseServiceTestCase):
 
     def setUp(self):
         super().setUp()
-        self._tenant_tree = Mock()
-        self.service = services.ExternalAuthService(
-            self.dao, self._tenant_tree, _DEFAULT_CONFIG
-        )
+        self.service = services.ExternalAuthService(self.dao, _DEFAULT_CONFIG)
 
     def test_list_external_auth(self):
         # No safe model registered for any auth type
@@ -145,8 +142,7 @@ class TestExternalAuthService(BaseServiceTestCase):
 class TestGroupService(BaseServiceTestCase):
     def setUp(self):
         super().setUp()
-        self._tenant_tree = Mock()
-        self.service = services.GroupService(self.dao, self._tenant_tree)
+        self.service = services.GroupService(self.dao)
 
     def test_remove_policy(self):
         def when(nb_deleted, group_exists=True, policy_exists=True):
@@ -219,12 +215,7 @@ class TestGroupService(BaseServiceTestCase):
 class TestUserService(BaseServiceTestCase):
     def setUp(self):
         super().setUp()
-        self.tenant_tree = Mock()
-        self.service = services.UserService(
-            self.dao,
-            self.tenant_tree,
-            encrypter=self.encrypter,
-        )
+        self.service = services.UserService(self.dao, encrypter=self.encrypter)
 
     def test_change_password(self):
         self.user_dao.list_.return_value = []
@@ -355,20 +346,18 @@ class TestUserService(BaseServiceTestCase):
 class TestTenantService(BaseServiceTestCase):
     def setUp(self):
         super().setUp()
-        self.tenant_tree = Mock()
         self.default_group_service = Mock()
         self.service = services.TenantService(
             self.dao,
-            self.tenant_tree,
             self.all_users_policies,
             self.default_group_service,
         )
         self.service._get = Mock()
 
     def test_get_by_uuid_or_slug(self):
-        self.tenant_tree.list_visible_tenant_uuids_with_slugs.return_value = [
-            ('1234-uuid', 'slug1'),
-            ('2345-uuid', 'slug2'),
+        self.tenant_dao.list_visible_tenants.return_value = [
+            Mock(uuid='1234-uuid', slug='slug1'),
+            Mock(uuid='2345-uuid', slug='slug2'),
         ]
         result = self.service.get_by_uuid_or_slug(None, '1234-uuid')
         self.service._get.assert_called_with('1234-uuid')

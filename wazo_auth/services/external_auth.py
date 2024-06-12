@@ -65,10 +65,8 @@ class _OAuth2Synchronizer:
 
 
 class ExternalAuthService(BaseService):
-    def __init__(
-        self, dao, tenant_tree, config, bus_publisher=None, enabled_external_auth=None
-    ):
-        super().__init__(dao, tenant_tree)
+    def __init__(self, dao, config, bus_publisher=None, enabled_external_auth=None):
+        super().__init__(dao)
         self._bus_publisher = bus_publisher
         self._safe_models = {}
         self._enabled_external_auth = enabled_external_auth or []

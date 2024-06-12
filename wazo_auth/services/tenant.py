@@ -19,12 +19,11 @@ class TenantService(BaseService):
     def __init__(
         self,
         dao,
-        tenant_tree,
         all_users_policies,
         default_group_service,
         bus_publisher=None,
     ):
-        super().__init__(dao, tenant_tree)
+        super().__init__(dao)
         self._bus_publisher = bus_publisher
         self._all_users_policies = all_users_policies
         self._default_group_service = default_group_service
@@ -56,9 +55,7 @@ class TenantService(BaseService):
         return self._get(tenant_uuid)
 
     def get_by_uuid_or_slug(self, scoping_tenant_uuid, id_):
-        visible_tenants = self._tenant_tree.list_visible_tenant_uuids_with_slugs(
-            scoping_tenant_uuid
-        )
+        visible_tenants = self.list_visible_tenant_uuids_with_slugs(scoping_tenant_uuid)
         for tenant_uuid, tenant_slug in visible_tenants:
             if tenant_uuid == id_ or tenant_slug == id_:
                 return self._get(tenant_uuid)
@@ -79,7 +76,7 @@ class TenantService(BaseService):
         )
 
     def list_sub_tenants(self, tenant_uuid):
-        return self._tenant_tree.list_visible_tenants(tenant_uuid)
+        return self.list_visible_tenants(tenant_uuid)
 
     def new(self, **kwargs):
         uuid = self._dao.tenant.create(**kwargs)
