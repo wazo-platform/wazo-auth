@@ -18,8 +18,8 @@ SMTP_TIMEOUT = 4
 
 
 class EmailService(BaseService):
-    def __init__(self, dao, tenant_uuid, config, template_formatter):
-        super().__init__(dao, tenant_uuid)
+    def __init__(self, dao, config, template_formatter):
+        super().__init__(dao)
         self._formatter = template_formatter
         self._smtp_host = config['smtp']['hostname']
         self._smtp_port = config['smtp']['port']

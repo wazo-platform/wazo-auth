@@ -110,9 +110,8 @@ def create_initial_user(
 ):
     init_db(db_uri)
     dao = queries.DAO.from_defaults()
-    tenant_tree = services.helpers.TenantTree(dao.tenant)
-    policy_service = services.PolicyService(dao, tenant_tree)
-    user_service = services.UserService(dao, tenant_tree)
+    policy_service = services.PolicyService(dao)
+    user_service = services.UserService(dao)
     if user_service.verify_password(username, password):
         # Already bootstrapped, just skip
         return

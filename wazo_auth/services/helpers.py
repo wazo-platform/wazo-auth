@@ -1,4 +1,4 @@
-# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -10,16 +10,16 @@ logger = logging.getLogger(__name__)
 
 
 class BaseService:
-    def __init__(self, dao, tenant_tree):
+    def __init__(self, dao):
         self._dao = dao
         self._top_tenant_uuid = None
-        self._tenant_tree = tenant_tree
 
     def _get_scoped_tenant_uuids(self, scoping_tenant_uuid, recurse):
-        if recurse:
-            return self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
+        if not recurse:
+            return [scoping_tenant_uuid]
 
-        return [scoping_tenant_uuid]
+        visible_tenants = self._dao.tenant.list_visible_tenants(scoping_tenant_uuid)
+        return [tenant.uuid for tenant in visible_tenants]
 
     @property
     def top_tenant_uuid(self):
@@ -80,16 +80,3 @@ class TemplateFormatter:
     def format_password_reset_subject(self, context):
         template = self.environment.get_template('reset_password_subject')
         return template.render(**context)
-
-
-class TenantTree:
-    def __init__(self, tenant_dao):
-        self._tenant_dao = tenant_dao
-
-    def list_visible_tenants(self, scoping_tenant_uuid):
-        visible_tenants = self._tenant_dao.list_visible_tenants(scoping_tenant_uuid)
-        return [tenant.uuid for tenant in visible_tenants]
-
-    def list_visible_tenant_uuids_with_slugs(self, scoping_tenant_uuid):
-        visible_tenants = self._tenant_dao.list_visible_tenants(scoping_tenant_uuid)
-        return [(tenant.uuid, tenant.slug) for tenant in visible_tenants]

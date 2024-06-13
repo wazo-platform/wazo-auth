@@ -21,8 +21,8 @@ class UnknownUserHash:
 
 
 class UserService(BaseService):
-    def __init__(self, dao, tenant_tree, encrypter=None):
-        super().__init__(dao, tenant_tree)
+    def __init__(self, dao, encrypter=None):
+        super().__init__(dao)
         self._encrypter = encrypter or PasswordEncrypter()
         self._unknown_user_salt = os.urandom(self._encrypter._salt_len)
         # The unknown_user_hash will never be equal, whatever the user input is
@@ -177,10 +177,9 @@ class UserService(BaseService):
 
         return self._dao.user.update_emails(user_uuid, emails)
 
-    def user_has_sub_tenant(self, user_uuid, tenant_uuid):
+    def user_has_subtenant(self, user_uuid, tenant_uuid):
         user = self.get_user(user_uuid)
-        visible_tenants = self._tenant_tree.list_visible_tenants(user['tenant_uuid'])
-        return tenant_uuid in visible_tenants
+        return self._dao.tenant.is_subtenant(tenant_uuid, user['tenant_uuid'])
 
     def verify_password(self, login, password, reset=False):
         if reset:
@@ -201,7 +200,8 @@ class UserService(BaseService):
         return hash_ == self._encrypter.compute_password_hash(password, salt)
 
     def assert_user_in_subtenant(self, scoping_tenant_uuid, user_uuid):
-        tenant_uuids = self._tenant_tree.list_visible_tenants(scoping_tenant_uuid)
+        visible_tenants = self._dao.tenant.list_visible_tenants(scoping_tenant_uuid)
+        tenant_uuids = [tenant.uuid for tenant in visible_tenants]
         user_exists = self._dao.user.exists(user_uuid, tenant_uuids=tenant_uuids)
         if not user_exists:
             raise exceptions.UnknownUserException(user_uuid)

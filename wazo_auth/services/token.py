@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 
 
 class TokenService(BaseService):
-    def __init__(self, config, dao, tenant_tree, bus_publisher, user_service):
-        super().__init__(dao, tenant_tree)
+    def __init__(self, config, dao, bus_publisher, user_service):
+        super().__init__(dao)
         self._deprecated_backend_policies = config.get('backend_policies', {})
         self._default_user_policy = config.get('default_user_policy')
         self._default_expiration = config['default_token_lifetime']
@@ -160,13 +160,6 @@ class TokenService(BaseService):
         token = Token(token_uuid, session_uuid=session_uuid, **token_args)
         return token
 
-    def _get_tenant_list(self, tenant_uuid):
-        if not tenant_uuid:
-            return []
-
-        tenant_uuids = self._tenant_tree.list_visible_tenants(tenant_uuid)
-        return [{'uuid': uuid} for uuid in tenant_uuids]
-
     def remove_token(self, token_uuid):
         token, session = self._dao.token.delete(token_uuid)
         if not session:
@@ -244,5 +237,5 @@ class TokenService(BaseService):
             else:
                 return
 
-        if not self._user_service.user_has_sub_tenant(user_uuid, tenant):
+        if not self._user_service.user_has_subtenant(user_uuid, tenant):
             raise MissingTenantTokenException(tenant)

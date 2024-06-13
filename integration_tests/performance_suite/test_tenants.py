@@ -55,3 +55,38 @@ class TestTenants(base.APIIntegrationTest):
             assert timer.last < 0.1
         finally:
             self.client.tenants.delete(tenant['uuid'])
+
+    @fixtures.http.tenant(name='createsubtenant-parent')
+    @fixtures.http.bulk_tenants()
+    def test_head_token(self, parent_tenant):
+        with codetiming.Timer() as timer:
+            result = self.client.token.is_valid(
+                self.client._token_id,
+                tenant=parent_tenant['uuid'],
+            )
+
+        assert timer.last < 0.05
+        assert result
+
+    @fixtures.http.tenant(name='createsubtenant-parent')
+    @fixtures.http.bulk_tenants()
+    def test_get_token(self, parent_tenant):
+        with codetiming.Timer() as timer:
+            self.client.token.get(
+                self.client._token_id,
+                tenant=parent_tenant['uuid'],
+            )
+
+        assert timer.last < 0.05
+
+    @fixtures.http.tenant(name='createsubtenant-parent')
+    @fixtures.http.bulk_tenants()
+    def test_post_token_scopes_check(self, parent_tenant):
+        with codetiming.Timer() as timer:
+            self.client.token.check_scopes(
+                self.client._token_id,
+                scopes=[],
+                tenant=parent_tenant['uuid'],
+            )
+
+        assert timer.last < 0.05
