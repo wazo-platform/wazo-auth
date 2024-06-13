@@ -17,6 +17,7 @@ egg-info:
 	cd .. && python3 setup.py egg_info
 
 test:
-	pytest
+	# Only suite and performance_suite are executed until https://wazo-dev.atlassian.net/browse/WAZO-3780 gets fixed
+	pytest suite performance_suite
 
 .PHONY: test-setup test test-image db
