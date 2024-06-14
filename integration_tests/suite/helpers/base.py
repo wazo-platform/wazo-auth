@@ -143,6 +143,10 @@ class APIAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
     asset = 'base'
 
 
+class SAMLAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
+    asset = 'saml'
+
+
 class ExternalAuthAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
     asset = 'external_auth'
 
@@ -451,6 +455,12 @@ class APIIntegrationTest(BaseIntegrationTest):
 
         with _resource(create, delete, *args, **kwargs) as user:
             yield user
+
+
+class SAMLIntegrationTest(BaseIntegrationTest):
+    asset_cls = SAMLAssetLaunchingTestCase
+    username = 'admin'
+    password = 's3cre7'
 
 
 @contextmanager

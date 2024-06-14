@@ -25,6 +25,15 @@ def base():
 
 
 @pytest.fixture(scope='session')
+def saml():
+    asset.SAMLAssetLaunchingTestCase.setUpClass()
+    try:
+        yield
+    finally:
+        asset.SAMLAssetLaunchingTestCase.tearDownClass()
+
+
+@pytest.fixture(scope='session')
 def database():
     asset.DBAssetLaunchingTestCase.setUpClass()
     try:
