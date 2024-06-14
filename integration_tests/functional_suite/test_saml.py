@@ -12,11 +12,11 @@ from playwright.sync_api import Page, expect
 from wazo_auth.database.queries.user import UserDAO
 
 from .helpers import base
-from .helpers.base import APIIntegrationTest
+from .helpers.base import SAMLIntegrationTest
 
 
-@base.use_asset('base')
-class TestSamlService(APIIntegrationTest):
+@base.use_asset('saml')
+class TestSamlService(SAMLIntegrationTest):
     @pytest.fixture(autouse=True)
     def setup(self, page: Page):
         self.page = page
