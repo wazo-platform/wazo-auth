@@ -173,15 +173,18 @@ class TokenService(BaseService):
     def get(self, token_uuid, required_access):
         token_data = self._dao.token.get(token_uuid)
         if not token_data:
+            logger.debug('Rejecting unknown token')
             raise UnknownTokenException()
 
         id_ = token_data.pop('uuid')
         token = Token(id_, **token_data)
 
         if token.is_expired():
+            logger.debug('Rejecting token: expired')
             raise UnknownTokenException()
 
         if not token.matches_required_access(required_access):
+            logger.debug('Rejecting token: forbidden access')
             raise MissingAccessTokenException(required_access)
 
         return token
@@ -233,4 +236,5 @@ class TokenService(BaseService):
 
         user_uuid = token['auth_id']
         if not self._user_service.user_has_subtenant(user_uuid, tenant):
+            logger.debug('Rejecting token: forbidden tenant')
             raise MissingTenantTokenException(tenant)
