@@ -227,15 +227,10 @@ class TokenService(BaseService):
         if not tenant:
             return
 
-        # TODO: when the ldap_user gets remove all tokens will have a UUID
-        user_uuid = token['metadata'].get('uuid')
-        if not user_uuid:
-            # Fallback on the token data since this is not a user token
-            visible_tenants = {t['uuid'] for t in token['metadata']['tenants']}
-            if tenant not in visible_tenants:
-                raise MissingTenantTokenException(tenant)
-            else:
-                return
+        # internal token emitted by wazo-auth
+        if token['auth_id'] == 'wazo-auth':
+            return
 
+        user_uuid = token['auth_id']
         if not self._user_service.user_has_subtenant(user_uuid, tenant):
             raise MissingTenantTokenException(tenant)

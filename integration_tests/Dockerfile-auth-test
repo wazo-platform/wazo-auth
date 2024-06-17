@@ -2,9 +2,13 @@ FROM wazoplatform/wazo-auth
 
 ENV PYTHONDONTWRITEBYTECODE='true'
 
-COPY integration_tests/assets/external_auth/service_plugin /usr/src/service_plugin
-WORKDIR /usr/src/service_plugin
-RUN python setup.py install
+COPY integration_tests/assets/external_auth/service_plugin /usr/src/external_auth_service_plugin
+WORKDIR /usr/src/external_auth_service_plugin
+RUN python3 setup.py install
+
+COPY integration_tests/assets/metadata/internal_token /usr/src/metadata_internal_token
+WORKDIR /usr/src/metadata_internal_token
+RUN python3 setup.py install
 
 COPY . /usr/src/wazo-auth
 WORKDIR /usr/src/wazo-auth

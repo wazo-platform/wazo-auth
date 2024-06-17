@@ -670,3 +670,13 @@ class TestTokens(base.APIIntegrationTest):
                     )
                 ),
             )
+
+
+@base.use_asset('metadata')
+class TestTokensFromMetadata(base.MetadataIntegrationTest):
+    # purpose internal enables the test metadata plugin
+    @fixtures.http.user(username='foo', password='bar', purpose='internal')
+    def test_validating_internal_token(self, user):
+        client = self.make_auth_client('foo', 'bar')
+        token = client.token.new(expiration=10)
+        assert token['metadata']['internal_token_is_valid'] is True
