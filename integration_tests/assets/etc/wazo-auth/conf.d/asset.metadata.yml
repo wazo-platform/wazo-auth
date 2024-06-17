@@ -1,8 +1,10 @@
 enabled_metadata_plugins:
   user_admin_status: True
+  internal_token: True
 
 purpose_metadata_mapping:
   user: [user_admin_status]
+  internal: [internal_token]
 
 default_policies:
   wazo_default_admin_policy:
