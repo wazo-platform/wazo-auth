@@ -44,6 +44,7 @@ class WazoSAMLConfig(TypedDict):
     cert_file: str
     xmlsec_binary: str
     domains: dict[str, RawSAMLConfig]
+    allow_unknown_attributes: bool
 
 
 class Config(TypedDict, total=False):
