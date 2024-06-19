@@ -85,7 +85,9 @@ class InvalidListParamException(APIException):
 
 class MaxConcurrentSessionsReached(APIException):
     def __init__(self, details=None):
-        message = 'Unable to proceed, user has exceeded the maximum number of active sessions'
+        message = (
+            'Unable to proceed, user has exceeded the maximum number of active sessions'
+        )
         super().__init__(429, message, 'max-user-concurrent-sessions', details, 'users')
 
 
