@@ -16,7 +16,7 @@ from ..saml import SamlAuthContext, SAMLService
 
 
 class TestSAMLService(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.lifetime = 10
         self.config = _DEFAULT_CONFIG
         self.config['saml']['saml_session_lifetime_seconds'] = self.lifetime
@@ -36,7 +36,7 @@ class TestSAMLService(TestCase):
             saml_id, redirect_url, domain, relay_state, login, None, date
         )
 
-    def test_clean_pending_requests(self):
+    def test_clean_pending_requests(self) -> None:
         expired_date: datetime = datetime.fromisoformat('2000-01-01 00:00:00+00:00')
         expired: SamlAuthContext = self._get_auth_context(date=expired_date)
 
@@ -51,7 +51,7 @@ class TestSAMLService(TestCase):
         assert_that(self.service._outstanding_requests, is_({'id2': pending}))
 
     @patch('wazo_auth.services.SAMLService.get_client')
-    def test_create_session_on_sso_init(self, mock_get_client):
+    def test_create_session_on_sso_init(self, mock_get_client) -> None:
         url = 'url1'
         domain = 'ex.com'
         mock_client = Mock()
@@ -69,10 +69,10 @@ class TestSAMLService(TestCase):
         assert_that(cached_req.domain, is_(domain))
 
     @patch('wazo_auth.services.SAMLService.get_client')
-    def test_enrich_context_on_successful_login(self, mock_get_client):
+    def test_enrich_context_on_successful_login(self, mock_get_client) -> None:
         domain = 'domain1'
         req_key = 'kid1'
-        cached_req = self._get_auth_context(domain=domain)
+        cached_req: SamlAuthContext = self._get_auth_context(domain=domain)
         self.service._outstanding_requests = {req_key: cached_req}
 
         response = Mock()
@@ -95,7 +95,7 @@ class TestSAMLService(TestCase):
         assert_that(updated_req.login, is_('testname'))
         assert_that(updated_req.response, is_(response))
 
-    def test_get_user_login_and_remove_contrext(self):
+    def test_get_user_login_and_remove_context(self) -> None:
         saml_context = SamlAuthContext(
             saml_session_id=s.session_1,
             redirect_url=s.redirect_url,
@@ -121,7 +121,9 @@ class TestSAMLService(TestCase):
             (None, None),
         ]
         for saml_session_id, expected in samples:
-            result = self.service.get_user_login_and_remove_context(saml_session_id)
+            result: str | None = self.service.get_user_login_and_remove_context(
+                saml_session_id
+            )
             assert_that(result, is_(expected))
 
         assert_that(self.service._outstanding_requests, has_length(1))
