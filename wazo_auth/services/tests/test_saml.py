@@ -29,20 +29,23 @@ class TestSAMLService(TestCase):
         redirect_url: str = 'some_url',
         domain: str = 'some_domain',
         login: Optional[str] = None,
-        date: datetime = datetime.fromisoformat('2000-01-01 00:00:02'),
+        relay_state: str = '6pruzvCdQHaLWCd30T6IziZFX_U=',
+        date: datetime = datetime.fromisoformat('2000-01-01 00:00:02+00:00'),
     ) -> SamlAuthContext:
-        return SamlAuthContext(saml_id, redirect_url, domain, login, None, date)
+        return SamlAuthContext(
+            saml_id, redirect_url, domain, relay_state, login, None, date
+        )
 
     def test_clean_pending_requests(self):
-        expired_date: datetime = datetime.fromisoformat('2000-01-01 00:00:00')
+        expired_date: datetime = datetime.fromisoformat('2000-01-01 00:00:00+00:00')
         expired: SamlAuthContext = self._get_auth_context(date=expired_date)
 
-        pending_date: datetime = datetime.fromisoformat('2000-01-01 00:00:02')
+        pending_date: datetime = datetime.fromisoformat('2000-01-01 00:00:02+00:00')
         pending: SamlAuthContext = self._get_auth_context(date=pending_date)
 
         self.service._outstanding_requests = {'id1': expired, 'id2': pending}
 
-        now: datetime = datetime.fromisoformat('2000-01-01 00:00:11')
+        now: datetime = datetime.fromisoformat('2000-01-01 00:00:11+00:00')
         self.service.clean_pending_requests(now)
 
         assert_that(self.service._outstanding_requests, is_({'id2': pending}))
@@ -80,7 +83,9 @@ class TestSAMLService(TestCase):
         mock_get_client.return_value = mock_client
 
         self.service.process_auth_response(
-            'url', 'remote_addr', {'RelayState': domain, 'SAMLResponse': None}
+            'url',
+            'remote_addr',
+            {'RelayState': cached_req.relay_state, 'SAMLResponse': None},
         )
 
         _, args, _ = mock_get_client.mock_calls[0]
@@ -95,12 +100,14 @@ class TestSAMLService(TestCase):
             saml_session_id=s.session_1,
             redirect_url=s.redirect_url,
             domain=s.domain,
+            relay_state='6pruzvCdQHaLWCd30T6IziZFX_U=',
             login=s.login_1,
         )
         ignored_saml_context = SamlAuthContext(
             s.session2,
             s.redirect_url,
             s.domain,
+            'iO6ldOVHIIpUKg6I8AyeZSCHEcQ=',
             s.login2,
         )
 

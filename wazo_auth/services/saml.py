@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
+import base64
+import hashlib
 import logging
 import secrets
 from dataclasses import dataclass, field, replace
@@ -25,6 +27,7 @@ class SamlAuthContext:
     saml_session_id: str
     redirect_url: str
     domain: str
+    relay_state: str
     login: str | None = None
     response: AuthnResponse | None = None
     start_time: datetime = field(default_factory=partial(datetime.now, timezone.utc))
@@ -117,12 +120,17 @@ class SAMLService(BaseService):
     ):
         saml_session_id = secrets.token_urlsafe(16)
         client = self.get_client(domain)
-        reqid, info = client.prepare_for_authenticate(relay_state=domain)
+        logger.error(f'---------------------------- domain: {domain}, {client}')
+        relay_state: str = base64.urlsafe_b64encode(
+            hashlib.sha1(saml_session_id.encode()).digest()
+        ).decode()
+        req_id, info = client.prepare_for_authenticate(relay_state=relay_state)
 
-        self._outstanding_requests[reqid] = SamlAuthContext(
+        self._outstanding_requests[req_id] = SamlAuthContext(
             saml_session_id,
             redirect_url,
             domain,
+            relay_state,
         )
         location = [i for i in info['headers'] if i[0] == 'Location'][0][1]
         return location, saml_session_id
@@ -130,14 +138,25 @@ class SAMLService(BaseService):
     def process_auth_response(
         self, url: str, remote_addr: str, form_data: SAMLACSFormData
     ) -> str | None:
-        saml_client = self.get_client(form_data['RelayState'])
+        req_id: list[Any] = [
+            e
+            for e in self._outstanding_requests
+            if self._outstanding_requests[e].relay_state == form_data['RelayState']
+        ]
+        if len(req_id) != 1:
+            logger.warn(
+                "Unable to get SAML session corresponding to the received RelayState"
+            )
+            return None
+        domain: str = self._outstanding_requests[req_id[0]].domain
+        saml_client = self.get_client(domain)
         conv_info = {
             "remote_addr": remote_addr,
             "request_uri": url,
             "entity_id": saml_client.config.entityid,
             "endpoints": saml_client.config.getattr("endpoints", "sp"),
         }
-
+        logger.error(f'---------------------------- domain: {domain}, {saml_client}')
         response = saml_client.parse_authn_request_response(
             form_data['SAMLResponse'],
             BINDING_HTTP_POST,
@@ -153,6 +172,9 @@ class SAMLService(BaseService):
             response.session_id()
         )
         if session_data:
+            if session_data.relay_state != form_data['RelayState']:
+                logger.warn('RequestId does not correspond to RelayState')
+                return None
             update = {'response': response, 'login': response.ava['name'][0]}
             self._outstanding_requests[response.session_id()] = replace(
                 session_data, **update
@@ -163,11 +185,14 @@ class SAMLService(BaseService):
 
     def get_user_login_and_remove_context(self, saml_session_id: str) -> str | None:
         logger.debug('sessions %s', self._outstanding_requests)
-        reqid = self._reqid_by_saml_session_id(saml_session_id)
-        session_data: SamlAuthContext | None = self._outstanding_requests.pop(
-            reqid, None
-        )
-        return session_data.login if session_data else None
+        reqid: str | None = self._reqid_by_saml_session_id(saml_session_id)
+        if reqid:
+            session_data: SamlAuthContext | None = self._outstanding_requests.pop(
+                reqid, None
+            )
+            return session_data.login if session_data else None
+        else:
+            return None
 
     def clean_pending_requests(self, maybe_now: datetime | None = None) -> None:
         now: datetime = maybe_now or datetime.now(timezone.utc)

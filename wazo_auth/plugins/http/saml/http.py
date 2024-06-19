@@ -52,7 +52,7 @@ class SAMLACS(http.ErrorCatchingResource):
             logger.info("Signature error: %s", err)
             raise exceptions.SAMLProcessingError('Signature error')
         except Exception as err:
-            logger.error("SAML unexpected error: %s", err)
+            logger.exception("SAML unexpected error: %s", err)
             raise exceptions.SAMLProcessingError('Unexpected error')
 
 
