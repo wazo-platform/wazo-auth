@@ -1,0 +1,114 @@
+paths:
+  /backends/saml:
+    delete:
+      description: '**Required ACL:** `auth.backends.saml.delete`'
+      operationId: deleteSAMLBackendConfig
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      responses:
+        '204':
+          description: The SAML backend configuration has been deleted
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - wazo_auth_token: []
+      summary: Delete current tenant's SAML backend configuration
+      tags:
+      - backends
+    get:
+      description: '**Required ACL:** `auth.backends.saml.read`'
+      operationId: getSAMLBackendConfig
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: The SAML backend configuration
+          schema:
+            $ref: '#/definitions/SAMLBackendConfig'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - wazo_auth_token: []
+      summary: 'Get current tenant''s SAML backend configuration. If there is no configuration,
+
+        all the fields will be `null`.
+
+        '
+      tags:
+      - backends
+    put:
+      description: '**Required ACL:** `auth.backends.saml.update'
+      operationId: updateSAMLBackendConfig
+      consumes:
+        - multipart/form-data
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+        - in: formData
+          name: metadata
+          type: file
+          description: The IDP metadata file in XML format.
+          x-mimetype: application/xml
+        - in: formData
+          name: entityId
+          type: string
+          description: The name of the SAML Entity.
+        - in: formData
+          name: acsUrl
+          type: string
+          format: url
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: The SAML backend configuration has been updated
+          schema:
+            $ref: '#/definitions/SAMLBackendConfig'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - wazo_auth_token: []
+      summary: Update current tenant's SAML backend configuration
+      tags:
+      - backends
+  /backends/saml/download:
+    get:
+      description: '**Required ACL:** `auth.backends.saml.read`
+
+        This endpoint allow to download tenant medatada file.
+
+        '
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      produces:
+      - application/xml
+      responses:
+        '200':
+          description: Download the tenant's SAML metadata XML file.
+        '404':
+          $ref: '#/definitions/Error'
+      summary: Download the tenant's SAML metadata XML file.
+      tags:
+      - backends
+
+
+definitions:
+  SAMLBackendConfig:
+    properties:
+      entityId:
+        type: string
+        description: The name of the SAML Entity Id
+      acsUrl:
+        type: string
+        description: The SAML ACS URL
+    required:
+    - entityId
+    - acsUrl
+    type: object
