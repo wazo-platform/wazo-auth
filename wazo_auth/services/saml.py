@@ -120,7 +120,7 @@ class SAMLService(BaseService):
     ):
         saml_session_id = secrets.token_urlsafe(16)
         client = self.get_client(domain)
-        logger.error(f'---------------------------- domain: {domain}, {client}')
+
         relay_state: str = base64.urlsafe_b64encode(
             hashlib.sha1(saml_session_id.encode()).digest()
         ).decode()
@@ -156,7 +156,6 @@ class SAMLService(BaseService):
             "entity_id": saml_client.config.entityid,
             "endpoints": saml_client.config.getattr("endpoints", "sp"),
         }
-        logger.error(f'---------------------------- domain: {domain}, {saml_client}')
         response = saml_client.parse_authn_request_response(
             form_data['SAMLResponse'],
             BINDING_HTTP_POST,
@@ -171,9 +170,12 @@ class SAMLService(BaseService):
         session_data: SamlAuthContext | None = self._outstanding_requests.get(
             response.session_id()
         )
+
         if session_data:
             if session_data.relay_state != form_data['RelayState']:
-                logger.warn('RequestId does not correspond to RelayState')
+                logger.warning(
+                    'RequestId does not correspond to RelayState, ignoring response'
+                )
                 return None
             update = {'response': response, 'login': response.ava['name'][0]}
             self._outstanding_requests[response.session_id()] = replace(

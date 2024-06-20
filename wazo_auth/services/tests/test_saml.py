@@ -95,6 +95,64 @@ class TestSAMLService(TestCase):
         assert_that(updated_req.login, is_('testname'))
         assert_that(updated_req.response, is_(response))
 
+    @patch('wazo_auth.services.SAMLService.get_client')
+    def test_remove_session_if_relay_state_is_not_in_outstanding_requests(
+        self, mock_get_client
+    ) -> None:
+        domain = 'domain1'
+        req_key = 'kid1'
+        saved_req: SamlAuthContext = self._get_auth_context(
+            domain=domain, relay_state='6pruzvCdQHaLWCd30T6IziZFX_U='
+        )
+
+        self.service._outstanding_requests = {req_key: saved_req}
+
+        response = Mock()
+        response.session_id.return_value = req_key
+        mock_client = Mock()
+        mock_client.parse_authn_request_response.return_value = response
+        mock_get_client.return_value = mock_client
+        res = self.service.process_auth_response(
+            'url',
+            'remote_addr',
+            {'RelayState': 'iO6ldOVHIIpUKg6I8AyeZSCHEcQ=', 'SAMLResponse': None},
+        )
+
+        assert_that(res, is_(None))
+        assert_that(self.service._outstanding_requests, is_({req_key: saved_req}))
+
+    @patch('wazo_auth.services.SAMLService.get_client')
+    def test_remove_session_if_relay_state_does_not_correspond_to_session_relay_state(
+        self, mock_get_client
+    ) -> None:
+        domain = 'domain1'
+        req_key = 'kid1'
+        original_req: SamlAuthContext = self._get_auth_context(
+            domain=domain, relay_state='6pruzvCdQHaLWCd30T6IziZFX_U='
+        )
+        altered_req: SamlAuthContext = self._get_auth_context(
+            domain=domain, relay_state='iO6ldOVHIIpUKg6I8AyeZSCHEcQ='
+        )
+
+        self.service._outstanding_requests = {
+            req_key: original_req,
+            "other_key": altered_req,
+        }
+
+        response = Mock()
+        response.session_id.return_value = req_key
+        mock_client = Mock()
+        mock_client.parse_authn_request_response.return_value = response
+        mock_get_client.return_value = mock_client
+        res = self.service.process_auth_response(
+            'url',
+            'remote_addr',
+            {'RelayState': 'iO6ldOVHIIpUKg6I8AyeZSCHEcQ=', 'SAMLResponse': None},
+        )
+
+        assert_that(res, is_(None))
+        assert_that(len(self.service._outstanding_requests), is_(2))
+
     def test_get_user_login_and_remove_context(self) -> None:
         saml_context = SamlAuthContext(
             saml_session_id=s.session_1,

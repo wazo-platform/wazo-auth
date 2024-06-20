@@ -51,6 +51,9 @@ class SAMLACS(http.ErrorCatchingResource):
         except SignatureError as err:
             logger.info("Signature error: %s", err)
             raise exceptions.SAMLProcessingError('Signature error')
+        except exceptions.SAMLProcessingError as err:
+            logger.warn('SAML SSO answer processing failed')
+            raise err
         except Exception as err:
             logger.exception("SAML unexpected error: %s", err)
             raise exceptions.SAMLProcessingError('Unexpected error')
