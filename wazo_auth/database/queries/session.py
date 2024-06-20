@@ -44,7 +44,7 @@ class SessionDAO(PaginatorMixin, BaseDAO):
             filter_ = and_(filter_, Session.tenant_uuid.in_(tenant_uuids))
 
         if user_uuid is not None:
-            filter_ = and_(filter_, Session.tokens.any(auth_id=user_uuid))
+            filter_ = and_(filter_, Session.tokens.any(auth_id=str(user_uuid)))
 
         return self.session.query(Session).join(Token).filter(filter_).count()
 
