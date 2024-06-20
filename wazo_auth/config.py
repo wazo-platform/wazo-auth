@@ -128,7 +128,6 @@ _DEFAULT_CONFIG = {
         'xmlsec_binary': '/usr/bin/xmlsec1',
         'key_file': '/var/lib/wazo-auth/saml/server.key',
         'cert_file': '/var/lib/wazo-auth/saml/server.crt',
-        'allow_unknown_attributes': True,
     },
 }
 
