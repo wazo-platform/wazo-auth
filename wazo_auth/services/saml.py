@@ -135,33 +135,53 @@ class SAMLService(BaseService):
         location = [i for i in info['headers'] if i[0] == 'Location'][0][1]
         return location, saml_session_id
 
-    def process_auth_response(
-        self, url: str, remote_addr: str, form_data: SAMLACSFormData
-    ) -> str | None:
-        req_id: list[Any] = [
+    def _decode_saml_response(
+        self, saml_client: Saml2Client, saml_response: str, conv_info: dict[str, Any]
+    ) -> None | AuthnResponse:
+        return saml_client.parse_authn_request_response(
+            saml_response,
+            BINDING_HTTP_POST,
+            self._outstanding_requests,
+            None,
+            conv_info=conv_info,
+        )
+
+    def _find_session_from_relay_state(
+        self, relay_state: str
+    ) -> SamlAuthContext | None:
+        session: list[SamlAuthContext] = [
             e
             for e in self._outstanding_requests
-            if self._outstanding_requests[e].relay_state == form_data['RelayState']
+            if self._outstanding_requests[e].relay_state == relay_state
         ]
-        if len(req_id) != 1:
-            logger.warn(
+        if len(session) == 1:
+            return session[0]
+        else:
+            logger.warning(
                 "Unable to get SAML session corresponding to the received RelayState"
             )
             return None
-        domain: str = self._outstanding_requests[req_id[0]].domain
-        saml_client = self.get_client(domain)
-        conv_info = {
+
+    def process_auth_response(
+        self, url: str, remote_addr: str, form_data: SAMLACSFormData
+    ) -> str | None:
+        session: SamlAuthContext | None = self._find_session_from_relay_state(
+            form_data['RelayState']
+        )
+        if not session:
+            return None
+
+        domain: str = self._outstanding_requests[session].domain
+        saml_client: Saml2Client = self.get_client(domain)
+        conv_info: dict[str, Any] = {
             "remote_addr": remote_addr,
             "request_uri": url,
             "entity_id": saml_client.config.entityid,
             "endpoints": saml_client.config.getattr("endpoints", "sp"),
         }
-        response = saml_client.parse_authn_request_response(
-            form_data['SAMLResponse'],
-            BINDING_HTTP_POST,
-            self._outstanding_requests,
-            None,
-            conv_info=conv_info,
+
+        response = self._decode_saml_response(
+            saml_client, form_data['SAMLResponse'], conv_info
         )
 
         logger.debug('SAML SP response: %s', response)

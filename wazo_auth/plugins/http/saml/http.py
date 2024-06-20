@@ -37,7 +37,7 @@ class SAMLACS(http.ErrorCatchingResource):
                 logger.debug('ASC Post response: %s', response)
                 return redirect(response)
             else:
-                logger.warn('ACS response request failed: Context not found')
+                logger.warning('ACS response request failed: Context not found')
                 raise exceptions.SAMLProcessingError('Context not found', 404)
         except UnknownPrincipal as excp:
             logger.info(f"UnknownPrincipal: {excp}")
@@ -52,7 +52,7 @@ class SAMLACS(http.ErrorCatchingResource):
             logger.info("Signature error: %s", err)
             raise exceptions.SAMLProcessingError('Signature error')
         except exceptions.SAMLProcessingError as err:
-            logger.warn('SAML SSO answer processing failed')
+            logger.warning('SAML SSO answer processing failed')
             raise err
         except Exception as err:
             logger.exception("SAML unexpected error: %s", err)
