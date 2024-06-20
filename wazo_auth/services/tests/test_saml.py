@@ -9,6 +9,7 @@ from unittest.mock import sentinel as s
 
 from hamcrest import assert_that, has_length, is_
 
+from wazo_auth import exceptions
 from wazo_auth.config import _DEFAULT_CONFIG
 from wazo_auth.services.tenant import TenantService
 
@@ -112,13 +113,15 @@ class TestSAMLService(TestCase):
         mock_client = Mock()
         mock_client.parse_authn_request_response.return_value = response
         mock_get_client.return_value = mock_client
-        res = self.service.process_auth_response(
-            'url',
-            'remote_addr',
-            {'RelayState': 'iO6ldOVHIIpUKg6I8AyeZSCHEcQ=', 'SAMLResponse': None},
-        )
+        with self.assertRaises(exceptions.SAMLProcessingError) as eo:
+            self.service.process_auth_response(
+                'url',
+                'remote_addr',
+                {'RelayState': 'iO6ldOVHIIpUKg6I8AyeZSCHEcQ=', 'SAMLResponse': None},
+            )
 
-        assert_that(res, is_(None))
+        the_exception = eo.exception
+        self.assertEqual(the_exception.status_code, 404)
         assert_that(self.service._outstanding_requests, is_({req_key: saved_req}))
 
     @patch('wazo_auth.services.SAMLService.get_client')
@@ -144,13 +147,15 @@ class TestSAMLService(TestCase):
         mock_client = Mock()
         mock_client.parse_authn_request_response.return_value = response
         mock_get_client.return_value = mock_client
-        res = self.service.process_auth_response(
-            'url',
-            'remote_addr',
-            {'RelayState': 'iO6ldOVHIIpUKg6I8AyeZSCHEcQ=', 'SAMLResponse': None},
-        )
+        with self.assertRaises(exceptions.SAMLProcessingError) as eo:
+            self.service.process_auth_response(
+                'url',
+                'remote_addr',
+                {'RelayState': 'iO6ldOVHIIpUKg6I8AyeZSCHEcQ=', 'SAMLResponse': None},
+            )
 
-        assert_that(res, is_(None))
+        the_exception = eo.exception
+        self.assertEqual(the_exception.status_code, 404)
         assert_that(len(self.service._outstanding_requests), is_(2))
 
     def test_get_user_login_and_remove_context(self) -> None:

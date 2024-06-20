@@ -14,8 +14,11 @@ from typing import Any, TypedDict
 from saml2 import BINDING_HTTP_POST
 from saml2.client import Saml2Client
 from saml2.config import Config as SAMLConfig
-from saml2.response import AuthnResponse
+from saml2.response import AuthnResponse, VerificationError
+from saml2.s_utils import UnknownPrincipal, UnsupportedBinding
+from saml2.sigver import SignatureError
 
+from wazo_auth import exceptions
 from wazo_auth.services.helpers import BaseService
 from wazo_auth.services.tenant import TenantService
 
@@ -122,7 +125,7 @@ class SAMLService(BaseService):
         client = self.get_client(domain)
 
         relay_state: str = base64.urlsafe_b64encode(
-            hashlib.sha1(saml_session_id.encode()).digest()
+            hashlib.sha256(saml_session_id.encode()).digest()
         ).decode()
         req_id, info = client.prepare_for_authenticate(relay_state=relay_state)
 
@@ -164,12 +167,13 @@ class SAMLService(BaseService):
 
     def process_auth_response(
         self, url: str, remote_addr: str, form_data: SAMLACSFormData
-    ) -> str | None:
+    ) -> str:
         session: SamlAuthContext | None = self._find_session_from_relay_state(
             form_data['RelayState']
         )
         if not session:
-            return None
+            logger.warning('ACS response request failed: Context not found')
+            raise exceptions.SAMLProcessingError('Context not found', code=404)
 
         domain: str = self._outstanding_requests[session].domain
         saml_client: Saml2Client = self.get_client(domain)
@@ -180,9 +184,30 @@ class SAMLService(BaseService):
             "endpoints": saml_client.config.getattr("endpoints", "sp"),
         }
 
-        response = self._decode_saml_response(
-            saml_client, form_data['SAMLResponse'], conv_info
-        )
+        try:
+            response = self._decode_saml_response(
+                saml_client, form_data['SAMLResponse'], conv_info
+            )
+        except UnknownPrincipal as excp:
+            logger.info(f"UnknownPrincipal: {excp}")
+            raise exceptions.SAMLProcessingErrorWithReturnURL(
+                'Unknown principal', return_url=session.redirect_url
+            )
+        except UnsupportedBinding as excp:
+            logger.info("UnsupportedBinding: %s", excp)
+            raise exceptions.SAMLProcessingErrorWithReturnURL(
+                'Unsupported binding', return_url=session.redirect_url
+            )
+        except VerificationError as err:
+            logger.info("Verification error: %s", err)
+            raise exceptions.SAMLProcessingErrorWithReturnURL(
+                'Verification error', return_url=session.redirect_url
+            )
+        except SignatureError as err:
+            logger.info("Signature error: %s", err)
+            raise exceptions.SAMLProcessingErrorWithReturnURL(
+                'Signature error', return_url=session.redirect_url
+            )
 
         logger.debug('SAML SP response: %s', response)
         logger.info('SAML response AVA: %s', response.ava)
@@ -196,14 +221,15 @@ class SAMLService(BaseService):
                 logger.warning(
                     'RequestId does not correspond to RelayState, ignoring response'
                 )
-                return None
+                raise exceptions.SAMLProcessingError('Context not found', code=404)
             update = {'response': response, 'login': response.ava['name'][0]}
             self._outstanding_requests[response.session_id()] = replace(
                 session_data, **update
             )
             return session_data.redirect_url
         else:
-            return None
+            logger.warning('ACS response request failed: Context not found')
+            raise exceptions.SAMLProcessingError('Context not found', code=404)
 
     def get_user_login_and_remove_context(self, saml_session_id: str) -> str | None:
         logger.debug('sessions %s', self._outstanding_requests)
