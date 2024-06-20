@@ -129,7 +129,7 @@ _DEFAULT_CONFIG = {
         'key_file': '/var/lib/wazo-auth/saml/server.key',
         'cert_file': '/var/lib/wazo-auth/saml/server.crt',
     },
-    'max_users_concurrent_sessions': 100,
+    'max_user_concurrent_sessions': 100,
 }
 
 

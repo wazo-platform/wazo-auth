@@ -34,7 +34,7 @@ class TokenService(BaseService):
         self._default_expiration = config['default_token_lifetime']
         self._bus_publisher = bus_publisher
         self._user_service = user_service
-        self._max_user_sessions = config['max_users_concurrent_sessions']
+        self._max_user_sessions = config['max_user_concurrent_sessions']
 
     def count_refresh_tokens(
         self, scoping_tenant_uuid=None, recurse=False, **search_params
