@@ -57,26 +57,34 @@ class SAMLService(BaseService):
         self._saml_clients: dict[str, Saml2Client] = {}
         self._tenant_service = tenant_service
 
-        self._init_clients()
+        global_saml_config = dict(self._config['saml'])
+        required_config_options = [
+            'key_file',
+            'cert_file',
+            'xmlsec_binary',
+            'saml_session_lifetime_seconds',
+        ]
+        missing_keys = []
+        for key in required_config_options:
+            value = global_saml_config.get(key)
+            if not value:
+                missing_keys.append(key)
+
+        if missing_keys:
+            logger.error(
+                'Failed to initialize SAML service, missing configuration %s',
+                ','.join(missing_keys),
+            )
+            return
+
+        domain_configs = global_saml_config.pop('domains', None)
+        self._init_clients(global_saml_config, domain_configs)
         self._saml_session_lifetime = timedelta(
             seconds=config['saml']['saml_session_lifetime_seconds']
         )
 
-    def _init_clients(self):
-        key_file = self._config['saml']['key_file']
-        cert_file = self._config['saml']['cert_file']
-        if not key_file or not cert_file:
-            raise Exception(
-                '"key_file" or "cert_file" are missing from the SAML configuration'
-            )
-
-        global_saml_config = {
-            'xmlsec_binary': self._config['saml'].get('xmlsec_binary'),
-            'key_file': key_file,
-            'cert_file': cert_file,
-        }
+    def _init_clients(self, global_saml_config, domain_configs):
         logger.debug('Global SAML config: %s', global_saml_config)
-        domain_configs = self._config['saml']['domains']
         if not domain_configs:
             logger.debug('No SAML configuration found for any domain')
             return
