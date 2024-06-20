@@ -707,12 +707,7 @@ class TestTokens(base.APIIntegrationTest):
             client.token.new(expiration=10, access_type='online')
 
         assert_that(
-            calling(client.token.new).with_args(expiration=10, access_type='online'),
-            not_(
-                raises(HTTPError).matching(
-                    has_properties(response=has_properties(status_code=429))
-                )
-            ),
+            client.token.new(expiration=10, access_type='online'), has_key('token')
         )
 
 
