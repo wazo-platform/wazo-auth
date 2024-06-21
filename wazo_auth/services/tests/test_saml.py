@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 from unittest.mock import sentinel as s
 
 from hamcrest import assert_that, has_length, is_
+from saml2.response import VerificationError
 
 from wazo_auth import exceptions
 from wazo_auth.config import _DEFAULT_CONFIG
@@ -157,6 +158,41 @@ class TestSAMLService(TestCase):
         the_exception = eo.exception
         self.assertEqual(the_exception.status_code, 404)
         assert_that(len(self.service._outstanding_requests), is_(2))
+
+    @patch('wazo_auth.services.SAMLService.get_client')
+    def test_process_response_raise_exception_with_redirection_url_when_possible(
+        self, mock_get_client
+    ) -> None:
+        domain = 'domain1'
+        req_key = 'kid1'
+        req: SamlAuthContext = self._get_auth_context(
+            domain=domain,
+            relay_state='6pruzvCdQHaLWCd30T6IziZFX_U=',
+            redirect_url='redirect_url',
+        )
+
+        self.service._outstanding_requests = {
+            req_key: req,
+        }
+
+        response = Mock()
+        response.session_id.return_value = req_key
+        mock_client = Mock()
+        mock_client.parse_authn_request_response.side_effect = VerificationError
+        mock_get_client.return_value = mock_client
+        with self.assertRaises(exceptions.SAMLProcessingErrorWithReturnURL) as eo:
+            self.service.process_auth_response(
+                'url',
+                'remote_addr',
+                {'RelayState': '6pruzvCdQHaLWCd30T6IziZFX_U=', 'SAMLResponse': None},
+            )
+
+        the_exception = eo.exception
+        self.assertEqual(the_exception.status_code, 500)
+        self.assertEqual(
+            the_exception.redirect_url, 'redirect_url?login_failure_code=500'
+        )
+        assert_that(len(self.service._outstanding_requests), is_(0))
 
     def test_get_user_login_and_remove_context(self) -> None:
         saml_context = SamlAuthContext(

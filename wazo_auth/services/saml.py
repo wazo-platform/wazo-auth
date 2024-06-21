@@ -149,33 +149,48 @@ class SAMLService(BaseService):
             conv_info=conv_info,
         )
 
-    def _find_session_from_relay_state(
+    def _find_session_by_relay_state(
         self, relay_state: str
-    ) -> SamlAuthContext | None:
+    ) -> tuple[SamlAuthContext, SamlAuthContext] | tuple[None, None]:
         session: list[SamlAuthContext] = [
             e
             for e in self._outstanding_requests
             if self._outstanding_requests[e].relay_state == relay_state
         ]
         if len(session) == 1:
-            return session[0]
+            return self._outstanding_requests[session[0]], session[0]
         else:
             logger.warning(
                 "Unable to get SAML session corresponding to the received RelayState"
             )
-            return None
+            return None, None
+
+    def _process_auth_response_error(
+        self, redirect_url: str, req_id: Any, msg: str
+    ) -> None:
+
+        logger.warning(msg)
+        logger.debug(f'Removing session: {req_id}')
+        del self._outstanding_requests[req_id]
+        raise exceptions.SAMLProcessingErrorWithReturnURL(
+            'Unknown principal', return_url=redirect_url
+        )
+
+    def _process_auth_response_context_not_found(self) -> None:
+        logger.warning('ACS response request failed: Context not found')
+        raise exceptions.SAMLProcessingError('Context not found', code=404)
 
     def process_auth_response(
         self, url: str, remote_addr: str, form_data: SAMLACSFormData
     ) -> str:
-        session: SamlAuthContext | None = self._find_session_from_relay_state(
-            form_data['RelayState']
-        )
-        if not session:
-            logger.warning('ACS response request failed: Context not found')
-            raise exceptions.SAMLProcessingError('Context not found', code=404)
+        (
+            session_by_relay_state,
+            req_id_by_relay_state,
+        ) = self._find_session_by_relay_state(form_data['RelayState'])
+        if not session_by_relay_state:
+            self._process_auth_response_context_not_found()
 
-        domain: str = self._outstanding_requests[session].domain
+        domain: str = session_by_relay_state.domain
         saml_client: Saml2Client = self.get_client(domain)
         conv_info: dict[str, Any] = {
             "remote_addr": remote_addr,
@@ -189,24 +204,34 @@ class SAMLService(BaseService):
                 saml_client, form_data['SAMLResponse'], conv_info
             )
         except UnknownPrincipal as excp:
-            logger.info(f"UnknownPrincipal: {excp}")
-            raise exceptions.SAMLProcessingErrorWithReturnURL(
-                'Unknown principal', return_url=session.redirect_url
+            self._process_auth_response_error(
+                session_by_relay_state.redirect_url,
+                req_id_by_relay_state,
+                f'UnknownPrincipal: {excp}',
             )
         except UnsupportedBinding as excp:
-            logger.info("UnsupportedBinding: %s", excp)
-            raise exceptions.SAMLProcessingErrorWithReturnURL(
-                'Unsupported binding', return_url=session.redirect_url
+            self._process_auth_response_error(
+                session_by_relay_state.redirect_url,
+                req_id_by_relay_state,
+                f'Unsupported binding: {excp}',
             )
-        except VerificationError as err:
-            logger.info("Verification error: %s", err)
-            raise exceptions.SAMLProcessingErrorWithReturnURL(
-                'Verification error', return_url=session.redirect_url
+        except VerificationError as excp:
+            self._process_auth_response_error(
+                session_by_relay_state.redirect_url,
+                req_id_by_relay_state,
+                f'Verification error: {excp}',
             )
-        except SignatureError as err:
-            logger.info("Signature error: %s", err)
-            raise exceptions.SAMLProcessingErrorWithReturnURL(
-                'Signature error', return_url=session.redirect_url
+        except SignatureError as excp:
+            self._process_auth_response_error(
+                session_by_relay_state.redirect_url,
+                req_id_by_relay_state,
+                f'Signature error: {excp}',
+            )
+        except Exception as excp:
+            self._process_auth_response_error(
+                session_by_relay_state.redirect_url,
+                req_id_by_relay_state,
+                f'Unexpected error: {excp}',
             )
 
         logger.debug('SAML SP response: %s', response)
@@ -221,15 +246,14 @@ class SAMLService(BaseService):
                 logger.warning(
                     'RequestId does not correspond to RelayState, ignoring response'
                 )
-                raise exceptions.SAMLProcessingError('Context not found', code=404)
+                self._process_auth_response_context_not_found()
             update = {'response': response, 'login': response.ava['name'][0]}
             self._outstanding_requests[response.session_id()] = replace(
                 session_data, **update
             )
             return session_data.redirect_url
         else:
-            logger.warning('ACS response request failed: Context not found')
-            raise exceptions.SAMLProcessingError('Context not found', code=404)
+            self._process_auth_response_context_not_found()
 
     def get_user_login_and_remove_context(self, saml_session_id: str) -> str | None:
         logger.debug('sessions %s', self._outstanding_requests)
