@@ -56,10 +56,13 @@ class Config(TypedDict, total=False):
     saml: WazoSAMLConfig
 
 
+RequestId = Any
+
+
 class SAMLService(BaseService):
     def __init__(self, config: Config, tenant_service: TenantService):
         self._config = config
-        self._outstanding_requests: dict[Any, SamlAuthContext] = {}
+        self._outstanding_requests: dict[RequestId, SamlAuthContext] = {}
         self._saml_clients: dict[str, Saml2Client] = {}
         self._tenant_service = tenant_service
 
@@ -151,7 +154,7 @@ class SAMLService(BaseService):
 
     def _find_session_by_relay_state(
         self, relay_state: str
-    ) -> tuple[SamlAuthContext, SamlAuthContext] | tuple[None, None]:
+    ) -> tuple[SamlAuthContext, RequestId] | tuple[None, None]:
         sessions = [
             (reqid, context)
             for reqid, context in self._outstanding_requests.items()
@@ -167,7 +170,7 @@ class SAMLService(BaseService):
             return None, None
 
     def _process_auth_response_error(
-        self, redirect_url: str, req_id: Any, msg: str
+        self, redirect_url: str, req_id: RequestId, msg: str
     ) -> None:
 
         logger.warning(msg)
