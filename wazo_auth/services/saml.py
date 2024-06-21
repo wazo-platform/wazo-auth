@@ -152,13 +152,14 @@ class SAMLService(BaseService):
     def _find_session_by_relay_state(
         self, relay_state: str
     ) -> tuple[SamlAuthContext, SamlAuthContext] | tuple[None, None]:
-        session: list[SamlAuthContext] = [
-            e
-            for e in self._outstanding_requests
-            if self._outstanding_requests[e].relay_state == relay_state
+        sessions = [
+            (reqid, context)
+            for reqid, context in self._outstanding_requests.items()
+            if context.relay_state == relay_state
         ]
-        if len(session) == 1:
-            return self._outstanding_requests[session[0]], session[0]
+        if len(sessions) == 1:
+            reqid, context = sessions[0]
+            return context, reqid
         else:
             logger.warning(
                 "Unable to get SAML session corresponding to the received RelayState"
@@ -254,6 +255,7 @@ class SAMLService(BaseService):
             return session_data.redirect_url
         else:
             self._process_auth_response_context_not_found()
+            return
 
     def get_user_login_and_remove_context(self, saml_session_id: str) -> str | None:
         logger.debug('sessions %s', self._outstanding_requests)
