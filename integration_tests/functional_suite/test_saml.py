@@ -128,3 +128,6 @@ class TestSamlService(SAMLIntegrationTest):
         expect(
             self.page.locator("#token"), "Failed to retrieve token"
         ).not_to_contain_text("not yet known")
+        expect(
+            self.page.locator("#refresh"), "Failed to retrieve a refresh token"
+        ).not_to_contain_text("not yet known")
