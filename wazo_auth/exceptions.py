@@ -154,7 +154,10 @@ class UnknownTenantException(APIException):
 
 class UnauthorizedTenantwithChildrenDelete(APIException):
     def __init__(self, tenant_uuid):
-        msg = f'Unauthorized delete of tenant : "{tenant_uuid}" ; since it has at least one child'
+        msg = (
+            f'Unauthorized delete of tenant : "{tenant_uuid}" ; '  # noqa: E702
+            'since it has at least one child'
+        )
         details = {'uuid': str(tenant_uuid)}
         super().__init__(400, msg, details, 'tenants')
 
@@ -463,3 +466,7 @@ class SAMLProcessingError(SAMLException):
             'error': error,
         }
         super().__init__(error_code, error_msg, error_id, error_details, self.resource)
+
+
+class SAMLConfigException(APIException):
+    resource = 'saml_config'
