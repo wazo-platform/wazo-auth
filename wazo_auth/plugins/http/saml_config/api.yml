@@ -12,6 +12,14 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/Error'
+        '404':
+          description: Configuration for the tenant not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error'
       security:
       - wazo_auth_token: []
       summary: Delete current tenant's SAML backend configuration
@@ -26,11 +34,15 @@ paths:
       - application/json
       responses:
         '200':
-          description: The SAML backend configuration
+          description: The SAML backend configuration and the metadata XML file.
           schema:
             $ref: '#/definitions/SAMLBackendConfig'
         '401':
           description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/Error'
       security:
@@ -58,10 +70,6 @@ paths:
           name: entityId
           type: string
           description: The name of the SAML Entity.
-        - in: formData
-          name: acsUrl
-          type: string
-          format: url
       produces:
       - application/json
       responses:
@@ -73,28 +81,77 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/Error'
+        '500':
+          description: 'Internal server error'
+          schema:
+            $ref: '#/definitions/Error'
       security:
       - wazo_auth_token: []
       summary: Update current tenant's SAML backend configuration
       tags:
       - backends
-  /backends/saml/download:
+  /backends/saml/metadata:
     get:
       description: '**Required ACL:** `auth.backends.saml.read`
 
-        This endpoint allow to download tenant medatada file.
+
+        This endpoint allow to download tenant metadata file.
+
+        '
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      responses:
+        '200':
+          description: Download the tenant SAML metadata XML file.
+          schema:
+            description: The  metadata file in XML format.
+            type: file
+            x-mimetype: application/xml
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: 'No metadata file found'
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: 'Internal server error'
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Download the tenant's SAML metadata XML file.
+      tags:
+      - backends
+  /backends/saml/acs:
+    get:
+      description: '**Required ACL:** `auth.backends.saml.read`
+
+
+        This endpoint provides the tenant Assertion Consumer Service URL.
 
         '
       parameters:
       - $ref: '#/parameters/tenantuuid'
       produces:
-      - application/xml
+      - application/json
       responses:
         '200':
-          description: Download the tenant's SAML metadata XML file.
+          description: Returns the URL to be used while configuring the Identity provider.
+          schema:
+            $ref: '#/definitions/SAMLAcsUrl'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
         '404':
-          $ref: '#/definitions/Error'
-      summary: Download the tenant's SAML metadata XML file.
+          description: SAML backend is not enabled
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: 'Internal server error'
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Get tenant's ACS URL to use in the IDP configuration
       tags:
       - backends
 
@@ -105,10 +162,15 @@ definitions:
       entityId:
         type: string
         description: The name of the SAML Entity Id
+    required:
+    - entityId
+    type: object
+  SAMLAcsUrl:
+    properties:
       acsUrl:
         type: string
         description: The SAML ACS URL
+        format: uri
     required:
-    - entityId
     - acsUrl
     type: object
