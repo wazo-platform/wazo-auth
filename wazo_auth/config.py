@@ -57,6 +57,7 @@ _DEFAULT_CONFIG = {
         'user_session': True,
         'users': True,
         'saml': True,
+        'saml_config': True,
     },
     'enabled_backend_plugins': {
         'ldap_user': True,

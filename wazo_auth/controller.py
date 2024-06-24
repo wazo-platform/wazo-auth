@@ -68,6 +68,9 @@ class Controller:
             self._bus_publisher,
         )
         self._saml_service = services.SAMLService(self._config, self._tenant_service)
+
+        self._saml_config_service = services.SAMLConfigService(self.dao)
+
         authentication_service = services.AuthenticationService(
             self.dao,
             self._backends,
@@ -155,6 +158,7 @@ class Controller:
             'template_formatter': template_formatter,
             'ldap_service': ldap_service,
             'saml_service': self._saml_service,
+            'saml_config_service': self._saml_config_service,
         }
         Tenant.setup(self._token_service, self._user_service, self._tenant_service)
         Token.setup(self._token_service)

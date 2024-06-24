@@ -31,7 +31,7 @@ class LDAPConfig(AuthResource):
         except marshmallow.ValidationError as e:
             for field in e.messages:
                 raise exceptions.InvalidInputException(field)
-        return ldap_config_schema.dump(ldap_config), 200
+        return ldap_config_schema.dump(obj=ldap_config), 200
 
     @required_acl('auth.backends.ldap.delete')
     def delete(self):
