@@ -1,12 +1,18 @@
 # Copyright 2022-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+<<<<<<< HEAD
 from typing import Any
 
 from sqlalchemy import exc
 
 from wazo_auth import exceptions
 
+=======
+from sqlalchemy import exc
+
+from ... import exceptions
+>>>>>>> 55953376 (database add saml_config table and DAO)
 from ..models import SAMLConfig
 from .base import BaseDAO
 

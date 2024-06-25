@@ -153,6 +153,7 @@ class SAMLService(BaseService):
 
             with tempfile.NamedTemporaryFile(suffix='.xml') as metadata_file:
                 metadata_file.write(db_config['idp_metadata'].encode())
+                metadata_file.flush()
                 raw_saml_config = self._prepare_saml_config(
                     db_config, metadata_file.name, self._global_saml_config
                 )
