@@ -12,7 +12,7 @@ from wazo_auth.database.datatypes import XMLPostgresqlType
 
 # revision identifiers, used by Alembic.
 revision = '036d80b11825'
-down_revision = '1cd6161394d0'
+down_revision = 'a1149ec5ad50'
 
 
 TABLE_NAME = 'auth_saml_config'
