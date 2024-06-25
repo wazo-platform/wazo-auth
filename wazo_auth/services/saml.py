@@ -180,10 +180,6 @@ class SAMLService(BaseService):
             'Unknown principal', return_url=redirect_url
         )
 
-    def _process_auth_response_context_not_found(self) -> None:
-        logger.warning('ACS response request failed: Context not found')
-        raise exceptions.SAMLProcessingError('Context not found', code=404)
-
     def process_auth_response(
         self, url: str, remote_addr: str, form_data: SAMLACSFormData
     ) -> str:
@@ -192,7 +188,8 @@ class SAMLService(BaseService):
             req_id_by_relay_state,
         ) = self._find_session_by_relay_state(form_data['RelayState'])
         if not session_by_relay_state:
-            self._process_auth_response_context_not_found()
+            logger.warning('ACS response request failed: Context not found')
+            raise exceptions.SAMLProcessingError('Context not found', code=404)
 
         domain: str = session_by_relay_state.domain
         saml_client: Saml2Client = self.get_client(domain)
@@ -250,15 +247,17 @@ class SAMLService(BaseService):
                 logger.warning(
                     'RequestId does not correspond to RelayState, ignoring response'
                 )
-                self._process_auth_response_context_not_found()
+                logger.warning('ACS response request failed: Context not found')
+                raise exceptions.SAMLProcessingError('Context not found', code=404)
+
             update = {'response': response, 'login': response.ava['name'][0]}
             self._outstanding_requests[response.session_id()] = replace(
                 session_data, **update
             )
             return session_data.redirect_url
         else:
-            self._process_auth_response_context_not_found()
-            return
+            logger.warning('ACS response request failed: Context not found')
+            raise exceptions.SAMLProcessingError('Context not found', code=404)
 
     def get_user_login_and_remove_context(self, saml_session_id: str) -> str | None:
         logger.debug('sessions %s', self._outstanding_requests)
