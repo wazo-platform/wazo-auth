@@ -83,14 +83,6 @@ class InvalidListParamException(APIException):
                 return cls(info['message'], {field: info})
 
 
-class MaxConcurrentSessionsReached(APIException):
-    def __init__(self, details=None):
-        message = (
-            'Unable to proceed, user has exceeded the maximum number of active sessions'
-        )
-        super().__init__(429, message, 'max-user-concurrent-sessions', details, 'users')
-
-
 class UnknownAddressException(APIException):
     def __init__(self, address_id):
         msg = f'No such address: "{address_id}"'
@@ -358,6 +350,19 @@ class DuplicateAccessException(TokenServiceException):
 
     def __str__(self):
         return f'Policy already associated to {self._access}'
+
+
+class MaxConcurrentSessionsReached(TokenServiceException):
+    code = 429
+
+    def __init__(self, user_uuid):
+        super().__init__()
+        self._user_uuid = user_uuid
+
+    def __str__(self):
+        return (
+            f'User {self._user_uuid} has exceeded the maximum number of active sessions'
+        )
 
 
 class UnknownPolicyException(TokenServiceException):

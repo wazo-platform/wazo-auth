@@ -79,7 +79,7 @@ class TokenService(BaseService):
         if is_uuid(auth_id) and purpose in ('user', 'external_api'):
             sessions = self._dao.session.count(user_uuid=auth_id)
             if sessions >= self._max_user_sessions:
-                raise MaxConcurrentSessionsReached({'user_uuid': auth_id})
+                raise MaxConcurrentSessionsReached(auth_id)
 
         args['acl'] = self._get_acl(args['backend'])
         args['metadata'] = metadata
