@@ -6,8 +6,6 @@ import sqlalchemy.types as types
 
 
 class XMLPostgresqlType(types.UserDefinedType):
-    cache_ok = True
-
     def __init__(self):
         pass
 

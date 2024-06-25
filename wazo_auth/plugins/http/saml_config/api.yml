@@ -67,7 +67,7 @@ paths:
           description: The IDP metadata file in XML format.
           x-mimetype: application/xml
         - in: formData
-          name: entityId
+          name: entity_id
           type: string
           description: The name of the SAML Entity.
       produces:
@@ -159,18 +159,18 @@ paths:
 definitions:
   SAMLBackendConfig:
     properties:
-      entityId:
+      entity_id:
         type: string
         description: The name of the SAML Entity Id
     required:
-    - entityId
+    - entity_id
     type: object
   SAMLAcsUrl:
     properties:
-      acsUrl:
+      acs_url:
         type: string
         description: The SAML ACS URL
         format: uri
     required:
-    - acsUrl
+    - acs_url
     type: object
