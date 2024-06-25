@@ -28,6 +28,7 @@ from ..database.queries import (
     ldap_config,
     policy,
     refresh_token,
+    saml_config,
     session,
     tenant,
     token,
@@ -47,6 +48,7 @@ class BaseServiceTestCase(TestCase):
         self.ldap_config_dao = Mock(ldap_config.LDAPConfigDAO)
         self.policy_dao = Mock(policy.PolicyDAO)
         self.refresh_token_dao = Mock(refresh_token.RefreshTokenDAO)
+        self.saml_config_dao = Mock(saml_config.SAMLConfigDAO)
         self.session_dao = Mock(session.SessionDAO)
         self.tenant_dao = Mock(tenant.TenantDAO)
         self.token_dao = Mock(token.TokenDAO)
@@ -65,6 +67,7 @@ class BaseServiceTestCase(TestCase):
             ldap_config=self.ldap_config_dao,
             policy=self.policy_dao,
             refresh_token=self.refresh_token_dao,
+            saml_config=self.saml_config_dao,
             session=self.session_dao,
             tenant=self.tenant_dao,
             token=self.token_dao,
