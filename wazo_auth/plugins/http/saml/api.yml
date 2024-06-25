@@ -44,7 +44,9 @@ paths:
 
         The internal cache allows to retrieve the context and redirect the browser
         to process the login.
-      summary: Processes the IdP response and redirects to requested URL
+      summary: |
+        Processes the IdP response and redirects to requested URL, even if the authentication
+        failed to allow further processing by the frontend application.
       operationId: processACS
       tags:
       - token
@@ -55,14 +57,38 @@ paths:
         description: The SAML response
         required: true
         schema:
-          $ref: '#/definitions/SAMLResponse'
+          $ref: '#/definitions/SAMLIdpResponse'
       responses:
         '303':
-          description: Redirect browser to process the login.
+          description: |
+            Redirect browser to process the login result. The `Location` header contains the
+            URL that should be used by the client to complete the authentication. For failed authentication,
+            the `Location` header URL contains an error code in the `login_failure_code` query parameter.
+            | Code | Description            |
+            |------|------------------------|
+            | 401  | Unauthorized           |
+            | 403  | Forbidden              |
+            | 500  | Internal Server Error  |
+          headers:
+            Location:
+              description: The URL to redirect the browser to.
+              type: string
         '400':
           description: Missing or wrong parameters.
         '404':
-          description: Context of the response not found
+          description: Context of the response not found, unable to redirect
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Error while processing the SAML response
+          schema:
+            $ref: '#/definitions/Error'
+          headers:
+            Location:
+              description: The URL to redirect the browser to.
+              type: string
+        '404':
+          description: Context of the response not found, unable to redirect
           schema:
             $ref: '#/definitions/Error'
         '500':
@@ -71,7 +97,7 @@ paths:
             $ref: '#/definitions/Error'
 
 definitions:
-  SAMLResponse:
+  SAMLIdpResponse:
     properties:
       SAMLResponse:
         description: Encoded SAML XML response

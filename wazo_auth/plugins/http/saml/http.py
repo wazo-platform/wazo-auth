@@ -6,9 +6,6 @@ import logging
 
 import marshmallow
 from flask import redirect, request
-from saml2.response import VerificationError
-from saml2.s_utils import UnknownPrincipal, UnsupportedBinding
-from saml2.sigver import SignatureError
 
 from wazo_auth import exceptions, http
 from wazo_auth.services.saml import SAMLService
@@ -30,29 +27,19 @@ class SAMLACS(http.ErrorCatchingResource):
             logger.info('ACS response request failed: Missing or wrong parameters')
             raise exceptions.SAMLParamException('RelayState and/or SAMLResponse')
         try:
-            response = self._saml_service.process_auth_response(
+            response: str | None = self._saml_service.process_auth_response(
                 request.url, request.remote_addr, request.form
             )
-            if response:
-                logger.debug('ASC Post response: %s', response)
-                return redirect(response)
-            else:
-                logger.warn('ACS response request failed: Context not found')
-                raise exceptions.SAMLProcessingError('Context not found', 404)
-        except UnknownPrincipal as excp:
-            logger.info(f"UnknownPrincipal: {excp}")
-            raise exceptions.SAMLProcessingError('Unknown principal')
-        except UnsupportedBinding as excp:
-            logger.info("UnsupportedBinding: %s", excp)
-            raise exceptions.SAMLProcessingError('Unsupported binding')
-        except VerificationError as err:
-            logger.info("Verification error: %s", err)
-            raise exceptions.SAMLProcessingError('Verification error')
-        except SignatureError as err:
-            logger.info("Signature error: %s", err)
-            raise exceptions.SAMLProcessingError('Signature error')
+            logger.debug('ASC Post response: %s', response)
+            return redirect(response)
+        except exceptions.SAMLProcessingErrorWithReturnURL as err:
+            logger.info('SAML SSO answer processing failed, redirect with error')
+            return redirect(err.redirect_url)
+        except exceptions.SAMLProcessingError as err:
+            logger.warning('SAML SSO answer processing failed')
+            raise err
         except Exception as err:
-            logger.error("SAML unexpected error: %s", err)
+            logger.exception("SAML unexpected error: %s", err)
             raise exceptions.SAMLProcessingError('Unexpected error')
 
 

@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
+import base64
+import hashlib
 import logging
 import secrets
 from dataclasses import dataclass, field, replace
@@ -12,8 +14,11 @@ from typing import Any, TypedDict
 from saml2 import BINDING_HTTP_POST
 from saml2.client import Saml2Client
 from saml2.config import Config as SAMLConfig
-from saml2.response import AuthnResponse
+from saml2.response import AuthnResponse, VerificationError
+from saml2.s_utils import UnknownPrincipal, UnsupportedBinding
+from saml2.sigver import SignatureError
 
+from wazo_auth import exceptions
 from wazo_auth.services.helpers import BaseService
 from wazo_auth.services.tenant import TenantService
 
@@ -25,6 +30,7 @@ class SamlAuthContext:
     saml_session_id: str
     redirect_url: str
     domain: str
+    relay_state: str
     login: str | None = None
     response: AuthnResponse | None = None
     start_time: datetime = field(default_factory=partial(datetime.now, timezone.utc))
@@ -50,10 +56,13 @@ class Config(TypedDict, total=False):
     saml: WazoSAMLConfig
 
 
+RequestId = Any
+
+
 class SAMLService(BaseService):
     def __init__(self, config: Config, tenant_service: TenantService):
         self._config = config
-        self._outstanding_requests: dict[Any, SamlAuthContext] = {}
+        self._outstanding_requests: dict[RequestId, SamlAuthContext] = {}
         self._saml_clients: dict[str, Saml2Client] = {}
         self._tenant_service = tenant_service
 
@@ -117,34 +126,114 @@ class SAMLService(BaseService):
     ):
         saml_session_id = secrets.token_urlsafe(16)
         client = self.get_client(domain)
-        reqid, info = client.prepare_for_authenticate(relay_state=domain)
 
-        self._outstanding_requests[reqid] = SamlAuthContext(
+        relay_state: str = base64.urlsafe_b64encode(
+            hashlib.sha256(saml_session_id.encode()).digest()
+        ).decode()
+        req_id, info = client.prepare_for_authenticate(relay_state=relay_state)
+
+        self._outstanding_requests[req_id] = SamlAuthContext(
             saml_session_id,
             redirect_url,
             domain,
+            relay_state,
         )
         location = [i for i in info['headers'] if i[0] == 'Location'][0][1]
         return location, saml_session_id
 
+    def _decode_saml_response(
+        self, saml_client: Saml2Client, saml_response: str, conv_info: dict[str, Any]
+    ) -> None | AuthnResponse:
+        return saml_client.parse_authn_request_response(
+            saml_response,
+            BINDING_HTTP_POST,
+            self._outstanding_requests,
+            None,
+            conv_info=conv_info,
+        )
+
+    def _find_session_by_relay_state(
+        self, relay_state: str
+    ) -> tuple[SamlAuthContext, RequestId] | tuple[None, None]:
+        sessions = [
+            (reqid, context)
+            for reqid, context in self._outstanding_requests.items()
+            if context.relay_state == relay_state
+        ]
+        if len(sessions) == 1:
+            reqid, context = sessions[0]
+            return context, reqid
+        else:
+            logger.warning(
+                "Unable to get SAML session corresponding to the received RelayState"
+            )
+            return None, None
+
+    def _process_auth_response_error(
+        self, redirect_url: str, req_id: RequestId, msg: str
+    ) -> None:
+
+        logger.warning(msg)
+        logger.debug(f'Removing session: {req_id}')
+        del self._outstanding_requests[req_id]
+        raise exceptions.SAMLProcessingErrorWithReturnURL(
+            'Unknown principal', return_url=redirect_url
+        )
+
     def process_auth_response(
         self, url: str, remote_addr: str, form_data: SAMLACSFormData
-    ) -> str | None:
-        saml_client = self.get_client(form_data['RelayState'])
-        conv_info = {
+    ) -> str:
+        (
+            session_by_relay_state,
+            req_id_by_relay_state,
+        ) = self._find_session_by_relay_state(form_data['RelayState'])
+        if not session_by_relay_state:
+            logger.warning('ACS response request failed: Context not found')
+            raise exceptions.SAMLProcessingError('Context not found', code=404)
+
+        domain: str = session_by_relay_state.domain
+        saml_client: Saml2Client = self.get_client(domain)
+        conv_info: dict[str, Any] = {
             "remote_addr": remote_addr,
             "request_uri": url,
             "entity_id": saml_client.config.entityid,
             "endpoints": saml_client.config.getattr("endpoints", "sp"),
         }
 
-        response = saml_client.parse_authn_request_response(
-            form_data['SAMLResponse'],
-            BINDING_HTTP_POST,
-            self._outstanding_requests,
-            None,
-            conv_info=conv_info,
-        )
+        try:
+            response = self._decode_saml_response(
+                saml_client, form_data['SAMLResponse'], conv_info
+            )
+        except UnknownPrincipal as excp:
+            self._process_auth_response_error(
+                session_by_relay_state.redirect_url,
+                req_id_by_relay_state,
+                f'UnknownPrincipal: {excp}',
+            )
+        except UnsupportedBinding as excp:
+            self._process_auth_response_error(
+                session_by_relay_state.redirect_url,
+                req_id_by_relay_state,
+                f'Unsupported binding: {excp}',
+            )
+        except VerificationError as excp:
+            self._process_auth_response_error(
+                session_by_relay_state.redirect_url,
+                req_id_by_relay_state,
+                f'Verification error: {excp}',
+            )
+        except SignatureError as excp:
+            self._process_auth_response_error(
+                session_by_relay_state.redirect_url,
+                req_id_by_relay_state,
+                f'Signature error: {excp}',
+            )
+        except Exception as excp:
+            self._process_auth_response_error(
+                session_by_relay_state.redirect_url,
+                req_id_by_relay_state,
+                f'Unexpected error: {excp}',
+            )
 
         logger.debug('SAML SP response: %s', response)
         logger.info('SAML response AVA: %s', response.ava)
@@ -152,22 +241,34 @@ class SAMLService(BaseService):
         session_data: SamlAuthContext | None = self._outstanding_requests.get(
             response.session_id()
         )
+
         if session_data:
+            if session_data.relay_state != form_data['RelayState']:
+                logger.warning(
+                    'RequestId does not correspond to RelayState, ignoring response'
+                )
+                logger.warning('ACS response request failed: Context not found')
+                raise exceptions.SAMLProcessingError('Context not found', code=404)
+
             update = {'response': response, 'login': response.ava['name'][0]}
             self._outstanding_requests[response.session_id()] = replace(
                 session_data, **update
             )
             return session_data.redirect_url
         else:
-            return None
+            logger.warning('ACS response request failed: Context not found')
+            raise exceptions.SAMLProcessingError('Context not found', code=404)
 
     def get_user_login_and_remove_context(self, saml_session_id: str) -> str | None:
         logger.debug('sessions %s', self._outstanding_requests)
-        reqid = self._reqid_by_saml_session_id(saml_session_id)
-        session_data: SamlAuthContext | None = self._outstanding_requests.pop(
-            reqid, None
-        )
-        return session_data.login if session_data else None
+        reqid: str | None = self._reqid_by_saml_session_id(saml_session_id)
+        if reqid:
+            session_data: SamlAuthContext | None = self._outstanding_requests.pop(
+                reqid, None
+            )
+            return session_data.login if session_data else None
+        else:
+            return None
 
     def clean_pending_requests(self, maybe_now: datetime | None = None) -> None:
         now: datetime = maybe_now or datetime.now(timezone.utc)
