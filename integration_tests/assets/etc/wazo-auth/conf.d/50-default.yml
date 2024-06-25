@@ -42,3 +42,5 @@ saml:
       metadata:
         local:
           - '/var/lib/wazo-auth/saml/saml.xml'
+
+max_user_concurrent_sessions: 10

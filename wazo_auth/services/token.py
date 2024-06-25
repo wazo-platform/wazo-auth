@@ -16,6 +16,7 @@ from wazo_auth.token import Token
 
 from ..exceptions import (
     DuplicatedRefreshTokenException,
+    MaxConcurrentSessionsReached,
     MissingAccessTokenException,
     MissingTenantTokenException,
     UnknownTokenException,
@@ -33,6 +34,7 @@ class TokenService(BaseService):
         self._default_expiration = config['default_token_lifetime']
         self._bus_publisher = bus_publisher
         self._user_service = user_service
+        self._max_user_sessions = config['max_user_concurrent_sessions']
 
     def count_refresh_tokens(
         self, scoping_tenant_uuid=None, recurse=False, **search_params
@@ -72,6 +74,12 @@ class TokenService(BaseService):
         pbx_user_uuid = metadata.get('pbx_user_uuid')
         xivo_uuid = metadata['xivo_uuid']
         tenant_uuid = metadata.get('tenant_uuid')
+        purpose = metadata.get('purpose')
+
+        if is_uuid(auth_id) and purpose in ('user', 'external_api'):
+            sessions = self._dao.session.count(user_uuid=auth_id)
+            if sessions >= self._max_user_sessions:
+                raise MaxConcurrentSessionsReached(auth_id)
 
         args['acl'] = self._get_acl(args['backend'])
         args['metadata'] = metadata

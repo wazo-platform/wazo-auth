@@ -1,4 +1,4 @@
-# Copyright 2019-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -18,3 +18,5 @@ DEFAULT_POLICIES_SLUG = [
     'wazo_default_user_policy',
 ]
 NB_DEFAULT_POLICIES = len(DEFAULT_POLICIES_SLUG)
+
+MAXIMUM_CONCURRENT_USER_SESSIONS = 10  # from config['max_users_concurrent_sessions']

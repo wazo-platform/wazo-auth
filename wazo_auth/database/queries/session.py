@@ -35,13 +35,16 @@ class SessionDAO(PaginatorMixin, BaseDAO):
             for r in query.all()
         ]
 
-    def count(self, tenant_uuids=None, **kwargs):
+    def count(self, tenant_uuids=None, user_uuid=None, **kwargs):
         filter_ = text('true')
 
         if tenant_uuids is not None:
             if not tenant_uuids:
                 return 0
             filter_ = and_(filter_, Session.tenant_uuid.in_(tenant_uuids))
+
+        if user_uuid is not None:
+            filter_ = and_(filter_, Session.tokens.any(auth_id=str(user_uuid)))
 
         return self.session.query(Session).join(Token).filter(filter_).count()
 

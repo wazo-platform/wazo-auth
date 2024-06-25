@@ -352,6 +352,19 @@ class DuplicateAccessException(TokenServiceException):
         return f'Policy already associated to {self._access}'
 
 
+class MaxConcurrentSessionsReached(TokenServiceException):
+    code = 429
+
+    def __init__(self, user_uuid):
+        super().__init__()
+        self._user_uuid = user_uuid
+
+    def __str__(self):
+        return (
+            f'User {self._user_uuid} has exceeded the maximum number of active sessions'
+        )
+
+
 class UnknownPolicyException(TokenServiceException):
     code = 404
 

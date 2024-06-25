@@ -28,7 +28,7 @@ from wazo_test_helpers.hamcrest.raises import raises
 
 from .helpers import base, fixtures
 from .helpers.base import assert_http_error
-from .helpers.constants import UNKNOWN_UUID
+from .helpers.constants import MAXIMUM_CONCURRENT_USER_SESSIONS, UNKNOWN_UUID
 
 
 @base.use_asset('base')
@@ -670,6 +670,45 @@ class TestTokens(base.APIIntegrationTest):
                     )
                 ),
             )
+
+    @fixtures.http.user(username='foo', password='bar', purpose='user')
+    def test_user_maximum_token_limit(self, _):
+        client = self.make_auth_client('foo', 'bar')
+        for _ in range(MAXIMUM_CONCURRENT_USER_SESSIONS):
+            client.token.new(expiration=10, access_type='online')
+
+        # Fails on 11th token
+        assert_that(
+            calling(client.token.new).with_args(expiration=10, access_type='online'),
+            raises(HTTPError).matching(
+                has_properties(response=has_properties(status_code=429))
+            ),
+        )
+
+    @fixtures.http.user(
+        username='my-service', password='my-password', purpose='external_api'
+    )
+    def test_external_api_user_maximum_token_limit(self, _):
+        client = self.make_auth_client('my-service', 'my-password')
+        for _ in range(MAXIMUM_CONCURRENT_USER_SESSIONS):
+            client.token.new(expiration=10, access_type='online')
+
+        assert_that(
+            calling(client.token.new).with_args(expiration=10, access_type='online'),
+            raises(HTTPError).matching(
+                has_properties(response=has_properties(status_code=429))
+            ),
+        )
+
+    @fixtures.http.user(username='foo', password='bar', purpose='internal')
+    def test_internal_user_should_not_have_token_limit(self, _):
+        client = self.make_auth_client('foo', 'bar')
+        for _ in range(MAXIMUM_CONCURRENT_USER_SESSIONS):
+            client.token.new(expiration=10, access_type='online')
+
+        assert_that(
+            client.token.new(expiration=10, access_type='online'), has_key('token')
+        )
 
 
 @base.use_asset('metadata')
