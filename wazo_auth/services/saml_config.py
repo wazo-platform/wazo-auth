@@ -17,10 +17,13 @@ class SAMLConfigService(BaseService):
         metadata = ElementTree.tostring(etree_metadata.getroot()).decode()
         if self._dao.saml_config.exists(tenant_uuid):
             return self._dao.saml_config.update(
-                tenant_uuid, saml_config['entity_id'], metadata
+                tenant_uuid,
+                saml_config['domain_uuid'],
+                saml_config['entity_id'],
+                metadata,
             )
         return self._dao.saml_config.create(
-            tenant_uuid, saml_config['entity_id'], metadata
+            tenant_uuid, saml_config['domain_uuid'], saml_config['entity_id'], metadata
         )
 
     def delete(self, tenant_uuid: str) -> None:

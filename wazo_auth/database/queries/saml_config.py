@@ -9,6 +9,9 @@ from .base import BaseDAO
 
 
 class SAMLConfigDAO(BaseDAO):
+    def list(self) -> list[SAMLConfig]:
+        return self.session.query(SAMLConfig).all()
+
     def get(self, tenant_uuid):
         saml_config = (
             self.session.query(SAMLConfig)
@@ -17,6 +20,7 @@ class SAMLConfigDAO(BaseDAO):
         )
         if saml_config:
             return {
+                'domain_uuid': saml_config.domain_uuid,
                 'tenant_uuid': saml_config.tenant_uuid,
                 'entity_id': saml_config.entity_id,
                 'idp_metadata': saml_config.idp_metadata,
@@ -26,11 +30,13 @@ class SAMLConfigDAO(BaseDAO):
     def create(
         self,
         tenant_uuid,
+        domain_uuid,
         entity_id,
         idp_metadata,
     ):
         saml_config = SAMLConfig(
             tenant_uuid=tenant_uuid,
+            domain_uuid=domain_uuid,
             entity_id=entity_id,
             idp_metadata=idp_metadata,
         )

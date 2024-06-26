@@ -435,5 +435,10 @@ class SAMLConfig(Base):
         nullable=False,
         primary_key=True,
     )
+    domain_uuid = Column(
+        String(length=38),
+        ForeignKey('auth_tenant_domain.uuid', ondelete='CASCADE'),
+        nullable=False,
+    )
     entity_id = Column(String(512), nullable=False)
     idp_metadata = Column(XMLPostgresqlType(), nullable=False)

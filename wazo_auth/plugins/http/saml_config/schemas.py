@@ -8,6 +8,7 @@ from wazo_auth.schemas import BaseSchema
 
 
 class SamlConfig(BaseSchema):
+    domain_uuid = fields.String(validate=Length(min=38, max=38), required=True)
     entity_id = fields.String(validate=Length(min=1, max=512), required=True)
 
 
