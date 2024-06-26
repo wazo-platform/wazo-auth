@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from .address import AddressDAO
+from .domain import DomainDAO
 from .email import EmailDAO
 from .external_auth import ExternalAuthDAO
 from .group import GroupDAO
@@ -19,6 +20,7 @@ class DAO:
     def __init__(
         self,
         address,
+        domain,
         email,
         external_auth,
         group,
@@ -32,6 +34,7 @@ class DAO:
         user,
     ):
         self.address = address
+        self.domain = domain
         self.email = email
         self.external_auth = external_auth
         self.group = group
@@ -48,6 +51,7 @@ class DAO:
     def from_defaults(cls):
         return cls(
             address=AddressDAO(),
+            domain=DomainDAO(),
             email=EmailDAO(),
             external_auth=ExternalAuthDAO(),
             group=GroupDAO(),
