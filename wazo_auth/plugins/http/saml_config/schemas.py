@@ -8,15 +8,16 @@ from wazo_auth.schemas import BaseSchema
 
 
 class SamlConfig(BaseSchema):
-    domain_uuid = fields.String(validate=Length(min=38, max=38), required=True)
+    domain_uuid = fields.String(validate=Length(min=36, max=38), required=True)
     entity_id = fields.String(validate=Length(min=1, max=512), required=True)
+    tenant_uuid = fields.String(validate=Length(min=36, max=38), required=False)
 
 
 saml_config_schema = SamlConfig()
 
 
 class SamlAcsUrl(BaseSchema):
-    acsrl = fields.String(validate=Length(min=1, max=2083), required=True)
+    acs_url = fields.String(validate=Length(min=1, max=2083), required=True)
 
 
 saml_acs_url_schema = SamlAcsUrl()

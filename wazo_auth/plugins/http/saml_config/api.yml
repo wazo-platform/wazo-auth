@@ -164,7 +164,7 @@ definitions:
   SAMLBackendConfig:
     properties:
       domain_uuid:
-        tye: string
+        type: string
         description: The UUID of the domain to use for the SAML backend.
       entity_id:
         type: string

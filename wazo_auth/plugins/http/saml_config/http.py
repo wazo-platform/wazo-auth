@@ -74,8 +74,8 @@ class SAMLConfig(AuthResource):
     def delete(self):
         scoping_tenant: Tenant = Tenant.autodetect()
         try:
-            if self._saml_config_service.delete(scoping_tenant.uuid):
-                return '', 204
+            self._saml_config_service.delete(scoping_tenant.uuid)
+            return '', 204
         except exceptions.APIException as e:
             raise e
         except Exception as e:

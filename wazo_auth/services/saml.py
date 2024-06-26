@@ -51,18 +51,46 @@ class Config(TypedDict, total=False):
 
 
 class SAMLService(BaseService):
-    def __init__(self, config: Config, tenant_service: TenantService):
+    def __init__(
+        self,
+        config: Config,
+        tenant_service: TenantService,
+    ):
         self._config = config
         self._outstanding_requests: dict[Any, SamlAuthContext] = {}
         self._saml_clients: dict[str, Saml2Client] = {}
-        self._tenant_service = tenant_service
+        self._tenant_service: TenantService = tenant_service
 
-        self._init_clients()
+        # self._init_clients()
         self._saml_session_lifetime = timedelta(
             seconds=config['saml']['saml_session_lifetime_seconds']
         )
 
-    def _init_clients(self):
+    def _format_config(self, configs: list[dict[str, str]]) -> dict[str, RawSAMLConfig]:
+        saml_cfgs: dict[str, RawSAMLConfig] = {}
+        for cfg in configs:
+            saml_cfgs[cfg['domain_name']] = {
+                'entityid': cfg['entity_id'],
+                'service': {
+                    'sp': {
+                        'want_response_signed': True,
+                        'authn_requests_signed': True,
+                        'endpoints': {
+                            'assertion_consumer_service': [
+                                (
+                                    'https://app.wazo.local/api/auth/0.1/saml/acs',
+                                    BINDING_HTTP_POST,
+                                )
+                            ]
+                        },
+                    }
+                },
+                'metadata': {'local': [cfg['metadata_path']]},
+            }
+        return saml_cfgs
+
+    def init_clients(self, db_config):
+        self._saml_clients = {}
         key_file = self._config['saml']['key_file']
         cert_file = self._config['saml']['cert_file']
         if not key_file or not cert_file:
@@ -76,7 +104,12 @@ class SAMLService(BaseService):
             'cert_file': cert_file,
         }
         logger.debug('Global SAML config: %s', global_saml_config)
-        domain_configs = self._config['saml']['domains']
+        domain_file_configs: dict[str, RawSAMLConfig] = self._config['saml']['domains']
+        domain_db_configs: dict[str, dict[str, Any]] = self._format_config(db_config)
+        domain_configs: dict[str, dict[str, Any]] = (
+            domain_file_configs | domain_db_configs
+        )
+        logger.info(f"(re)Initializing SAML clients with config: {domain_configs}")
         if not domain_configs:
             logger.debug('No SAML configuration found for any domain')
             return

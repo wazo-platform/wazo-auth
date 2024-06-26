@@ -22,6 +22,7 @@ from .. import exceptions, services
 from ..database import queries
 from ..database.queries import (
     address,
+    domain,
     email,
     external_auth,
     group,
@@ -42,6 +43,7 @@ class BaseServiceTestCase(TestCase):
         self.top_tenant_uuid = 'c699f101-2c71-4069-85da-e1ca7f680393'
 
         self.address_dao = Mock(address.AddressDAO)
+        self.domain_dao = Mock(domain.DomainDAO)
         self.email_dao = Mock(email.EmailDAO)
         self.external_auth_dao = Mock(external_auth.ExternalAuthDAO)
         self.group_dao = Mock(group.GroupDAO)
@@ -61,6 +63,7 @@ class BaseServiceTestCase(TestCase):
 
         self.dao = queries.DAO(
             address=self.address_dao,
+            domain=self.domain_dao,
             email=self.email_dao,
             external_auth=self.external_auth_dao,
             group=self.group_dao,
