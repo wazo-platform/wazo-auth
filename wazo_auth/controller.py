@@ -69,7 +69,9 @@ class Controller:
         )
         self._saml_service = services.SAMLService(self._config, self._tenant_service)
 
-        self._saml_config_service = services.SAMLConfigService(self.dao)
+        self._saml_config_service = services.SAMLConfigService(
+            self._config, self._saml_service, self.dao
+        )
 
         authentication_service = services.AuthenticationService(
             self.dao,

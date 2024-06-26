@@ -129,6 +129,7 @@ _DEFAULT_CONFIG = {
         'xmlsec_binary': '/usr/bin/xmlsec1',
         'key_file': '/var/lib/wazo-auth/saml/server.key',
         'cert_file': '/var/lib/wazo-auth/saml/server.crt',
+        'xml_files_dir': '/var/lib/wazo-auth/saml/',
     },
     'max_user_concurrent_sessions': 100,
 }

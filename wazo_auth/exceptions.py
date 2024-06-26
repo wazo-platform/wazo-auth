@@ -156,14 +156,10 @@ class UnknownTenantException(APIException):
 
 class UnauthorizedTenantwithChildrenDelete(APIException):
     def __init__(self, tenant_uuid):
-<<<<<<< HEAD
-        msg = f'Unauthorized delete of tenant : "{tenant_uuid}" ; since it has at least one child'  # noqa
-=======
         msg = (
             f'Unauthorized delete of tenant : "{tenant_uuid}" ; '  # noqa: E702
             'since it has at least one child'
         )
->>>>>>> 3a2f2f5c (plugins.http.saml_config REST API plugin)
         details = {'uuid': str(tenant_uuid)}
         super().__init__(400, msg, details, 'tenants')
 

@@ -62,7 +62,7 @@ class SAMLConfigDAO(BaseDAO):
             self.session.rollback()
             raise
 
-    def delete(self, tenant_uuid):
+    def delete(self, tenant_uuid) -> None:
         filter_ = SAMLConfig.tenant_uuid == str(tenant_uuid)
         self.session.query(SAMLConfig).filter(filter_).delete(synchronize_session=False)
         self.session.flush()
