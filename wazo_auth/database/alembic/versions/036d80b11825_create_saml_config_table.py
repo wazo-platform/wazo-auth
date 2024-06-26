@@ -28,6 +28,12 @@ def upgrade():
             primary_key=True,
         ),
         sa.Column(
+            'domain_uuid',
+            sa.String(38),
+            sa.ForeignKey('auth_tenant_domain.uuid', ondelete='CASCADE'),
+            primary_key=True,
+        ),
+        sa.Column(
             'entity_id',
             sa.String(512),
             nullable=False,
