@@ -23,6 +23,10 @@
   * `ldap`
   * `saml`
 
+* The following resources have been added allowing users to login using SAML2
+
+  * `POST /saml/sso`
+  * `POST /saml/acs`
 
 
 ## 24.07
