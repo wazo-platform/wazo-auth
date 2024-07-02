@@ -442,3 +442,4 @@ class SAMLConfig(Base):
     )
     entity_id = Column(String(512), nullable=False)
     idp_metadata = Column(XMLPostgresqlType(), nullable=False)
+    acs_url = Column(String(512), nullable=False)

@@ -24,6 +24,7 @@ class SAMLConfigDAO(BaseDAO):
                 'tenant_uuid': saml_config.tenant_uuid,
                 'entity_id': saml_config.entity_id,
                 'idp_metadata': saml_config.idp_metadata,
+                'acs_url': saml_config.acs_url,
             }
         raise exceptions.UnknownSAMLConfigException(tenant_uuid)
 
@@ -33,12 +34,14 @@ class SAMLConfigDAO(BaseDAO):
         domain_uuid,
         entity_id,
         idp_metadata,
+        acs_url,
     ):
         saml_config = SAMLConfig(
             tenant_uuid=tenant_uuid,
             domain_uuid=domain_uuid,
             entity_id=entity_id,
             idp_metadata=idp_metadata,
+            acs_url=acs_url,
         )
         self.session.add(saml_config)
         try:

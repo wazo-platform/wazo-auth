@@ -43,6 +43,11 @@ def upgrade():
             XMLPostgresqlType(),
             nullable=False,
         ),
+        sa.Column(
+            'acs_url',
+            sa.String(512),
+            nullable=False,
+        ),
     )
 
 
