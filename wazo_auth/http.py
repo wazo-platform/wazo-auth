@@ -16,11 +16,7 @@ from wazo_auth_client.exceptions import (
     MissingPermissionsTokenException,
 )
 from werkzeug.local import LocalProxy as Proxy
-from xivo.auth_verifier import (
-    AuthVerifier,
-    Unauthorized,
-    extract_token_id_from_query_or_header,
-)
+from xivo.auth_verifier import AuthVerifier, Unauthorized
 from xivo.auth_verifier import required_acl as _required_acl
 from xivo.auth_verifier import required_tenant
 from xivo.rest_api_helpers import handle_api_exception
@@ -85,7 +81,7 @@ class AuthClientFacade:
         self.users = self.UsersCommand()
 
 
-auth_verifier = AuthVerifier(extract_token_id=extract_token_id_from_query_or_header)
+auth_verifier = AuthVerifier()
 auth_verifier.set_client(AuthClientFacade())
 
 
