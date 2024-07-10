@@ -134,8 +134,8 @@ class ErrorCatchingResource(ProfilingResource):
 class AuthResource(ErrorCatchingResource):
     auth_verifier = auth_verifier
     method_decorators = [
-        auth_verifier.verify_token,
         auth_verifier.verify_tenant,
+        auth_verifier.verify_token,
     ] + ErrorCatchingResource.method_decorators
 
 
