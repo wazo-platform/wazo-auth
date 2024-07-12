@@ -9,7 +9,7 @@ import os.path
 import time
 from datetime import datetime
 
-from flask import current_app, request
+from flask import current_app, g, request
 from flask_restful import Resource
 from wazo_auth_client.exceptions import (
     InvalidTokenException,
@@ -35,7 +35,7 @@ def _error(code, msg):
 
 class AuthClientFacade:
     class TokenCommand:
-        def check(self, token_id, required_access):
+        def check(self, token_id, required_access, tenant=None):
             try:
                 current_app.config['token_service'].get(token_id, required_access)
                 return True
@@ -80,9 +80,21 @@ class AuthClientFacade:
         self.token = self.TokenCommand()
         self.users = self.UsersCommand()
 
+    def set_token(self, token_uuid):
+        # Mocked for helpers
+        pass
+
+
+def inject_auth_client(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        g.auth_client = AuthClientFacade()
+        return func(*args, **kwargs)
+
+    return wrapper
+
 
 auth_verifier = AuthVerifier()
-auth_verifier.set_client(AuthClientFacade())
 
 
 def handle_manager_exception(func):
@@ -134,8 +146,9 @@ class ErrorCatchingResource(ProfilingResource):
 class AuthResource(ErrorCatchingResource):
     auth_verifier = auth_verifier
     method_decorators = [
-        auth_verifier.verify_token,
         auth_verifier.verify_tenant,
+        auth_verifier.verify_token,
+        inject_auth_client,
     ] + ErrorCatchingResource.method_decorators
 
 
