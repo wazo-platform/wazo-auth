@@ -74,6 +74,12 @@ paths:
           name: entity_id
           type: string
           description: The name of the SAML Entity.
+        - in: formData
+          name: acs_url
+          type: string
+          format: uri
+          description: The SAML ACS URL configured in the IdP.
+
       produces:
       - application/json
       responses:
@@ -126,23 +132,20 @@ paths:
       summary: Download the tenant's SAML metadata XML file.
       tags:
       - backends
-  /backends/saml/acs:
+  /backends/saml/acs_url_template:
     get:
       description: '**Required ACL:** `auth.backends.saml.read`
-
-
-        This endpoint provides the tenant Assertion Consumer Service URL.
-
+        This endpoint provides the tenant Assertion Consumer Service URL template.
+        The `{{STACK_URL}}` must be replaced by the public URL of the stack, wazo-confd
+        ingress can be used to retrieve previously configured data.
         '
-      parameters:
-      - $ref: '#/parameters/tenantuuid'
       produces:
       - application/json
       responses:
         '200':
           description: Returns the URL to be used while configuring the Identity provider.
           schema:
-            $ref: '#/definitions/SAMLAcsUrl'
+            $ref: '#/definitions/SAMLAcsUrlTemplate'
         '401':
           description: Unauthorized
           schema:
@@ -155,7 +158,7 @@ paths:
           description: 'Internal server error'
           schema:
             $ref: '#/definitions/Error'
-      summary: Get tenant's ACS URL to use in the IDP configuration
+      summary: Get tenant's ACS URL template to use in the IDP configuration
       tags:
       - backends
 
@@ -169,11 +172,15 @@ definitions:
       entity_id:
         type: string
         description: The name of the SAML Entity Id
+      acs_url:
+        type: string
+        description: The SAML ACS URL
+        format: uri
     required:
     - domain_uuid
     - entity_id
     type: object
-  SAMLAcsUrl:
+  SAMLAcsUrlTemplate:
     properties:
       acs_url:
         type: string

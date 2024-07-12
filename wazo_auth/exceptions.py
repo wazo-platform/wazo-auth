@@ -462,10 +462,10 @@ class SAMLException(APIException):
 
 
 class SAMLConfigurationError(SAMLException):
-    def __init__(self, domain):
+    def __init__(self, domain, message=None):
         error_code = 500
         error_id = 'configuration-error'
-        error_msg = 'SAML client for domain not found or failed'
+        error_msg = message or 'SAML client for domain not found or failed'
         error_details = {
             'domain': domain,
         }
@@ -495,6 +495,8 @@ class SAMLProcessingErrorWithReturnURL(SAMLException):
             return_url + '?' + urlencode({'login_failure_code': error_code})
         )
         super().__init__(error_code, error_msg, error_id, error_details, self.resource)
+
+
 class SAMLConfigException(APIException):
     resource = 'saml_config'
 

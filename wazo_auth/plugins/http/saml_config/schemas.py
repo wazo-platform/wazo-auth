@@ -11,13 +11,14 @@ class SamlConfig(BaseSchema):
     domain_uuid = fields.String(validate=Length(min=36, max=38), required=True)
     entity_id = fields.String(validate=Length(min=1, max=512), required=True)
     tenant_uuid = fields.String(validate=Length(min=36, max=38), required=False)
+    acs_url = fields.String(validate=Length(min=1, max=512), required=True)
 
 
 saml_config_schema = SamlConfig()
 
 
-class SamlAcsUrl(BaseSchema):
-    acs_url = fields.String(validate=Length(min=1, max=2083), required=True)
+class SamlAcsUrlTemplate(BaseSchema):
+    acs_url = fields.String(validate=Length(min=1, max=512), required=True)
 
 
-saml_acs_url_schema = SamlAcsUrl()
+saml_acs_url_template_schema = SamlAcsUrlTemplate()

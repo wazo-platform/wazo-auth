@@ -18,7 +18,11 @@ from saml2.response import AuthnResponse, VerificationError
 from saml2.s_utils import UnknownPrincipal, UnsupportedBinding
 from saml2.sigver import SignatureError
 
-from wazo_auth import exceptions
+from wazo_auth.exceptions import (
+    SAMLConfigurationError,
+    SAMLProcessingError,
+    SAMLProcessingErrorWithReturnURL,
+)
 from wazo_auth.services.helpers import BaseService
 from wazo_auth.services.tenant import TenantService
 
@@ -109,7 +113,7 @@ class SAMLService(BaseService):
                         'endpoints': {
                             'assertion_consumer_service': [
                                 (
-                                    'https://app.wazo.local/api/auth/0.1/saml/acs',
+                                    cfg['acs_url'],
                                     BINDING_HTTP_POST,
                                 )
                             ]
@@ -122,11 +126,12 @@ class SAMLService(BaseService):
 
     def init_clients(self, db_config):
         self._saml_clients = {}
-        self._domain_configs = self._global_saml_config.pop('domains', None)
-
-        if not self._key_file or not self._cert_file:
-            raise Exception(
-                '"key_file" or "cert_file" are missing from the SAML configuration'
+        key_file = self._config['saml']['key_file']
+        cert_file = self._config['saml']['cert_file']
+        if not key_file or not cert_file:
+            raise SAMLConfigurationError(
+                db_config['domain_name'],
+                '"key_file" or "cert_file" are missing from the SAML configuration',
             )
 
         domain_file_configs: dict[str, dict[str, Any]] = self._config['saml']['domains']
@@ -217,7 +222,7 @@ class SAMLService(BaseService):
         logger.warning(msg)
         logger.debug(f'Removing session: {req_id}')
         del self._outstanding_requests[req_id]
-        raise exceptions.SAMLProcessingErrorWithReturnURL(
+        raise SAMLProcessingErrorWithReturnURL(
             'Unknown principal', return_url=redirect_url
         )
 
@@ -230,7 +235,7 @@ class SAMLService(BaseService):
         ) = self._find_session_by_relay_state(form_data['RelayState'])
         if not session_by_relay_state:
             logger.warning('ACS response request failed: Context not found')
-            raise exceptions.SAMLProcessingError('Context not found', code=404)
+            raise SAMLProcessingError('Context not found', code=404)
 
         domain: str = session_by_relay_state.domain
         saml_client: Saml2Client = self.get_client(domain)
@@ -289,7 +294,7 @@ class SAMLService(BaseService):
                     'RequestId does not correspond to RelayState, ignoring response'
                 )
                 logger.warning('ACS response request failed: Context not found')
-                raise exceptions.SAMLProcessingError('Context not found', code=404)
+                raise SAMLProcessingError('Context not found', code=404)
 
             update = {'response': response, 'login': response.ava['name'][0]}
             self._outstanding_requests[response.session_id()] = replace(
@@ -298,7 +303,7 @@ class SAMLService(BaseService):
             return session_data.redirect_url
         else:
             logger.warning('ACS response request failed: Context not found')
-            raise exceptions.SAMLProcessingError('Context not found', code=404)
+            raise SAMLProcessingError('Context not found', code=404)
 
     def get_user_login_and_remove_context(self, saml_session_id: str) -> str | None:
         logger.debug('sessions %s', self._outstanding_requests)

@@ -13,7 +13,7 @@ from wazo_auth.exceptions import SAMLConfigException
 from wazo_auth.flask_helpers import Tenant
 from wazo_auth.http import AuthResource
 
-from .schemas import saml_acs_url_schema, saml_config_schema
+from .schemas import saml_acs_url_template_schema, saml_config_schema
 
 logger = logging.getLogger(__name__)
 
@@ -109,22 +109,17 @@ class SAMLMetadata(AuthResource):
             raise SAMLConfigException(500, f'Internal server error({e})', '500')
 
 
-class SAMLAcsUrl(AuthResource):
+class SAMLAcsUrlTemplate(AuthResource):
     def __init__(self, saml_config_service) -> None:
         self._saml_config_service = saml_config_service
 
     @required_acl('auth.backends.saml.read')
     def get(self):
-        scoping_tenant: Tenant = Tenant.autodetect()
         try:
-            if url := self._saml_config_service.get_acs_url(scoping_tenant.uuid):
-                return saml_acs_url_schema.dump(url), 200
+            if url := self._saml_config_service.get_acs_url_template():
+                return saml_acs_url_template_schema.dump(url), 200
         except exceptions.APIException as e:
             raise e
         except Exception as e:
-            logger.exception(
-                f"An error occurred while getting SAML ACS URL for tenant {scoping_tenant.uuid}."
-            )
+            logger.exception("An error occurred while getting SAML ACS URL")
             raise SAMLConfigException(500, f'Internal server error({e})', '500')
-
-        logger.info(f'Returning SAML ACS URL {scoping_tenant.uuid}')

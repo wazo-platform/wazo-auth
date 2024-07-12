@@ -125,6 +125,7 @@ _DEFAULT_CONFIG = {
     'bootstrap_user_password': None,
     'saml': {
         'domains': {},
+        'acs_url_template': 'https://{{STACK_URL}}/api/auth/0.1/saml/acs',
         'saml_session_lifetime_seconds': 600,
         'xmlsec_binary': '/usr/bin/xmlsec1',
         'key_file': '/var/lib/wazo-auth/saml/server.key',

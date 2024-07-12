@@ -22,7 +22,7 @@ class Plugin:
         )
 
         api.add_resource(
-            http.SAMLAcsUrl,
-            '/backends/saml/acs',
+            http.SAMLAcsUrlTemplate,
+            '/backends/saml/acs_url_template',
             resource_class_args=args,
         )

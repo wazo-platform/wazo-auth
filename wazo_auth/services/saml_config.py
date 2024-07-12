@@ -6,6 +6,7 @@ import os
 from xml.etree import ElementTree
 
 from wazo_auth.database.models import Domain, SAMLConfig
+from wazo_auth.exceptions import SAMLConfigurationError
 from wazo_auth.plugins.http.saml_config.schemas import saml_config_schema
 from wazo_auth.services.helpers import BaseService
 
@@ -15,6 +16,7 @@ logger = logging.getLogger(__name__)
 class SAMLConfigService(BaseService):
     def __init__(self, config, saml_service, dao) -> None:
         self._xml_files_dir: str = config['saml']['xml_files_dir']
+        self._acs_url_template = config['saml']['acs_url_template']
         self._saml_service = saml_service
         super().__init__(dao)
         self._reload_saml_service()
@@ -42,6 +44,7 @@ class SAMLConfigService(BaseService):
             'domain_uuid': saml_config['domain_uuid'],
             'entity_id': saml_config['entity_id'],
             'idp_metadata': metadata,
+            'acs_url': saml_config['acs_url'],
         }
         if self._dao.saml_config.exists(tenant_uuid):
             self._dao.saml_config.update(**kwargs)
@@ -61,8 +64,8 @@ class SAMLConfigService(BaseService):
         )
         return etree_metadata
 
-    def get_acs_url(self, tenant_uuid: str) -> dict[str, str]:
-        return {'acsUrl': 'http://localhost:9497/api/auth/v1/saml/acs'}
+    def get_acs_url_template(self) -> dict[str, str]:
+        return {'acs_url': self._acs_url_template}
 
     def _update_domain_name(self, item, domains) -> dict[str, str]:
         domain_name: list[str] = [
@@ -71,17 +74,23 @@ class SAMLConfigService(BaseService):
         if domain_name[0]:
             item['domain_name'] = domain_name[0]
             return item
-        assert f'Database consistency error, domain name for {item}/{domains}'
-        return {}
+        logger.error(
+            f'Database consistency error, missing domain name for {item}/{domains}'
+        )
+        logger.info(f'SAML configuration for domain_uuid: {item} couldn\'t be loaded')
+        raise SAMLConfigurationError(
+            f'unknown_domain, domain_uuid: {item}',
+            f'Database consistency error, missing domain name for domain_uuid {item}',
+        )
 
     def _add_metadata_path(self, item) -> dict[str, str]:
         item['metadata_path'] = self._get_metadata_path(item['tenant_uuid'])
         return item
 
     def _update_item(self, item, domains) -> dict[str, str]:
-        item = self._update_domain_name(item, domains)
-        item = self._add_metadata_path(item)
-        return item
+        with_domain_name: dict[str, str] = self._update_domain_name(item, domains)
+        with_metadata: dict[str, str] = self._add_metadata_path(with_domain_name)
+        return with_metadata
 
     def _reload_saml_service(self) -> None:
         db_configs: list[SAMLConfig] = self._dao.saml_config.list()
