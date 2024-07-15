@@ -34,7 +34,7 @@ paths:
       - application/json
       responses:
         '200':
-          description: The SAML backend configuration and the metadata XML file.
+          description: The SAML backend configuration.
           schema:
             $ref: '#/definitions/SAMLBackendConfig'
         '401':
@@ -54,6 +54,55 @@ paths:
         '
       tags:
       - backends
+    post:
+      description: '**Required ACL:** `auth.backends.saml.create'
+      operationId: createSAMLBackendConfig
+      consumes:
+        - multipart/form-data
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+        - in: formData
+          name: metadata
+          type: file
+          description: The IDP metadata file in XML format.
+          x-mimetype: application/xml
+          required: true
+        - in: formData
+          name: domain_uuid
+          type: string
+          description: The UUID of the domain to use for the SAML backend.
+          required: true
+        - in: formData
+          name: entity_id
+          type: string
+          description: The name of the SAML Entity.
+          required: true
+        - in: formData
+          name: acs_url
+          type: string
+          format: uri
+          description: The SAML ACS URL configured in the IdP.
+          required: true
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: The SAML backend configuration.
+          schema:
+            $ref: '#/definitions/SAMLBackendConfig'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - wazo_auth_token: []
+      summary: Returns the created SAML configuration.
+      tags:
+      - backends
     put:
       description: '**Required ACL:** `auth.backends.saml.update'
       operationId: updateSAMLBackendConfig
@@ -66,20 +115,23 @@ paths:
           type: file
           description: The IDP metadata file in XML format.
           x-mimetype: application/xml
+          required: false
         - in: formData
           name: domain_uuid
           type: string
           description: The UUID of the domain to use for the SAML backend.
+          required: false
         - in: formData
           name: entity_id
           type: string
           description: The name of the SAML Entity.
+          required: false
         - in: formData
           name: acs_url
           type: string
           format: uri
           description: The SAML ACS URL configured in the IdP.
-
+          required: false
       produces:
       - application/json
       responses:
@@ -97,7 +149,7 @@ paths:
             $ref: '#/definitions/Error'
       security:
       - wazo_auth_token: []
-      summary: Update current tenant's SAML backend configuration
+      summary: Updates current tenant's SAML backend configuration
       tags:
       - backends
   /backends/saml/metadata:
@@ -162,7 +214,6 @@ paths:
       tags:
       - backends
 
-
 definitions:
   SAMLBackendConfig:
     properties:
@@ -179,6 +230,7 @@ definitions:
     required:
     - domain_uuid
     - entity_id
+    - acs_url
     type: object
   SAMLAcsUrlTemplate:
     properties:

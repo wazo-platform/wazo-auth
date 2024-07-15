@@ -8,3 +8,8 @@ from .base import BaseDAO
 class DomainDAO(BaseDAO):
     def list(self) -> list[Domain]:
         return self.session.query(Domain).all()
+
+    def get(self, tenant_uuid):
+        return (
+            self.session.query(Domain).filter(Domain.tenant_uuid == tenant_uuid).all()
+        )

@@ -497,8 +497,10 @@ class SAMLProcessingErrorWithReturnURL(SAMLException):
         super().__init__(error_code, error_msg, error_id, error_details, self.resource)
 
 
-class SAMLConfigException(APIException):
-    resource = 'saml_config'
+class SAMLConfigParameterException(APIException):
+    def __init__(self, tenant_uuid, msg, code):
+        details = {'uuid': str(tenant_uuid)}
+        super().__init__(code, msg, 'unknown-saml-config', details, 'saml_config')
 
 
 class UnknownSAMLConfigException(APIException):
@@ -506,3 +508,10 @@ class UnknownSAMLConfigException(APIException):
         msg = f'No SAML IDP config found for this tenant: "{tenant_uuid}"'
         details = {'uuid': str(tenant_uuid)}
         super().__init__(404, msg, 'unknown-saml-config', details, 'saml_config')
+
+
+class DuplicatedSAMLConfigException(APIException):
+    def __init__(self, tenant_uuid):
+        msg = 'Duplicated SAML config exists'
+        details = {'tenant_uuid': {'constraint_id': 'unique', 'message': msg}}
+        super().__init__(409, 'Conflict detected', 'conflict', details, 'saml_config')

@@ -3,10 +3,14 @@
 
 import logging
 import os
+from typing import Any
 from xml.etree import ElementTree
 
 from wazo_auth.database.models import Domain, SAMLConfig
-from wazo_auth.exceptions import SAMLConfigurationError
+from wazo_auth.exceptions import (
+    DuplicatedSAMLConfigException,
+    SAMLConfigParameterException,
+)
 from wazo_auth.plugins.http.saml_config.schemas import saml_config_schema
 from wazo_auth.services.helpers import BaseService
 
@@ -35,9 +39,9 @@ class SAMLConfigService(BaseService):
     def get(self, tenant_uuid: str) -> dict[str, str]:
         return self._dao.saml_config.get(tenant_uuid)
 
-    def create_or_update(
+    def create(
         self, tenant_uuid: str, saml_config, etree_metadata: ElementTree.ElementTree
-    ) -> None:
+    ) -> dict[str, Any]:
         metadata = ElementTree.tostring(etree_metadata.getroot()).decode()
         kwargs = {
             'tenant_uuid': tenant_uuid,
@@ -47,11 +51,25 @@ class SAMLConfigService(BaseService):
             'acs_url': saml_config['acs_url'],
         }
         if self._dao.saml_config.exists(tenant_uuid):
-            self._dao.saml_config.update(**kwargs)
+            raise DuplicatedSAMLConfigException(tenant_uuid)
         else:
-            self._dao.saml_config.create(**kwargs)
+            result: dict[str, Any] = self._dao.saml_config.create(**kwargs)
         self._update_xml_metadata(tenant_uuid, etree_metadata)
         self._reload_saml_service()
+        return result
+
+    def update(self, tenant_uuid: str, kwargs, etree_metadata) -> dict[str, Any]:
+        kwargs['tenant_uuid'] = tenant_uuid
+        if etree_metadata:
+            kwargs['idp_metadata'] = ElementTree.tostring(
+                etree_metadata.getroot()
+            ).decode()
+
+        result: dict[str, Any] = self._dao.saml_config.update(**kwargs)
+        if etree_metadata:
+            self._update_xml_metadata(tenant_uuid, etree_metadata)
+        self._reload_saml_service()
+        return result
 
     def delete(self, tenant_uuid: str) -> None:
         self._dao.saml_config.delete(tenant_uuid)
@@ -78,9 +96,10 @@ class SAMLConfigService(BaseService):
             f'Database consistency error, missing domain name for {item}/{domains}'
         )
         logger.info(f'SAML configuration for domain_uuid: {item} couldn\'t be loaded')
-        raise SAMLConfigurationError(
-            f'unknown_domain, domain_uuid: {item}',
+        raise SAMLConfigParameterException(
+            f'unknown tenant, domain_uuid: {item}',
             f'Database consistency error, missing domain name for domain_uuid {item}',
+            500,
         )
 
     def _add_metadata_path(self, item) -> dict[str, str]:
