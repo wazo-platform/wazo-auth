@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import Response
-from xivo.auth_verifier import extract_token_id_from_query_or_header
+from xivo.flask.headers import extract_token_id_from_query_or_header
 
 from wazo_auth import http
 

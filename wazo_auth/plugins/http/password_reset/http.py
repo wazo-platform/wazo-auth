@@ -5,7 +5,8 @@ import logging
 
 import marshmallow
 from flask import request
-from xivo.auth_verifier import Unauthorized, extract_token_id_from_query_or_header
+from xivo.auth_verifier import Unauthorized
+from xivo.flask.headers import extract_token_id_from_query_or_header
 
 from wazo_auth import http
 from wazo_auth.plugin_helpers.flask import extract_connection_params
