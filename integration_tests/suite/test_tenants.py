@@ -551,3 +551,23 @@ class TestTenants(base.APIIntegrationTest):
         result = self.client.tenants.edit(tenant['uuid'], **new_body)
 
         assert_that(result, has_entries(**tenant))
+
+    @fixtures.http.tenant(domain_names=VALID_DOMAIN_NAMES_1)
+    @fixtures.http.tenant(domain_names=[])
+    def test_get_domains(self, tenant_1, tenant_2):
+
+        result = self.client.tenants.get_domains(tenant_1['uuid'])
+        assert_that(result['total'], is_(2))
+        assert_that(
+            result['items'],
+            contains_inanyorder(
+                has_entries({'name': VALID_DOMAIN_NAMES_1[0], 'uuid': uuid_()}),
+                has_entries({'name': VALID_DOMAIN_NAMES_1[1], 'uuid': uuid_()}),
+            ),
+        )
+
+        result = self.client.tenants.get_domains(tenant_2['uuid'])
+        assert_that(result['total'], is_(0))
+        assert_that(result['items'], empty())
+
+        assert_http_error(404, self.client.tenants.get_domains, UNKNOWN_UUID)
