@@ -16,9 +16,10 @@ from wazo_auth_client.exceptions import (
     MissingPermissionsTokenException,
 )
 from werkzeug.local import LocalProxy as Proxy
-from xivo.auth_verifier import AuthVerifier, Unauthorized
+from xivo.auth_verifier import Unauthorized
 from xivo.auth_verifier import required_acl as _required_acl
 from xivo.auth_verifier import required_tenant
+from xivo.flask.auth_verifier import AuthVerifierFlask
 from xivo.rest_api_helpers import handle_api_exception
 
 from wazo_auth.database.helpers import commit_or_rollback
@@ -94,7 +95,7 @@ def inject_auth_client(func):
     return wrapper
 
 
-auth_verifier = AuthVerifier()
+auth_verifier = AuthVerifierFlask()
 
 
 def handle_manager_exception(func):
