@@ -10,7 +10,8 @@ markupsafe==2.0.1
 
 # for database tests
 https://github.com/wazo-platform/wazo-lib-rest-client/archive/master.zip
-https://github.com/wazo-platform/wazo-auth-client/archive/master.zip
+#https://github.com/wazo-platform/wazo-auth-client/archive/master.zip
+https://github.com/wazo-platform/wazo-auth-client/archive/refs/heads/WP-1387-API-to-configure-SAML.zip
 https://github.com/wazo-platform/wazo-confd-client/archive/master.zip
 https://github.com/wazo-platform/wazo-test-helpers/archive/master.zip
 https://github.com/wazo-platform/xivo-lib-python/archive/master.zip
