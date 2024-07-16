@@ -8,6 +8,8 @@ from functools import wraps
 
 import requests
 
+SAML_METADATA = '<xml><h1>title</h1><body>lorem ipv5</body></xml>'
+
 
 def _random_string(length):
     return ''.join(random.choice(string.ascii_lowercase) for _ in range(length))
@@ -317,6 +319,41 @@ def ldap_config(**ldap_config_args):
             finally:
                 try:
                     self.client.ldap_config.delete(tenant_uuid=tenant_uuid)
+                except requests.HTTPError:
+                    pass
+            return result
+
+        return wrapper
+
+    return decorator
+
+
+def saml_config(domains, **config_args):
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            tenant = self.client.tenants.new(domain_names=domains)
+            config_args.setdefault(
+                'data',
+                {
+                    'acs_url': 'https://stack.wazo.local/api/0.1/saml/acs',
+                    'entity_id': 'wazo.dev',
+                    'domain_uuid': self.client.tenants.get_domains(tenant['uuid'])[
+                        'items'
+                    ][0]['uuid'],
+                },
+            )
+            config_args.setdefault('files', {'metadata': SAML_METADATA})
+
+            tenant_uuid = config_args.get('tenant_uuid', tenant['uuid'])
+            saml_config = self.client.saml_config.create(tenant_uuid, **config_args)
+            args = list(args) + [saml_config]
+            try:
+                result = decorated(self, *args, **kwargs)
+            finally:
+                try:
+                    self.client.saml_config.delete(tenant_uuid)
+                    self.client.tenants.delete(tenant_uuid, self.top_tenant_uuid)
                 except requests.HTTPError:
                     pass
             return result

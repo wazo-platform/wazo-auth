@@ -118,34 +118,3 @@ service_discovery:
 #   # The time interval to detect that the service is running when starting
 #   retry_interval: 2
 #   extra_tags: []
-
-# Example settings to enable SAML authentication API
-#
-# To avoid issues during upgrade it should be put in a dedicated file in /etc/wazo-auth/conf.d/ directory.
-#
-# saml:
-#   domains:
-#     DOMAIN:
-#       entityid: 'ENTITY_ID'
-#       service:
-#         sp:
-#           want_response_signed: True,
-#           authn_requests_signed: True,
-#           logout_requests_signed: False,
-#           endpoints:
-#             assertion_consumer_service:
-#               - ['ACS_URL', 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST']
-#       metadata:
-#         local:
-#           - '/var/lib/wazo-auth/saml/NAME_OF_YOUR_SAML_FILE'
-#
-# Where:
-# - DOMAIN: is the domain configured in the Wazo tenant, be sure to keep the double point
-#           after (without any prefix, e.g. example.com:)
-# - ENTITY_ID: is the entity ID configured in the Microsoft Entra SSO SAML Configuration,
-#              with the http prefix, e.g.: https://entity.com
-# - ACS_URL: is the ACS URL configured in the Microsoft Entra SSO SAML Configuration
-#            (be sure to keep the simple quotes around, it’s an URL based on your stack domain,
-#            e.g.: ‘https://STACK_DOMAIN/api/auth/0.1/saml/acs’)
-# - NAME_OF_YOUR_SAML_FILE: is the name of the Federation metadata XML file.
-#

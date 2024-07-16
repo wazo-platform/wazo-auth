@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-import os
 from typing import Any
 from xml.etree import ElementTree
 
@@ -11,7 +10,7 @@ from wazo_auth.exceptions import (
     DuplicatedSAMLConfigException,
     SAMLConfigParameterException,
 )
-from wazo_auth.plugins.http.saml_config.schemas import saml_config_schema
+from wazo_auth.plugins.http.saml_config.schemas import SamlConfigWithMetadata
 from wazo_auth.services.helpers import BaseService
 
 logger = logging.getLogger(__name__)
@@ -24,17 +23,6 @@ class SAMLConfigService(BaseService):
         self._saml_service = saml_service
         super().__init__(dao)
         self._reload_saml_service()
-
-    def _get_metadata_path(self, tenant_uuid: str) -> str:
-        return self._xml_files_dir + '/' + tenant_uuid + '.xml'
-
-    def _update_xml_metadata(
-        self, tenant_uuid: str, etree_metadata: ElementTree.ElementTree
-    ) -> None:
-        etree_metadata.write(self._get_metadata_path(tenant_uuid))
-
-    def _delete_conf(self, tenant_uuid: str) -> None:
-        os.remove(self._xml_files_dir + '/' + tenant_uuid + '.xml')
 
     def get(self, tenant_uuid: str) -> dict[str, str]:
         return self._dao.saml_config.get(tenant_uuid)
@@ -54,7 +42,6 @@ class SAMLConfigService(BaseService):
             raise DuplicatedSAMLConfigException(tenant_uuid)
         else:
             result: dict[str, Any] = self._dao.saml_config.create(**kwargs)
-        self._update_xml_metadata(tenant_uuid, etree_metadata)
         self._reload_saml_service()
         return result
 
@@ -66,14 +53,11 @@ class SAMLConfigService(BaseService):
             ).decode()
 
         result: dict[str, Any] = self._dao.saml_config.update(**kwargs)
-        if etree_metadata:
-            self._update_xml_metadata(tenant_uuid, etree_metadata)
         self._reload_saml_service()
         return result
 
     def delete(self, tenant_uuid: str) -> None:
         self._dao.saml_config.delete(tenant_uuid)
-        self._delete_conf(tenant_uuid)
         self._reload_saml_service()
 
     def get_metadata(self, tenant_uuid: str) -> ElementTree.Element:
@@ -102,21 +86,16 @@ class SAMLConfigService(BaseService):
             500,
         )
 
-    def _add_metadata_path(self, item) -> dict[str, str]:
-        item['metadata_path'] = self._get_metadata_path(item['tenant_uuid'])
-        return item
-
     def _update_item(self, item, domains) -> dict[str, str]:
-        with_domain_name: dict[str, str] = self._update_domain_name(item, domains)
-        with_metadata: dict[str, str] = self._add_metadata_path(with_domain_name)
-        return with_metadata
+        updated: dict[str, str] = self._update_domain_name(item, domains)
+        return updated
 
     def _reload_saml_service(self) -> None:
         db_configs: list[SAMLConfig] = self._dao.saml_config.list()
         domains: list[Domain] = self._dao.domain.list()
-        saml_configs = [saml_config_schema.dump(item) for item in db_configs]
-        configs_domain_names: list[dict[str, str]] = [
+        saml_configs = [SamlConfigWithMetadata().dump(item) for item in db_configs]
+        configs_with_domain_names: list[dict[str, str]] = [
             self._update_item(item, domains) for item in saml_configs
         ]
-        self._saml_service.init_clients(configs_domain_names)
+        self._saml_service.init_clients(configs_with_domain_names)
         return None

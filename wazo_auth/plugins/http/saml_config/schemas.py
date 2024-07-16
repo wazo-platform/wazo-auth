@@ -14,6 +14,10 @@ class SamlConfig(BaseSchema):
     acs_url = fields.String(validate=Length(min=1, max=512), required=True)
 
 
+class SamlConfigWithMetadata(SamlConfig):
+    idp_metadata = fields.String(required=True)
+
+
 saml_config_schema = SamlConfig()
 
 

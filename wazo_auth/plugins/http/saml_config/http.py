@@ -7,7 +7,6 @@ from xml.etree import ElementTree
 
 import marshmallow
 from flask import make_response, request
-from xivo.auth_verifier import required_acl
 
 from wazo_auth import exceptions, http
 from wazo_auth.exceptions import InvalidListParamException, SAMLConfigParameterException
@@ -18,11 +17,13 @@ from .schemas import saml_acs_url_template_schema, saml_config_schema
 logger = logging.getLogger(__name__)
 
 
-class SAMLConfig(http.AuthResource):
-    def __init__(self, saml_config_service) -> None:
+class BaseResource(http.AuthResource):
+    def __init__(self, saml_config_service):
         self._saml_config_service = saml_config_service
 
-    @required_acl('auth.backends.saml.read')
+
+class SAMLConfig(BaseResource):
+    @http.required_acl('auth.backends.saml.read')
     def get(self):
         scoping_tenant: Tenant = Tenant.autodetect()
         try:
@@ -38,7 +39,7 @@ class SAMLConfig(http.AuthResource):
                 scoping_tenant.uuid, f'Internal server error({e})', 500
             )
 
-    @required_acl('auth.backends.saml.update')
+    @http.required_acl('auth.backends.saml.create')
     def post(self):
         scoping_tenant: Tenant = Tenant.autodetect()
         try:
@@ -84,7 +85,7 @@ class SAMLConfig(http.AuthResource):
                 500,
             )
 
-    @required_acl('auth.backends.saml.update')
+    @http.required_acl('auth.backends.saml.update')
     def put(self):
         scoping_tenant: Tenant = Tenant.autodetect()
         metadata = None
@@ -122,7 +123,7 @@ class SAMLConfig(http.AuthResource):
                 500,
             )
 
-    @required_acl('auth.backends.saml.delete')
+    @http.required_acl('auth.backends.saml.delete')
     def delete(self):
         scoping_tenant: Tenant = Tenant.autodetect()
         try:
@@ -139,11 +140,8 @@ class SAMLConfig(http.AuthResource):
             )
 
 
-class SAMLMetadata(http.AuthResource):
-    def __init__(self, saml_config_service) -> None:
-        self._saml_config_service = saml_config_service
-
-    @required_acl('auth.backends.saml.read')
+class SAMLMetadata(BaseResource):
+    @http.required_acl('auth.backends.saml.read')
     def get(self):
         scoping_tenant: Tenant = Tenant.autodetect()
         try:
@@ -165,11 +163,8 @@ class SAMLMetadata(http.AuthResource):
             )
 
 
-class SAMLAcsUrlTemplate(http.AuthResource):
-    def __init__(self, saml_config_service) -> None:
-        self._saml_config_service = saml_config_service
-
-    @required_acl('auth.backends.saml.read')
+class SAMLAcsUrlTemplate(BaseResource):
+    @http.required_acl('auth.backends.saml.read')
     def get(self):
         try:
             if url := self._saml_config_service.get_acs_url_template():

@@ -6,6 +6,7 @@ import base64
 import hashlib
 import logging
 import secrets
+import tempfile
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
 from functools import partial
@@ -101,66 +102,76 @@ class SAMLService(BaseService):
             seconds=config['saml']['saml_session_lifetime_seconds']
         )
 
-    def _format_config(self, configs: list[dict[str, str]]) -> dict[str, RawSAMLConfig]:
-        saml_cfgs: dict[str, RawSAMLConfig] = {}
-        for cfg in configs:
-            saml_cfgs[cfg['domain_name']] = {
-                'entityid': cfg['entity_id'],
-                'service': {
-                    'sp': {
-                        'want_response_signed': True,
-                        'authn_requests_signed': True,
-                        'endpoints': {
-                            'assertion_consumer_service': [
-                                (
-                                    cfg['acs_url'],
-                                    BINDING_HTTP_POST,
-                                )
-                            ]
-                        },
-                    }
-                },
-                'metadata': {'local': [cfg['metadata_path']]},
-            }
-        return saml_cfgs
+    def _prepare_saml_config(self, db_config, filename, globals) -> RawSAMLConfig:
+        return {
+            'entityid': db_config['entity_id'],
+            'service': {
+                'sp': {
+                    'want_response_signed': True,
+                    'authn_requests_signed': True,
+                    'endpoints': {
+                        'assertion_consumer_service': [
+                            (
+                                db_config['acs_url'],
+                                BINDING_HTTP_POST,
+                            )
+                        ]
+                    },
+                }
+            },
+            'metadata': {'local': [filename]},
+            'key_file': globals['key_file'],
+            'cert_file': globals['cert_file'],
+            'xmlsec_binary': globals['xmlsec_binary'],
+        }
 
-    def init_clients(self, db_config):
+    def init_clients(self, db_configs):
         self._saml_clients = {}
         key_file = self._config['saml']['key_file']
         cert_file = self._config['saml']['cert_file']
         if not key_file or not cert_file:
             raise SAMLConfigurationError(
-                db_config['domain_name'],
+                db_configs['domain_name'],
                 '"key_file" or "cert_file" are missing from the SAML configuration',
             )
 
-        domain_file_configs: dict[str, dict[str, Any]] = self._config['saml']['domains']
-        domain_db_configs: dict[str, dict[str, Any]] = self._format_config(db_config)
-        domain_configs: dict[str, dict[str, Any]] = (
-            domain_file_configs | domain_db_configs
-        )
-        logger.info(f"(re)Initializing SAML clients with config: {domain_configs}")
-        if not domain_configs:
+        logger.info(f"(re)Initializing SAML clients with config: {db_configs}")
+        if not db_configs:
             logger.debug('No SAML configuration found for any domain')
             return
 
-        for domain, raw_saml_config in domain_configs.items():
+        for db_config in db_configs:
+            domain_name = db_config['domain_name']
             matching_tenants = self._tenant_service.list_(
-                domain_name=domain, scoping_tenant_uuid=None
+                domain_name=domain_name, scoping_tenant_uuid=None
             )
             if not matching_tenants:
-                logger.info('Ignoring SAML config for "%s" no matching tenant', domain)
+                logger.info(
+                    'Ignoring SAML config for "%s" no matching tenant', domain_name
+                )
                 continue
-            raw_saml_config['relay_state'] = domain
-            raw_saml_config.update(self._global_saml_config)
-            try:
-                saml_config = SAMLConfig()
-                saml_config.load(raw_saml_config)
-                saml_client = Saml2Client(config=saml_config)
-                logger.debug('SAML config : %s', vars(saml_config))
-                self._saml_clients[domain] = saml_client
-            except Exception:
-                logger.exception('Error during SAML client init for domain %s', domain)
+
+            with tempfile.NamedTemporaryFile(suffix='.xml') as metadata_file:
+                metadata_file.write(db_config['idp_metadata'].encode())
+                raw_saml_config = self._prepare_saml_config(
+                    db_config, metadata_file.name, self._global_saml_config
+                )
+                raw_saml_config['relay_state'] = domain_name
+                logger.debug(
+                    f'SAML config for domain: {domain_name}: {raw_saml_config}'
+                )
+                try:
+                    saml_config = SAMLConfig()
+                    saml_config.load(cnf=raw_saml_config)
+                    saml_client = Saml2Client(config=saml_config)
+                    logger.debug(
+                        f'SAML config for domain: {domain_name}: {vars(saml_config)}'
+                    )
+                    self._saml_clients[domain_name] = saml_client
+                except Exception:
+                    logger.exception(
+                        'Error during SAML client init for domain %s', domain_name
+                    )
 
     def get_client(self, domain: str):
         return self._saml_clients[domain]
