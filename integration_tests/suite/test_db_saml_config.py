@@ -3,7 +3,7 @@
 
 from typing import Any
 
-from hamcrest import all_of, assert_that, calling, has_entries, not_, raises
+from hamcrest import assert_that, calling, has_entries, not_, raises
 
 from wazo_auth import exceptions
 
@@ -23,12 +23,12 @@ class TestSAMLConfigDAO(base.DAOTestCase):
         config: dict[str, Any] = self._saml_config_dao.get(tenant_uuid)
         assert_that(
             config,
-            all_of(
-                has_entries(tenant_uuid=tenant_uuid),
-                has_entries(domain_uuid=saml_config['domain_uuid']),
-                has_entries(entity_id=saml_config['entity_id']),
-                has_entries(idp_metadata=saml_config['idp_metadata']),
-                has_entries(acs_url=saml_config['acs_url']),
+            has_entries(
+                tenant_uuid=tenant_uuid,
+                domain_uuid=saml_config['domain_uuid'],
+                entity_id=saml_config['entity_id'],
+                idp_metadata=saml_config['idp_metadata'],
+                acs_url=saml_config['acs_url'],
             ),
         )
 
