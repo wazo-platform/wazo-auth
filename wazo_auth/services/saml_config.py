@@ -40,6 +40,12 @@ class SAMLConfigService(BaseService):
         }
         if self._dao.saml_config.exists(tenant_uuid):
             raise DuplicatedSAMLConfigException(tenant_uuid)
+        elif saml_config['domain_uuid'] not in [
+            i.uuid for i in self._dao.domain.list(tenant_uuid=tenant_uuid)
+        ]:
+            raise SAMLConfigParameterException(
+                tenant_uuid, 'Domain not from tenant', 400
+            )
         else:
             result: dict[str, Any] = self._dao.saml_config.create(**kwargs)
         self._reload_saml_service()
@@ -47,6 +53,15 @@ class SAMLConfigService(BaseService):
 
     def update(self, tenant_uuid: str, kwargs, etree_metadata) -> dict[str, Any]:
         kwargs['tenant_uuid'] = tenant_uuid
+
+        if domain_uuid := kwargs.get('domain_uuid'):
+            if domain_uuid not in [
+                i.uuid for i in self._dao.domain.list(tenant_uuid=tenant_uuid)
+            ]:
+                raise SAMLConfigParameterException(
+                    tenant_uuid, 'Domain not from tenant', 400
+                )
+
         if etree_metadata:
             kwargs['idp_metadata'] = ElementTree.tostring(
                 etree_metadata.getroot()
