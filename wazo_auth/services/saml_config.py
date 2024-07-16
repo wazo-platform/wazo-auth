@@ -6,22 +6,23 @@ from typing import Any
 from xml.etree import ElementTree
 
 from wazo_auth.database.models import Domain, SAMLConfig
+from wazo_auth.database.queries import DAO
 from wazo_auth.exceptions import (
     DuplicatedSAMLConfigException,
     SAMLConfigParameterException,
 )
 from wazo_auth.plugins.http.saml_config.schemas import SamlConfigWithMetadata
 from wazo_auth.services.helpers import BaseService
+from wazo_auth.services.saml import Config, SAMLService
 
 logger = logging.getLogger(__name__)
 
 
 class SAMLConfigService(BaseService):
-    def __init__(self, config, saml_service, dao) -> None:
-        self._xml_files_dir: str = config['saml']['xml_files_dir']
+    def __init__(self, config: Config, saml_service: SAMLService, dao: DAO) -> None:
+        super().__init__(dao)
         self._acs_url_template = config['saml']['acs_url_template']
         self._saml_service = saml_service
-        super().__init__(dao)
         self._reload_saml_service()
 
     def get(self, tenant_uuid: str) -> dict[str, str]:
@@ -88,7 +89,7 @@ class SAMLConfigService(BaseService):
         domain_name: list[str] = [
             domain.name for domain in domains if domain.uuid == item['domain_uuid']
         ]
-        if domain_name[0]:
+        if domain_name:
             item['domain_name'] = domain_name[0]
             return item
         logger.error(

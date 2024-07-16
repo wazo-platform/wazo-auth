@@ -5,7 +5,8 @@ from typing import Any
 
 from sqlalchemy import exc
 
-from ... import exceptions
+from wazo_auth import exceptions
+
 from ..models import SAMLConfig
 from .base import BaseDAO
 
