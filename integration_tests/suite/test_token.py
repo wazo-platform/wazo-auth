@@ -76,29 +76,41 @@ class TestTokens(base.APIIntegrationTest):
         token_data = client.token.new(expiration=1)
         assert_that(token_data, has_entries(metadata=has_entries(uuid=u2['uuid'])))
 
-    @fixtures.http.user(username=None, email_address='u1@example.com', password='pépé')
-    def test_unicode_password(self, u1):
+    @fixtures.http.user(
+        username=None, email_address='u1@example.com', password='pépéç€'
+    )
+    @fixtures.http.user(username=None, email_address='u2@example.com', password='pépéç')
+    def test_unicode_password(self, u1, u2):
         client = Client('127.0.0.1', port=self.auth_port(), prefix=None, https=False)
 
-        client.username = 'u1@example.com'
-        client.password = 'pépé'
-        token_data = client.token.new(expiration=1)
-        assert_that(token_data, has_entries(metadata=has_entries(uuid=u1['uuid'])))
+        for username, password, charsets, uuid in [
+            (
+                'u1@example.com',
+                'pépéç€',
+                ['utf-8'],
+                u1['uuid'],
+            ),  # € is not included in the latin charset
+            ('u2@example.com', 'pépéç', ['utf-8', 'latin'], u2['uuid']),
+        ]:
+            client.username = username
+            client.password = password
+            token_data = client.token.new(expiration=1)
+            assert_that(token_data, has_entries(metadata=has_entries(uuid=uuid)))
 
-        for charset in ['latin', 'utf-8']:
-            encoded_credentials = b64encode(
-                f'{client.username}:{client.password}'.encode(charset)
-            )
-            headers = {
-                'Authorization': b'Basic ' + encoded_credentials,
-                'Content-Type': 'application/json',
-            }
-            response = requests.post(
-                client.token.base_url, headers=headers, json={'expiration': 1}
-            )
-            assert_that(
-                response, has_properties(status_code=200), f'failed for {charset}'
-            )
+            for charset in charsets:
+                encoded_credentials = b64encode(
+                    f'{client.username}:{client.password}'.encode(charset)
+                )
+                headers = {
+                    'Authorization': b'Basic ' + encoded_credentials,
+                    'Content-Type': 'application/json',
+                }
+                response = requests.post(
+                    client.token.base_url, headers=headers, json={'expiration': 1}
+                )
+                assert_that(
+                    response, has_properties(status_code=200), f'failed for {charset}'
+                )
 
     @fixtures.http.user(username=None, email_address='u1@example.com', password='pass')
     def test_username_is_logged_on_failed_attempts(self, u1):
