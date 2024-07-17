@@ -37,7 +37,6 @@ class SamlAuthContext:
     domain: str
     relay_state: str
     login: str | None = None
-    response: AuthnResponse | None = None
     start_time: datetime = field(default_factory=partial(datetime.now, timezone.utc))
 
 
@@ -308,7 +307,7 @@ class SAMLService(BaseService):
                 logger.warning('ACS response request failed: Context not found')
                 raise SAMLProcessingError('Context not found', code=404)
 
-            update = {'response': response, 'login': response.ava['name'][0]}
+            update = {'login': response.ava['name'][0]}
             self._outstanding_requests[response.session_id()] = replace(
                 session_data, **update
             )

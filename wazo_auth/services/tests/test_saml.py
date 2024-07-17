@@ -34,9 +34,7 @@ class TestSAMLService(TestCase):
         relay_state: str = '6pruzvCdQHaLWCd30T6IziZFX_U=',
         date: datetime = datetime.fromisoformat('2000-01-01 00:00:02+00:00'),
     ) -> SamlAuthContext:
-        return SamlAuthContext(
-            saml_id, redirect_url, domain, relay_state, login, None, date
-        )
+        return SamlAuthContext(saml_id, redirect_url, domain, relay_state, login, date)
 
     def test_clean_pending_requests(self) -> None:
         expired_date: datetime = datetime.fromisoformat('2000-01-01 00:00:00+00:00')
@@ -95,7 +93,6 @@ class TestSAMLService(TestCase):
         assert_that(len(self.service._outstanding_requests), is_(1))
         updated_req: SamlAuthContext = self.service._outstanding_requests[req_key]
         assert_that(updated_req.login, is_('testname'))
-        assert_that(updated_req.response, is_(response))
 
     @patch('wazo_auth.services.SAMLService.get_client')
     def test_remove_session_if_relay_state_is_not_in_outstanding_requests(
