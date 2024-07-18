@@ -128,9 +128,6 @@ class TestSAMLService(TestCase):
         the_exception = eo.exception
         self.assertEqual(the_exception.status_code, 404)
 
-    def _fake_get(self, request_id: str) -> SamlSessionItem:
-        pass
-
     @patch('wazo_auth.services.SAMLService.get_client')
     def test_remove_session_if_relay_state_does_not_correspond_to_session_relay_state(
         self, mock_get_client

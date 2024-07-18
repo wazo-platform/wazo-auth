@@ -25,11 +25,11 @@ class TestSAMLSessionDAO(base.DAOTestCase):
     @fixtures.db.saml_session(REQUEST_ID, session_id='samsid', domain='test.domain.org')
     @fixtures.db.saml_session('2nd-request-id')
     def test_list(self, a, b) -> None:
-        all: list[SamlSessionItem] = self._saml_session_dao.list()
-        assert_that(len(all), is_(2))
-        assert_that(all[0].request_id, is_(REQUEST_ID))
-        assert_that(all[1].request_id, is_('2nd-request-id'))
-        assert_that(all[0].auth_context.saml_session_id, is_('samsid'))
+        all_sessions: list[SamlSessionItem] = self._saml_session_dao.list()
+        assert_that(len(all_sessions), is_(2))
+        assert_that(all_sessions[0].request_id, is_(REQUEST_ID))
+        assert_that(all_sessions[1].request_id, is_('2nd-request-id'))
+        assert_that(all_sessions[0].auth_context.saml_session_id, is_('samsid'))
 
     def test_create(self) -> None:
         now = datetime.now(timezone.utc)

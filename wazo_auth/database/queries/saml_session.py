@@ -45,8 +45,8 @@ class SAMLSessionDAO(BaseDAO):
         raise exceptions.UnknownSAMLSessionException(request_id)
 
     def list(self) -> list[SamlSessionItem]:
-        all = self.session.query(SAMLSession).all()
-        return [self._forge_return(session) for session in all]
+        all_rows = self.session.query(SAMLSession).all()
+        return [self._forge_return(session) for session in all_rows]
 
     def create(self, item: SamlSessionItem) -> SamlSessionItem:
         saml_session = SAMLSession(
