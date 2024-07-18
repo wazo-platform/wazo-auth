@@ -2,28 +2,32 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 from unittest import TestCase
 from unittest.mock import Mock, patch
 from unittest.mock import sentinel as s
 
-from hamcrest import assert_that, has_length, is_
+from hamcrest import assert_that, is_
 from saml2.response import VerificationError
 
 from wazo_auth import exceptions
 from wazo_auth.config import _DEFAULT_CONFIG
+from wazo_auth.database.queries import DAO
+from wazo_auth.database.queries.saml_session import SAMLSessionDAO
 from wazo_auth.services.tenant import TenantService
 
-from ..saml import SamlAuthContext, SAMLService
+from ..saml import SamlAuthContext, SAMLService, SamlSessionItem
 
 
 class TestSAMLService(TestCase):
     def setUp(self) -> None:
         self.lifetime = 10
-        self.config = _DEFAULT_CONFIG
+        self.config: dict[str, Any] = _DEFAULT_CONFIG
         self.config['saml']['saml_session_lifetime_seconds'] = self.lifetime
         self.tenant_service_mock = Mock(TenantService)
-        self.service = SAMLService(self.config, self.tenant_service_mock)
+        self.dao_mock = Mock(DAO)
+        self.dao_mock.saml_session = Mock(SAMLSessionDAO)
+        self.service = SAMLService(self.config, self.tenant_service_mock, self.dao_mock)
 
     def _get_auth_context(
         self,
@@ -42,13 +46,15 @@ class TestSAMLService(TestCase):
 
         pending_date: datetime = datetime.fromisoformat('2000-01-01 00:00:02+00:00')
         pending: SamlAuthContext = self._get_auth_context(date=pending_date)
-
-        self.service._outstanding_requests = {'id1': expired, 'id2': pending}
+        self.dao_mock.saml_session.list.return_value = [
+            SamlSessionItem('id1', expired),
+            SamlSessionItem('id2', pending),
+        ]
 
         now: datetime = datetime.fromisoformat('2000-01-01 00:00:11+00:00')
         self.service.clean_pending_requests(now)
 
-        assert_that(self.service._outstanding_requests, is_({'id2': pending}))
+        self.dao_mock.saml_session.delete.assert_called_once_with('id1')
 
     @patch('wazo_auth.services.SAMLService.get_client')
     def test_create_session_on_sso_init(self, mock_get_client) -> None:
@@ -61,19 +67,20 @@ class TestSAMLService(TestCase):
         mock_get_client.return_value = mock_client
 
         self.service.prepare_redirect_response(url, domain)
-        assert_that(len(self.service._outstanding_requests), is_(1))
-        cached_req: SamlAuthContext = list(self.service._outstanding_requests.values())[
-            0
-        ]
-        assert_that(cached_req.redirect_url, is_(url))
-        assert_that(cached_req.domain, is_(domain))
+        self.dao_mock.saml_session.create.assert_called_once()
+        args = self.dao_mock.saml_session.create.call_args.args
+        item: SamlSessionItem = args[0]
+        assert_that(item.auth_context.redirect_url, is_(url))
+        assert_that(item.auth_context.domain, is_(domain))
 
     @patch('wazo_auth.services.SAMLService.get_client')
     def test_enrich_context_on_successful_login(self, mock_get_client) -> None:
         domain = 'domain1'
         req_key = 'kid1'
         cached_req: SamlAuthContext = self._get_auth_context(domain=domain)
-        self.service._outstanding_requests = {req_key: cached_req}
+        pending_session = SamlSessionItem(req_key, cached_req)
+        self.dao_mock.saml_session.list.return_value = [pending_session]
+        self.dao_mock.saml_session.get.return_value = pending_session
 
         response = Mock()
         response.ava = {'name': ['testname']}
@@ -90,9 +97,9 @@ class TestSAMLService(TestCase):
 
         _, args, _ = mock_get_client.mock_calls[0]
         assert_that(args[0], is_(domain))
-        assert_that(len(self.service._outstanding_requests), is_(1))
-        updated_req: SamlAuthContext = self.service._outstanding_requests[req_key]
-        assert_that(updated_req.login, is_('testname'))
+
+        update: dict[str, str] = {'login': 'testname'}
+        self.dao_mock.saml_session.update.assert_called_once_with(req_key, **update)
 
     @patch('wazo_auth.services.SAMLService.get_client')
     def test_remove_session_if_relay_state_is_not_in_outstanding_requests(
@@ -103,8 +110,8 @@ class TestSAMLService(TestCase):
         saved_req: SamlAuthContext = self._get_auth_context(
             domain=domain, relay_state='6pruzvCdQHaLWCd30T6IziZFX_U='
         )
-
-        self.service._outstanding_requests = {req_key: saved_req}
+        pending_session = SamlSessionItem(req_key, saved_req)
+        self.dao_mock.saml_session.list.return_value = [pending_session]
 
         response = Mock()
         response.session_id.return_value = req_key
@@ -120,7 +127,9 @@ class TestSAMLService(TestCase):
 
         the_exception = eo.exception
         self.assertEqual(the_exception.status_code, 404)
-        assert_that(self.service._outstanding_requests, is_({req_key: saved_req}))
+
+    def _fake_get(self, request_id: str) -> SamlSessionItem:
+        pass
 
     @patch('wazo_auth.services.SAMLService.get_client')
     def test_remove_session_if_relay_state_does_not_correspond_to_session_relay_state(
@@ -131,14 +140,13 @@ class TestSAMLService(TestCase):
         original_req: SamlAuthContext = self._get_auth_context(
             domain=domain, relay_state='6pruzvCdQHaLWCd30T6IziZFX_U='
         )
-        altered_req: SamlAuthContext = self._get_auth_context(
-            domain=domain, relay_state='iO6ldOVHIIpUKg6I8AyeZSCHEcQ='
-        )
+        altered_relay_state = 'iO6ldOVHIIpUKg6I8AyeZSCHEcQ='
 
-        self.service._outstanding_requests = {
-            req_key: original_req,
-            "other_key": altered_req,
-        }
+        pending_session = SamlSessionItem(req_key, original_req)
+        self.dao_mock.saml_session.list.return_value = [pending_session]
+        self.dao_mock.saml_session.get.return_value = SamlSessionItem(
+            req_key, original_req
+        )
 
         response = Mock()
         response.session_id.return_value = req_key
@@ -149,12 +157,11 @@ class TestSAMLService(TestCase):
             self.service.process_auth_response(
                 'url',
                 'remote_addr',
-                {'RelayState': 'iO6ldOVHIIpUKg6I8AyeZSCHEcQ=', 'SAMLResponse': None},
+                {'RelayState': altered_relay_state, 'SAMLResponse': None},
             )
 
         the_exception = eo.exception
         self.assertEqual(the_exception.status_code, 404)
-        assert_that(len(self.service._outstanding_requests), is_(2))
 
     @patch('wazo_auth.services.SAMLService.get_client')
     def test_process_response_raise_exception_with_redirection_url_when_possible(
@@ -168,9 +175,9 @@ class TestSAMLService(TestCase):
             redirect_url='redirect_url',
         )
 
-        self.service._outstanding_requests = {
-            req_key: req,
-        }
+        pending_session = SamlSessionItem(req_key, req)
+        self.dao_mock.saml_session.list.return_value = [pending_session]
+        self.dao_mock.saml_session.get.return_value = SamlSessionItem(req_key, req)
 
         response = Mock()
         response.session_id.return_value = req_key
@@ -189,7 +196,7 @@ class TestSAMLService(TestCase):
         self.assertEqual(
             the_exception.redirect_url, 'redirect_url?login_failure_code=500'
         )
-        assert_that(len(self.service._outstanding_requests), is_(0))
+        self.dao_mock.saml_session.delete.assert_called_once_with(req_key)
 
     def test_get_user_login_and_remove_context(self) -> None:
         saml_context = SamlAuthContext(
@@ -207,10 +214,14 @@ class TestSAMLService(TestCase):
             s.login2,
         )
 
-        self.service._outstanding_requests = {
-            s.req_id: saml_context,
-            s.other_req_id: ignored_saml_context,
-        }
+        pending_session = SamlSessionItem(s.req_id, saml_context)
+        ignored_session = SamlSessionItem(s.other_req_id, ignored_saml_context)
+        self.dao_mock.saml_session.list.return_value = [
+            pending_session,
+            ignored_session,
+        ]
+        self.dao_mock.saml_session.get.return_value = pending_session
+
         samples = [
             ('unknown', None),
             (s.session_1, s.login_1),
@@ -222,4 +233,6 @@ class TestSAMLService(TestCase):
             )
             assert_that(result, is_(expected))
 
-        assert_that(self.service._outstanding_requests, has_length(1))
+        self.dao_mock.saml_session.delete.assert_called_once_with(
+            pending_session.request_id
+        )

@@ -1,18 +1,25 @@
 # Copyright 2022-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from wazo_auth.services.saml import RequestId
+
 from sqlalchemy import exc
 
 from wazo_auth import exceptions
-from wazo_auth.services.saml import RequestId, SamlAuthContext
+from wazo_auth.services.saml import SamlAuthContext, SamlSessionItem
 
 from ..models import SAMLSession
 from .base import BaseDAO
 
 
 class SAMLSessionDAO(BaseDAO):
-    def _forge_return(self, session: SAMLSession) -> tuple[RequestId, SamlAuthContext]:
-        return (
+    def _forge_return(self, session: SAMLSession) -> SamlSessionItem:
+        return SamlSessionItem(
             session.request_id,
             SamlAuthContext(
                 session.session_id,
@@ -31,23 +38,25 @@ class SAMLSessionDAO(BaseDAO):
             .first()
         )
 
-    def get(self, request_id: RequestId) -> tuple[RequestId, SamlAuthContext]:
+    def get(self, request_id: RequestId) -> SamlSessionItem:
         session = self._get_raw(request_id)
         if session:
             return self._forge_return(session)
         raise exceptions.UnknownSAMLSessionException(request_id)
 
-    def create(
-        self, request_id: RequestId, session: SamlAuthContext
-    ) -> tuple[RequestId, SamlAuthContext]:
+    def list(self) -> list[SamlSessionItem]:
+        all = self.session.query(SAMLSession).all()
+        return [self._forge_return(session) for session in all]
+
+    def create(self, item: SamlSessionItem) -> SamlSessionItem:
         saml_session = SAMLSession(
-            request_id=request_id,
-            session_id=session.saml_session_id,
-            redirect_url=session.redirect_url,
-            domain=session.domain,
-            relay_state=session.relay_state,
-            login=session.login,
-            start_time=session.start_time,
+            request_id=item.request_id,
+            session_id=item.auth_context.saml_session_id,
+            redirect_url=item.auth_context.redirect_url,
+            domain=item.auth_context.domain,
+            relay_state=item.auth_context.relay_state,
+            login=item.auth_context.login,
+            start_time=item.auth_context.start_time,
         )
         self.session.add(saml_session)
         try:
@@ -55,15 +64,16 @@ class SAMLSessionDAO(BaseDAO):
         except exc.IntegrityError as e:
             self.session.rollback()
             raise exceptions.DuplicatedSAMLSessionException(
-                f'Session with request_id({request_id}) or '
-                f'session_id({session.saml_session_id} already exists, error: {e}'
+                f'Session with request_id({item.request_id}) or '
+                f'session_id({item.auth_context.saml_session_id} already exists, error: {e}'
             )
         except Exception as e:
             self.session.rollback()
             raise exceptions.SAMLSessionSQLException(
-                f'Unexpected error on SAML session SQL creation for {request_id}: {e}'
+                f'Unexpected error on SAML session SQL creation for {item.request_id}: {e}'
             )
-        return (request_id, session)
+
+        return item
 
     def update(self, request_id, **kwargs):
         filter_ = SAMLSession.request_id == request_id

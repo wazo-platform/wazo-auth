@@ -12,7 +12,7 @@ import uuid
 from functools import wraps
 
 from wazo_auth.database import models
-from wazo_auth.services.saml import RequestId, SamlAuthContext
+from wazo_auth.services.saml import SamlAuthContext, SamlSessionItem
 
 A_SALT = os.urandom(64)
 
@@ -339,18 +339,17 @@ def saml_session(request_id, **session_args):
                 or 'https://stack.wazo.local/api/0.1/saml/acs'
             )
             domain = session_args.get('domain') or 'example.com'
-            session = SamlAuthContext(
+            auth_context = SamlAuthContext(
                 saml_session_id=session_id,
                 redirect_url=redirect_url,
                 domain=domain,
                 relay_state=relay_state,
             )
 
-            (saml_session_tuple): tuple[
-                RequestId, SamlAuthContext
-            ] = self._saml_session_dao.create(request_id, session)
+            item = SamlSessionItem(request_id, auth_context)
+            self._saml_session_dao.create(item)
             self.session.begin_nested()
-            args = list(args) + [saml_session_tuple]
+            args = list(args) + [item]
             try:
                 return decorated(self, *args, **kwargs)
             finally:
