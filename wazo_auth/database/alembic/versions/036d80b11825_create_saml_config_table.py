@@ -1,7 +1,7 @@
 """create saml config table
 
 Revision ID: 036d80b11825
-Revises: a1149ec5ad50
+Revises: 1cd6161394d0
 
 """
 
@@ -12,7 +12,7 @@ from wazo_auth.database.datatypes import XMLPostgresqlType
 
 # revision identifiers, used by Alembic.
 revision = '036d80b11825'
-down_revision = 'a1149ec5ad50'
+down_revision = '1cd6161394d0'
 
 
 TABLE_NAME = 'auth_saml_config'
