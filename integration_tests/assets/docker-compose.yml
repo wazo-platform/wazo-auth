@@ -70,7 +70,6 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--entryPoints.websecure.address=:443"
     ports:
-      - "8080:8080"
       - "443:443"
     links:
       - "samlwebapp:app.wazo.local"
