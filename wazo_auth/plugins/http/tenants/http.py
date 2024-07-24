@@ -86,3 +86,15 @@ class Tenants(BaseResource):
 
         result = self.tenant_service.new(parent_uuid=scoping_tenant.uuid, **args)
         return result, 200
+
+
+class TenantDomains(BaseResource):
+    @http.required_acl('auth.tenants.{tenant_uuid}.domains.read')
+    def get(self, tenant_uuid):
+
+        domains = self.tenant_service.list_domains(tenant_uuid)
+        total = len(domains)
+
+        response = {'total': total, 'items': domains}
+
+        return response, 200

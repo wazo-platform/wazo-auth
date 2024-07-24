@@ -12,6 +12,7 @@ from .idp import IDPService
 from .ldap import LDAPService
 from .policy import PolicyService
 from .saml import SAMLService
+from .saml_config import SAMLConfigService
 from .session import SessionService
 from .tenant import TenantService
 from .token import TokenService
@@ -30,6 +31,7 @@ __all__ = [
     'PasswordEncrypter',
     'PolicyService',
     'SAMLService',
+    'SAMLConfigService',
     'SessionService',
     'TenantService',
     'TokenService',

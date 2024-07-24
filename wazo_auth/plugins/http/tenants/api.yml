@@ -136,6 +136,35 @@ paths:
           description: Tenant not found
           schema:
             $ref: '#/definitions/Error'
+  /tenants/{tenant_uuid}/domains:
+    get:
+      tags:
+        - tenants
+      security:
+      - wazo_auth_token: []
+      description: '**Required ACL**: `auth.tenants.{tenant_uuid}.domains.read`'
+      parameters:
+      - $ref: '#/parameters/tenant_uuid'
+      summary: Retrieves the domains names with uuids of a tenant
+      responses:
+        '200':
+          description: "The tenant's domains data"
+          schema:
+            $ref: '#/definitions/TenantDomainsList'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Tenant not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: System related error
+          schema:
+            $ref: '#/definitions/Error'
+
+
 parameters:
   tenant_uuid:
     name: tenant_uuid
@@ -254,3 +283,19 @@ definitions:
         type: string
       zip_code:
         type: string
+  TenantDomainsList:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: The number of domains
+      items:
+        type: array
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+            uuid:
+              type: string
+        description: A non-paginated list of domains

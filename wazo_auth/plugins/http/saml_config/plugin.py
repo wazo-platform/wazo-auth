@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from . import http
@@ -7,20 +7,22 @@ from . import http
 class Plugin:
     def load(self, dependencies):
         api = dependencies['api']
-        args = (dependencies['tenant_service'],)
+        args = (dependencies['saml_config_service'],)
 
         api.add_resource(
-            http.Tenants,
-            '/tenants',
+            http.SAMLConfig,
+            '/backends/saml',
             resource_class_args=args,
         )
+
         api.add_resource(
-            http.Tenant,
-            '/tenants/<uuid:tenant_uuid>',
+            http.SAMLMetadata,
+            '/backends/saml/metadata',
             resource_class_args=args,
         )
+
         api.add_resource(
-            http.TenantDomains,
-            '/tenants/<uuid:tenant_uuid>/domains',
+            http.SAMLAcsUrlTemplate,
+            '/backends/saml/acs_url_template',
             resource_class_args=args,
         )

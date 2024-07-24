@@ -115,6 +115,7 @@ then run
 playwright install
 tox -e integration
 ```
+Note: If you update the `test-requirements-for-tox.ini` file don't forget to run `tox --recreate -e integration`.
 Note: The `playwright install` command installs the required browsers to run tests.
 
 Playwright can be executed with headed browser and in a slowmotion mode, you

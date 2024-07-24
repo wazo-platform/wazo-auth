@@ -156,7 +156,10 @@ class UnknownTenantException(APIException):
 
 class UnauthorizedTenantwithChildrenDelete(APIException):
     def __init__(self, tenant_uuid):
-        msg = f'Unauthorized delete of tenant : "{tenant_uuid}" ; since it has at least one child'  # noqa
+        msg = (
+            f'Unauthorized delete of tenant : "{tenant_uuid}" ; '  # noqa: E702
+            'since it has at least one child'
+        )
         details = {'uuid': str(tenant_uuid)}
         super().__init__(400, msg, details, 'tenants')
 
@@ -459,10 +462,10 @@ class SAMLException(APIException):
 
 
 class SAMLConfigurationError(SAMLException):
-    def __init__(self, domain):
+    def __init__(self, domain, message=None):
         error_code = 500
         error_id = 'configuration-error'
-        error_msg = 'SAML client for domain not found or failed'
+        error_msg = message or 'SAML client for domain not found or failed'
         error_details = {
             'domain': domain,
         }
@@ -492,3 +495,23 @@ class SAMLProcessingErrorWithReturnURL(SAMLException):
             return_url + '?' + urlencode({'login_failure_code': error_code})
         )
         super().__init__(error_code, error_msg, error_id, error_details, self.resource)
+
+
+class SAMLConfigParameterException(APIException):
+    def __init__(self, tenant_uuid, msg, code):
+        details = {'uuid': str(tenant_uuid)}
+        super().__init__(code, msg, 'unknown-saml-config', details, 'saml_config')
+
+
+class UnknownSAMLConfigException(APIException):
+    def __init__(self, tenant_uuid):
+        msg = f'No SAML IDP config found for this tenant: "{tenant_uuid}"'
+        details = {'uuid': str(tenant_uuid)}
+        super().__init__(404, msg, 'unknown-saml-config', details, 'saml_config')
+
+
+class DuplicatedSAMLConfigException(APIException):
+    def __init__(self, tenant_uuid):
+        msg = 'Duplicated SAML config exists'
+        details = {'tenant_uuid': {'constraint_id': 'unique', 'message': msg}}
+        super().__init__(409, 'Conflict detected', 'conflict', details, 'saml_config')

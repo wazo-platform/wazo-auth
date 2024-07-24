@@ -6,6 +6,7 @@ import base64
 import hashlib
 import logging
 import secrets
+import tempfile
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
 from functools import partial
@@ -18,7 +19,11 @@ from saml2.response import AuthnResponse, VerificationError
 from saml2.s_utils import UnknownPrincipal, UnsupportedBinding
 from saml2.sigver import SignatureError
 
-from wazo_auth import exceptions
+from wazo_auth.exceptions import (
+    SAMLConfigurationError,
+    SAMLProcessingError,
+    SAMLProcessingErrorWithReturnURL,
+)
 from wazo_auth.services.helpers import BaseService
 from wazo_auth.services.tenant import TenantService
 
@@ -60,13 +65,20 @@ RequestId = Any
 
 
 class SAMLService(BaseService):
-    def __init__(self, config: Config, tenant_service: TenantService):
+    def __init__(
+        self,
+        config: Config,
+        tenant_service: TenantService,
+    ):
         self._config = config
         self._outstanding_requests: dict[RequestId, SamlAuthContext] = {}
         self._saml_clients: dict[str, Saml2Client] = {}
-        self._tenant_service = tenant_service
+        self._tenant_service: TenantService = tenant_service
 
-        global_saml_config = dict(self._config['saml'])
+        self._key_file = self._config['saml']['key_file']
+        self._cert_file = self._config['saml']['cert_file']
+
+        self._global_saml_config = dict(self._config['saml'])
         required_config_options = [
             'key_file',
             'cert_file',
@@ -75,7 +87,7 @@ class SAMLService(BaseService):
         ]
         missing_keys = []
         for key in required_config_options:
-            value = global_saml_config.get(key)
+            value = self._global_saml_config.get(key)
             if not value:
                 missing_keys.append(key)
 
@@ -85,36 +97,81 @@ class SAMLService(BaseService):
                 ','.join(missing_keys),
             )
             return
-
-        domain_configs = global_saml_config.pop('domains', None)
-        self._init_clients(global_saml_config, domain_configs)
+        logger.debug('Global SAML config: %s', self._global_saml_config)
         self._saml_session_lifetime = timedelta(
             seconds=config['saml']['saml_session_lifetime_seconds']
         )
 
-    def _init_clients(self, global_saml_config, domain_configs):
-        logger.debug('Global SAML config: %s', global_saml_config)
-        if not domain_configs:
+    def _prepare_saml_config(self, db_config, filename, globals) -> RawSAMLConfig:
+        return {
+            'entityid': db_config['entity_id'],
+            'service': {
+                'sp': {
+                    'want_response_signed': True,
+                    'authn_requests_signed': True,
+                    'endpoints': {
+                        'assertion_consumer_service': [
+                            (
+                                db_config['acs_url'],
+                                BINDING_HTTP_POST,
+                            )
+                        ]
+                    },
+                }
+            },
+            'metadata': {'local': [filename]},
+            'key_file': globals['key_file'],
+            'cert_file': globals['cert_file'],
+            'xmlsec_binary': globals['xmlsec_binary'],
+        }
+
+    def init_clients(self, db_configs):
+        self._saml_clients = {}
+        key_file = self._config['saml']['key_file']
+        cert_file = self._config['saml']['cert_file']
+        if not key_file or not cert_file:
+            raise SAMLConfigurationError(
+                db_configs['domain_name'],
+                '"key_file" or "cert_file" are missing from the SAML configuration',
+            )
+
+        logger.info(f"(re)Initializing SAML clients with config: {db_configs}")
+        if not db_configs:
             logger.debug('No SAML configuration found for any domain')
             return
 
-        for domain, raw_saml_config in domain_configs.items():
+        for db_config in db_configs:
+            domain_name = db_config['domain_name']
             matching_tenants = self._tenant_service.list_(
-                domain_name=domain, scoping_tenant_uuid=None
+                domain_name=domain_name, scoping_tenant_uuid=None
             )
             if not matching_tenants:
-                logger.info('Ignoring SAML config for "%s" no matching tenant', domain)
+                logger.info(
+                    'Ignoring SAML config for "%s" no matching tenant', domain_name
+                )
                 continue
-            raw_saml_config['relay_state'] = domain
-            raw_saml_config.update(global_saml_config)
-            try:
-                saml_config = SAMLConfig()
-                saml_config.load(raw_saml_config)
-                saml_client = Saml2Client(config=saml_config)
-                logger.debug('SAML config : %s', vars(saml_config))
-                self._saml_clients[domain] = saml_client
-            except Exception:
-                logger.exception('Error during SAML client init for domain %s', domain)
+
+            with tempfile.NamedTemporaryFile(suffix='.xml') as metadata_file:
+                metadata_file.write(db_config['idp_metadata'].encode())
+                raw_saml_config = self._prepare_saml_config(
+                    db_config, metadata_file.name, self._global_saml_config
+                )
+                raw_saml_config['relay_state'] = domain_name
+                logger.debug(
+                    f'SAML config for domain: {domain_name}: {raw_saml_config}'
+                )
+                try:
+                    saml_config = SAMLConfig()
+                    saml_config.load(cnf=raw_saml_config)
+                    saml_client = Saml2Client(config=saml_config)
+                    logger.debug(
+                        f'SAML config for domain: {domain_name}: {vars(saml_config)}'
+                    )
+                    self._saml_clients[domain_name] = saml_client
+                except Exception:
+                    logger.exception(
+                        'Error during SAML client init for domain %s', domain_name
+                    )
 
     def get_client(self, domain: str):
         return self._saml_clients[domain]
@@ -176,7 +233,7 @@ class SAMLService(BaseService):
         logger.warning(msg)
         logger.debug(f'Removing session: {req_id}')
         del self._outstanding_requests[req_id]
-        raise exceptions.SAMLProcessingErrorWithReturnURL(
+        raise SAMLProcessingErrorWithReturnURL(
             'Unknown principal', return_url=redirect_url
         )
 
@@ -189,7 +246,7 @@ class SAMLService(BaseService):
         ) = self._find_session_by_relay_state(form_data['RelayState'])
         if not session_by_relay_state:
             logger.warning('ACS response request failed: Context not found')
-            raise exceptions.SAMLProcessingError('Context not found', code=404)
+            raise SAMLProcessingError('Context not found', code=404)
 
         domain: str = session_by_relay_state.domain
         saml_client: Saml2Client = self.get_client(domain)
@@ -248,7 +305,7 @@ class SAMLService(BaseService):
                     'RequestId does not correspond to RelayState, ignoring response'
                 )
                 logger.warning('ACS response request failed: Context not found')
-                raise exceptions.SAMLProcessingError('Context not found', code=404)
+                raise SAMLProcessingError('Context not found', code=404)
 
             update = {'response': response, 'login': response.ava['name'][0]}
             self._outstanding_requests[response.session_id()] = replace(
@@ -257,7 +314,7 @@ class SAMLService(BaseService):
             return session_data.redirect_url
         else:
             logger.warning('ACS response request failed: Context not found')
-            raise exceptions.SAMLProcessingError('Context not found', code=404)
+            raise SAMLProcessingError('Context not found', code=404)
 
     def get_user_login_and_remove_context(self, saml_session_id: str) -> str | None:
         logger.debug('sessions %s', self._outstanding_requests)

@@ -24,6 +24,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
+from wazo_auth.database.datatypes import XMLPostgresqlType
+
 Base = declarative_base()
 
 RFC_DN_MAX_LENGTH = 253
@@ -422,3 +424,22 @@ class LDAPConfig(Base):
     user_login_attribute = Column(String(64), nullable=False)
     user_email_attribute = Column(String(64), nullable=False)
     search_filters = Column(Text, nullable=True)
+
+
+class SAMLConfig(Base):
+    __tablename__ = 'auth_saml_config'
+
+    tenant_uuid = Column(
+        String(38),
+        ForeignKey('auth_tenant.uuid', ondelete='CASCADE'),
+        nullable=False,
+        primary_key=True,
+    )
+    domain_uuid = Column(
+        String(length=38),
+        ForeignKey('auth_tenant_domain.uuid', ondelete='CASCADE'),
+        nullable=False,
+    )
+    entity_id = Column(String(512), nullable=False)
+    idp_metadata = Column(XMLPostgresqlType(), nullable=False)
+    acs_url = Column(String(512), nullable=False)

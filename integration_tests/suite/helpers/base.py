@@ -40,6 +40,7 @@ from wazo_auth.database.queries import (
     ldap_config,
     policy,
     refresh_token,
+    saml_config,
     session,
     tenant,
     token,
@@ -170,6 +171,7 @@ class DAOTestCase(unittest.TestCase):
 
     def setUp(self):
         self._address_dao = queries.AddressDAO()
+        self._domain_dao = queries.DomainDAO()
         self._email_dao = queries.EmailDAO()
         self._external_auth_dao = queries.ExternalAuthDAO()
         self._group_dao = group.GroupDAO()
@@ -179,6 +181,7 @@ class DAOTestCase(unittest.TestCase):
         self._refresh_token_dao = refresh_token.RefreshTokenDAO()
         self._tenant_dao = tenant.TenantDAO()
         self._token_dao = token.TokenDAO()
+        self._saml_config_dao = saml_config.SAMLConfigDAO()
         self._session_dao = session.SessionDAO()
 
         self.top_tenant_uuid = self._tenant_dao.find_top_tenant()

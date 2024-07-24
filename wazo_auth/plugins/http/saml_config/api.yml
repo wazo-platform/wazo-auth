@@ -1,0 +1,243 @@
+paths:
+  /backends/saml:
+    delete:
+      description: '**Required ACL:** `auth.backends.saml.delete`'
+      operationId: deleteSAMLBackendConfig
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      responses:
+        '204':
+          description: The SAML backend configuration has been deleted
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Configuration for the tenant not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - wazo_auth_token: []
+      summary: Delete current tenant's SAML backend configuration
+      tags:
+      - backends
+    get:
+      description: '**Required ACL:** `auth.backends.saml.read`'
+      operationId: getSAMLBackendConfig
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: The SAML backend configuration.
+          schema:
+            $ref: '#/definitions/SAMLBackendConfig'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - wazo_auth_token: []
+      summary: 'Get current tenant''s SAML backend configuration. If there is no configuration,
+
+        all the fields will be `null`.
+
+        '
+      tags:
+      - backends
+    post:
+      description: '**Required ACL:** `auth.backends.saml.create'
+      operationId: createSAMLBackendConfig
+      consumes:
+        - multipart/form-data
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+        - in: formData
+          name: metadata
+          type: file
+          description: The IDP metadata file in XML format.
+          x-mimetype: application/xml
+          required: true
+        - in: formData
+          name: domain_uuid
+          type: string
+          description: The UUID of the domain to use for the SAML backend.
+          required: true
+        - in: formData
+          name: entity_id
+          type: string
+          description: The name of the SAML Entity.
+          required: true
+        - in: formData
+          name: acs_url
+          type: string
+          format: uri
+          description: The SAML ACS URL configured in the IdP.
+          required: true
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: The SAML backend configuration.
+          schema:
+            $ref: '#/definitions/SAMLBackendConfig'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - wazo_auth_token: []
+      summary: Returns the created SAML configuration.
+      tags:
+      - backends
+    put:
+      description: '**Required ACL:** `auth.backends.saml.update'
+      operationId: updateSAMLBackendConfig
+      consumes:
+        - multipart/form-data
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+        - in: formData
+          name: metadata
+          type: file
+          description: The IDP metadata file in XML format.
+          x-mimetype: application/xml
+          required: false
+        - in: formData
+          name: domain_uuid
+          type: string
+          description: The UUID of the domain to use for the SAML backend.
+          required: false
+        - in: formData
+          name: entity_id
+          type: string
+          description: The name of the SAML Entity.
+          required: false
+        - in: formData
+          name: acs_url
+          type: string
+          format: uri
+          description: The SAML ACS URL configured in the IdP.
+          required: false
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: The SAML backend configuration has been updated
+          schema:
+            $ref: '#/definitions/SAMLBackendConfig'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: 'Internal server error'
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - wazo_auth_token: []
+      summary: Updates current tenant's SAML backend configuration
+      tags:
+      - backends
+  /backends/saml/metadata:
+    get:
+      description: '**Required ACL:** `auth.backends.saml.read`
+
+
+        This endpoint allow to download tenant metadata file.
+
+        '
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      responses:
+        '200':
+          description: Download the tenant SAML metadata XML file.
+          schema:
+            description: The  metadata file in XML format.
+            type: file
+            x-mimetype: application/xml
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: 'No metadata file found'
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: 'Internal server error'
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Download the tenant's SAML metadata XML file.
+      tags:
+      - backends
+  /backends/saml/acs_url_template:
+    get:
+      description: '**Required ACL:** `auth.backends.saml.read`
+        This endpoint provides the tenant Assertion Consumer Service URL template.
+        The `{{STACK_URL}}` must be replaced by the public URL of the stack, wazo-confd
+        ingress can be used to retrieve previously configured data.
+        '
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: Returns the URL to be used while configuring the Identity provider.
+          schema:
+            $ref: '#/definitions/SAMLAcsUrlTemplate'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: SAML backend is not enabled
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: 'Internal server error'
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Get tenant's ACS URL template to use in the IDP configuration
+      tags:
+      - backends
+
+definitions:
+  SAMLBackendConfig:
+    properties:
+      domain_uuid:
+        type: string
+        description: The UUID of the domain to use for the SAML backend.
+      entity_id:
+        type: string
+        description: The name of the SAML Entity Id
+      acs_url:
+        type: string
+        description: The SAML ACS URL
+        format: uri
+    required:
+    - domain_uuid
+    - entity_id
+    - acs_url
+    type: object
+  SAMLAcsUrlTemplate:
+    properties:
+      acs_url:
+        type: string
+        description: The SAML ACS URL
+        format: uri
+    required:
+    - acs_url
+    type: object

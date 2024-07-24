@@ -141,3 +141,10 @@ class TenantService(BaseService):
         event = TenantUpdatedEvent(result.get('name'), tenant_uuid)
         self._bus_publisher.publish(event)
         return result
+
+    def list_domains(self, tenant_uuid):
+        if self.get(tenant_uuid, tenant_uuid) is None:
+            raise exceptions.UnknownTenantException(tenant_uuid)
+
+        domains = self._dao.domain.get(str(tenant_uuid))
+        return [{'name': domain.name, 'uuid': domain.uuid} for domain in domains]

@@ -45,6 +45,24 @@ class TestSamlService(SAMLIntegrationTest):
             name='example', slug='example', domain_names=[domain_name]
         )
 
+    def _configure_saml(self, domain_name: str) -> None:
+        acs_url_template: str = self.client.saml_config.get_acs_template()['acs_url']
+        acs_url: str = acs_url_template.replace('{{STACK_URL}}', 'stack.wazo.local')
+        domain_uuid: str = self.client.tenants.get_domains(self.tenant['uuid'])[
+            'items'
+        ][0]['uuid']
+        with open('./assets/var/lib/wazo-auth/saml/saml.xml') as f:
+            metadata: str = f.read()
+            saml_config: dict[str, Any] = {
+                'data': {
+                    'acs_url': acs_url,
+                    'entity_id': 'https://es.dev.wazo.io',
+                    'domain_uuid': domain_uuid,
+                },
+                'files': {'metadata': metadata},
+            }
+            self.client.saml_config.create(self.tenant['uuid'], **saml_config)
+
     def _create_user(self, login: str) -> None:
         user: dict[str, Any] = {
             'username': login,
@@ -96,7 +114,9 @@ class TestSamlService(SAMLIntegrationTest):
         timezone_id="Europe/London", locale="en-GB", ignore_https_errors=True
     )
     def test_login(self) -> None:
-        self._setup_tenant_and_domain("example.com")
+        domain_name = 'example.com'
+        self._setup_tenant_and_domain(domain_name)
+        self._configure_saml(domain_name)
         self._create_user(self.login)
         self._reload_saml_config()
         self._accept_self_signed_certificate_on_stack()

@@ -292,3 +292,26 @@ def ldap_config(**ldap_config_args):
         return wrapper
 
     return decorator
+
+
+def saml_config(**saml_config_args):
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            domain = self._domain_dao.get(saml_config_args['tenant_uuid'])
+            saml_config_args.setdefault('domain_uuid', domain[0].uuid)
+            saml_config_args.setdefault('acs_url', 'https://stack/api/0.1/saml/acs')
+            saml_config_args.setdefault('entity_id', 'entity_id')
+            saml_config_args.setdefault('idp_metadata', '<my_xml_data/>')
+
+            saml_config = self._saml_config_dao.create(**saml_config_args)
+            self.session.begin_nested()
+            args = list(args) + [saml_config]
+            try:
+                return decorated(self, *args, **kwargs)
+            finally:
+                self.session.rollback()
+
+        return wrapper
+
+    return decorator

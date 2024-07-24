@@ -22,12 +22,14 @@ from .. import exceptions, services
 from ..database import queries
 from ..database.queries import (
     address,
+    domain,
     email,
     external_auth,
     group,
     ldap_config,
     policy,
     refresh_token,
+    saml_config,
     session,
     tenant,
     token,
@@ -41,12 +43,14 @@ class BaseServiceTestCase(TestCase):
         self.top_tenant_uuid = 'c699f101-2c71-4069-85da-e1ca7f680393'
 
         self.address_dao = Mock(address.AddressDAO)
+        self.domain_dao = Mock(domain.DomainDAO)
         self.email_dao = Mock(email.EmailDAO)
         self.external_auth_dao = Mock(external_auth.ExternalAuthDAO)
         self.group_dao = Mock(group.GroupDAO)
         self.ldap_config_dao = Mock(ldap_config.LDAPConfigDAO)
         self.policy_dao = Mock(policy.PolicyDAO)
         self.refresh_token_dao = Mock(refresh_token.RefreshTokenDAO)
+        self.saml_config_dao = Mock(saml_config.SAMLConfigDAO)
         self.session_dao = Mock(session.SessionDAO)
         self.tenant_dao = Mock(tenant.TenantDAO)
         self.token_dao = Mock(token.TokenDAO)
@@ -59,12 +63,14 @@ class BaseServiceTestCase(TestCase):
 
         self.dao = queries.DAO(
             address=self.address_dao,
+            domain=self.domain_dao,
             email=self.email_dao,
             external_auth=self.external_auth_dao,
             group=self.group_dao,
             ldap_config=self.ldap_config_dao,
             policy=self.policy_dao,
             refresh_token=self.refresh_token_dao,
+            saml_config=self.saml_config_dao,
             session=self.session_dao,
             tenant=self.tenant_dao,
             token=self.token_dao,
