@@ -48,7 +48,7 @@ def upgrade():
         ),
         sa.Column(
             'relay_state',
-            sa.String(44),
+            sa.String(100),
             nullable=False,
         ),
         sa.Column(
