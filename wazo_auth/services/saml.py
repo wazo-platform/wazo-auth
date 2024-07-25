@@ -138,7 +138,7 @@ class SAMLService(BaseService):
                 '"key_file" or "cert_file" are missing from the SAML configuration',
             )
 
-        logger.info(f"(re)Initializing SAML clients with config: {db_configs}")
+        logger.info("(re)Initializing SAML clients with config: %s", db_configs)
         if not db_configs:
             logger.debug('No SAML configuration found for any domain')
             return
@@ -162,14 +162,14 @@ class SAMLService(BaseService):
                 )
                 raw_saml_config['relay_state'] = domain_name
                 logger.debug(
-                    f'SAML config for domain: {domain_name}: {raw_saml_config}'
+                    'SAML config for domain: %s: %s', domain_name, raw_saml_config
                 )
                 try:
                     saml_config = SAMLConfig()
                     saml_config.load(cnf=raw_saml_config)
                     saml_client = Saml2Client(config=saml_config)
                     logger.debug(
-                        f'SAML config for domain: {domain_name}: {vars(saml_config)}'
+                        'SAML config for domain: %s: %s', domain_name, vars(saml_config)
                     )
                     self._saml_clients[domain_name] = saml_client
                 except Exception:
@@ -229,7 +229,7 @@ class SAMLService(BaseService):
             for item in self._dao.saml_session.list()
             if item.auth_context.relay_state == relay_state
         ]
-        if len(sessions) == 1:
+        if sessions:
             return sessions[0]
         else:
             logger.warning(
@@ -242,7 +242,7 @@ class SAMLService(BaseService):
     ) -> None:
 
         logger.warning(msg)
-        logger.debug(f'Removing session: {req_id}')
+        logger.debug('Removing session: %s', req_id)
         self._dao.saml_session.delete(req_id)
         raise SAMLProcessingErrorWithReturnURL(
             'Unknown principal', return_url=redirect_url
@@ -348,7 +348,7 @@ class SAMLService(BaseService):
                 item.auth_context.start_time + self._saml_session_lifetime
             )
             if now > expire_at:
-                logger.debug(f"Removing SAML context: {item}")
+                logger.debug("Removing SAML context: %s", item)
                 self._dao.saml_session.delete(item.request_id)
 
     def _reqid_by_saml_session_id(self, saml_session_id: str) -> str | None:
