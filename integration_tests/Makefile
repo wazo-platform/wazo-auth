@@ -1,4 +1,4 @@
-test-setup: test-image egg-info db saml-webapp build-oauth2-sync
+test-setup: test-image egg-info db saml-webapp build-oauth2-sync install-playwright
 
 build-oauth2-sync:
 	docker build --no-cache -t oauth2-synchronization-service -f assets/external_auth/oauth2_synchronization_service/Dockerfile assets/external_auth/oauth2_synchronization_service
@@ -12,6 +12,9 @@ saml-webapp:
 test-image:
 	docker build --no-cache -t wazoplatform/wazo-auth ..
 	docker build --no-cache -t wazoplatform/wazo-auth-tests -f Dockerfile-auth-test ..
+
+install-playwright:
+	playwright install
 
 egg-info:
 	cd .. && python3 setup.py egg_info
