@@ -11,6 +11,7 @@ from ..models import (
     GroupPolicy,
     Policy,
     RefreshToken,
+    SAMLSession,
     Tenant,
     User,
     UserGroup,
@@ -122,6 +123,10 @@ user_strict_filter = StrictFilter(
     ('purpose', User.purpose, None),
     ('email_address', Email.address, None),
     ('group_uuid', UserGroup.group_uuid, str),
+)
+saml_session_strict_filter = StrictFilter(
+    ('session_id', SAMLSession.session_id, str),
+    ('relay_state', SAMLSession.relay_state, str),
 )
 
 external_auth_search_filter = SearchFilter(ExternalAuthType.name)

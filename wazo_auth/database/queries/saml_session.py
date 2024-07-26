@@ -14,10 +14,13 @@ from wazo_auth import exceptions
 from wazo_auth.services.saml import SamlAuthContext, SamlSessionItem
 
 from ..models import SAMLSession
+from . import filters
 from .base import BaseDAO
 
 
-class SAMLSessionDAO(BaseDAO):
+class SAMLSessionDAO(filters.FilterMixin, BaseDAO):
+    search_filter = filters.saml_session_strict_filter
+
     def _forge_return(self, session: SAMLSession) -> SamlSessionItem:
         return SamlSessionItem(
             session.request_id,
@@ -44,8 +47,9 @@ class SAMLSessionDAO(BaseDAO):
             return self._forge_return(session)
         raise exceptions.UnknownSAMLSessionException(request_id)
 
-    def list(self) -> list[SamlSessionItem]:
-        all_rows = self.session.query(SAMLSession).all()
+    def list(self, **kwargs) -> list[SamlSessionItem]:
+        search_filter = self.new_search_filter(**kwargs)
+        all_rows = self.session.query(SAMLSession).filter(search_filter).all()
         return [self._forge_return(session) for session in all_rows]
 
     def create(self, item: SamlSessionItem) -> SamlSessionItem:

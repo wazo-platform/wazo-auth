@@ -3,7 +3,15 @@
 
 from datetime import datetime, timezone
 
-from hamcrest import assert_that, calling, is_, not_, raises
+from hamcrest import (
+    assert_that,
+    calling,
+    contains_exactly,
+    has_properties,
+    is_,
+    not_,
+    raises,
+)
 
 from wazo_auth import exceptions
 from wazo_auth.services.saml import SamlAuthContext, SamlSessionItem
@@ -30,6 +38,40 @@ class TestSAMLSessionDAO(base.DAOTestCase):
         assert_that(all_sessions[0].request_id, is_(REQUEST_ID))
         assert_that(all_sessions[1].request_id, is_('2nd-request-id'))
         assert_that(all_sessions[0].auth_context.saml_session_id, is_('samsid'))
+
+    @fixtures.db.saml_session(REQUEST_ID, session_id='samsid')
+    @fixtures.db.saml_session('2nd-request-id', session_id='autre_id')
+    def test_list_with_filter_session_id(self, a, b) -> None:
+        matching_sessions: list[SamlSessionItem] = self._saml_session_dao.list(
+            session_id=a.auth_context.saml_session_id
+        )
+        assert_that(
+            matching_sessions,
+            contains_exactly(
+                has_properties(
+                    request_id=REQUEST_ID,
+                    auth_context=has_properties(
+                        saml_session_id=a.auth_context.saml_session_id
+                    ),
+                ),
+            ),
+        )
+
+    @fixtures.db.saml_session(REQUEST_ID, relay_state='r1')
+    @fixtures.db.saml_session('2nd-request-id', relay_state='autre_r')
+    def test_list_with_filter_relay_state(self, a, b) -> None:
+        matching_sessions: list[SamlSessionItem] = self._saml_session_dao.list(
+            relay_state=b.auth_context.relay_state
+        )
+        assert_that(
+            matching_sessions,
+            contains_exactly(
+                has_properties(
+                    request_id='2nd-request-id',
+                    auth_context=has_properties(relay_state=b.auth_context.relay_state),
+                ),
+            ),
+        )
 
     def test_create(self) -> None:
         now = datetime.now(timezone.utc)

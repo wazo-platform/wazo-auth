@@ -224,11 +224,9 @@ class SAMLService(BaseService):
     def _find_session_by_relay_state(
         self, relay_state: str
     ) -> SamlSessionItem | tuple[None, None]:
-        sessions: list[SamlSessionItem] = [
-            item
-            for item in self._dao.saml_session.list()
-            if item.auth_context.relay_state == relay_state
-        ]
+        sessions: list[SamlSessionItem] = self._dao.saml_session.list(
+            relay_state=relay_state
+        )
         if sessions:
             return sessions[0]
         else:
@@ -333,13 +331,11 @@ class SAMLService(BaseService):
 
     def get_user_login_and_remove_context(self, saml_session_id: str) -> str | None:
         logger.debug('sessions %s', self._dao.saml_session.list())
-        reqid: str | None = self._reqid_by_saml_session_id(saml_session_id)
-        if reqid:
-            _, session_data = self._dao.saml_session.get(reqid)
+        for reqid, session_data in self._dao.saml_session.list(
+            session_id=saml_session_id
+        ):
             self._dao.saml_session.delete(reqid)
             return session_data.login if session_data else None
-        else:
-            return None
 
     def clean_pending_requests(self, maybe_now: datetime | None = None) -> None:
         now: datetime = maybe_now or datetime.now(timezone.utc)
@@ -350,9 +346,3 @@ class SAMLService(BaseService):
             if now > expire_at:
                 logger.debug("Removing SAML context: %s", item)
                 self._dao.saml_session.delete(item.request_id)
-
-    def _reqid_by_saml_session_id(self, saml_session_id: str) -> str | None:
-        for reqid, saml_context in self._dao.saml_session.list():
-            if saml_context.saml_session_id == saml_session_id:
-                return reqid
-        return None
