@@ -10,6 +10,7 @@ from .ldap_config import LDAPConfigDAO
 from .policy import PolicyDAO
 from .refresh_token import RefreshTokenDAO
 from .saml_config import SAMLConfigDAO
+from .saml_session import SAMLSessionDAO
 from .session import SessionDAO
 from .tenant import TenantDAO
 from .token import TokenDAO
@@ -28,6 +29,7 @@ class DAO:
         policy,
         refresh_token,
         saml_config,
+        saml_session,
         session,
         tenant,
         token,
@@ -42,6 +44,7 @@ class DAO:
         self.policy = policy
         self.refresh_token = refresh_token
         self.saml_config = saml_config
+        self.saml_session = saml_session
         self.session = session
         self.tenant = tenant
         self.token = token
@@ -59,6 +62,7 @@ class DAO:
             policy=PolicyDAO(),
             refresh_token=RefreshTokenDAO(),
             saml_config=SAMLConfigDAO(),
+            saml_session=SAMLSessionDAO(),
             session=SessionDAO(),
             tenant=TenantDAO(),
             token=TokenDAO(),

@@ -41,6 +41,7 @@ from wazo_auth.database.queries import (
     policy,
     refresh_token,
     saml_config,
+    saml_session,
     session,
     tenant,
     token,
@@ -182,6 +183,7 @@ class DAOTestCase(unittest.TestCase):
         self._tenant_dao = tenant.TenantDAO()
         self._token_dao = token.TokenDAO()
         self._saml_config_dao = saml_config.SAMLConfigDAO()
+        self._saml_session_dao = saml_session.SAMLSessionDAO()
         self._session_dao = session.SessionDAO()
 
         self.top_tenant_uuid = self._tenant_dao.find_top_tenant()

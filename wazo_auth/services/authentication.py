@@ -1,12 +1,16 @@
 # Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+from __future__ import annotations
 
 import logging
 from collections.abc import Mapping
+from typing import TYPE_CHECKING
 
 import stevedore
 
-from wazo_auth.database.queries import DAO
+if TYPE_CHECKING:
+    from wazo_auth.database.queries import DAO
+
 from wazo_auth.exceptions import (
     InvalidUsernamePassword,
     NoMatchingSAMLSession,

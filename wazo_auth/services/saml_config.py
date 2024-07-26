@@ -1,12 +1,16 @@
 # Copyright 2022-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from xml.etree import ElementTree
 
 from wazo_auth.database.models import Domain, SAMLConfig
-from wazo_auth.database.queries import DAO
+
+if TYPE_CHECKING:
+    from wazo_auth.database.queries import DAO
+
 from wazo_auth.exceptions import (
     DuplicatedSAMLConfigException,
     SAMLConfigParameterException,
@@ -93,9 +97,9 @@ class SAMLConfigService(BaseService):
             item['domain_name'] = domain_name[0]
             return item
         logger.error(
-            f'Database consistency error, missing domain name for {item}/{domains}'
+            'Database consistency error, missing domain name for %s/%s', item, domains
         )
-        logger.info(f'SAML configuration for domain_uuid: {item} couldn\'t be loaded')
+        logger.info('SAML configuration for domain_uuid: %s couldn\'t be loaded', item)
         raise SAMLConfigParameterException(
             f'unknown tenant, domain_uuid: {item}',
             f'Database consistency error, missing domain name for domain_uuid {item}',

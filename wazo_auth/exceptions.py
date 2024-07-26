@@ -515,3 +515,18 @@ class DuplicatedSAMLConfigException(APIException):
         msg = 'Duplicated SAML config exists'
         details = {'tenant_uuid': {'constraint_id': 'unique', 'message': msg}}
         super().__init__(409, 'Conflict detected', 'conflict', details, 'saml_config')
+
+
+class UnknownSAMLSessionException(Exception):
+    def __init__(self, request_id):
+        super().__init__(f'no such session {request_id}')
+
+
+class DuplicatedSAMLSessionException(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+
+
+class SAMLSessionSQLException(Exception):
+    def __init__(self, request_id):
+        super().__init__(f'e {request_id}')

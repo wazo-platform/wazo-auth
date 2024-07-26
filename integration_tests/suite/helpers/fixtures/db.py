@@ -1,14 +1,18 @@
 # Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import base64
+import hashlib
 import os
 import random
+import secrets
 import string
 import time
 import uuid
 from functools import wraps
 
 from wazo_auth.database import models
+from wazo_auth.services.saml import SamlAuthContext, SamlSessionItem
 
 A_SALT = os.urandom(64)
 
@@ -307,6 +311,45 @@ def saml_config(**saml_config_args):
             saml_config = self._saml_config_dao.create(**saml_config_args)
             self.session.begin_nested()
             args = list(args) + [saml_config]
+            try:
+                return decorated(self, *args, **kwargs)
+            finally:
+                self.session.rollback()
+
+        return wrapper
+
+    return decorator
+
+
+def saml_session(request_id, **session_args):
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            session_id: str = session_args.get('session_id') or secrets.token_urlsafe(
+                16
+            )
+            relay_state: str = (
+                session_args.get('session_id')
+                or base64.urlsafe_b64encode(
+                    hashlib.sha256(session_id.encode()).digest()
+                ).decode()
+            )
+            redirect_url = (
+                session_args.get('redirect_url')
+                or 'https://stack.wazo.local/api/0.1/saml/acs'
+            )
+            domain = session_args.get('domain') or 'example.com'
+            auth_context = SamlAuthContext(
+                saml_session_id=session_id,
+                redirect_url=redirect_url,
+                domain=domain,
+                relay_state=relay_state,
+            )
+
+            item = SamlSessionItem(request_id, auth_context)
+            self._saml_session_dao.create(item)
+            self.session.begin_nested()
+            args = list(args) + [item]
             try:
                 return decorated(self, *args, **kwargs)
             finally:

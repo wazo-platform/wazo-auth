@@ -7,10 +7,10 @@ import hashlib
 import logging
 import secrets
 import tempfile
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from functools import partial
-from typing import Any, TypedDict
+from typing import TYPE_CHECKING, Any, NamedTuple, TypedDict
 
 from saml2 import BINDING_HTTP_POST
 from saml2.client import Saml2Client
@@ -18,6 +18,9 @@ from saml2.config import Config as SAMLConfig
 from saml2.response import AuthnResponse, VerificationError
 from saml2.s_utils import UnknownPrincipal, UnsupportedBinding
 from saml2.sigver import SignatureError
+
+if TYPE_CHECKING:
+    from wazo_auth.database.queries import DAO
 
 from wazo_auth.exceptions import (
     SAMLConfigurationError,
@@ -37,7 +40,6 @@ class SamlAuthContext:
     domain: str
     relay_state: str
     login: str | None = None
-    response: AuthnResponse | None = None
     start_time: datetime = field(default_factory=partial(datetime.now, timezone.utc))
 
 
@@ -61,19 +63,20 @@ class Config(TypedDict, total=False):
     saml: WazoSAMLConfig
 
 
-RequestId = Any
+RequestId = str
+
+
+class SamlSessionItem(NamedTuple):
+    request_id: RequestId
+    auth_context: SamlAuthContext
 
 
 class SAMLService(BaseService):
-    def __init__(
-        self,
-        config: Config,
-        tenant_service: TenantService,
-    ):
-        self._config = config
-        self._outstanding_requests: dict[RequestId, SamlAuthContext] = {}
+    def __init__(self, config: Config, tenant_service: TenantService, dao: DAO):
+        self._config: Config = config
         self._saml_clients: dict[str, Saml2Client] = {}
         self._tenant_service: TenantService = tenant_service
+        self._dao: DAO = dao
 
         self._key_file = self._config['saml']['key_file']
         self._cert_file = self._config['saml']['cert_file']
@@ -135,7 +138,7 @@ class SAMLService(BaseService):
                 '"key_file" or "cert_file" are missing from the SAML configuration',
             )
 
-        logger.info(f"(re)Initializing SAML clients with config: {db_configs}")
+        logger.info("(re)Initializing SAML clients with config: %s", db_configs)
         if not db_configs:
             logger.debug('No SAML configuration found for any domain')
             return
@@ -153,19 +156,20 @@ class SAMLService(BaseService):
 
             with tempfile.NamedTemporaryFile(suffix='.xml') as metadata_file:
                 metadata_file.write(db_config['idp_metadata'].encode())
+                metadata_file.flush()
                 raw_saml_config = self._prepare_saml_config(
                     db_config, metadata_file.name, self._global_saml_config
                 )
                 raw_saml_config['relay_state'] = domain_name
                 logger.debug(
-                    f'SAML config for domain: {domain_name}: {raw_saml_config}'
+                    'SAML config for domain: %s: %s', domain_name, raw_saml_config
                 )
                 try:
                     saml_config = SAMLConfig()
                     saml_config.load(cnf=raw_saml_config)
                     saml_client = Saml2Client(config=saml_config)
                     logger.debug(
-                        f'SAML config for domain: {domain_name}: {vars(saml_config)}'
+                        'SAML config for domain: %s: %s', domain_name, vars(saml_config)
                     )
                     self._saml_clients[domain_name] = saml_client
                 except Exception:
@@ -182,18 +186,23 @@ class SAMLService(BaseService):
         domain: str,
     ):
         saml_session_id = secrets.token_urlsafe(16)
-        client = self.get_client(domain)
+        client: Saml2Client = self.get_client(domain)
 
         relay_state: str = base64.urlsafe_b64encode(
             hashlib.sha256(saml_session_id.encode()).digest()
         ).decode()
         req_id, info = client.prepare_for_authenticate(relay_state=relay_state)
 
-        self._outstanding_requests[req_id] = SamlAuthContext(
-            saml_session_id,
-            redirect_url,
-            domain,
-            relay_state,
+        self._dao.saml_session.create(
+            SamlSessionItem(
+                req_id,
+                SamlAuthContext(
+                    saml_session_id,
+                    redirect_url,
+                    domain,
+                    relay_state,
+                ),
+            )
         )
         location = [i for i in info['headers'] if i[0] == 'Location'][0][1]
         return location, saml_session_id
@@ -204,22 +213,22 @@ class SAMLService(BaseService):
         return saml_client.parse_authn_request_response(
             saml_response,
             BINDING_HTTP_POST,
-            self._outstanding_requests,
+            {
+                item.request_id: item.auth_context
+                for item in self._dao.saml_session.list()
+            },
             None,
             conv_info=conv_info,
         )
 
     def _find_session_by_relay_state(
         self, relay_state: str
-    ) -> tuple[SamlAuthContext, RequestId] | tuple[None, None]:
-        sessions = [
-            (reqid, context)
-            for reqid, context in self._outstanding_requests.items()
-            if context.relay_state == relay_state
-        ]
-        if len(sessions) == 1:
-            reqid, context = sessions[0]
-            return context, reqid
+    ) -> SamlSessionItem | tuple[None, None]:
+        sessions: list[SamlSessionItem] = self._dao.saml_session.list(
+            relay_state=relay_state
+        )
+        if sessions:
+            return sessions[0]
         else:
             logger.warning(
                 "Unable to get SAML session corresponding to the received RelayState"
@@ -231,8 +240,8 @@ class SAMLService(BaseService):
     ) -> None:
 
         logger.warning(msg)
-        logger.debug(f'Removing session: {req_id}')
-        del self._outstanding_requests[req_id]
+        logger.debug('Removing session: %s', req_id)
+        self._dao.saml_session.delete(req_id)
         raise SAMLProcessingErrorWithReturnURL(
             'Unknown principal', return_url=redirect_url
         )
@@ -240,15 +249,14 @@ class SAMLService(BaseService):
     def process_auth_response(
         self, url: str, remote_addr: str, form_data: SAMLACSFormData
     ) -> str:
-        (
-            session_by_relay_state,
-            req_id_by_relay_state,
-        ) = self._find_session_by_relay_state(form_data['RelayState'])
-        if not session_by_relay_state:
+        saml_session: SamlSessionItem | tuple[
+            None, None
+        ] = self._find_session_by_relay_state(form_data['RelayState'])
+        if saml_session == (None, None):
             logger.warning('ACS response request failed: Context not found')
             raise SAMLProcessingError('Context not found', code=404)
 
-        domain: str = session_by_relay_state.domain
+        domain: str = saml_session.auth_context.domain
         saml_client: Saml2Client = self.get_client(domain)
         conv_info: dict[str, Any] = {
             "remote_addr": remote_addr,
@@ -258,87 +266,83 @@ class SAMLService(BaseService):
         }
 
         try:
-            response = self._decode_saml_response(
+            response: AuthnResponse | None = self._decode_saml_response(
                 saml_client, form_data['SAMLResponse'], conv_info
             )
+            if response is None:
+                self._process_auth_response_error(
+                    saml_session.auth_context.redirect_url,
+                    saml_session.request_id,
+                    'Unexpected error: parsed response is empty',
+                )
+
+            logger.debug('SAML SP response: %s', response)
+            logger.info('SAML response AVA: %s', response.ava)
+
+            session_data: SamlAuthContext | None = self._dao.saml_session.get(
+                response.session_id()
+            )
+
+            if session_data:
+                if session_data.auth_context.relay_state != form_data['RelayState']:
+                    logger.warning(
+                        'RequestId does not correspond to RelayState, ignoring response'
+                    )
+                    logger.warning('ACS response request failed: Context not found')
+                    raise SAMLProcessingError('Context not found', code=404)
+
+                update = {'login': response.ava['name'][0]}
+                self._dao.saml_session.update(response.session_id(), **update)
+                return session_data.auth_context.redirect_url
+            else:
+                logger.warning('ACS response request failed: Context not found')
+                raise SAMLProcessingError('Context not found', code=404)
+
         except UnknownPrincipal as excp:
             self._process_auth_response_error(
-                session_by_relay_state.redirect_url,
-                req_id_by_relay_state,
+                saml_session.auth_context.redirect_url,
+                saml_session.request_id,
                 f'UnknownPrincipal: {excp}',
             )
         except UnsupportedBinding as excp:
             self._process_auth_response_error(
-                session_by_relay_state.redirect_url,
-                req_id_by_relay_state,
+                saml_session.auth_context.redirect_url,
+                saml_session.request_id,
                 f'Unsupported binding: {excp}',
             )
         except VerificationError as excp:
             self._process_auth_response_error(
-                session_by_relay_state.redirect_url,
-                req_id_by_relay_state,
+                saml_session.auth_context.redirect_url,
+                saml_session.request_id,
                 f'Verification error: {excp}',
             )
         except SignatureError as excp:
             self._process_auth_response_error(
-                session_by_relay_state.redirect_url,
-                req_id_by_relay_state,
+                saml_session.auth_context.redirect_url,
+                saml_session.request_id,
                 f'Signature error: {excp}',
             )
         except Exception as excp:
             self._process_auth_response_error(
-                session_by_relay_state.redirect_url,
-                req_id_by_relay_state,
+                saml_session.auth_context.redirect_url,
+                saml_session.request_id,
                 f'Unexpected error: {excp}',
             )
 
-        logger.debug('SAML SP response: %s', response)
-        logger.info('SAML response AVA: %s', response.ava)
-
-        session_data: SamlAuthContext | None = self._outstanding_requests.get(
-            response.session_id()
-        )
-
-        if session_data:
-            if session_data.relay_state != form_data['RelayState']:
-                logger.warning(
-                    'RequestId does not correspond to RelayState, ignoring response'
-                )
-                logger.warning('ACS response request failed: Context not found')
-                raise SAMLProcessingError('Context not found', code=404)
-
-            update = {'response': response, 'login': response.ava['name'][0]}
-            self._outstanding_requests[response.session_id()] = replace(
-                session_data, **update
-            )
-            return session_data.redirect_url
-        else:
-            logger.warning('ACS response request failed: Context not found')
-            raise SAMLProcessingError('Context not found', code=404)
-
     def get_user_login_and_remove_context(self, saml_session_id: str) -> str | None:
-        logger.debug('sessions %s', self._outstanding_requests)
-        reqid: str | None = self._reqid_by_saml_session_id(saml_session_id)
-        if reqid:
-            session_data: SamlAuthContext | None = self._outstanding_requests.pop(
-                reqid, None
-            )
+        logger.debug('sessions %s', self._dao.saml_session.list())
+        for reqid, session_data in self._dao.saml_session.list(
+            session_id=saml_session_id
+        ):
+            self._dao.saml_session.delete(reqid)
             return session_data.login if session_data else None
-        else:
-            return None
 
     def clean_pending_requests(self, maybe_now: datetime | None = None) -> None:
         now: datetime = maybe_now or datetime.now(timezone.utc)
-        for k in list(self._outstanding_requests.keys()):
+        for item in self._dao.saml_session.list():
             expire_at: datetime = (
-                self._outstanding_requests[k].start_time + self._saml_session_lifetime
+                item.auth_context.start_time + self._saml_session_lifetime
             )
             if now > expire_at:
-                logger.debug(f"Removing SAML context: {self._outstanding_requests}")
-                del self._outstanding_requests[k]
-
-    def _reqid_by_saml_session_id(self, saml_session_id: str) -> str | None:
-        for reqid, saml_context in self._outstanding_requests.items():
-            if saml_context.saml_session_id == saml_session_id:
-                return reqid
-        return None
+                logger.debug("Removing SAML context: %s", item)
+                self._dao.saml_session.delete(item.request_id)

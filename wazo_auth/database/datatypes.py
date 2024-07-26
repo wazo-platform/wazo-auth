@@ -6,6 +6,8 @@ import sqlalchemy.types as types
 
 
 class XMLPostgresqlType(types.UserDefinedType):
+    cache_ok = True
+
     def get_col_spec(self, **kw):
         return "XML"
 

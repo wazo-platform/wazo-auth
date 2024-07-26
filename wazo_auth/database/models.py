@@ -443,3 +443,23 @@ class SAMLConfig(Base):
     entity_id = Column(String(512), nullable=False)
     idp_metadata = Column(XMLPostgresqlType(), nullable=False)
     acs_url = Column(String(512), nullable=False)
+
+
+class SAMLSession(Base):
+    __tablename__ = 'auth_saml_session'
+
+    request_id = Column(
+        String(40),
+        nullable=False,
+        primary_key=True,
+    )
+    session_id = Column(
+        String(length=22),
+        nullable=False,
+        primary_key=True,
+    )
+    redirect_url = Column(String(512), nullable=False)
+    domain = Column(String(512), nullable=False)
+    relay_state = Column(String(44), nullable=False)
+    login = Column(String(512), nullable=True)
+    start_time = Column(DateTime(timezone=True), nullable=True)
