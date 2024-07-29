@@ -20,9 +20,12 @@ class TestSamlService(SAMLIntegrationTest):
     @pytest.fixture(autouse=True)
     def setup(self, page: Page):
         self.page = page
-        conf_file = (
-            pathlib.Path(__file__).parent.parent / 'assets/saml/config/saml.json'
-        )
+        if 'WAZO_SAML_CONFIG_FILE' in os.environ:
+            conf_file = pathlib.Path(os.environ['WAZO_SAML_CONFIG_FILE'])
+        else:
+            conf_file = (
+                pathlib.Path(__file__).parent.parent / 'assets/saml/config/saml.json'
+            )
         if conf_file.exists():
             try:
                 with conf_file.open('r') as conf_file_stream:
