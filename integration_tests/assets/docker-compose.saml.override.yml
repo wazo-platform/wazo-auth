@@ -1,4 +1,30 @@
 services:
+  samlwebapp:
+    image: wazoplatform/wazo-saml-sso-webapp:local
+    ports:
+      - "8800"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.samplewebapp.rule=Host(`app.wazo.local`)"
+      - "traefik.http.routers.samplewebapp.tls=true"
+      - "traefik.http.routers.samplewebapp.entrypoints=websecure"
+
+  proxy:
+    image: traefik:v3.0
+    command:
+      - "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entryPoints.websecure.address=:443"
+    ports:
+      - "443:443"
+    links:
+      - "samlwebapp:app.wazo.local"
+      - "auth:stack.wazo.local"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
   sync:
     depends_on:
       - auth
@@ -14,3 +40,10 @@ services:
       - "./templates/raw_password_reset_email.base.jinja:/var/lib/wazo-auth/templates/raw_password_reset_email.jinja"
       - "./templates/email_confirmation_get_body.base.jinja:/var/lib/wazo-auth/templates/email_confirmation_get_body.jinja"
       - "./etc/wazo-auth/conf.d/asset.base.yml:/etc/wazo-auth/conf.d/asset.base.yml"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.rule=Host(`stack.wazo.local`) && PathPrefix(`/api/auth`)"
+      - "traefik.http.routers.auth.middlewares=auth-stripprefix"
+      - "traefik.http.middlewares.auth-stripprefix.stripprefix.prefixes=/api/auth"
+      - "traefik.http.routers.auth.tls=true"
+      - "traefik.http.routers.auth.entrypoints=websecure"
