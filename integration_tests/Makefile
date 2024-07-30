@@ -20,6 +20,6 @@ egg-info:
 	cd .. && python3 setup.py egg_info
 
 test:
-	pytest
+	pytest --tracing off
 
 .PHONY: test-setup test test-image db

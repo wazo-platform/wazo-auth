@@ -15,6 +15,17 @@ from .helpers import base
 from .helpers.base import SAMLIntegrationTest
 
 
+class RedactedValue:
+    def __init__(self, value):
+        self._value = value
+
+    def __repr__(self):
+        return "*Redacted****"
+
+    def __str___(self):
+        return "*Redacted****"
+
+
 @base.use_asset('saml')
 class TestSamlService(SAMLIntegrationTest):
     @pytest.fixture(autouse=True)
@@ -30,8 +41,8 @@ class TestSamlService(SAMLIntegrationTest):
             try:
                 with conf_file.open('r') as conf_file_stream:
                     saml_test_config = json.load(conf_file_stream)
-                self.login = saml_test_config['login']
-                self.password = saml_test_config['password']
+                self.login = RedactedValue(saml_test_config['login'])
+                self.password = RedactedValue(saml_test_config['password'])
             except FileNotFoundError as e:
                 pytest.fail(f"Unable to load SAML test config ({e})")
             except ValueError as e:
@@ -39,9 +50,9 @@ class TestSamlService(SAMLIntegrationTest):
             except Exception as e:
                 pytest.fail(f"Unexpected error while loading SAML test config ({e})")
         if 'WAZO_SAML_LOGIN' in os.environ:
-            self.login = os.environ['WAZO_SAML_LOGIN']
+            self.login = RedactedValue(os.environ['WAZO_SAML_LOGIN'])
         if 'WAZO_SAML_PASSWORD' in os.environ:
-            self.password = os.environ['WAZO_SAML_PASSWORD']
+            self.password = RedactedValue(os.environ['WAZO_SAML_PASSWORD'])
 
     def _setup_tenant_and_domain(self, domain_name: str) -> None:
         self.tenant = self.client.tenants.new(
@@ -66,9 +77,9 @@ class TestSamlService(SAMLIntegrationTest):
             }
             self.client.saml_config.create(self.tenant['uuid'], **saml_config)
 
-    def _create_user(self, login: str) -> None:
+    def _create_user(self, login: RedactedValue) -> None:
         user: dict[str, Any] = {
-            'username': login,
+            'username': login._value,
             'firstname': 'saml',
             'lastname': 'test user',
             'password_hash': 'hash',  # NOSONAR
@@ -100,12 +111,12 @@ class TestSamlService(SAMLIntegrationTest):
         )
 
     def _login(self, page, login, password):
-        page.get_by_placeholder("Email address, phone number").fill(login)
+        page.get_by_placeholder("Email address, phone number").fill(login._value)
         page.get_by_role("button", name="Next").click()
         expect(page.get_by_role("heading"), "Failed to submit login").to_contain_text(
             "Enter password"
         )
-        page.get_by_placeholder("Password").fill(password)
+        page.get_by_placeholder("Password").fill(password._value)
         page.get_by_role("button", name="Sign in").click()
         expect(
             page.get_by_role("heading"), "Failed to submit password"
