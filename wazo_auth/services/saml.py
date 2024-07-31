@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from functools import partial
 from typing import TYPE_CHECKING, Any, NamedTuple, TypedDict
+from uuid import UUID
 
 from saml2 import BINDING_HTTP_POST
 from saml2.client import Saml2Client
@@ -41,6 +42,8 @@ class SamlAuthContext:
     relay_state: str
     login: str | None = None
     start_time: datetime = field(default_factory=partial(datetime.now, timezone.utc))
+    saml_name_id: str | None = None
+    refresh_token_uuid: UUID | None = None
 
 
 class SAMLACSFormData(TypedDict):

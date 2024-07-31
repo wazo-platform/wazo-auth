@@ -31,6 +31,8 @@ class SAMLSessionDAO(filters.FilterMixin, BaseDAO):
                 session.relay_state,
                 session.login,
                 session.start_time,
+                session.saml_name_id,
+                session.refresh_token_uuid,
             ),
         )
 
@@ -61,6 +63,8 @@ class SAMLSessionDAO(filters.FilterMixin, BaseDAO):
             relay_state=item.auth_context.relay_state,
             login=item.auth_context.login,
             start_time=item.auth_context.start_time,
+            saml_name_id=item.auth_context.saml_name_id,
+            refresh_token_uuid=item.auth_context.refresh_token_uuid,
         )
         self.session.add(saml_session)
         try:
@@ -91,6 +95,8 @@ class SAMLSessionDAO(filters.FilterMixin, BaseDAO):
             'relay_state': session_db.relay_state,
             'login': session_db.login,
             'start_time': session_db.start_time,
+            'saml_name_id': session_db.saml_name_id,
+            'refresh_token_uuid': session_db.refresh_token_uuid,
         }
         session.update(kwargs)
 

@@ -468,3 +468,7 @@ class SAMLSession(Base):
     relay_state = Column(String(44), nullable=False)
     login = Column(String(512), nullable=True)
     start_time = Column(DateTime(timezone=True), nullable=True)
+    saml_name_id = Column(Text, nullable=True)
+    refresh_token_uuid = Column(
+        String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=True
+    )

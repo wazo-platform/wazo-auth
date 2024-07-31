@@ -24,20 +24,17 @@ REQUEST_ID = 'id-6Ac62w7PS9rp1EC5e'
 @base.use_asset('database')
 class TestSAMLSessionDAO(base.DAOTestCase):
     @fixtures.db.saml_session(REQUEST_ID, session_id='samsid', domain='test.domain.org')
-    def test_get(self, _: SamlSessionItem) -> None:
+    def test_get(self, fixture: SamlSessionItem) -> None:
         item: SamlSessionItem = self._saml_session_dao.get(REQUEST_ID)
-        assert_that(item.request_id, is_(REQUEST_ID))
-        assert_that(item.auth_context.saml_session_id, is_('samsid'))
-        assert_that(item.auth_context.domain, is_('test.domain.org'))
+        assert_that(item, is_(fixture))
 
     @fixtures.db.saml_session(REQUEST_ID, session_id='samsid', domain='test.domain.org')
     @fixtures.db.saml_session('2nd-request-id')
     def test_list(self, a, b) -> None:
         all_sessions: list[SamlSessionItem] = self._saml_session_dao.list()
         assert_that(len(all_sessions), is_(2))
-        assert_that(all_sessions[0].request_id, is_(REQUEST_ID))
-        assert_that(all_sessions[1].request_id, is_('2nd-request-id'))
-        assert_that(all_sessions[0].auth_context.saml_session_id, is_('samsid'))
+        assert_that(all_sessions[0], is_(a))
+        assert_that(all_sessions[1], is_(b))
 
     @fixtures.db.saml_session(REQUEST_ID, session_id='samsid')
     @fixtures.db.saml_session('2nd-request-id', session_id='autre_id')
@@ -86,12 +83,7 @@ class TestSAMLSessionDAO(base.DAOTestCase):
         self._saml_session_dao.create(SamlSessionItem(REQUEST_ID, auth_context))
         (request_id, result_session) = self._saml_session_dao.get(REQUEST_ID)
         assert_that(request_id, is_(REQUEST_ID))
-        assert_that(result_session.saml_session_id, is_('samsid'))
-        assert_that(result_session.domain, is_('test.domain.org'))
-        assert_that(result_session.login, is_('login'))
-        assert_that(result_session.redirect_url, is_('acs-url'))
-        assert_that(result_session.relay_state, is_('relay-state'))
-        assert_that(result_session.start_time, is_(now))
+        assert_that(result_session, is_(auth_context))
 
         assert_that(
             calling(self._saml_session_dao.create).with_args(
