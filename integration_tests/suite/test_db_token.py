@@ -25,9 +25,9 @@ SESSION_UUID_1 = str(uuid.uuid4())
 
 @base.use_asset('database')
 class TestTokenDAO(base.DAOTestCase):
-    def test_create(self):
+    def _get_token_body(self):
         now = int(time.time())
-        body = {
+        return {
             'auth_id': 'test',
             'pbx_user_uuid': str(uuid.uuid4),
             'xivo_uuid': str(uuid.uuid4),
@@ -42,9 +42,21 @@ class TestTokenDAO(base.DAOTestCase):
             'user_agent': 'my-user-agent',
             'remote_addr': '192.168.1.1',
         }
+
+    @fixtures.db.refresh_token()
+    def test_create(self, refresh_token_uuid):
+        body = self._get_token_body()
         session = {}
         token_uuid, session_uuid = self._token_dao.create(body, session)
 
+        result = self._token_dao.get(token_uuid)
+        assert_that(
+            result, has_entries(uuid=token_uuid, session_uuid=session_uuid, **body)
+        )
+
+        refresh_body = self._get_token_body()
+        refresh_body['refresh_token_uuid'] = refresh_token_uuid
+        token_uuid, session_uuid = self._token_dao.create(refresh_body, session)
         result = self._token_dao.get(token_uuid)
         assert_that(
             result, has_entries(uuid=token_uuid, session_uuid=session_uuid, **body)

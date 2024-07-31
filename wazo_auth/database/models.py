@@ -212,6 +212,11 @@ class Token(Base):
     user_agent = Column(Text)
     remote_addr = Column(Text)
     acl = Column(ARRAY(Text), nullable=False, server_default='{}')
+    refresh_token_uuid = Column(
+        String(38),
+        ForeignKey('auth_refresh_token.uuid', ondelete='CASCADE'),
+        nullable=True,
+    )
 
     session = relationship('Session', passive_deletes=True)
 

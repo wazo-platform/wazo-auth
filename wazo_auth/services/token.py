@@ -133,7 +133,7 @@ class TokenService(BaseService):
             token_payload['refresh_token'] = refresh_token
 
         token_uuid, session_uuid = self._dao.token.create(
-            token_payload, session_payload
+            token_payload, session_payload, args.get('refresh_token', None)
         )
         token = Token(token_uuid, session_uuid=session_uuid, **token_payload)
 

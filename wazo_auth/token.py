@@ -32,6 +32,7 @@ class Token:
         user_agent,
         remote_addr,
         refresh_token=None,
+        refresh_token_uuid=None,
     ):
         self.token = id_
         self.auth_id = auth_id
@@ -45,6 +46,7 @@ class Token:
         self.user_agent = user_agent
         self.remote_addr = remote_addr
         self.refresh_token = refresh_token
+        self.refresh_token_uuid = refresh_token_uuid
         self._access_check = AccessCheck(self.auth_id, self.session_uuid, self.acl)
 
     def __eq__(self, other):

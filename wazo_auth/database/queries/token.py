@@ -15,7 +15,7 @@ from .base import BaseDAO
 
 
 class TokenDAO(BaseDAO):
-    def create(self, body, session_body):
+    def create(self, body, session_body, refresh_token_uuid=None):
         serialized_metadata = json.dumps(body.get('metadata', {}))
         token = TokenModel(
             auth_id=body['auth_id'],
@@ -27,6 +27,7 @@ class TokenDAO(BaseDAO):
             remote_addr=body['remote_addr'],
             metadata_=serialized_metadata,
             acl=body.get('acl') or [],
+            refresh_token_uuid=refresh_token_uuid,
         )
 
         if not session_body.get('tenant_uuid'):
@@ -56,6 +57,7 @@ class TokenDAO(BaseDAO):
                 'session_uuid': token.session_uuid,
                 'remote_addr': token.remote_addr,
                 'user_agent': token.user_agent,
+                'refresh_token_uuid': token.refresh_token_uuid,
             }
 
         raise exceptions.UnknownTokenException()
