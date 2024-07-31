@@ -215,7 +215,7 @@ class TestSAMLService(TestCase):
         )
         self.dao_mock.saml_session.delete.assert_called_once_with(req_key)
 
-    def test_get_user_login_and_remove_context(self) -> None:
+    def test_get_user_login(self) -> None:
         saml_context = SamlAuthContext(
             saml_session_id='session_1',
             redirect_url='rurl1',
@@ -256,11 +256,5 @@ class TestSAMLService(TestCase):
             ('another', None),
         ]
         for saml_session_id, expected in samples:
-            result: str | None = self.service.get_user_login_and_remove_context(
-                saml_session_id
-            )
+            result: str | None = self.service.get_user_login(saml_session_id)
             assert_that(result, is_(expected))
-
-        self.dao_mock.saml_session.delete.assert_called_once_with(
-            pending_session.request_id
-        )

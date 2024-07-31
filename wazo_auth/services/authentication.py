@@ -73,7 +73,7 @@ class AuthenticationService:
 
     def verify_saml(self, saml_session_id):
         logger.debug('verifying SAML login')
-        saml_login = self._saml_service.get_user_login_and_remove_context(
+        saml_login = self._saml_service.get_user_login(
             saml_session_id,
         )
         if not saml_login:

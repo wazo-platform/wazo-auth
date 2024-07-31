@@ -133,7 +133,7 @@ class TestAuthenticationService(TestCase):
         )
 
     def test_verify_auth_saml_no_saml_session_id(self):
-        self.saml_service.get_user_login_and_remove_context.return_value = None
+        self.saml_service.get_user_login.return_value = None
         args = {'saml_session_id': s.saml_session_id}
 
         assert_that(
@@ -142,7 +142,7 @@ class TestAuthenticationService(TestCase):
         )
 
     def test_verify_auth_saml(self):
-        self.saml_service.get_user_login_and_remove_context.return_value = s.login
+        self.saml_service.get_user_login.return_value = s.login
         self.set_authorized_authentication_method(s.login, 'saml')
         args = {'saml_session_id': s.saml_session_id}
 
@@ -152,7 +152,7 @@ class TestAuthenticationService(TestCase):
         assert_that(args, has_entries(login=s.login))
 
     def test_verify_auth_saml_not_authorized(self):
-        self.saml_service.get_user_login_and_remove_context.return_value = s.login
+        self.saml_service.get_user_login.return_value = s.login
         self.set_authorized_authentication_method(s.login, 'native')
         args = {'saml_session_id': s.saml_session_id}
 

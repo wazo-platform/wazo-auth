@@ -222,6 +222,11 @@ class Tokens(BaseResource):
             user_agent,
         )
 
+        if (refresh_token := token.refresh_token) and (
+            saml_session_id := args.get('saml_session_id')
+        ):
+            self._saml_service.update_refresh_token(refresh_token, saml_session_id)
+
         return {'data': token.to_dict()}, 200
 
 

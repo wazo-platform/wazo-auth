@@ -335,13 +335,15 @@ class SAMLService(BaseService):
                 f'Unexpected error: {excp}',
             )
 
-    def get_user_login_and_remove_context(self, saml_session_id: str) -> str | None:
+    def get_user_login(self, saml_session_id: str) -> str | None:
         logger.debug('sessions %s', self._dao.saml_session.list())
-        for reqid, session_data in self._dao.saml_session.list(
-            session_id=saml_session_id
-        ):
-            self._dao.saml_session.delete(reqid)
+        for _, session_data in self._dao.saml_session.list(session_id=saml_session_id):
             return session_data.login if session_data else None
+
+    def update_refresh_token(self, refresh_token: UUID, saml_session_id: str) -> None:
+        for session_data in self._dao.saml_session.list(session_id=saml_session_id):
+            update = {'refresh_token_uuid': refresh_token}
+            self._dao.saml_session.update(session_data.request_id, **update)
 
     def clean_pending_requests(self, maybe_now: datetime | None = None) -> None:
         now: datetime = maybe_now or datetime.now(timezone.utc)
