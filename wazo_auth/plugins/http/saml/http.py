@@ -3,12 +3,16 @@
 
 
 import logging
+from typing import Any
 
 import marshmallow
 from flask import redirect, request
+from saml2 import BINDING_HTTP_REDIRECT
+from saml2.s_utils import decode_base64_and_inflate
 
 from wazo_auth import exceptions, http
 from wazo_auth.services.saml import SAMLService
+from wazo_auth.services.token import TokenService
 
 from .schemas import SAMLSSOSchema
 
@@ -71,3 +75,55 @@ class SAMLSSO(http.ErrorCatchingResource):
             raise exceptions.SAMLConfigurationError(
                 domain=args['domain'],
             )
+
+
+class SAMLLogout(http.ErrorCatchingResource):
+    def __init__(self, saml_service: SAMLService, token_service: TokenService):
+        self._saml_service: SAMLService = saml_service
+        self._token_service: TokenService = token_service
+
+    def get(self):
+        token = request.headers.get('X-Auth-Token') or request.args.get('token')
+        token_data = self._token_service.get(token, required_access=None)
+        try:
+            location = self._saml_service.process_logout_request(
+                request.url,
+                request.remote_addr,
+                token_data,
+            )
+
+            self._token_service.remove_token(token)
+
+            rer: dict[str, Any] = {'location': location}
+            return rer
+        except Exception as excp:
+            logger.exception(
+                f'Unexpected error while processing the logout request: {excp}'
+            )
+            raise exceptions.SAMLProcessingError(excp)
+
+
+class SAMLSLS(http.ErrorCatchingResource):
+    def __init__(self, saml_service: SAMLService):
+        self._saml_service = saml_service
+
+    def get(self):
+        try:
+            txt = decode_base64_and_inflate(request.body)
+            is_logout_request = "LogoutRequest" in txt.split(">", 1)[0]
+        except Exception as e:  # TODO: parse the XML correctly
+            logger.exception(e)
+            is_logout_request = False
+
+        if is_logout_request:
+            logger.error('IdP initiated logout is not implemented')
+            raise exceptions.SAMLProcessingError(
+                'IdP initiated logout is not implemented'
+            )
+        else:
+            message = request.args.get('SAMLResponse')
+            relay_state = request.args.get('RelayState')
+            location = self._saml_service.process_logout_request_response(
+                message, relay_state, BINDING_HTTP_REDIRECT
+            )
+            return redirect(location)

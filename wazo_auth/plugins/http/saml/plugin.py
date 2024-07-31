@@ -18,3 +18,16 @@ class Plugin:
             '/saml/sso',
             resource_class_args=(dependencies['saml_service'],),
         )
+        api.add_resource(
+            http.SAMLLogout,
+            '/saml/logout',
+            resource_class_args=(
+                dependencies['saml_service'],
+                dependencies['token_service'],
+            ),
+        )
+        api.add_resource(
+            http.SAMLSLS,
+            '/saml/sls',
+            resource_class_args=(dependencies['saml_service'],),
+        )

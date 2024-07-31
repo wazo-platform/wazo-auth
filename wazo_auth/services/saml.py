@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from functools import partial
 from typing import TYPE_CHECKING, Any, NamedTuple, TypedDict
+from urllib.parse import unquote
 from uuid import UUID
 
 from saml2 import BINDING_HTTP_POST
@@ -18,6 +19,7 @@ from saml2.client import Saml2Client
 from saml2.config import Config as SAMLConfig
 from saml2.response import AuthnResponse, VerificationError
 from saml2.s_utils import UnknownPrincipal, UnsupportedBinding
+from saml2.saml import name_id_from_string
 from saml2.sigver import SignatureError
 
 if TYPE_CHECKING:
@@ -354,3 +356,31 @@ class SAMLService(BaseService):
             if now > expire_at:
                 logger.debug("Removing SAML context: %s", item)
                 self._dao.saml_session.delete(item.request_id)
+
+    def process_logout_request(self, url, remote_addr, token):
+        session: list[SamlSessionItem] = [
+            item
+            for item in self._dao.saml_session.list()
+            if item.auth_context.refresh_token_uuid == token.refresh_token_uuid
+        ]
+        client = self.get_client(session[0].auth_context.domain)
+        name_id = name_id_from_string(session[0].auth_context.saml_name_id)
+
+        data = client.global_logout(name_id)
+        _, details = data.popitem()
+
+        location = details[1]['headers'][0][1]
+
+        relay_state = unquote(location.split('RelayState=')[1]).split('&')[0]
+        update = {'relay_state': relay_state}
+
+        self._dao.saml_session.update(session[0].request_id, **update)
+        return location
+
+    def process_logout_request_response(self, message, relay_state, binding):
+        saml_session = self._find_session_by_relay_state(relay_state)
+        client = self.get_client(saml_session.auth_context.domain)
+        client.parse_logout_request_response(message, binding)
+
+        self._dao.saml_session.delete(saml_session.request_id)
+        return saml_session.auth_context.redirect_url + '?logged_out=true'
