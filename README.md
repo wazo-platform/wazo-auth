@@ -183,6 +183,8 @@ Requires following environment variables to be set:
 WAZO_SAML_LOGIN
 WAZO_SAML_PASSWORD
 
+You can use WAZO_SAML_CONFIG_FILE variable to specify a SAML credentials config file.
+
 ## How to get help
 
 If you ever need help from the Wazo Platform community, the following resources are available:

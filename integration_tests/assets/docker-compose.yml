@@ -18,13 +18,6 @@ services:
       - "./var/lib/wazo-auth/saml:/var/lib/wazo-auth/saml:ro"
       # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/opt/venv/lib/python3.9/site-packages/xivo"
       # - "${LOCAL_GIT_REPOS}/wazo-bus/wazo_bus:/opt/venv/lib/python3.9/site-packages/wazo_bus"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.auth.rule=Host(`stack.wazo.local`) && PathPrefix(`/api/auth`)"
-      - "traefik.http.routers.auth.middlewares=auth-stripprefix"
-      - "traefik.http.middlewares.auth-stripprefix.stripprefix.prefixes=/api/auth"
-      - "traefik.http.routers.auth.tls=true"
-      - "traefik.http.routers.auth.entrypoints=websecure"
 
   oauth2sync:
     image: oauth2-synchronization-service
@@ -60,29 +53,3 @@ services:
     image: munkyboy/fakesmtp
     ports:
       - "25"
-
-  proxy:
-    image: traefik:v3.0
-    command:
-      - "--log.level=DEBUG"
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entryPoints.websecure.address=:443"
-    ports:
-      - "443:443"
-    links:
-      - "samlwebapp:app.wazo.local"
-      - "auth:stack.wazo.local"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-
-  samlwebapp:
-    image: wazoplatform/wazo-saml-sso-webapp:local
-    ports:
-      - "8800"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.samplewebapp.rule=Host(`app.wazo.local`)"
-      - "traefik.http.routers.samplewebapp.tls=true"
-      - "traefik.http.routers.samplewebapp.entrypoints=websecure"
