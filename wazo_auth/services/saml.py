@@ -294,7 +294,10 @@ class SAMLService(BaseService):
                     logger.warning('ACS response request failed: Context not found')
                     raise SAMLProcessingError('Context not found', code=404)
 
-                update = {'login': response.ava['name'][0]}
+                update: dict[str, Any] = {
+                    'login': response.ava['name'][0],
+                    'saml_name_id': str(response.name_id),
+                }
                 self._dao.saml_session.update(response.session_id(), **update)
                 return session_data.auth_context.redirect_url
             else:

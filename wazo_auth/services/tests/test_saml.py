@@ -83,6 +83,11 @@ class TestSAMLService(TestCase):
 
         response = Mock()
         response.ava = {'name': ['testname']}
+        name_id = (
+            '<saml:NameID xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">'
+            'testname</saml:NameID>'
+        )
+        response.name_id = name_id
         response.session_id.return_value = req_key
         mock_client = Mock()
         mock_client.parse_authn_request_response.return_value = response
@@ -97,7 +102,7 @@ class TestSAMLService(TestCase):
         _, args, _ = mock_get_client.mock_calls[0]
         assert_that(args[0], is_(domain))
 
-        update: dict[str, str] = {'login': 'testname'}
+        update: dict[str, str] = {'login': 'testname', 'saml_name_id': name_id}
         self.dao_mock.saml_session.update.assert_called_once_with(req_key, **update)
 
     @patch('wazo_auth.services.SAMLService.get_client')
