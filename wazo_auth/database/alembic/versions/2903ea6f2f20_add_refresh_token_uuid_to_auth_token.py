@@ -22,7 +22,7 @@ def upgrade():
         sa.Column(
             column_name,
             sa.String(38),
-            sa.ForeignKey('auth_refresh_token.uuid', ondelete='CASCADE'),
+            sa.ForeignKey('auth_refresh_token.uuid', ondelete='SET NULL'),
             nullable=True,
         ),
     )
