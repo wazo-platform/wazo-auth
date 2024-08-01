@@ -88,8 +88,6 @@ class SAMLLogout(http.ErrorCatchingResource):
         token_data: Token = self._token_service.get(token, required_access=None)
         try:
             location = self._saml_service.process_logout_request(
-                request.url,
-                request.remote_addr,
                 token_data,
             )
 

@@ -29,8 +29,8 @@ class RedactedValue:
 @base.use_asset('saml')
 class TestSamlService(SAMLIntegrationTest):
     @pytest.fixture(autouse=True)
-    def setup(self, page: Page):
-        self.page = page
+    def setup(self, page: Page) -> None:
+        self.page: Page = page
         if 'WAZO_SAML_CONFIG_FILE' in os.environ:
             conf_file = pathlib.Path(os.environ['WAZO_SAML_CONFIG_FILE'])
         else:
@@ -98,7 +98,7 @@ class TestSamlService(SAMLIntegrationTest):
     def _reload_saml_config(self) -> None:
         self.restart_auth()
 
-    def _click_login(self, page):
+    def _click_login(self, page) -> None:
         page.goto("https://app.wazo.local/")
         expect(page.locator("h1"), "Error while opening the test page").to_contain_text(
             "Wazo SAML login"
@@ -110,7 +110,7 @@ class TestSamlService(SAMLIntegrationTest):
             "Sign in to your account"
         )
 
-    def _login(self, page, login, password):
+    def _login(self, page, login, password) -> None:
         page.get_by_placeholder("Email address, phone number").fill(login._value)
         page.get_by_role("button", name="Next").click()
         expect(page.get_by_role("heading"), "Failed to submit login").to_contain_text(
@@ -123,11 +123,14 @@ class TestSamlService(SAMLIntegrationTest):
         ).to_contain_text("Stay signed in?")
         page.get_by_role("button", name="No").click()
 
+    def _logout(self, page) -> None:
+        page.get_by_role("button", name="Logout").click()
+
     @pytest.mark.only_browser("chromium")
     @pytest.mark.browser_context_args(
         timezone_id="Europe/London", locale="en-GB", ignore_https_errors=True
     )
-    def test_login(self) -> None:
+    def test_login_logout(self) -> None:
         domain_name = 'example.com'
         self._setup_tenant_and_domain(domain_name)
         self._configure_saml(domain_name)
@@ -145,3 +148,10 @@ class TestSamlService(SAMLIntegrationTest):
         expect(
             self.page.locator("#refresh"), "Failed to retrieve a refresh token"
         ).not_to_contain_text("not yet known")
+
+        self._logout(self.page)
+        expect(self.page).to_have_url(
+            'https://app.wazo.local/postacs.html?logged_out=true', timeout=20000
+        )
+        expect(self.page.locator("#token")).to_contain_text("Failed")
+        expect(self.page.locator("#refresh")).to_contain_text("Failed")

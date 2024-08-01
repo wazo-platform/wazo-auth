@@ -370,7 +370,7 @@ class SAMLService(BaseService):
                 logger.debug("Removing SAML context: %s", item)
                 self._dao.saml_session.delete(item.request_id)
 
-    def process_logout_request(self, url, remote_addr, token):
+    def process_logout_request(self, token):
         logger.debug(
             'Processing logout for token: ...%s', token.refresh_token_uuid[:-8]
         )
