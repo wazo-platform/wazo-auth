@@ -63,13 +63,11 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             RefreshToken.user_uuid == user_uuid,
             RefreshToken.tenant_uuid.in_(tenant_uuids),
         )
-
         nb_deleted = (
             self.session.query(RefreshToken)
             .filter(filter_)
             .delete(synchronize_session=False)
         )
-
         self.session.flush()
         if not nb_deleted:
             raise exceptions.UnknownRefreshToken(client_id)
@@ -86,6 +84,16 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             }
 
         raise exceptions.UnknownRefreshToken(client_id)
+
+    def get_by_uuid(self, uuid):
+        query = self.session.query(RefreshToken).filter(RefreshToken.uuid == uuid)
+        for refresh_token in query.all():
+            return {
+                'backend_name': refresh_token.backend,
+                'login': refresh_token.login,
+            }
+
+        raise exceptions.UnknownRefreshTokenUUID(uuid)
 
     def get_by_user(self, tenant_uuids, user_uuid, client_id):
         filter_ = and_(

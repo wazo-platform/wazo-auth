@@ -258,3 +258,22 @@ class TestSAMLService(TestCase):
         for saml_session_id, expected in samples:
             result: str | None = self.service.get_user_login(saml_session_id)
             assert_that(result, is_(expected))
+
+    def test_invalidate_saml_session_id(self) -> None:
+        saml_context = SamlAuthContext(
+            saml_session_id='session_1',
+            redirect_url='rurl1',
+            domain='domain1.org',
+            relay_state='6pruzvCdQHaLWCd30T6IziZFX_U=',
+            login='login_1',
+        )
+        pending_session = SamlSessionItem('req_id', saml_context)
+
+        self.dao_mock.saml_session.list.return_value = [pending_session]
+
+        self.service.invalidate_saml_session_id(saml_context.saml_session_id)
+
+        update: dict[str, str] = {'session_id': 'token-already-used'}
+        self.dao_mock.saml_session.update.assert_called_once_with(
+            pending_session.request_id, **update
+        )

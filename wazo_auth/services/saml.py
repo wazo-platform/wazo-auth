@@ -25,6 +25,7 @@ from saml2.sigver import SignatureError
 if TYPE_CHECKING:
     from wazo_auth.database.queries import DAO
 
+from wazo_auth import exceptions
 from wazo_auth.exceptions import (
     SAMLConfigurationError,
     SAMLProcessingError,
@@ -339,8 +340,20 @@ class SAMLService(BaseService):
 
     def get_user_login(self, saml_session_id: str) -> str | None:
         logger.debug('sessions %s', self._dao.saml_session.list())
-        for _, session_data in self._dao.saml_session.list(session_id=saml_session_id):
+        for reqid, session_data in self._dao.saml_session.list(
+            session_id=saml_session_id
+        ):
             return session_data.login if session_data else None
+
+    def invalidate_saml_session_id(self, saml_session_id: str) -> str | None:
+        logger.debug('sessions %s', self._dao.saml_session.list())
+        for reqid, session in self._dao.saml_session.list(session_id=saml_session_id):
+            update: dict[str, None] = {'session_id': 'token-already-used'}
+            self._dao.saml_session.update(reqid, **update)
+            return
+        raise exceptions.SAMLProcessingError(
+            'Unable to remove unexisting SAML Session ID'
+        )
 
     def update_refresh_token(self, refresh_token: UUID, saml_session_id: str) -> None:
         for session_data in self._dao.saml_session.list(session_id=saml_session_id):
@@ -358,6 +371,9 @@ class SAMLService(BaseService):
                 self._dao.saml_session.delete(item.request_id)
 
     def process_logout_request(self, url, remote_addr, token):
+        logger.debug(
+            'Processing logout for token: ...%s', token.refresh_token_uuid[:-8]
+        )
         session: list[SamlSessionItem] = [
             item
             for item in self._dao.saml_session.list()
