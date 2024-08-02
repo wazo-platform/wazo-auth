@@ -20,6 +20,7 @@ _DEFAULT_CONFIG = {
     'profiling_enabled': False,
     'default_token_lifetime': TWO_HOURS,
     'token_cleanup_interval': 60.0,
+    'token_cleanup_batch_size': 5000,
     'password_reset_expiration': 172800,
     'password_reset_from_name': 'wazo-auth',
     'password_reset_from_address': 'noreply@wazo.community',
