@@ -290,8 +290,8 @@ class TestSessions(base.APIIntegrationTest):
     def test_handle_generic_tokens_when_expired(self):
         assert self.client.config.get()['debug'] is True, 'debug must be set to true'
 
-        test_start: int = time.time()
-        session_uuid: str = self._create_generic_token(expiration=3)
+        test_start = time.time()
+        session_uuid = self._create_generic_token(expiration=3)
 
         def assert_log_message():
             logs = self.service_logs(service_name='auth', since=test_start)

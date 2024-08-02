@@ -7,6 +7,7 @@ import uuid
 from hamcrest import (
     all_of,
     assert_that,
+    contains_exactly,
     equal_to,
     has_entries,
     has_items,
@@ -71,10 +72,9 @@ class TestTokenDAO(base.DAOTestCase):
     @fixtures.db.token(expiration=0)
     @fixtures.db.token(expiration=0)
     def test_delete_expired_tokens_and_sessions(self, token_1, token_2, token_3):
-        (
-            expired_tokens,
-            expired_sessions,
-        ) = self._token_dao.delete_expired_tokens_and_sessions()
+        expired_tokens, expired_sessions = next(
+            self._token_dao.purge_expired_tokens_and_sessions()
+        )
 
         assert_that(
             expired_tokens,
@@ -111,5 +111,47 @@ class TestTokenDAO(base.DAOTestCase):
                 has_items(has_properties(uuid=token_1['uuid'])),
                 not_(has_items(has_properties(uuid=token_2['uuid']))),
                 not_(has_items(has_properties(uuid=token_3['uuid']))),
+            ),
+        )
+
+    @fixtures.db.token(expiration=0)
+    @fixtures.db.token(expiration=0)
+    @fixtures.db.token(expiration=0)
+    def test_expired_tokens_and_sessions_batching(self, token_1, token_2, token_3):
+        batch_generator = self._token_dao.get_tokens_and_sessions_about_to_expire(
+            0, batch_size=2
+        )
+
+        # 1st iteration
+        tokens, sessions = next(batch_generator)
+        assert_that(
+            tokens,
+            contains_exactly(
+                has_entries(uuid=token_1['uuid']),
+                has_entries(uuid=token_2['uuid']),
+            ),
+        )
+        assert_that(
+            sessions,
+            contains_exactly(
+                has_entries(uuid=token_1['session_uuid']),
+                has_entries(uuid=token_2['session_uuid']),
+            ),
+        )
+
+        # 2nd iteration
+        tokens, sessions = next(batch_generator)
+        assert_that(
+            tokens,
+            contains_exactly(
+                has_entries(
+                    uuid=token_3['uuid'],
+                )
+            ),
+        )
+        assert_that(
+            sessions,
+            contains_exactly(
+                has_entries(uuid=token_3['session_uuid']),
             ),
         )
