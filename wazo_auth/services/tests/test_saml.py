@@ -273,7 +273,7 @@ class TestSAMLService(TestCase):
 
         self.service.invalidate_saml_session_id(saml_context.saml_session_id)
 
-        update: dict[str, str] = {'session_id': 'token-already-used'}
+        update: dict[str, str] = {'session_id': 'token-already-used', 'login': None}
         self.dao_mock.saml_session.update.assert_called_once_with(
             pending_session.request_id, **update
         )

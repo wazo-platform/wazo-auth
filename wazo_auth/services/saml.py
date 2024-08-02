@@ -348,7 +348,10 @@ class SAMLService(BaseService):
     def invalidate_saml_session_id(self, saml_session_id: str) -> str | None:
         logger.debug('sessions %s', self._dao.saml_session.list())
         for reqid, session in self._dao.saml_session.list(session_id=saml_session_id):
-            update: dict[str, None] = {'session_id': 'token-already-used'}
+            update: dict[str, None] = {
+                'session_id': 'token-already-used',
+                'login': None,
+            }
             self._dao.saml_session.update(reqid, **update)
             return
         raise exceptions.SAMLProcessingError(

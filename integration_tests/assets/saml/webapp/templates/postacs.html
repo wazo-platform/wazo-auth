@@ -26,6 +26,15 @@
 	<p id="renewed_token">not yet known</p>
 	<h2>Renewed expires</h2>
 	<p id="renewed_expires">not yet known</p>
+	<br>
+	<input type="text" id="custom_saml_session_id" placeholder="Enter custom SAML session ID">
+	<button onclick="get_token_custom_saml_session_id()">
+		Get token with custom SAML session ID
+	</button>
+	<br>
+	<h2>Token using custom SAML session ID</h2>
+	<p id="custom_id_token">not yet known</p>
+
 
 	<script type="text/javascript">
 		function get_token() {
@@ -101,6 +110,30 @@
 					document.getElementById('renewed_expires').innerHTML = 'Failed';
 				});
 
+
+		}
+
+		function get_token_custom_saml_session_id() {
+			fetch("https://stack.wazo.local/api/auth/0.1/token", {
+				method: "POST",
+				body: JSON.stringify({
+					'refresh_token': document.getElementById('custom_saml_session_id').value,
+					'client_id': 'saml_tests',
+				}),
+				headers: {
+					"Content-type": "application/json"
+				}
+			})
+				.then((response) => response.json())
+				.then((json) => {
+					console.log(json)
+					localStorage.setItem('token', json.data.token);
+					document.getElementById('custom_id_token').innerHTML = json.data.token.substring(0, 5) + "...";
+				})
+				.catch((error) => {
+					console.error('Failed: ', error);
+					document.getElementById('custom_id_token').innerHTML = 'Failed with error: ' + error;
+				});
 
 		}
 
