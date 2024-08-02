@@ -17,35 +17,46 @@
 	<p id="expires">not yet known</p>
 
 	<button onclick="logout()">Logout</button>
-
+	<br>
+	<button onclick="get_token()">Reuse SAML session ID</button>
+	<br>
+	<button onclick="renew_token()">Renew token</button>
+	<br>
+	<h2>Renewed token</h2>
+	<p id="renewed_token">not yet known</p>
+	<h2>Renewed expires</h2>
+	<p id="renewed_expires">not yet known</p>
 
 	<script type="text/javascript">
-		let saml_session_id = localStorage.getItem("wazo-saml-session-id");
-		fetch("https://stack.wazo.local/api/auth/0.1/token", {
-			method: "POST",
-			body: JSON.stringify({
-				'saml_session_id': saml_session_id,
-				'client_id': 'saml_tests',
-				'access_type': 'offline',
-			}),
-			headers: {
-				"Content-type": "application/json"
-			}
-		})
-			.then((response) => response.json())
-			.then((json) => {
-				console.log(json)
-				localStorage.setItem('token', json.data.token);
-				document.getElementById('token').innerHTML = json.data.token.substring(0, 5) + "...";
-				document.getElementById('refresh').innerHTML = json.data.refresh_token;
-				document.getElementById('expires').innerHTML = json.data.expires_at;
+		function get_token() {
+			let saml_session_id = localStorage.getItem("wazo-saml-session-id");
+			fetch("https://stack.wazo.local/api/auth/0.1/token", {
+				method: "POST",
+				body: JSON.stringify({
+					'saml_session_id': saml_session_id,
+					'client_id': 'saml_tests',
+					'access_type': 'offline',
+				}),
+				headers: {
+					"Content-type": "application/json"
+				}
 			})
-			.catch((error) => {
-				console.error('Failed: ', error);
-				document.getElementById('token').innerHTML = 'Failed with error: ' + error;
-				document.getElementById('refresh').innerHTML = 'Failed';
-				document.getElementById('expires').innerHTML = 'Failed';
-			});
+				.then((response) => response.json())
+				.then((json) => {
+					console.log(json)
+					localStorage.setItem('token', json.data.token);
+					localStorage.setItem('refresh_token', json.data.refresh_token)
+					document.getElementById('token').innerHTML = json.data.token.substring(0, 5) + "...";
+					document.getElementById('refresh').innerHTML = json.data.refresh_token;
+					document.getElementById('expires').innerHTML = json.data.expires_at;
+				})
+				.catch((error) => {
+					console.error('Failed: ', error);
+					document.getElementById('token').innerHTML = 'Failed with error: ' + error;
+					document.getElementById('refresh').innerHTML = 'Failed';
+					document.getElementById('expires').innerHTML = 'Failed';
+				});
+		};
 
 		function logout() {
 			fetch(
@@ -65,6 +76,35 @@
 				}
 			).catch((error) => console.error('Error:', error));
 		};
+
+		function renew_token() {
+			fetch("https://stack.wazo.local/api/auth/0.1/token", {
+				method: "POST",
+				body: JSON.stringify({
+					'refresh_token': localStorage.getItem('refresh_token'),
+					'client_id': 'saml_tests',
+				}),
+				headers: {
+					"Content-type": "application/json"
+				}
+			})
+				.then((response) => response.json())
+				.then((json) => {
+					console.log(json)
+					localStorage.setItem('token', json.data.token);
+					document.getElementById('renewed_token').innerHTML = json.data.token.substring(0, 5) + "...";
+					document.getElementById('renewed_expires').innerHTML = json.data.expires_at;
+				})
+				.catch((error) => {
+					console.error('Failed: ', error);
+					document.getElementById('renewed_token').innerHTML = 'Failed with error: ' + error;
+					document.getElementById('renewed_expires').innerHTML = 'Failed';
+				});
+
+
+		}
+
+		get_token();
 	</script>
 
 </body>
