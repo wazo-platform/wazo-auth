@@ -28,7 +28,8 @@ def upgrade():
         table,
         sa.Column(
             'refresh_token_uuid',
-            sa.Text,
+            sa.String(36),
+            sa.ForeignKey('auth_refresh_token.uuid', ondelete='SET NULL'),
             nullable=True,
         ),
     )

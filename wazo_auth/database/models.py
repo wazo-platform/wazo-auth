@@ -213,7 +213,7 @@ class Token(Base):
     remote_addr = Column(Text)
     acl = Column(ARRAY(Text), nullable=False, server_default='{}')
     refresh_token_uuid = Column(
-        String(38),
+        String(36),
         ForeignKey('auth_refresh_token.uuid', ondelete='CASCADE'),
         nullable=True,
     )
@@ -470,5 +470,7 @@ class SAMLSession(Base):
     start_time = Column(DateTime(timezone=True), nullable=True)
     saml_name_id = Column(Text, nullable=True)
     refresh_token_uuid = Column(
-        String(38), ForeignKey('auth_tenant.uuid', ondelete='CASCADE'), nullable=True
+        String(36),
+        ForeignKey('auth_refresh_token.uuid', ondelete='CASCADE'),
+        nullable=True,
     )
