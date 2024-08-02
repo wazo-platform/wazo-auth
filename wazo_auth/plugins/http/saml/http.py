@@ -97,6 +97,8 @@ class SAMLLogout(http.ErrorCatchingResource):
 
             rer: dict[str, Any] = {'location': location}
             return rer
+        except exceptions.SAMLException as e:
+            raise e
         except Exception as excp:
             logger.exception(
                 f'Unexpected error while processing the logout request: {excp}'

@@ -372,13 +372,19 @@ class SAMLService(BaseService):
 
     def process_logout_request(self, token):
         logger.debug(
-            'Processing logout for token: ...%s', token.refresh_token_uuid[:-8]
+            'Processing logout for token: ...%s',
+            (token.refresh_token_uuid or token.token or 'xxxxxxx unknown token')[:-8],
         )
         session: list[SamlSessionItem] = [
             item
             for item in self._dao.saml_session.list()
             if item.auth_context.refresh_token_uuid == token.refresh_token_uuid
         ]
+
+        if not session:
+            logger.warning('Logout request failed: Context not found')
+            raise SAMLProcessingError('Context not found', code=404)
+
         client = self.get_client(session[0].auth_context.domain)
         name_id = name_id_from_string(session[0].auth_context.saml_name_id)
 
