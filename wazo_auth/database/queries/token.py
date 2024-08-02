@@ -4,6 +4,10 @@
 import json
 import time
 
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import Bundle
+from sqlalchemy.sql import cast
+
 from ... import exceptions
 from ..models import Session, Tenant
 from ..models import Token as TokenModel
@@ -78,61 +82,64 @@ class TokenDAO(BaseDAO):
 
         return token_result, session_result
 
-    def get_tokens_and_session_that_expire_soon(self, _time):
-        tokens = self._get_tokens_with_expiration_less_than(time.time() + _time)
-        if not tokens:
-            return [], []
-        filter_ = TokenModel.uuid.in_([token['uuid'] for token in tokens])
-        sessions = self._get_sessions_from_token_filter(filter_)
-        return tokens, sessions
-
-    def delete_expired_tokens_and_sessions(self):
-        tokens = self._delete_expired_tokens()
-        sessions = self._delete_expired_sessions()
-        self.session.flush()
-        return tokens, sessions
-
-    def _get_tokens_with_expiration_less_than(self, epoch):
-        filter_ = TokenModel.expire_t < epoch
-        tokens = self.session.query(TokenModel).filter(filter_).all()
-        results = []
-        for token in tokens:
-            results.append(
-                {
-                    'uuid': token.uuid,
-                    'auth_id': token.auth_id,
-                    'session_uuid': token.session_uuid,
-                    'metadata': json.loads(token.metadata_) if token.metadata_ else {},
-                }
+    def _get_tokens_and_sessions_by_expiration(
+        self, time_remaining, limit=None, offset=None
+    ):
+        query = (
+            self.session.query(
+                Bundle(
+                    'token',
+                    TokenModel.uuid,
+                    TokenModel.auth_id,
+                    TokenModel.session_uuid,
+                    cast(TokenModel.metadata_, JSONB).label('metadata'),
+                ),
+                Bundle('session', Session.uuid),
             )
-        return results
-
-    def _get_sessions_from_token_filter(self, filter_):
-        sessions = (
-            self.session.query(Session.uuid).outerjoin(TokenModel).filter(filter_).all()
+            .filter(TokenModel.expire_t < time.time() + time_remaining)
+            .order_by(TokenModel.expire_t)
+            .join(TokenModel.session)
         )
-        results = []
-        for session in sessions:
-            results.append({'uuid': session.uuid})
-        return results
 
-    def _delete_expired_tokens(self):
-        results = self._get_tokens_with_expiration_less_than(time.time())
-        if not results:
-            return results
-        token_uuids = [token['uuid'] for token in results]
-        filter_ = TokenModel.uuid.in_(token_uuids)
-        self.session.query(TokenModel).filter(filter_).delete(synchronize_session=False)
-        self.session.flush()
-        return results
+        if limit:
+            query = query.limit(limit)
 
-    def _delete_expired_sessions(self):
-        filter_ = TokenModel.uuid.is_(None)
-        results = self._get_sessions_from_token_filter(filter_)
+        if offset:
+            query = query.offset(offset)
+
+        results = query.all()
         if not results:
-            return results
-        session_uuids = [session['uuid'] for session in results]
-        filter_ = Session.uuid.in_(session_uuids)
-        self.session.query(Session).filter(filter_).delete(synchronize_session=False)
-        self.session.flush()
-        return results
+            return None
+        tokens = [result.token._asdict() for result in results]
+        sessions = [result.session._asdict() for result in results]
+
+        return tokens, sessions
+
+    def purge_expired_tokens_and_sessions(self, batch_size=5_000):
+        def delete_by_uuids(model, items):
+            uuids = [item['uuid'] for item in items]
+            self.session.query(model).filter(model.uuid.in_(uuids)).delete(
+                synchronize_session=False
+            )
+            self.session.flush()
+
+        while batch := self._get_tokens_and_sessions_by_expiration(0, batch_size):
+            tokens, sessions = batch
+            delete_by_uuids(TokenModel, tokens)
+            delete_by_uuids(Session, sessions)
+            yield tokens, sessions
+
+            if len(tokens) < batch_size:
+                return
+
+    def get_tokens_and_sessions_about_to_expire(self, time_remaining, batch_size=5_000):
+        offset = 0
+        while batch := self._get_tokens_and_sessions_by_expiration(
+            time_remaining, batch_size, offset
+        ):
+            tokens, sessions = batch
+            yield tokens, sessions
+            offset += batch_size
+
+            if len(tokens) < batch_size:
+                return

@@ -109,6 +109,7 @@ class ExpiredTokenRemover:
         self._dao = dao
         self._bus_publisher = bus_publisher
         self._cleanup_interval = config['token_cleanup_interval']
+        self._batch_size = config['token_cleanup_batch_size']
         self._debug = config['debug']
         if self._cleanup_interval < 1:
             return
@@ -132,9 +133,17 @@ class ExpiredTokenRemover:
         while not self._tombstone.is_set():
             started = time.monotonic()
 
-            self._tokens_cleanup()
-            self._tokens_notice()
-            self._purge_expired_saml_sessions()
+            try:
+                self._purge_expired_sessions()
+                self._purge_expired_saml_sessions()
+                self._notify_expire_soon()
+            except Exception:
+                logger.warning(
+                    '%s: an exception occured during execution',
+                    self.__class__.__name__,
+                    exc_info=self._debug,
+                )
+                Session.close()
 
             elapsed = time.monotonic() - started
 
@@ -142,68 +151,58 @@ class ExpiredTokenRemover:
                 log_level = logging.WARNING
             else:
                 log_level = logging.DEBUG
-            logger.log(log_level, "ExpiredTokenRemover took %s seconds", elapsed)
+            logger.log(log_level, "ExpiredTokenRemover took %.5f seconds", elapsed)
 
             if elapsed < self._cleanup_interval:
                 self._tombstone.wait(self._cleanup_interval - elapsed)
 
-    def _tokens_cleanup(self):
+    def _notify_expire_soon(self):
+        generator = self._dao.token.get_tokens_and_sessions_about_to_expire(
+            self._cleanup_interval, self._batch_size
+        )
         try:
-            tokens, sessions = self._dao.token.delete_expired_tokens_and_sessions()
-            Session.commit()
-        except Exception:
-            Session.rollback()
-            logger.warning(
-                'failed to remove expired tokens and sessions', exc_info=self._debug
-            )
-            return
+            for tokens, sessions in generator:
+                self._publish_events(SessionExpireSoonEvent, tokens, sessions)
         finally:
             Session.close()
 
-        self._publish_event(tokens, sessions, SessionDeletedEvent)
-
-    def _tokens_notice(self):
+    def _purge_expired_sessions(self):
         try:
-            tokens, sessions = self._dao.token.get_tokens_and_session_that_expire_soon(
-                self._cleanup_interval
-            )
-        except Exception:
-            logger.warning(
-                'failed to get tokens and sessions that expire soon',
-                exc_info=self._debug,
-            )
-            return
+            for tokens, sessions in self._dao.token.purge_expired_tokens_and_sessions(
+                self._batch_size
+            ):
+                try:
+                    Session.commit()
+                except Exception:
+                    Session.rollback()
+                    logger.warning(
+                        'failed to remove expired tokens and sessions',
+                        exc_info=self._debug,
+                    )
+                    raise
+
+                self._publish_events(SessionDeletedEvent, tokens, sessions)
         finally:
             Session.close()
-
-        self._publish_event(tokens, sessions, SessionExpireSoonEvent)
-
-    def _publish_event(self, tokens, sessions, event_class):
-        for session in sessions:
-            event_args = {
-                'session_uuid': session['uuid'],
-                'tenant_uuid': None,
-                'user_uuid': None,
-            }
-            for token in tokens:
-                if token['session_uuid'] == session['uuid']:
-                    event_args['user_uuid'] = token['auth_id']
-                    event_args['tenant_uuid'] = token['metadata'].get('tenant_uuid')
-                    break
-            else:
-                logger.warning('session without token associated: %s', session['uuid'])
-
-            try:
-                event = event_class(**event_args)
-            except ValueError:
-                logger.debug(
-                    '%s failed to publish event `%s`, session has no tenant_uuid: %s',
-                    self.__class__.__name__,
-                    event_class.name,
-                    session['uuid'],
-                )
-            else:
-                self._bus_publisher.publish(event)
 
     def _purge_expired_saml_sessions(self):
         self._saml_service.clean_pending_requests()
+
+    def _publish_events(self, event_class, tokens, sessions):
+        for token, session in zip(tokens, sessions):
+            if token['session_uuid'] != session['uuid']:
+                logger.warning('token and session mistmatch')
+                continue
+
+            if 'tenant_uuid' not in token['metadata']:
+                logger.warning(
+                    'invalid session %s: no tenant_uuid found', session['uuid']
+                )
+                continue
+
+            event = event_class(
+                session_uuid=session['uuid'],
+                tenant_uuid=token['metadata']['tenant_uuid'],
+                user_uuid=token['auth_id'],
+            )
+            self._bus_publisher.publish(event)
