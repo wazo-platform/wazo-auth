@@ -110,6 +110,9 @@ class SAMLService(BaseService):
         self._saml_session_lifetime = timedelta(
             seconds=config['saml']['saml_session_lifetime_seconds']
         )
+        self._saml_login_timeout = timedelta(
+            seconds=config['saml']['saml_login_timeout_seconds']
+        )
 
     def _prepare_saml_config(self, db_config, filename, globals) -> RawSAMLConfig:
         return {
@@ -372,6 +375,14 @@ class SAMLService(BaseService):
             if now > expire_at:
                 logger.debug("Removing SAML context: %s", item)
                 self._dao.saml_session.delete(item.request_id)
+                return
+            if item.auth_context.saml_session_id != 'token_already_used':
+                invalidate_at: datetime = (
+                    item.auth_context.start_time + self._saml_login_timeout
+                )
+                if now > invalidate_at:
+                    logger.debug('Deleting SAML login session on timeout: %s', item)
+                    self._dao.saml_session.delete(item.request_id)
 
     def process_logout_request(self, token):
         logger.debug(

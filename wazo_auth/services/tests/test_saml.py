@@ -43,6 +43,24 @@ class TestSAMLService(TestCase):
         expired_date: datetime = datetime.fromisoformat('2000-01-01 00:00:00+00:00')
         expired: SamlAuthContext = self._get_auth_context(date=expired_date)
 
+        pending_date: datetime = datetime.fromisoformat('2000-01-02 00:00:00+00:00')
+        pending: SamlAuthContext = self._get_auth_context(date=pending_date)
+        self.dao_mock.saml_session.list.return_value = [
+            SamlSessionItem('id1', auth_context=expired),
+            SamlSessionItem('id2', pending),
+        ]
+
+        now: datetime = datetime.fromisoformat('2000-01-02 00:00:01+00:00')
+        self.service.clean_pending_requests(now)
+
+        self.dao_mock.saml_session.delete.assert_called_once_with('id1')
+
+    def test_invalidate_on_login_timeout(self) -> None:
+        timeout_date: datetime = datetime.fromisoformat('2000-01-01 00:00:00+00:00')
+        expired: SamlAuthContext = self._get_auth_context(
+            date=timeout_date, saml_id='token-already-used'
+        )
+
         pending_date: datetime = datetime.fromisoformat('2000-01-01 00:00:02+00:00')
         pending: SamlAuthContext = self._get_auth_context(date=pending_date)
         self.dao_mock.saml_session.list.return_value = [
