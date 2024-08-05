@@ -3,12 +3,17 @@
 
 
 import logging
+from typing import Any
 
 import marshmallow
 from flask import redirect, request
+from saml2 import BINDING_HTTP_REDIRECT
+from werkzeug.wrappers.response import Response
 
 from wazo_auth import exceptions, http
 from wazo_auth.services.saml import SAMLService
+from wazo_auth.services.token import TokenService
+from wazo_auth.token import Token
 
 from .schemas import SAMLSSOSchema
 
@@ -70,4 +75,50 @@ class SAMLSSO(http.ErrorCatchingResource):
             logger.error("Failed to process initial SAML SSO post because of: %s", excp)
             raise exceptions.SAMLConfigurationError(
                 domain=args['domain'],
+            )
+
+
+class SAMLLogout(http.ErrorCatchingResource):
+    def __init__(self, saml_service: SAMLService, token_service: TokenService):
+        self._saml_service: SAMLService = saml_service
+        self._token_service: TokenService = token_service
+
+    def get(self):
+        token = request.headers.get('X-Auth-Token') or request.args.get('token')
+        token_data: Token = self._token_service.get(token, required_access=None)
+        try:
+            location = self._saml_service.process_logout_request(
+                token_data,
+            )
+
+            self._token_service.remove_token(token)
+            if refresh_token := token_data.refresh_token:
+                self._token_service.delete_refresh_token_by_uuid(refresh_token)
+
+            rer: dict[str, Any] = {'location': location}
+            return rer
+        except exceptions.SAMLException as e:
+            raise e
+        except Exception as excp:
+            logger.exception(
+                f'Unexpected error while processing the logout request: {excp}'
+            )
+            raise exceptions.SAMLProcessingError(excp)
+
+
+class SAMLSLS(http.ErrorCatchingResource):
+    def __init__(self, saml_service: SAMLService):
+        self._saml_service: SAMLService = saml_service
+
+    def get(self) -> Response:
+        try:
+            message = request.args.get('SAMLResponse')
+            relay_state = request.args.get('RelayState')
+            location = self._saml_service.process_logout_request_response(
+                message, relay_state, BINDING_HTTP_REDIRECT
+            )
+            return redirect(location)
+        except Exception as e:
+            raise exceptions.SAMLProcessingError(
+                f'Unable to process logout request response ({e})'
             )

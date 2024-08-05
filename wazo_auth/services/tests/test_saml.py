@@ -43,6 +43,24 @@ class TestSAMLService(TestCase):
         expired_date: datetime = datetime.fromisoformat('2000-01-01 00:00:00+00:00')
         expired: SamlAuthContext = self._get_auth_context(date=expired_date)
 
+        pending_date: datetime = datetime.fromisoformat('2000-01-02 00:00:00+00:00')
+        pending: SamlAuthContext = self._get_auth_context(date=pending_date)
+        self.dao_mock.saml_session.list.return_value = [
+            SamlSessionItem('id1', auth_context=expired),
+            SamlSessionItem('id2', pending),
+        ]
+
+        now: datetime = datetime.fromisoformat('2000-01-02 00:00:01+00:00')
+        self.service.clean_pending_requests(now)
+
+        self.dao_mock.saml_session.delete.assert_called_once_with('id1')
+
+    def test_invalidate_on_login_timeout(self) -> None:
+        timeout_date: datetime = datetime.fromisoformat('2000-01-01 00:00:00+00:00')
+        expired: SamlAuthContext = self._get_auth_context(
+            date=timeout_date, saml_id='token-already-used'
+        )
+
         pending_date: datetime = datetime.fromisoformat('2000-01-01 00:00:02+00:00')
         pending: SamlAuthContext = self._get_auth_context(date=pending_date)
         self.dao_mock.saml_session.list.return_value = [
@@ -83,6 +101,11 @@ class TestSAMLService(TestCase):
 
         response = Mock()
         response.ava = {'name': ['testname']}
+        name_id = (
+            '<saml:NameID xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">'
+            'testname</saml:NameID>'
+        )
+        response.name_id = name_id
         response.session_id.return_value = req_key
         mock_client = Mock()
         mock_client.parse_authn_request_response.return_value = response
@@ -97,7 +120,7 @@ class TestSAMLService(TestCase):
         _, args, _ = mock_get_client.mock_calls[0]
         assert_that(args[0], is_(domain))
 
-        update: dict[str, str] = {'login': 'testname'}
+        update: dict[str, str] = {'login': 'testname', 'saml_name_id': name_id}
         self.dao_mock.saml_session.update.assert_called_once_with(req_key, **update)
 
     @patch('wazo_auth.services.SAMLService.get_client')
@@ -210,7 +233,7 @@ class TestSAMLService(TestCase):
         )
         self.dao_mock.saml_session.delete.assert_called_once_with(req_key)
 
-    def test_get_user_login_and_remove_context(self) -> None:
+    def test_get_user_login(self) -> None:
         saml_context = SamlAuthContext(
             saml_session_id='session_1',
             redirect_url='rurl1',
@@ -251,11 +274,24 @@ class TestSAMLService(TestCase):
             ('another', None),
         ]
         for saml_session_id, expected in samples:
-            result: str | None = self.service.get_user_login_and_remove_context(
-                saml_session_id
-            )
+            result: str | None = self.service.get_user_login(saml_session_id)
             assert_that(result, is_(expected))
 
-        self.dao_mock.saml_session.delete.assert_called_once_with(
-            pending_session.request_id
+    def test_invalidate_saml_session_id(self) -> None:
+        saml_context = SamlAuthContext(
+            saml_session_id='session_1',
+            redirect_url='rurl1',
+            domain='domain1.org',
+            relay_state='6pruzvCdQHaLWCd30T6IziZFX_U=',
+            login='login_1',
+        )
+        pending_session = SamlSessionItem('req_id', saml_context)
+
+        self.dao_mock.saml_session.list.return_value = [pending_session]
+
+        self.service.invalidate_saml_session_id(saml_context.saml_session_id)
+
+        update: dict[str, str] = {'session_id': 'token-already-used', 'login': None}
+        self.dao_mock.saml_session.update.assert_called_once_with(
+            pending_session.request_id, **update
         )

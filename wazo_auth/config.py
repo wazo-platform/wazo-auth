@@ -127,7 +127,8 @@ _DEFAULT_CONFIG = {
     'saml': {
         'domains': {},
         'acs_url_template': 'https://{{STACK_URL}}/api/auth/0.1/saml/acs',
-        'saml_session_lifetime_seconds': 600,
+        'saml_login_timeout_seconds': 600,
+        'saml_session_lifetime_seconds': 86400,
         'xmlsec_binary': '/usr/bin/xmlsec1',
         'key_file': '/var/lib/wazo-auth/saml/server.key',
         'cert_file': '/var/lib/wazo-auth/saml/server.crt',

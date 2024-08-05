@@ -143,6 +143,7 @@ def token(**token_args):
                 'metadata': token_args.get('metadata', {}),
                 'user_agent': token_args.get('user_agent', ''),
                 'remote_addr': token_args.get('remote_addr', ''),
+                'refresh_token_uuid': token_args.get('refresh_token_uuid', None),
             }
             session = token_args.get('session', {})
 

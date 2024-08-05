@@ -29,7 +29,7 @@ class RedactedValue:
 @base.use_asset('saml')
 class TestSamlService(SAMLIntegrationTest):
     @pytest.fixture(autouse=True)
-    def setup(self, page: Page):
+    def setup(self, page: Page) -> None:
         self.page = page
         if 'WAZO_SAML_CONFIG_FILE' in os.environ:
             conf_file = pathlib.Path(os.environ['WAZO_SAML_CONFIG_FILE'])
@@ -53,6 +53,17 @@ class TestSamlService(SAMLIntegrationTest):
             self.login = RedactedValue(os.environ['WAZO_SAML_LOGIN'])
         if 'WAZO_SAML_PASSWORD' in os.environ:
             self.password = RedactedValue(os.environ['WAZO_SAML_PASSWORD'])
+
+        tenants = self.client.tenants.list(
+            self.get_top_tenant()['uuid'], name='example'
+        )
+        if not tenants['items']:
+            domain_name = 'example.com'
+            self._setup_tenant_and_domain(domain_name)
+            self._configure_saml(domain_name)
+            self._create_user(self.login)
+            self._reload_saml_config()
+            self._accept_self_signed_certificate_on_stack()
 
     def _setup_tenant_and_domain(self, domain_name: str) -> None:
         self.tenant = self.client.tenants.new(
@@ -98,7 +109,7 @@ class TestSamlService(SAMLIntegrationTest):
     def _reload_saml_config(self) -> None:
         self.restart_auth()
 
-    def _click_login(self, page):
+    def _click_login(self, page) -> None:
         page.goto("https://app.wazo.local/")
         expect(page.locator("h1"), "Error while opening the test page").to_contain_text(
             "Wazo SAML login"
@@ -110,7 +121,7 @@ class TestSamlService(SAMLIntegrationTest):
             "Sign in to your account"
         )
 
-    def _login(self, page, login, password):
+    def _login(self, page, login, password) -> None:
         page.get_by_placeholder("Email address, phone number").fill(login._value)
         page.get_by_role("button", name="Next").click()
         expect(page.get_by_role("heading"), "Failed to submit login").to_contain_text(
@@ -123,17 +134,24 @@ class TestSamlService(SAMLIntegrationTest):
         ).to_contain_text("Stay signed in?")
         page.get_by_role("button", name="No").click()
 
+    def _renew_token(self, page) -> None:
+        page.get_by_role("button", name="Renew token").click()
+
+    def _logout(self, page) -> None:
+        page.get_by_role("button", name="Logout").click()
+
+    def _reuse_saml_session_id(self, page) -> None:
+        page.get_by_role("button", name="Reuse SAML session ID").click()
+
+    def _get_token_using_saml_session_id(self, page, saml_session_id) -> None:
+        page.get_by_placeholder('Enter custom SAML session ID').fill(saml_session_id)
+        page.get_by_role("button", name="Get token with custom SAML session ID").click()
+
     @pytest.mark.only_browser("chromium")
     @pytest.mark.browser_context_args(
         timezone_id="Europe/London", locale="en-GB", ignore_https_errors=True
     )
-    def test_login(self) -> None:
-        domain_name = 'example.com'
-        self._setup_tenant_and_domain(domain_name)
-        self._configure_saml(domain_name)
-        self._create_user(self.login)
-        self._reload_saml_config()
-        self._accept_self_signed_certificate_on_stack()
+    def test_login_logout(self) -> None:
         self._click_login(self.page)
         self._login(self.page, self.login, self.password)
         expect(self.page.locator("h1"), "SSO handling failed").to_contain_text(
@@ -145,3 +163,76 @@ class TestSamlService(SAMLIntegrationTest):
         expect(
             self.page.locator("#refresh"), "Failed to retrieve a refresh token"
         ).not_to_contain_text("not yet known")
+
+        self._logout(self.page)
+        expect(self.page).to_have_url(
+            'https://app.wazo.local/postacs.html?logged_out=true', timeout=20000
+        )
+        expect(self.page.locator("#token")).to_contain_text("Failed")
+        expect(self.page.locator("#refresh")).to_contain_text("Failed")
+
+    @pytest.mark.only_browser("chromium")
+    @pytest.mark.browser_context_args(
+        timezone_id="Europe/London", locale="en-GB", ignore_https_errors=True
+    )
+    def test_logout_after_token_renewal(self) -> None:
+        self._click_login(self.page)
+        self._login(self.page, self.login, self.password)
+        expect(self.page.locator("h1"), "SSO handling failed").to_contain_text(
+            "Wazo SAML Post ACS handling"
+        )
+        expect(
+            self.page.locator("#token"), "Failed to retrieve token"
+        ).not_to_contain_text("not yet known")
+        expect(
+            self.page.locator("#refresh"), "Failed to retrieve a refresh token"
+        ).not_to_contain_text("not yet known")
+
+        self._renew_token(self.page)
+        self._logout(self.page)
+        expect(self.page).to_have_url(
+            'https://app.wazo.local/postacs.html?logged_out=true', timeout=20000
+        )
+        expect(self.page.locator("#token")).to_contain_text("Failed")
+        expect(self.page.locator("#refresh")).to_contain_text("Failed")
+
+    @pytest.mark.only_browser("chromium")
+    @pytest.mark.browser_context_args(
+        timezone_id="Europe/London", locale="en-GB", ignore_https_errors=True
+    )
+    def test_reuse_saml_session(self) -> None:
+        self._click_login(self.page)
+        self._login(self.page, self.login, self.password)
+        expect(self.page.locator("h1"), "SSO handling failed").to_contain_text(
+            "Wazo SAML Post ACS handling"
+        )
+        expect(
+            self.page.locator("#token"), "Failed to retrieve token"
+        ).not_to_contain_text("not yet known")
+        expect(
+            self.page.locator("#refresh"), "Failed to retrieve a refresh token"
+        ).not_to_contain_text("not yet known")
+
+        self._reuse_saml_session_id(self.page)
+        expect(self.page.locator("#token")).to_contain_text("Failed")
+        expect(self.page.locator("#refresh")).to_contain_text("Failed")
+
+    @pytest.mark.only_browser("chromium")
+    @pytest.mark.browser_context_args(
+        timezone_id="Europe/London", locale="en-GB", ignore_https_errors=True
+    )
+    def test_other_saml_session_ids(self) -> None:
+        self._click_login(self.page)
+        self._login(self.page, self.login, self.password)
+        expect(self.page.locator("h1"), "SSO handling failed").to_contain_text(
+            "Wazo SAML Post ACS handling"
+        )
+        expect(
+            self.page.locator("#token"), "Failed to retrieve token"
+        ).not_to_contain_text("not yet known")
+        expect(
+            self.page.locator("#refresh"), "Failed to retrieve a refresh token"
+        ).not_to_contain_text("not yet known")
+
+        self._get_token_using_saml_session_id(self.page, 'token-already-used')
+        expect(self.page.locator("#custom_id_token")).to_contain_text("Failed")

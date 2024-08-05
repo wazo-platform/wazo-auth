@@ -25,8 +25,9 @@ paths:
       responses:
         '201':
           description: |
-            The `Location` header contains the URL of the identity provider that should be
-            used by the client to authenticate.
+            The `Location` contains the URL of the identity provider that should be
+            used by the client to authenticate. The provided `saml_session_id` must
+            be used by the application when requesting the token following the login.
           schema:
             $ref: '#/definitions/SAMLSSOResponse'
         '400':
@@ -96,6 +97,61 @@ paths:
           schema:
             $ref: '#/definitions/Error'
 
+  /saml/logout:
+    get:
+      description: |
+        Returns the SAML logout request and redirect location, which is the IdP.
+        The client must use the indicated location and forward the logout request
+        to the IdP and forward the response to the wazo-auth. Wazo-auth will process
+        the answer and confirm to the requester the logout was processed or notify
+        an error.
+      summary: Creates and returns data required to process the logout by the IdP
+      security:
+      - wazo_auth_token: []
+      operationId: samlLogout
+      tags:
+      - token
+      - saml
+      responses:
+        '201':
+          description: |
+            SAML encoded Logout request to be forwarded to the provided redirect URL.
+          schema:
+            $ref: '#/definitions/SAMLLogoutRequest'
+        '400':
+          description: Missing or wrong parameters.
+        '500':
+          description: |
+            Failed to initialize SAML SSO. Please check your stack configuration.
+
+  /saml/sls:
+    get:
+      description: |
+        Processes the IdP response to logout request and confirms the logout by
+        a redirect to the `redirect_url` provided during the login phase
+        with logout confirmation un the URL's query param.
+      summary: Handles the logout response from the IDP
+      operationId: samlLogoutResponse
+      tags:
+      - token
+      - saml
+      parameters:
+      - description: SAML SSO Logout data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SAMLIdpLogoutResponse'
+      responses:
+        '201':
+          description: |
+            Logout successfully processed.
+        '400':
+          description: Missing or wrong parameters.
+        '500':
+          description: |
+            Failed to initialize SAML SSO. Please check your stack configuration.
+
 definitions:
   SAMLIdpResponse:
     properties:
@@ -134,4 +190,25 @@ definitions:
     required:
     - redirect_url
     - domain
+    type: object
+
+  SAMLLogoutRequest:
+    type: object
+    properties:
+      location:
+        description: |
+          The URL that the client should open to complete the logout.
+        type: string
+
+  SAMLIdpLogoutResponse:
+    properties:
+      SAMLLogoutResponse:
+        description: Encoded SAML XML response to logout request
+        type: string
+      RelayState:
+        description: Relay state parameter
+        type: string
+    required:
+    - SAMLLogoutResponse
+    - RelayState
     type: object

@@ -101,3 +101,15 @@ class TestSAML(base.APIIntegrationTest):
             saml_response=None,
             relay_state=None,
         )
+
+    def test_logout_unknown_token(self) -> None:
+        assert_http_error_partial_body(
+            404,
+            self._expected_dict(
+                message='SAML processing failed',
+                error_id='processing-error',
+                details={'error': 'Context not found'},
+                resource='saml',
+            ),
+            self.client.saml.logout,
+        )

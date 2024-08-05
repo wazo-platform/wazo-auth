@@ -37,6 +37,14 @@ class UnknownRefreshToken(APIException):
         super().__init__(404, msg, error_id, details, resource='tokens')
 
 
+class UnknownRefreshTokenUUID(APIException):
+    def __init__(self, uuid):
+        details = {'uuid': uuid}
+        msg = f'unknown refresh_token uuid "{uuid}"'
+        error_id = 'cannot-find-refresh-token-matching-uuid'
+        super().__init__(404, msg, error_id, details, resource='tokens')
+
+
 class TokenServiceException(Exception):
     pass
 

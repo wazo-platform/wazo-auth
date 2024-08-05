@@ -11,17 +11,21 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from functools import partial
 from typing import TYPE_CHECKING, Any, NamedTuple, TypedDict
+from urllib.parse import unquote
+from uuid import UUID
 
 from saml2 import BINDING_HTTP_POST
 from saml2.client import Saml2Client
 from saml2.config import Config as SAMLConfig
 from saml2.response import AuthnResponse, VerificationError
 from saml2.s_utils import UnknownPrincipal, UnsupportedBinding
+from saml2.saml import name_id_from_string
 from saml2.sigver import SignatureError
 
 if TYPE_CHECKING:
     from wazo_auth.database.queries import DAO
 
+from wazo_auth import exceptions
 from wazo_auth.exceptions import (
     SAMLConfigurationError,
     SAMLProcessingError,
@@ -41,6 +45,8 @@ class SamlAuthContext:
     relay_state: str
     login: str | None = None
     start_time: datetime = field(default_factory=partial(datetime.now, timezone.utc))
+    saml_name_id: str | None = None
+    refresh_token_uuid: UUID | None = None
 
 
 class SAMLACSFormData(TypedDict):
@@ -103,6 +109,9 @@ class SAMLService(BaseService):
         logger.debug('Global SAML config: %s', self._global_saml_config)
         self._saml_session_lifetime = timedelta(
             seconds=config['saml']['saml_session_lifetime_seconds']
+        )
+        self._saml_login_timeout = timedelta(
+            seconds=config['saml']['saml_login_timeout_seconds']
         )
 
     def _prepare_saml_config(self, db_config, filename, globals) -> RawSAMLConfig:
@@ -291,7 +300,10 @@ class SAMLService(BaseService):
                     logger.warning('ACS response request failed: Context not found')
                     raise SAMLProcessingError('Context not found', code=404)
 
-                update = {'login': response.ava['name'][0]}
+                update: dict[str, Any] = {
+                    'login': response.ava['name'][0],
+                    'saml_name_id': str(response.name_id),
+                }
                 self._dao.saml_session.update(response.session_id(), **update)
                 return session_data.auth_context.redirect_url
             else:
@@ -329,13 +341,30 @@ class SAMLService(BaseService):
                 f'Unexpected error: {excp}',
             )
 
-    def get_user_login_and_remove_context(self, saml_session_id: str) -> str | None:
+    def get_user_login(self, saml_session_id: str) -> str | None:
         logger.debug('sessions %s', self._dao.saml_session.list())
         for reqid, session_data in self._dao.saml_session.list(
             session_id=saml_session_id
         ):
-            self._dao.saml_session.delete(reqid)
             return session_data.login if session_data else None
+
+    def invalidate_saml_session_id(self, saml_session_id: str) -> str | None:
+        logger.debug('sessions %s', self._dao.saml_session.list())
+        for reqid, session in self._dao.saml_session.list(session_id=saml_session_id):
+            update: dict[str, None] = {
+                'session_id': 'token-already-used',
+                'login': None,
+            }
+            self._dao.saml_session.update(reqid, **update)
+            return
+        raise exceptions.SAMLProcessingError(
+            'Unable to remove unexisting SAML Session ID'
+        )
+
+    def update_refresh_token(self, refresh_token: UUID, saml_session_id: str) -> None:
+        for session_data in self._dao.saml_session.list(session_id=saml_session_id):
+            update = {'refresh_token_uuid': refresh_token}
+            self._dao.saml_session.update(session_data.request_id, **update)
 
     def clean_pending_requests(self, maybe_now: datetime | None = None) -> None:
         now: datetime = maybe_now or datetime.now(timezone.utc)
@@ -346,3 +375,48 @@ class SAMLService(BaseService):
             if now > expire_at:
                 logger.debug("Removing SAML context: %s", item)
                 self._dao.saml_session.delete(item.request_id)
+                return
+            if item.auth_context.saml_session_id != 'token_already_used':
+                invalidate_at: datetime = (
+                    item.auth_context.start_time + self._saml_login_timeout
+                )
+                if now > invalidate_at:
+                    logger.debug('Deleting SAML login session on timeout: %s', item)
+                    self._dao.saml_session.delete(item.request_id)
+
+    def process_logout_request(self, token):
+        logger.debug(
+            'Processing logout for token: ...%s',
+            (token.refresh_token_uuid or token.token or 'xxxxxxx unknown token')[:-8],
+        )
+        session: list[SamlSessionItem] = [
+            item
+            for item in self._dao.saml_session.list()
+            if item.auth_context.refresh_token_uuid == token.refresh_token_uuid
+        ]
+
+        if not session:
+            logger.warning('Logout request failed: Context not found')
+            raise SAMLProcessingError('Context not found', code=404)
+
+        client = self.get_client(session[0].auth_context.domain)
+        name_id = name_id_from_string(session[0].auth_context.saml_name_id)
+
+        data = client.global_logout(name_id)
+        _, details = data.popitem()
+
+        location = details[1]['headers'][0][1]
+
+        relay_state = unquote(location.split('RelayState=')[1]).split('&')[0]
+        update = {'relay_state': relay_state}
+
+        self._dao.saml_session.update(session[0].request_id, **update)
+        return location
+
+    def process_logout_request_response(self, message, relay_state, binding):
+        saml_session = self._find_session_by_relay_state(relay_state)
+        client = self.get_client(saml_session.auth_context.domain)
+        client.parse_logout_request_response(message, binding)
+
+        self._dao.saml_session.delete(saml_session.request_id)
+        return saml_session.auth_context.redirect_url + '?logged_out=true'
