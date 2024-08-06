@@ -34,6 +34,16 @@ class UserService(BaseService):
     def add_policy(self, user_uuid, policy_uuid):
         self._dao.user.add_policy(user_uuid, policy_uuid)
 
+    def uses_external_authentication(self, user):
+        if user['authentication_method'] in EXTERNAL_AUTH_METHODS:
+            return True
+
+        if user['authentication_method'] == 'default':
+            tenant = self._tenant_service.get(user['tenant_uuid'], user['tenant_uuid'])
+            if tenant['default_authentication_method'] in EXTERNAL_AUTH_METHODS:
+                return True
+        return False
+
     def change_password(self, user_uuid, old_password, new_password, reset=False):
         user = self.get_user(user_uuid)
         login = user['username']
@@ -47,13 +57,8 @@ class UserService(BaseService):
         if not self.verify_password(login, old_password, reset):
             raise exceptions.AuthenticationFailedException()
 
-        if user['authentication_method'] in EXTERNAL_AUTH_METHODS:
+        if self.uses_external_authentication(user):
             raise exceptions.PasswordIsManagedExternallyException(user['uuid'])
-
-        if user['authentication_method'] == 'default':
-            tenant = self._tenant_service.get(user['tenant_uuid'], user['tenant_uuid'])
-            if tenant['default_authentication_method'] in EXTERNAL_AUTH_METHODS:
-                raise exceptions.PasswordIsManagedExternallyException(user['uuid'])
 
         salt, hash_ = self._encrypter.encrypt_password(new_password)
         self._dao.user.change_password(user_uuid, salt, hash_)
