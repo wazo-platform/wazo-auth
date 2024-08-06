@@ -8,7 +8,7 @@ from flask import request
 from xivo.auth_verifier import Unauthorized
 from xivo.flask.headers import extract_token_id_from_query_or_header
 
-from wazo_auth import exceptions, http
+from wazo_auth import http
 from wazo_auth.plugin_helpers.flask import extract_connection_params
 
 from .exceptions import PasswordResetException
@@ -41,11 +41,13 @@ class PasswordReset(http.ErrorCatchingResource):
         else:
             user = users[0]
             logger.debug('user: %s', user)
-            if self.user_service.uses_external_authentication(user):
-                raise exceptions.PasswordIsManagedExternallyException(user['uuid'])
-
             email_address = args['email_address'] or self._extract_email(user)
-            if email_address:
+
+            if self.user_service.uses_external_authentication(user):
+                logger.info(
+                    'Not sending password reset mail because of external authentication'
+                )
+            elif email_address:
                 connection_params = extract_connection_params(request.headers)
                 self.email_service.send_reset_email(
                     user['uuid'],

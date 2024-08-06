@@ -72,11 +72,12 @@ class TestUsers(base.APIIntegrationTest):
         assert_no_error(user_client.token.new, 'wazo_user')
 
     @fixtures.http.user(
-        username='reset_ldap', password='foobaz', authentication_method='ldap'  # noqa
+        username='reset_ldap',  # NOSONAR
+        password='foobaz',  # NOSONAR
+        authentication_method='ldap',
     )
-    def test_password_reset_external_auth_fails(self, user):
-        assert_http_error(
-            405,
+    def test_password_reset_external_auth(self, user):
+        assert_no_error(
             self.client.users.reset_password,
             username=user['username'],
         )
@@ -529,11 +530,11 @@ class TestUsers(base.APIIntegrationTest):
         )
 
     @fixtures.http.user(
-        username='saml_user', password='secret', authentication_method='saml'  # noqa
+        username='saml_user', password='secret', authentication_method='saml'  # NOSONAR
     )
     def test_put_password_externally_managed(self, user):
-        old_password = 'secret'  # noqa
-        new_password = 'NewPass'  # noqa
+        old_password = 'secret'  # NOSONAR
+        new_password = 'NewPass'  # NOSONAR
 
         assert_http_error(
             405,
