@@ -16,8 +16,8 @@ from hamcrest import (
 )
 from xivo.mallow import fields
 
-from build.lib.wazo_auth.services.tenant import TenantService
 from wazo_auth.config import _DEFAULT_CONFIG
+from wazo_auth.services.tenant import TenantService
 
 from .. import exceptions, services
 from ..database import queries

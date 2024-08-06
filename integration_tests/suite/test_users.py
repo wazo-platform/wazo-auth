@@ -71,6 +71,16 @@ class TestUsers(base.APIIntegrationTest):
         user_client = self.make_auth_client('foobaz', 'foobaz')
         assert_no_error(user_client.token.new, 'wazo_user')
 
+    @fixtures.http.user(
+        username='reset_ldap', password='foobaz', authentication_method='ldap'  # noqa
+    )
+    def test_password_reset_external_auth_fails(self, user):
+        assert_http_error(
+            405,
+            self.client.users.reset_password,
+            username=user['username'],
+        )
+
     def test_post_no_token(self):
         args = {
             'username': 'foobar',
@@ -512,6 +522,21 @@ class TestUsers(base.APIIntegrationTest):
         valid_email = {'address': 'one@example.com', 'main': True, 'confirmed': True}
         self.client.admin.update_user_emails(user['uuid'], [valid_email])
         assert_no_error(
+            self.client.users.change_password,
+            user['uuid'],
+            old_password=old_password,
+            new_password=new_password,
+        )
+
+    @fixtures.http.user(
+        username='saml_user', password='secret', authentication_method='saml'  # noqa
+    )
+    def test_put_password_externally_managed(self, user):
+        old_password = 'secret'  # noqa
+        new_password = 'NewPass'  # noqa
+
+        assert_http_error(
+            405,
             self.client.users.change_password,
             user['uuid'],
             old_password=old_password,
