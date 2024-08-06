@@ -42,7 +42,12 @@ class PasswordReset(http.ErrorCatchingResource):
             user = users[0]
             logger.debug('user: %s', user)
             email_address = args['email_address'] or self._extract_email(user)
-            if email_address:
+
+            if self.user_service.uses_external_authentication(user):
+                logger.info(
+                    'Not sending password reset mail because of external authentication'
+                )
+            elif email_address:
                 connection_params = extract_connection_params(request.headers)
                 self.email_service.send_reset_email(
                     user['uuid'],

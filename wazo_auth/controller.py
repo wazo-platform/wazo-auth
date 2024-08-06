@@ -96,7 +96,7 @@ class Controller:
         group_service = services.GroupService(self.dao)
         policy_service = services.PolicyService(self.dao)
         session_service = services.SessionService(self.dao, self._bus_publisher)
-        self._user_service = services.UserService(self.dao)
+        self._user_service = services.UserService(self.dao, self._tenant_service)
         self._token_service = services.TokenService(
             config, self.dao, self._bus_publisher, self._user_service
         )

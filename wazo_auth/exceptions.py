@@ -212,6 +212,13 @@ class UnknownLoginException(Exception):
         super().__init__(msg)
 
 
+class PasswordIsManagedExternallyException(APIException):
+    def __init__(self, user_uuid, details=None):
+        msg = f'Unable to update externally managed password for user : "{user_uuid}"'
+        details = details or {'uuid': str(user_uuid)}
+        super().__init__(405, msg, 'password-managed-externally', details, 'users')
+
+
 class _BaseParamException(APIException):
     def __init__(self, message, details=None):
         super().__init__(400, message, 'invalid-data', details, self.resource)
