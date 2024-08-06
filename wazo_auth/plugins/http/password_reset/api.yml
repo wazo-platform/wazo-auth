@@ -25,6 +25,8 @@ paths:
       responses:
         '204':
           description: A mail will be sent if the username or email were found
+        '405':
+          description: Unable to reset the password, e.g. because the authentication is handled externally.
     post:
       security:
       - wazo_auth_token: []
@@ -51,6 +53,8 @@ paths:
       responses:
         '204':
           description: Password changed
+        '405':
+          description: Unable to reset the password, e.g. because the authentication is handled externally.
 definitions:
   PostPasswordReset:
     type: object

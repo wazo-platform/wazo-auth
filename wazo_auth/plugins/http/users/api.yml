@@ -166,6 +166,10 @@ paths:
           description: User not found
           schema:
             $ref: '#/definitions/Error'
+        '405':
+          description: Not allowed, for example unable to update password for user with SAML authentication.
+          schema:
+            $ref: '#/definitions/Error'
         '500':
           description: System related error
           schema:

@@ -11,6 +11,8 @@ from wazo_auth.services.helpers import BaseService
 
 logger = logging.getLogger(__name__)
 
+EXTERNAL_AUTH_METHODS: list[str] = ['saml', 'ldap']
+
 
 class UnknownUserHash:
     def __eq__(self, other):
@@ -21,8 +23,9 @@ class UnknownUserHash:
 
 
 class UserService(BaseService):
-    def __init__(self, dao, encrypter=None):
+    def __init__(self, dao, tenant_service=None, encrypter=None):
         super().__init__(dao)
+        self._tenant_service = tenant_service
         self._encrypter = encrypter or PasswordEncrypter()
         self._unknown_user_salt = os.urandom(self._encrypter._salt_len)
         # The unknown_user_hash will never be equal, whatever the user input is
@@ -43,6 +46,14 @@ class UserService(BaseService):
 
         if not self.verify_password(login, old_password, reset):
             raise exceptions.AuthenticationFailedException()
+
+        if user['authentication_method'] in EXTERNAL_AUTH_METHODS:
+            raise exceptions.PasswordIsManagedExternallyException(user['uuid'])
+
+        if user['authentication_method'] == 'default':
+            tenant = self._tenant_service.get(user['tenant_uuid'], user['tenant_uuid'])
+            if tenant['default_authentication_method'] in EXTERNAL_AUTH_METHODS:
+                raise exceptions.PasswordIsManagedExternallyException(user['uuid'])
 
         salt, hash_ = self._encrypter.encrypt_password(new_password)
         self._dao.user.change_password(user_uuid, salt, hash_)

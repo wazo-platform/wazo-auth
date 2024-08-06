@@ -16,6 +16,7 @@ from hamcrest import (
 )
 from xivo.mallow import fields
 
+from build.lib.wazo_auth.services.tenant import TenantService
 from wazo_auth.config import _DEFAULT_CONFIG
 
 from .. import exceptions, services
@@ -224,7 +225,10 @@ class TestGroupService(BaseServiceTestCase):
 class TestUserService(BaseServiceTestCase):
     def setUp(self):
         super().setUp()
-        self.service = services.UserService(self.dao, encrypter=self.encrypter)
+        self.tenant_service = Mock(TenantService)
+        self.service = services.UserService(
+            self.dao, self.tenant_service, encrypter=self.encrypter
+        )
 
     def test_change_password(self):
         self.user_dao.list_.return_value = []
@@ -233,17 +237,62 @@ class TestUserService(BaseServiceTestCase):
             raises(exceptions.UnknownUserException),
         )
 
-        self.user_dao.list_.return_value = [{'username': 'foobar'}]
+        self.user_dao.list_.return_value = [
+            {'username': 'foobar', 'authentication_method': 'native'}
+        ]
         with patch.object(self.service, 'verify_password', return_value=False):
             assert_that(
                 calling(self.service.change_password).with_args(s.uuid, s.old, s.new),
                 raises(exceptions.AuthenticationFailedException),
             )
 
-        self.user_dao.list_.return_value = [{'username': 'foobar'}]
+        self.user_dao.list_.return_value = [
+            {'username': 'foobar', 'authentication_method': 'native'}
+        ]
         with patch.object(self.service, 'verify_password', return_value=True):
             self.service.change_password(s.uuid, s.old, s.new)
+        self.user_dao.change_password.assert_called_once_with(s.uuid, s.salt, s.hash_)
 
+    def test_change_password_external_auth(self):
+        self.user_dao.list_.return_value = [
+            {'username': 'foobar', 'uuid': s.uuid, 'authentication_method': 'saml'}
+        ]
+        with patch.object(self.service, 'verify_password', return_value=True):
+            assert_that(
+                calling(self.service.change_password).with_args(s.uuid, s.old, s.new),
+                raises(exceptions.PasswordIsManagedExternallyException),
+            )
+
+        self.user_dao.list_.return_value = [
+            {
+                'username': 'foobar',
+                'uuid': s.uuid,
+                'tenant_uuid': s.tenant_uuid,
+                'authentication_method': 'default',
+            }
+        ]
+        self.tenant_service.get.return_value = {'default_authentication_method': 'ldap'}
+        with patch.object(self.service, 'verify_password', return_value=True):
+            assert_that(
+                calling(self.service.change_password).with_args(
+                    s.uuid, s.tenant_uuid, s.old, s.new
+                ),
+                raises(exceptions.PasswordIsManagedExternallyException),
+            )
+
+        self.user_dao.list_.return_value = [
+            {
+                'username': 'foobar',
+                'uuid': s.uuid,
+                'tenant_uuid': s.tenant_uuid,
+                'authentication_method': 'default',
+            }
+        ]
+        self.tenant_service.get.return_value = {
+            'default_authentication_method': 'native'
+        }
+        with patch.object(self.service, 'verify_password', return_value=True):
+            self.service.change_password(s.uuid, s.tenant_uuid, s.old, s.new)
         self.user_dao.change_password.assert_called_once_with(s.uuid, s.salt, s.hash_)
 
     def test_delete_password(self):
