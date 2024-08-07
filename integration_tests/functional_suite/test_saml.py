@@ -81,7 +81,7 @@ class TestSamlService(SAMLIntegrationTest):
             saml_config: dict[str, Any] = {
                 'data': {
                     'acs_url': acs_url,
-                    'entity_id': 'https://es.dev.wazo.io',
+                    'entity_id': 'auth-functional',
                     'domain_uuid': domain_uuid,
                 },
                 'files': {'metadata': metadata},
