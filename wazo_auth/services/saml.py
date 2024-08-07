@@ -387,7 +387,12 @@ class SAMLService(BaseService):
     def process_logout_request(self, token):
         logger.debug(
             'Processing logout for token: ...%s',
-            (token.refresh_token_uuid or token.token or 'xxxxxxx unknown token')[:-8],
+            "".join(
+                [
+                    'xxxxxx...',
+                    (token.refresh_token_uuid or token.token or 'unknown token')[-8:],
+                ]
+            ),
         )
         session: list[SamlSessionItem] = [
             item
