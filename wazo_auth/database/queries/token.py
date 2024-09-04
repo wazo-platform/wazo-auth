@@ -118,19 +118,16 @@ class TokenDAO(BaseDAO):
         return tokens, sessions
 
     def purge_expired_tokens_and_sessions(self, batch_size=5_000):
-        def delete_by_uuids(model, items):
-            uuids = [item['uuid'] for item in items]
-            self.session.query(model).filter(model.uuid.in_(uuids)).delete(
+        while batch := self._get_tokens_and_sessions_by_expiration(0, batch_size):
+            tokens, sessions = batch
+
+            uuids = [session['uuid'] for session in sessions]
+            self.session.query(Session).filter(Session.uuid.in_(uuids)).delete(
                 synchronize_session=False
             )
             self.session.flush()
 
-        while batch := self._get_tokens_and_sessions_by_expiration(0, batch_size):
-            tokens, sessions = batch
-            delete_by_uuids(TokenModel, tokens)
-            delete_by_uuids(Session, sessions)
             yield tokens, sessions
-
             if len(tokens) < batch_size:
                 return
 
