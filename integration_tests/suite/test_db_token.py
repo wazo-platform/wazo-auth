@@ -8,6 +8,7 @@ from hamcrest import (
     all_of,
     assert_that,
     contains_exactly,
+    empty,
     equal_to,
     has_entries,
     has_items,
@@ -124,6 +125,38 @@ class TestTokenDAO(base.DAOTestCase):
                 not_(has_items(has_properties(uuid=token_2['uuid']))),
                 not_(has_items(has_properties(uuid=token_3['uuid']))),
             ),
+        )
+
+    @fixtures.db.token(expiration=0)
+    @fixtures.db.token(expiration=0)
+    def test_expired_session_cascade_deletes_token(self, token_1, token_2):
+        batch_generator = self._token_dao.purge_expired_tokens_and_sessions(1)
+
+        db_tokens = self.session.query(models.Token).all()
+        assert_that(
+            db_tokens,
+            contains_exactly(
+                has_properties(uuid=token_1['uuid']),
+                has_properties(uuid=token_2['uuid']),
+            ),
+        )
+
+        # 1st batch delete
+        next(batch_generator)
+        db_tokens = self.session.query(models.Token).all()
+        assert_that(
+            db_tokens,
+            contains_exactly(
+                has_properties(uuid=token_2['uuid']),
+            ),
+        )
+
+        # 2nd batch delete
+        next(batch_generator)
+        db_tokens = self.session.query(models.Token).all()
+        assert_that(
+            db_tokens,
+            empty(),
         )
 
     @fixtures.db.token(expiration=0)
