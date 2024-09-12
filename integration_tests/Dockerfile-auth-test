@@ -12,4 +12,5 @@ RUN python3 setup.py install
 
 COPY . /usr/src/wazo-auth
 WORKDIR /usr/src/wazo-auth
-RUN python3 -m pip install -e .
+RUN python3 -m pip install -e . coverage[toml]
+CMD ["coverage", "run", "--data-file", "/tmp/coverage", "/opt/venv/bin/wazo-auth"]
