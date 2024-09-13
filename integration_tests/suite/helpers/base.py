@@ -91,7 +91,7 @@ class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
         except (NoSuchService, NoSuchPort):
             return WrongClient('postgres')
         db_uri = DB_URI.format(port=port)
-        return Database(db_uri, db='asterisk')
+        return Database(db_uri, db='wazo-auth')
 
     @classmethod
     def make_db_session(cls):
