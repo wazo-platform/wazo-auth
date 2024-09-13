@@ -94,7 +94,7 @@ Profiles can then be analyzed with CLI or GUI tools like `snakeviz`.
 ### Running unit tests
 
 ```sh
-apt-get install libldap2-dev libpq-dev python-dev libffi-dev libyaml-dev libsasl2-dev
+apt-get install libldap2-dev libpq-dev python3-dev libffi-dev libyaml-dev libsasl2-dev
 pip install tox
 tox --recreate -e py39
 ```

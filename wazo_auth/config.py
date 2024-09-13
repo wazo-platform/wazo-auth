@@ -117,7 +117,6 @@ _DEFAULT_CONFIG = {
     'db_connect_retry_timeout_seconds': 300,
     'db_uri': 'postgresql://asterisk:proformatique@localhost/asterisk',
     'db_upgrade_on_startup': False,
-    'confd_db_uri': 'postgresql://asterisk:proformatique@localhost/asterisk',
     'all_users_policies': {},
     'default_policies': {},
     'tenant_default_groups': {},

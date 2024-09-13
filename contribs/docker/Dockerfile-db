@@ -1,15 +1,15 @@
-FROM wazoplatform/wazo-confd-db-test
-MAINTAINER Wazo Maintainers <dev@wazo.community>
-USER root
+FROM wazoplatform/wazo-base-db
+LABEL maintainer="Wazo Maintainers <dev@wazo.community>"
 
-ADD . /usr/src/wazo-auth
+COPY . /usr/src/wazo-auth
 WORKDIR /usr/src/wazo-auth
-ENV ALEMBIC_DB_URI=postgresql://asterisk:proformatique@localhost/asterisk
+ENV ALEMBIC_DB_URI=postgresql://wazo-auth:Secr7t@localhost/wazo-auth
 
 RUN true \
     && python3 setup.py install \
     && pg_start \
-    && wazo-auth-init-db --user postgres \
+    && wazo-auth-init-db --user postgres --pg_db_uri postgresql:///postgres --auth_db_uri postgresql:///wazo-auth --db wazo-auth --owner wazo-auth --password Secr7t \
     && (cd /usr/src/wazo-auth && python3 -m alembic.config -c wazo_auth/database/alembic.ini upgrade head) \
     && pg_stop \
     && true
+USER postgres
