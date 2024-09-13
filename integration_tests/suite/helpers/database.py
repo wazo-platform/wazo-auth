@@ -9,11 +9,6 @@ logger = logging.getLogger(__name__)
 
 
 class Database:
-    @classmethod
-    def build(cls, user, password, host, port, db):
-        uri = f"postgresql://{user}:{password}@{host}:{port}"
-        return cls(uri, db)
-
     def __init__(self, uri, db):
         self.uri = uri
         self.db = db
