@@ -35,6 +35,8 @@ services:
       - "--config-file=/etc/postgresql/13/main/postgresql.conf"
       - "-c"
       - "log_min_duration_statement=0"
+      - "-c"
+      - "fsync=off"
 
 
   rabbitmq:
