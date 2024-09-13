@@ -60,24 +60,3 @@ Default: proformatique
 Description: DB app password
  What is the password to be created for the app?
  .
-
-Template: wazo-auth/db-confd-name
-Type: string
-Default: asterisk
-Description: Confd DB name
- What is the name of the confd database?
- .
-
-Template: wazo-auth/db-confd-username
-Type: string
-Default: asterisk
-Description: Confd DB username
- What is the username used to connect to the confd database?
- .
-
-Template: wazo-auth/db-confd-password
-Type: password
-Default: proformatique
-Description: Confd DB password
- What is the password used to connect to the confd database?
- .

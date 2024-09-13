@@ -84,7 +84,6 @@ smtp:
 
 # Database connection settings.
 db_uri: postgresql://asterisk:proformatique@localhost/asterisk?application_name=wazo-auth
-confd_db_uri: postgresql://asterisk:proformatique@localhost/asterisk?application_name=wazo-auth
 
 service_discovery:
   enabled: false
