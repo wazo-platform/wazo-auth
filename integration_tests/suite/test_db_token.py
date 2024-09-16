@@ -56,11 +56,18 @@ class TestTokenDAO(base.DAOTestCase):
         )
 
         refresh_body = self._get_token_body()
-        refresh_body['refresh_token_uuid'] = refresh_token_uuid
-        token_uuid, session_uuid = self._token_dao.create(refresh_body, session)
+        token_uuid, session_uuid = self._token_dao.create(
+            {'refresh_token_uuid': refresh_token_uuid, **refresh_body},
+            session,
+        )
         result = self._token_dao.get(token_uuid)
         assert_that(
-            result, has_entries(uuid=token_uuid, session_uuid=session_uuid, **body)
+            result,
+            has_entries(
+                uuid=token_uuid,
+                session_uuid=session_uuid,
+                **refresh_body,
+            ),
         )
 
     @fixtures.db.token()
