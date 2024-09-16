@@ -28,16 +28,7 @@ services:
     image: wazoplatform/wazo-auth-db:local
     ports:
       - "5432"
-    command:
-      - "/usr/lib/postgresql/13/bin/postgres"
-      - "-D"
-      - "/var/lib/postgresql/13/main"
-      - "--config-file=/etc/postgresql/13/main/postgresql.conf"
-      - "-c"
-      - "log_min_duration_statement=0"
-      - "-c"
-      - "fsync=off"
-
+    command: "-c 'log_min_duration_statement=0' -c 'fsync=off'"
 
   rabbitmq:
     image: rabbitmq
