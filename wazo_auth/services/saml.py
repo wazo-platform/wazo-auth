@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class SamlAuthContext:
+class SamlAuthContext(dict):
     saml_session_id: str
     redirect_url: str
     domain: str
@@ -175,9 +175,15 @@ class SAMLService(BaseService):
                     'SAML config for domain: %s: %s', domain_name, raw_saml_config
                 )
                 try:
+                    from wazo_auth.database.queries.saml_pysaml2_cache import (
+                        SAMLPysaml2CacheDAO,
+                    )
+
                     saml_config = SAMLConfig()
                     saml_config.load(cnf=raw_saml_config)
-                    saml_client = Saml2Client(config=saml_config)
+                    saml_client = Saml2Client(
+                        config=saml_config, identity_cache=SAMLPysaml2CacheDAO()
+                    )
                     logger.debug(
                         'SAML config for domain: %s: %s', domain_name, vars(saml_config)
                     )
@@ -336,6 +342,7 @@ class SAMLService(BaseService):
                 f'Signature error: {excp}',
             )
         except Exception as excp:
+            logger.exception(excp)
             self._process_auth_response_error(
                 saml_session.auth_context.redirect_url,
                 saml_session.request_id,
@@ -347,7 +354,10 @@ class SAMLService(BaseService):
         for reqid, session_data in self._dao.saml_session.list(
             session_id=saml_session_id
         ):
-            return session_data.login if session_data else None
+            try:
+                return session_data.login
+            except AttributeError:
+                return None
 
     def invalidate_saml_session_id(self, saml_session_id: str) -> str | None:
         logger.debug('sessions %s', self._dao.saml_session.list())
@@ -409,7 +419,12 @@ class SAMLService(BaseService):
         name_id = name_id_from_string(session[0].auth_context.saml_name_id)
 
         data = client.global_logout(name_id)
-        _, details = data.popitem()
+        try:
+            _, details = data.popitem()
+        except KeyError:
+            logger.info('SAML logout failed, error or already logged out')
+            self._dao.saml_session.delete(session[0].request_id)
+            return session[0].auth_context.redirect_url + '?logged_out=true'
 
         location = details[1]['headers'][0][1]
 
@@ -422,7 +437,9 @@ class SAMLService(BaseService):
     def process_logout_request_response(self, message, relay_state, binding):
         saml_session = self._find_session_by_relay_state(relay_state)
         client = self.get_client(saml_session.auth_context.domain)
-        client.parse_logout_request_response(message, binding)
+        response = client.parse_logout_request_response(message, binding)
+        client.handle_logout_response(response)
 
         self._dao.saml_session.delete(saml_session.request_id)
+
         return saml_session.auth_context.redirect_url + '?logged_out=true'
