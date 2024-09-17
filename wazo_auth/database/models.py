@@ -474,3 +474,23 @@ class SAMLSession(Base):
         ForeignKey('auth_refresh_token.uuid', ondelete='CASCADE'),
         nullable=True,
     )
+
+
+class SAMLPysaml2Cache(Base):
+    __tablename__ = 'auth_saml_pysaml2_cache'
+
+    name_id = Column(
+        String(512),
+        nullable=False,
+        primary_key=True,
+    )
+    entity_id = Column(
+        String(1024),
+        nullable=False,
+        primary_key=True,
+    )
+    info = Column(Text(), nullable=False)
+    not_on_or_after = Column(
+        Integer(),
+        nullable=False,
+    )
