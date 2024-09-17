@@ -11,6 +11,7 @@ from ..models import (
     GroupPolicy,
     Policy,
     RefreshToken,
+    SAMLPysaml2Cache,
     SAMLSession,
     Tenant,
     User,
@@ -137,3 +138,8 @@ user_search_filter = SearchFilter(
     User.firstname, User.lastname, User.username, Email.address
 )
 refresh_token_search_filter = SearchFilter(RefreshToken.client_id)
+saml_pysaml2_cache_search_filter = SearchFilter(
+    SAMLPysaml2Cache.name_id,
+    SAMLPysaml2Cache.entity_id,
+    SAMLPysaml2Cache.not_on_or_after,
+)
