@@ -11,7 +11,7 @@ import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from functools import partial
-from typing import TYPE_CHECKING, Any, NamedTuple, TypedDict
+from typing import TYPE_CHECKING, Any, NamedTuple, NoReturn, TypedDict
 from urllib.parse import unquote
 from uuid import UUID
 
@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class SamlAuthContext:
+class SamlAuthContext(dict):
     saml_session_id: str
     redirect_url: str
     domain: str
@@ -175,9 +175,16 @@ class SAMLService(BaseService):
                     'SAML config for domain: %s: %s', domain_name, raw_saml_config
                 )
                 try:
+                    # avoid circular import issue
+                    from wazo_auth.database.queries.saml_pysaml2_cache import (
+                        SAMLPysaml2CacheDAO,
+                    )
+
                     saml_config = SAMLConfig()
                     saml_config.load(cnf=raw_saml_config)
-                    saml_client = Saml2Client(config=saml_config)
+                    saml_client = Saml2Client(
+                        config=saml_config, identity_cache=SAMLPysaml2CacheDAO()
+                    )
                     logger.debug(
                         'SAML config for domain: %s: %s', domain_name, vars(saml_config)
                     )
@@ -247,7 +254,7 @@ class SAMLService(BaseService):
 
     def _process_auth_response_error(
         self, redirect_url: str, req_id: RequestId, msg: str
-    ) -> None:
+    ) -> NoReturn:
 
         logger.warning(msg)
         logger.debug('Removing session: %s', req_id)
@@ -258,7 +265,7 @@ class SAMLService(BaseService):
 
     def process_auth_response(
         self, url: str, remote_addr: str, form_data: SAMLACSFormData
-    ) -> str:
+    ) -> str | NoReturn:
         saml_session: SamlSessionItem | tuple[
             None, None
         ] = self._find_session_by_relay_state(form_data['RelayState'])
@@ -336,6 +343,7 @@ class SAMLService(BaseService):
                 f'Signature error: {excp}',
             )
         except Exception as excp:
+            logger.exception(excp)
             self._process_auth_response_error(
                 saml_session.auth_context.redirect_url,
                 saml_session.request_id,
@@ -347,7 +355,13 @@ class SAMLService(BaseService):
         for reqid, session_data in self._dao.saml_session.list(
             session_id=saml_session_id
         ):
-            return session_data.login if session_data else None
+            try:
+                return session_data.login
+            except AttributeError:
+                logger.warning(
+                    'User login not found for saml_session_id %s', saml_session_id
+                )
+                return None
 
     def invalidate_saml_session_id(self, saml_session_id: str) -> str | None:
         logger.debug('sessions %s', self._dao.saml_session.list())
@@ -409,7 +423,12 @@ class SAMLService(BaseService):
         name_id = name_id_from_string(session[0].auth_context.saml_name_id)
 
         data = client.global_logout(name_id)
-        _, details = data.popitem()
+        try:
+            _, details = data.popitem()
+        except KeyError:
+            logger.info('SAML logout failed, error or already logged out')
+            self._dao.saml_session.delete(session[0].request_id)
+            return session[0].auth_context.redirect_url + '?logged_out=true'
 
         location = details[1]['headers'][0][1]
 
@@ -422,7 +441,9 @@ class SAMLService(BaseService):
     def process_logout_request_response(self, message, relay_state, binding):
         saml_session = self._find_session_by_relay_state(relay_state)
         client = self.get_client(saml_session.auth_context.domain)
-        client.parse_logout_request_response(message, binding)
+        response = client.parse_logout_request_response(message, binding)
+        client.handle_logout_response(response)
 
         self._dao.saml_session.delete(saml_session.request_id)
+
         return saml_session.auth_context.redirect_url + '?logged_out=true'

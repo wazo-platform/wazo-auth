@@ -1,5 +1,6 @@
 # Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+from __future__ import annotations
 
 import base64
 import hashlib
@@ -10,6 +11,9 @@ import string
 import time
 import uuid
 from functools import wraps
+from typing import Any
+
+from saml2.saml import NameID
 
 from wazo_auth.database import models
 from wazo_auth.services.saml import SamlAuthContext, SamlSessionItem
@@ -351,6 +355,53 @@ def saml_session(request_id, **session_args):
             self._saml_session_dao.create(item)
             self.session.begin_nested()
             args = list(args) + [item]
+            try:
+                return decorated(self, *args, **kwargs)
+            finally:
+                self.session.rollback()
+
+        return wrapper
+
+    return decorator
+
+
+def saml_pysaml2_cache(name_id: NameID, **session_args):
+    def decorator(decorated):
+        @wraps(decorated)
+        def wrapper(self, *args, **kwargs):
+            entity_id: str = session_args.get('entity_id') or secrets.token_urlsafe(16)
+            info: dict[str, Any] = session_args.get('info') or {
+                'ava': {
+                    'givenName': ['Alice'],
+                    'surname': ['Test'],
+                    'name': ['alice@test.idp.com'],
+                },
+                'name_id': '2=urn%3Aoasis%3Anames%3Atc%3ASAML%3A1.1%3Anameid-format%3AemailAddress'
+                + ',4=alice%40test.idp.com',
+                'came_from': 'bldKO8ntPi1zLbHVgBwYuw',
+                'authn_info': [
+                    (
+                        'urn:oasis:names:tc:SAML:2.0:ac:classes:Password',
+                        [],
+                        '2024-09-16T09:18:09.886Z',
+                    )
+                ],
+                'session_index': '_4564564-3453df-3456345792a',
+            }
+            not_on_or_after = (
+                session_args.get('not_on_or_after') or int(time.time()) + 3600
+            )
+
+            self._saml_pysaml2_cache_dao.set(name_id, entity_id, info, not_on_or_after)
+            self.session.begin_nested()
+            args = list(args) + [
+                {
+                    'name_id': name_id,
+                    'entity_id': entity_id,
+                    'info': info,
+                    'not_on_or_after': not_on_or_after,
+                }
+            ]
             try:
                 return decorated(self, *args, **kwargs)
             finally:
