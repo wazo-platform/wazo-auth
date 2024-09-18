@@ -11,7 +11,7 @@ import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from functools import partial
-from typing import TYPE_CHECKING, Any, NamedTuple, TypedDict
+from typing import TYPE_CHECKING, Any, NamedTuple, NoReturn, TypedDict
 from urllib.parse import unquote
 from uuid import UUID
 
@@ -254,7 +254,7 @@ class SAMLService(BaseService):
 
     def _process_auth_response_error(
         self, redirect_url: str, req_id: RequestId, msg: str
-    ) -> None:
+    ) -> NoReturn:
 
         logger.warning(msg)
         logger.debug('Removing session: %s', req_id)
@@ -265,7 +265,7 @@ class SAMLService(BaseService):
 
     def process_auth_response(
         self, url: str, remote_addr: str, form_data: SAMLACSFormData
-    ) -> str:
+    ) -> str | NoReturn:
         saml_session: SamlSessionItem | tuple[
             None, None
         ] = self._find_session_by_relay_state(form_data['RelayState'])
