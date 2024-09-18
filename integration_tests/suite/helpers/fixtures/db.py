@@ -406,7 +406,6 @@ def saml_pysaml2_cache(name_id: NameID, **session_args):
                 return decorated(self, *args, **kwargs)
             finally:
                 self.session.rollback()
-                pass
 
         return wrapper
 

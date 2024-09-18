@@ -175,6 +175,7 @@ class SAMLService(BaseService):
                     'SAML config for domain: %s: %s', domain_name, raw_saml_config
                 )
                 try:
+                    # avoid circular import issue
                     from wazo_auth.database.queries.saml_pysaml2_cache import (
                         SAMLPysaml2CacheDAO,
                     )
@@ -357,6 +358,9 @@ class SAMLService(BaseService):
             try:
                 return session_data.login
             except AttributeError:
+                logger.warning(
+                    'User login not found for saml_session_id %s', saml_session_id
+                )
                 return None
 
     def invalidate_saml_session_id(self, saml_session_id: str) -> str | None:

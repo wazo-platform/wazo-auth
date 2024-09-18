@@ -50,7 +50,8 @@ class SAMLPysaml2CacheDAO(filters.FilterMixin, BaseDAO):
                     .filter(SAMLPysaml2Cache.name_id == cni)
                     .all()
                 )
-            except Exception:
+            except Exception as e:
+                logger.exception(e)
                 return {}, []
 
         if not entities:
@@ -79,11 +80,11 @@ class SAMLPysaml2CacheDAO(filters.FilterMixin, BaseDAO):
 
     def get(self, name_id: NameID, entity_id: str, check_not_on_or_after: bool = True):
         cni = code(name_id)
-        o = self._search(name_id=cni, entity_id=entity_id)
-        if not o:
+        cache_entries = self._search(name_id=cni, entity_id=entity_id)
+        if not cache_entries:
             return None
-        timestamp = o[0].not_on_or_after
-        info = o[0].info
+        timestamp = cache_entries[0].not_on_or_after
+        info = cache_entries[0].info
         if not timestamp:
             return None
 
@@ -149,7 +150,10 @@ class SAMLPysaml2CacheDAO(filters.FilterMixin, BaseDAO):
         try:
             cni = code(name_id)
             entry = self._search(name_id=cni, entity_id=entity_id)[0]
-        except KeyError:
+        except IndexError:
+            return False
+        except Exception as e:
+            logger.exception(e)
             return False
 
         if not entry.info:

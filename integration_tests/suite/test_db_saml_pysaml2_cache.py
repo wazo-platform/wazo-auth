@@ -53,7 +53,7 @@ class TestSAMLPysaml2Cache(base.DAOTestCase):
         }
 
         self._saml_pysaml2_cache_dao.set(**entry)
-        res, oldees = self._saml_pysaml2_cache_dao.get_identity(self.NAME_ID)
+        res, _ = self._saml_pysaml2_cache_dao.get_identity(self.NAME_ID)
 
         assert_that(res, is_(entry['info']['ava']))
 
