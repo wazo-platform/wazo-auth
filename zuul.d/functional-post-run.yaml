@@ -3,12 +3,12 @@
   tasks:
     - name: check if rules file exists
       stat:
-        path: '{{ zuul_work_dir }}/integration_tests/test-results/'
+        path: '{{ zuul.project.src_dir }}/integration_tests/test-results/'
       register: functional_test_results
 
     - name: Fetch functional traces
       synchronize:
-        src: '{{ zuul_work_dir }}/integration_tests/test-results/'
+        src: '{{ zuul.project.src_dir }}/integration_tests/test-results/'
         dest: '{{ zuul.executor.log_root }}/functional/'
         mode: pull
         copy_links: true
