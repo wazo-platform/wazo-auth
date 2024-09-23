@@ -1,0 +1,17 @@
+---
+- hosts: all
+  tasks:
+    - name: check if rules file exists
+      stat:
+        path: '{{ zuul.project.src_dir }}/integration_tests/test-results/'
+      register: functional_test_results
+
+    - name: Fetch functional traces
+      synchronize:
+        src: '{{ zuul.project.src_dir }}/integration_tests/test-results/'
+        dest: '{{ zuul.executor.log_root }}/functional/'
+        mode: pull
+        copy_links: true
+        verify_host: true
+        rsync_opts: []
+      when: functional_test_results.stat.exists == True
