@@ -196,76 +196,61 @@ definitions:
         items:
           $ref: '#/definitions/TenantResult'
         description: A paginated list of tenants
+  TenantBase:
+    type: object
+    properties:
+      name:
+        type: string
+        description: "The tenant's name"
+      contact:
+        type: string
+        description: "The contact user's UUID"
+      phone:
+        type: string
+        description: "The tenant's contact phone number"
+      domain_names:
+        type: array
+        description: "A list containing human readeable unique domain names, associated with a specific tenant"
+        uniqueItems: true
+        items:
+          type: string
+      address:
+        $ref: '#/definitions/TenantAddress'
+      default_authentication_method:
+        type: string
+        description: |
+          The `default_authentication_method` defines the authentication method that
+          is going to be used for users using the `authentication_method` `default`.
+        default: native
+        enum:
+          - native
+          - saml
+          - ldap
   TenantResult:
     type: object
-    properties:
-      uuid:
-        type: string
-      name:
-        type: string
-      slug:
-        type: string
-        description: "A unique, human readeable identifier for this tenant"
-      contact:
-        type: string
-        description: "The contact user's UUID"
-      phone:
-        type: string
-        description: "The tenant's contact phone number"
-      domain_names:
-        type: array
-        description: "A list containing human readable unique domain names, associated with a specific tenant"
-        uniqueItems: true
-        items:
+    allOf:
+    - $ref: '#/definitions/TenantBase'
+    - properties:
+        uuid:
           type: string
-      address:
-        $ref: '#/definitions/TenantAddress'
+        slug:
+          type: string
+          description: "A unique, human readeable identifier for this tenant"
   TenantCreate:
     type: object
-    properties:
-      uuid:
-        type: string
-        description: "The tenant's UUID"
-      name:
-        type: string
-        description: "The tenant's name"
-      slug:
-        type: string
-        description: "A unique, human readeable identifier for this tenant. This field cannot be modified and will be auto-generated if missing."
-      contact:
-        type: string
-        description: "The contact user's UUID"
-      phone:
-        type: string
-        description: "The tenant's contact phone number"
-      domain_names:
-        type: array
-        description: "A list containing human readeable unique domain names, associated with a specific tenant"
-        uniqueItems: true
-        items:
+    allOf:
+    - $ref: '#/definitions/TenantBase'
+    - properties:
+        uuid:
           type: string
-      address:
-        $ref: '#/definitions/TenantAddress'
+          description: "The tenant's UUID"
+        slug:
+          type: string
+          description: "A unique, human readeable identifier for this tenant. This field cannot be modified and will be auto-generated if missing."
   TenantEdit:
     type: object
-    properties:
-      name:
-        type: string
-        description: "The tenant's name"
-      contact:
-        type: string
-        description: "The contact user's UUID"
-      phone:
-        type: string
-        description: "The tenant's contact phone number"
-      domain_names:
-        type: array
-        description: "A list containing human readeable unique domain names, associated with a specific tenant"
-        uniqueItems: true
-        items:
-          type: string
-      address:
-        $ref: '#/definitions/TenantAddress'
+    allOf:
+    - $ref: '#/definitions/TenantBase'
   TenantAddress:
     type: object
     properties:
