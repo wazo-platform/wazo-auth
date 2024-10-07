@@ -6,13 +6,12 @@ import os
 from datetime import timedelta
 from functools import partial
 
-from cheroot import wsgi
 from flask import Flask
 from flask_cors import CORS
 from flask_restful import Api
 from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.middleware.proxy_fix import ProxyFix
-from xivo import http_helpers
+from xivo import http_helpers, wsgi
 from xivo.http_helpers import ReverseProxied
 
 from wazo_auth.database.helpers import Session
