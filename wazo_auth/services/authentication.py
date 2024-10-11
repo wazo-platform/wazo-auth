@@ -80,6 +80,8 @@ class AuthenticationService:
         if not saml_login:
             raise NoMatchingSAMLSession(saml_session_id)
 
+        self._saml_service.invalidate_saml_session_id(saml_session_id)
+
         if (
             authorized_authentication_method := self._authorized_authentication_method(
                 saml_login
