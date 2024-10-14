@@ -31,6 +31,7 @@ from ..database.queries import (
     policy,
     refresh_token,
     saml_config,
+    saml_pysaml2_cache,
     saml_session,
     session,
     tenant,
@@ -54,6 +55,7 @@ class BaseServiceTestCase(TestCase):
         self.refresh_token_dao = Mock(refresh_token.RefreshTokenDAO)
         self.saml_config_dao = Mock(saml_config.SAMLConfigDAO)
         self.saml_session_dao = Mock(saml_session.SAMLSessionDAO)
+        self.saml_pysaml2_cache = Mock(saml_pysaml2_cache.SAMLPysaml2CacheDAO)
         self.session_dao = Mock(session.SessionDAO)
         self.tenant_dao = Mock(tenant.TenantDAO)
         self.token_dao = Mock(token.TokenDAO)
@@ -75,6 +77,7 @@ class BaseServiceTestCase(TestCase):
             refresh_token=self.refresh_token_dao,
             saml_config=self.saml_config_dao,
             saml_session=self.saml_session_dao,
+            saml_pysaml2_cache=self.saml_pysaml2_cache,
             session=self.session_dao,
             tenant=self.tenant_dao,
             token=self.token_dao,

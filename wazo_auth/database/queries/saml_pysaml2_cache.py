@@ -24,6 +24,13 @@ logger: logging.Logger = logging.getLogger(__name__)
 class SAMLPysaml2CacheDAO(filters.FilterMixin, BaseDAO):
     search_filter: filters.SearchFilter = filters.saml_pysaml2_cache_search_filter
 
+    def get_expired(self, expiration_ts: int) -> list[SAMLPysaml2Cache]:
+        return (
+            self.session.query(SAMLPysaml2Cache)
+            .filter(SAMLPysaml2Cache.not_on_or_after > expiration_ts)
+            .all()
+        )
+
     def _search(self, **kwargs):
         search_filter = self.new_search_filter(**kwargs)
         return self.session.query(SAMLPysaml2Cache).filter(search_filter).all()

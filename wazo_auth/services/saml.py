@@ -79,6 +79,9 @@ class SamlSessionItem(NamedTuple):
 
 
 class SAMLService(BaseService):
+
+    _PYSAML2_SESSION_LIFETIME_DAYS = 7
+
     def __init__(self, config: Config, tenant_service: TenantService, dao: DAO):
         self._config: Config = config
         self._saml_clients: dict[str, Saml2Client] = {}
@@ -366,10 +369,7 @@ class SAMLService(BaseService):
     def invalidate_saml_session_id(self, saml_session_id: str) -> str | None:
         logger.debug('sessions %s', self._dao.saml_session.list())
         for reqid, session in self._dao.saml_session.list(session_id=saml_session_id):
-            update: dict[str, None] = {
-                'session_id': 'token-already-used',
-                'login': None,
-            }
+            update: dict[str, None] = {'session_id': 'token-already-used'}
             self._dao.saml_session.update(reqid, **update)
             return
         raise exceptions.SAMLProcessingError(
@@ -381,23 +381,32 @@ class SAMLService(BaseService):
             update = {'refresh_token_uuid': refresh_token}
             self._dao.saml_session.update(session_data.request_id, **update)
 
+    def _clean_saml_sessions(self, now: datetime) -> None:
+        for item in self._dao.saml_session.list():
+            context: SamlAuthContext = item.auth_context
+            expire_at: datetime = context.start_time + self._saml_session_lifetime
+            if (
+                context.saml_session_id == 'token_already_used'
+                and context.refresh_token_uuid is None
+            ):
+                logger.debug('Deleting used SAML session: %s', item)
+                self._dao.saml_session.delete(item.request_id)
+            elif now > expire_at and context.saml_session_id != 'token_already_used':
+                logger.debug("Deleting SAML session on timeout: %s", item)
+                self._dao.saml_session.delete(item.request_id)
+
+    def _clean_pysaml2_sessions(self, now: datetime) -> None:
+        one_week_ago: datetime = datetime.now(tz=timezone.utc) - timedelta(
+            days=self._PYSAML2_SESSION_LIFETIME_DAYS
+        )
+        one_week_ago_timestamp: int = int(round(one_week_ago.timestamp()))
+        for item in self._dao.saml_pysaml2_cache.get_expired(one_week_ago_timestamp):
+            self._dao.saml_pysaml2_cache.delete(item.name_id)
+
     def clean_pending_requests(self, maybe_now: datetime | None = None) -> None:
         now: datetime = maybe_now or datetime.now(timezone.utc)
-        for item in self._dao.saml_session.list():
-            expire_at: datetime = (
-                item.auth_context.start_time + self._saml_session_lifetime
-            )
-            if now > expire_at:
-                logger.debug("Removing SAML context: %s", item)
-                self._dao.saml_session.delete(item.request_id)
-                return
-            if item.auth_context.saml_session_id != 'token_already_used':
-                invalidate_at: datetime = (
-                    item.auth_context.start_time + self._saml_login_timeout
-                )
-                if now > invalidate_at:
-                    logger.debug('Deleting SAML login session on timeout: %s', item)
-                    self._dao.saml_session.delete(item.request_id)
+        self._clean_saml_sessions(now)
+        self._clean_pysaml2_sessions(now)
 
     def process_logout_request(self, token):
         logger.debug(

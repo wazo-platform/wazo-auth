@@ -12,6 +12,7 @@ from saml2.response import VerificationError
 from wazo_auth import exceptions
 from wazo_auth.config import _DEFAULT_CONFIG
 from wazo_auth.database.queries import DAO
+from wazo_auth.database.queries.saml_pysaml2_cache import SAMLPysaml2CacheDAO
 from wazo_auth.database.queries.saml_session import SAMLSessionDAO
 from wazo_auth.services.tenant import TenantService
 
@@ -26,6 +27,7 @@ class TestSAMLService(TestCase):
         self.tenant_service_mock = Mock(TenantService)
         self.dao_mock = Mock(DAO)
         self.dao_mock.saml_session = Mock(SAMLSessionDAO)
+        self.dao_mock.saml_pysaml2_cache = Mock(SAMLPysaml2CacheDAO)
         self.service = SAMLService(self.config, self.tenant_service_mock, self.dao_mock)
 
     def _get_auth_context(
@@ -50,6 +52,8 @@ class TestSAMLService(TestCase):
             SamlSessionItem('id2', pending),
         ]
 
+        self.dao_mock.saml_pysaml2_cache.get_expired.return_value = []
+
         now: datetime = datetime.fromisoformat('2000-01-02 00:00:01+00:00')
         self.service.clean_pending_requests(now)
 
@@ -67,6 +71,8 @@ class TestSAMLService(TestCase):
             SamlSessionItem('id1', expired),
             SamlSessionItem('id2', pending),
         ]
+
+        self.dao_mock.saml_pysaml2_cache.get_expired.return_value = []
 
         now: datetime = datetime.fromisoformat('2000-01-01 00:00:11+00:00')
         self.service.clean_pending_requests(now)
@@ -288,10 +294,11 @@ class TestSAMLService(TestCase):
         pending_session = SamlSessionItem('req_id', saml_context)
 
         self.dao_mock.saml_session.list.return_value = [pending_session]
+        self.dao_mock.saml_pysaml2_cache.get_expired.return_value = []
 
         self.service.invalidate_saml_session_id(saml_context.saml_session_id)
 
-        update: dict[str, str] = {'session_id': 'token-already-used', 'login': None}
+        update: dict[str, str] = {'session_id': 'token-already-used'}
         self.dao_mock.saml_session.update.assert_called_once_with(
             pending_session.request_id, **update
         )
