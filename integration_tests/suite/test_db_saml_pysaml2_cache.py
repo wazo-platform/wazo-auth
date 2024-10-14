@@ -21,6 +21,8 @@ class TestSAMLPysaml2Cache(base.DAOTestCase):
         format='urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
     )
 
+    YEAR_2000: int = 946684800
+
     @fixtures.db.saml_pysaml2_cache(NAME_ID)
     def test_get_identity(self, fixture) -> None:
         res, oldees = self._saml_pysaml2_cache_dao.get_identity(self.NAME_ID)
@@ -28,6 +30,37 @@ class TestSAMLPysaml2Cache(base.DAOTestCase):
         assert_that(oldees, is_([]))
 
     def test_set(self) -> None:
+        entry = {
+            'name_id': self.NAME_ID,
+            'entity_id': 'https://test.idp.com/saml2/idp/id-1',
+            'info': {
+                'ava': {
+                    'givenName': ['Alice'],
+                    'surname': ['Test'],
+                    'name': ['alice@test.idp.com'],
+                },
+                'name_id': '2=urn%3Aoasis%3Anames%3Atc%3ASAML%3A1.1%3Anameid-format%3AemailAddress'
+                + ',4=alice%40test.idp.com',
+                'came_from': 'bldKO8ntPi1zLbHVgBwYuw',
+                'authn_info': [
+                    (
+                        'urn:oasis:names:tc:SAML:2.0:ac:classes:Password',
+                        [],
+                        '2024-09-16T09:18:09.886Z',
+                    )
+                ],
+                'session_index': '_4564564-3453df-3456345792a',
+            },
+            'not_on_or_after': int(time.time()) + 3600,
+        }
+
+        self._saml_pysaml2_cache_dao.set(**entry)
+        res, _ = self._saml_pysaml2_cache_dao.get_identity(self.NAME_ID)
+
+        assert_that(res, is_(entry['info']['ava']))
+
+    @fixtures.db.saml_pysaml2_cache(NAME_ID, not_on_or_after=YEAR_2000)
+    def test_set_over_existing(self, _) -> None:
         entry = {
             'name_id': self.NAME_ID,
             'entity_id': 'https://test.idp.com/saml2/idp/id-1',

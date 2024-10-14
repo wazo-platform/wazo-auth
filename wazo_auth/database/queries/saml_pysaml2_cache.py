@@ -109,7 +109,7 @@ class SAMLPysaml2CacheDAO(filters.FilterMixin, BaseDAO):
 
         cni = code(name_id)
 
-        if self.get(name_id, entity_id):
+        if self.get(name_id, entity_id, False):
             search_filter = self.new_search_filter(name_id=cni, entity_id=entity_id)
             data = {
                 'name_id': cni,
