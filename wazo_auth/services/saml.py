@@ -79,9 +79,6 @@ class SamlSessionItem(NamedTuple):
 
 
 class SAMLService(BaseService):
-
-    _PYSAML2_SESSION_LIFETIME_DAYS = 7
-
     def __init__(self, config: Config, tenant_service: TenantService, dao: DAO):
         self._config: Config = config
         self._saml_clients: dict[str, Saml2Client] = {}
@@ -386,7 +383,8 @@ class SAMLService(BaseService):
             context: SamlAuthContext = item.auth_context
             expire_at: datetime = context.start_time + self._saml_session_lifetime
             if (
-                context.saml_session_id == 'token_already_used'
+                now > expire_at
+                and context.saml_session_id == 'token_already_used'
                 and context.refresh_token_uuid is None
             ):
                 logger.debug('Deleting used SAML session: %s', item)
@@ -396,12 +394,13 @@ class SAMLService(BaseService):
                 self._dao.saml_session.delete(item.request_id)
 
     def _clean_pysaml2_sessions(self, now: datetime) -> None:
-        one_week_ago: datetime = datetime.now(tz=timezone.utc) - timedelta(
-            days=self._PYSAML2_SESSION_LIFETIME_DAYS
+        one_week_ago: datetime = (
+            datetime.now(tz=timezone.utc) - self._saml_session_lifetime
         )
         one_week_ago_timestamp: int = int(round(one_week_ago.timestamp()))
         for item in self._dao.saml_pysaml2_cache.get_expired(one_week_ago_timestamp):
-            self._dao.saml_pysaml2_cache.delete(item.name_id)
+            logger.debug("Deleting from pysaml2 cache: %s", item.name_id)
+            self._dao.saml_pysaml2_cache.delete_encoded(item.name_id)
 
     def clean_pending_requests(self, maybe_now: datetime | None = None) -> None:
         now: datetime = maybe_now or datetime.now(timezone.utc)

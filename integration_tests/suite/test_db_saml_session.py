@@ -115,3 +115,5 @@ class TestSAMLSessionDAO(base.DAOTestCase):
             calling(self._saml_session_dao.delete).with_args(REQUEST_ID),
             not_(raises(Exception)),
         )
+
+        assert_that(self._saml_session_dao.list(), is_([]))

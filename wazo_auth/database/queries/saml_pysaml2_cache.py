@@ -27,7 +27,7 @@ class SAMLPysaml2CacheDAO(filters.FilterMixin, BaseDAO):
     def get_expired(self, expiration_ts: int) -> list[SAMLPysaml2Cache]:
         return (
             self.session.query(SAMLPysaml2Cache)
-            .filter(SAMLPysaml2Cache.not_on_or_after > expiration_ts)
+            .filter(SAMLPysaml2Cache.not_on_or_after < expiration_ts)
             .all()
         )
 
@@ -35,13 +35,14 @@ class SAMLPysaml2CacheDAO(filters.FilterMixin, BaseDAO):
         search_filter = self.new_search_filter(**kwargs)
         return self.session.query(SAMLPysaml2Cache).filter(search_filter).all()
 
-    def delete(self, name_id: NameID) -> None:
-        filter_ = SAMLPysaml2Cache.name_id == code(name_id)
-        self.session.query(SAMLPysaml2Cache).filter(filter_).delete(
-            synchronize_session=False
-        )
-        self.session.flush()
+    def delete_encoded(self, name_id: str) -> None:
+        filter_ = SAMLPysaml2Cache.name_id == name_id
+        self.session.query(SAMLPysaml2Cache).filter(filter_).delete()
+        self.session.commit()
         logger.debug("Deleted from pysaml cache %s", name_id)
+
+    def delete(self, name_id: NameID) -> None:
+        self.delete_encoded(code(name_id))
 
     def get_identity(
         self,
