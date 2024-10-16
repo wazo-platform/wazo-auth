@@ -394,11 +394,11 @@ class SAMLService(BaseService):
                 self._dao.saml_session.delete(item.request_id)
 
     def _clean_pysaml2_sessions(self, now: datetime) -> None:
-        one_week_ago: datetime = (
+        session_expired: datetime = (
             datetime.now(tz=timezone.utc) - self._saml_session_lifetime
         )
-        one_week_ago_timestamp: int = int(round(one_week_ago.timestamp()))
-        for item in self._dao.saml_pysaml2_cache.get_expired(one_week_ago_timestamp):
+        session_expired_timestamp: int = int(round(session_expired.timestamp()))
+        for item in self._dao.saml_pysaml2_cache.get_expired(session_expired_timestamp):
             logger.debug("Deleting from pysaml2 cache: %s", item.name_id)
             self._dao.saml_pysaml2_cache.delete_encoded(item.name_id)
 
