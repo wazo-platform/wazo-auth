@@ -421,6 +421,7 @@ class SAMLService(BaseService):
             item
             for item in self._dao.saml_session.list()
             if item.auth_context.refresh_token_uuid == token.refresh_token_uuid
+            and item.auth_context.login is not None
         ]
 
         if not session:
