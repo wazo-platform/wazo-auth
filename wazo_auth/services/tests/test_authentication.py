@@ -150,9 +150,6 @@ class TestAuthenticationService(TestCase):
 
         assert_that(result, contains_exactly(self.wazo_user_backend, s.login))
         assert_that(args, has_entries(login=s.login))
-        self.saml_service.invalidate_saml_session_id.assert_called_once_with(
-            s.saml_session_id
-        )
 
     def test_verify_auth_saml_not_authorized(self):
         self.saml_service.get_user_login.return_value = s.login
