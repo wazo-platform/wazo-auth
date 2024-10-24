@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
+from typing import Any
 
 from hamcrest import assert_that, is_
 from saml2.saml import NameID
@@ -20,16 +21,13 @@ class TestSAMLPysaml2Cache(base.DAOTestCase):
         text='bob@test.idp.com',
         format='urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
     )
+    NAME_ID_TO_OVERRIDE = NAME_ID
 
-    @fixtures.db.saml_pysaml2_cache(NAME_ID)
-    def test_get_identity(self, fixture) -> None:
-        res, oldees = self._saml_pysaml2_cache_dao.get_identity(self.NAME_ID)
-        assert_that(res, is_(fixture['info']['ava']))
-        assert_that(oldees, is_([]))
+    YEAR_2000: int = 946684800
 
-    def test_set(self) -> None:
-        entry = {
-            'name_id': self.NAME_ID,
+    def _get_entry(self, name_id: NameID) -> dict[str, Any]:
+        return {
+            'name_id': name_id,
             'entity_id': 'https://test.idp.com/saml2/idp/id-1',
             'info': {
                 'ava': {
@@ -51,6 +49,25 @@ class TestSAMLPysaml2Cache(base.DAOTestCase):
             },
             'not_on_or_after': int(time.time()) + 3600,
         }
+
+    @fixtures.db.saml_pysaml2_cache(NAME_ID)
+    def test_get_identity(self, fixture) -> None:
+        res, oldees = self._saml_pysaml2_cache_dao.get_identity(self.NAME_ID)
+        assert_that(res, is_(fixture['info']['ava']))
+        assert_that(oldees, is_([]))
+
+    def test_set(self) -> None:
+        entry = self._get_entry(self.NAME_ID)
+        self._saml_pysaml2_cache_dao.set(**entry)
+        res, _ = self._saml_pysaml2_cache_dao.get_identity(self.NAME_ID)
+
+        assert_that(res, is_(entry['info']['ava']))
+
+    NAME_ID_TO_OVERRIDE = NAME_ID
+
+    @fixtures.db.saml_pysaml2_cache(NAME_ID_TO_OVERRIDE, not_on_or_after=YEAR_2000)
+    def test_set_over_existing(self, fixture) -> None:
+        entry = self._get_entry(self.NAME_ID_TO_OVERRIDE)
 
         self._saml_pysaml2_cache_dao.set(**entry)
         res, _ = self._saml_pysaml2_cache_dao.get_identity(self.NAME_ID)

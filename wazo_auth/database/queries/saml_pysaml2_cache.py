@@ -24,17 +24,25 @@ logger: logging.Logger = logging.getLogger(__name__)
 class SAMLPysaml2CacheDAO(filters.FilterMixin, BaseDAO):
     search_filter: filters.SearchFilter = filters.saml_pysaml2_cache_search_filter
 
+    def get_expired(self, expiration_ts: int) -> list[SAMLPysaml2Cache]:
+        return (
+            self.session.query(SAMLPysaml2Cache)
+            .filter(SAMLPysaml2Cache.not_on_or_after < expiration_ts)
+            .all()
+        )
+
     def _search(self, **kwargs):
         search_filter = self.new_search_filter(**kwargs)
         return self.session.query(SAMLPysaml2Cache).filter(search_filter).all()
 
-    def delete(self, name_id: NameID) -> None:
-        filter_ = SAMLPysaml2Cache.name_id == code(name_id)
-        self.session.query(SAMLPysaml2Cache).filter(filter_).delete(
-            synchronize_session=False
-        )
-        self.session.flush()
+    def delete_encoded(self, name_id: str) -> None:
+        filter_ = SAMLPysaml2Cache.name_id == name_id
+        self.session.query(SAMLPysaml2Cache).filter(filter_).delete()
+        self.session.commit()
         logger.debug("Deleted from pysaml cache %s", name_id)
+
+    def delete(self, name_id: NameID) -> None:
+        self.delete_encoded(code(name_id))
 
     def get_identity(
         self,
@@ -109,7 +117,7 @@ class SAMLPysaml2CacheDAO(filters.FilterMixin, BaseDAO):
 
         cni = code(name_id)
 
-        if self.get(name_id, entity_id):
+        if self.get(name_id, entity_id, False):
             search_filter = self.new_search_filter(name_id=cni, entity_id=entity_id)
             data = {
                 'name_id': cni,

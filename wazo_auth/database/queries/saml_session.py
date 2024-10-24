@@ -111,7 +111,5 @@ class SAMLSessionDAO(filters.FilterMixin, BaseDAO):
 
     def delete(self, request_id) -> None:
         filter_ = SAMLSession.request_id == request_id
-        self.session.query(SAMLSession).filter(filter_).delete(
-            synchronize_session=False
-        )
-        self.session.flush()
+        self.session.query(SAMLSession).filter(filter_).delete()
+        self.session.commit()
