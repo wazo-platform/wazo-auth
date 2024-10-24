@@ -393,7 +393,7 @@ class SAMLService(BaseService):
                 logger.debug("Deleting SAML session on timeout: %s", item)
                 self._dao.saml_session.delete(item.request_id)
 
-    def _clean_pysaml2_sessions(self, now: datetime) -> None:
+    def _clean_pysaml2_sessions(self) -> None:
         session_expired: datetime = (
             datetime.now(tz=timezone.utc) - self._saml_session_lifetime
         )
@@ -405,7 +405,7 @@ class SAMLService(BaseService):
     def clean_pending_requests(self, maybe_now: datetime | None = None) -> None:
         now: datetime = maybe_now or datetime.now(timezone.utc)
         self._clean_saml_sessions(now)
-        self._clean_pysaml2_sessions(now)
+        self._clean_pysaml2_sessions()
 
     def process_logout_request(self, token):
         logger.debug(

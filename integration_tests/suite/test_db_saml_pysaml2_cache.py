@@ -21,6 +21,7 @@ class TestSAMLPysaml2Cache(base.DAOTestCase):
         text='bob@test.idp.com',
         format='urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
     )
+    NAME_ID_TO_OVERRIDE = NAME_ID
 
     YEAR_2000: int = 946684800
 
@@ -62,9 +63,11 @@ class TestSAMLPysaml2Cache(base.DAOTestCase):
 
         assert_that(res, is_(entry['info']['ava']))
 
-    @fixtures.db.saml_pysaml2_cache(NAME_ID, not_on_or_after=YEAR_2000)
-    def test_set_over_existing(self, _) -> None:
-        entry = self._get_entry(self.NAME_ID)
+    NAME_ID_TO_OVERRIDE = NAME_ID
+
+    @fixtures.db.saml_pysaml2_cache(NAME_ID_TO_OVERRIDE, not_on_or_after=YEAR_2000)
+    def test_set_over_existing(self, fixture) -> None:
+        entry = self._get_entry(self.NAME_ID_TO_OVERRIDE)
 
         self._saml_pysaml2_cache_dao.set(**entry)
         res, _ = self._saml_pysaml2_cache_dao.get_identity(self.NAME_ID)
