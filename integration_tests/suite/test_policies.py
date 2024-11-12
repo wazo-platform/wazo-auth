@@ -521,8 +521,6 @@ class TestPolicies(base.APIIntegrationTest):
         policy = user_client.policies.get(policy_restrictive['uuid'])
         assert_that(policy, has_entries(acl=new_body['acl']))
 
-        self.client.policies.delete(user_policy['uuid'])
-
     @fixtures.http.policy(acl=['dird.me.#', 'ctid-ng.#'])
     def test_add_access(self, policy):
         assert_http_error(404, self.client.policies.add_access, UNKNOWN_UUID, '#')
@@ -573,8 +571,6 @@ class TestPolicies(base.APIIntegrationTest):
         policy = user_client.policies.get(policy['uuid'])
         assert_that(policy, has_entries(acl=['authorized', '!forbid-access']))
 
-        self.client.policies.delete(user_policy['uuid'])
-
     @fixtures.http.policy(acl=['dird.me.#', 'ctid-ng.#'])
     def test_remove_access(self, policy):
         assert_http_error(404, self.client.policies.remove_access, UNKNOWN_UUID, '#')
@@ -615,8 +611,6 @@ class TestPolicies(base.APIIntegrationTest):
 
         policy = user_client.policies.get(policy['uuid'])
         assert_that(policy, has_entries(acl=['!unauthorized']))
-
-        self.client.policies.delete(user_policy['uuid'])
 
 
 @base.use_asset('base')
