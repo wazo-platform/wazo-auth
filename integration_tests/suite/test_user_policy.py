@@ -80,12 +80,11 @@ class TestUsers(base.APIIntegrationTest):
     @fixtures.http.user()
     @fixtures.http.policy(acl=['authorized', '!forbid-access'])
     @fixtures.http.policy(acl=['authorized', 'unauthorized'])
+    @fixtures.http.policy(acl=['auth.#', 'authorized', '!unauthorized'])
     def test_put_when_policy_has_more_access_than_token(
-        self, login, user, policy1, policy2
+        self, login, user, policy1, policy2, user_policy
     ):
         user_client = self.make_auth_client('foo', 'bar')
-        acl = ['auth.#', 'authorized', '!unauthorized']
-        user_policy = self.client.policies.new(name='foo-policy', acl=acl)
         self.client.users.add_policy(login['uuid'], user_policy['uuid'])
         token = user_client.token.new(expiration=30)['token']
         user_client.set_token(token)
@@ -104,8 +103,6 @@ class TestUsers(base.APIIntegrationTest):
 
         result = self.client.users.get_policies(user['uuid'])
         assert_that(result, has_entries(items=contains_exactly(policy1)))
-
-        self.client.policies.delete(user_policy['uuid'])
 
     @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
     @fixtures.http.user(tenant_uuid=SUB_TENANT_UUID)
@@ -198,15 +195,14 @@ class TestUserPolicySlug(base.APIIntegrationTest):
     @fixtures.http.user()
     @fixtures.http.policy(acl=['authorized'])
     @fixtures.http.policy(acl=['authorized', '!unauthorized'])
+    @fixtures.http.policy(acl=['auth.#', 'authorized', '!unauthorized'])
     def test_delete_when_policy_negative_access_in_token(
-        self, login, user, policy1, policy2
+        self, login, user, policy1, policy2, user_policy
     ):
         self.client.users.add_policy(user['uuid'], policy1['uuid'])
         self.client.users.add_policy(user['uuid'], policy2['uuid'])
 
         user_client = self.make_auth_client('foo', 'bar')
-        acl = ['auth.#', 'authorized', '!unauthorized']
-        user_policy = self.client.policies.new(name='foo-policy', acl=acl)
         self.client.users.add_policy(login['uuid'], user_policy['uuid'])
         token = user_client.token.new(expiration=30)['token']
         user_client.set_token(token)
@@ -225,8 +221,6 @@ class TestUserPolicySlug(base.APIIntegrationTest):
 
         result = self.client.users.get_policies(user['uuid'])
         assert_that(result, has_entries(items=contains(policy2)))
-
-        self.client.policies.delete(user_policy['uuid'])
 
     @fixtures.http.user()
     @fixtures.http.policy()

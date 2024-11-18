@@ -144,12 +144,11 @@ class TestGroupPolicyAssociation(base.APIIntegrationTest):
     @fixtures.http.group()
     @fixtures.http.policy(acl=['authorized', '!forbid-access'])
     @fixtures.http.policy(acl=['authorized', 'unauthorized'])
+    @fixtures.http.policy(acl=['auth.#', 'authorized', '!unauthorized'])
     def test_put_when_policy_has_more_access_than_token(
-        self, login, group, policy1, policy2
+        self, login, group, policy1, policy2, user_policy
     ):
         user_client = self.make_auth_client('foo', 'bar')
-        acl = ['auth.#', 'authorized', '!unauthorized']
-        user_policy = self.client.policies.new(name='foo-policy', acl=acl)
         self.client.users.add_policy(login['uuid'], user_policy['uuid'])
         token = user_client.token.new(expiration=30)['token']
         user_client.set_token(token)
@@ -168,8 +167,6 @@ class TestGroupPolicyAssociation(base.APIIntegrationTest):
 
         result = self.client.groups.get_policies(group['uuid'])
         assert_that(result, has_entries(items=contains_exactly(policy1)))
-
-        self.client.policies.delete(user_policy['uuid'])
 
     @fixtures.http.group()
     @fixtures.http.policy(name='foo')
