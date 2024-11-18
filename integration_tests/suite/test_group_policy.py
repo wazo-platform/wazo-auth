@@ -42,9 +42,9 @@ class TestGroupPolicyAssociation(base.APIIntegrationTest):
             )
 
             # Any policies of a visible group can be removed.
-            self.client.groups.add_policy(visible_group['uuid'], policy1['uuid'])
+            client.groups.add_policy(visible_group['uuid'], visible_policy['uuid'])
             base.assert_no_error(
-                client.groups.remove_policy, visible_group['uuid'], policy1['uuid']
+                client.groups.remove_policy, visible_group['uuid'], visible_policy['uuid']
             )
 
         base.assert_http_error(
