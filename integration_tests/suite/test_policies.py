@@ -512,7 +512,7 @@ class TestPolicies(base.APIIntegrationTest):
 
         # Removing authorized access
         new_body = dict(policy_restrictive)
-        new_body['acl'] = ['!unauthorized']  # removed authorized and !anything
+        new_body['acl'] = ['!unauthorized', '!anything']  # removed authorized
         user_client.policies.edit(policy_restrictive['uuid'], **new_body)
 
         policy = user_client.policies.get(policy_restrictive['uuid'])
