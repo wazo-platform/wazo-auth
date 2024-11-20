@@ -215,6 +215,7 @@ def policy(**policy_args):
                     result = decorated(self, *args, **kwargs)
             finally:
                 try:
+                    self.client.set_token(self.admin_token)
                     self.client.policies.delete(policy['uuid'])
                 except requests.HTTPError:
                     pass
