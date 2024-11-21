@@ -77,7 +77,7 @@ class Token:
     def _format_utc_time(t):
         if not t:
             return None
-        return datetime.fromtimestamp(t, timezone.utc).isoformat()
+        return datetime.fromtimestamp(t, timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f')
 
     def to_dict(self):
         result = {
