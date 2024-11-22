@@ -199,3 +199,4 @@ You can learn more on how to contribute in the [Wazo Platform documentation](htt
 ## License
 
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fwazo-platform%2Fwazo-auth.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fwazo-platform%2Fwazo-auth?ref=badge_large)
+DO NOT MERGE
