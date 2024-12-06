@@ -33,22 +33,22 @@ from .helpers.constants import MAXIMUM_CONCURRENT_USER_SESSIONS, UNKNOWN_UUID
 
 @base.use_asset('base')
 class TestTokens(base.APIIntegrationTest):
-    @fixtures.http.user(username='large', password='expiration')
-    def test_that_large_expiration_returns_a_400(self, _):
+    @fixtures.http.user(username='large')
+    def test_that_large_expiration_returns_a_400(self, user):
         client = Client(
             '127.0.0.1',
             port=self.auth_port(),
             prefix=None,
             https=False,
             username='large',
-            password='expiration',
+            password=user['password'],
         )
         try:
             client.token.new(expiration=9999999999999999999999)
         except HTTPError as e:
             assert e.response.status_code == 400
 
-    @fixtures.http.user(email_address='u1@example.com', password='bar')
+    @fixtures.http.user(email_address='u1@example.com')
     def test_that_the_email_can_be_used_to_get_a_token(self, u1):
         client = Client(
             '127.0.0.1',
@@ -56,23 +56,23 @@ class TestTokens(base.APIIntegrationTest):
             prefix=None,
             https=False,
             username='u1@example.com',
-            password='bar',
+            password=u1['password'],
         )
         token_data = client.token.new(expiration=1)
         assert_that(token_data, has_entries(token=not_(None)))
 
-    @fixtures.http.user(username=None, email_address='u1@example.com', password='pass1')
-    @fixtures.http.user(username=None, email_address='u2@example.com', password='pass2')
+    @fixtures.http.user(username=None, email_address='u1@example.com')
+    @fixtures.http.user(username=None, email_address='u2@example.com')
     def test_that_the_email_can_be_used_to_get_a_token_when_many_users(self, u1, u2):
         client = Client('127.0.0.1', port=self.auth_port(), prefix=None, https=False)
 
         client.username = 'u1@example.com'
-        client.password = 'pass1'
+        client.password = u1['password']
         token_data = client.token.new(expiration=1)
         assert_that(token_data, has_entries(metadata=has_entries(uuid=u1['uuid'])))
 
         client.username = 'u2@example.com'
-        client.password = 'pass2'
+        client.password = u2['password']
         token_data = client.token.new(expiration=1)
         assert_that(token_data, has_entries(metadata=has_entries(uuid=u2['uuid'])))
 
@@ -112,12 +112,12 @@ class TestTokens(base.APIIntegrationTest):
                     response, has_properties(status_code=200), f'failed for {charset}'
                 )
 
-    @fixtures.http.user(username=None, email_address='u1@example.com', password='pass')
+    @fixtures.http.user(username=None, email_address='u1@example.com')
     def test_username_is_logged_on_failed_attempts(self, u1):
         client = Client('127.0.0.1', port=self.auth_port(), prefix=None, https=False)
 
         client.username = 'u1@example.com'
-        client.password = 'invalid'
+        client.password = u1['password'][2:]  # invalid password
 
         with self.asset_cls.capture_logs(service_name='auth') as auth_logs:
             assert_http_error(401, client.token.new, expiration=1)
@@ -126,12 +126,12 @@ class TestTokens(base.APIIntegrationTest):
             r'INFO.*u1@example.com', auth_logs.result()
         ), 'username missing in logs'
 
-    @fixtures.http.user(username=None, email_address='u1@example.com', password='pass')
+    @fixtures.http.user(username=None, email_address='u1@example.com')
     def test_username_is_logged_on_successful_attempts(self, u1):
         client = Client('127.0.0.1', port=self.auth_port(), prefix=None, https=False)
 
         client.username = 'u1@example.com'
-        client.password = 'pass'
+        client.password = u1['password']
 
         with self.asset_cls.capture_logs(service_name='auth') as auth_logs:
             token_data = client.token.new(expiration=1)
@@ -193,7 +193,7 @@ class TestTokens(base.APIIntegrationTest):
         )
         assert_that(result, not_(has_key('refresh_token')))
 
-    @fixtures.http.user(username='foo', password='bar')
+    @fixtures.http.user(username='foo')
     def test_refresh_token_created_event(self, user):
         msg_accumulator = self.bus.accumulator(
             headers={'name': 'auth_refresh_token_created'},
@@ -201,7 +201,7 @@ class TestTokens(base.APIIntegrationTest):
         client_id = 'mytestapp'
         self._post_token(
             'foo',
-            'bar',
+            user['password'],
             session_type='Mobile',
             access_type='offline',
             client_id=client_id,
@@ -230,12 +230,12 @@ class TestTokens(base.APIIntegrationTest):
 
         until.assert_(bus_received_msg, tries=10, interval=0.25)
 
-    @fixtures.http.user(username='foo', password='bar')
+    @fixtures.http.user(username='foo')
     def test_refresh_token_created_event_not_duplicated(self, user):
         client_id = 'mytestapp'
         self._post_token(
             'foo',
-            'bar',
+            user['password'],
             session_type='Mobile',
             access_type='offline',
             client_id=client_id,
@@ -250,7 +250,7 @@ class TestTokens(base.APIIntegrationTest):
         # The same same refresh token is returned, not a new one
         self._post_token(
             'foo',
-            'bar',
+            user['password'],
             session_type='Mobile',
             access_type='offline',
             client_id=client_id,
@@ -683,9 +683,9 @@ class TestTokens(base.APIIntegrationTest):
                 ),
             )
 
-    @fixtures.http.user(username='foo', password='bar', purpose='user')
-    def test_user_maximum_token_limit(self, _):
-        client = self.make_auth_client('foo', 'bar')
+    @fixtures.http.user(username='foo', purpose='user')
+    def test_user_maximum_token_limit(self, user):
+        client = self.make_auth_client('foo', user['password'])
         for _ in range(MAXIMUM_CONCURRENT_USER_SESSIONS):
             client.token.new(expiration=10, access_type='online')
 
@@ -697,11 +697,9 @@ class TestTokens(base.APIIntegrationTest):
             ),
         )
 
-    @fixtures.http.user(
-        username='my-service', password='my-password', purpose='external_api'
-    )
-    def test_external_api_user_maximum_token_limit(self, _):
-        client = self.make_auth_client('my-service', 'my-password')
+    @fixtures.http.user(username='my-service', purpose='external_api')
+    def test_external_api_user_maximum_token_limit(self, user):
+        client = self.make_auth_client('my-service', user['password'])
         for _ in range(MAXIMUM_CONCURRENT_USER_SESSIONS):
             client.token.new(expiration=10, access_type='online')
 
@@ -712,9 +710,9 @@ class TestTokens(base.APIIntegrationTest):
             ),
         )
 
-    @fixtures.http.user(username='foo', password='bar', purpose='internal')
-    def test_internal_user_should_not_have_token_limit(self, _):
-        client = self.make_auth_client('foo', 'bar')
+    @fixtures.http.user(username='foo', purpose='internal')
+    def test_internal_user_should_not_have_token_limit(self, user):
+        client = self.make_auth_client('foo', user['password'])
         for _ in range(MAXIMUM_CONCURRENT_USER_SESSIONS):
             client.token.new(expiration=10, access_type='online')
 
@@ -726,8 +724,8 @@ class TestTokens(base.APIIntegrationTest):
 @base.use_asset('metadata')
 class TestTokensFromMetadata(base.MetadataIntegrationTest):
     # purpose internal enables the test metadata plugin
-    @fixtures.http.user(username='foo', password='bar', purpose='internal')
+    @fixtures.http.user(username='foo', purpose='internal')
     def test_validating_internal_token(self, user):
-        client = self.make_auth_client('foo', 'bar')
+        client = self.make_auth_client('foo', user['password'])
         token = client.token.new(expiration=10)
         assert token['metadata']['internal_token_is_valid'] is True

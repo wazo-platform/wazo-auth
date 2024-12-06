@@ -76,7 +76,7 @@ class TestUsers(base.APIIntegrationTest):
 
         assert_no_error(self.client.users.remove_policy, user['uuid'], policy_1['uuid'])
 
-    @fixtures.http.user(username='foo', password='bar')
+    @fixtures.http.user(username='foo')
     @fixtures.http.user()
     @fixtures.http.policy(acl=['authorized', '!forbid-access'])
     @fixtures.http.policy(acl=['authorized', 'unauthorized'])
@@ -84,7 +84,7 @@ class TestUsers(base.APIIntegrationTest):
     def test_put_when_policy_has_more_access_than_token(
         self, login, user, policy1, policy2, user_policy
     ):
-        user_client = self.make_auth_client('foo', 'bar')
+        user_client = self.make_auth_client('foo', login['password'])
         self.client.users.add_policy(login['uuid'], user_policy['uuid'])
         token = user_client.token.new(expiration=30)['token']
         user_client.set_token(token)
@@ -191,7 +191,7 @@ class TestUserPolicySlug(base.APIIntegrationTest):
             result = client.users.get_policies(visible_user['uuid'])
             assert_that(result, has_entries(items=empty()))
 
-    @fixtures.http.user(username='foo', password='bar')
+    @fixtures.http.user(username='foo')
     @fixtures.http.user()
     @fixtures.http.policy(acl=['authorized'])
     @fixtures.http.policy(acl=['authorized', '!unauthorized'])
@@ -202,7 +202,7 @@ class TestUserPolicySlug(base.APIIntegrationTest):
         self.client.users.add_policy(user['uuid'], policy1['uuid'])
         self.client.users.add_policy(user['uuid'], policy2['uuid'])
 
-        user_client = self.make_auth_client('foo', 'bar')
+        user_client = self.make_auth_client('foo', login['password'])
         self.client.users.add_policy(login['uuid'], user_policy['uuid'])
         token = user_client.token.new(expiration=30)['token']
         user_client.set_token(token)

@@ -181,12 +181,12 @@ class TestSessions(base.APIIntegrationTest):
 
         until.assert_(bus_received_msg, tries=10, interval=0.25)
 
-    @fixtures.http.user(username='foo', password='bar')
+    @fixtures.http.user(username='foo')
     def test_create_event(self, user):
         headers = {'name': 'auth_session_created'}
         msg_accumulator = self.bus.accumulator(headers=headers)
 
-        session_uuid = self._post_token('foo', 'bar', session_type='Mobile')[
+        session_uuid = self._post_token('foo', user['password'], session_type='Mobile')[
             'session_uuid'
         ]
 
@@ -210,11 +210,13 @@ class TestSessions(base.APIIntegrationTest):
 
         until.assert_(bus_received_msg, tries=10, interval=0.25)
 
-    @fixtures.http.user(username='foo', password='bar')
+    @fixtures.http.user(username='foo')
     def test_expire_soon_event_when_token_is_about_to_expire(self, user):
         headers = {'name': 'auth_session_expire_soon'}
         msg_accumulator = self.bus.accumulator(headers=headers)
-        session_uuid = self._post_token('foo', 'bar', expiration=3)['session_uuid']
+        session_uuid = self._post_token('foo', user['password'], expiration=3)[
+            'session_uuid'
+        ]
 
         def bus_received_msg():
             assert_that(
@@ -235,12 +237,14 @@ class TestSessions(base.APIIntegrationTest):
 
         until.assert_(bus_received_msg, tries=10, interval=0.25)
 
-    @fixtures.http.user(username='foo', password='bar')
+    @fixtures.http.user(username='foo')
     def test_delete_event_when_token_expired(self, user):
         headers = {'name': 'auth_session_deleted'}
         msg_accumulator = self.bus.accumulator(headers=headers)
 
-        session_uuid = self._post_token('foo', 'bar', expiration=1)['session_uuid']
+        session_uuid = self._post_token('foo', user['password'], expiration=1)[
+            'session_uuid'
+        ]
 
         def bus_received_msg():
             assert_that(
@@ -261,12 +265,12 @@ class TestSessions(base.APIIntegrationTest):
 
         until.assert_(bus_received_msg, tries=10, interval=0.25)
 
-    @fixtures.http.user(username='foo', password='bar')
+    @fixtures.http.user(username='foo')
     def test_delete_event_when_token_deleted(self, user):
         headers = {'name': 'auth_session_deleted'}
         msg_accumulator = self.bus.accumulator(headers=headers)
 
-        token = self._post_token('foo', 'bar')
+        token = self._post_token('foo', user['password'])
         self.client.token.revoke(token['token'])
 
         def bus_received_msg():
