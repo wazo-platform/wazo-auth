@@ -76,7 +76,6 @@ class TokenDAO(BaseDAO):
                 'uuid': session.uuid,
                 'tenant_uuid': session.tenant_uuid,
             }
-            self.session.delete(session)
 
         token_result = {'uuid': token.uuid, 'auth_id': token.auth_id}
         self.session.query(TokenModel).filter(filter_).delete()
