@@ -149,6 +149,8 @@ def user(**user_args):
         def wrapper(self, *args, **kwargs):
             user_args.setdefault('password', _random_string(20))
             user = self.client.users.new(**user_args)
+            assert 'password' not in user, 'The API should not return a password'
+            user['password'] = user_args['password']
             args = list(args) + [user]
             try:
                 result = decorated(self, *args, **kwargs)

@@ -8,6 +8,7 @@ from hamcrest import (
     assert_that,
     contains_exactly,
     contains_string,
+    empty,
     greater_than_or_equal_to,
     has_entries,
     has_entry,
@@ -298,3 +299,13 @@ class TestSessions(base.APIIntegrationTest):
             assert_that(logs, contains_string(session_uuid))
 
         until.assert_(assert_log_message, tries=10, interval=0.5)
+
+    @fixtures.http.user(username='foo')
+    def test_that_delete_token_deletes_the_session(self, user):
+        token = self._post_token('foo', user['password'])
+        session_uuid = token['session_uuid']
+        sessions = self.client.users.get_sessions(user['uuid'])
+        assert_that(sessions['items'], contains_exactly(has_entries(uuid=session_uuid)))
+        self.client.token.revoke(token['token'])
+        sessions = self.client.users.get_sessions(user['uuid'])
+        assert_that(sessions['items'], empty())
