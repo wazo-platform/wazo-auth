@@ -154,6 +154,12 @@ class Tenant(Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
+    policies = relationship(
+        'Policy',
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        backref='tenant',
+    )
 
     @hybrid_property
     def domain_names(self):
@@ -217,8 +223,13 @@ class Token(Base):
         ForeignKey('auth_refresh_token.uuid', ondelete='CASCADE'),
         nullable=True,
     )
-
-    session = relationship('Session', passive_deletes=True)
+    session = relationship(
+        'Session',
+        cascade='all, delete-orphan',
+        passive_deletes=True,
+        single_parent=True,
+        backref='tokens',
+    )
 
 
 class RefreshToken(Base):
@@ -266,8 +277,6 @@ class Session(Base):
     )
     mobile = Column(Boolean, nullable=False, default=False)
 
-    tokens = relationship('Token', viewonly=True)
-
 
 class Policy(Base):
     __tablename__ = 'auth_policy'
@@ -294,12 +303,6 @@ class Policy(Base):
     )
     shared = Column(Boolean, default=False, server_default='false', nullable=False)
 
-    tenant = relationship(
-        'Tenant',
-        cascade='all, delete-orphan',
-        passive_deletes=True,
-        single_parent=True,
-    )
     accesses = relationship('Access', secondary='auth_policy_access', viewonly=True)
     groups = relationship('Group', secondary='auth_group_policy', viewonly=True)
 
