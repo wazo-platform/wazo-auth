@@ -4,7 +4,7 @@ https://github.com/wazo-platform/xivo-lib-python/archive/master.zip
 https://github.com/wazo-platform/wazo-auth-client/archive/master.zip
 https://github.com/wazo-platform/wazo-lib-rest-client/archive/master.zip  # from wazo-auth-client
 alembic==1.4.3
-cheroot==8.5.2
+cheroot==9.0.0
 flask-cors==3.0.9
 flask-httpauth==3.2.4
 flask-restful==0.3.8
