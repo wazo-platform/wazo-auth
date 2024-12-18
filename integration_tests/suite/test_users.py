@@ -45,12 +45,8 @@ class TestUsers(base.APIIntegrationTest):
         assert_no_error(self.client.users.delete, alice['uuid'])
         assert_http_error(404, self.client.users.delete, alice['uuid'])
 
-    @fixtures.http.user(
-        username='foobar', password='foobar', email_address='foobar@example.com'
-    )
-    @fixtures.http.user(
-        username='foobaz', password='foobaz', email_address='foobaz@example.com'
-    )
+    @fixtures.http.user(username='foobar', email_address='foobar@example.com')
+    @fixtures.http.user(username='foobaz', email_address='foobaz@example.com')
     def test_password_reset_does_not_disable_old_password(self, foobar, foobaz):
         assert_no_error(self.client.users.reset_password, username='unknown')
         assert_no_error(self.client.users.reset_password, email='unknown@example.com')
@@ -63,17 +59,16 @@ class TestUsers(base.APIIntegrationTest):
 
         self.client.users.reset_password(username='foobar')
 
-        user_client = self.make_auth_client('foobar', 'foobar')
+        user_client = self.make_auth_client('foobar', foobar['password'])
         assert_no_error(user_client.token.new, 'wazo_user')
 
         self.client.users.reset_password(email='foobaz@example.com')
 
-        user_client = self.make_auth_client('foobaz', 'foobaz')
+        user_client = self.make_auth_client('foobaz', foobaz['password'])
         assert_no_error(user_client.token.new, 'wazo_user')
 
     @fixtures.http.user(
         username='reset_ldap',  # NOSONAR
-        password='foobaz',  # NOSONAR
         authentication_method='ldap',
     )
     def test_password_reset_external_auth(self, user):
@@ -482,10 +477,10 @@ class TestUsers(base.APIIntegrationTest):
         assert_that(logs.result(), not_(contains_string(old_password)))
         assert_that(logs.result(), not_(contains_string(new_password)))
 
-    @fixtures.http.user(username=None, email_address='u1@example.com', password='pass1')
-    @fixtures.http.user(username=None, email_address='u2@example.com', password='pass2')
+    @fixtures.http.user(username=None, email_address='u1@example.com')
+    @fixtures.http.user(username=None, email_address='u2@example.com')
     def test_put_password_when_many_username_to_none(self, user1, user2):
-        old_password = 'pass1'
+        old_password = user1['password']
         new_password = 'new-pass1'
         assert_no_error(
             self.client.users.change_password,
@@ -494,9 +489,9 @@ class TestUsers(base.APIIntegrationTest):
             new_password=new_password,
         )
 
-    @fixtures.http.user(username=None, password='pass1')
+    @fixtures.http.user(username=None)
     def test_put_password_with_email(self, user):
-        old_password = 'pass1'
+        old_password = user['password']
         new_password = 'new-pass1'
 
         not_confirmed = {'address': 'one@example.com', 'main': True, 'confirmed': False}
@@ -529,11 +524,9 @@ class TestUsers(base.APIIntegrationTest):
             new_password=new_password,
         )
 
-    @fixtures.http.user(
-        username='saml_user', password='secret', authentication_method='saml'  # NOSONAR
-    )
+    @fixtures.http.user(username='saml_user', authentication_method='saml')  # NOSONAR
     def test_put_password_externally_managed(self, user):
-        old_password = 'secret'  # NOSONAR
+        old_password = user['password']
         new_password = 'NewPass'  # NOSONAR
 
         assert_http_error(

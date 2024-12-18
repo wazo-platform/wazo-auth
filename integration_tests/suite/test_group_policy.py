@@ -140,7 +140,7 @@ class TestGroupPolicyAssociation(base.APIIntegrationTest):
             tenant_uuid=SUB_TENANT_UUID,
         )
 
-    @fixtures.http.user(username='foo', password='bar')
+    @fixtures.http.user(username='foo')
     @fixtures.http.group()
     @fixtures.http.policy(acl=['authorized', '!forbid-access'])
     @fixtures.http.policy(acl=['authorized', 'unauthorized'])
@@ -148,7 +148,7 @@ class TestGroupPolicyAssociation(base.APIIntegrationTest):
     def test_put_when_policy_has_more_access_than_token(
         self, login, group, policy1, policy2, user_policy
     ):
-        user_client = self.make_auth_client('foo', 'bar')
+        user_client = self.make_auth_client('foo', login['password'])
         self.client.users.add_policy(login['uuid'], user_policy['uuid'])
         token = user_client.token.new(expiration=30)['token']
         user_client.set_token(token)
@@ -226,12 +226,12 @@ class TestGroupPolicyAssociation(base.APIIntegrationTest):
     @fixtures.http.tenant(uuid=TENANT_UUID_1)
     @fixtures.http.group(name='one', tenant_uuid=TENANT_UUID_1)
     @fixtures.http.policy(name='main', acl=['foobar'])
-    @fixtures.http.user(username='foo', password='bar', tenant_uuid=TENANT_UUID_1)
+    @fixtures.http.user(username='foo', tenant_uuid=TENANT_UUID_1)
     def test_generated_acl(self, _, group, policy, user):
         self.client.groups.add_user(group['uuid'], user['uuid'])
         self.client.groups.add_policy(group['uuid'], policy['uuid'])
 
-        user_client = self.asset_cls.make_auth_client('foo', 'bar')
+        user_client = self.asset_cls.make_auth_client('foo', user['password'])
         token_data = user_client.token.new('wazo_user', expiration=5)
         assert_that(token_data, has_entries(acl=has_items('foobar')))
 

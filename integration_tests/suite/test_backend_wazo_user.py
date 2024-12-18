@@ -47,13 +47,11 @@ class TestWazoUserBackend(base.APIIntegrationTest):
     @fixtures.http.tenant(uuid=NEW_TENANT_UUID, default_authentication_method='saml')
     @fixtures.http.user(
         username='u1',
-        password='s3cr37',
         authentication_method='ldap',
         tenant_uuid=NEW_TENANT_UUID,
     )
     @fixtures.http.user(
         username='u2',
-        password='s3cr37',
         authentication_method='default',
         tenant_uuid=NEW_TENANT_UUID,
     )
@@ -63,14 +61,14 @@ class TestWazoUserBackend(base.APIIntegrationTest):
             401,
             self._post_token,
             'u1',
-            's3cr37',
+            u1['password'],
         )
         # u2 uses saml (from the tenant) not native
         assert_http_error(
             401,
             self._post_token,
             'u2',
-            's3cr37',
+            u2['password'],
         )
 
         tenant['default_authentication_method'] = 'native'
@@ -81,26 +79,26 @@ class TestWazoUserBackend(base.APIIntegrationTest):
             401,
             self._post_token,
             'u1',
-            's3cr37',
+            u1['password'],
         )
         # u2 now uses native from the tenant
-        response = self._post_token('u2', 's3cr37')
+        response = self._post_token('u2', u2['password'])
         assert_that(response, has_entries(token=uuid_()))
 
         u1['authentication_method'] = 'native'
         self.client.users.edit(u1['uuid'], **u1)
 
         # u1 now uses native
-        response = self._post_token('u1', 's3cr37')
+        response = self._post_token('u1', u1['password'])
         assert_that(response, has_entries(token=uuid_()))
 
     @fixtures.http.tenant()
     # extra tenant: "master" tenant
-    @fixtures.http.user(username='foobar', password='s3cr37')
+    @fixtures.http.user(username='foobar')
     def test_token_metadata(self, tenant, user):
         top_tenant = self.get_top_tenant()
 
-        token_data = self._post_token(user['username'], 's3cr37')
+        token_data = self._post_token(user['username'], user['password'])
 
         assert_that(
             token_data['metadata'],
