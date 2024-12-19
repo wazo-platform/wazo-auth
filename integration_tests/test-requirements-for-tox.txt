@@ -16,7 +16,7 @@ https://github.com/wazo-platform/wazo-test-helpers/archive/master.zip
 https://github.com/wazo-platform/xivo-lib-python/archive/master.zip
 https://github.com/wazo-platform/wazo-bus/archive/master.zip
 sqlalchemy<2.0
-jinja2==2.11.3
+jinja2==3.0.3
 psycopg2-binary
 stevedore
 unidecode
