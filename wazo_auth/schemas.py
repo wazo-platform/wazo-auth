@@ -17,7 +17,7 @@ class GroupRequestSchema(BaseSchema):
     name = fields.String(validate=validate.Length(min=1, max=128), required=True)
     slug = fields.String(
         validate=[validate.Length(min=1, max=80), validate.Regexp(Slug.valid_re())],
-        missing=None,
+        load_default=None,
     )
 
 
@@ -31,14 +31,14 @@ class GroupFullSchema(BaseSchema):
     name = fields.String(validate=validate.Length(min=1, max=80), required=True)
     slug = fields.String(
         validate=[validate.Length(min=1, max=80), validate.Regexp(Slug.valid_re())],
-        missing=None,
+        load_default=None,
     )
     read_only = fields.Boolean(dump_only=True, attribute='system_managed')
     system_managed = fields.Boolean(dump_only=True)
 
 
 class BaseListSchema(mallow.ListSchema):
-    recurse = fields.Boolean(missing=False)
+    recurse = fields.Boolean(load_default=False)
 
 
 class ExternalListSchema(BaseListSchema):
