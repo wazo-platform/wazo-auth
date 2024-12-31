@@ -12,7 +12,7 @@ TEN_YEARS = 3600 * 24 * 365 * 10
 
 
 class TokenRequestSchema(BaseSchema):
-    backend = fields.String(missing='wazo_user')
+    backend = fields.String(load_default='wazo_user')
     expiration = fields.Integer(validate=Range(min=1, max=TEN_YEARS))
     access_type = fields.String(validate=OneOf(['online', 'offline']))
     client_id = fields.String(validate=Length(min=1, max=1024))
@@ -87,4 +87,4 @@ class RefreshTokenSchema(BaseSchema):
 
 class TokenScopesRequestSchema(BaseSchema):
     scopes = fields.List(fields.String())
-    tenant_uuid = fields.String(missing=None)
+    tenant_uuid = fields.String(load_default=None)

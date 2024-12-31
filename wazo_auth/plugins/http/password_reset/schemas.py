@@ -14,9 +14,11 @@ class PasswordResetPostParameters(BaseSchema):
 
 
 class PasswordResetQueryParameters(BaseSchema):
-    username = fields.String(validate=validate.Length(min=1, max=256), missing=None)
-    email_address = fields.Email(data_key='email', missing=None)
-    login = fields.String(validate=validate.Length(min=1, max=256), missing=None)
+    username = fields.String(
+        validate=validate.Length(min=1, max=256), load_default=None
+    )
+    email_address = fields.Email(data_key='email', load_default=None)
+    login = fields.String(validate=validate.Length(min=1, max=256), load_default=None)
 
     @validates_schema
     def validate_mutually_exclusive_fields(self, data, **kwargs):

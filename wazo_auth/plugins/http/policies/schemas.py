@@ -14,12 +14,12 @@ class PolicyFullSchema(BaseSchema):
     name = fields.String(validate=validate.Length(min=1, max=80), required=True)
     slug = fields.String(
         validate=[validate.Length(min=1, max=80), validate.Regexp(Slug.valid_re())],
-        missing=None,
+        load_default=None,
     )
-    description = fields.String(allow_none=True, missing=None)
-    acl = fields.List(fields.String(), missing=[], attribute='acl')
+    description = fields.String(allow_none=True, load_default=None)
+    acl = fields.List(fields.String(), load_default=[], attribute='acl')
     read_only = fields.Boolean(dump_only=True)
-    shared = fields.Boolean(missing=False)
+    shared = fields.Boolean(load_default=False)
 
     @post_dump(pass_original=True)
     def set_shared_exposed_only_for_dump(self, data, original, **kwargs):

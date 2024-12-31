@@ -9,17 +9,18 @@ from wazo_auth.schemas import BaseSchema
 
 class _BaseUserSchema(BaseSchema):
     username = fields.String(
-        validate=validate.Length(min=1, max=256), missing=None, allow_none=True
+        validate=validate.Length(min=1, max=256), load_default=None, allow_none=True
     )
-    firstname = fields.String(missing=None, allow_none=True)
-    lastname = fields.String(missing=None, allow_none=True)
+    firstname = fields.String(load_default=None, allow_none=True)
+    lastname = fields.String(load_default=None, allow_none=True)
     purpose = fields.String(
-        missing='user', validate=validate.OneOf(['user', 'internal', 'external_api'])
+        load_default='user',
+        validate=validate.OneOf(['user', 'internal', 'external_api']),
     )
     authentication_method = fields.String(
         validate=validate.OneOf(['default', 'native', 'ldap', 'saml']),
     )
-    enabled = fields.Boolean(missing=True)
+    enabled = fields.Boolean(load_default=True)
 
     @pre_load
     def set_authentication_method(self, data, **kwargs):
