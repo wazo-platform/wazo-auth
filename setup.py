@@ -25,6 +25,9 @@ setup(
             'wazo-auth-upgrade-db=wazo_auth.main:upgrade_db',
             'wazo-auth-wait=wazo_auth.wait:main',
         ],
+        'wazo_auth.services': [
+            'email_notification = wazo_auth.services.email:EmailService',
+        ],
         'wazo_auth.backends': [
             'wazo_user = wazo_auth.plugins.backends.wazo_user:WazoUser',
             'ldap_user = wazo_auth.plugins.backends.ldap_user:LDAPUser',
