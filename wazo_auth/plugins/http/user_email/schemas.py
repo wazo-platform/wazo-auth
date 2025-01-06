@@ -9,13 +9,13 @@ from wazo_auth.schemas import BaseSchema
 
 class _AdminEmailSchema(BaseSchema):
     address = fields.Email(required=True)
-    confirmed = fields.Boolean(missing=None, allow_none=True)
-    main = fields.Boolean(missing=False)
+    confirmed = fields.Boolean(load_default=None, allow_none=True)
+    main = fields.Boolean(load_default=False)
 
 
 class _UserEmailSchema(BaseSchema):
     address = fields.Email(required=True)
-    main = fields.Boolean(missing=False)
+    main = fields.Boolean(load_default=False)
 
 
 class _EmailPutSchema(BaseSchema):
