@@ -128,7 +128,7 @@ paths:
       produces:
         - application/json
       summary: Modify a group
-      description: '**Required ACL:** `auth.groups.{group_uuid}.edit`'
+      description: '**Required ACL:** `auth.groups.{group_uuid}.update`'
       operationId: editGroups
       tags:
         - groups

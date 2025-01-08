@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -45,7 +45,7 @@ class FooService(http.AuthResource):
         )
         return self.external_auth_service.create(user_uuid, self.auth_type, data), 200
 
-    @http.required_acl('auth.users.{user_uuid}.external.foo.edit')
+    @http.required_acl('auth.users.{user_uuid}.external.foo.update')
     def put(self, user_uuid):
         data = request.get_json(force=True)
         return self.external_auth_service.update(user_uuid, self.auth_type, data), 200
@@ -78,7 +78,7 @@ class BarService(http.AuthResource):
         data = request.get_json(force=True)
         return self.external_auth_service.create(user_uuid, self.auth_type, data), 200
 
-    @http.required_acl('auth.users.{user_uuid}.external.bar.edit')
+    @http.required_acl('auth.users.{user_uuid}.external.bar.update')
     def put(self, user_uuid):
         data = request.get_json(force=True)
         return self.external_auth_service.update(user_uuid, self.auth_type, data), 200

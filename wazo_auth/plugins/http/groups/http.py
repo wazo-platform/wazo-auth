@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import marshmallow
@@ -25,7 +25,7 @@ class Group(_BaseGroupResource):
         tenant_uuids = get_tenant_uuids(recurse=True)
         return self.group_service.get(group_uuid, tenant_uuids)
 
-    @http.required_acl('auth.groups.{group_uuid}.edit')
+    @http.required_acl('auth.groups.{group_uuid}.update')
     def put(self, group_uuid):
         tenant_uuids = get_tenant_uuids(recurse=True)
         self.group_service.assert_group_in_subtenant(tenant_uuids, group_uuid)

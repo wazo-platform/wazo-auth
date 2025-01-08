@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from flask import Response
@@ -14,14 +14,14 @@ class EmailConfirm(http.AuthResource):
         self._get_body = template_formatter.get_confirmation_email_get_body()
 
     @http.required_acl(
-        'auth.emails.{email_uuid}.confirm.edit',
+        'auth.emails.{email_uuid}.confirm.update',
         extract_token_id=extract_token_id_from_query_or_header,
     )
     def get(self, email_uuid):
         self.email_service.confirm(email_uuid)
         return Response(self._get_body, 200, mimetype=self._mimetype)
 
-    @http.required_acl('auth.emails.{email_uuid}.confirm.edit')
+    @http.required_acl('auth.emails.{email_uuid}.confirm.update')
     def put(self, email_uuid):
         self.email_service.confirm(email_uuid)
         return '', 204

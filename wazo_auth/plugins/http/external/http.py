@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import marshmallow
@@ -55,7 +55,7 @@ class ExternalConfig(http.AuthResource):
         self.external_auth_service.create_config(auth_type, data, tenant_uuid)
         return '', 201
 
-    @http.required_acl('auth.{auth_type}.external.config.edit')
+    @http.required_acl('auth.{auth_type}.external.config.update')
     def put(self, auth_type):
         data = request.get_json()
         tenant_uuid = Tenant.autodetect().uuid

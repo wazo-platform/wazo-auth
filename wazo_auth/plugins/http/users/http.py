@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -31,7 +31,7 @@ class User(BaseUserService):
         self.user_service.delete_user(scoping_tenant.uuid, user_uuid)
         return '', 204
 
-    @http.required_acl('auth.users.{user_uuid}.edit')
+    @http.required_acl('auth.users.{user_uuid}.update')
     def put(self, user_uuid):
         scoping_tenant = Tenant.autodetect()
         try:
@@ -44,7 +44,7 @@ class User(BaseUserService):
 
 
 class UserPassword(BaseUserService):
-    @http.required_acl('auth.users.{user_uuid}.password.edit')
+    @http.required_acl('auth.users.{user_uuid}.password.update')
     def put(self, user_uuid):
         try:
             args = ChangePasswordSchema().load(request.get_json())

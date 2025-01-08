@@ -126,7 +126,7 @@ paths:
       produces:
         - application/json
       summary: Modify an ACL policy
-      description: '**Required ACL:** `auth.policies.{policy_uuid}.edit`'
+      description: '**Required ACL:** `auth.policies.{policy_uuid}.update`'
       operationId: editPolicies
       tags:
         - policies
@@ -159,7 +159,7 @@ paths:
       operationId: deletePolicyAccess
       tags:
         - policies
-      description: '**Required ACL:** `auth.policies.{policy_uuid}.edit`'
+      description: '**Required ACL:** `auth.policies.{policy_uuid}.update`'
       summary: Dissociate an access from a policy
       parameters:
       - $ref: '#/parameters/policy_uuid'
@@ -178,7 +178,7 @@ paths:
       operationId: addPolicyAccess
       tags:
         - policies
-      description: '**Required ACL:** `auth.policies.{policy_uuid}.edit`'
+      description: '**Required ACL:** `auth.policies.{policy_uuid}.update`'
       summary: Associate an access to a policy
       parameters:
       - $ref: '#/parameters/policy_uuid'

@@ -112,7 +112,7 @@ paths:
       produces:
         - application/json
       summary: Update an existing user
-      description: "**Required ACL**: `auth.users.{user_uuid}.edit`"
+      description: "**Required ACL**: `auth.users.{user_uuid}.update`"
       operationId: updateUser
       tags:
         - users
@@ -145,7 +145,7 @@ paths:
         - users
       security:
         - wazo_auth_token: []
-      description: "**Required ACL**: `auth.users.{user_uuid}.password.edit`"
+      description: "**Required ACL**: `auth.users.{user_uuid}.password.update`"
       summary: "Change the user's password"
       parameters:
         - $ref: '#/parameters/user_uuid'

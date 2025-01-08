@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import marshmallow
@@ -102,7 +102,7 @@ class PolicyUUID(_Policy):
         tenant_uuids = get_tenant_uuids(recurse=True)
         return super()._delete(policy_uuid, tenant_uuids)
 
-    @http.required_acl('auth.policies.{policy_uuid}.edit')
+    @http.required_acl('auth.policies.{policy_uuid}.update')
     def put(self, policy_uuid):
         tenant_uuids = get_tenant_uuids(recurse=True)
         return super()._put(policy_uuid, tenant_uuids)
@@ -121,7 +121,7 @@ class PolicySlug(_Policy):
         policy = self.policy_service.get_by_slug(policy_slug, tenant_uuids)
         return super()._delete(policy.uuid, tenant_uuids)
 
-    @http.required_acl('auth.policies.{policy_slug}.edit')
+    @http.required_acl('auth.policies.{policy_slug}.update')
     def put(self, policy_slug):
         tenant_uuids = get_tenant_uuids(recurse=False)
         policy = self.policy_service.get_by_slug(policy_slug, tenant_uuids)
@@ -148,25 +148,25 @@ class _PolicyAccess(_BasePolicyRessource):
 
 
 class PolicyUUIDAccess(_PolicyAccess):
-    @http.required_acl('auth.policies.{policy_uuid}.edit')
+    @http.required_acl('auth.policies.{policy_uuid}.update')
     def delete(self, policy_uuid, access):
         tenant_uuids = get_tenant_uuids(recurse=True)
         return super()._delete(policy_uuid, access, tenant_uuids)
 
-    @http.required_acl('auth.policies.{policy_uuid}.edit')
+    @http.required_acl('auth.policies.{policy_uuid}.update')
     def put(self, policy_uuid, access):
         tenant_uuids = get_tenant_uuids(recurse=True)
         return super()._put(policy_uuid, access, tenant_uuids)
 
 
 class PolicySlugAccess(_PolicyAccess):
-    @http.required_acl('auth.policies.{policy_slug}.edit')
+    @http.required_acl('auth.policies.{policy_slug}.update')
     def delete(self, policy_slug, access):
         tenant_uuids = get_tenant_uuids(recurse=False)
         policy = self.policy_service.get_by_slug(policy_slug, tenant_uuids)
         return super()._delete(policy.uuid, access, tenant_uuids)
 
-    @http.required_acl('auth.policies.{policy_slug}.edit')
+    @http.required_acl('auth.policies.{policy_slug}.update')
     def put(self, policy_slug, access):
         tenant_uuids = get_tenant_uuids(recurse=False)
         policy = self.policy_service.get_by_slug(policy_slug, tenant_uuids)
