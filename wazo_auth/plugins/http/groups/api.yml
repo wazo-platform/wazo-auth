@@ -72,7 +72,7 @@ paths:
         - groups
       security:
       - wazo_auth_token: []
-      description: '**Required ACL**: `auth.groups.{policy_uuid}.read'
+      description: '**Required ACL**: `auth.groups.{group_uuid}.read'
       parameters:
         - $ref: '#/parameters/tenantuuid'
         - $ref: '#/parameters/group_uuid'
