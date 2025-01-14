@@ -1,4 +1,4 @@
-# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import smtplib
@@ -18,15 +18,7 @@ SMTP_TIMEOUT = 4
 
 
 class EmailService(BaseService):
-    def __init__(self):
-        self.dao = None
-        self.tenant_uuid = None
-
-    def load(self, dependencies):
-        dao = dependencies['dao']
-        template_formatter = dependencies['template_formatter']
-        config = dependencies['config']
-
+    def __init__(self, dao, config, template_formatter):
         super().__init__(dao)
         self._formatter = template_formatter
         self._smtp_host = config['smtp']['hostname']
