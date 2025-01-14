@@ -1,9 +1,10 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import abc
 import logging
 import os
+from collections import namedtuple
 
 DEFAULT_XIVO_UUID = os.getenv('XIVO_UUID')
 logger = logging.getLogger(__name__)
@@ -83,3 +84,22 @@ class BaseMetadata(metaclass=abc.ABCMeta):
         this method.
         """
         return DEFAULT_XIVO_UUID
+
+
+EmailDestination = namedtuple('EmailDestination', ['name', 'address'])
+
+
+class BaseEmail(metaclass=abc.ABCMeta):
+    def __init__(self, *args, **kwargs):
+        """Initialize this plugin instance from the given configuration"""
+        pass
+
+    def send(
+        self,
+        to: EmailDestination,
+        from_: EmailDestination,
+        subject: str,
+        body: str,
+    ) -> None:
+        """Send message"""
+        pass

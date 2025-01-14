@@ -1,28 +1,17 @@
 # Copyright 2018-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import smtplib
 import time
-from collections import namedtuple
-from email import utils as email_utils
-from email.mime.text import MIMEText
 
+from wazo_auth.interfaces import EmailDestination
 from wazo_auth.services.helpers import BaseService
-
-EmailDestination = namedtuple('EmailDestination', ['name', 'address'])
-
-# NOTE(sileht): default socket timeout is None on linux
-# Our client http client is 10s, since sending mail is currently synchronous
-# we have to be sure we return before the 10s, so we set the SMTP timeout.
-SMTP_TIMEOUT = 4
 
 
 class EmailService(BaseService):
-    def __init__(self, dao, config, template_formatter):
+    def __init__(self, dao, config, template_formatter, driver):
         super().__init__(dao)
         self._formatter = template_formatter
-        self._smtp_host = config['smtp']['hostname']
-        self._smtp_port = config['smtp']['port']
+        self._driver = driver
         self._confirmation_token_expiration = config['email_confirmation_expiration']
         self._reset_token_expiration = config['password_reset_expiration']
         self._confirmation_from = EmailDestination(
@@ -52,7 +41,7 @@ class EmailService(BaseService):
         body = self._formatter.format_confirmation_email(template_context)
         subject = self._formatter.format_confirmation_subject(template_context)
         to = EmailDestination(username, email_address)
-        self._send_msg(to, self._confirmation_from, subject, body)
+        self._driver.send(to, self._confirmation_from, subject, body)
 
     def send_reset_email(self, user_uuid, username, email_address, connection_params):
         template_context = dict(connection_params)
@@ -68,18 +57,7 @@ class EmailService(BaseService):
         body = self._formatter.format_password_reset_email(template_context)
         subject = self._formatter.format_password_reset_subject(template_context)
         to = EmailDestination(username, email_address)
-        self._send_msg(to, self._password_reset_from, subject, body)
-
-    def _send_msg(self, to, from_, subject, body):
-        msg = MIMEText(body)
-        msg['To'] = email_utils.formataddr(to)
-        msg['From'] = email_utils.formataddr(from_)
-        msg['Subject'] = subject
-
-        with smtplib.SMTP(
-            self._smtp_host, self._smtp_port, timeout=SMTP_TIMEOUT
-        ) as server:
-            server.sendmail(from_.address, [to.address], msg.as_string())
+        self._driver.send(to, self._confirmation_from, subject, body)
 
     def _new_email_confirmation_token(self, email_uuid):
         acl = f'auth.emails.{email_uuid}.confirm.edit'

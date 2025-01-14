@@ -84,16 +84,18 @@ class Controller:
         )
 
         logger.info("Loading driver plugin email: %s", config['email_plugin'])
-        email_service = driver.DriverManager(
+        email_driver = driver.DriverManager(
             namespace='wazo_auth.email',
             name=config['email_plugin'],
             invoke_on_load=True,
-            invoke_kwds={
-                'dao': self.dao,
-                'template_formatter': template_formatter,
-                'config': config,
-            },
+            invoke_kwds={'config': config},
         ).driver
+        email_service = services.EmailService(
+            self.dao,
+            config,
+            template_formatter,
+            email_driver,
+        )
 
         enabled_external_auth_plugins = [
             name

@@ -26,7 +26,7 @@ setup(
             'wazo-auth-wait=wazo_auth.wait:main',
         ],
         'wazo_auth.email': [
-            'smtp = wazo_auth.services.email:EmailService',
+            'smtp = wazo_auth.plugins.email.smtp:SMTPEmail',
         ],
         'wazo_auth.backends': [
             'wazo_user = wazo_auth.plugins.backends.wazo_user:WazoUser',
