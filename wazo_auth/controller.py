@@ -83,17 +83,20 @@ class Controller:
             self._saml_service,
         )
 
-        logger.info("Loading driver plugin email: %s", config['email_plugin'])
+        email_notification_plugin = config['email_notification_plugin']
+        logger.info("Loading driver plugin email: %s", email_notification_plugin)
         email_driver = driver.DriverManager(
-            namespace='wazo_auth.email',
-            name=config['email_plugin'],
+            namespace='wazo_auth.email_notification',
+            name=email_notification_plugin,
             invoke_on_load=True,
-            invoke_kwds={'config': config},
+            invoke_kwds={
+                'config': config,
+                'template_formatter': template_formatter,
+            },
         ).driver
         email_service = services.EmailService(
             self.dao,
             config,
-            template_formatter,
             email_driver,
         )
 

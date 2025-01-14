@@ -89,17 +89,15 @@ class BaseMetadata(metaclass=abc.ABCMeta):
 EmailDestination = namedtuple('EmailDestination', ['name', 'address'])
 
 
-class BaseEmail(metaclass=abc.ABCMeta):
+class BaseEmailNotification(metaclass=abc.ABCMeta):
     def __init__(self, *args, **kwargs):
         """Initialize this plugin instance from the given configuration"""
         pass
 
-    def send(
-        self,
-        to: EmailDestination,
-        from_: EmailDestination,
-        subject: str,
-        body: str,
-    ) -> None:
-        """Send message"""
+    def send_confirmation(self, context: dict) -> None:
+        """Send confirmation email link"""
+        pass
+
+    def send_password_reset(self, context: dict) -> None:
+        """Send password reset email link"""
         pass
