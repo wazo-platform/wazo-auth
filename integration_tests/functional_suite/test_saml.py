@@ -1,4 +1,4 @@
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -122,7 +122,7 @@ class TestSamlService(SAMLIntegrationTest):
         )
 
     def _login(self, page, login, password) -> None:
-        page.get_by_placeholder("Email address, phone number").fill(login._value)
+        page.locator('xpath=//*[@id="i0116"]').fill(login._value)
         page.get_by_role("button", name="Next").click()
         expect(page.get_by_role("heading"), "Failed to submit login").to_contain_text(
             "Enter password"
