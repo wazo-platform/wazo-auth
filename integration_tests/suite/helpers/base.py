@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 
 import pytest
 import requests
+import yaml
 from hamcrest import (
     assert_that,
     calling,
@@ -32,6 +33,7 @@ from wazo_test_helpers.asset_launching_test_case import (
     WrongClient,
 )
 from wazo_test_helpers.bus import BusClient
+from wazo_test_helpers.filesystem import FileSystemClient
 from wazo_test_helpers.hamcrest.raises import raises
 
 from wazo_auth.database import helpers, queries
@@ -336,6 +338,24 @@ class BaseIntegrationTest(unittest.TestCase):
         self.asset_cls.docker_copy_from_container(
             container_directory, local_directory, 'auth'
         )
+
+    @classmethod
+    @contextmanager
+    def auth_with_config(cls, config):
+        filesystem = FileSystemClient(
+            execute=cls.asset_cls.docker_exec,
+            service_name='auth',
+            root=True,
+        )
+        name = ''.join(random.choice(string.ascii_lowercase) for _ in range(6))
+        config_file = f'/etc/wazo-auth/conf.d/10-{name}.yml'
+        content = yaml.dump(config)
+        try:
+            with filesystem.file_(config_file, content=content):
+                cls.restart_auth()
+                yield
+        finally:
+            cls.restart_auth()
 
 
 class ExternalAuthIntegrationTest(BaseIntegrationTest):
