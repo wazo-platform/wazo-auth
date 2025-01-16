@@ -7,7 +7,7 @@ paths:
         - emails
       security:
         - wazo_auth_token: []
-      description: '**Required ACL**: `auth.admin.users.{user_uuid}.emails.edit`
+      description: '**Required ACL**: `auth.admin.users.{user_uuid}.emails.update`
 
       Update all of the users email address at the same time.
 
@@ -40,7 +40,7 @@ paths:
         - emails
       security:
         - wazo_auth_token: []
-      description: '**Required ACL**: `auth.users.{user_uuid}.emails.edit`
+      description: '**Required ACL**: `auth.users.{user_uuid}.emails.update`
 
       Update all of the users email address at the same time.
 

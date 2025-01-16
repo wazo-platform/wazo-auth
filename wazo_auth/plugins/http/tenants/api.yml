@@ -109,7 +109,7 @@ paths:
       produces:
       - application/json
       summary: Modify a tenant
-      description: '**Required ACL:** `auth.tenants.{tenant_uuid}.edit`'
+      description: '**Required ACL:** `auth.tenants.{tenant_uuid}.update`'
       operationId: updateTenant
       tags:
       - tenants

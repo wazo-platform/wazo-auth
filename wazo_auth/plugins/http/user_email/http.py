@@ -1,4 +1,4 @@
-# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -33,7 +33,7 @@ class _EmailUpdate(http.AuthResource):
 class AdminUserEmailUpdate(_EmailUpdate):
     EmailPutSchema = schemas.AdminEmailPutSchema
 
-    @http.required_acl('auth.admin.users.{user_uuid}.emails.edit')
+    @http.required_acl('auth.admin.users.{user_uuid}.emails.update')
     def put(self, user_uuid):
         return super().put(user_uuid)
 
@@ -41,7 +41,7 @@ class AdminUserEmailUpdate(_EmailUpdate):
 class UserEmailUpdate(_EmailUpdate):
     EmailPutSchema = schemas.UserEmailPutSchema
 
-    @http.required_acl('auth.users.{user_uuid}.emails.edit')
+    @http.required_acl('auth.users.{user_uuid}.emails.update')
     def put(self, user_uuid):
         return super().put(user_uuid)
 

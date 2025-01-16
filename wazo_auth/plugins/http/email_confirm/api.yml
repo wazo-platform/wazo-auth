@@ -5,7 +5,7 @@ paths:
         - emails
       security:
         - wazo_auth_token: []
-      description: '**Required ACL**: `auth.emails.{email_uuid}.confirm.edit`'
+      description: '**Required ACL**: `auth.emails.{email_uuid}.confirm.update`'
       summary: 'Confirm an email address'
       parameters:
         - $ref: '#/parameters/email_uuid'
@@ -20,7 +20,7 @@ paths:
       tags:
         - emails
       description: |
-        **Required ACL**: `auth.emails.{email_uuid}.confirm.edit`
+        **Required ACL**: `auth.emails.{email_uuid}.confirm.update`
 
         The token should be in the URL instead of being in the HTTP headers
       summary: 'Confirm an email address'

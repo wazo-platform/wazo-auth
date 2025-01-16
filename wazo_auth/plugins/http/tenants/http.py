@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -38,7 +38,7 @@ class Tenant(BaseResource):
         scoping_tenant = TenantDetector.autodetect()
         return self.tenant_service.get(scoping_tenant.uuid, tenant_uuid)
 
-    @http.required_acl('auth.tenants.{tenant_uuid}.edit')
+    @http.required_acl('auth.tenants.{tenant_uuid}.update')
     def put(self, tenant_uuid):
         scoping_tenant = TenantDetector.autodetect()
         try:
