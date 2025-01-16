@@ -17,15 +17,15 @@ AUTHORIZE_URL = 'http://127.0.0.1:{port}/microsoft/authorize/{state}'
 @base.use_asset('base')
 class TestAuthMicrosoft(base.APIIntegrationTest):
     @classmethod
-    def setUpClass(self):
+    def setUpClass(cls):
         super().setUpClass()
         config = {'client_id': 'a-client-id', 'client_secret': 'a-client-secret'}
-        self.client.external.create_config(MICROSOFT, config, self.top_tenant_uuid)
+        cls.client.external.create_config(MICROSOFT, config, cls.top_tenant_uuid)
 
     @classmethod
-    def tearDownClass(self):
+    def tearDownClass(cls):
         try:
-            self.client.external.delete_config(MICROSOFT, self.top_tenant_uuid)
+            cls.client.external.delete_config(MICROSOFT, cls.top_tenant_uuid)
         except requests.HTTPError:
             pass
         super().tearDownClass()
