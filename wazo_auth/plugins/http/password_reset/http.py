@@ -88,7 +88,7 @@ class PasswordReset(http.ErrorCatchingResource):
                 user_uuid, None, args['password'], reset=True
             )
 
-        return '', 204
+        return RESPONSE_204
 
     def _extract_email(self, user):
         for email in user['emails']:
