@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -7,6 +7,7 @@ import sys
 import threading
 from functools import partial
 
+from stevedore import driver
 from xivo import plugin_helpers
 from xivo.consul_helpers import ServiceCatalogRegistration
 from xivo.status import StatusAggregator
@@ -81,7 +82,24 @@ class Controller:
             self._tenant_service,
             self._saml_service,
         )
-        email_service = services.EmailService(self.dao, config, template_formatter)
+
+        email_notification_plugin = config['email_notification_plugin']
+        logger.info("Loading driver plugin email: %s", email_notification_plugin)
+        email_driver = driver.DriverManager(
+            namespace='wazo_auth.email_notification',
+            name=email_notification_plugin,
+            invoke_on_load=True,
+            invoke_kwds={
+                'config': config,
+                'template_formatter': template_formatter,
+            },
+        ).driver
+        email_service = services.EmailService(
+            self.dao,
+            config,
+            email_driver,
+        )
+
         enabled_external_auth_plugins = [
             name
             for name, value in config['enabled_external_auth_plugins'].items()

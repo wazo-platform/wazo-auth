@@ -1,5 +1,7 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+
+import time
 
 import requests
 from hamcrest import (
@@ -8,6 +10,7 @@ from hamcrest import (
     equal_to,
     has_entries,
     has_properties,
+    matches_regexp,
     starts_with,
 )
 
@@ -106,3 +109,17 @@ class TestEmailConfirmation(base.APIIntegrationTest):
             user['uuid'],
             UNKNOWN_UUID,
         )
+
+    @fixtures.http.user_register(email_address='foobar@example.com')
+    def test_sending_a_new_confirmation_mail_from_custom_plugin(self, user):
+        email_uuid = user['emails'][0]['uuid']
+
+        config = {'email_notification_plugin': 'logger'}
+        with self.auth_with_config(config):
+            test_start = time.time()
+            self.client.users.request_confirmation_email(user['uuid'], email_uuid)
+
+            logs = self.service_logs(service_name='auth', since=test_start)
+            context_str = f"'email_uuid': '{email_uuid}'"
+            regex = f"email_notification_logger,send_confirmation,.*{context_str}"
+            assert_that(logs, matches_regexp(regex))

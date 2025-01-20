@@ -1,5 +1,9 @@
 # Changelog
 
+## 25.02
+
+* Allow to customize the way to send email through Stevedore entry points
+
 ## 24.08
 
 * The following resources have been added

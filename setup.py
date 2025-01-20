@@ -1,4 +1,4 @@
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from setuptools import find_packages, setup
@@ -24,6 +24,9 @@ setup(
             'wazo-auth-init-db=wazo_auth.init_db:main',
             'wazo-auth-upgrade-db=wazo_auth.main:upgrade_db',
             'wazo-auth-wait=wazo_auth.wait:main',
+        ],
+        'wazo_auth.email_notification': [
+            'smtp = wazo_auth.plugins.email_notification.smtp:SMTPEmail',
         ],
         'wazo_auth.backends': [
             'wazo_user = wazo_auth.plugins.backends.wazo_user:WazoUser',

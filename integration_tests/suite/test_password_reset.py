@@ -1,5 +1,7 @@
-# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+
+import time
 
 import yaml
 from hamcrest import (
@@ -8,6 +10,7 @@ from hamcrest import (
     contains_string,
     has_entries,
     has_items,
+    matches_regexp,
     not_,
 )
 
@@ -98,3 +101,15 @@ class TestResetPassword(base.APIIntegrationTest):
 
         response = self.client.sessions.list()
         assert_that(response['items'], has_items(has_entries(user_uuid=None)))
+
+    @fixtures.http.user(username='bob', email_address='user@example.com')
+    def test_password_reset_from_custom_plugin(self, user):
+        config = {'email_notification_plugin': 'logger'}
+        with self.auth_with_config(config):
+            test_start = time.time()
+            self.client.users.reset_password(username='bob')
+
+            logs = self.service_logs(service_name='auth', since=test_start)
+            context_str = "'username': 'bob'"
+            regex = f"email_notification_logger,send_password_reset,.*{context_str}"
+            assert_that(logs, matches_regexp(regex))

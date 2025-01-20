@@ -1,4 +1,4 @@
-# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -15,6 +15,9 @@ from .exceptions import PasswordResetException
 from .schemas import PasswordResetPostParameters, PasswordResetQueryParameters
 
 logger = logging.getLogger(__name__)
+
+# Always return 204 to avoid to leak information
+RESPONSE_204 = '', 204
 
 
 class PasswordReset(http.ErrorCatchingResource):
@@ -36,29 +39,31 @@ class PasswordReset(http.ErrorCatchingResource):
         search_params = {field: value for field, value in args.items() if value}
         users = self.user_service.list_users(**search_params)
         if not users:
-            # We do not want to leak the information if a user exists or not
             logger.debug('Failed to reset password %s', args)
-        else:
-            user = users[0]
-            logger.debug('user: %s', user)
-            email_address = args['email_address'] or self._extract_email(user)
+            return RESPONSE_204
 
-            if self.user_service.uses_external_authentication(user):
-                logger.info(
-                    'Not sending password reset mail because of external authentication'
-                )
-            elif email_address:
-                connection_params = extract_connection_params(request.headers)
-                self.email_service.send_reset_email(
-                    user['uuid'],
-                    user['username'],
-                    email_address,
-                    connection_params,
-                )
-            else:
-                logger.debug('No confirmed email %s', args)
+        user = users[0]
+        logger.debug('user: %s', user)
 
-        return '', 204
+        if self.user_service.uses_external_authentication(user):
+            logger.info(
+                'Not sending password reset notification because of external authentication'
+            )
+            return RESPONSE_204
+
+        email_address = args['email_address'] or self._extract_email(user)
+        if not email_address:
+            logger.debug('No confirmed email %s', args)
+            return RESPONSE_204
+
+        connection_params = extract_connection_params(request.headers)
+        self.email_service.send_reset_email(
+            user['uuid'],
+            user['username'],
+            email_address,
+            connection_params,
+        )
+        return RESPONSE_204
 
     def post(self):
         token_id = extract_token_id_from_query_or_header()
@@ -83,7 +88,7 @@ class PasswordReset(http.ErrorCatchingResource):
                 user_uuid, None, args['password'], reset=True
             )
 
-        return '', 204
+        return RESPONSE_204
 
     def _extract_email(self, user):
         for email in user['emails']:
