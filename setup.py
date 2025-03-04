@@ -70,5 +70,6 @@ setup(
             'default_external_api = wazo_auth.plugins.metadata.default_external_api:DefaultExternalAPI',  # noqa
             'user_admin_status = wazo_auth.plugins.metadata.user_admin_status:UserAdminStatus',
         ],
+        'wazo_auth.idp': [],
     },
 )
