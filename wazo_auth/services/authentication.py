@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import annotations
@@ -54,7 +54,9 @@ class AuthenticationService:
                 args['user_email']
             )
             if authorized_authentication_method != 'ldap':
-                raise UnauthorizedAuthenticationMethod(authorized_authentication_method)
+                raise UnauthorizedAuthenticationMethod(
+                    authorized_authentication_method, 'ldap', login
+                )
         else:
             login = args.get('login', '')
             authorized_authentication_method = self._authorized_authentication_method(
@@ -64,7 +66,9 @@ class AuthenticationService:
             if authorized_authentication_method == 'native':
                 backend = self._get_backend('wazo_user')
             else:
-                raise UnauthorizedAuthenticationMethod(authorized_authentication_method)
+                raise UnauthorizedAuthenticationMethod(
+                    authorized_authentication_method, 'native', login
+                )
 
             # There's no password verification when using a refresh token or SAML
             if not backend.verify_password(login, args.pop('password', ''), args):
@@ -85,7 +89,9 @@ class AuthenticationService:
                 saml_login
             )
         ) != 'saml':
-            raise UnauthorizedAuthenticationMethod(authorized_authentication_method)
+            raise UnauthorizedAuthenticationMethod(
+                authorized_authentication_method, 'saml', saml_login
+            )
 
         # There's no SAML backend
         backend = self._get_backend('wazo_user')
@@ -107,7 +113,9 @@ class AuthenticationService:
         elif authorized_authentication_method == 'saml':
             backend = self._get_backend('wazo_user')
         else:
-            raise UnauthorizedAuthenticationMethod(authorized_authentication_method)
+            raise UnauthorizedAuthenticationMethod(
+                authorized_authentication_method, 'refresh_token', refresh_token
+            )
 
         return backend, login
 
