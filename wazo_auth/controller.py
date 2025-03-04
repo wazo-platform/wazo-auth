@@ -5,9 +5,11 @@ import logging
 import signal
 import sys
 import threading
+from collections import UserDict
 from functools import partial
 
 from stevedore import driver
+from stevedore.extension import Extension
 from xivo import plugin_helpers
 from xivo.consul_helpers import ServiceCatalogRegistration
 from xivo.status import StatusAggregator
@@ -159,7 +161,9 @@ class Controller:
                 'config': config,
             },
         )
-        self._backends.set_backends(backends)
+        if backends:
+            self._backends.set_backends(dict(backends.items()))
+
         self._config['loaded_plugins'] = self._loaded_plugins_names(self._backends)
         dependencies = {
             'api': api,
@@ -257,15 +261,6 @@ class Controller:
         self._default_policy_service.delete_orphan_policies()
 
 
-class BackendsProxy:
-    def __init__(self):
-        self._backends = {}
-
-    def set_backends(self, backends):
-        self._backends = backends
-
-    def __getitem__(self, key):
-        return self._backends[key]
-
-    def __iter__(self):
-        return iter(self._backends)
+class BackendsProxy(UserDict[str, Extension]):
+    def set_backends(self, backends: dict[str, Extension]):
+        self.data = backends
