@@ -1,5 +1,7 @@
-# Copyright 2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2024-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+
+from wazo_auth.services.idp import HARDCODED_IDP_TYPES
 
 from . import http
 
@@ -11,6 +13,13 @@ class Plugin:
         api.add_resource(
             http.IDPList,
             '/idp',
+            resource_class_args=(
+                {
+                    idp_extension.obj.authentication_method
+                    for idp_extension in dependencies['idp_plugins'].values()
+                }
+                | HARDCODED_IDP_TYPES,
+            ),
         )
         api.add_resource(
             http.IDPUser,
