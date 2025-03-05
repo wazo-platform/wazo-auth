@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -203,6 +203,7 @@ class Tokens(BaseResource):
             exceptions.NoMatchingSAMLSession,
             exceptions.UnauthorizedAuthenticationMethod,
             exceptions.UnknownLoginException,
+            exceptions.InvalidLoginRequest,
         ) as e:
             logger.info(
                 'Failed login: %s from %s using agent "%s"',
