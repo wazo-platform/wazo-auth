@@ -8,6 +8,8 @@ from collections import namedtuple
 from collections.abc import Mapping
 from typing import Protocol, TypedDict
 
+from stevedore.extension import Extension
+
 DEFAULT_XIVO_UUID = os.getenv('XIVO_UUID')
 logger = logging.getLogger(__name__)
 
@@ -106,7 +108,7 @@ class BaseEmailNotification(metaclass=abc.ABCMeta):
 
 
 class IDPPluginDependencies(TypedDict, total=False):
-    backends: Mapping[str, BaseAuthenticationBackend]
+    backends: Mapping[str, Extension]
     ...
 
 
