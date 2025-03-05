@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import (
@@ -139,7 +139,6 @@ class Tenant(Base):
     parent_uuid = Column(String(38), ForeignKey('auth_tenant.uuid'), nullable=False)
     default_authentication_method = Column(
         Text,
-        CheckConstraint("default_authentication_method in ('native', 'ldap', 'saml')"),
         nullable=False,
     )
     domains = relationship(
@@ -339,9 +338,6 @@ class User(Base):
     )
     authentication_method = Column(
         Text,
-        CheckConstraint(
-            "default_authentication_method in ('default', 'native', 'ldap', 'saml')"
-        ),
         nullable=False,
     )
     enabled = Column(Boolean)
