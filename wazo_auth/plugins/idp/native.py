@@ -11,13 +11,11 @@ from wazo_auth.exceptions import (
     InvalidUsernamePassword,
     UnauthorizedAuthenticationMethod,
 )
-from wazo_auth.interfaces import (
-    BaseAuthenticationBackend,
-    IDPPlugin,
-    IDPPluginDependencies,
-)
+from wazo_auth.interfaces import BaseAuthenticationBackend
 from wazo_auth.services.tenant import TenantService
 from wazo_auth.services.user import UserService
+
+from .base import BaseIDP, BaseIDPDependencies
 
 logger = logging.getLogger(__name__)
 
@@ -26,34 +24,21 @@ class Backends(TypedDict, total=False):
     wazo_user: Extension
 
 
-class Dependencies(IDPPluginDependencies):
+class Dependencies(BaseIDPDependencies):
     backends: Backends
     user_service: UserService
     tenant_service: TenantService
 
 
-class NativeIDP(IDPPlugin):
+class NativeIDP(BaseIDP):
     authentication_method = 'native'
     loaded = False
 
-    _user_service: UserService
-    _tenant_service: TenantService
     _backend: BaseAuthenticationBackend
-
-    def _get_user_auth_method(self, login):
-        user = self._user_service.get_user_by_login(login)
-        # TODO: can we push default auth method resolution to the db/dao layer?
-        if user.authentication_method == 'default':
-            tenant = self._tenant_service.get(None, user.tenant_uuid)
-            authorized_method = tenant['default_authentication_method']
-        else:
-            authorized_method = user.authentication_method
-        return authorized_method
 
     def load(self, dependencies: Dependencies):
         logger.debug('Loading native idp plugin')
-        self._user_service = dependencies['user_service']
-        self._tenant_service = dependencies['tenant_service']
+        super().load(dependencies)
 
         if 'wazo_user' not in dependencies['backends']:
             logger.error(
