@@ -34,6 +34,7 @@ class AuthenticationService:
         saml_service: SAMLService,
         idp_plugins: Mapping[str, stevedore.extension.Extension],
         native_idp: IDPPlugin,
+        refresh_token_idp: IDPPlugin,
     ):
         self._dao = dao
         self._backends = backends
@@ -41,13 +42,15 @@ class AuthenticationService:
         self._saml_service = saml_service
         self._idp_plugins = idp_plugins
         self._native_idp = native_idp
+        self._refresh_token_idp = refresh_token_idp
 
     def verify_auth(self, args):
-        if saml_session_id := args.get('saml_session_id'):
-            backend, login = self.verify_saml(saml_session_id)
+        # check refresh token first, as it may be used along with other auth methods
+        if self._refresh_token_idp.can_authenticate(args):
+            backend, login = self._refresh_token_idp.verify_auth(args)
             args['login'] = login
-        elif refresh_token := args.get('refresh_token'):
-            backend, login = self.verify_refresh_token(refresh_token, args['client_id'])
+        elif saml_session_id := args.get('saml_session_id'):
+            backend, login = self.verify_saml(saml_session_id)
             args['login'] = login
         elif 'domain_name' in args or 'tenant_id' in args:
             backend = self._get_backend('ldap_user')
@@ -134,27 +137,6 @@ class AuthenticationService:
         backend = self._get_backend('wazo_user')
 
         return backend, saml_login
-
-    def verify_refresh_token(self, refresh_token, client_id):
-        logger.debug('verifying refresh token login')
-        refresh_token_data = self._dao.refresh_token.get(
-            refresh_token,
-            client_id,
-        )
-        login = refresh_token_data['login']
-        authorized_authentication_method = self._authorized_authentication_method(login)
-        if authorized_authentication_method == 'native':
-            backend = self._get_backend('wazo_user')
-        elif authorized_authentication_method == 'ldap':
-            backend = self._get_backend('ldap_user')
-        elif authorized_authentication_method == 'saml':
-            backend = self._get_backend('wazo_user')
-        else:
-            raise UnauthorizedAuthenticationMethod(
-                authorized_authentication_method, 'refresh_token', refresh_token
-            )
-
-        return backend, login
 
     def _get_backend(self, backend_name: str) -> BaseAuthenticationBackend:
         try:
