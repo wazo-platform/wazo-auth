@@ -14,6 +14,8 @@ from xivo import plugin_helpers
 from xivo.consul_helpers import ServiceCatalogRegistration
 from xivo.status import StatusAggregator
 
+from wazo_auth.plugins.idp.native import NativeIDP
+
 from . import bootstrap, http, services, token
 from .bus import BusPublisher
 from .database import queries
@@ -78,13 +80,6 @@ class Controller:
             self._config, self._saml_service, self.dao
         )
 
-        authentication_service = services.AuthenticationService(
-            self.dao,
-            self._backends,
-            self._tenant_service,
-            self._saml_service,
-        )
-
         email_notification_plugin = config['email_notification_plugin']
         logger.info("Loading driver plugin email: %s", email_notification_plugin)
         email_driver = driver.DriverManager(
@@ -128,7 +123,6 @@ class Controller:
             self.dao,
             config['all_users_policies'],
         )
-        self._idp_service = services.IDPService(self.dao)
 
         ldap_service = services.LDAPService(self.dao)
 
@@ -164,27 +158,67 @@ class Controller:
         if backends:
             self._backends.set_backends(dict(backends.items()))
 
-        self._config['loaded_plugins'] = self._loaded_plugins_names(self._backends)
+        self._config['loaded_plugins'] = self._loaded_plugins_names(
+            self._backends.values()
+        )
+
+        # dependencies for idp plugins
+        dependencies = {
+            'backends': self._backends,
+            'config': config,
+            'group_service': group_service,
+            'user_service': self._user_service,
+            'policy_service': policy_service,
+            'tenant_service': self._tenant_service,
+            'session_service': session_service,
+            'ldap_service': ldap_service,
+            'saml_service': self._saml_service,
+            'saml_config_service': self._saml_config_service,
+        }
+
+        # load idp plugins (ensure native is always loaded)
+        idp_names = {name: True for name in self._config['enabled_idp_plugins']}
+        self._idp_plugins = plugin_helpers.load(
+            namespace='wazo_auth.idp',
+            names=idp_names,
+            dependencies=dependencies,
+        )
+
+        if self._idp_plugins and 'native' in self._idp_plugins:
+            self._native_idp = self._idp_plugins['native'].obj
+            assert isinstance(self._native_idp, NativeIDP)
+        else:
+            self._native_idp = NativeIDP()
+            self._native_idp.load(dependencies)
+
+        # idp_plugins should be available in dependencies for http plugins
+        dependencies['idp_plugins'] = (
+            dict(self._idp_plugins.items()) if self._idp_plugins else {}
+        )
+
+        authentication_service = services.AuthenticationService(
+            self.dao,
+            self._backends,
+            self._tenant_service,
+            self._saml_service,
+            dependencies['idp_plugins'],
+            self._native_idp,
+        )
+
+        self._idp_service = services.IDPService(self.dao, dependencies['idp_plugins'])
+
         dependencies = {
             'api': api,
             'status_aggregator': self.status_aggregator,
             'authentication_service': authentication_service,
-            'backends': self._backends,
-            'config': config,
             'email_service': email_service,
             'external_auth_service': external_auth_service,
-            'group_service': group_service,
             'idp_service': self._idp_service,
             'user_service': self._user_service,
             'token_service': self._token_service,
             'token_manager': self._token_service,  # For compatibility only
-            'policy_service': policy_service,
-            'tenant_service': self._tenant_service,
-            'session_service': session_service,
             'template_formatter': template_formatter,
-            'ldap_service': ldap_service,
-            'saml_service': self._saml_service,
-            'saml_config_service': self._saml_config_service,
+            **dependencies,
         }
         Tenant.setup(self._token_service, self._user_service, self._tenant_service)
         Token.setup(self._token_service)
