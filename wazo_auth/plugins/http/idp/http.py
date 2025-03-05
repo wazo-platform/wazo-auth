@@ -1,4 +1,4 @@
-# Copyright 2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2024-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import marshmallow
@@ -11,18 +11,15 @@ from wazo_auth.services.user import UserService
 
 from .schemas import IDPUsersSchema
 
-IDP_TYPES = [
-    'default',
-    'native',
-    'ldap',
-    'saml',
-]
-
 
 class IDPList(http.AuthResource):
+    def __init__(self, idp_types: set[str]) -> None:
+        super().__init__()
+        self._idp_types = idp_types
+
     @http.required_acl('auth.idp.read')
     def get(self):
-        items = IDP_TYPES
+        items = list(self._idp_types)
         count = len(items)
         return {'total': count, 'filtered': count, 'items': items}
 
@@ -32,9 +29,8 @@ class _BaseIDPUser(http.AuthResource):
         self._user_service = user_service
         self._idp_service = idp_service
 
-    @staticmethod
-    def _validate_idp_type(type_):
-        if type_ not in IDP_TYPES:
+    def _validate_idp_type(self, type_):
+        if not self._idp_service.is_valid_idp_type(type_):
             raise exceptions.UnknownIDPType(type_)
 
 
