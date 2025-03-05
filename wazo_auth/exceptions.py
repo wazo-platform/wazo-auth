@@ -549,3 +549,9 @@ class DuplicatedSAMLSessionException(Exception):
 class SAMLSessionSQLException(Exception):
     def __init__(self, request_id):
         super().__init__(f'e {request_id}')
+
+
+class InvalidLoginRequest(Exception):
+    def __init__(self, args: dict):
+        super().__init__('Invalid login request')
+        self.args = args
