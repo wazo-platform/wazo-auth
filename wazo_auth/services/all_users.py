@@ -1,4 +1,4 @@
-# Copyright 2020-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2020-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -30,12 +30,19 @@ class AllUsersService:
         current_group_policy_associations = (
             self._dao.group.get_all_policy_associations()
         )
+
+        all_users_groups = self._dao.group.get_all_users_groups()
+        all_users_groups_by_tenant = {
+            group.tenant_uuid: group for group in all_users_groups
+        }
+
         for tenant_uuid in tenant_uuids:
             self.associate_policies_for_tenant(
                 tenant_uuid,
                 policies,
                 current_group_policy_associations,
                 existing_config_managed_policies_by_tenant,
+                all_users_groups_by_tenant[tenant_uuid],
             )
 
         commit_or_rollback()
@@ -61,8 +68,8 @@ class AllUsersService:
         policies,
         current_group_policy_associations,
         existing_config_managed_policies_by_tenant,
+        all_users_group,
     ):
-        all_users_group = self._dao.group.get_all_users_group(tenant_uuid)
         for policy in policies:
             if (all_users_group.uuid, policy.uuid) in current_group_policy_associations:
                 continue

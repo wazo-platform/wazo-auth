@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, text
@@ -272,6 +272,11 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             .filter(Group.tenant_uuid == tenant_uuid)
         )
         return query.first()
+
+    def get_all_users_groups(self):
+        prefix = 'wazo-all-users-tenant-%'
+        query = self.session.query(Group).filter(Group.name.like(prefix))
+        return query.all()
 
     def _policy_uuid_filter(self, policy_uuid):
         return self._policy_filter(Policy.uuid == policy_uuid)
