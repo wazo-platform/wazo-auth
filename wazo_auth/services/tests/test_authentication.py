@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from unittest.mock import sentinel as s
 
 from hamcrest import assert_that, calling, contains_exactly, has_entries
@@ -10,8 +10,10 @@ from wazo_test_helpers.hamcrest.raises import raises
 
 from wazo_auth import exceptions
 from wazo_auth.plugins.idp.native import NativeIDP
+from wazo_auth.plugins.idp.refresh_token import RefreshTokenIDP
 from wazo_auth.services.saml import SAMLService
 from wazo_auth.services.tenant import TenantService
+from wazo_auth.services.token import TokenService
 from wazo_auth.services.user import UserService
 
 from ..authentication import AuthenticationService
@@ -23,6 +25,7 @@ class TestAuthenticationService(TestCase):
         self.saml_service = Mock(SAMLService)
         self.tenant_service = Mock(TenantService)
         self.user_service = Mock(UserService)
+        self.token_service = Mock(TokenService)
         self.wazo_user_backend = Mock()
         self.ldap_user_backend = Mock()
         self.backends = {
@@ -40,6 +43,9 @@ class TestAuthenticationService(TestCase):
             }
         )
 
+        self.refresh_token_idp = Mock(RefreshTokenIDP)
+        self.refresh_token_idp.can_authenticate.return_value = False
+
         self.service = AuthenticationService(
             self.dao,
             self.backends,
@@ -47,52 +53,62 @@ class TestAuthenticationService(TestCase):
             self.saml_service,
             self.idp_plugins,
             self.native_idp,
+            self.refresh_token_idp,
         )
 
     def set_authorized_authentication_method(self, login, method):
         user = Mock(authentication_method=method)
         results = {login: user}
         self.dao.user.get_user_by_login.side_effect = results.get
+        self.user_service.get_user_by_login.side_effect = results.get
 
     def test_verify_auth_refresh_token(self):
         self.set_authorized_authentication_method(s.original_login, 'native')
         args = {'refresh_token': s.refresh_token, 'client_id': s.client_id}
-        self.dao.refresh_token.get.return_value = {
-            'login': s.original_login,
-            'backend_name': 'wazo_user',
-        }
+        self.refresh_token_idp.can_authenticate.return_value = True
+        self.refresh_token_idp.verify_auth.return_value = (
+            self.wazo_user_backend,
+            s.original_login,
+        )
 
-        result = self.service.verify_auth(args)
+        with patch.object(
+            self.refresh_token_idp, 'can_authenticate'
+        ) as can_authenticate:
+            can_authenticate.return_value = True
+            result = self.service.verify_auth(args)
 
         assert_that(result, contains_exactly(self.wazo_user_backend, s.original_login))
         assert_that(args, has_entries(login=s.original_login))
 
     def test_verify_auth_refresh_token_user_deleted(self):
-        self.dao.user.get_user_by_login.side_effect = exceptions.UnknownLoginException(
-            s.original_login
-        )
         args = {'refresh_token': s.refresh_token, 'client_id': s.client_id}
-        self.dao.refresh_token.get.return_value = {
-            'login': s.original_login,
-            'backend_name': 'wazo_user',
-        }
-
-        assert_that(
-            calling(self.service.verify_auth).with_args(args),
-            raises(exceptions.UnknownLoginException),
+        self.refresh_token_idp.verify_auth.side_effect = (
+            exceptions.UnknownLoginException(s.original_login)
         )
+
+        with patch.object(
+            self.refresh_token_idp, 'can_authenticate'
+        ) as can_authenticate:
+            can_authenticate.return_value = True
+            assert_that(
+                calling(self.service.verify_auth).with_args(args),
+                raises(exceptions.UnknownLoginException),
+            )
 
     def test_verify_auth_refresh_token_no_refresh_token(self):
-        self.set_authorized_authentication_method(s.original_login, 'native')
         args = {'refresh_token': s.refresh_token, 'client_id': s.client_id}
-        self.dao.refresh_token.get.side_effect = exceptions.UnknownRefreshToken(
+        self.refresh_token_idp.verify_auth.side_effect = exceptions.UnknownRefreshToken(
             s.client_id
         )
 
-        assert_that(
-            calling(self.service.verify_auth).with_args(args),
-            raises(exceptions.UnknownRefreshToken),
-        )
+        with patch.object(
+            self.refresh_token_idp, 'can_authenticate'
+        ) as can_authenticate:
+            can_authenticate.return_value = True
+            assert_that(
+                calling(self.service.verify_auth).with_args(args),
+                raises(exceptions.UnknownRefreshToken),
+            )
 
     def test_verify_auth_with_login_password_native(self):
         self.set_authorized_authentication_method(s.login, 'native')

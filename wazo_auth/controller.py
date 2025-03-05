@@ -15,6 +15,7 @@ from xivo.consul_helpers import ServiceCatalogRegistration
 from xivo.status import StatusAggregator
 
 from wazo_auth.plugins.idp.native import NativeIDP
+from wazo_auth.plugins.idp.refresh_token import RefreshTokenIDP
 
 from . import bootstrap, http, services, token
 from .bus import BusPublisher
@@ -170,13 +171,14 @@ class Controller:
             'user_service': self._user_service,
             'policy_service': policy_service,
             'tenant_service': self._tenant_service,
+            'token_service': self._token_service,
             'session_service': session_service,
             'ldap_service': ldap_service,
             'saml_service': self._saml_service,
             'saml_config_service': self._saml_config_service,
         }
 
-        # load idp plugins (ensure native is always loaded)
+        # load idp plugins (native and refresh_token are loaded separately)
         idp_names = {name: True for name in self._config['enabled_idp_plugins']}
         self._idp_plugins = plugin_helpers.load(
             namespace='wazo_auth.idp',
@@ -186,6 +188,9 @@ class Controller:
 
         self._native_idp = NativeIDP()
         self._native_idp.load(dependencies)
+
+        self._refresh_token_idp = RefreshTokenIDP()
+        self._refresh_token_idp.load(dependencies)
 
         # idp_plugins should be available in dependencies for http plugins
         dependencies['idp_plugins'] = (
@@ -199,6 +204,7 @@ class Controller:
             self._saml_service,
             dependencies['idp_plugins'],
             self._native_idp,
+            self._refresh_token_idp,
         )
 
         self._idp_service = services.IDPService(self.dao, dependencies['idp_plugins'])
@@ -211,7 +217,6 @@ class Controller:
             'external_auth_service': external_auth_service,
             'idp_service': self._idp_service,
             'user_service': self._user_service,
-            'token_service': self._token_service,
             'token_manager': self._token_service,  # For compatibility only
             'template_formatter': template_formatter,
             **dependencies,
