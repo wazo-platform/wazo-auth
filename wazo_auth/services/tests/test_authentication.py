@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -9,8 +9,10 @@ from hamcrest import assert_that, calling, contains_exactly, has_entries
 from wazo_test_helpers.hamcrest.raises import raises
 
 from wazo_auth import exceptions
+from wazo_auth.plugins.idp.native import NativeIDP
 from wazo_auth.services.saml import SAMLService
 from wazo_auth.services.tenant import TenantService
+from wazo_auth.services.user import UserService
 
 from ..authentication import AuthenticationService
 
@@ -20,6 +22,7 @@ class TestAuthenticationService(TestCase):
         self.dao = Mock()
         self.saml_service = Mock(SAMLService)
         self.tenant_service = Mock(TenantService)
+        self.user_service = Mock(UserService)
         self.wazo_user_backend = Mock()
         self.ldap_user_backend = Mock()
         self.backends = {
@@ -27,11 +30,23 @@ class TestAuthenticationService(TestCase):
             'ldap_user': Mock(obj=self.ldap_user_backend),
         }
 
+        self.idp_plugins = {}
+        self.native_idp = NativeIDP()
+        self.native_idp.load(
+            {
+                'user_service': self.user_service,
+                'tenant_service': self.tenant_service,
+                'backends': self.backends,
+            }
+        )
+
         self.service = AuthenticationService(
             self.dao,
             self.backends,
             self.tenant_service,
             self.saml_service,
+            self.idp_plugins,
+            self.native_idp,
         )
 
     def set_authorized_authentication_method(self, login, method):
@@ -84,6 +99,9 @@ class TestAuthenticationService(TestCase):
         args = {'login': s.login, 'password': s.password}
 
         self.wazo_user_backend.verify_password.return_value = True
+        self.user_service.get_user_by_login.return_value.authentication_method = (
+            'native'
+        )
         result = self.service.verify_auth(args)
 
         assert_that(result, contains_exactly(self.wazo_user_backend, s.login))
@@ -93,6 +111,9 @@ class TestAuthenticationService(TestCase):
         args = {'login': s.login, 'password': s.password}
 
         self.wazo_user_backend.verify_password.return_value = False
+        self.user_service.get_user_by_login.return_value.authentication_method = (
+            'native'
+        )
         assert_that(
             calling(self.service.verify_auth).with_args(args),
             raises(exceptions.InvalidUsernamePassword),
