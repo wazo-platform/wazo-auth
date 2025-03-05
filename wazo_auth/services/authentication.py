@@ -18,7 +18,7 @@ from wazo_auth.exceptions import (
     NoSuchBackendException,
     UnauthorizedAuthenticationMethod,
 )
-from wazo_auth.interfaces import BaseAuthenticationBackend
+from wazo_auth.interfaces import BaseAuthenticationBackend, IDPPlugin
 from wazo_auth.services.saml import SAMLService
 from wazo_auth.services.tenant import TenantService
 
@@ -32,11 +32,15 @@ class AuthenticationService:
         backends: Mapping[str, stevedore.extension.Extension],
         tenant_service: TenantService,
         saml_service: SAMLService,
+        idp_plugins: Mapping[str, stevedore.extension.Extension],
+        native_idp: IDPPlugin,
     ):
         self._dao = dao
         self._backends = backends
         self._tenant_service = tenant_service
         self._saml_service = saml_service
+        self._idp_plugins = idp_plugins
+        self._native_idp = native_idp
 
     def verify_auth(self, args):
         if saml_session_id := args.get('saml_session_id'):
@@ -58,21 +62,40 @@ class AuthenticationService:
                     authorized_authentication_method, 'ldap', login
                 )
         else:
-            login = args.get('login', '')
-            authorized_authentication_method = self._authorized_authentication_method(
-                login
+            logger.info('Attempting to find idp plugin for login request')
+            logger.debug('%d idp plugins available', len(self._idp_plugins))
+            idp_name, idp_extension = next(
+                (
+                    (name, extension)
+                    for name, extension in self._idp_plugins.items()
+                    if extension.obj.can_authenticate(args)
+                ),
+                (None, None),
             )
-            logger.debug('Verifying %s login', authorized_authentication_method)
-            if authorized_authentication_method == 'native':
-                backend = self._get_backend('wazo_user')
-            else:
-                raise UnauthorizedAuthenticationMethod(
-                    authorized_authentication_method, 'native', login
+            if idp_name is None:
+                # NOTE: this is the only code path allowing the native auth to be used
+                logger.debug(
+                    'No available idp plugin can verify login request, falling back on native idp'
                 )
+                idp_plugin = self._native_idp
+            else:
+                logger.debug('idp plugin %s accepts to verify login request', idp_name)
+                idp_plugin = idp_extension.obj
 
-            # There's no password verification when using a refresh token or SAML
-            if not backend.verify_password(login, args.pop('password', ''), args):
-                raise InvalidUsernamePassword(login)
+            # authentication failure would raise an exception that the API layer can handle
+            backend, login = idp_plugin.verify_auth(args)
+
+            logger.info(
+                'Successfully authenticated login %s through authentication method %s',
+                login,
+                idp_plugin.authentication_method,
+            )
+            logger.debug(
+                'authentication method %s authenticates login request with backend %s, login %s',
+                idp_plugin.authentication_method,
+                repr(backend),
+                login,
+            )
 
         return backend, login
 
