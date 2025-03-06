@@ -76,7 +76,7 @@ _DEFAULT_CONFIG = {
         'microsoft': True,
         'mobile': True,
     },
-    'enabled_idp_plugins': ['native'],
+    'enabled_idp_plugins': ['native', 'refresh_token'],
     'backend_policies': {},  # since 21.14: Deprecated
     'rest_api': {
         'max_threads': 25,
