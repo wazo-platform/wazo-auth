@@ -72,6 +72,7 @@ setup(
         ],
         'wazo_auth.idp': [
             'native = wazo_auth.plugins.idp.native:NativeIDP',
+            'refresh_token = wazo_auth.plugins.idp.refresh_token:RefreshTokenIDP',
         ],
     },
 )
