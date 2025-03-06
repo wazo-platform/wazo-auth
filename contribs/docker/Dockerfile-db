@@ -6,6 +6,8 @@ WORKDIR /usr/src/wazo-auth
 ENV ALEMBIC_DB_URI=postgresql://wazo-auth:Secr7t@localhost/wazo-auth
 
 RUN true \
+    && apt-get update && apt-get install -y gcc build-essential python3-dev libldap2-dev libsasl2-dev \
+    && python3 -m pip install -r requirements.txt \
     && python3 setup.py install \
     && pg_start \
     && wazo-auth-init-db --user postgres --pg_db_uri postgresql:///postgres --auth_db_uri postgresql:///wazo-auth --db wazo-auth --owner wazo-auth --password Secr7t \
