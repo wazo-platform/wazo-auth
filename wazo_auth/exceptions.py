@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from urllib.parse import urlencode
@@ -23,10 +23,14 @@ class NoMatchingSAMLSession(Exception):
 
 
 class UnauthorizedAuthenticationMethod(Exception):
-    def __init__(self, authorized_authentication_method):
+    def __init__(self, authorized_authentication_method, proposed_auth_method, login):
         super().__init__(
-            f'unauthorized authentication method should use {authorized_authentication_method}'
+            f'Unauthorized authentication method {proposed_auth_method} for login {login}: '
+            f'should use {authorized_authentication_method}'
         )
+        self.authorized_authentication_method = authorized_authentication_method
+        self.proposed_auth_method = proposed_auth_method
+        self.login = login
 
 
 class UnknownRefreshToken(APIException):
@@ -545,3 +549,9 @@ class DuplicatedSAMLSessionException(Exception):
 class SAMLSessionSQLException(Exception):
     def __init__(self, request_id):
         super().__init__(f'e {request_id}')
+
+
+class InvalidLoginRequest(Exception):
+    def __init__(self, args: dict):
+        super().__init__('Invalid login request')
+        self.args = args

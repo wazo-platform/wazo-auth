@@ -1,4 +1,4 @@
-# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -263,3 +263,10 @@ class TokenService(BaseService):
         if not self._user_service.user_has_subtenant(user_uuid, tenant):
             logger.debug('Rejecting token: forbidden tenant')
             raise MissingTenantTokenException(tenant)
+
+    def get_refresh_token_info(self, refresh_token: str, client_id: str) -> dict:
+        refresh_token_data = self._dao.refresh_token.get(
+            refresh_token,
+            client_id,
+        )
+        return refresh_token_data
