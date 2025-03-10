@@ -52,7 +52,7 @@ enabled_external_auth_plugins:
   microsoft: true
   mobile: true
 
-enabled_idp_plugins: []
+idp_plugins: {}
 
 
 microsoft:

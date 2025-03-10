@@ -5,7 +5,7 @@ import logging
 import signal
 import sys
 import threading
-from collections import UserDict
+from collections import OrderedDict, UserDict
 from functools import partial
 
 from stevedore import driver
@@ -23,6 +23,7 @@ from .database import queries
 from .database.helpers import db_ready, init_db
 from .flask_helpers import Tenant, Token
 from .http_server import CoreRestApi, api
+from .plugin_helpers import utils as plugin_utils
 from .purpose import Purposes
 from .service_discovery import self_check
 
@@ -178,23 +179,56 @@ class Controller:
             'saml_config_service': self._saml_config_service,
         }
 
-        # load idp plugins (native and refresh_token are loaded separately)
-        idp_names = {name: True for name in self._config['enabled_idp_plugins']}
-        self._idp_plugins = plugin_helpers.load(
-            namespace='wazo_auth.idp',
-            names=idp_names,
-            dependencies=dependencies,
-        )
-
         self._native_idp = NativeIDP()
         self._native_idp.load(dependencies)
+        assert self._native_idp.loaded
 
         self._refresh_token_idp = RefreshTokenIDP()
         self._refresh_token_idp.load(dependencies)
+        assert self._refresh_token_idp.loaded
+
+        # load idp plugins (native and refresh_token are loaded separately)
+        self._idp_plugins = None
+
+        # NOTE: idp plugins have a priority since order of execution is important
+        # and that priority should be preserved after load in the order plugins are used
+        enabled_idps = sorted(
+            (
+                (name, plugin_params.get('priority', 100))
+                for name, plugin_params in self._config['idp_plugins'].items()
+                if plugin_params.get('enabled', False)
+            ),
+            key=lambda x: x[1],
+        )
+        enabled_idp_names = [name for name, _ in enabled_idps]
+        if idp_plugins := plugin_utils.load_ordered(
+            namespace='wazo_auth.idp',
+            enabled=enabled_idp_names,
+            load_args=(dependencies,),
+        ):
+            self._idp_plugins = idp_plugins
+            for name, extension in self._idp_plugins.items():
+                if not extension.obj.loaded:
+                    logger.warning(
+                        'idp plugin %s may not have been loaded successfully', name
+                    )
+                if not getattr(extension.obj, 'authentication_method', None):
+                    logger.warning(
+                        'idp plugin %s does not define an authentication_method attribute',
+                        name,
+                    )
+        else:
+            logger.info('no idp plugins loaded')
 
         # idp_plugins should be available in dependencies for http plugins
         dependencies['idp_plugins'] = (
-            dict(self._idp_plugins.items()) if self._idp_plugins else {}
+            OrderedDict(
+                (name, extension.obj)
+                for name, extension in self._idp_plugins.items()
+                if extension.obj.loaded
+            )
+            if self._idp_plugins
+            else OrderedDict()
         )
 
         authentication_service = services.AuthenticationService(
