@@ -14,6 +14,10 @@ COPY integration_tests/assets/email_notification/logger /usr/src/email_notificat
 WORKDIR /usr/src/email_notification_logger
 RUN python3 setup.py install
 
+COPY integration_tests/assets/broken_idp /usr/src/broken_idp
+WORKDIR /usr/src/broken_idp
+RUN python3 setup.py install
+
 COPY . /usr/src/wazo-auth
 WORKDIR /usr/src/wazo-auth
 RUN python3 -m pip install -e .

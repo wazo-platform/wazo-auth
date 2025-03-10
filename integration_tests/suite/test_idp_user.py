@@ -1,4 +1,4 @@
-# Copyright 2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2024-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -42,6 +42,8 @@ class TestIDPUserAssociation(base.APIIntegrationTest):
             'native',
             'default',
             'ldap',
+            'broken_can_authenticate',
+            'broken_verify_auth',
         ]
         for t in valid_idp_types:
             assert_no_error(self.client.idp.add_user, t, user_1['uuid'])
@@ -75,6 +77,8 @@ class TestIDPUserAssociation(base.APIIntegrationTest):
             'saml',
             'native',
             'ldap',
+            'broken_can_authenticate',
+            'broken_verify_auth',
         ]
         for t in valid_idp_types:
             self.client.idp.add_user(t, user_1['uuid'])
@@ -118,6 +122,8 @@ class TestIDPUserAssociation(base.APIIntegrationTest):
             'native',
             'default',
             'ldap',
+            'broken_can_authenticate',
+            'broken_verify_auth',
         ]
         for t in valid_idp_types:
             assert_no_error(self.client.idp.add_users, t, [user_1])

@@ -4,6 +4,14 @@ enabled_backend_plugins:
   broken_init: true
   broken_verify_password: true
 
+idp_plugins:
+  broken_load:
+    enabled: true
+  broken_can_authenticate:
+    enabled: true
+  broken_verify_auth:
+    enabled: true
+
 default_user_policy: wazo_default_admin_policy # For testing only, not a legitimate configuration
 
 password_reset_email_template: '/var/lib/wazo-auth/templates/raw_password_reset_email.jinja'
