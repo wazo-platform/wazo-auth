@@ -1,5 +1,6 @@
 # Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+from __future__ import annotations
 
 import logging
 import signal
@@ -10,6 +11,7 @@ from functools import partial
 
 from stevedore import driver
 from stevedore.extension import Extension
+from stevedore.named import NamedExtensionManager
 from xivo import plugin_helpers
 from xivo.consul_helpers import ServiceCatalogRegistration
 from xivo.status import StatusAggregator
@@ -40,6 +42,53 @@ def _check_required_config_for_other_threads(config):
     except KeyError as e:
         logger.error('Missing configuration to start the application: %s', e)
         sys.exit(1)
+
+
+def _load_idp_plugins(
+    config: dict, dependencies: dict
+) -> tuple[NamedExtensionManager | None, OrderedDict[str, Extension]]:
+    # NOTE: idp plugins have a priority since order of execution is important
+    # and that priority should be preserved after load in the order plugins are used
+    enabled_idps = sorted(
+        (
+            (name, plugin_params.get('priority', 100))
+            for name, plugin_params in config['idp_plugins'].items()
+            if plugin_params.get('enabled', False)
+        ),
+        key=lambda x: x[1],
+    )
+    logger.debug('idp plugins by priority: %s', enabled_idps)
+    enabled_idp_names = [name for name, _ in enabled_idps]
+    validated_idp_plugins = OrderedDict()
+    logger.info('Loading idp plugins(%d enabled)', len(enabled_idp_names))
+    if idp_plugin_manager := plugin_utils.load_ordered(
+        namespace='wazo_auth.idp',
+        enabled=enabled_idp_names,
+        load_args=(dependencies,),
+    ):
+        # validate each plugin loaded
+        for extension in idp_plugin_manager.extensions:
+            name = extension.name
+            valid = True
+            if not getattr(extension.obj, 'loaded', False):
+                logger.warning(
+                    'idp plugin %s may not have been loaded successfully', name
+                )
+                valid = False
+            if not getattr(extension.obj, 'authentication_method', None):
+                logger.warning(
+                    'idp plugin %s does not define an authentication_method attribute',
+                    name,
+                )
+                valid = False
+            if valid:
+                logger.debug('idp plugin %s loaded & validated', name)
+                validated_idp_plugins[name] = extension
+    else:
+        logger.info('no idp plugins loaded')
+
+    logger.debug('idp plugins loaded & validated: %s', validated_idp_plugins)
+    return idp_plugin_manager, validated_idp_plugins
 
 
 class Controller:
@@ -188,48 +237,12 @@ class Controller:
         assert self._refresh_token_idp.loaded
 
         # load idp plugins (native and refresh_token are loaded separately)
-        self._idp_plugins = None
-
-        # NOTE: idp plugins have a priority since order of execution is important
-        # and that priority should be preserved after load in the order plugins are used
-        enabled_idps = sorted(
-            (
-                (name, plugin_params.get('priority', 100))
-                for name, plugin_params in self._config['idp_plugins'].items()
-                if plugin_params.get('enabled', False)
-            ),
-            key=lambda x: x[1],
+        self._idp_plugins_manager, self._idp_plugins = _load_idp_plugins(
+            config, dependencies
         )
-        enabled_idp_names = [name for name, _ in enabled_idps]
-        if idp_plugins := plugin_utils.load_ordered(
-            namespace='wazo_auth.idp',
-            enabled=enabled_idp_names,
-            load_args=(dependencies,),
-        ):
-            self._idp_plugins = idp_plugins
-            for name, extension in self._idp_plugins.items():
-                if not extension.obj.loaded:
-                    logger.warning(
-                        'idp plugin %s may not have been loaded successfully', name
-                    )
-                if not getattr(extension.obj, 'authentication_method', None):
-                    logger.warning(
-                        'idp plugin %s does not define an authentication_method attribute',
-                        name,
-                    )
-        else:
-            logger.info('no idp plugins loaded')
 
         # idp_plugins should be available in dependencies for http plugins
-        dependencies['idp_plugins'] = (
-            OrderedDict(
-                (name, extension.obj)
-                for name, extension in self._idp_plugins.items()
-                if extension.obj.loaded
-            )
-            if self._idp_plugins
-            else OrderedDict()
-        )
+        dependencies['idp_plugins'] = self._idp_plugins
 
         authentication_service = services.AuthenticationService(
             self.dao,
