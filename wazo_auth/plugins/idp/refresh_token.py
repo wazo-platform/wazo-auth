@@ -6,7 +6,7 @@ from typing import TypedDict
 
 from stevedore.extension import Extension
 
-from wazo_auth.exceptions import InvalidLoginRequest, UnauthorizedAuthenticationMethod
+from wazo_auth.exceptions import UnauthorizedAuthenticationMethod
 from wazo_auth.interfaces import BaseAuthenticationBackend
 from wazo_auth.services.token import TokenService
 
@@ -43,18 +43,20 @@ class RefreshTokenIDP(BaseIDP):
         # this method applies to request providing 'login' and 'password' credentials
         return {'refresh_token', 'client_id'} <= args.keys()
 
-    def _get_backend(self, auth_method: str, login: str) -> BaseAuthenticationBackend:
+    def _get_backend(self, login: str) -> BaseAuthenticationBackend:
         # TODO: abstract away this auth method - backend
         # mapping to support arbitrary auth methods
-        if auth_method == 'native':
+        authorized_authentication_method = self._get_user_auth_method(login)
+
+        if authorized_authentication_method == 'native':
             backend = self._backends['wazo_user'].obj
-        elif auth_method == 'ldap':
+        elif authorized_authentication_method == 'ldap':
             backend = self._backends['ldap_user'].obj
-        elif auth_method == 'saml':
+        elif authorized_authentication_method == 'saml':
             backend = self._backends['wazo_user'].obj
         else:
             raise UnauthorizedAuthenticationMethod(
-                auth_method,
+                authorized_authentication_method,
                 'refresh_token',
                 login,
             )
@@ -64,9 +66,7 @@ class RefreshTokenIDP(BaseIDP):
     def verify_auth(self, args: dict) -> tuple[BaseAuthenticationBackend, str]:
         logger.debug('verifying refresh token login')
         assert self.loaded
-
-        if not {'refresh_token', 'client_id'} <= args.keys():
-            raise InvalidLoginRequest(args)
+        assert {'refresh_token', 'client_id'} <= args.keys()
 
         refresh_token = args['refresh_token']
         client_id = args['client_id']
@@ -76,9 +76,8 @@ class RefreshTokenIDP(BaseIDP):
         )
 
         login = refresh_token_data['login']
-        authorized_authentication_method = self._get_user_auth_method(login)
         # backend depends on the user's auth method,
         # as refresh tokens are used in combination with other auth methods
-        backend = self._get_backend(authorized_authentication_method, login)
+        backend = self._get_backend(login)
 
         return backend, login

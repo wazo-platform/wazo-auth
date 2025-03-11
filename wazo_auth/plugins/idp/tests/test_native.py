@@ -7,10 +7,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from wazo_auth.exceptions import (
-    InvalidUsernamePassword,
-    UnauthorizedAuthenticationMethod,
-)
+from wazo_auth.exceptions import InvalidUsernamePassword
 from wazo_auth.plugins.idp.native import Dependencies, NativeIDP
 
 
@@ -59,19 +56,6 @@ def test_verify_auth_ok(native_idp: NativeIDP):
     backend, login = native_idp.verify_auth(args)
     assert backend
     assert login == args['login']
-
-
-def test_verify_auth_bad_auth_method(native_idp: NativeIDP):
-    args = {'login': 'user', 'password': 'pass'}
-
-    # assume user do not have native auth method
-    user = MagicMock()
-    user.uuid = 'user_uuid'
-    user.authentication_method = 'something'
-    native_idp._user_service.get_user_by_login.return_value = user
-
-    with pytest.raises(UnauthorizedAuthenticationMethod):
-        native_idp.verify_auth(args)
 
 
 def test_verify_auth_bad_credentials(native_idp: NativeIDP):

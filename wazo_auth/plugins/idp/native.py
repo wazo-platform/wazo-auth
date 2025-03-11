@@ -6,11 +6,7 @@ from typing import TypedDict
 
 from stevedore.extension import Extension
 
-from wazo_auth.exceptions import (
-    InvalidLoginRequest,
-    InvalidUsernamePassword,
-    UnauthorizedAuthenticationMethod,
-)
+from wazo_auth.exceptions import InvalidUsernamePassword
 from wazo_auth.interfaces import BaseAuthenticationBackend
 from wazo_auth.services.tenant import TenantService
 from wazo_auth.services.user import UserService
@@ -56,20 +52,10 @@ class NativeIDP(BaseIDP):
 
     def verify_auth(self, args: dict) -> tuple[BaseAuthenticationBackend, str]:
         assert self.loaded
-
-        if not ({'login', 'password'} <= args.keys()):
-            raise InvalidLoginRequest(args)
+        assert {'login', 'password'} <= args.keys()
 
         login = args['login']
         password = args['password']
-
-        # verify user auth method
-        auth_method = self._get_user_auth_method(login)
-        logger.debug('User \'%s\' has auth method: \'%s\'', login, auth_method)
-        if auth_method != self.authentication_method:
-            raise UnauthorizedAuthenticationMethod(
-                auth_method, self.authentication_method, login
-            )
 
         if not self._backend.verify_password(login, password, args):
             raise InvalidUsernamePassword(login)

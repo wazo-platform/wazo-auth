@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from wazo_auth.database.queries import DAO
 
 from wazo_auth.exceptions import (
+    InvalidLoginRequest,
     InvalidUsernamePassword,
     NoMatchingSAMLSession,
     NoSuchBackendException,
@@ -45,47 +46,68 @@ class AuthenticationService:
         self._refresh_token_idp = refresh_token_idp
 
     def verify_auth(self, args):
+        selected_authentication_method = None
+
         # check refresh token first, as it may be used along with other auth methods
         if self._refresh_token_idp.can_authenticate(args):
             backend, login = self._refresh_token_idp.verify_auth(args)
             args['login'] = login
+            selected_authentication_method = 'refresh_token'
         elif saml_session_id := args.get('saml_session_id'):
             backend, login = self.verify_saml(saml_session_id)
             args['login'] = login
+            selected_authentication_method = 'saml'
         elif 'domain_name' in args or 'tenant_id' in args:
             backend = self._get_backend('ldap_user')
-            login = args.get('login', '')
-            if not backend.verify_password(login, args.pop('password', ''), args):
-                raise InvalidUsernamePassword(login)
-            authorized_authentication_method = self._authorized_authentication_method(
-                args['user_email']
-            )
-            if authorized_authentication_method != 'ldap':
-                raise UnauthorizedAuthenticationMethod(
-                    authorized_authentication_method, 'ldap', login
-                )
+            # TODO: cleanup "login" confusion.
+            ldap_login = args.get(
+                'login', ''
+            )  # ldap username, not necessarily wazo username or email
+            if not backend.verify_password(ldap_login, args.pop('password', ''), args):
+                raise InvalidUsernamePassword(ldap_login)
+            # TODO: avoid relying on mutable args
+            assert 'user_email' in args
+            login = args['user_email']
+            selected_authentication_method = 'ldap'
         else:
             logger.info('Attempting to find idp plugin for login request')
             logger.debug('%d idp plugins available', len(self._idp_plugins))
-            idp_name, idp_extension = next(
-                (
-                    (name, extension)
-                    for name, extension in self._idp_plugins.items()
-                    if extension.obj.can_authenticate(args)
-                ),
-                (None, None),
-            )
+            # search for appropriate plugin
+            idp_name, idp_extension = None, None
+            for name, extension in self._idp_plugins.items():
+                logger.debug('Checking login request against idp plugin %s', name)
+                try:
+                    if extension.obj.can_authenticate(args):
+                        idp_name, idp_extension = name, extension
+                        break
+                    else:
+                        logger.debug(
+                            'idp plugin %s cannot authenticate login request', name
+                        )
+                except Exception:
+                    logger.exception(
+                        'Unexpected error from idp plugin %s can_authenticate method',
+                        name,
+                    )
+                    continue
+
             if idp_name is None:
                 # NOTE: this is the only code path allowing the native auth to be used
                 logger.debug(
                     'No available idp plugin can verify login request, falling back on native idp'
                 )
-                idp_plugin = self._native_idp
+                if self._native_idp.can_authenticate(args):
+                    idp_plugin = self._native_idp
+                else:
+                    logger.info('Cannot authenticate login request with native idp')
+                    raise InvalidLoginRequest(args)
             else:
                 logger.debug('idp plugin %s accepts to verify login request', idp_name)
                 idp_plugin = idp_extension.obj
 
-            # authentication failure would raise an exception that the API layer can handle
+            selected_authentication_method = idp_plugin.authentication_method
+
+            # authentication failure should raise an exception that the API layer can handle
             backend, login = idp_plugin.verify_auth(args)
 
             logger.info(
@@ -97,6 +119,27 @@ class AuthenticationService:
                 'authentication method %s authenticates login request with backend %s, login %s',
                 idp_plugin.authentication_method,
                 repr(backend),
+                login,
+            )
+
+        # verify user authorized auth method
+        assert selected_authentication_method
+        authorized_authentication_method = self._authorized_authentication_method(login)
+        logger.debug(
+            'User (login=%s) authorized auth method is \'%s\'',
+            login,
+            authorized_authentication_method,
+        )
+        # NOTE: if method is refresh_token, refresh_token implementation takes care of
+        #  verifying user for compatible auth method
+        #  when selecting which wazo_auth.backend to use
+        if (
+            selected_authentication_method != 'refresh_token'
+            and authorized_authentication_method != selected_authentication_method
+        ):
+            raise UnauthorizedAuthenticationMethod(
+                authorized_authentication_method,
+                selected_authentication_method,
                 login,
             )
 
