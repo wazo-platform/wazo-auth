@@ -1,4 +1,4 @@
-# Copyright 2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2024-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -13,7 +13,7 @@ class TestUserSchema(TestCase):
         self.put_schema = UserPutSchema()
         self.post_schema = UserPostSchema()
 
-    def test_authentication_method(self):
+    def test_authentication_method_default(self):
         payload = {
             'username': 'foobar',
             'firstname': 'foo',
@@ -69,6 +69,14 @@ class TestUserSchema(TestCase):
             ),
         )
 
+    def test_authentication_method_validation(self):
+        payload = {
+            'username': 'foobar',
+            'firstname': 'foo',
+            'lastname': 'bar',
+            'enabled': True,
+        }
+
         user_defined_payload = dict(
             authentication_method='saml', purpose='user', **payload
         )
@@ -84,5 +92,23 @@ class TestUserSchema(TestCase):
             result,
             has_entries(
                 authentication_method='saml',
+            ),
+        )
+
+        custom_auth_method_payload = dict(
+            authentication_method='unknown', purpose='user', **payload
+        )
+        result = self.put_schema.load(custom_auth_method_payload)
+        assert_that(
+            result,
+            has_entries(
+                authentication_method='unknown',
+            ),
+        )
+        result = self.post_schema.load(custom_auth_method_payload)
+        assert_that(
+            result,
+            has_entries(
+                authentication_method='unknown',
             ),
         )

@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import pre_load
@@ -17,9 +17,7 @@ class _BaseUserSchema(BaseSchema):
         load_default='user',
         validate=validate.OneOf(['user', 'internal', 'external_api']),
     )
-    authentication_method = fields.String(
-        validate=validate.OneOf(['default', 'native', 'ldap', 'saml']),
-    )
+    authentication_method = fields.String()
     enabled = fields.Boolean(load_default=True)
 
     @pre_load
