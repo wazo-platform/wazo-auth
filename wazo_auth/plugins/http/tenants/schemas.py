@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import post_dump, post_load
@@ -64,7 +64,6 @@ class TenantFullSchema(BaseSchema):
     )
     default_authentication_method = fields.String(
         load_default='native',
-        validate=validate.OneOf(['native', 'ldap', 'saml']),
         allow_none=False,
     )
     domain_names = fields.List(
