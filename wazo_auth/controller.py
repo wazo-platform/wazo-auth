@@ -18,6 +18,7 @@ from xivo.status import StatusAggregator
 
 from wazo_auth.plugins.idp.native import NativeIDP
 from wazo_auth.plugins.idp.refresh_token import RefreshTokenIDP
+from wazo_auth.services.idp import HARDCODED_IDP_TYPES
 
 from . import bootstrap, http, services, token
 from .bus import BusPublisher
@@ -312,7 +313,7 @@ class Controller:
                     self._config.get('bootstrap_user_policy_slug')
                     or bootstrap.DEFAULT_POLICY_SLUG,
                 )
-
+            self._check_unavailable_authentication_methods()
         try:
             with ServiceCatalogRegistration(*self._service_discovery_args):
                 self._expired_token_remover.start()
@@ -341,6 +342,95 @@ class Controller:
         self._all_users_service.update_policies(tenant_uuids)
         self._default_group_service.update_groups(tenant_uuids)
         self._default_policy_service.delete_orphan_policies()
+
+    def _check_unavailable_authentication_methods(self):
+        """
+        Detect missing implementations for authentication methods
+        assigned to tenants and users
+        """
+        logger.info(
+            'Checking configured authentication methods for missing implementations'
+        )
+
+        # compute available authentication methods from loaded idp plugins and hardcoded methods
+        available_authentication_methods = (
+            {
+                getattr(extension.obj, 'authentication_method', None)
+                for name, extension in self._idp_plugins.items()
+            }
+            if self._idp_plugins
+            else set()
+        )
+        available_authentication_methods |= HARDCODED_IDP_TYPES
+        logger.debug(
+            '%d authentication methods are available',
+            len(available_authentication_methods),
+        )
+
+        # fetch tenants
+        tenants = self.dao.tenant.list_visible_tenants()
+        tenants_authentication_methods = {
+            tenant.default_authentication_method for tenant in tenants
+        }
+        tenants_missing_authentication_method = [
+            tenant
+            for tenant in tenants
+            if tenant.default_authentication_method
+            not in available_authentication_methods
+        ]
+        logger.debug(
+            '%d tenants have no available idp implementation',
+            len(tenants_missing_authentication_method),
+        )
+
+        # fetch users
+        users = self.dao.user.list_()
+        users_authentication_methods = {user['authentication_method'] for user in users}
+        users_missing_authentication_method = [
+            user
+            for user in users
+            if user['authentication_method'] not in available_authentication_methods
+        ]
+        logger.debug(
+            '%d users have no available idp implementation',
+            len(users_missing_authentication_method),
+        )
+
+        # compute in-use authentication methods
+        all_authentication_methods = (
+            tenants_authentication_methods | users_authentication_methods - {'default'}
+        )
+        logger.debug(
+            '%d authentication methods are in use', len(all_authentication_methods)
+        )
+
+        missing_authentication_methods = (
+            all_authentication_methods - available_authentication_methods
+        )
+        if missing_authentication_methods:
+            logger.warning(
+                '%d authentication methods have no available idp implementation',
+                len(missing_authentication_methods),
+            )
+            for method in missing_authentication_methods:
+                logger.warning(
+                    'Authentication method %s is in use but is not available', method
+                )
+
+        for tenant in tenants_missing_authentication_method:
+            logger.warning(
+                'Tenant (uuid=%s) has no available idp implementation '
+                'for default authentication method %s',
+                tenant.uuid,
+                tenant.default_authentication_method,
+            )
+        for user in users_missing_authentication_method:
+            logger.warning(
+                'User (uuid=%s) has no available idp implementation '
+                'for authentication method %s',
+                user['uuid'],
+                user['authentication_method'],
+            )
 
 
 class BackendsProxy(UserDict[str, Extension]):
