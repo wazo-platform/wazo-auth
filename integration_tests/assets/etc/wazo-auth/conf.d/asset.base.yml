@@ -7,10 +7,14 @@ enabled_backend_plugins:
 idp_plugins:
   broken_load:
     enabled: true
+    priority: 1
   broken_can_authenticate:
     enabled: true
+    priority: 2
   broken_verify_auth:
     enabled: true
+    priority: 3
+
 
 default_user_policy: wazo_default_admin_policy # For testing only, not a legitimate configuration
 
