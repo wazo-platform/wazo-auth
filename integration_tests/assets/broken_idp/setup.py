@@ -13,6 +13,7 @@ setup(
             'broken_load = broken_idp.plugin:BrokenLoadIDP',
             'broken_can_authenticate = broken_idp.plugin:BrokenCanAuthenticateIDP',
             'broken_verify_auth = broken_idp.plugin:BrokenVerifyAuthIDP',
+            'broken_verify_auth_replacement = broken_idp.plugin:BrokenVerifyAuthReplacementIDP',
         ],
     },
 )

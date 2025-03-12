@@ -53,3 +53,20 @@ class BrokenVerifyAuthIDP(BaseIDP):
 
     def verify_auth(self, args: dict) -> tuple[BaseAuthenticationBackend, str]:
         raise exceptions.UnknownLoginException(args['login'])
+
+
+class BrokenVerifyAuthReplacementIDP(BaseIDP):
+    loaded = False
+    authentication_method = 'broken_verify_auth'
+
+    # a load method that does nothing
+    def load(self, dependencies: BaseIDPDependencies):
+        self.backend = dependencies['backends']['wazo_user'].obj
+        self.loaded = True
+
+    def can_authenticate(self, args: dict) -> bool:
+        custom_body_param = request.json.get('broken_verify_auth', False)
+        return custom_body_param
+
+    def verify_auth(self, args: dict) -> tuple[BaseAuthenticationBackend, str]:
+        return self.backend, args['login']

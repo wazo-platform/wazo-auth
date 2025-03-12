@@ -14,6 +14,9 @@ idp_plugins:
   broken_verify_auth:
     enabled: true
     priority: 3
+  broken_verify_auth_replacement:
+    enabled: true
+    priority: 4
 
 
 default_user_policy: wazo_default_admin_policy # For testing only, not a legitimate configuration

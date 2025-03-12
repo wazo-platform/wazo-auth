@@ -8,7 +8,7 @@ import requests
 from hamcrest import assert_that, contains_inanyorder, has_entries
 
 from .helpers import base, fixtures
-from .helpers.base import assert_http_error
+from .helpers.base import assert_http_error, assert_no_error
 
 TENANT_1_UUID = str(uuid4())
 TENANT_2_UUID = str(uuid4())
@@ -37,7 +37,9 @@ class TestAuthenticationMethods(base.APIIntegrationTest):
 
     @fixtures.http.tenant(uuid=TENANT_1_UUID)
     @fixtures.http.user(
-        tenant_uuid=TENANT_1_UUID, authentication_method='broken_verify_auth'
+        username='user1',
+        tenant_uuid=TENANT_1_UUID,
+        authentication_method='broken_verify_auth',
     )
     def test_broken_idp_login(self, tenant_1, user_1):
         # test a login attempt against an idp plugin implementation that fails
@@ -54,6 +56,16 @@ class TestAuthenticationMethods(base.APIIntegrationTest):
             response.raise_for_status()
 
         assert_http_error(401, login_using_broken_verify_auth)
+
+        # switch priority between two conflicting implementations
+        idp_priority_config = {
+            'idp_plugins': {
+                'broken_verify_auth': {'priority': 4},
+                'broken_verify_auth_replacement': {'priority': 3},
+            }
+        }
+        with self.auth_with_config(idp_priority_config):
+            assert_no_error(login_using_broken_verify_auth)
 
     @fixtures.http.tenant(uuid=TENANT_1_UUID)
     @fixtures.http.tenant(uuid=TENANT_2_UUID)
