@@ -368,14 +368,16 @@ class Controller:
         )
 
         # fetch tenants
-        tenants = self.dao.tenant.list_visible_tenants()
+        tenants = self.dao.tenant.get_missing_auth_methods(
+            available_methods=available_authentication_methods
+        )
         tenants_authentication_methods = {
-            tenant.default_authentication_method for tenant in tenants
+            tenant['default_authentication_method'] for tenant in tenants
         }
         tenants_missing_authentication_method = [
             tenant
             for tenant in tenants
-            if tenant.default_authentication_method
+            if tenant['default_authentication_method']
             not in available_authentication_methods
         ]
         logger.debug(
@@ -384,7 +386,9 @@ class Controller:
         )
 
         # fetch users
-        users = self.dao.user.list_()
+        users = self.dao.user.get_missing_auth_methods(
+            available_methods=available_authentication_methods
+        )
         users_authentication_methods = {user['authentication_method'] for user in users}
         users_missing_authentication_method = [
             user
@@ -421,8 +425,8 @@ class Controller:
             logger.warning(
                 'Tenant (uuid=%s) has no available idp implementation '
                 'for default authentication method %s',
-                tenant.uuid,
-                tenant.default_authentication_method,
+                tenant['uuid'],
+                tenant['default_authentication_method'],
             )
         for user in users_missing_authentication_method:
             logger.warning(

@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, func, or_, text
@@ -352,6 +352,19 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             )
 
         return users
+
+    def get_missing_auth_methods(self, available_methods: list[str]) -> list[dict]:
+        _filter = ~User.authentication_method.in_(available_methods)
+        query = self.session.query(User.uuid, User.authentication_method).filter(
+            _filter
+        )
+        return [
+            {
+                'uuid': user.uuid,
+                'authentication_method': user.authentication_method,
+            }
+            for user in query.all()
+        ]
 
     def update(self, user_uuid, **kwargs):
         self.session.query(User).filter(User.uuid == str(user_uuid)).update(kwargs)
