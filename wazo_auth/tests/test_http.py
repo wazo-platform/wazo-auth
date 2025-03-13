@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -33,6 +33,7 @@ class HTTPAppTestCase(TestCase):
         self.session_service = Mock()
         self.status_aggregator = Mock()
         self.template_formatter = Mock()
+        self.idp_service = Mock()
 
         app = Flask('wazo-auth')
         app.config['token_service'] = token_service
@@ -55,6 +56,7 @@ class HTTPAppTestCase(TestCase):
             'session_service': self.session_service,
             'status_aggregator': self.status_aggregator,
             'template_formatter': self.template_formatter,
+            'idp_service': self.idp_service,
         }
         plugin_helpers.load(
             namespace='wazo_auth.http',

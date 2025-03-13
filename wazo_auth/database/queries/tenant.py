@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, text
@@ -167,6 +167,22 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         top_tenant_uuid = self.find_top_tenant()
         query = self._tenant_query(top_tenant_uuid, scoping_tenant_uuid)
         return query.all()
+
+    def get_missing_auth_methods(self, available_methods: list[str]) -> list[dict]:
+        _filter = ~Tenant.default_authentication_method.in_(available_methods)
+        top_tenant_uuid = self.find_top_tenant()
+        query = (
+            self._tenant_query(top_tenant_uuid)
+            .filter(_filter)
+            .with_entities(Tenant.uuid, Tenant.default_authentication_method)
+        )
+        return [
+            {
+                'uuid': tenant.uuid,
+                'default_authentication_method': tenant.default_authentication_method,
+            }
+            for tenant in query.all()
+        ]
 
     def list_(self, top_tenant_uuid, scoping_tenant_uuid=None, **kwargs):
         query = self._tenant_query(top_tenant_uuid, scoping_tenant_uuid)

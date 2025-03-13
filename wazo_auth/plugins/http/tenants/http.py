@@ -15,9 +15,15 @@ from .schemas import TenantFullSchema, TenantListSchema, TenantPUTSchema
 logger = logging.getLogger(__name__)
 
 
+tenant_post_schema = TenantFullSchema()
+tenant_put_schema = TenantPUTSchema()
+tenant_list_schema = TenantListSchema()
+
+
 class BaseResource(http.AuthResource):
-    def __init__(self, tenant_service):
+    def __init__(self, tenant_service, idp_service):
         self.tenant_service = tenant_service
+        self.idp_service = idp_service
 
 
 class Tenant(BaseResource):
@@ -42,10 +48,21 @@ class Tenant(BaseResource):
     def put(self, tenant_uuid):
         scoping_tenant = TenantDetector.autodetect()
         try:
-            args = TenantPUTSchema().load(request.get_json())
+            args = tenant_put_schema.load(request.get_json())
         except ValidationError as e:
             raise exceptions.TenantParamException.from_errors(e.messages)
 
+        if not self.idp_service.is_valid_idp_type(
+            args['default_authentication_method']
+        ):
+            raise exceptions.TenantParamException(
+                f'Invalid default authentication method {args["default_authentication_method"]}',
+                details={
+                    'default_authentication_method': args[
+                        'default_authentication_method'
+                    ]
+                },
+            )
         result = self.tenant_service.update(scoping_tenant.uuid, tenant_uuid, **args)
         return result, 200
 
@@ -55,7 +72,7 @@ class Tenants(BaseResource):
     def get(self):
         scoping_tenant = TenantDetector.autodetect()
         try:
-            list_params = TenantListSchema().load(request.args)
+            list_params = tenant_list_schema.load(request.args)
         except ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 
@@ -80,10 +97,21 @@ class Tenants(BaseResource):
             request.get_json(force=True),
         )
         try:
-            args = TenantFullSchema().load(request.get_json())
+            args = tenant_post_schema.load(request.get_json())
         except ValidationError as e:
             raise exceptions.TenantParamException.from_errors(e.messages)
 
+        if not self.idp_service.is_valid_idp_type(
+            args['default_authentication_method']
+        ):
+            raise exceptions.TenantParamException(
+                f'Invalid default authentication method {args["default_authentication_method"]}',
+                details={
+                    'default_authentication_method': args[
+                        'default_authentication_method'
+                    ]
+                },
+            )
         result = self.tenant_service.new(parent_uuid=scoping_tenant.uuid, **args)
         return result, 200
 

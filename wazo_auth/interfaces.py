@@ -1,10 +1,18 @@
 # Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from __future__ import annotations
+
 import abc
 import logging
 import os
 from collections import namedtuple
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Protocol, TypedDict
+
+if TYPE_CHECKING:
+    from stevedore.extension import Extension
+
 
 DEFAULT_XIVO_UUID = os.getenv('XIVO_UUID')
 logger = logging.getLogger(__name__)
@@ -101,3 +109,39 @@ class BaseEmailNotification(metaclass=abc.ABCMeta):
     def send_password_reset(self, context: dict) -> None:
         """Send password reset email link"""
         pass
+
+
+class IDPPluginDependencies(TypedDict, total=False):
+    backends: Mapping[str, Extension]
+    ...
+
+
+class IDPPlugin(Protocol):
+    loaded: bool = False
+    """
+    Indicates that the plugin has been fully loaded successfully
+    (load method executed completely without errors)
+    """
+
+    authentication_method: str
+    """
+    identifier for this auth method
+    """
+
+    def load(self, dependencies: IDPPluginDependencies):
+        ...
+
+    def can_authenticate(self, args: dict) -> bool:
+        """
+        Evaluate if this plugin is applicable to a login request based on login request args
+
+        Returns true if the plugin can authenticate the login request
+        based on the login request information, false otherwise.
+        """
+        ...
+
+    def verify_auth(self, args: dict) -> tuple[BaseAuthenticationBackend, str]:
+        """
+        Verify(authenticate) login request and return an authentication backend and a login string
+        """
+        ...
