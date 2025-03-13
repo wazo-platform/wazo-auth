@@ -34,15 +34,11 @@ def downgrade():
     op.create_check_constraint(
         AUTH_TENANT_DEFAULT_AUTHENTICATION_METHOD_CHECK_CONSTRAINT,
         'auth_tenant',
-        sa.CheckConstraint(
-            "default_authentication_method in ('native', 'ldap', 'saml')"
-        ),
+        sa.text("default_authentication_method in ('native', 'ldap', 'saml')"),
     )
     # recreate check constraint
     op.create_check_constraint(
         AUTH_USER_AUTHENTICATION_METHOD_CHECK_CONSTRAINT,
         'auth_user',
-        sa.CheckConstraint(
-            "authentication_method in ('default', 'native', 'ldap', 'saml')"
-        ),
+        sa.text("authentication_method in ('default', 'native', 'ldap', 'saml')"),
     )

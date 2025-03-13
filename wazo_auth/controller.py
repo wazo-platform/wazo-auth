@@ -23,7 +23,7 @@ from wazo_auth.services.idp import HARDCODED_IDP_TYPES
 from . import bootstrap, http, services, token
 from .bus import BusPublisher
 from .database import queries
-from .database.helpers import db_ready, init_db
+from .database.helpers import Session, db_ready, init_db
 from .flask_helpers import Tenant, Token
 from .http_server import CoreRestApi, api
 from .plugin_helpers import utils as plugin_utils
@@ -371,6 +371,14 @@ class Controller:
         tenants = self.dao.tenant.get_missing_auth_methods(
             available_methods=available_authentication_methods
         )
+
+        # fetch users
+        users = self.dao.user.get_missing_auth_methods(
+            available_methods=available_authentication_methods
+        )
+        # ensure transaction is closed to avoid connection leak
+        Session.remove()
+
         tenants_authentication_methods = {
             tenant['default_authentication_method'] for tenant in tenants
         }
@@ -385,10 +393,6 @@ class Controller:
             len(tenants_missing_authentication_method),
         )
 
-        # fetch users
-        users = self.dao.user.get_missing_auth_methods(
-            available_methods=available_authentication_methods
-        )
         users_authentication_methods = {user['authentication_method'] for user in users}
         users_missing_authentication_method = [
             user
