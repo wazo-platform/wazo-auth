@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -347,6 +347,34 @@ class TestCore(base.APIIntegrationTest):
         assert_that(
             self.client.token.check_scopes(token, ['foo', 'bar'])['scopes'],
             has_entries(foo=True, bar=False),
+        )
+
+    @fixtures.http.policy(name='userme', acl=['users.me.#'])
+    def test_that_users_me_wildcard_acl_on_scope_check_returns_only_valid_accesses(
+        self, policy
+    ):
+        self.client.users.add_policy(self.user['uuid'], policy['uuid'])
+
+        token = self._post_token('foo', 'bar')['token']
+
+        assert_that(
+            self.client.token.check_scopes(
+                token,
+                [
+                    'users.me.123',
+                    f'users.{self.user["uuid"]}.some_resource',
+                    f'users.{self.admin_user_uuid}.some_resource',
+                    'fire.the.missiles',
+                ],
+            )['scopes'],
+            has_entries(
+                {
+                    'users.me.123': True,
+                    f'users.{self.user["uuid"]}.some_resource': True,
+                    f'users.{self.admin_user_uuid}.some_resource': False,
+                    'fire.the.missiles': False,
+                }
+            ),
         )
 
     def test_that_no_acl_on_scope_check_returns_empty_result(self):
