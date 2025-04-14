@@ -1,7 +1,8 @@
-# Copyright 2017-2022 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
+import threading
 import time
 import uuid
 
@@ -19,29 +20,41 @@ class LocalTokenRenewer:
         self._acl = acl
         self._token_service = token_service
         self._token = None
-        self._renew_time = time.time() - 5
         self._delay = 3600
         self._threshold = 30
+        self._lock = threading.RLock()
 
     def get_token(self):
         # get_token MUST be called before any DB operations during the HTTP request
         # otherwise previous changes will be committed event if an error occurs later
-        if self._need_new_token():
-            self._renew_time = time.time() + self._delay - self._threshold
-            self._token = self._token_service.new_token_internal(
-                expiration=self._delay,
-                acl=self._acl,
-            )
-            commit_or_rollback()
+        with self._lock:
+            if self._need_new_token():
+                time_start = time.time()
+                self._token = self._token_service.new_token_internal(
+                    expiration=self._delay,
+                    acl=self._acl,
+                )
+                commit_or_rollback()
+                logger.info(
+                    'Generated internal token in %.3fs: %s with expiration %ss',
+                    time.time() - time_start,
+                    self._token.token_redacted(),
+                    self._delay,
+                )
 
         return self._token.token
 
     def revoke_token(self):
-        if self._token:
-            self._token_service.remove_token(self._token.token)
+        with self._lock:
+            if self._token:
+                self._token_service.remove_token(self._token.token)
+                self._token = None
 
     def _need_new_token(self):
-        return not self._token or time.time() > self._renew_time
+        if not self._token:
+            return True
+        expire_in = self._token.expire_t - time.time()
+        return expire_in < self._threshold
 
 
 def is_uuid(value):
