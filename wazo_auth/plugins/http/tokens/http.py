@@ -214,11 +214,10 @@ class Tokens(BaseResource):
             return http._error(401, 'Authentication Failed')
 
         token = self._token_service.new_token(backend, login, args)
-        redacted_token_id = 'XXXXXXXX-XXXX-XXXX-XXXX-XXXX' + token.token[-8:]
         logger.info(
             'Successful login: %s got token %s from %s using agent "%s"',
             login,
-            redacted_token_id,
+            token.token_redacted(),
             remote_addr,
             user_agent,
         )
