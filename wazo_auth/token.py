@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -104,6 +104,9 @@ class Token:
 
     def matches_required_access(self, required_access):
         return self._access_check.matches_required_access(required_access)
+
+    def token_redacted(self):
+        return 'XXXXXXXX-XXXX-XXXX-XXXX-XXXX' + self.token[-8:]
 
 
 class ExpiredTokenRemover:
