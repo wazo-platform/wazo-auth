@@ -1,6 +1,7 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import time
 import unittest
 from unittest.mock import Mock
 
@@ -11,7 +12,9 @@ from ..helpers import LocalTokenRenewer
 
 class TestLocalTokenRenewer(unittest.TestCase):
     def setUp(self):
+        token = Mock(expire_t=time.time())
         self.token_service = Mock()
+        self.token_service.new_token_internal.return_value = token
         self.acl = ['access.1', 'access.2.#']
 
         self.token_renewer = LocalTokenRenewer(self.token_service, acl=self.acl)
@@ -45,3 +48,4 @@ class TestLocalTokenRenewer(unittest.TestCase):
         self.token_renewer.revoke_token()
 
         self.token_service.remove_token.assert_called_once_with(token)
+        assert_that(self.token_renewer._token, equal_to(None))
