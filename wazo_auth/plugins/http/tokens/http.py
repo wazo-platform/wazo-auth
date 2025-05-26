@@ -211,6 +211,7 @@ class Tokens(BaseResource):
                 remote_addr,
                 user_agent,
             )
+            logger.debug('authentication failed: %s', e)
             return http._error(401, 'Authentication Failed')
 
         token = self._token_service.new_token(backend, login, args)
