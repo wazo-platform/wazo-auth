@@ -229,21 +229,26 @@ class Controller:
             'saml_config_service': self._saml_config_service,
         }
 
-        self._native_idp = NativeIDP()
-        self._native_idp.load(dependencies)
-        assert self._native_idp.loaded
-
-        self._refresh_token_idp = RefreshTokenIDP()
-        self._refresh_token_idp.load(dependencies)
-        assert self._refresh_token_idp.loaded
-
         # load idp plugins (native and refresh_token are loaded separately)
         self._idp_plugins_manager, self._idp_plugins = _load_idp_plugins(
             config, dependencies
         )
 
-        # idp_plugins should be available in dependencies for http plugins
+        # idp_plugins should be available in dependencies
+        #  for http plugins and refresh token idp
         dependencies['idp_plugins'] = self._idp_plugins
+
+        self._native_idp = NativeIDP()
+        self._native_idp.load(dependencies)
+        assert self._native_idp.loaded
+
+        dependencies['native_idp'] = self._native_idp
+
+        self._refresh_token_idp = RefreshTokenIDP()
+        self._refresh_token_idp.load(dependencies)
+        assert self._refresh_token_idp.loaded
+
+        dependencies['refresh_token_idp'] = self._refresh_token_idp
 
         authentication_service = services.AuthenticationService(
             self.dao,
