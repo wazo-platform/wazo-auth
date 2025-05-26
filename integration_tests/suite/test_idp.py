@@ -113,3 +113,45 @@ class TestAuthenticationMethods(base.APIIntegrationTest):
         ]
         for log in expected_logs:
             assert re.search(log, logs)
+
+    @fixtures.http.tenant(uuid=TENANT_1_UUID)
+    @fixtures.http.user(
+        tenant_uuid=TENANT_1_UUID,
+        authentication_method='broken_verify_auth',
+        username='user1',
+    )
+    def test_idp_with_refresh_token(self, tenant_1, user_1):
+        idp_priority_config = {
+            'idp_plugins': {
+                'broken_verify_auth': {'priority': 4},
+                'broken_verify_auth_replacement': {'priority': 3},
+            }
+        }
+        client_id = 'my-test'
+        with self.auth_with_config(idp_priority_config):
+            response = requests.post(
+                self.client.url('token'),
+                json={
+                    'broken_verify_auth': True,
+                    'access_type': 'offline',
+                    'client_id': client_id,
+                },
+                auth=(user_1['username'], user_1['password']),
+            )
+            response.raise_for_status()
+
+            assert response.status_code == 200
+
+            refresh_token = response.json()['data']['refresh_token']
+
+            # login with refresh token
+            response2 = requests.post(
+                self.client.url('token'),
+                json={
+                    'refresh_token': refresh_token,
+                    'client_id': client_id,
+                    'expiration': 7200,
+                },
+            )
+            response2.raise_for_status()
+            assert response2.status_code == 200

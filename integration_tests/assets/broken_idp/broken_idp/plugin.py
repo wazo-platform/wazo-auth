@@ -20,6 +20,9 @@ class BrokenLoadIDP(BaseIDP):
     def can_authenticate(self, args: dict) -> bool:
         return False
 
+    def get_backend(self, args: dict) -> BaseAuthenticationBackend:
+        raise Exception()
+
     def verify_auth(self, args: dict) -> tuple[BaseAuthenticationBackend, str]:
         raise Exception()
 
@@ -34,6 +37,9 @@ class BrokenCanAuthenticateIDP(BaseIDP):
 
     def can_authenticate(self, args: dict) -> bool:
         raise Exception("Say what?")
+
+    def get_backend(self, args: dict) -> BaseAuthenticationBackend:
+        raise Exception()
 
     def verify_auth(self, args: dict) -> tuple[BaseAuthenticationBackend, str]:
         raise Exception()
@@ -51,6 +57,9 @@ class BrokenVerifyAuthIDP(BaseIDP):
         custom_body_param = request.json.get('broken_verify_auth', False)
         return custom_body_param
 
+    def get_backend(self, args: dict) -> BaseAuthenticationBackend:
+        raise Exception()
+
     def verify_auth(self, args: dict) -> tuple[BaseAuthenticationBackend, str]:
         raise exceptions.UnknownLoginException(args['login'])
 
@@ -67,6 +76,9 @@ class BrokenVerifyAuthReplacementIDP(BaseIDP):
     def can_authenticate(self, args: dict) -> bool:
         custom_body_param = request.json.get('broken_verify_auth', False)
         return custom_body_param
+
+    def get_backend(self, args: dict) -> BaseAuthenticationBackend:
+        return self.backend
 
     def verify_auth(self, args: dict) -> tuple[BaseAuthenticationBackend, str]:
         return self.backend, args['login']
