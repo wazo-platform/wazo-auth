@@ -12,6 +12,17 @@ from wazo_auth.exceptions import UnauthorizedAuthenticationMethod, UnknownRefres
 from wazo_auth.plugins.idp.refresh_token import Dependencies, RefreshTokenIDP
 
 
+class CustomIDP:
+    authentication_method = 'custom'
+    loaded = False
+
+    def load(self, dependencies: Dependencies):
+        self.loaded = True
+
+    def get_backend(self, args):
+        return s.custom_idp_backend
+
+
 @pytest.fixture
 def refresh_token_idp() -> RefreshTokenIDP:
     user_service = MagicMock()
@@ -26,6 +37,15 @@ def refresh_token_idp() -> RefreshTokenIDP:
         'ldap_service': MagicMock(),
         'config': MagicMock(),
         'backends': {'wazo_user': native_backend},
+        'idp_plugins': {
+            'custom': MagicMock(obj=CustomIDP()),
+        },
+        'native_idp': MagicMock(
+            obj=MagicMock(
+                authentication_method='native',
+                get_backend=MagicMock(return_value=native_backend),
+            )
+        ),
     }
     refresh_token_idp = RefreshTokenIDP()
     refresh_token_idp.load(cast(Dependencies, dependencies))
@@ -90,3 +110,22 @@ def test_verify_auth_bad_credentials(refresh_token_idp: RefreshTokenIDP):
 
     with pytest.raises(UnknownRefreshToken):
         refresh_token_idp.verify_auth(args)
+
+
+def test_verify_auth_idp_auth_method(refresh_token_idp: RefreshTokenIDP):
+    args = {'refresh_token': s.refresh_token, 'client_id': s.client_id}
+
+    # assume user do not have native auth method
+    user = MagicMock()
+    user.uuid = 'user_uuid'
+    user.authentication_method = 'custom'
+    refresh_token_idp._user_service.get_user_by_login.return_value = user
+
+    refresh_token_idp._token_service.get_refresh_token_info.return_value = {
+        'login': s.login
+    }
+
+    backend, login = refresh_token_idp.verify_auth(args)
+
+    assert backend == s.custom_idp_backend
+    assert login == s.login

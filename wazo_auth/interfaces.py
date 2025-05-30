@@ -145,3 +145,9 @@ class IDPPlugin(Protocol):
         Verify(authenticate) login request and return an authentication backend and a login string
         """
         ...
+
+    def get_backend(self, args: dict) -> BaseAuthenticationBackend:
+        """
+        Return an authentication backend appropriate for the given authentication request
+        """
+        ...

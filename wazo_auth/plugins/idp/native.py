@@ -50,6 +50,9 @@ class NativeIDP(BaseIDP):
         # this method applies to request providing 'login' and 'password' credentials
         return 'login' in args and 'password' in args
 
+    def get_backend(self, args: dict) -> BaseAuthenticationBackend:
+        return self._backend
+
     def verify_auth(self, args: dict) -> tuple[BaseAuthenticationBackend, str]:
         assert self.loaded
         assert {'login', 'password'} <= args.keys()
