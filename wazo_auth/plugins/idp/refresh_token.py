@@ -55,8 +55,6 @@ class RefreshTokenIDP(BaseIDP):
         #  when those auth methods are implemented as IDP plugins
         if authorized_authentication_method == 'ldap':
             backend = self._backends['ldap_user'].obj
-        elif authorized_authentication_method == 'saml':
-            backend = self._backends['wazo_user'].obj
         else:
             # try and get backend from idp plugin
             try:

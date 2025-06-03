@@ -11,6 +11,7 @@ from wazo_test_helpers.hamcrest.raises import raises
 from wazo_auth import exceptions
 from wazo_auth.plugins.idp.native import NativeIDP
 from wazo_auth.plugins.idp.refresh_token import RefreshTokenIDP
+from wazo_auth.plugins.idp.saml import SAMLIDP
 from wazo_auth.services.saml import SAMLService
 from wazo_auth.services.tenant import TenantService
 from wazo_auth.services.token import TokenService
@@ -33,7 +34,17 @@ class TestAuthenticationService(TestCase):
             'ldap_user': Mock(obj=self.ldap_user_backend),
         }
 
-        self.idp_plugins = {}
+        saml_idp = SAMLIDP()
+        saml_idp.load(
+            {
+                'config': {},
+                'backends': {'wazo_user': Mock(obj=self.wazo_user_backend)},
+                'saml_service': self.saml_service,
+            }
+        )
+        self.idp_plugins = {
+            'saml': Mock(obj=saml_idp),
+        }
         self.native_idp = NativeIDP()
         self.native_idp.load(
             {
@@ -50,7 +61,6 @@ class TestAuthenticationService(TestCase):
             self.dao,
             self.backends,
             self.tenant_service,
-            self.saml_service,
             self.idp_plugins,
             self.native_idp,
             self.refresh_token_idp,

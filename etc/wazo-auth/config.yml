@@ -52,7 +52,10 @@ enabled_external_auth_plugins:
   microsoft: true
   mobile: true
 
-idp_plugins: {}
+idp_plugins:
+  saml:
+    enabled: true
+    priority: 1
 
 
 microsoft:
