@@ -132,7 +132,7 @@ class AuthenticationService:
         )
         # NOTE: if method is refresh_token, refresh_token implementation takes care of
         #  verifying user for compatible auth method
-        #  when selecting which wazo_auth.backend to use
+        #  when selecting which wazo_auth.backends to use
         if (
             selected_authentication_method != 'refresh_token'
             and authorized_authentication_method != selected_authentication_method

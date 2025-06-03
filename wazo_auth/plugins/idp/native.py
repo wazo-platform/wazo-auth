@@ -38,9 +38,9 @@ class NativeIDP(BaseIDP):
 
         if 'wazo_user' not in dependencies['backends']:
             logger.error(
-                'cannot load native idp plugin: missing wazo_auth.backend \'wazo_user\''
+                'cannot load native idp plugin: missing wazo_auth.backends \'wazo_user\''
             )
-            raise RuntimeError('missing wazo_user wazo_auth.backend extension')
+            raise RuntimeError('missing wazo_user wazo_auth.backends extension')
         self._backend = dependencies['backends']['wazo_user'].obj
 
         self.loaded = True
