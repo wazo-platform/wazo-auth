@@ -9,4 +9,5 @@ class BaseIDPDependencies(IDPPluginDependencies):
 
 
 class BaseIDP(IDPPlugin):
-    pass
+    def load(self, dependencies: BaseIDPDependencies):
+        pass
