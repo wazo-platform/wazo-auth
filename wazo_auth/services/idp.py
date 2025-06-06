@@ -13,7 +13,7 @@ from wazo_auth.services.helpers import BaseService
 IDPType = Union[str, Literal['default']]
 
 # TODO: remove non-native authentication methods when they are migrated to idp plugins
-HARDCODED_IDP_TYPES: set[IDPType] = {'ldap', 'native', 'default'}
+HARDCODED_IDP_TYPES: set[IDPType] = {'native', 'default'}
 
 
 class IDPService(BaseService):

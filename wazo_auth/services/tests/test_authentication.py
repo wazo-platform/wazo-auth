@@ -1,6 +1,7 @@
 # Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from collections import OrderedDict
 from unittest import TestCase
 from unittest.mock import Mock, patch
 from unittest.mock import sentinel as s
@@ -9,6 +10,7 @@ from hamcrest import assert_that, calling, contains_exactly, has_entries
 from wazo_test_helpers.hamcrest.raises import raises
 
 from wazo_auth import exceptions
+from wazo_auth.plugins.idp.ldap import LDAPIDP
 from wazo_auth.plugins.idp.native import NativeIDP
 from wazo_auth.plugins.idp.refresh_token import RefreshTokenIDP
 from wazo_auth.plugins.idp.saml import SAMLIDP
@@ -37,14 +39,22 @@ class TestAuthenticationService(TestCase):
         saml_idp = SAMLIDP()
         saml_idp.load(
             {
-                'config': {},
-                'backends': {'wazo_user': Mock(obj=self.wazo_user_backend)},
+                'backends': self.backends,
                 'saml_service': self.saml_service,
             }
         )
-        self.idp_plugins = {
-            'saml': Mock(obj=saml_idp),
-        }
+        ldap_idp = LDAPIDP()
+        ldap_idp.load(
+            {
+                'backends': self.backends,
+            }
+        )
+        self.idp_plugins = OrderedDict(
+            [
+                ('saml', Mock(obj=saml_idp)),
+                ('ldap', Mock(obj=ldap_idp)),
+            ]
+        )
         self.native_idp = NativeIDP()
         self.native_idp.load(
             {
@@ -68,7 +78,6 @@ class TestAuthenticationService(TestCase):
 
         self.service = AuthenticationService(
             self.dao,
-            self.backends,
             self.tenant_service,
             self.idp_plugins,
             self.native_idp,

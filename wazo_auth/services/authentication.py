@@ -12,13 +12,8 @@ import stevedore
 if TYPE_CHECKING:
     from wazo_auth.database.queries import DAO
 
-from wazo_auth.exceptions import (
-    InvalidLoginRequest,
-    InvalidUsernamePassword,
-    NoSuchBackendException,
-    UnauthorizedAuthenticationMethod,
-)
-from wazo_auth.interfaces import BaseAuthenticationBackend, IDPPlugin
+from wazo_auth.exceptions import InvalidLoginRequest, UnauthorizedAuthenticationMethod
+from wazo_auth.interfaces import IDPPlugin
 from wazo_auth.services.tenant import TenantService
 
 logger = logging.getLogger(__name__)
@@ -28,14 +23,12 @@ class AuthenticationService:
     def __init__(
         self,
         dao: DAO,
-        backends: Mapping[str, stevedore.extension.Extension],
         tenant_service: TenantService,
         idp_plugins: Mapping[str, stevedore.extension.Extension],
         native_idp: IDPPlugin,
         refresh_token_idp: IDPPlugin,
     ):
         self._dao = dao
-        self._backends = backends
         self._tenant_service = tenant_service
         self._idp_plugins = idp_plugins
         self._native_idp = native_idp
@@ -49,21 +42,10 @@ class AuthenticationService:
             backend, login = self._refresh_token_idp.verify_auth(args)
             args['login'] = login
             selected_authentication_method = 'refresh_token'
-        elif 'domain_name' in args or 'tenant_id' in args:
-            backend = self._get_backend('ldap_user')
-            # TODO: cleanup "login" confusion.
-            ldap_login = args.get(
-                'login', ''
-            )  # ldap username, not necessarily wazo username or email
-            if not backend.verify_password(ldap_login, args.pop('password', ''), args):
-                raise InvalidUsernamePassword(ldap_login)
-            # TODO: avoid relying on mutable args
-            assert 'user_email' in args
-            login = args['user_email']
-            selected_authentication_method = 'ldap'
         else:
             logger.info('Attempting to find idp plugin for login request')
             logger.debug('%d idp plugins available', len(self._idp_plugins))
+            logger.debug('login request args: %s', args)
             # search for appropriate plugin
             idp_name, idp_extension = None, None
             for name, extension in self._idp_plugins.items():
@@ -136,13 +118,6 @@ class AuthenticationService:
             )
 
         return backend, login
-
-    def _get_backend(self, backend_name: str) -> BaseAuthenticationBackend:
-        try:
-            return self._backends[backend_name].obj
-        except KeyError:
-            logger.debug('backend not found: "%s"', backend_name)
-            raise NoSuchBackendException(backend_name)
 
     def _authorized_authentication_method(self, login: str):
         user = self._dao.user.get_user_by_login(login)
