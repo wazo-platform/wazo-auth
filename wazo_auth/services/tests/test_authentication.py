@@ -1,6 +1,7 @@
 # Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from collections import OrderedDict
 from unittest import TestCase
 from unittest.mock import Mock, patch
 from unittest.mock import sentinel as s
@@ -9,6 +10,7 @@ from hamcrest import assert_that, calling, contains_exactly, has_entries
 from wazo_test_helpers.hamcrest.raises import raises
 
 from wazo_auth import exceptions
+from wazo_auth.plugins.idp.ldap import LDAPIDP
 from wazo_auth.plugins.idp.native import NativeIDP
 from wazo_auth.plugins.idp.refresh_token import RefreshTokenIDP
 from wazo_auth.plugins.idp.saml import SAMLIDP
@@ -37,14 +39,22 @@ class TestAuthenticationService(TestCase):
         saml_idp = SAMLIDP()
         saml_idp.load(
             {
-                'config': {},
-                'backends': {'wazo_user': Mock(obj=self.wazo_user_backend)},
+                'backends': self.backends,
                 'saml_service': self.saml_service,
             }
         )
-        self.idp_plugins = {
-            'saml': Mock(obj=saml_idp),
-        }
+        ldap_idp = LDAPIDP()
+        ldap_idp.load(
+            {
+                'backends': self.backends,
+            }
+        )
+        self.idp_plugins = OrderedDict(
+            [
+                ('saml', Mock(obj=saml_idp)),
+                ('ldap', Mock(obj=ldap_idp)),
+            ]
+        )
         self.native_idp = NativeIDP()
         self.native_idp.load(
             {
@@ -54,12 +64,20 @@ class TestAuthenticationService(TestCase):
             }
         )
 
-        self.refresh_token_idp = Mock(RefreshTokenIDP)
-        self.refresh_token_idp.can_authenticate.return_value = False
+        self.refresh_token_idp = RefreshTokenIDP()
+        self.refresh_token_idp.load(
+            {
+                'backends': self.backends,
+                'idp_plugins': self.idp_plugins,
+                'native_idp': self.native_idp,
+                'user_service': self.user_service,
+                'tenant_service': self.tenant_service,
+                'token_service': self.token_service,
+            }
+        )
 
         self.service = AuthenticationService(
             self.dao,
-            self.backends,
             self.tenant_service,
             self.idp_plugins,
             self.native_idp,
@@ -75,16 +93,12 @@ class TestAuthenticationService(TestCase):
     def test_verify_auth_refresh_token(self):
         self.set_authorized_authentication_method(s.original_login, 'native')
         args = {'refresh_token': s.refresh_token, 'client_id': s.client_id}
-        self.refresh_token_idp.can_authenticate.return_value = True
-        self.refresh_token_idp.verify_auth.return_value = (
-            self.wazo_user_backend,
-            s.original_login,
-        )
 
-        with patch.object(
-            self.refresh_token_idp, 'can_authenticate'
-        ) as can_authenticate:
-            can_authenticate.return_value = True
+        with patch.object(self.refresh_token_idp, 'verify_auth') as verify_auth:
+            verify_auth.return_value = (
+                self.wazo_user_backend,
+                s.original_login,
+            )
             result = self.service.verify_auth(args)
 
         assert_that(result, contains_exactly(self.wazo_user_backend, s.original_login))
@@ -92,14 +106,9 @@ class TestAuthenticationService(TestCase):
 
     def test_verify_auth_refresh_token_user_deleted(self):
         args = {'refresh_token': s.refresh_token, 'client_id': s.client_id}
-        self.refresh_token_idp.verify_auth.side_effect = (
-            exceptions.UnknownLoginException(s.original_login)
-        )
 
-        with patch.object(
-            self.refresh_token_idp, 'can_authenticate'
-        ) as can_authenticate:
-            can_authenticate.return_value = True
+        with patch.object(self.refresh_token_idp, 'verify_auth') as verify_auth:
+            verify_auth.side_effect = exceptions.UnknownLoginException(s.original_login)
             assert_that(
                 calling(self.service.verify_auth).with_args(args),
                 raises(exceptions.UnknownLoginException),
@@ -107,14 +116,9 @@ class TestAuthenticationService(TestCase):
 
     def test_verify_auth_refresh_token_no_refresh_token(self):
         args = {'refresh_token': s.refresh_token, 'client_id': s.client_id}
-        self.refresh_token_idp.verify_auth.side_effect = exceptions.UnknownRefreshToken(
-            s.client_id
-        )
 
-        with patch.object(
-            self.refresh_token_idp, 'can_authenticate'
-        ) as can_authenticate:
-            can_authenticate.return_value = True
+        with patch.object(self.refresh_token_idp, 'verify_auth') as verify_auth:
+            verify_auth.side_effect = exceptions.UnknownRefreshToken(s.client_id)
             assert_that(
                 calling(self.service.verify_auth).with_args(args),
                 raises(exceptions.UnknownRefreshToken),

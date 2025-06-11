@@ -8,6 +8,9 @@ idp_plugins:
   saml:
     enabled: true
     priority: 1
+  ldap:
+    enabled: true
+    priority: 2
   broken_load:
     enabled: true
     priority: 2

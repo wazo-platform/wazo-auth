@@ -252,7 +252,6 @@ class Controller:
 
         authentication_service = services.AuthenticationService(
             self.dao,
-            self._backends,
             self._tenant_service,
             dependencies['idp_plugins'],
             self._native_idp,

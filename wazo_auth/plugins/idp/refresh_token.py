@@ -67,45 +67,40 @@ class RefreshTokenIDP(BaseIDP):
 
         authorized_authentication_method = self._get_user_auth_method(args['login'])
 
-        # TODO: these hardcoded mappings should be removed
-        #  when those auth methods are implemented as IDP plugins
-        if authorized_authentication_method == 'ldap':
-            backend = self._backends['ldap_user'].obj
-        else:
-            # try and get backend from idp plugin
-            try:
-                idp_plugin: IDPPlugin = (
-                    self._native_idp
-                    if authorized_authentication_method == 'native'
-                    else next(
-                        plugin.obj
-                        for name, plugin in self._idp_plugins.items()
-                        if plugin.obj.authentication_method
-                        == authorized_authentication_method
-                    )
+        # try and get backend from idp plugin
+        try:
+            idp_plugin: IDPPlugin = (
+                self._native_idp
+                if authorized_authentication_method == 'native'
+                else next(
+                    plugin.obj
+                    for name, plugin in self._idp_plugins.items()
+                    if plugin.obj.authentication_method
+                    == authorized_authentication_method
                 )
-            except StopIteration:
-                logger.error(
-                    'no idp plugin found for user authorized auth method %s',
-                    authorized_authentication_method,
-                )
-                raise UnauthorizedAuthenticationMethod(
-                    authorized_authentication_method,
-                    'refresh_token',
-                    args['login'],
-                )
+            )
+        except StopIteration:
+            logger.error(
+                'no idp plugin found for user authorized auth method %s',
+                authorized_authentication_method,
+            )
+            raise UnauthorizedAuthenticationMethod(
+                authorized_authentication_method,
+                'refresh_token',
+                args['login'],
+            )
 
-            if not hasattr(idp_plugin, 'get_backend'):
-                logger.error(
-                    'idp plugin %s does not implement a get_backend interface',
-                    authorized_authentication_method,
-                )
-                raise UnauthorizedAuthenticationMethod(
-                    authorized_authentication_method,
-                    'refresh_token',
-                    args['login'],
-                )
-            backend = idp_plugin.get_backend(args)
+        if not hasattr(idp_plugin, 'get_backend'):
+            logger.error(
+                'idp plugin %s does not implement a get_backend interface',
+                authorized_authentication_method,
+            )
+            raise UnauthorizedAuthenticationMethod(
+                authorized_authentication_method,
+                'refresh_token',
+                args['login'],
+            )
+        backend = idp_plugin.get_backend(args)
 
         return backend
 

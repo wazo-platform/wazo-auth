@@ -81,6 +81,10 @@ _DEFAULT_CONFIG = {
             'enabled': True,
             'priority': 1,
         },
+        'ldap': {
+            'enabled': True,
+            'priority': 2,
+        },
     },
     'backend_policies': {},  # since 21.14: Deprecated
     'rest_api': {
