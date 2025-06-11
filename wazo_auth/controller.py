@@ -254,7 +254,6 @@ class Controller:
             self.dao,
             self._backends,
             self._tenant_service,
-            self._saml_service,
             dependencies['idp_plugins'],
             self._native_idp,
             self._refresh_token_idp,

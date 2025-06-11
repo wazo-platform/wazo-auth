@@ -6,10 +6,9 @@ from typing import TypedDict
 
 from stevedore.extension import Extension
 
-from wazo_auth.exceptions import InvalidUsernamePassword
+from wazo_auth.exceptions import NoMatchingSAMLSession
 from wazo_auth.interfaces import BaseAuthenticationBackend
-from wazo_auth.services.tenant import TenantService
-from wazo_auth.services.user import UserService
+from wazo_auth.services.saml import SAMLService
 
 from .base import BaseIDP, BaseIDPDependencies
 
@@ -22,45 +21,48 @@ class Backends(TypedDict, total=False):
 
 class Dependencies(BaseIDPDependencies):
     backends: Backends
-    user_service: UserService
-    tenant_service: TenantService
+    saml_service: SAMLService
 
 
-class NativeIDP(BaseIDP):
-    authentication_method = 'native'
+class SAMLIDP(BaseIDP):
+    authentication_method = 'saml'
     loaded = False
 
     _backend: BaseAuthenticationBackend
 
     def load(self, dependencies: Dependencies):
-        logger.debug('Loading native idp plugin')
+        logger.debug('Loading saml idp plugin')
         super().load(dependencies)
 
         if 'wazo_user' not in dependencies['backends']:
             logger.error(
-                'cannot load native idp plugin: missing wazo_auth.backends \'wazo_user\''
+                'cannot load saml idp plugin: missing wazo_auth.backends \'wazo_user\''
             )
             raise RuntimeError('missing wazo_user wazo_auth.backends extension')
         self._backend = dependencies['backends']['wazo_user'].obj
+        self._saml_service = dependencies['saml_service']
 
         self.loaded = True
-        logger.debug('Native idp plugin loaded')
+        logger.debug('saml idp plugin loaded')
 
     def can_authenticate(self, args: dict) -> bool:
-        # this method applies to request providing 'login' and 'password' credentials
-        return 'login' in args and 'password' in args
+        return 'saml_session_id' in args
 
     def get_backend(self, args: dict) -> BaseAuthenticationBackend:
         return self._backend
 
     def verify_auth(self, args: dict) -> tuple[BaseAuthenticationBackend, str]:
         assert self.loaded
-        assert {'login', 'password'} <= args.keys()
+        assert 'saml_session_id' in args
 
-        login = args['login']
-        password = args['password']
+        logger.debug('verifying SAML login')
+        saml_session_id = args['saml_session_id']
+        saml_login = self._saml_service.get_user_login(
+            saml_session_id,
+        )
+        if not saml_login:
+            raise NoMatchingSAMLSession(saml_session_id)
 
-        if not self._backend.verify_password(login, password, args):
-            raise InvalidUsernamePassword(login)
+        args['login'] = saml_login
 
-        return self._backend, login
+        return self._backend, saml_login

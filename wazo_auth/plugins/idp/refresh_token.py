@@ -9,7 +9,9 @@ from stevedore.extension import Extension
 
 from wazo_auth.exceptions import UnauthorizedAuthenticationMethod
 from wazo_auth.interfaces import BaseAuthenticationBackend, IDPPlugin
+from wazo_auth.services.tenant import TenantService
 from wazo_auth.services.token import TokenService
+from wazo_auth.services.user import UserService
 
 from .base import BaseIDP, BaseIDPDependencies
 
@@ -30,10 +32,14 @@ class RefreshTokenIDP(BaseIDP):
     authentication_method = 'refresh_token'
     loaded = False
     _token_service: TokenService
+    _user_service: UserService
+    _tenant_service: TenantService
 
     def load(self, dependencies: Dependencies):
         logger.debug('Loading refresh idp plugin')
         super().load(dependencies)
+        self._user_service = dependencies['user_service']
+        self._tenant_service = dependencies['tenant_service']
         self._token_service = dependencies['token_service']
         self._backends = dependencies['backends']
         self._idp_plugins = dependencies['idp_plugins']
@@ -41,6 +47,16 @@ class RefreshTokenIDP(BaseIDP):
 
         self.loaded = True
         logger.debug('refresh idp plugin loaded')
+
+    def _get_user_auth_method(self, login):
+        user = self._user_service.get_user_by_login(login)
+        # TODO: can we push default auth method resolution to the db/dao layer?
+        if user.authentication_method == 'default':
+            tenant = self._tenant_service.get(None, user.tenant_uuid)
+            authorized_method = tenant['default_authentication_method']
+        else:
+            authorized_method = user.authentication_method
+        return authorized_method
 
     def can_authenticate(self, args: dict) -> bool:
         # this method applies to request providing 'login' and 'password' credentials
@@ -55,8 +71,6 @@ class RefreshTokenIDP(BaseIDP):
         #  when those auth methods are implemented as IDP plugins
         if authorized_authentication_method == 'ldap':
             backend = self._backends['ldap_user'].obj
-        elif authorized_authentication_method == 'saml':
-            backend = self._backends['wazo_user'].obj
         else:
             # try and get backend from idp plugin
             try:

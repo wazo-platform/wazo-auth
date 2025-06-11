@@ -15,12 +15,10 @@ if TYPE_CHECKING:
 from wazo_auth.exceptions import (
     InvalidLoginRequest,
     InvalidUsernamePassword,
-    NoMatchingSAMLSession,
     NoSuchBackendException,
     UnauthorizedAuthenticationMethod,
 )
 from wazo_auth.interfaces import BaseAuthenticationBackend, IDPPlugin
-from wazo_auth.services.saml import SAMLService
 from wazo_auth.services.tenant import TenantService
 
 logger = logging.getLogger(__name__)
@@ -32,7 +30,6 @@ class AuthenticationService:
         dao: DAO,
         backends: Mapping[str, stevedore.extension.Extension],
         tenant_service: TenantService,
-        saml_service: SAMLService,
         idp_plugins: Mapping[str, stevedore.extension.Extension],
         native_idp: IDPPlugin,
         refresh_token_idp: IDPPlugin,
@@ -40,7 +37,6 @@ class AuthenticationService:
         self._dao = dao
         self._backends = backends
         self._tenant_service = tenant_service
-        self._saml_service = saml_service
         self._idp_plugins = idp_plugins
         self._native_idp = native_idp
         self._refresh_token_idp = refresh_token_idp
@@ -53,10 +49,6 @@ class AuthenticationService:
             backend, login = self._refresh_token_idp.verify_auth(args)
             args['login'] = login
             selected_authentication_method = 'refresh_token'
-        elif saml_session_id := args.get('saml_session_id'):
-            backend, login = self.verify_saml(saml_session_id)
-            args['login'] = login
-            selected_authentication_method = 'saml'
         elif 'domain_name' in args or 'tenant_id' in args:
             backend = self._get_backend('ldap_user')
             # TODO: cleanup "login" confusion.
@@ -132,7 +124,7 @@ class AuthenticationService:
         )
         # NOTE: if method is refresh_token, refresh_token implementation takes care of
         #  verifying user for compatible auth method
-        #  when selecting which wazo_auth.backend to use
+        #  when selecting which wazo_auth.backends to use
         if (
             selected_authentication_method != 'refresh_token'
             and authorized_authentication_method != selected_authentication_method
@@ -144,28 +136,6 @@ class AuthenticationService:
             )
 
         return backend, login
-
-    def verify_saml(self, saml_session_id):
-        logger.debug('verifying SAML login')
-        saml_login = self._saml_service.get_user_login(
-            saml_session_id,
-        )
-        if not saml_login:
-            raise NoMatchingSAMLSession(saml_session_id)
-
-        if (
-            authorized_authentication_method := self._authorized_authentication_method(
-                saml_login
-            )
-        ) != 'saml':
-            raise UnauthorizedAuthenticationMethod(
-                authorized_authentication_method, 'saml', saml_login
-            )
-
-        # There's no SAML backend
-        backend = self._get_backend('wazo_user')
-
-        return backend, saml_login
 
     def _get_backend(self, backend_name: str) -> BaseAuthenticationBackend:
         try:
