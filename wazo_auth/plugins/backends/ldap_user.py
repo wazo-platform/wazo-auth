@@ -35,11 +35,17 @@ class LDAPUser(MetadataByPurposeMixin, BaseAuthenticationBackend):
         return backend_acl + group_acl + user_acl
 
     def get_metadata(self, login, args):
-        args['case_sensitive'] = False
         metadata = super().get_metadata(login, args)
         login_to_use = args.get('user_email') or login
         for plugin in self.get_metadata_plugins_by_login(login_to_use):
             metadata.update(plugin.get_token_metadata(login_to_use, args))
+        return metadata
+
+    def get_persistent_metadata(self, login, args):
+        metadata = super().get_persistent_metadata(login, args)
+        login_to_use = args.get('user_email') or login
+        for plugin in self.get_metadata_plugins_by_login(login_to_use):
+            metadata.update(plugin.get_persistent_metadata(login_to_use, args))
         return metadata
 
     def verify_password(self, username, password, args):
