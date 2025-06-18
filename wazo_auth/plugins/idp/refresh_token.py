@@ -119,6 +119,10 @@ class RefreshTokenIDP(BaseIDP):
         login = refresh_token_data['login']
         args['login'] = login
 
+        # persistent_metadata is consumed by TokenService.new_token
+        metadata = refresh_token_data['metadata']
+        args['persistent_metadata'] = metadata
+
         backend = self.get_backend(args)
 
         return backend, login

@@ -80,11 +80,13 @@ def test_verify_auth_ok(refresh_token_idp: RefreshTokenIDP):
     refresh_token_idp._token_service.get_refresh_token_info.return_value = {
         'login': s.login,
         'backend': 'native',
+        'metadata': {'foo': 'bar'},
     }
 
     backend, login = refresh_token_idp.verify_auth(args)
     assert backend
     assert login == s.login
+    assert args['persistent_metadata'] == {'foo': 'bar'}
 
 
 def test_verify_auth_bad_auth_method(refresh_token_idp: RefreshTokenIDP):
@@ -122,10 +124,12 @@ def test_verify_auth_idp_auth_method(refresh_token_idp: RefreshTokenIDP):
     refresh_token_idp._user_service.get_user_by_login.return_value = user
 
     refresh_token_idp._token_service.get_refresh_token_info.return_value = {
-        'login': s.login
+        'login': s.login,
+        'metadata': {'foo': 'bar'},
     }
 
     backend, login = refresh_token_idp.verify_auth(args)
 
     assert backend == s.custom_idp_backend
     assert login == s.login
+    assert args['persistent_metadata'] == {'foo': 'bar'}

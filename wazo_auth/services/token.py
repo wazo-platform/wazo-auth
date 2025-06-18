@@ -11,6 +11,7 @@ from wazo_bus.resources.auth.events import (
     SessionDeletedEvent,
 )
 
+from wazo_auth.interfaces import BaseAuthenticationBackend
 from wazo_auth.services.helpers import BaseService
 from wazo_auth.token import Token
 
@@ -81,9 +82,9 @@ class TokenService(BaseService):
         )
         return self._dao.refresh_token.list_(**search_params)
 
-    def new_token(self, backend, login, args):
+    def new_token(self, backend: BaseAuthenticationBackend, login, args):
         metadata = backend.get_metadata(login, args)
-        logger.debug('metadata for %s: %s', login, metadata)
+        logger.debug('fresh token metadata for %s: %s', login, metadata)
 
         auth_id = metadata['auth_id']
         pbx_user_uuid = metadata.get('pbx_user_uuid')
@@ -97,7 +98,6 @@ class TokenService(BaseService):
                 raise MaxConcurrentSessionsReached(auth_id)
 
         args['acl'] = self._get_acl(args['backend'])
-        args['metadata'] = metadata
 
         acl = backend.get_acl(login, args)
         expiration = args.get('expiration', self._default_expiration)
@@ -109,6 +109,10 @@ class TokenService(BaseService):
         if args.get('mobile'):
             session_payload['mobile'] = args['mobile']
 
+        # refresh token expected to expose its metadata during refresh token login
+        persistent_metadata = args.get('persistent_metadata', {})
+        logger.debug('persistent metadata for %s: %s', login, persistent_metadata)
+
         token_payload = {
             'auth_id': auth_id,
             'pbx_user_uuid': pbx_user_uuid,
@@ -116,12 +120,19 @@ class TokenService(BaseService):
             'expire_t': current_time + expiration,
             'issued_t': current_time,
             'acl': acl or [],
-            'metadata': metadata,
+            'metadata': persistent_metadata | metadata,
             'user_agent': args['user_agent'],
             'remote_addr': args['remote_addr'],
         }
 
         if args.get('access_type', 'online') == 'offline':
+            persistent_metadata = backend.get_persistent_metadata(login, args)
+            logger.debug(
+                'freshly generated persistent metadata for %s: %s',
+                login,
+                persistent_metadata,
+            )
+
             body = {
                 'backend': args['backend'],
                 'login': args['login']
@@ -132,6 +143,7 @@ class TokenService(BaseService):
                 'user_agent': args['user_agent'],
                 'remote_addr': args['remote_addr'],
                 'mobile': args['mobile'],
+                'metadata': persistent_metadata,
             }
             try:
                 refresh_token = self._dao.refresh_token.create(body)
@@ -141,11 +153,13 @@ class TokenService(BaseService):
                     metadata['uuid'],
                 )
             else:
+                # TODO: add persistent metadata to event?
                 event = RefreshTokenCreatedEvent(
                     body['client_id'], body['mobile'], tenant_uuid, body['user_uuid']
                 )
                 self._bus_publisher.publish(event)
             token_payload['refresh_token'] = refresh_token
+            token_payload['metadata'] = persistent_metadata | token_payload['metadata']
 
         token_uuid, session_uuid = self._dao.token.create(
             token_payload,
