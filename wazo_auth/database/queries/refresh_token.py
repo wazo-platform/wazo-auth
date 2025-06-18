@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, text
@@ -17,6 +17,7 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         'created_at': RefreshToken.created_at,
         'client_id': RefreshToken.client_id,
         'mobile': RefreshToken.mobile,
+        'metadata': RefreshToken.metadata_,
     }
 
     def count(self, user_uuid=None, tenant_uuids=None, filtered=False, **search_params):
@@ -39,6 +40,7 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return self.session.query(RefreshToken).filter(filter_).count()
 
     def create(self, body):
+        body['metadata_'] = body.pop('metadata', {})
         refresh_token = RefreshToken(**body)
         self.session.add(refresh_token)
         try:
@@ -81,6 +83,7 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             return {
                 'backend_name': refresh_token.backend,
                 'login': refresh_token.login,
+                'metadata': refresh_token.metadata_,
             }
 
         raise exceptions.UnknownRefreshToken(client_id)
@@ -144,6 +147,7 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     'created_at': refresh_token.created_at,
                     'user_agent': refresh_token.user_agent,
                     'remote_addr': refresh_token.remote_addr,
+                    'metadata': refresh_token.metadata_,
                 }
             )
         return refresh_tokens

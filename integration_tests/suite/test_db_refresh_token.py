@@ -1,10 +1,17 @@
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import datetime
 import uuid
 
-from hamcrest import assert_that, contains_inanyorder, empty, equal_to, has_entries
+from hamcrest import (
+    assert_that,
+    contains_inanyorder,
+    empty,
+    equal_to,
+    has_entries,
+    has_item,
+)
 
 from .helpers import base, fixtures
 
@@ -85,11 +92,15 @@ class TestRefreshTokenDAO(base.DAOTestCase):
     @fixtures.db.refresh_token(user_uuid=ALICE_UUID, mobile=True)
     @fixtures.db.refresh_token(user_uuid=ALICE_UUID, created_at=CREATED_AT)
     @fixtures.db.refresh_token(user_uuid=ALICE_UUID, client_id='foobar')
-    def test_list(self, tenant, alice_uuid, bob_uuid, token_1, token_2, token_3):
+    @fixtures.db.refresh_token(user_uuid=ALICE_UUID, metadata={"foo": "bar"})
+    def test_list(
+        self, tenant, alice_uuid, bob_uuid, token_1, token_2, token_3, token_4
+    ):
         all_refresh_tokens = contains_inanyorder(
             has_entries(uuid=token_1),
             has_entries(uuid=token_2),
             has_entries(uuid=token_3),
+            has_entries(uuid=token_4),
         )
 
         result = self._refresh_token_dao.list_(user_uuid=ALICE_UUID)
@@ -130,3 +141,8 @@ class TestRefreshTokenDAO(base.DAOTestCase):
 
         result = self._refresh_token_dao.list_(user_uuid=ALICE_UUID, search='foo')
         assert_that(result, contains_inanyorder(has_entries(uuid=token_3)))
+
+        result = self._refresh_token_dao.list_(user_uuid=ALICE_UUID)
+        assert_that(
+            result, has_item(has_entries(uuid=token_4, metadata={"foo": "bar"}))
+        )
