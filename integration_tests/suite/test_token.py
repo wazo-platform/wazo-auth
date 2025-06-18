@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import re
@@ -729,3 +729,22 @@ class TestTokensFromMetadata(base.MetadataIntegrationTest):
         client = self.make_auth_client('foo', user['password'])
         token = client.token.new(expiration=10)
         assert token['metadata']['internal_token_is_valid'] is True
+
+    @fixtures.http.user(username='foo', purpose='internal')
+    def test_validating_refresh_token(self, user):
+        client = self.make_auth_client('foo', user['password'])
+        token = client.token.new(
+            expiration=10,
+            access_type='offline',
+            client_id='my-test',
+        )
+        assert 'persistent' in token['metadata']
+        persistent = token['metadata']['persistent']
+
+        token = client.token.new(
+            expiration=10,
+            client_id='my-test',
+            refresh_token=token['refresh_token'],
+        )
+        assert 'persistent' in token['metadata']
+        assert token['metadata']['persistent'] == persistent
