@@ -32,3 +32,9 @@ class WazoUser(MetadataByPurposeMixin, BaseAuthenticationBackend):
         for plugin in self.get_metadata_plugins_by_login(login):
             metadata.update(plugin.get_token_metadata(login, args))
         return metadata
+
+    def get_persistent_metadata(self, login, args):
+        metadata = super().get_persistent_metadata(login, args)
+        for plugin in self.get_metadata_plugins_by_login(login):
+            metadata.update(plugin.get_persistent_metadata(login, args))
+        return metadata
