@@ -52,6 +52,14 @@ class BaseAuthenticationBackend(metaclass=abc.ABCMeta):
 
         return metadata
 
+    def get_persistent_metadata(self, login, args):
+        """return metadata to persist across sessions
+        through the refresh token
+        """
+        metadata = {}
+
+        return metadata
+
     @abc.abstractmethod
     def verify_password(self, login, passwd, args):
         """Checks if a login/password combination is correct, returns True or False.
@@ -83,6 +91,14 @@ class BaseMetadata(metaclass=abc.ABCMeta):
             'pbx_user_uuid': None,
             'xivo_uuid': self.get_xivo_uuid(args),
         }
+        return metadata
+
+    def get_persistent_metadata(self, login, args):
+        """return metadata to persist across sessions
+        through the refresh token
+        """
+        metadata = {}
+
         return metadata
 
     def get_xivo_uuid(self, _args):
