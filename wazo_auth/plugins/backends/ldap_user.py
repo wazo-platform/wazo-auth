@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -8,6 +8,7 @@ from ldap.dn import escape_dn_chars
 from ldap.filter import escape_filter_chars
 
 from wazo_auth import BaseAuthenticationBackend
+from wazo_auth.plugin_helpers.backend_mixins import MetadataByPurposeMixin
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ def caseless_equal(str1: str, str2: str):
     return str1.casefold() == str2.casefold()
 
 
-class LDAPUser(BaseAuthenticationBackend):
+class LDAPUser(MetadataByPurposeMixin, BaseAuthenticationBackend):
     def load(self, dependencies):
         super().load(dependencies)
         self._user_service = dependencies['user_service']
@@ -37,10 +38,7 @@ class LDAPUser(BaseAuthenticationBackend):
         args['case_sensitive'] = False
         metadata = super().get_metadata(login, args)
         login_to_use = args.get('user_email') or login
-        user_uuid = self._user_service.get_user_uuid_by_login(login_to_use)
-        metadata['auth_id'] = user_uuid
-        purpose = self._user_service.list_users(uuid=user_uuid)[0]['purpose']
-        for plugin in self._purposes.get(purpose).metadata_plugins:
+        for plugin in self.get_metadata_plugins_by_login(login_to_use):
             metadata.update(plugin.get_token_metadata(login_to_use, args))
         return metadata
 
