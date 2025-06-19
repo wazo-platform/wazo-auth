@@ -564,16 +564,19 @@ class TestTokens(base.APIIntegrationTest):
                         client_id=token_1['client_id'],
                         user_uuid=user['uuid'],
                         tenant_uuid=user['tenant_uuid'],
+                        metadata={},
                     ),
                     has_entries(
                         client_id=token_2['client_id'],
                         user_uuid=user['uuid'],
                         tenant_uuid=user['tenant_uuid'],
+                        metadata={},
                     ),
                     has_entries(
                         client_id=token_3['client_id'],
                         user_uuid=user['uuid'],
                         tenant_uuid=user['tenant_uuid'],
+                        metadata={},
                     ),
                 ),
             ),
@@ -748,3 +751,8 @@ class TestTokensFromMetadata(base.MetadataIntegrationTest):
         )
         assert 'persistent' in token['metadata']
         assert token['metadata']['persistent'] == persistent
+
+        refresh_token = self.client.refresh_tokens.list(client_id='my-test')
+        assert refresh_token['items']
+        assert 'persistent' in refresh_token['items'][0]['metadata']
+        assert refresh_token['items'][0]['metadata']['persistent'] == persistent

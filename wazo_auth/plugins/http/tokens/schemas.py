@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import validates_schema
@@ -83,6 +83,7 @@ class RefreshTokenSchema(BaseSchema):
     mobile = fields.Boolean()
     user_uuid = fields.String()
     tenant_uuid = fields.String()
+    metadata = fields.Dict()
 
 
 class TokenScopesRequestSchema(BaseSchema):
