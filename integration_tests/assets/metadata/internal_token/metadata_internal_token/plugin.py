@@ -1,7 +1,8 @@
-# Copyright 2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2024-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
+from uuid import uuid4
 
 from wazo_auth_client import Client as AuthClient
 
@@ -12,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 class Plugin(BaseMetadata):
     def load(self, dependencies):
+        logger.debug('loading metadata plugin')
         super().load(dependencies)
         self._token_service = dependencies['token_service']
         self.token_renewer = helpers.LocalTokenRenewer(
@@ -28,4 +30,13 @@ class Plugin(BaseMetadata):
         )
 
         metadata['internal_token_is_valid'] = is_valid
+        return metadata
+
+    def get_persistent_metadata(self, login, args):
+        logger.debug('computing persistent metadata for %s: %s', login, args)
+        metadata = super().get_persistent_metadata(login, args)
+
+        metadata.update(
+            persistent=str(uuid4()),
+        )
         return metadata

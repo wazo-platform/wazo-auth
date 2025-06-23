@@ -23,6 +23,7 @@ from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref, relationship
+from sqlalchemy.sql.sqltypes import JSON
 
 from wazo_auth.database.datatypes import XMLPostgresqlType
 
@@ -249,6 +250,7 @@ class RefreshToken(Base):
     remote_addr = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=text('NOW()'))
     mobile = Column(Boolean, nullable=False, default=False)
+    metadata_ = Column(JSON(), nullable=False, server_default='{}', name='metadata')
     user = relationship('User', viewonly=True)
 
     @hybrid_property
