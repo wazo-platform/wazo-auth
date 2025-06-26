@@ -1,5 +1,13 @@
 # Changelog
 
+## 25.09
+
+* Added metadata to refresh tokens. `/0.1/tokens` exposes new `metadata` field.
+
+## 25.08
+
+* wazo_auth.idp plugin interface now supports `get_backend` method for refresh token interoperability
+
 ## 25.02
 
 * Allow to customize the way to send email through Stevedore entry points

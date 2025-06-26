@@ -329,6 +329,9 @@ definitions:
       tenant_uuid:
         type: string
         description: The tenant UUID of the user which created this refresh token
+      metadata:
+        type: object
+        description: the persistent metadata tied to this refresh token
   RefreshTokenList:
     type: object
     properties:
