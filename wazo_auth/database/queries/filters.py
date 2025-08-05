@@ -34,6 +34,15 @@ class AnyEquals(FilterExpr):
         return self.relationship.any(self.column == value)
 
 
+class AnyIlike(FilterExpr):
+    def __init__(self, relationship, column):
+        self.relationship = relationship
+        self.column = column
+
+    def __call__(self, pattern):
+        return self.relationship.any(self.column.ilike(pattern))
+
+
 class SearchFilter:
     def __init__(self, *columns):
         self._columns = columns
@@ -43,7 +52,14 @@ class SearchFilter:
             return text('true')
 
         pattern = self.new_pattern(search)
-        return or_(column.ilike(pattern) for column in self._columns)
+        conditions = []
+        for column in self._columns:
+            if callable(column):
+                conditions.append(column(pattern))
+            else:
+                conditions.append(column.ilike(pattern))
+
+        return or_(*conditions)
 
     def new_pattern(self, search):
         if not search:
@@ -153,7 +169,10 @@ group_search_filter = SearchFilter(Group.name)
 policy_search_filter = SearchFilter(Policy.name, Policy.description)
 tenant_search_filter = _TenantSearchFilter(Tenant.name, Tenant.slug)
 user_search_filter = SearchFilter(
-    User.firstname, User.lastname, User.username, Email.address
+    User.firstname,
+    User.lastname,
+    User.username,
+    AnyIlike(User.emails, Email.address),
 )
 refresh_token_search_filter = SearchFilter(RefreshToken.client_id)
 saml_pysaml2_cache_search_filter = SearchFilter(
