@@ -345,7 +345,13 @@ class TestUserDAO(base.DAOTestCase):
     @fixtures.db.user(username='bar', email_address='bar@example.com')
     @fixtures.db.user(email_address='foobar@example.com')
     @fixtures.db.user(username='foo')
-    def test_user_count_no_search_term_strict_filter(self, a, b, c):
+    @fixtures.db.group(name='group')
+    def test_user_count_no_search_term_strict_filter(self, a, b, c, group):
+        self._group_dao.add_user(group, a)
+
+        result = self._user_dao.count(group_uuid=group)
+        assert_that(result, equal_to(1))
+
         result = self._user_dao.count(username='foo')
         assert_that(result, equal_to(1))
 
@@ -432,7 +438,13 @@ class TestUserDAO(base.DAOTestCase):
     @fixtures.db.user(username='foo', email_address='foo@example.com')
     @fixtures.db.user(username='bar', email_address='bar@example.com')
     @fixtures.db.user(username='baz', email_address='baz@example.com')
-    def test_user_list_with_strict_filters(self, foo, bar, baz):
+    @fixtures.db.group(name='group')
+    def test_user_list_with_strict_filters(self, foo, bar, baz, group):
+        self._group_dao.add_user(group, foo)
+
+        result = self._user_dao.list_(group_uuid=group)
+        assert_that(result, contains_inanyorder(has_entries(uuid=foo)))
+
         result = self._user_dao.list_(username='foo')
         assert_that(result, contains_inanyorder(has_entries(uuid=foo)))
 
@@ -499,6 +511,27 @@ class TestUserDAO(base.DAOTestCase):
     @fixtures.db.user(username='user3')
     @fixtures.db.email(user_uuid=USER_UUID, address='user1-2@example.com')
     def test_pagination_with_many_emails(self, user1, user2, user3, email2):
+        result = self._user_dao.list_(order='username', direction='asc', limit=2)
+        assert_that(
+            result,
+            contains_exactly(has_entries(uuid=user1), has_entries(uuid=user2)),
+        )
+
+        result = self._user_dao.list_(order='username', direction='desc', limit=2)
+        assert_that(
+            result,
+            contains_exactly(has_entries(uuid=user3), has_entries(uuid=user2)),
+        )
+
+    @fixtures.db.user(username='user1')
+    @fixtures.db.user(username='user2')
+    @fixtures.db.user(username='user3')
+    @fixtures.db.group(name='group1')
+    @fixtures.db.group(name='group2')
+    def test_pagination_with_many_groups(self, user1, user2, user3, group1, group2):
+        self._group_dao.add_user(group1, user1)
+        self._group_dao.add_user(group2, user1)
+
         result = self._user_dao.list_(order='username', direction='asc', limit=2)
         assert_that(
             result,

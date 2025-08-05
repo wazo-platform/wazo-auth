@@ -348,6 +348,7 @@ class User(Base):
     )
 
     emails = relationship('Email', viewonly=True)
+    user_groups = relationship('UserGroup', viewonly=True)
 
 
 class UserExternalAuth(Base):

@@ -157,7 +157,7 @@ user_strict_filter = StrictFilter(
     ('lastname', User.lastname, None),
     ('purpose', User.purpose, None),
     ('email_address', AnyEquals(User.emails, Email.address), None),
-    ('group_uuid', UserGroup.group_uuid, str),
+    ('group_uuid', AnyEquals(User.user_groups, UserGroup.group_uuid), str),
 )
 saml_session_strict_filter = StrictFilter(
     ('session_id', SAMLSession.session_id, str),

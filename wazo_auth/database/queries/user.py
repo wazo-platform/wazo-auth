@@ -316,12 +316,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             filter_ = and_(filter_, self._login_filter(login))
 
         users = []
-        query = (
-            self.session.query(User)
-            .outerjoin(UserGroup)
-            .options(joinedload('emails'))
-            .filter(filter_)
-        )
+        query = self.session.query(User).options(joinedload('emails')).filter(filter_)
         query = self._paginator.update_query(query, **kwargs)
 
         for user in query.all():
