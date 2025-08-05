@@ -5,7 +5,7 @@ from sqlalchemy import and_, exc, text
 
 from ... import exceptions
 from ...slug import Slug
-from ..models import Email, Group, GroupPolicy, Policy, User, UserGroup
+from ..models import Group, GroupPolicy, Policy, User, UserGroup
 from . import filters
 from .base import BaseDAO, PaginatorMixin
 
@@ -104,13 +104,8 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             search_filter = filters.user_search_filter.new_filter(**kwargs)
             filter_ = and_(filter_, strict_filter, search_filter)
 
-        return (
-            self.session.query(UserGroup)
-            .join(User)
-            .outerjoin(Email)
-            .filter(filter_)
-            .count()
-        )
+        query = self.session.query(UserGroup).join(User).filter(filter_)
+        return query.count()
 
     def create(self, name, slug, tenant_uuid, system_managed, **ignored):
         if not slug:
