@@ -241,27 +241,23 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if not login:
             raise exceptions.UnknownLoginException(login)
 
-        ordered_filters = [
-            and_(
-                func.lower(Email.address) == func.lower(login),
-                Email.confirmed.is_(True),
-            ),
-            func.lower(User.username) == func.lower(login),
-        ]
-        for filter_ in ordered_filters:
-            query = (
-                self.session.query(User)
-                .outerjoin(Email)
-                .filter(
-                    and_(
-                        filter_,
-                        User.enabled.is_(True),
-                    )
-                )
-            )
-            row = query.first()
-            if row:
-                return row
+        email_login_query = (
+            self.session.query(User)
+            .join(Email)
+            .filter(User.enabled.is_(True))
+            .filter(func.lower(Email.address) == func.lower(login))
+            .filter(Email.confirmed.is_(True))
+        )
+        if user := email_login_query.first():
+            return user
+
+        username_login_query = (
+            self.session.query(User)
+            .filter(User.enabled.is_(True))
+            .filter(func.lower(User.username) == func.lower(login))
+        )
+        if user := username_login_query.first():
+            return user
 
         raise exceptions.UnknownLoginException(login)
 
@@ -385,8 +381,8 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if ignored_user:
             filter_ = and_(filter_, User.uuid != str(ignored_user))
         query = self.session.query(User.uuid).outerjoin(Email).filter(filter_)
-        row = query.first()
-        return True if row else False
+        exists = query.scalar()
+        return True if exists else False
 
     def _login_filter(self, login):
         return or_(
