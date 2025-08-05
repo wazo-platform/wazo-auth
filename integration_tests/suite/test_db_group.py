@@ -198,6 +198,58 @@ class TestGroupDAO(base.DAOTestCase):
         expected = build_list_matcher('baz', 'foo')
         assert_that(result, contains_exactly(*expected))
 
+    @fixtures.db.user()
+    @fixtures.db.user()
+    @fixtures.db.group(name='group1')
+    @fixtures.db.group(name='group2')
+    @fixtures.db.group(name='group3')
+    def test_list_with_many_users(self, user1, user2, group1, group2, group3):
+        self._group_dao.add_user(group1, user1)
+        self._group_dao.add_user(group1, user2)
+
+        result = self._group_dao.list_(order='name', direction='asc', limit=2)
+        assert_that(
+            result,
+            contains_exactly(has_entries(uuid=group1), has_entries(uuid=group2)),
+        )
+
+        result = self._group_dao.list_(order='name', direction='desc', limit=2)
+        assert_that(
+            result,
+            contains_exactly(has_entries(uuid=group3), has_entries(uuid=group2)),
+        )
+
+    @fixtures.db.user()
+    @fixtures.db.user()
+    @fixtures.db.group(name='group1')
+    @fixtures.db.group(name='group2')
+    @fixtures.db.group(name='group3')
+    def test_list_by_user_uuid(self, user1, user2, group1, group2, group3):
+        self._group_dao.add_user(group1, user1)
+        self._group_dao.add_user(group2, user1)
+
+        result = self._group_dao.list_(
+            user_uuid=user1,
+            order='name',
+            direction='asc',
+            limit=2,
+        )
+        assert_that(
+            result,
+            contains_exactly(has_entries(uuid=group1), has_entries(uuid=group2)),
+        )
+
+        result = self._group_dao.list_(
+            user_uuid=user1,
+            order='name',
+            direction='desc',
+            limit=2,
+        )
+        assert_that(
+            result,
+            contains_exactly(has_entries(uuid=group2), has_entries(uuid=group1)),
+        )
+
     @fixtures.db.group()
     @fixtures.db.policy()
     def test_remove_policy(self, group_uuid, policy_uuid):

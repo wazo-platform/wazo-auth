@@ -118,15 +118,15 @@ group_strict_filter = StrictFilter(
     ('name', Group.name, None),
     ('slug', Group.slug, None),
     ('tenant_uuid', Group.tenant_uuid, str),
-    ('user_uuid', UserGroup.user_uuid, str),
+    ('user_uuid', AnyEquals(Group.user_groups, UserGroup.user_uuid), str),
     ('read_only', Group.system_managed, bool),
 )
 policy_strict_filter = StrictFilter(
     ('uuid', Policy.uuid, str),
     ('name', Policy.name, None),
     ('slug', Policy.slug, None),
-    ('user_uuid', UserPolicy.user_uuid, str),
-    ('group_uuid', GroupPolicy.group_uuid, str),
+    ('user_uuid', AnyEquals(Policy.user_policies, UserPolicy.user_uuid), str),
+    ('group_uuid', AnyEquals(Policy.group_policies, GroupPolicy.group_uuid), str),
     ('tenant_uuid', Policy.tenant_uuid, str),
 )
 refresh_token_strict_filter = StrictFilter(

@@ -177,12 +177,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         if policy_slug:
             filter_ = and_(filter_, self._policy_slug_filter(policy_slug))
 
-        query = (
-            self.session.query(Group)
-            .outerjoin(UserGroup)
-            .filter(filter_)
-            .group_by(Group)
-        )
+        query = self.session.query(Group).filter(filter_)
         query = self._paginator.update_query(query, **kwargs)
 
         return [
