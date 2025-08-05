@@ -523,6 +523,9 @@ class TestUserDAO(base.DAOTestCase):
             contains_exactly(has_entries(uuid=user3), has_entries(uuid=user2)),
         )
 
+        result = self._user_dao.count()
+        assert_that(result, equal_to(3))
+
     @fixtures.db.user(username='user1')
     @fixtures.db.user(username='user2')
     @fixtures.db.user(username='user3')

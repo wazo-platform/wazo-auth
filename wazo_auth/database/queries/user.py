@@ -109,7 +109,10 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             if has_policy_slug:
                 filter_ = and_(filter_, self._has_policy_slug_filter(has_policy_slug))
 
-        return self.session.query(User.uuid).outerjoin(Email).filter(filter_).count()
+        query = (
+            self.session.query(User.uuid).options(joinedload('emails')).filter(filter_)
+        )
+        return query.count()
 
     def count_groups(self, user_uuid, **kwargs):
         filtered = kwargs.get('filtered')
