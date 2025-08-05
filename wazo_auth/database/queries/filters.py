@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, or_, text
@@ -18,6 +18,20 @@ from ..models import (
     UserGroup,
     UserPolicy,
 )
+
+
+class FilterExpr:
+    def __call__(self, value):
+        raise NotImplementedError
+
+
+class AnyEquals(FilterExpr):
+    def __init__(self, relationship, column):
+        self.relationship = relationship
+        self.column = column
+
+    def __call__(self, value):
+        return self.relationship.any(self.column == value)
 
 
 class SearchFilter:
@@ -61,10 +75,14 @@ class StrictFilter:
                 continue
 
             value = type_(kwargs[key]) if type_ else kwargs[key]
-            if isinstance(value, list):
-                filter_ = and_(filter_, column.in_(value))
+            if callable(column):
+                condition = column(value)
             else:
-                filter_ = and_(filter_, column == value)
+                condition = (
+                    column.in_(value) if isinstance(value, list) else column == value
+                )
+
+            filter_ = and_(filter_, condition)
 
         return filter_
 
@@ -122,7 +140,7 @@ user_strict_filter = StrictFilter(
     ('firstname', User.firstname, None),
     ('lastname', User.lastname, None),
     ('purpose', User.purpose, None),
-    ('email_address', Email.address, None),
+    ('email_address', AnyEquals(User.emails, Email.address), None),
     ('group_uuid', UserGroup.group_uuid, str),
 )
 saml_session_strict_filter = StrictFilter(

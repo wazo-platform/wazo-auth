@@ -318,7 +318,6 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         users = []
         query = (
             self.session.query(User)
-            .outerjoin(Email)
             .outerjoin(UserGroup)
             .options(joinedload('emails'))
             .filter(filter_)
@@ -394,7 +393,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     def _login_filter(self, login):
         return or_(
             func.lower(User.username) == login.lower(),
-            func.lower(Email.address) == login.lower(),
+            User.emails.any(func.lower(Email.address) == login.lower()),
         )
 
     def _add_user_email(self, user_uuid, args):

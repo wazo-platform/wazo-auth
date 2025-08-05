@@ -1,4 +1,4 @@
-# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -587,6 +587,27 @@ class TestUserDAO(base.DAOTestCase):
         )
         assert_that(
             result, contains_inanyorder(has_entries(uuid=b), has_entries(uuid=c))
+        )
+
+    @fixtures.db.user(
+        uuid=USER_UUID,
+        username='user1',
+        email_address='user1-1@example.com',
+    )
+    @fixtures.db.user(username='user2')
+    @fixtures.db.user(username='user3')
+    @fixtures.db.email(user_uuid=USER_UUID, address='user1-2@example.com')
+    def test_pagination_with_many_emails(self, user1, user2, user3, email2):
+        result = self._user_dao.list_(order='username', direction='asc', limit=2)
+        assert_that(
+            result,
+            contains_exactly(has_entries(uuid=user1), has_entries(uuid=user2)),
+        )
+
+        result = self._user_dao.list_(order='username', direction='desc', limit=2)
+        assert_that(
+            result,
+            contains_exactly(has_entries(uuid=user3), has_entries(uuid=user2)),
         )
 
     @fixtures.db.user(username='a', firstname='a', lastname='a')
