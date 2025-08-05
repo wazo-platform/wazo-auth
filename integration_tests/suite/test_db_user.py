@@ -436,6 +436,9 @@ class TestUserDAO(base.DAOTestCase):
         result = self._user_dao.list_(username='foo')
         assert_that(result, contains_inanyorder(has_entries(uuid=foo)))
 
+        result = self._user_dao.list_(email_address='foo@example.com')
+        assert_that(result, contains_inanyorder(has_entries(uuid=foo)))
+
         result = self._user_dao.list_(uuid=foo)
         assert_that(result, contains_inanyorder(has_entries(uuid=foo)))
 
