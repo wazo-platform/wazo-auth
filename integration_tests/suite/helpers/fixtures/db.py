@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
@@ -48,8 +48,7 @@ def email(**email_args):
         @wraps(decorated)
         def wrapper(self, *args, **kwargs):
             email_args.setdefault('address', f'{_random_string(5)}@{_random_string(5)}')
-
-            def create_user():
+            if 'user_uuid' not in email_args:
                 user_args = {
                     'username': _random_string(5),
                     'purpose': 'user',
@@ -57,9 +56,7 @@ def email(**email_args):
                     'authentication_method': 'default',
                 }
                 user = self._user_dao.create(**user_args)
-                return user['uuid']
-
-            email_args.setdefault('user_uuid', create_user())
+                email_args['user_uuid'] = user['uuid']
 
             email = models.Email(**email_args)
             self.session.add(email)
