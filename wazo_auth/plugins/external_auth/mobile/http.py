@@ -1,25 +1,17 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
 import marshmallow
 from flask import request
-from xivo.mallow import fields
 
-from wazo_auth import exceptions, http, schemas
+from wazo_auth import exceptions, http
 from wazo_auth.flask_helpers import Tenant
 
+from .schemas import MobileSchema
+
 logger = logging.getLogger(__name__)
-
-
-class MobileSchema(schemas.BaseSchema):
-    token = fields.String(min=1, max=512, load_default=None)
-    apns_token = fields.String(
-        allow_none=True, max=512, load_default=None
-    )  # deprecated
-    apns_voip_token = fields.String(allow_none=True, max=512, load_default=None)
-    apns_notification_token = fields.String(allow_none=True, max=512, load_default=None)
 
 
 class MobileAuthSenderID(http.AuthResource):
