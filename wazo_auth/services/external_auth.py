@@ -1,4 +1,4 @@
-# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -12,6 +12,7 @@ from wazo_bus.resources.auth.events import (
     UserExternalAuthAddedEvent,
     UserExternalAuthAuthorizedEvent,
     UserExternalAuthDeletedEvent,
+    UserExternalAuthUpdatedEvent,
 )
 
 from wazo_auth.database.helpers import commit_or_rollback
@@ -182,7 +183,11 @@ class ExternalAuthService(BaseService):
         self._safe_models[auth_type] = model_class
 
     def update(self, user_uuid, auth_type, data):
-        return self._dao.external_auth.update(user_uuid, auth_type, data)
+        updated = self._dao.external_auth.update(user_uuid, auth_type, data)
+        tenant_uuid = self._get_user_tenant_uuid(user_uuid)
+        event = UserExternalAuthUpdatedEvent(auth_type, tenant_uuid, user_uuid)
+        self._bus_publisher.publish(event)
+        return updated
 
     def update_config(self, auth_type, data, tenant_uuid):
         return self._dao.external_auth.update_config(auth_type, data, tenant_uuid)
