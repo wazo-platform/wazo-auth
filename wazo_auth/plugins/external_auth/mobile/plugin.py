@@ -1,4 +1,4 @@
-# Copyright 2018-2023 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from .http import MobileAuth, MobileAuthSenderID
@@ -12,7 +12,6 @@ class Plugin:
             '/users/<uuid:user_uuid>/external/mobile',
             resource_class_args=[
                 dependencies['external_auth_service'],
-                dependencies['config'],
             ],
         )
         api.add_resource(
