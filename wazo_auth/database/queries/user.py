@@ -1,7 +1,7 @@
 # Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from sqlalchemy import and_, exc, func, or_, text
+from sqlalchemy import and_, distinct, exc, func, or_, text
 from sqlalchemy.orm import joinedload
 
 from ... import exceptions
@@ -109,9 +109,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             if has_policy_slug:
                 filter_ = and_(filter_, self._has_policy_slug_filter(has_policy_slug))
 
-        query = (
-            self.session.query(User.uuid).options(joinedload('emails')).filter(filter_)
-        )
+        query = self.session.query(distinct(User.uuid)).filter(filter_)
         return query.count()
 
     def count_groups(self, user_uuid, **kwargs):
