@@ -5,7 +5,7 @@ paths:
       - backends
       security:
       - {}
-      description: Retrieves the list of activated backends
+      description: Retrieves the list of activated wazo_auth.backends plugins
       responses:
         '200':
           description: The list of activated backends
