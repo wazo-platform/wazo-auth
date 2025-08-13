@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
@@ -105,6 +105,43 @@ class TestExternalAuthMobile(base.ExternalAuthIntegrationTest):
                 has_property('response', has_properties(status_code=404))
             ),
         )
+
+    @fixtures.http.tenant(uuid=TENANT_UUID)
+    @fixtures.http.user(username='one', password='pass', tenant_uuid=TENANT_UUID)
+    @fixtures.http.token(username='one', password='pass', expiration=30)
+    def test_update(self, tenant, user, token):
+        client = self.make_auth_client(
+            token=token['token'],
+            tenant=tenant['uuid'],
+        )
+        device_tokens = {
+            'token': 'TOKEN',
+            'apns_token': 'APNS_VOIP_TOKEN',
+            'apns_voip_token': 'APNS_VOIP_TOKEN',
+            'apns_notification_token': 'APNS_NOTIFICATION_TOKEN',
+        }
+        response = client.external.create(
+            self.EXTERNAL_AUTH_TYPE,
+            user['uuid'],
+            device_tokens,
+        )
+        assert_that(response, has_entries(device_tokens))
+
+        new_device_tokens = {
+            'token': 'NEW_TOKEN',
+            'apns_token': 'NEW_APNS_VOIP_TOKEN',
+            'apns_voip_token': 'NEW_APNS_VOIP_TOKEN',
+            'apns_notification_token': 'NEW_APNS_NOTIFICATION_TOKEN',
+        }
+        response = client.external.update(
+            self.EXTERNAL_AUTH_TYPE,
+            user['uuid'],
+            new_device_tokens,
+        )
+        assert_that(response, has_entries(new_device_tokens))
+
+        response = client.external.get(self.EXTERNAL_AUTH_TYPE, user['uuid'])
+        assert_that(response, has_entries(new_device_tokens))
 
     def get_sender_id(self, user):
         # NOTE(sileht): client doesn't have this endpoints has its specific to
