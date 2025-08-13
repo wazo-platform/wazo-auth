@@ -28,6 +28,7 @@ class TestExternalAuthMobile(base.ExternalAuthIntegrationTest):
     }
 
     def tearDown(self):
+        super().tearDown()
         try:
             self.client.external.delete_config(self.EXTERNAL_AUTH_TYPE)
         except requests.HTTPError:
@@ -37,18 +38,24 @@ class TestExternalAuthMobile(base.ExternalAuthIntegrationTest):
     @fixtures.http.user(username='one', password='pass', tenant_uuid=TENANT_UUID)
     @fixtures.http.token(username='one', password='pass', expiration=30)
     def test_mobile_workflow(self, tenant, user, token):
-        self.client.tenant_uuid = tenant['uuid']
-        self.client.external.create_config(
-            auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET
+        client = self.make_auth_client(
+            username=self.username,
+            password=self.password,
+            tenant=tenant['uuid'],
+        )
+        client.set_token(client.token.new()['token'])
+        client.external.create_config(
+            auth_type=self.EXTERNAL_AUTH_TYPE,
+            data=self.SECRET,
         )
 
-        response = self.client.external.get_config(self.EXTERNAL_AUTH_TYPE)
+        response = client.external.get_config(self.EXTERNAL_AUTH_TYPE)
         assert_that(response, has_entries(self.SECRET))
 
-        self.client.set_token(token['token'])
+        client.set_token(token['token'])
 
         assert_that(
-            calling(self.client.external.get).with_args(
+            calling(client.external.get).with_args(
                 self.EXTERNAL_AUTH_TYPE, user['uuid']
             ),
             raises(requests.HTTPError).matching(
@@ -56,7 +63,7 @@ class TestExternalAuthMobile(base.ExternalAuthIntegrationTest):
             ),
         )
 
-        response = self.client.external.create(
+        response = client.external.create(
             self.EXTERNAL_AUTH_TYPE,
             user['uuid'],
             {
@@ -75,7 +82,7 @@ class TestExternalAuthMobile(base.ExternalAuthIntegrationTest):
                 apns_notification_token='APNS_NOTIFICATION_TOKEN',
             ),
         )
-        response = self.client.external.get(self.EXTERNAL_AUTH_TYPE, user['uuid'])
+        response = client.external.get(self.EXTERNAL_AUTH_TYPE, user['uuid'])
         assert_that(
             response,
             has_entries(
@@ -89,9 +96,9 @@ class TestExternalAuthMobile(base.ExternalAuthIntegrationTest):
         response = self.get_sender_id(user)
         assert_that(response, has_entry('sender_id', 'fcm_sender_id'))
 
-        self.client.external.delete(self.EXTERNAL_AUTH_TYPE, user['uuid'])
+        client.external.delete(self.EXTERNAL_AUTH_TYPE, user['uuid'])
         assert_that(
-            calling(self.client.external.get).with_args(
+            calling(client.external.get).with_args(
                 self.EXTERNAL_AUTH_TYPE, user['uuid']
             ),
             raises(requests.HTTPError).matching(
@@ -102,7 +109,9 @@ class TestExternalAuthMobile(base.ExternalAuthIntegrationTest):
     def get_sender_id(self, user):
         # NOTE(sileht): client doesn't have this endpoints has its specific to
         # android application
-        headers = self.client.external._get_headers()
+        headers = self.client.external._get_headers() | {
+            'Wazo-Tenant': user['tenant_uuid'],
+        }
         base_url = self.client.external._build_url(
             self.EXTERNAL_AUTH_TYPE, user['uuid']
         )
