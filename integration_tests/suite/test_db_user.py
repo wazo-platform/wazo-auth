@@ -1,4 +1,4 @@
-# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
@@ -345,7 +345,13 @@ class TestUserDAO(base.DAOTestCase):
     @fixtures.db.user(username='bar', email_address='bar@example.com')
     @fixtures.db.user(email_address='foobar@example.com')
     @fixtures.db.user(username='foo')
-    def test_user_count_no_search_term_strict_filter(self, a, b, c):
+    @fixtures.db.group(name='group')
+    def test_user_count_no_search_term_strict_filter(self, a, b, c, group):
+        self._group_dao.add_user(group, a)
+
+        result = self._user_dao.count(group_uuid=group)
+        assert_that(result, equal_to(1))
+
         result = self._user_dao.count(username='foo')
         assert_that(result, equal_to(1))
 
@@ -380,11 +386,8 @@ class TestUserDAO(base.DAOTestCase):
         assert_that(result, equal_to(3))
 
     @fixtures.db.user(username='a', email_address='a@example.com')
-    @fixtures.db.user(username='b', email_address='b@example.com')
-    @fixtures.db.user(username='c', email_address='c@example.com')
-    def test_user_list_no_search_term_no_strict_filter(self, a, b, c):
+    def test_user_list_returns_properties(self, a):
         result = self._user_dao.list_()
-
         assert_that(
             result,
             contains_inanyorder(
@@ -395,161 +398,71 @@ class TestUserDAO(base.DAOTestCase):
                     emails=contains_inanyorder(
                         has_entries(address='a@example.com', main=True, confirmed=False)
                     ),
-                ),
-                has_entries(
-                    uuid=b,
-                    username='b',
-                    tenant_uuid=self.top_tenant_uuid,
-                    emails=contains_inanyorder(
-                        has_entries(address='b@example.com', main=True, confirmed=False)
-                    ),
-                ),
-                has_entries(
-                    uuid=c,
-                    username='c',
-                    tenant_uuid=self.top_tenant_uuid,
-                    emails=contains_inanyorder(
-                        has_entries(address='c@example.com', main=True, confirmed=False)
-                    ),
-                ),
+                )
             ),
         )
 
-    @fixtures.db.user(
-        firstname='foo', lastname='foo', username='foo', email_address='foo@example.com'
-    )
-    @fixtures.db.user(
-        firstname='bar', lastname='bar', username='bar', email_address='bar@example.com'
-    )
-    @fixtures.db.user(
-        firstname='baz', lastname='baz', username='baz', email_address='baz@example.com'
-    )
+    @fixtures.db.user(username='a', email_address='a@example.com')
+    @fixtures.db.user(username='b', email_address='b@example.com')
+    @fixtures.db.user(username='c', email_address='c@example.com')
+    def test_user_list_no_search_term_no_strict_filter(self, a, b, c):
+        result = self._user_dao.list_()
+
+        assert_that(
+            result,
+            contains_inanyorder(
+                has_entries(uuid=a),
+                has_entries(uuid=b),
+                has_entries(uuid=c),
+            ),
+        )
+
+    @fixtures.db.user(email_address='foo@example.com')
+    @fixtures.db.user(email_address='bar@example.com')
+    @fixtures.db.user(email_address='baz@example.com')
     def test_user_list_with_search_term(self, foo, bar, baz):
         result = self._user_dao.list_(search='@example.')
 
         assert_that(
             result,
             contains_inanyorder(
-                has_entries(
-                    uuid=foo,
-                    username='foo',
-                    tenant_uuid=self.top_tenant_uuid,
-                    emails=contains_inanyorder(
-                        has_entries(
-                            address='foo@example.com', main=True, confirmed=False
-                        )
-                    ),
-                ),
-                has_entries(
-                    uuid=bar,
-                    username='bar',
-                    tenant_uuid=self.top_tenant_uuid,
-                    emails=contains_inanyorder(
-                        has_entries(
-                            address='bar@example.com', main=True, confirmed=False
-                        )
-                    ),
-                ),
-                has_entries(
-                    uuid=baz,
-                    username='baz',
-                    tenant_uuid=self.top_tenant_uuid,
-                    emails=contains_inanyorder(
-                        has_entries(
-                            address='baz@example.com', main=True, confirmed=False
-                        )
-                    ),
-                ),
+                has_entries(uuid=foo),
+                has_entries(uuid=bar),
+                has_entries(uuid=baz),
             ),
         )
 
         result = self._user_dao.list_(search='foo')
-        assert_that(
-            result,
-            contains_inanyorder(
-                has_entries(
-                    uuid=foo,
-                    username='foo',
-                    emails=contains_inanyorder(
-                        has_entries(
-                            address='foo@example.com', main=True, confirmed=False
-                        )
-                    ),
-                )
-            ),
-        )
+        assert_that(result, contains_inanyorder(has_entries(uuid=foo)))
 
-    @fixtures.db.user(
-        firstname='foo', lastname='foo', username='foo', email_address='foo@example.com'
-    )
-    @fixtures.db.user(
-        firstname='bar', lastname='bar', username='bar', email_address='bar@example.com'
-    )
-    @fixtures.db.user(
-        firstname='baz', lastname='baz', username='baz', email_address='baz@example.com'
-    )
-    def test_user_list_with_strict_filters(self, foo, bar, baz):
+    @fixtures.db.user(username='foo', email_address='foo@example.com')
+    @fixtures.db.user(username='bar', email_address='bar@example.com')
+    @fixtures.db.user(username='baz', email_address='baz@example.com')
+    @fixtures.db.group(name='group')
+    def test_user_list_with_strict_filters(self, foo, bar, baz, group):
+        self._group_dao.add_user(group, foo)
+
+        result = self._user_dao.list_(group_uuid=group)
+        assert_that(result, contains_inanyorder(has_entries(uuid=foo)))
+
         result = self._user_dao.list_(username='foo')
+        assert_that(result, contains_inanyorder(has_entries(uuid=foo)))
 
-        assert_that(
-            result,
-            contains_inanyorder(
-                has_entries(
-                    uuid=foo,
-                    username='foo',
-                    emails=contains_inanyorder(
-                        has_entries(
-                            address='foo@example.com', main=True, confirmed=False
-                        )
-                    ),
-                )
-            ),
-        )
+        result = self._user_dao.list_(email_address='foo@example.com')
+        assert_that(result, contains_inanyorder(has_entries(uuid=foo)))
 
         result = self._user_dao.list_(uuid=foo)
-        assert_that(
-            result,
-            contains_inanyorder(
-                has_entries(
-                    uuid=foo,
-                    username='foo',
-                    emails=contains_inanyorder(
-                        has_entries(
-                            address='foo@example.com', main=True, confirmed=False
-                        )
-                    ),
-                )
-            ),
-        )
+        assert_that(result, contains_inanyorder(has_entries(uuid=foo)))
 
-    @fixtures.db.user(
-        firstname='foo', lastname='foo', username='foo', email_address='foo@example.com'
-    )
-    @fixtures.db.user(
-        firstname='bar', lastname='bar', username='bar', email_address='bar@example.com'
-    )
-    @fixtures.db.user(
-        firstname='baz', lastname='baz', username='baz', email_address='baz@example.com'
-    )
+    @fixtures.db.user(username='foo', email_address='foo@example.com')
+    @fixtures.db.user(username='bar', email_address='bar@example.com')
+    @fixtures.db.user(username='baz', email_address='baz@example.com')
     def test_user_list_with_strict_filters_and_search(self, foo, bar, baz):
         result = self._user_dao.list_(username='foo', search='baz')
         assert_that(result, empty())
 
         result = self._user_dao.list_(uuid=foo, search='example')
-        assert_that(
-            result,
-            contains_inanyorder(
-                has_entries(
-                    uuid=foo,
-                    username='foo',
-                    emails=contains_inanyorder(
-                        has_entries(
-                            address='foo@example.com', main=True, confirmed=False
-                        )
-                    ),
-                )
-            ),
-        )
+        assert_that(result, contains_inanyorder(has_entries(uuid=foo)))
 
     @fixtures.db.user(username='user1', email_address='user1@example.com')
     @fixtures.db.user(username='user2', email_address='user2@example.com')
@@ -587,6 +500,51 @@ class TestUserDAO(base.DAOTestCase):
         )
         assert_that(
             result, contains_inanyorder(has_entries(uuid=b), has_entries(uuid=c))
+        )
+
+    @fixtures.db.user(
+        uuid=USER_UUID,
+        username='user1',
+        email_address='user1-1@example.com',
+    )
+    @fixtures.db.user(username='user2')
+    @fixtures.db.user(username='user3')
+    @fixtures.db.email(user_uuid=USER_UUID, address='user1-2@example.com')
+    def test_pagination_with_many_emails(self, user1, user2, user3, email2):
+        result = self._user_dao.list_(order='username', direction='asc', limit=2)
+        assert_that(
+            result,
+            contains_exactly(has_entries(uuid=user1), has_entries(uuid=user2)),
+        )
+
+        result = self._user_dao.list_(order='username', direction='desc', limit=2)
+        assert_that(
+            result,
+            contains_exactly(has_entries(uuid=user3), has_entries(uuid=user2)),
+        )
+
+        result = self._user_dao.count()
+        assert_that(result, equal_to(3))
+
+    @fixtures.db.user(username='user1')
+    @fixtures.db.user(username='user2')
+    @fixtures.db.user(username='user3')
+    @fixtures.db.group(name='group1')
+    @fixtures.db.group(name='group2')
+    def test_pagination_with_many_groups(self, user1, user2, user3, group1, group2):
+        self._group_dao.add_user(group1, user1)
+        self._group_dao.add_user(group2, user1)
+
+        result = self._user_dao.list_(order='username', direction='asc', limit=2)
+        assert_that(
+            result,
+            contains_exactly(has_entries(uuid=user1), has_entries(uuid=user2)),
+        )
+
+        result = self._user_dao.list_(order='username', direction='desc', limit=2)
+        assert_that(
+            result,
+            contains_exactly(has_entries(uuid=user3), has_entries(uuid=user2)),
         )
 
     @fixtures.db.user(username='a', firstname='a', lastname='a')

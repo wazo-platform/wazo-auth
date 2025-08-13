@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, or_, text
@@ -198,21 +198,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         filter_ = and_(filter_, read_only_filter)
 
-        query = (
-            self.session.query(Policy)
-            .outerjoin(
-                UserPolicy,
-            )
-            .outerjoin(
-                GroupPolicy,
-            )
-            .filter(
-                filter_,
-            )
-            .group_by(
-                Policy,
-            )
-        )
+        query = self.session.query(Policy).filter(filter_)
         query = self._paginator.update_query(query, **kwargs)
 
         policies = query.all()

@@ -111,6 +111,8 @@ class Group(Base):
         Boolean, nullable=False, default=False, server_default='false'
     )
 
+    user_groups = relationship('UserGroup', viewonly=True)
+
 
 class GroupPolicy(Base):
     __tablename__ = 'auth_group_policy'
@@ -306,6 +308,8 @@ class Policy(Base):
 
     accesses = relationship('Access', secondary='auth_policy_access', viewonly=True)
     groups = relationship('Group', secondary='auth_group_policy', viewonly=True)
+    group_policies = relationship('GroupPolicy', viewonly=True)
+    user_policies = relationship('UserPolicy', viewonly=True)
 
     @property
     def acl(self):
@@ -348,6 +352,7 @@ class User(Base):
     )
 
     emails = relationship('Email', viewonly=True)
+    user_groups = relationship('UserGroup', viewonly=True)
 
 
 class UserExternalAuth(Base):

@@ -1,4 +1,4 @@
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from contextlib import contextmanager
@@ -22,6 +22,7 @@ from wazo_auth.database import models
 
 from .helpers import base, fixtures
 
+USER_UUID = '00000000-0000-4000-9000-111111111111'
 TENANT_UUID = 'a26c4ed8-767f-463e-a10a-42c4f220d375'
 
 
@@ -96,6 +97,39 @@ class TestGroupDAO(base.DAOTestCase):
         result = self._group_dao.count(search='ba', filtered=True)
         assert_that(result, equal_to(2))
 
+    @fixtures.db.user()
+    @fixtures.db.user()
+    @fixtures.db.group()
+    def test_count_users(self, user1, user2, group):
+        self._group_dao.add_user(group, user1)
+        self._group_dao.add_user(group, user2)
+
+        result = self._group_dao.count_users(group)
+        assert_that(result, equal_to(2))
+
+    @fixtures.db.user(uuid=USER_UUID, email_address='user1-1@example.com')
+    @fixtures.db.group()
+    @fixtures.db.email(user_uuid=USER_UUID, address='user1-2@example.com')
+    def test_count_users_with_user_many_emails(self, user, group, *_):
+        self._group_dao.add_user(group, user)
+
+        result = self._group_dao.count_users(group)
+        assert_that(result, equal_to(1))
+
+        result = self._group_dao.count_users(
+            group,
+            filtered=True,
+            email_address='user1-1@example.com',
+        )
+        assert_that(result, equal_to(1))
+
+        result = self._group_dao.count_users(
+            group,
+            filtered=True,
+            search='example.com',
+        )
+        assert_that(result, equal_to(1))
+
     @fixtures.db.tenant(uuid=TENANT_UUID)
     @fixtures.db.group(name='foobar', tenant_uuid=TENANT_UUID)
     def test_create(self, tenant_uuid, group_uuid):
@@ -163,6 +197,58 @@ class TestGroupDAO(base.DAOTestCase):
         result = self._group_dao.list_(order='name', direction='asc', offset=1)
         expected = build_list_matcher('baz', 'foo')
         assert_that(result, contains_exactly(*expected))
+
+    @fixtures.db.user()
+    @fixtures.db.user()
+    @fixtures.db.group(name='group1')
+    @fixtures.db.group(name='group2')
+    @fixtures.db.group(name='group3')
+    def test_list_with_many_users(self, user1, user2, group1, group2, group3):
+        self._group_dao.add_user(group1, user1)
+        self._group_dao.add_user(group1, user2)
+
+        result = self._group_dao.list_(order='name', direction='asc', limit=2)
+        assert_that(
+            result,
+            contains_exactly(has_entries(uuid=group1), has_entries(uuid=group2)),
+        )
+
+        result = self._group_dao.list_(order='name', direction='desc', limit=2)
+        assert_that(
+            result,
+            contains_exactly(has_entries(uuid=group3), has_entries(uuid=group2)),
+        )
+
+    @fixtures.db.user()
+    @fixtures.db.user()
+    @fixtures.db.group(name='group1')
+    @fixtures.db.group(name='group2')
+    @fixtures.db.group(name='group3')
+    def test_list_by_user_uuid(self, user1, user2, group1, group2, group3):
+        self._group_dao.add_user(group1, user1)
+        self._group_dao.add_user(group2, user1)
+
+        result = self._group_dao.list_(
+            user_uuid=user1,
+            order='name',
+            direction='asc',
+            limit=2,
+        )
+        assert_that(
+            result,
+            contains_exactly(has_entries(uuid=group1), has_entries(uuid=group2)),
+        )
+
+        result = self._group_dao.list_(
+            user_uuid=user1,
+            order='name',
+            direction='desc',
+            limit=2,
+        )
+        assert_that(
+            result,
+            contains_exactly(has_entries(uuid=group2), has_entries(uuid=group1)),
+        )
 
     @fixtures.db.group()
     @fixtures.db.policy()
