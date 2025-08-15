@@ -1,31 +1,27 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
 import marshmallow
 from flask import request
-from xivo.mallow import fields
 
-from wazo_auth import exceptions, http, schemas
+from wazo_auth import exceptions, http
 from wazo_auth.flask_helpers import Tenant
+from wazo_auth.services.external_auth import ExternalAuthService
+from wazo_auth.services.user import UserService
+
+from .schemas import MobileSchema
 
 logger = logging.getLogger(__name__)
-
-
-class MobileSchema(schemas.BaseSchema):
-    token = fields.String(min=1, max=512, load_default=None)
-    apns_token = fields.String(
-        allow_none=True, max=512, load_default=None
-    )  # deprecated
-    apns_voip_token = fields.String(allow_none=True, max=512, load_default=None)
-    apns_notification_token = fields.String(allow_none=True, max=512, load_default=None)
 
 
 class MobileAuthSenderID(http.AuthResource):
     auth_type = 'mobile'
 
-    def __init__(self, external_auth_service, user_service):
+    def __init__(
+        self, external_auth_service: ExternalAuthService, user_service: UserService
+    ):
         self.external_auth_service = external_auth_service
         self.user_service = user_service
 
@@ -39,9 +35,8 @@ class MobileAuthSenderID(http.AuthResource):
 class MobileAuth(http.AuthResource):
     auth_type = 'mobile'
 
-    def __init__(self, external_auth_service, config):
+    def __init__(self, external_auth_service: ExternalAuthService):
         self.external_auth_service = external_auth_service
-        self.config = config
 
     @http.required_acl('auth.users.{user_uuid}.external.mobile.delete')
     def delete(self, user_uuid):
@@ -61,7 +56,17 @@ class MobileAuth(http.AuthResource):
             raise exceptions.UserParamException.from_errors(e.messages)
 
         logger.info(
-            'Token created for User(%s) in plugin external mobile', str(user_uuid)
+            'Tokens registered for User(%s) in plugin external mobile', str(user_uuid)
         )
         self.external_auth_service.create(user_uuid, self.auth_type, args)
         return args, 201
+
+    @http.required_acl('auth.users.{user_uuid}.external.mobile.update')
+    def put(self, user_uuid):
+        try:
+            args = MobileSchema().load(request.get_json())
+        except marshmallow.ValidationError as e:
+            raise exceptions.UserParamException.from_errors(e.messages)
+
+        self.external_auth_service.update(user_uuid, self.auth_type, args)
+        return args, 200

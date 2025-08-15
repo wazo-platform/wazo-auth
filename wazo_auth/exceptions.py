@@ -344,6 +344,19 @@ class MasterTenantConflictException(APIException):
         super().__init__(403, 'Conflict detected', 'conflict', details, 'tenants')
 
 
+class TenantIdentityConflictException(APIException):
+    def __init__(self, column, value):
+        msg = f'A tenant with identity {column}="{value}" already exists'
+        details = {column: {'constraint_id': 'unique', 'message': msg}}
+        super().__init__(
+            status_code=409,
+            message='Tenant Conflict detected',
+            error_id='tenant-identity-conflict',
+            details=details,
+            resource='tenants',
+        )
+
+
 class DuplicatePolicyException(TokenServiceException):
     code = 409
 

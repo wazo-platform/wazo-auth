@@ -1,8 +1,10 @@
-# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
 
+import psycopg2.errorcodes
+import sqlalchemy.exc
 from wazo_bus.resources.auth.events import (
     TenantCreatedEvent,
     TenantDeletedEvent,
@@ -80,7 +82,23 @@ class TenantService(BaseService):
         return [tenant.uuid for tenant in visible_tenants]
 
     def new(self, **kwargs):
-        uuid = self._dao.tenant.create(**kwargs)
+        try:
+            uuid = self._dao.tenant.create(**kwargs)
+        except sqlalchemy.exc.IntegrityError as e:
+            logger.debug(
+                'integrity error(code=%s, pgcode=%s): %s', e.code, e.orig.pgcode, e
+            )
+            if (
+                e.orig.pgcode == psycopg2.errorcodes.UNIQUE_VIOLATION
+                and 'Key (uuid)' in str(e)
+            ):
+                assert 'uuid' in kwargs, 'uuid conflict but no uuid specified?'
+                raise exceptions.TenantIdentityConflictException(
+                    'uuid',
+                    kwargs['uuid'],
+                )
+            raise e
+
         self._dao.address.new(tenant_uuid=uuid, **kwargs['address'])
         result = self._get(uuid)
 

@@ -74,13 +74,13 @@ class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
     service = 'auth'
 
     @classmethod
-    def make_auth_client(cls, username=None, password=None):
+    def make_auth_client(cls, username=None, password=None, **kwargs):
         try:
             port = cls.service_port(9497, service_name='auth')
         except (NoSuchService, NoSuchPort):
             return WrongClient('auth')
-        kwargs = {'port': port, 'prefix': '', 'https': False}
 
+        kwargs.update({'port': port, 'prefix': '', 'https': False})
         if username and password:
             kwargs['username'] = username
             kwargs['password'] = password
