@@ -36,7 +36,7 @@ services:
       - "5672"
 
   slapd:
-    image: bitnami/openldap
+    image: bitnamilegacy/openldap
     environment:
       BITNAMI_DEBUG: "true"
       LDAP_PORT_NUMBER: 1389
