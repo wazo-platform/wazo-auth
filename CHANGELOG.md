@@ -1,5 +1,9 @@
 # Changelog
 
+## 25.12
+
+* Added API `PUT /0.1/users/<user_uuid>/external/mobile`, along with `auth_user_external_auth_updated` event
+
 ## 25.09
 
 * Added metadata to refresh tokens. `/0.1/tokens` exposes new `metadata` field.
