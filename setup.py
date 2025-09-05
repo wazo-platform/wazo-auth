@@ -16,6 +16,7 @@ setup(
     package_data={
         'wazo_auth.plugins.http': ['*/api.yml'],
         'wazo_auth.plugins.external_auth': ['*/api.yml'],
+        'wazo_auth.database.alembic': ['versions/*.sql'],
     },
     entry_points={
         'console_scripts': [
