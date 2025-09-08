@@ -334,7 +334,7 @@ class TestUsers(base.APIIntegrationTest):
             'password': 's3cr37',
         }
 
-        with self.new_email() as current_most_recent_email:
+        with self.new_email() as start_time:
             with self.user(self.client, register=True, **args) as user:
                 assert_that(
                     user,
@@ -366,7 +366,7 @@ class TestUsers(base.APIIntegrationTest):
                 )
 
                 def confirm_email():
-                    url = self.get_last_email_url(newer_than=current_most_recent_email)
+                    url = self.get_last_email_url(newer_than=start_time)
                     url = url.replace('https', 'http')
                     requests.get(url)
 

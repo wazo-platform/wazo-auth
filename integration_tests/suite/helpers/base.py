@@ -408,23 +408,14 @@ class APIIntegrationTest(BaseIntegrationTest):
             raise AssertionError("No emails found")
 
         if newer_than is not None:
-            newer_than_timestamp = self._extract_email_timestamp(newer_than)
-            if newer_than_timestamp is None:
-                raise AssertionError("Could not parse timestamp from newer_than email")
-
             filtered_emails = []
             for email in all_email:
                 email_timestamp = self._extract_email_timestamp(email)
-                if (
-                    email_timestamp is not None
-                    and email_timestamp > newer_than_timestamp
-                ):
+                if email_timestamp is not None and email_timestamp > newer_than:
                     filtered_emails.append(email)
 
             if not filtered_emails:
-                raise AssertionError(
-                    "No new emails found newer than the provided email"
-                )
+                raise AssertionError("No new emails found newer than the provided time")
             last_email = filtered_emails[-1]
         else:
             last_email = all_email[-1]
@@ -484,22 +475,17 @@ class APIIntegrationTest(BaseIntegrationTest):
 
     @contextmanager
     def new_email(self):
-        initial_filenames = set(self._get_email_filenames())
-        current_most_recent_email = None
-
-        if initial_filenames:
-            all_emails = self.get_emails()
-            if all_emails:
-                current_most_recent_email = all_emails[-1]
+        start_time = datetime.now(timezone.utc)
 
         try:
-            yield current_most_recent_email
+            yield start_time
         finally:
-            current_filenames = set(self._get_email_filenames())
-            new_filenames = current_filenames - initial_filenames
-
-            for filename in new_filenames:
-                self._remove_email(filename)
+            current_filenames = self._get_email_filenames()
+            for filename in current_filenames:
+                email = self._email_body(filename)
+                email_timestamp = self._extract_email_timestamp(email)
+                if email_timestamp is not None and email_timestamp > start_time:
+                    self._remove_email(filename)
 
     @staticmethod
     @contextmanager
