@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -334,44 +334,46 @@ class TestUsers(base.APIIntegrationTest):
             'password': 's3cr37',
         }
 
-        with self.user(self.client, register=True, **args) as user:
-            assert_that(
-                user,
-                has_entries(
-                    uuid=uuid_(),
-                    username='foobar',
-                    firstname=None,
-                    lastname='Denver',
-                    enabled=True,
-                    tenant_uuid=uuid_(),
-                    emails=contains_inanyorder(
-                        has_entries(
-                            uuid=uuid_(),
-                            address='foobar@example.com',
-                            main=True,
-                            confirmed=False,
-                        )
+        with self.new_email() as current_most_recent_email:
+            with self.user(self.client, register=True, **args) as user:
+                assert_that(
+                    user,
+                    has_entries(
+                        uuid=uuid_(),
+                        username='foobar',
+                        firstname=None,
+                        lastname='Denver',
+                        enabled=True,
+                        tenant_uuid=uuid_(),
+                        emails=contains_inanyorder(
+                            has_entries(
+                                uuid=uuid_(),
+                                address='foobar@example.com',
+                                main=True,
+                                confirmed=False,
+                            )
+                        ),
                     ),
-                ),
-            )
+                )
 
-            created_tenant = self.client.tenants.get(user['tenant_uuid'])
-            assert_that(
-                created_tenant,
-                has_entries(
-                    uuid=is_not(self.top_tenant_uuid), parent_uuid=self.top_tenant_uuid
-                ),
-            )
+                created_tenant = self.client.tenants.get(user['tenant_uuid'])
+                assert_that(
+                    created_tenant,
+                    has_entries(
+                        uuid=is_not(self.top_tenant_uuid),
+                        parent_uuid=self.top_tenant_uuid,
+                    ),
+                )
 
-            url = self.get_last_email_url()
-            url = url.replace('https', 'http')
-            requests.get(url)
+                url = self.get_last_email_url(newer_than=current_most_recent_email)
+                url = url.replace('https', 'http')
+                requests.get(url)
 
-            updated_user = self.client.users.get(user['uuid'])
-            assert_that(
-                updated_user,
-                has_entries(emails=contains_exactly(has_entries(confirmed=True))),
-            )
+                updated_user = self.client.users.get(user['uuid'])
+                assert_that(
+                    updated_user,
+                    has_entries(emails=contains_exactly(has_entries(confirmed=True))),
+                )
 
     def test_register_post_does_not_log_password(self):
         args = {
