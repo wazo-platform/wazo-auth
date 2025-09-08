@@ -404,8 +404,6 @@ class APIIntegrationTest(BaseIntegrationTest):
 
     def get_last_email_url(self, newer_than=None):
         all_email = self.get_emails()
-        print(all_email)
-
         if not all_email:
             raise AssertionError("No emails found")
 

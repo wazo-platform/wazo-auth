@@ -365,9 +365,12 @@ class TestUsers(base.APIIntegrationTest):
                     ),
                 )
 
-                url = self.get_last_email_url(newer_than=current_most_recent_email)
-                url = url.replace('https', 'http')
-                requests.get(url)
+                def confirm_email():
+                    url = self.get_last_email_url(newer_than=current_most_recent_email)
+                    url = url.replace('https', 'http')
+                    requests.get(url)
+
+                until.assert_(confirm_email, timeout=5.0)
 
                 updated_user = self.client.users.get(user['uuid'])
                 assert_that(
