@@ -411,7 +411,7 @@ class APIIntegrationTest(BaseIntegrationTest):
             filtered_emails = []
             for email in all_email:
                 email_timestamp = self._extract_email_timestamp(email)
-                if email_timestamp is not None and email_timestamp > newer_than:
+                if email_timestamp is not None and email_timestamp >= newer_than:
                     filtered_emails.append(email)
 
             if not filtered_emails:
@@ -478,7 +478,7 @@ class APIIntegrationTest(BaseIntegrationTest):
         start_time = datetime.now(timezone.utc)
 
         try:
-            yield start_time
+            yield start_time.replace(microsecond=0)
         finally:
             current_filenames = self._get_email_filenames()
             for filename in current_filenames:

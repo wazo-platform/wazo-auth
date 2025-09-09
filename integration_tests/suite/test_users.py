@@ -368,7 +368,9 @@ class TestUsers(base.APIIntegrationTest):
                 def confirm_email():
                     url = self.get_last_email_url(newer_than=start_time)
                     url = url.replace('https', 'http')
-                    requests.get(url)
+                    assert_that(
+                        calling(requests.get).with_args(url), not_(raises(Exception))
+                    )
 
                 until.assert_(confirm_email, timeout=5.0)
 
