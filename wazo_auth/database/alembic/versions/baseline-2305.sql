@@ -262,7 +262,7 @@ INSERT INTO public.auth_access(access) VALUES ('#');
 
 INSERT INTO public.auth_tenant
 SELECT master_uuid, 'master', NULL, NULL, master_uuid, 'master'
-FROM (SELECT public.uuid_generate_v4() as master_uuid) as master_tenant;
+FROM (SELECT public.uuid_generate_v4() AS master_uuid) AS master_tenant;
 
 -- Data for Name: auth_group; Type: TABLE DATA; Schema: public; Owner: -
 
@@ -274,8 +274,8 @@ SELECT
     true,
     'wazo-all-users-tenant-' || master_uuid
 FROM (
-    SELECT uuid as master_uuid from public.auth_tenant where name = 'master'
-) as master_tenant;
+    SELECT uuid AS master_uuid FROM public.auth_tenant WHERE name = 'master'
+) AS master_tenant;
 
 -- Data for Name: auth_group_policy; Type: TABLE DATA; Schema: public; Owner: -
 
@@ -290,7 +290,7 @@ INSERT INTO public.auth_policy VALUES (
 
 Do not modify this policy, it can be modified in future Wazo upgrades
 ',
-    (select uuid from public.auth_tenant where name = 'master'),
+    (SELECT uuid FROM public.auth_tenant WHERE name = 'master'),
     false,
     'wazo_default_master_user_policy',
     false
@@ -299,8 +299,8 @@ Do not modify this policy, it can be modified in future Wazo upgrades
 -- Data for Name: auth_policy_access; Type: TABLE DATA; Schema: public; Owner: -
 
 INSERT INTO public.auth_policy_access VALUES (
-    (select uuid from public.auth_policy where name = 'wazo_default_master_user_policy'),
-    (select id from public.auth_access where access = '#')
+    (SELECT uuid FROM public.auth_policy WHERE name = 'wazo_default_master_user_policy'),
+    (SELECT id FROM public.auth_access WHERE access = '#')
 );
 
 -- Data for Name: auth_refresh_token; Type: TABLE DATA; Schema: public; Owner: -
