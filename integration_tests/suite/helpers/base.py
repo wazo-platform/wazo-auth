@@ -10,6 +10,7 @@ import string
 import unittest
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 
 import pytest
 import requests
@@ -394,8 +395,31 @@ class APIIntegrationTest(BaseIntegrationTest):
                 body_contains, self.get_last_email_body(), re.MULTILINE
             ), self.get_last_email_body()
 
-    def get_last_email_url(self):
-        last_email = self.get_emails()[-1]
+    def _extract_email_timestamp(self, email):
+        first_line = email.split('\n')[0].strip()
+        try:
+            return parsedate_to_datetime(first_line)
+        except (ValueError, TypeError):
+            return None
+
+    def get_last_email_url(self, newer_than=None):
+        all_email = self.get_emails()
+        if not all_email:
+            raise AssertionError("No emails found")
+
+        if newer_than is not None:
+            filtered_emails = []
+            for email in all_email:
+                email_timestamp = self._extract_email_timestamp(email)
+                if email_timestamp is not None and email_timestamp >= newer_than:
+                    filtered_emails.append(email)
+
+            if not filtered_emails:
+                raise AssertionError("No new emails found newer than the provided time")
+            last_email = filtered_emails[-1]
+        else:
+            last_email = all_email[-1]
+
         email_urls = [
             line for line in last_email.split('\n') if line.startswith('https://')
         ]
@@ -429,12 +453,17 @@ class APIIntegrationTest(BaseIntegrationTest):
 
     def _get_email_filenames(self):
         command = ['ls', '/var/mail']
-        return (
-            self.asset_cls.docker_exec(command, 'smtp')
-            .decode('utf-8')
-            .strip()
-            .split('\n')
-        )
+        try:
+            result = self.asset_cls.docker_exec(command, 'smtp').decode('utf-8').strip()
+            if (
+                not result
+                or 'No such file or directory' in result
+                or 'Is a directory' in result
+            ):
+                return []
+            return result.split('\n')
+        except Exception:
+            return []
 
     def clean_emails(self):
         for filename in self._get_email_filenames():
@@ -443,6 +472,20 @@ class APIIntegrationTest(BaseIntegrationTest):
     def _remove_email(self, filename):
         command = ['rm', f'/var/mail/{filename}']
         self.asset_cls.docker_exec(command, 'smtp')
+
+    @contextmanager
+    def new_email(self):
+        start_time = datetime.now(timezone.utc)
+
+        try:
+            yield start_time.replace(microsecond=0)
+        finally:
+            current_filenames = self._get_email_filenames()
+            for filename in current_filenames:
+                email = self._email_body(filename)
+                email_timestamp = self._extract_email_timestamp(email)
+                if email_timestamp is not None and email_timestamp > start_time:
+                    self._remove_email(filename)
 
     @staticmethod
     @contextmanager
