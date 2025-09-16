@@ -14,6 +14,7 @@ wazo-auth is an authentication microservice for the Wazo platform that handles:
 ## Architecture
 
 ### Plugin-Based Architecture
+
 The project uses a stevedore plugin architecture with several plugin types defined in `setup.py`:
 
 1. **HTTP Plugins** (`wazo_auth.http`): API endpoints
