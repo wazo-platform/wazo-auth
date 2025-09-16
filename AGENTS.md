@@ -54,7 +54,10 @@ The project uses a [stevedore](https://docs.openstack.org/stevedore/latest/user/
 - Models in `wazo_auth/database/models/`
 
 ## Development Workflow
+### Virtual environments
 
+tox creates virtual environments for test environments defined in tox.ini, in [`.tox`](.tox) subdirectories.
+To run arbitrary shell commands using a tox-managed virtual environment, use `tox exec -e<environment> -- <shell command>`
 ### Testing
 
 #### Unit Tests
