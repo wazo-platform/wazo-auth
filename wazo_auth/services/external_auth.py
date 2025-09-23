@@ -61,7 +61,7 @@ class _OAuth2Synchronizer:
     def _on_error(self, ws, error):
         logger.debug('ws error: %s', error)
 
-    def _on_close(self, ws):
+    def _on_close(self, ws, status_code, message):
         logger.debug('ws closed')
 
 

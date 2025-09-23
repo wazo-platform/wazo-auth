@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -43,7 +43,7 @@ class WebSocketOAuth2(Thread):
         finally:
             self.ws.close()
 
-    def _on_message(self, message):
+    def _on_message(self, ws, message):
         try:
             logger.debug(
                 "Confirmation has been received on websocketOAuth, message : %s",
@@ -56,10 +56,10 @@ class WebSocketOAuth2(Thread):
         except Exception as e:
             logger.error('error when receiving websocket event %s', e)
 
-    def _on_error(self, error):
+    def _on_error(self, ws, error):
         logger.error(error)
 
-    def _on_close(self):
+    def _on_close(self, ws, status_code, message):
         logger.debug("WebsocketOAuth closed")
 
     def create_first_token(self, user_uuid, code):
