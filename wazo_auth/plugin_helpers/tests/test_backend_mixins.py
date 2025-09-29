@@ -1,5 +1,5 @@
 import unittest
-from typing import Any, Optional
+from typing import Any
 from unittest.mock import Mock
 
 from wazo_auth.plugin_helpers.backend_mixins import MetadataByPurposeMixin
@@ -7,7 +7,7 @@ from wazo_auth.services import UserService
 
 
 class MockPurpose:
-    def __init__(self, metadata_plugins: Optional[list] = None):
+    def __init__(self, metadata_plugins: list | None = None):
         self.metadata_plugins = metadata_plugins or []
 
 
