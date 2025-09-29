@@ -16,8 +16,8 @@ services:
       - "../..:/usr/src/wazo-auth"
       - "./etc/wazo-auth/conf.d/50-default.yml:/etc/wazo-auth/conf.d/50-default.yml"
       - "./var/lib/wazo-auth/saml:/var/lib/wazo-auth/saml:ro"
-      # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/opt/venv/lib/python3.9/site-packages/xivo"
-      # - "${LOCAL_GIT_REPOS}/wazo-bus/wazo_bus:/opt/venv/lib/python3.9/site-packages/wazo_bus"
+      # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/opt/venv/lib/python3.11/site-packages/xivo"
+      # - "${LOCAL_GIT_REPOS}/wazo-bus/wazo_bus:/opt/venv/lib/python3.11/site-packages/wazo_bus"
 
   oauth2sync:
     image: oauth2-synchronization-service
