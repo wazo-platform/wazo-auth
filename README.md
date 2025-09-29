@@ -1,4 +1,4 @@
-<p align="center"><img src="https://github.com/wazo-platform/wazo-platform.org/raw/master/static/images/logo.png" height="200"></p>
+<p align="center"><img alt="" src="https://github.com/wazo-platform/wazo-platform.org/raw/master/static/images/logo.png" height="200"></p>
 
 # wazo-auth
 
