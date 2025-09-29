@@ -44,7 +44,6 @@
   * `POST /saml/sso`
   * `POST /saml/acs`
 
-
 ## 24.07
 
 * The external API `POST /external/mobile/config` accepts a new key:
@@ -140,11 +139,11 @@ Those keys may also be configured with PATCH `/0.1/config`.
 
 The `POST /0.1/token` endpoint now accepts the following body parameters:
 
-  * `domain_name`: mandatory for `ldap_user` backend
+* `domain_name`: mandatory for `ldap_user` backend
 
 The following body parameters have been deprecated on the `POST /0.1/token` endpoint:
 
-  * `tenant_id` use the `domain_name` parameter instead
+* `tenant_id` use the `domain_name` parameter instead
 
 * The following field:
 
@@ -152,15 +151,14 @@ The following body parameters have been deprecated on the `POST /0.1/token` endp
 
 has been added to the following resources:
 
-  * `tenants`
+* `tenants`
 
 supporting the following operations:
 
-  * `GET /tenants/domain_name`
-  * `PUT /tenants/{tenant_uuid}/domain_names`
-  * `DELETE /tenants/{tenant_uuid}/domain_names`
-  * `POST /tenants/{tenant_uuid}/domain_names`
-
+* `GET /tenants/domain_name`
+* `PUT /tenants/{tenant_uuid}/domain_names`
+* `DELETE /tenants/{tenant_uuid}/domain_names`
+* `POST /tenants/{tenant_uuid}/domain_names`
 
 ## 22.03
 
