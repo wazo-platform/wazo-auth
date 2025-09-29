@@ -96,7 +96,7 @@ Profiles can then be analyzed with CLI or GUI tools like `snakeviz`.
 ```sh
 apt-get install libldap2-dev libpq-dev python3-dev libffi-dev libyaml-dev libsasl2-dev
 pip install tox
-tox --recreate -e py39
+tox --recreate -e py311
 ```
 
 ### Running integration tests
