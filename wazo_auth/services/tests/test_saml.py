@@ -1,8 +1,8 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 from unittest import TestCase
 from unittest.mock import Mock, patch
 
@@ -35,7 +35,7 @@ class TestSAMLService(TestCase):
         saml_id: str = 'saml_id',
         redirect_url: str = 'some_url',
         domain: str = 'some_domain',
-        login: Optional[str] = None,
+        login: str | None = None,
         relay_state: str = '6pruzvCdQHaLWCd30T6IziZFX_U=',
         date: datetime = datetime.fromisoformat('2000-01-01 00:00:02+00:00'),
     ) -> SamlAuthContext:
