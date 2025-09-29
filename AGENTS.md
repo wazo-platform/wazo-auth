@@ -5,6 +5,7 @@ This file provides essential context about the wazo-auth project for AI coding a
 ## Project Overview
 
 wazo-auth is an authentication microservice for the Wazo platform that handles:
+
 - User, group, and policy management
 - Token creation and validation
 - External authentication (LDAP, Google, Microsoft)
@@ -17,38 +18,40 @@ wazo-auth is an authentication microservice for the Wazo platform that handles:
 
 The project uses a [stevedore](https://docs.openstack.org/stevedore/latest/user/index.html) plugin architecture with several plugin types defined in `setup.py`:
 
-1. **HTTP Plugins** (`wazo_auth.http`): API endpoints
+- **HTTP Plugins** (`wazo_auth.http`): API endpoints
    - Each plugin handles a specific API resource (users, tokens, groups, etc.)
    - Located in `wazo_auth/plugins/http/`
    - Each plugin has: `plugin.py`, `http.py`, `api.yml` (OpenAPI spec), `schemas.py`
 
-2. **Backend Plugins** (`wazo_auth.backends`): Authentication backends
+- **Backend Plugins** (`wazo_auth.backends`): Authentication backends
    - `wazo_user`: Native Wazo user authentication
    - `ldap_user`: LDAP authentication
    - Located in `wazo_auth/plugins/backends/`
 
-3. **External Auth Plugins** (`wazo_auth.external_auth`): OAuth2 providers
+- **External Auth Plugins** (`wazo_auth.external_auth`): authentication credentials for external integrations
    - `google`, `microsoft`, `mobile`
    - Located in `wazo_auth/plugins/external_auth/`
 
-4. **Metadata Plugins** (`wazo_auth.metadata`): Token metadata providers
+- **Metadata Plugins** (`wazo_auth.metadata`): Token metadata providers
    - Located in `wazo_auth/plugins/metadata/`
 
-5. **IDP Plugins** (`wazo_auth.idp`): Identity providers
-   - `saml`, `ldap`
+- **IDP Plugins** (`wazo_auth.idp`): Identity providers
+   - `saml`, `ldap`, `idp`, `refresh_token`
    - Located in `wazo_auth/plugins/idp/`
 
-6. **Email Notification Plugins** (`wazo_auth.email_notification`):
+- **Email Notification Plugins** (`wazo_auth.email_notification`):
    - `smtp`: Email delivery
    - Located in `wazo_auth/plugins/email_notification/`
 
 ### Configuration
+
 - Main config: `/etc/wazo-auth/config.yml`
 - Override configs: `/etc/wazo-auth/conf.d/`
 - Configuration loading in `wazo_auth/config.py`
 - Plugin enabling/disabling via `enabled_http_plugins` config
 
 ### Database
+
 - PostgreSQL with SQLAlchemy ORM
 - Alembic migrations in `wazo_auth/database/alembic/`
 - Models in `wazo_auth/database/models/`
@@ -68,34 +71,40 @@ To run arbitrary shell commands using a tox-managed virtual environment, use `to
 ### Testing
 
 #### Unit Tests
+
 - Located in `wazo_auth/tests/` and within individual plugin directories
 - Run with: `tox -e py39`
 - Use pytest with coverage reporting
 
 #### Integration Tests
+
 - Located in `integration_tests/suite/`
 - Use Docker Compose to spin up required services
 - Test actual HTTP APIs against running wazo-auth instance
 - Run with: `tox -e integration`
-- Environment variables for customization (WAZO_TEST_DOCKER_*, etc.)
+- Environment variables for customization (WAZO_TEST_DOCKER\_\*, etc.)
 
 #### Performance Tests
+
 - Located in `integration_tests/performance_suite/`
 - Run with: `tox -e performance`
 
 #### Functional Tests
+
 - Located in `integration_tests/functional_suite/`
 - Use Playwright for browser automation (SAML testing)
 - Run with: `tox -e functional`
 - Requires SAML credentials via environment variables
 
 ### Linting and Code Quality
+
 - Use pre-commit hooks for code formatting and linting
 - Run with: `tox -e linters`
 - Pre-commit runs automatically before commits
 - Configured via `.pre-commit-config.yaml`
 
 ### Docker
+
 - Main image: `wazoplatform/wazo-auth`
 - Database image: `wazoplatform/wazo-auth-db`
 - Integration tests use docker-compose for service orchestration
@@ -103,7 +112,9 @@ To run arbitrary shell commands using a tox-managed virtual environment, use `to
 ## Common Patterns
 
 ### Plugin Structure
+
 Each HTTP plugin typically follows this structure:
+
 ```
 plugin_name/
 ├── __init__.py
@@ -115,17 +126,20 @@ plugin_name/
 ```
 
 ### Service Layer
+
 - Business logic in `wazo_auth/services/`
 - Database operations through DAOs in `wazo_auth/database/`
 - Plugin helpers in `wazo_auth/plugin_helpers/`
 
 ### HTTP Framework
+
 - Flask-based HTTP server
 - RESTful API design
 - OpenAPI specifications for each plugin
 - Error handling via custom exceptions in `wazo_auth/exceptions.py`
 
 ### Authentication Flow
+
 - Token-based authentication
 - ACL (Access Control List) validation
 - Multi-tenant support via tenant UUID
