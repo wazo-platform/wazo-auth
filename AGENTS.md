@@ -54,7 +54,14 @@ The project uses a [stevedore](https://docs.openstack.org/stevedore/latest/user/
 - Models in `wazo_auth/database/models/`
 
 ## Development Workflow
+
 ### Virtual environments
+
+- `tox` creates virtual environments for test environments defined in `tox.ini`, under the [`.tox`](.tox) subdirectory.
+
+- To run arbitrary shell commands in a tox-managed virtual environment, one can use `tox exec -e<environment> -- <shell command>`, e.g. `tox exec -epy39 -- pip list`
+
+- to create a development virtual environment independent of other tox testenvs, one can use `tox devenv .tox/cursor`; this environment must then be activated manually with `source .tox/cursor/bin/activate`.
 
 tox creates virtual environments for test environments defined in tox.ini, in [`.tox`](.tox) subdirectories.
 To run arbitrary shell commands using a tox-managed virtual environment, use `tox exec -e<environment> -- <shell command>`
