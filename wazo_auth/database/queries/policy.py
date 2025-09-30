@@ -41,7 +41,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         )
 
         query = self.session.query(Access.id_).join(PolicyAccess).filter(filter_)
-        access_id = query.first()
+        access_id = query.scalar()
 
         filter_ = and_(
             PolicyAccess.policy_uuid == str(policy_uuid),
