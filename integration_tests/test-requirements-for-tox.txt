@@ -6,7 +6,6 @@ pytest
 python-ldap
 pytest-playwright
 pysaml2
-markupsafe==2.0.1
 websocket-client==1.8.0
 
 # for database tests
