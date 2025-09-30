@@ -1,4 +1,4 @@
-FROM python:3.9-slim-buster
+FROM python:3.11-slim-bookworm
 
 COPY . /usr/src/oauth2_synchronization_service
 WORKDIR /usr/src/oauth2_synchronization_service
