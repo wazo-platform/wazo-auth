@@ -146,9 +146,12 @@ class RefreshTokens(_BaseRefreshTokens):
 
 class Tokens(BaseResource):
     def _get_login_password(self):
-        # This method is a workaround to fix broken werkzeug helper
-        # `request.authorization` with version:
-        # 1.0.1 (bullseye) and 2.0.2 (bullseye-backports)
+        # This method is a workaround
+        # to support latin-1(ISO-8859-1) charset in http basic auth
+        # since werkzeug `request.authorization` only supports utf-8
+        # with versions:
+        # 2.0.2 (bookworm)
+        # see https://wazo-dev.atlassian.net/browse/WP-1084
         error = None, None
 
         authorization = request.headers.get('Authorization')
