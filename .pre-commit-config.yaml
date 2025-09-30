@@ -35,3 +35,9 @@ repos:
     rev: 1.1.1
     hooks:
       - id: wazo-copyright-check
+
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.45.0
+    hooks:
+      - id: markdownlint-fix
+        args: ["--config", 'pyproject.toml', "--configPointer", "/tool/markdownlint"]

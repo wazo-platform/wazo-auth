@@ -17,3 +17,19 @@ exclude = [
 [tool.isort]
 profile = "black"
 py_version = 39
+
+[tool.markdownlint]
+default = true
+MD040 = false # allow fences(```) without languages
+MD033 = false # allow inline html
+MD041 = false # allow the inline html before the first-level heading
+
+[tool.markdownlint.MD013]
+ # don't check line length
+code_blocks = false
+
+[tool.markdownlint.MD024]
+# allow the multiple Profiling headings(used at different levels)
+siblings_only = true
+[tool.markdownlint.MD007]
+indent = 2

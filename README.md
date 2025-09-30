@@ -1,4 +1,4 @@
-<p align="center"><img src="https://github.com/wazo-platform/wazo-platform.org/raw/master/static/images/logo.png" height="200"></p>
+<p align="center"><img alt="" src="https://github.com/wazo-platform/wazo-platform.org/raw/master/static/images/logo.png" height="200"></p>
 
 # wazo-auth
 
@@ -103,18 +103,21 @@ tox --recreate -e py39
 
 You need a SAML test account and configuration, you need to create a configuration
 file .integration_tests/asses/saml/config/saml.json with following json:
+
 ```json
 {
   "login": "entraLogin",
   "password": "entraPwd"
 }
 ```
+
 then run
 
 ```sh
 playwright install
 tox -e integration
 ```
+
 Note: If you update the `test-requirements-for-tox.ini` file don't forget to run `tox --recreate -e integration`.
 Note: The `playwright install` command installs the required browsers to run tests.
 
