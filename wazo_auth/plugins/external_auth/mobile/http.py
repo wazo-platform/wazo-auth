@@ -68,5 +68,5 @@ class MobileAuth(http.AuthResource):
         except marshmallow.ValidationError as e:
             raise exceptions.UserParamException.from_errors(e.messages)
 
-        self.external_auth_service.update(user_uuid, self.auth_type, args)
+        self.external_auth_service.update_or_create(user_uuid, self.auth_type, args)
         return args, 200
