@@ -3,14 +3,14 @@
 
 from __future__ import annotations
 
-from typing import Literal, Union
+from typing import Literal
 
 from stevedore.extension import Extension
 
 from wazo_auth.database.models import User
 from wazo_auth.services.helpers import BaseService
 
-IDPType = Union[str, Literal['default']]
+IDPType = str | Literal['default']
 
 # TODO: remove non-native authentication methods when they are migrated to idp plugins
 HARDCODED_IDP_TYPES: set[IDPType] = {'native', 'default'}
