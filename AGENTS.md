@@ -102,8 +102,11 @@ The project uses a [stevedore](https://docs.openstack.org/stevedore/latest/user/
 ### Docker
 
 - Main image: `wazoplatform/wazo-auth`
+  built from `Dockerfile`
 - Database image: `wazoplatform/wazo-auth-db`
+  built from `contribs/docker/Dockerfile-db`
 - Integration tests use docker-compose for service orchestration
+  with compose files in `integration_tests/assets/`
 
 ## Common Patterns
 
