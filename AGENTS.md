@@ -169,7 +169,12 @@ plugin_name/
 
 - Python 3.9+
 - Use `wazo-auth-bootstrap` for initial setup
-- Configuration in `/etc/wazo-auth/` for local development
+- Configuration in `etc/wazo-auth/` for local development
+
+## Packaging
+
+- debian packaging metadata in `debian/`
+- debian packages built in CI and published to wazo mirrors
 
 ## API Design
 
