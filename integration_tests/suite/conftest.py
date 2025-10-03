@@ -15,7 +15,7 @@ def pytest_collection_modifyitems(session, config, items):
     items.sort(key=lambda item: item.parent.own_markers[0].args[0])
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='package')
 def base():
     asset.APIAssetLaunchingTestCase.setUpClass()
     try:
@@ -24,7 +24,7 @@ def base():
         asset.APIAssetLaunchingTestCase.tearDownClass()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='package')
 def saml():
     asset.SAMLAssetLaunchingTestCase.setUpClass()
     try:
@@ -33,7 +33,7 @@ def saml():
         asset.SAMLAssetLaunchingTestCase.tearDownClass()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='package')
 def database():
     asset.DBAssetLaunchingTestCase.setUpClass()
     try:
@@ -42,7 +42,7 @@ def database():
         asset.DBAssetLaunchingTestCase.tearDownClass()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='package')
 def external_auth():
     asset.ExternalAuthAssetLaunchingTestCase.setUpClass()
     try:
@@ -51,7 +51,7 @@ def external_auth():
         asset.ExternalAuthAssetLaunchingTestCase.tearDownClass()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='package')
 def metadata():
     asset.MetadataAssetLaunchingTestCase.setUpClass()
     try:
