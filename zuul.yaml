@@ -9,6 +9,7 @@
     wazo-gate:
       jobs:
         - auth-tox-integration
+        - auth-tox-performance
         - auth-tox-functional
 
 - secret:
@@ -44,6 +45,13 @@
     timeout: 10800
     vars:
       integration_test_timeout: 60
+
+- job:
+    name: auth-tox-performance
+    description: Run auth performance tests
+    parent: wazo-tox-integration-py39
+    vars:
+      tox_envlist: performance
 
 - job:
     name: auth-tox-functional
