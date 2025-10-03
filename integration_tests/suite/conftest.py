@@ -1,4 +1,4 @@
-# Copyright 2021-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import pytest
@@ -62,11 +62,6 @@ def metadata():
 
 @pytest.fixture(autouse=True, scope='function')
 def mark_logs(request):
-    # database tests don't have asset_cls
-    if not hasattr(request.cls, 'asset_cls'):
-        yield
-        return
-
     test_name = f'{request.cls.__name__}.{request.function.__name__}'
     request.cls.asset_cls.mark_logs_test_start(test_name)
     yield
