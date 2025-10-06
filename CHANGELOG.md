@@ -1,5 +1,9 @@
 # Changelog
 
+## 25.14
+
+* `PUT /0.1/users/<user_uuid>/external/mobile`: now creates the resource if it does not already exist
+
 ## 25.12
 
 * Added API `PUT /0.1/users/<user_uuid>/external/mobile`, along with `auth_user_external_auth_updated` event

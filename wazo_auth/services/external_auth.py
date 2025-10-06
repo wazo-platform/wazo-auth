@@ -15,6 +15,7 @@ from wazo_bus.resources.auth.events import (
     UserExternalAuthUpdatedEvent,
 )
 
+from wazo_auth import exceptions
 from wazo_auth.database.helpers import commit_or_rollback
 from wazo_auth.exceptions import UnknownUserException
 from wazo_auth.services.helpers import BaseService
@@ -188,6 +189,12 @@ class ExternalAuthService(BaseService):
         event = UserExternalAuthUpdatedEvent(auth_type, tenant_uuid, user_uuid)
         self._bus_publisher.publish(event)
         return updated
+
+    def update_or_create(self, user_uuid, auth_type, data):
+        try:
+            return self.update(user_uuid, auth_type, data)
+        except exceptions.UnknownExternalAuthException:
+            return self.create(user_uuid, auth_type, data)
 
     def update_config(self, auth_type, data, tenant_uuid):
         return self._dao.external_auth.update_config(auth_type, data, tenant_uuid)
