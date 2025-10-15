@@ -32,7 +32,7 @@ case "$1" in
 
         if [[ -z "${previous_version}" ]]; then
             # Add nginx configuration on new installations
-            ln -sf  /etc/nginx/locations/https-available/$DAEMONNAME \
+            ln -sf /etc/nginx/locations/https-available/$DAEMONNAME \
                     /etc/nginx/locations/https-enabled/$DAEMONNAME
         fi
 

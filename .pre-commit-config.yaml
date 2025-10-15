@@ -1,4 +1,3 @@
-# See https://pre-commit.com for more information
 repos:
   - repo: https://github.com/PyCQA/flake8
     rev: 6.1.0
@@ -10,19 +9,19 @@ repos:
     rev: 22.12.0
     hooks:
       - id: black
-# Automatically update to modern python (as modern as allowed by your Python version)
+  # Automatically update to modern python (as modern as allowed by your Python version)
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.15.0
     hooks:
       - id: pyupgrade
-        args: [--py39-plus]
-# Automatically sort and format imports (in black compatible way)
+        args: [--py311-plus]
+  # Automatically sort and format imports (in black compatible way)
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
     hooks:
       - id: isort
         args: [--filter-files]
-# See https://pre-commit.com for more information
+  # See https://pre-commit.com for more information
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
