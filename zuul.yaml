@@ -49,7 +49,7 @@
 - job:
     name: auth-tox-performance
     description: Run auth performance tests
-    parent: wazo-tox-integration-py39
+    parent: wazo-tox-integration-py311
     vars:
       tox_envlist: performance
 
