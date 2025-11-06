@@ -155,7 +155,41 @@ CREATE TABLE public.auth_refresh_token (
     user_agent text,
     remote_addr text,
     created_at timestamp with time zone DEFAULT now(),
-    mobile boolean DEFAULT false NOT NULL
+    mobile boolean DEFAULT false NOT NULL,
+    metadata json DEFAULT '{}'::json NOT NULL
+);
+
+-- Name: auth_saml_config; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE public.auth_saml_config (
+    tenant_uuid character varying(38) NOT NULL,
+    domain_uuid character varying(38) NOT NULL,
+    entity_id character varying(512) NOT NULL,
+    idp_metadata xml NOT NULL,
+    acs_url character varying(512) NOT NULL
+);
+
+-- Name: auth_saml_pysaml2_cache; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE public.auth_saml_pysaml2_cache (
+    name_id character varying(512) NOT NULL,
+    entity_id character varying(1024) NOT NULL,
+    info text NOT NULL,
+    not_on_or_after integer NOT NULL
+);
+
+-- Name: auth_saml_session; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE public.auth_saml_session (
+    request_id character varying(40) NOT NULL,
+    session_id character varying(22) NOT NULL,
+    redirect_url character varying(512) NOT NULL,
+    domain character varying(512) NOT NULL,
+    relay_state character varying(100) NOT NULL,
+    login character varying(512),
+    start_time timestamp with time zone DEFAULT now(),
+    saml_name_id text,
+    refresh_token_uuid character varying(36)
 );
 
 -- Name: auth_session; Type: TABLE; Schema: public; Owner: -
@@ -174,7 +208,8 @@ CREATE TABLE public.auth_tenant (
     phone text,
     contact_uuid character varying(38),
     parent_uuid character varying(38) NOT NULL,
-    slug character varying(10) NOT NULL
+    slug character varying(10) NOT NULL,
+    default_authentication_method text DEFAULT 'native'::text NOT NULL
 );
 
 -- Name: auth_tenant_domain; Type: TABLE; Schema: public; Owner: -
@@ -198,7 +233,8 @@ CREATE TABLE public.auth_token (
     session_uuid character varying(36) NOT NULL,
     user_agent text DEFAULT ''::text,
     remote_addr text DEFAULT ''::text,
-    acl text[] DEFAULT '{}'::text[] NOT NULL
+    acl text[] DEFAULT '{}'::text[] NOT NULL,
+    refresh_token_uuid character varying(36)
 );
 
 -- Name: auth_user; Type: TABLE; Schema: public; Owner: -
@@ -213,6 +249,7 @@ CREATE TABLE public.auth_user (
     enabled boolean DEFAULT true,
     tenant_uuid character varying(38) NOT NULL,
     purpose text NOT NULL,
+    authentication_method text DEFAULT 'default'::text NOT NULL,
     CONSTRAINT auth_user_purpose_check CHECK ((purpose = ANY (ARRAY['user'::text, 'internal'::text, 'external_api'::text])))
 );
 
@@ -250,6 +287,12 @@ ALTER TABLE ONLY public.auth_address ALTER COLUMN id SET DEFAULT nextval('public
 
 INSERT INTO public.auth_access(access) VALUES ('#');
 
+-- Data for Name: auth_tenant; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.auth_tenant
+SELECT master_uuid, 'master', NULL, NULL, master_uuid, 'master', 'native'
+FROM (SELECT public.uuid_generate_v4() AS master_uuid) AS master_tenant;
+
 -- Data for Name: auth_address; Type: TABLE DATA; Schema: public; Owner: -
 
 -- Data for Name: auth_email; Type: TABLE DATA; Schema: public; Owner: -
@@ -257,12 +300,6 @@ INSERT INTO public.auth_access(access) VALUES ('#');
 -- Data for Name: auth_external_auth_config; Type: TABLE DATA; Schema: public; Owner: -
 
 -- Data for Name: auth_external_auth_type; Type: TABLE DATA; Schema: public; Owner: -
-
--- Data for Name: auth_tenant; Type: TABLE DATA; Schema: public; Owner: -
-
-INSERT INTO public.auth_tenant
-SELECT master_uuid, 'master', NULL, NULL, master_uuid, 'master'
-FROM (SELECT public.uuid_generate_v4() AS master_uuid) AS master_tenant;
 
 -- Data for Name: auth_group; Type: TABLE DATA; Schema: public; Owner: -
 
@@ -304,6 +341,12 @@ INSERT INTO public.auth_policy_access VALUES (
 );
 
 -- Data for Name: auth_refresh_token; Type: TABLE DATA; Schema: public; Owner: -
+
+-- Data for Name: auth_saml_config; Type: TABLE DATA; Schema: public; Owner: -
+
+-- Data for Name: auth_saml_pysaml2_cache; Type: TABLE DATA; Schema: public; Owner: -
+
+-- Data for Name: auth_saml_session; Type: TABLE DATA; Schema: public; Owner: -
 
 -- Data for Name: auth_session; Type: TABLE DATA; Schema: public; Owner: -
 
@@ -411,6 +454,21 @@ ALTER TABLE ONLY public.auth_refresh_token
 
 ALTER TABLE ONLY public.auth_refresh_token
     ADD CONSTRAINT auth_refresh_token_pkey PRIMARY KEY (uuid);
+
+-- Name: auth_saml_config auth_saml_config_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+
+ALTER TABLE ONLY public.auth_saml_config
+    ADD CONSTRAINT auth_saml_config_pkey PRIMARY KEY (tenant_uuid, domain_uuid);
+
+-- Name: auth_saml_pysaml2_cache auth_saml_pysaml2_cache_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+
+ALTER TABLE ONLY public.auth_saml_pysaml2_cache
+    ADD CONSTRAINT auth_saml_pysaml2_cache_pkey PRIMARY KEY (name_id, entity_id);
+
+-- Name: auth_saml_session auth_saml_session_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+
+ALTER TABLE ONLY public.auth_saml_session
+    ADD CONSTRAINT auth_saml_session_pkey PRIMARY KEY (request_id, session_id);
 
 -- Name: auth_session auth_session_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 
@@ -581,6 +639,21 @@ ALTER TABLE ONLY public.auth_policy
 ALTER TABLE ONLY public.auth_refresh_token
     ADD CONSTRAINT auth_refresh_token_user_uuid_fkey FOREIGN KEY (user_uuid) REFERENCES public.auth_user(uuid) ON DELETE CASCADE;
 
+-- Name: auth_saml_config auth_saml_config_domain_uuid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+
+ALTER TABLE ONLY public.auth_saml_config
+    ADD CONSTRAINT auth_saml_config_domain_uuid_fkey FOREIGN KEY (domain_uuid) REFERENCES public.auth_tenant_domain(uuid) ON DELETE CASCADE;
+
+-- Name: auth_saml_config auth_saml_config_tenant_uuid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+
+ALTER TABLE ONLY public.auth_saml_config
+    ADD CONSTRAINT auth_saml_config_tenant_uuid_fkey FOREIGN KEY (tenant_uuid) REFERENCES public.auth_tenant(uuid) ON DELETE CASCADE;
+
+-- Name: auth_saml_session auth_saml_session_refresh_token_uuid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+
+ALTER TABLE ONLY public.auth_saml_session
+    ADD CONSTRAINT auth_saml_session_refresh_token_uuid_fkey FOREIGN KEY (refresh_token_uuid) REFERENCES public.auth_refresh_token(uuid) ON DELETE SET NULL;
+
 -- Name: auth_session auth_session_tenant_uuid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 
 ALTER TABLE ONLY public.auth_session
@@ -600,6 +673,11 @@ ALTER TABLE ONLY public.auth_tenant_domain
 
 ALTER TABLE ONLY public.auth_tenant
     ADD CONSTRAINT auth_tenant_parent_uuid_fkey FOREIGN KEY (parent_uuid) REFERENCES public.auth_tenant(uuid);
+
+-- Name: auth_token auth_token_refresh_token_uuid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+
+ALTER TABLE ONLY public.auth_token
+    ADD CONSTRAINT auth_token_refresh_token_uuid_fkey FOREIGN KEY (refresh_token_uuid) REFERENCES public.auth_refresh_token(uuid) ON DELETE SET NULL;
 
 -- Name: auth_token auth_token_session_uuid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 
