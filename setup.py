@@ -64,6 +64,7 @@ setup(
             'google = wazo_auth.plugins.external_auth.google.plugin:GooglePlugin',
             'microsoft = wazo_auth.plugins.external_auth.microsoft.plugin:MicrosoftPlugin',
             'mobile = wazo_auth.plugins.external_auth.mobile.plugin:Plugin',
+            'gemini = wazo_auth.plugins.external_auth.gemini.plugin:Plugin',
         ],
         'wazo_auth.metadata': [
             'default_user = wazo_auth.plugins.metadata.default_user:DefaultUser',
