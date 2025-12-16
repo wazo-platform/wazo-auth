@@ -1,4 +1,4 @@
-pytest
+pytest>=9.0
 pytest-playwright
 pyhamcrest
 https://github.com/wazo-platform/wazo-test-helpers/archive/master.zip
