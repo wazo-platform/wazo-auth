@@ -6,6 +6,7 @@
     wazo-check:
       jobs:
         - auth-tox-integration
+        - auth-tox-performance
     wazo-gate:
       jobs:
         - auth-tox-integration
