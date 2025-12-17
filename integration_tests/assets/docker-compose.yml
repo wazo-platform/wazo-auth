@@ -12,6 +12,7 @@ services:
       TZ: UTC+1
       XIVO_UUID: the-predefined-xivo-uuid
       OAUTHLIB_INSECURE_TRANSPORT: 1
+      SQLALCHEMY_WARN_20: 1
     volumes:
       - "../..:/usr/src/wazo-auth"
       - "./etc/wazo-auth/conf.d/50-default.yml:/etc/wazo-auth/conf.d/50-default.yml"
