@@ -1,11 +1,10 @@
-# Copyright 2021-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import requests
 from hamcrest import (
     assert_that,
     calling,
-    contains,
     contains_exactly,
     empty,
     has_entries,
@@ -220,7 +219,7 @@ class TestUserPolicySlug(base.APIIntegrationTest):
         )
 
         result = self.client.users.get_policies(user['uuid'])
-        assert_that(result, has_entries(items=contains(policy2)))
+        assert_that(result, has_entries(items=contains_exactly(policy2)))
 
     @fixtures.http.user()
     @fixtures.http.policy()
