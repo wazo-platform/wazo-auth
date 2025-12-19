@@ -194,8 +194,8 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         query = (
             query.filter(filter_)
-            .options(joinedload('address'))
-            .options(joinedload('domains'))
+            .options(joinedload(Tenant.address))
+            .options(joinedload(Tenant.domains))
         )
         query = self._paginator.update_query(query, **kwargs)
 
