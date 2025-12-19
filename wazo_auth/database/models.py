@@ -148,6 +148,7 @@ class Tenant(Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
         backref='tenant',
+        cascade_backrefs=False,
     )
     address = relationship(
         'Address',
@@ -181,7 +182,7 @@ class Tenant(Base):
                 domains.add(domain)
 
         for name in missing_names:
-            domains.add(Domain(name=name, tenant=self))
+            domains.add(Domain(name=name))
 
         self.domains = list(domains)
 
