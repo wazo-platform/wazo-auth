@@ -106,7 +106,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         )
 
     def delete(self, uuid):
-        tenant = self.session.query(Tenant).get(str(uuid))
+        tenant = self.session.get(Tenant, str(uuid))
         if not tenant:
             raise exceptions.UnknownTenantException(uuid)
 
@@ -213,7 +213,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         **kwargs
     ):
         try:
-            tenant = self.session.query(Tenant).get(str(tenant_uuid))
+            tenant = self.session.get(Tenant, str(tenant_uuid))
             tenant.domain_names = domain_names or []
             tenant.contact_uuid = contact_uuid
             tenant.phone = phone
