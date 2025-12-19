@@ -20,9 +20,8 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import backref, relationship
+from sqlalchemy.orm import backref, declarative_base, relationship
 from sqlalchemy.sql.sqltypes import JSON
 
 from wazo_auth.database.datatypes import XMLPostgresqlType
