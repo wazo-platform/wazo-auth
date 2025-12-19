@@ -261,8 +261,9 @@ class RefreshToken(Base):
     @tenant_uuid.expression
     def tenant_uuid(cls):
         return (
-            sql.select([User.tenant_uuid])
+            sql.select(User.tenant_uuid)
             .where(User.uuid == cls.user_uuid)
+            .scalar_subquery()
             .label('tenant_uuid')
         )
 
