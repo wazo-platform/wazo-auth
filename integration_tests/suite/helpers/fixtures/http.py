@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import random
@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from functools import wraps
 
 import requests
+from sqlalchemy import text
 
 SAML_METADATA = '<xml><h1>title</h1><body>lorem ipv5</body></xml>'
 
@@ -196,7 +197,9 @@ def config_managed_policy(db_client, policy, policy_args):
         policy_uuid = policy['uuid']
         with db_client.connect() as connection:
             connection.execute(
-                f"UPDATE auth_policy set config_managed=true WHERE uuid = '{policy_uuid}'"
+                text(
+                    f"UPDATE auth_policy set config_managed=true WHERE uuid = '{policy_uuid}'"
+                )
             )
     yield
 
@@ -235,14 +238,18 @@ def system_managed_group(db_client, group_uuid, group_args):
     else:
         with db_client.connect() as connection:
             connection.execute(
-                f"UPDATE auth_group set system_managed=true WHERE uuid = '{group_uuid}'"
+                text(
+                    f"UPDATE auth_group set system_managed=true WHERE uuid = '{group_uuid}'"
+                )
             )
         try:
             yield
         finally:
             with db_client.connect() as connection:
                 connection.execute(
-                    f"UPDATE auth_group set system_managed=false WHERE uuid = '{group_uuid}'"
+                    text(
+                        f"UPDATE auth_group set system_managed=false WHERE uuid = '{group_uuid}'"
+                    )
                 )
 
 
