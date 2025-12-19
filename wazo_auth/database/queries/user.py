@@ -430,7 +430,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             .join(UserPolicy, User.uuid == UserPolicy.user_uuid)
             .join(Policy, UserPolicy.policy_uuid == Policy.uuid)
             .filter(filter_)
-            .subquery()
+            .scalar_subquery()
         )
         return User.uuid.in_(user_policy_subquery)
 
@@ -446,7 +446,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             .join(UserPolicy, User.uuid == UserPolicy.user_uuid)
             .join(Policy, UserPolicy.policy_uuid == Policy.uuid)
             .filter(filter_)
-            .subquery()
+            .scalar_subquery()
         )
         user_policy_filter = User.uuid.in_(user_policy_subquery)
         group_policy_subquery = (
@@ -456,7 +456,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             .join(GroupPolicy, Group.uuid == GroupPolicy.group_uuid)
             .join(Policy, GroupPolicy.policy_uuid == Policy.uuid)
             .filter(filter_)
-            .subquery()
+            .scalar_subquery()
         )
         group_policy_filter = User.uuid.in_(group_policy_subquery)
         filter_ = or_(

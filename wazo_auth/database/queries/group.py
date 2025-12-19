@@ -280,7 +280,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             .join(GroupPolicy, Group.uuid == GroupPolicy.group_uuid)
             .join(Policy, GroupPolicy.policy_uuid == Policy.uuid)
             .filter(filter_)
-            .subquery()
+            .scalar_subquery()
         )
         return Group.uuid.in_(group_policy_subquery)
 
