@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import argparse
@@ -84,7 +84,7 @@ def main():
     elif args.action == 'initial-user':
         uri = args.uri or get_database_uri_from_config()
         try:
-            create_initial_user(
+            bootstrap_initial_user(
                 uri,
                 args.username,
                 args.password,
@@ -105,10 +105,16 @@ def get_database_uri_from_config():
     return wazo_auth_config['db_uri']
 
 
-def create_initial_user(
+def bootstrap_initial_user(
     db_uri, username, password, purpose, authentication_method, policy_slug
 ):
     init_db(db_uri)
+    create_initial_user(username, password, purpose, authentication_method, policy_slug)
+
+
+def create_initial_user(
+    username, password, purpose, authentication_method, policy_slug
+):
     dao = queries.DAO.from_defaults()
     policy_service = services.PolicyService(dao)
     user_service = services.UserService(dao)
@@ -139,7 +145,7 @@ def complete():
     if os.path.exists(CLI_CONFIG_FILENAME):
         # NOTE(sileht): Allow custom username/password or reuse previous one
         wazo_auth_cli_config = parse_config_file(CLI_CONFIG_FILENAME)
-        create_initial_user(
+        bootstrap_initial_user(
             database_uri,
             wazo_auth_cli_config['auth']['username'],
             wazo_auth_cli_config['auth']['password'],
@@ -149,7 +155,7 @@ def complete():
         )
     else:
         password = random_string(28)
-        create_initial_user(
+        bootstrap_initial_user(
             database_uri,
             USERNAME,
             password,
