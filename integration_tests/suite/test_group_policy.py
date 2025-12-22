@@ -302,11 +302,12 @@ class TestGroupPolicyAssociation(base.APIIntegrationTest):
 
     def _remove_policy_acl(self, policy_uuid):
         with self.database.connect() as connection:
-            connection.execute(
-                text(
-                    f"DELETE FROM auth_policy_access WHERE policy_uuid = '{policy_uuid}'"
+            with connection.begin():
+                connection.execute(
+                    text(
+                        f"DELETE FROM auth_policy_access WHERE policy_uuid = '{policy_uuid}'"
+                    )
                 )
-            )
 
     @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
     @fixtures.http.group(tenant_uuid=SUB_TENANT_UUID)

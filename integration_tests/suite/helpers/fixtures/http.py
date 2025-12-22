@@ -196,11 +196,12 @@ def config_managed_policy(db_client, policy, policy_args):
     if policy_args.get('config_managed'):
         policy_uuid = policy['uuid']
         with db_client.connect() as connection:
-            connection.execute(
-                text(
-                    f"UPDATE auth_policy set config_managed=true WHERE uuid = '{policy_uuid}'"
+            with connection.begin():
+                connection.execute(
+                    text(
+                        f"UPDATE auth_policy set config_managed=true WHERE uuid = '{policy_uuid}'"
+                    )
                 )
-            )
     yield
 
 
@@ -237,20 +238,23 @@ def system_managed_group(db_client, group_uuid, group_args):
         yield
     else:
         with db_client.connect() as connection:
-            connection.execute(
-                text(
-                    f"UPDATE auth_group set system_managed=true WHERE uuid = '{group_uuid}'"
+            with connection.begin():
+                connection.execute(
+                    text(
+                        f"UPDATE auth_group set system_managed=true WHERE uuid = '{group_uuid}'"
+                    )
                 )
-            )
         try:
             yield
         finally:
             with db_client.connect() as connection:
-                connection.execute(
-                    text(
-                        f"UPDATE auth_group set system_managed=false WHERE uuid = '{group_uuid}'"
+                with connection.begin():
+                    connection.execute(
+                        text(
+                            f"UPDATE auth_group set system_managed=false "
+                            f"WHERE uuid = '{group_uuid}'"
+                        )
                     )
-                )
 
 
 def group(**group_args):
