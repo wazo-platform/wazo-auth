@@ -143,6 +143,19 @@ class TestCore(base.APIIntegrationTest):
 
         assert_that(response.status_code, equal_to(400))
 
+    def test_that_empty_body_returns_400(self):
+        url = f'http://127.0.0.1:{self.auth_port()}/0.1/users'
+        headers = {
+            'Accept': 'application/json',
+            'X-Auth-Token': self.admin_token,
+        }
+
+        response = requests.post(url, headers=headers, data='', verify=False)
+        assert_that(response.status_code, equal_to(400))
+
+        response = requests.post(url, headers=headers, data=None, verify=False)
+        assert_that(response.status_code, equal_to(400))
+
     def test_the_expiration_argument(self):
         token_data = self._post_token('foo', 'bar', expiration=2)
 
