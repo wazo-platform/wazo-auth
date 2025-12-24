@@ -74,7 +74,7 @@ class PasswordReset(http.ErrorCatchingResource):
             raise Unauthorized(token_id)
 
         try:
-            args = PasswordResetPostParameters().load(request.get_json())
+            args = PasswordResetPostParameters().load(request.get_json(force=True))
         except marshmallow.ValidationError as e:
             raise PasswordResetException.from_errors(e.messages)
 

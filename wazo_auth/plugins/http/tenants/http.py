@@ -48,7 +48,7 @@ class Tenant(BaseResource):
     def put(self, tenant_uuid):
         scoping_tenant = TenantDetector.autodetect()
         try:
-            args = tenant_put_schema.load(request.get_json())
+            args = tenant_put_schema.load(request.get_json(force=True))
         except ValidationError as e:
             raise exceptions.TenantParamException.from_errors(e.messages)
 
@@ -97,7 +97,7 @@ class Tenants(BaseResource):
             request.get_json(force=True),
         )
         try:
-            args = tenant_post_schema.load(request.get_json())
+            args = tenant_post_schema.load(request.get_json(force=True))
         except ValidationError as e:
             raise exceptions.TenantParamException.from_errors(e.messages)
 
