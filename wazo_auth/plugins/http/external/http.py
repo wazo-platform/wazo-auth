@@ -50,14 +50,14 @@ class ExternalConfig(http.AuthResource):
 
     @http.required_acl('auth.{auth_type}.external.config.create')
     def post(self, auth_type):
-        data = request.get_json()
+        data = request.get_json(force=True)
         tenant_uuid = Tenant.autodetect().uuid
         self.external_auth_service.create_config(auth_type, data, tenant_uuid)
         return '', 201
 
     @http.required_acl('auth.{auth_type}.external.config.update')
     def put(self, auth_type):
-        data = request.get_json()
+        data = request.get_json(force=True)
         tenant_uuid = Tenant.autodetect().uuid
         self.external_auth_service.update_config(auth_type, data, tenant_uuid)
         return '', 204

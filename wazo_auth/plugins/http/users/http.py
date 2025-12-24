@@ -43,7 +43,7 @@ class User(BaseUserService):
     def put(self, user_uuid):
         scoping_tenant = Tenant.autodetect()
         try:
-            args = user_put_schema.load(request.get_json())
+            args = user_put_schema.load(request.get_json(force=True))
         except marshmallow.ValidationError as e:
             raise exceptions.UserParamException.from_errors(e.messages)
 
@@ -61,7 +61,7 @@ class UserPassword(BaseUserService):
     @http.required_acl('auth.users.{user_uuid}.password.update')
     def put(self, user_uuid):
         try:
-            args = change_password_schema.load(request.get_json())
+            args = change_password_schema.load(request.get_json(force=True))
         except marshmallow.ValidationError as e:
             raise exceptions.PasswordChangeException.from_errors(e.messages)
         self.user_service.change_password(user_uuid, **args)
@@ -95,7 +95,7 @@ class Users(BaseUserService):
     def post(self):
         tenant = Tenant.autodetect()
         try:
-            args = user_post_schema.load(request.get_json())
+            args = user_post_schema.load(request.get_json(force=True))
         except marshmallow.ValidationError as e:
             raise exceptions.UserParamException.from_errors(e.messages)
 

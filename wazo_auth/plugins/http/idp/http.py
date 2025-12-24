@@ -63,7 +63,7 @@ class IDPUsers(_BaseIDPUser):
         scoping_tenant = Tenant.autodetect()
 
         try:
-            form = IDPUsersSchema().load(request.get_json())
+            form = IDPUsersSchema().load(request.get_json(force=True))
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 
