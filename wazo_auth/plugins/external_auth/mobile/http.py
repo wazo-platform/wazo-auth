@@ -51,7 +51,7 @@ class MobileAuth(http.AuthResource):
     @http.required_acl('auth.users.{user_uuid}.external.mobile.create')
     def post(self, user_uuid):
         try:
-            args = MobileSchema().load(request.get_json())
+            args = MobileSchema().load(request.get_json(force=True))
         except marshmallow.ValidationError as e:
             raise exceptions.UserParamException.from_errors(e.messages)
 
@@ -64,7 +64,7 @@ class MobileAuth(http.AuthResource):
     @http.required_acl('auth.users.{user_uuid}.external.mobile.update')
     def put(self, user_uuid):
         try:
-            args = MobileSchema().load(request.get_json())
+            args = MobileSchema().load(request.get_json(force=True))
         except marshmallow.ValidationError as e:
             raise exceptions.UserParamException.from_errors(e.messages)
 

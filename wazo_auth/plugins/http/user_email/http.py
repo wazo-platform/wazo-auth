@@ -21,7 +21,7 @@ class _EmailUpdate(http.AuthResource):
 
     def put(self, user_uuid):
         try:
-            args = self.EmailPutSchema().load(request.get_json())
+            args = self.EmailPutSchema().load(request.get_json(force=True))
         except marshmallow.ValidationError as e:
             raise exceptions.EmailUpdateException(e.messages)
 

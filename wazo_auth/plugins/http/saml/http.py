@@ -1,4 +1,4 @@
-# Copyright 2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2024-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
@@ -55,7 +55,7 @@ class SAMLSSO(http.ErrorCatchingResource):
 
     def post(self):
         try:
-            args = self._schema.load(request.get_json())
+            args = self._schema.load(request.get_json(force=True))
         except marshmallow.ValidationError as e:
             for field in e.messages:
                 logger.info(

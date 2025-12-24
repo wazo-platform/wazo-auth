@@ -30,7 +30,7 @@ class Group(_BaseGroupResource):
         tenant_uuids = get_tenant_uuids(recurse=True)
         self.group_service.assert_group_in_subtenant(tenant_uuids, group_uuid)
         try:
-            body = schemas.GroupPutSchema().load(request.get_json())
+            body = schemas.GroupPutSchema().load(request.get_json(force=True))
         except marshmallow.ValidationError as e:
             raise exceptions.GroupParamException.from_errors(e.messages)
 
@@ -66,7 +66,7 @@ class Groups(_BaseGroupResource):
     @http.required_acl('auth.groups.create')
     def post(self):
         try:
-            args = schemas.GroupRequestSchema().load(request.get_json())
+            args = schemas.GroupRequestSchema().load(request.get_json(force=True))
         except marshmallow.ValidationError as e:
             raise exceptions.GroupParamException.from_errors(e.messages)
 
