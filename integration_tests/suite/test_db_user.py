@@ -595,7 +595,7 @@ class TestUserDAO(base.DAOTestCase):
         self._user_dao.delete(user_uuid)
 
         self.session.expire_all()
-        result = self.session.query(models.UserExternalAuth).get((user_uuid, type_uuid))
+        result = self.session.get(models.UserExternalAuth, (user_uuid, type_uuid))
         assert_that(result, equal_to(None))
 
     @fixtures.db.user(username='foobar')

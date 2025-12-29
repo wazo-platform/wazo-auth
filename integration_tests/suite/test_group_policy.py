@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -14,6 +14,7 @@ from hamcrest import (
     has_items,
     not_,
 )
+from sqlalchemy import text
 
 from .helpers import base, fixtures
 from .helpers.base import SUB_TENANT_UUID
@@ -301,9 +302,12 @@ class TestGroupPolicyAssociation(base.APIIntegrationTest):
 
     def _remove_policy_acl(self, policy_uuid):
         with self.database.connect() as connection:
-            connection.execute(
-                f"DELETE FROM auth_policy_access WHERE policy_uuid = '{policy_uuid}'"
-            )
+            with connection.begin():
+                connection.execute(
+                    text(
+                        f"DELETE FROM auth_policy_access WHERE policy_uuid = '{policy_uuid}'"
+                    )
+                )
 
     @fixtures.http.tenant(uuid=SUB_TENANT_UUID)
     @fixtures.http.group(tenant_uuid=SUB_TENANT_UUID)

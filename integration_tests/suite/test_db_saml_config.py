@@ -1,4 +1,4 @@
-# Copyright 2022-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2022-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from typing import Any
@@ -89,5 +89,5 @@ class TestSAMLConfigDAO(base.DAOTestCase):
     @fixtures.db.tenant(name='1', uuid=TENANT_UUID_1, domain_names=DOMAINS)
     @fixtures.db.saml_config(tenant_uuid=TENANT_UUID_1)
     def test_exists(self, tenant_uuid, saml_config) -> None:
-        assert_that(self._saml_config_dao.exists(tenant_uuid))
-        assert_that(not_(self._saml_config_dao.exists(UNKNOWN_TENANT)))
+        assert self._saml_config_dao.exists(tenant_uuid)
+        assert not self._saml_config_dao.exists(UNKNOWN_TENANT)

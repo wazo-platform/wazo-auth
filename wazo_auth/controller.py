@@ -308,7 +308,6 @@ class Controller:
             http.init_top_tenant(self.dao)
             if self._config['bootstrap_user_on_startup']:
                 bootstrap.create_initial_user(
-                    self._config['db_uri'],
                     self._config['bootstrap_user_username'],
                     self._config['bootstrap_user_password'],
                     self._config.get('bootstrap_user_purpose') or bootstrap.PURPOSE,

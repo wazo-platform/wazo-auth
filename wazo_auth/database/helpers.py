@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -6,7 +6,8 @@ import time
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import Session as BaseSession
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 logger = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ def deinit_db():
     Session.configure(bind=None)
 
 
-def get_db_session():
+def get_db_session() -> BaseSession:
     return Session()
 
 
@@ -59,4 +60,5 @@ def db_ready(timeout):
 
 
 def ping_db():
-    get_db_session().get_bind().execute('SELECT 1')
+    with get_db_session().get_bind().connect() as conn:
+        conn.execute(text('SELECT 1'))

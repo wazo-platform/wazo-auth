@@ -20,9 +20,8 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import backref, relationship
+from sqlalchemy.orm import backref, declarative_base, relationship
 from sqlalchemy.sql.sqltypes import JSON
 
 from wazo_auth.database.datatypes import XMLPostgresqlType
@@ -149,6 +148,7 @@ class Tenant(Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
         backref='tenant',
+        cascade_backrefs=False,
     )
     address = relationship(
         'Address',
@@ -182,7 +182,7 @@ class Tenant(Base):
                 domains.add(domain)
 
         for name in missing_names:
-            domains.add(Domain(name=name, tenant=self))
+            domains.add(Domain(name=name))
 
         self.domains = list(domains)
 
@@ -262,8 +262,9 @@ class RefreshToken(Base):
     @tenant_uuid.expression
     def tenant_uuid(cls):
         return (
-            sql.select([User.tenant_uuid])
+            sql.select(User.tenant_uuid)
             .where(User.uuid == cls.user_uuid)
+            .scalar_subquery()
             .label('tenant_uuid')
         )
 

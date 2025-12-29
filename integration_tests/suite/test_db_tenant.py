@@ -1,4 +1,4 @@
-# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest.mock import ANY
@@ -349,21 +349,17 @@ class TestTenantDAO(base.DAOTestCase):
 
         self._tenant_dao.delete(tenant_uuid)
 
-        result = self.session.query(models.User).get(user_uuid)
+        result = self.session.get(models.User, user_uuid)
         assert_that(result, equal_to(None))
-        result = self.session.query(models.Email).get(email_uuid)
+        result = self.session.get(models.Email, email_uuid)
         assert_that(result, equal_to(None))
-        result = self.session.query(models.Address).get(address_id)
+        result = self.session.get(models.Address, address_id)
         assert_that(result, equal_to(None))
-        result = self.session.query(models.ExternalAuthConfig).get(
-            (tenant_uuid, type_uuid)
-        )
+        result = self.session.get(models.ExternalAuthConfig, (tenant_uuid, type_uuid))
         assert_that(result, equal_to(None))
-        result = self.session.query(models.UserExternalAuth).get(
-            (user_uuid, user_type_uuid)
-        )
+        result = self.session.get(models.UserExternalAuth, (user_uuid, user_type_uuid))
         assert_that(result, equal_to(None))
-        result = self.session.query(models.Policy).get(policy_uuid)
+        result = self.session.get(models.Policy, policy_uuid)
         assert_that(result, equal_to(None))
 
     @pytest.mark.skip(reason="find a way to delete unused Access")

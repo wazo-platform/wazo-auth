@@ -1,4 +1,4 @@
-# Copyright 2022-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2022-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from hamcrest import assert_that, calling, has_entries, not_, raises
@@ -81,5 +81,5 @@ class TestLDAPConfigDAO(base.DAOTestCase):
 
     @fixtures.db.ldap_config()
     def test_exists(self, tenant_uuid):
-        assert_that(self._ldap_config_dao.exists(tenant_uuid))
-        assert_that(not_(self._ldap_config_dao.exists(UNKNOWN_TENANT)))
+        assert self._ldap_config_dao.exists(tenant_uuid)
+        assert not self._ldap_config_dao.exists(UNKNOWN_TENANT)

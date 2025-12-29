@@ -104,6 +104,7 @@ class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
         except (NoSuchService, NoSuchPort):
             return WrongClient('postgres')
 
+        helpers.Session.remove()
         helpers.init_db(DB_URI.format(port=port))
         return helpers.Session
 
