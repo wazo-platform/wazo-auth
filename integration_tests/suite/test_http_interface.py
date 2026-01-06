@@ -1,4 +1,4 @@
-# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -144,17 +144,116 @@ class TestCore(base.APIIntegrationTest):
         assert_that(response.status_code, equal_to(400))
 
     def test_that_empty_body_returns_400(self):
-        url = f'http://127.0.0.1:{self.auth_port()}/0.1/users'
+        base_url = f'http://127.0.0.1:{self.auth_port()}'
         headers = {
             'Accept': 'application/json',
             'X-Auth-Token': self.admin_token,
         }
 
-        response = requests.post(url, headers=headers, data='', verify=False)
-        assert_that(response.status_code, equal_to(400))
+        test_user = self.client.users.new(
+            username='test_user_empty_body', password='testpass'
+        )
+        test_group = self.client.groups.new(name='test_group_empty_body')
+        test_tenant = self.client.tenants.new(name='test_tenant_empty_body')
+        test_policy = self.client.policies.new(name='test_policy_empty_body', acl=[])
+        test_token = self._post_token('test_user_empty_body', 'testpass')['token']
 
-        response = requests.post(url, headers=headers, data=None, verify=False)
-        assert_that(response.status_code, equal_to(400))
+        try:
+            endpoints_to_test = [
+                ('POST', f'{base_url}/0.1/users', headers),
+                ('PUT', f'{base_url}/0.1/users/{test_user["uuid"]}', headers),
+                ('PUT', f'{base_url}/0.1/users/{test_user["uuid"]}/password', headers),
+                ('PUT', f'{base_url}/0.1/users/{test_user["uuid"]}/emails', headers),
+                ('POST', f'{base_url}/0.1/groups', headers),
+                ('PUT', f'{base_url}/0.1/groups/{test_group["uuid"]}', headers),
+                ('PATCH', f'{base_url}/0.1/config', headers),
+                ('POST', f'{base_url}/0.1/external/google/config', headers),
+                ('PUT', f'{base_url}/0.1/external/google/config', headers),
+                (
+                    'POST',
+                    f'{base_url}/0.1/saml/sso',
+                    {'Accept': 'application/json', 'Content-Type': 'application/json'},
+                ),
+                ('PUT', f'{base_url}/0.1/idp/saml/users', headers),
+                (
+                    'POST',
+                    f'{base_url}/0.1/users/register',
+                    {'Accept': 'application/json', 'Content-Type': 'application/json'},
+                ),
+                ('POST', f'{base_url}/0.1/tenants', headers),
+                ('PUT', f'{base_url}/0.1/tenants/{test_tenant["uuid"]}', headers),
+                (
+                    'POST',
+                    f'{base_url}/0.1/token',
+                    {'Accept': 'application/json', 'Content-Type': 'application/json'},
+                ),
+                ('POST', f'{base_url}/0.1/token/{test_token}/scopes/check', headers),
+                ('POST', f'{base_url}/0.1/policies', headers),
+                ('PUT', f'{base_url}/0.1/policies/{test_policy["uuid"]}', headers),
+                ('PUT', f'{base_url}/0.1/backends/ldap', headers),
+                (
+                    'POST',
+                    f'{base_url}/0.1/users/{test_user["uuid"]}/external/mobile',
+                    headers,
+                ),
+                (
+                    'PUT',
+                    f'{base_url}/0.1/users/{test_user["uuid"]}/external/mobile',
+                    headers,
+                ),
+                (
+                    'POST',
+                    f'{base_url}/0.1/users/{test_user["uuid"]}/external/microsoft',
+                    headers,
+                ),
+                (
+                    'POST',
+                    f'{base_url}/0.1/users/{test_user["uuid"]}/external/google',
+                    headers,
+                ),
+            ]
+
+            for method, url, test_headers in endpoints_to_test:
+                response = requests.request(
+                    method, url, headers=test_headers, data='', verify=False
+                )
+                assert_that(
+                    response.status_code,
+                    equal_to(400),
+                    f'{method} {url} should return 400 with empty body, got {response.status_code}',  # noqa
+                )
+
+                response = requests.request(
+                    method, url, headers=test_headers, data=None, verify=False
+                )
+                assert_that(
+                    response.status_code,
+                    equal_to(400),
+                    f'{method} {url} should return 400 with None body, got {response.status_code}',
+                )
+
+        finally:
+            # Cleanup test data
+            try:
+                self.client.users.delete(test_user['uuid'])
+            except requests.HTTPError:
+                pass
+            try:
+                self.client.groups.delete(test_group['uuid'])
+            except requests.HTTPError:
+                pass
+            try:
+                self.client.tenants.delete(test_tenant['uuid'])
+            except requests.HTTPError:
+                pass
+            try:
+                self.client.policies.delete(test_policy['uuid'])
+            except requests.HTTPError:
+                pass
+            try:
+                self.client.token.revoke(test_token)
+            except requests.HTTPError:
+                pass
 
     def test_the_expiration_argument(self):
         token_data = self._post_token('foo', 'bar', expiration=2)
