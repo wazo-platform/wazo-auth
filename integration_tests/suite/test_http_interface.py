@@ -1,4 +1,4 @@
-# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -143,117 +143,129 @@ class TestCore(base.APIIntegrationTest):
 
         assert_that(response.status_code, equal_to(400))
 
-    def test_that_empty_body_returns_400(self):
-        base_url = f'http://127.0.0.1:{self.auth_port()}'
-        headers = {
-            'Accept': 'application/json',
+    def _make_http_request(
+        self, verb: str, url: str, body: str | None, headers: dict = None
+    ):
+        default_headers = {
             'X-Auth-Token': self.admin_token,
         }
+        req_headers = default_headers if not headers else headers
 
-        test_user = self.client.users.new(
-            username='test_user_empty_body', password='testpass'
+        match verb.lower():
+            case 'patch':
+                call = requests.patch
+            case 'post':
+                call = requests.post  # type: ignore
+            case 'put':
+                call = requests.put  # type: ignore
+
+        return call(
+            url,
+            headers=req_headers,
+            data=body,
+            verify=False,
         )
-        test_group = self.client.groups.new(name='test_group_empty_body')
-        test_tenant = self.client.tenants.new(name='test_tenant_empty_body')
-        test_policy = self.client.policies.new(name='test_policy_empty_body', acl=[])
-        test_token = self._post_token('test_user_empty_body', 'testpass')['token']
 
-        try:
-            endpoints_to_test = [
-                ('POST', f'{base_url}/0.1/users', headers),
-                ('PUT', f'{base_url}/0.1/users/{test_user["uuid"]}', headers),
-                ('PUT', f'{base_url}/0.1/users/{test_user["uuid"]}/password', headers),
-                ('PUT', f'{base_url}/0.1/users/{test_user["uuid"]}/emails', headers),
-                ('POST', f'{base_url}/0.1/groups', headers),
-                ('PUT', f'{base_url}/0.1/groups/{test_group["uuid"]}', headers),
-                ('PATCH', f'{base_url}/0.1/config', headers),
-                ('POST', f'{base_url}/0.1/external/google/config', headers),
-                ('PUT', f'{base_url}/0.1/external/google/config', headers),
-                (
-                    'POST',
-                    f'{base_url}/0.1/saml/sso',
-                    {'Accept': 'application/json', 'Content-Type': 'application/json'},
-                ),
-                ('PUT', f'{base_url}/0.1/idp/saml/users', headers),
-                (
-                    'POST',
-                    f'{base_url}/0.1/users/register',
-                    {'Accept': 'application/json', 'Content-Type': 'application/json'},
-                ),
-                ('POST', f'{base_url}/0.1/tenants', headers),
-                ('PUT', f'{base_url}/0.1/tenants/{test_tenant["uuid"]}', headers),
-                (
-                    'POST',
-                    f'{base_url}/0.1/token',
-                    {'Accept': 'application/json', 'Content-Type': 'application/json'},
-                ),
-                ('POST', f'{base_url}/0.1/token/{test_token}/scopes/check', headers),
-                ('POST', f'{base_url}/0.1/policies', headers),
-                ('PUT', f'{base_url}/0.1/policies/{test_policy["uuid"]}', headers),
-                ('PUT', f'{base_url}/0.1/backends/ldap', headers),
-                (
-                    'POST',
-                    f'{base_url}/0.1/users/{test_user["uuid"]}/external/mobile',
-                    headers,
-                ),
-                (
-                    'PUT',
-                    f'{base_url}/0.1/users/{test_user["uuid"]}/external/mobile',
-                    headers,
-                ),
-                (
-                    'POST',
-                    f'{base_url}/0.1/users/{test_user["uuid"]}/external/microsoft',
-                    headers,
-                ),
-                (
-                    'POST',
-                    f'{base_url}/0.1/users/{test_user["uuid"]}/external/google',
-                    headers,
-                ),
-            ]
+    @fixtures.http.group()
+    def test_empty_body_for_group_requests(self, test_group):
+        base_url = f'http://127.0.0.1:{self.auth_port()}'
+        urls = [
+            ('POST', f'{base_url}/0.1/groups'),
+            ('PUT', f'{base_url}/0.1/groups/{test_group["uuid"]}'),
+        ]
 
-            for method, url, test_headers in endpoints_to_test:
-                response = requests.request(
-                    method, url, headers=test_headers, data='', verify=False
-                )
-                assert_that(
-                    response.status_code,
-                    equal_to(400),
-                    f'{method} {url} should return 400 with empty body, got {response.status_code}',  # noqa
-                )
+        for url in urls:
+            response = self._make_http_request(url[0], url[1], '')
+            assert response.status_code == 400, f'Error with url: {url}'
 
-                response = requests.request(
-                    method, url, headers=test_headers, data=None, verify=False
-                )
-                assert_that(
-                    response.status_code,
-                    equal_to(400),
-                    f'{method} {url} should return 400 with None body, got {response.status_code}',
-                )
+            response = self._make_http_request(url[0], url[1], None)
+            assert response.status_code == 400, f'Error with url: {url}'
 
-        finally:
-            # Cleanup test data
-            try:
-                self.client.users.delete(test_user['uuid'])
-            except requests.HTTPError:
-                pass
-            try:
-                self.client.groups.delete(test_group['uuid'])
-            except requests.HTTPError:
-                pass
-            try:
-                self.client.tenants.delete(test_tenant['uuid'])
-            except requests.HTTPError:
-                pass
-            try:
-                self.client.policies.delete(test_policy['uuid'])
-            except requests.HTTPError:
-                pass
-            try:
-                self.client.token.revoke(test_token)
-            except requests.HTTPError:
-                pass
+    @fixtures.http.tenant()
+    def test_empty_body_for_tenant_requests(self, test_tenant):
+        base_url = f'http://127.0.0.1:{self.auth_port()}'
+        urls = [
+            ('POST', f'{base_url}/0.1/tenants'),
+            ('PUT', f'{base_url}/0.1/tenants/{test_tenant["uuid"]}'),
+        ]
+
+        for url in urls:
+            response = self._make_http_request(url[0], url[1], '')
+            assert response.status_code == 400, f'Error with url: {url}'
+
+            response = self._make_http_request(url[0], url[1], None)
+            assert response.status_code == 400, f'Error with url: {url}'
+
+    @fixtures.http.user()
+    def test_empty_body_for_user_requests(self, test_user):
+        base_url = f'http://127.0.0.1:{self.auth_port()}'
+        urls = [
+            ('POST', f'{base_url}/0.1/users'),
+            ('PUT', f'{base_url}/0.1/users/{test_user["uuid"]}'),
+            ('PUT', f'{base_url}/0.1/users/{test_user["uuid"]}/password'),
+            ('PUT', f'{base_url}/0.1/users/{test_user["uuid"]}/emails'),
+            ('POST', f'{base_url}/0.1/users/register'),
+            ('POST', f'{base_url}/0.1/users/{test_user["uuid"]}/external/mobile'),
+            ('PUT', f'{base_url}/0.1/users/{test_user["uuid"]}/external/mobile'),
+            ('POST', f'{base_url}/0.1/users/{test_user["uuid"]}/external/microsoft'),
+            ('POST', f'{base_url}/0.1/users/{test_user["uuid"]}/external/google'),
+        ]
+
+        for url in urls:
+            response = self._make_http_request(url[0], url[1], '')
+            assert response.status_code == 400, f'Error with url: {url}'
+
+            response = self._make_http_request(url[0], url[1], None)
+            assert response.status_code == 400, f'Error with url: {url}'
+
+    @fixtures.http.user(username='username', password='pass')
+    @fixtures.http.token(username='username', password='pass')
+    def test_empty_body_for_token_requests(self, _, test_token):
+        base_url = f'http://127.0.0.1:{self.auth_port()}'
+        urls = [
+            ('POST', f'{base_url}/0.1/token/{test_token["token"]}/scopes/check'),
+            ('POST', f'{base_url}/0.1/token'),
+        ]
+
+        for url in urls:
+            response = self._make_http_request(url[0], url[1], '')
+            assert response.status_code == 400, f'Error with url: {url}'
+
+            response = self._make_http_request(url[0], url[1], None)
+            assert response.status_code == 400, f'Error with url: {url}'
+
+    @fixtures.http.policy()
+    def test_empty_body_for_policy_requests(self, test_policy):
+        base_url = f'http://127.0.0.1:{self.auth_port()}'
+        urls = [
+            ('POST', f'{base_url}/0.1/policies'),
+            ('PUT', f'{base_url}/0.1/policies/{test_policy["uuid"]}'),
+        ]
+
+        for url in urls:
+            response = self._make_http_request(url[0], url[1], '')
+            assert response.status_code == 400, f'Error with url: {url}'
+
+            response = self._make_http_request(url[0], url[1], None)
+            assert response.status_code == 400, f'Error with url: {url}'
+
+    def test_that_empty_body_for_request_returns_400(self):
+        base_url = f'http://127.0.0.1:{self.auth_port()}'
+        urls = [
+            ('PATCH', f'{base_url}/0.1/config'),
+            ('POST', f'{base_url}/0.1/external/google/config'),
+            ('PUT', f'{base_url}/0.1/external/google/config'),
+            ('POST', f'{base_url}/0.1/saml/sso'),
+            ('PUT', f'{base_url}/0.1/idp/saml/users'),
+            ('PUT', f'{base_url}/0.1/backends/ldap'),
+        ]
+
+        for url in urls:
+            response = self._make_http_request(url[0], url[1], '')
+            assert response.status_code == 400, f'Error with url: {url}'
+
+            response = self._make_http_request(url[0], url[1], None)
+            assert response.status_code == 400, f'Error with url: {url}'
 
     def test_the_expiration_argument(self):
         token_data = self._post_token('foo', 'bar', expiration=2)
