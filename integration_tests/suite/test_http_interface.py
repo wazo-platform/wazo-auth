@@ -158,6 +158,8 @@ class TestCore(base.APIIntegrationTest):
                 call = requests.post  # type: ignore
             case 'put':
                 call = requests.put  # type: ignore
+            case _:
+                raise ValueError('An unexpected http verb was given')
 
         return call(
             url,
