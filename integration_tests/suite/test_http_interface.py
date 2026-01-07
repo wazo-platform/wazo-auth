@@ -144,8 +144,9 @@ class TestCore(base.APIIntegrationTest):
         assert_that(response.status_code, equal_to(400))
 
     def _make_http_request(
-        self, verb: str, url: str, body: str | None, headers: dict = None
+        self, verb: str, endpoint: str, body: str | None, headers: dict = None
     ):
+        base_url = f'http://127.0.0.1:{self.auth_port()}/0.1/'
         default_headers = {
             'X-Auth-Token': self.admin_token,
         }
@@ -162,7 +163,7 @@ class TestCore(base.APIIntegrationTest):
                 raise ValueError('An unexpected http verb was given')
 
         return call(
-            url,
+            base_url + endpoint,
             headers=req_headers,
             data=body,
             verify=False,
@@ -170,104 +171,98 @@ class TestCore(base.APIIntegrationTest):
 
     @fixtures.http.group()
     def test_empty_body_for_group_requests(self, test_group):
-        base_url = f'http://127.0.0.1:{self.auth_port()}'
         urls = [
-            ('POST', f'{base_url}/0.1/groups'),
-            ('PUT', f'{base_url}/0.1/groups/{test_group["uuid"]}'),
+            ('POST', 'groups'),
+            ('PUT', f'groups/{test_group["uuid"]}'),
         ]
 
-        for url in urls:
-            response = self._make_http_request(url[0], url[1], '')
-            assert response.status_code == 400, f'Error with url: {url}'
+        for method, url in urls:
+            response = self._make_http_request(method, url, '')
+            assert response.status_code == 400, f'Error with url: ({method}) {url}'
 
-            response = self._make_http_request(url[0], url[1], None)
-            assert response.status_code == 400, f'Error with url: {url}'
+            response = self._make_http_request(method, url, None)
+            assert response.status_code == 400, f'Error with url: ({method}) {url}'
 
     @fixtures.http.tenant()
     def test_empty_body_for_tenant_requests(self, test_tenant):
-        base_url = f'http://127.0.0.1:{self.auth_port()}'
         urls = [
-            ('POST', f'{base_url}/0.1/tenants'),
-            ('PUT', f'{base_url}/0.1/tenants/{test_tenant["uuid"]}'),
+            ('POST', 'tenants'),
+            ('PUT', f'tenants/{test_tenant["uuid"]}'),
         ]
 
-        for url in urls:
-            response = self._make_http_request(url[0], url[1], '')
-            assert response.status_code == 400, f'Error with url: {url}'
+        for method, url in urls:
+            response = self._make_http_request(method, url, '')
+            assert response.status_code == 400, f'Error with url: ({method}) {url}'
 
-            response = self._make_http_request(url[0], url[1], None)
-            assert response.status_code == 400, f'Error with url: {url}'
+            response = self._make_http_request(method, url, None)
+            assert response.status_code == 400, f'Error with url: ({method}) {url}'
 
     @fixtures.http.user()
     def test_empty_body_for_user_requests(self, test_user):
-        base_url = f'http://127.0.0.1:{self.auth_port()}'
         urls = [
-            ('POST', f'{base_url}/0.1/users'),
-            ('PUT', f'{base_url}/0.1/users/{test_user["uuid"]}'),
-            ('PUT', f'{base_url}/0.1/users/{test_user["uuid"]}/password'),
-            ('PUT', f'{base_url}/0.1/users/{test_user["uuid"]}/emails'),
-            ('POST', f'{base_url}/0.1/users/register'),
-            ('POST', f'{base_url}/0.1/users/{test_user["uuid"]}/external/mobile'),
-            ('PUT', f'{base_url}/0.1/users/{test_user["uuid"]}/external/mobile'),
-            ('POST', f'{base_url}/0.1/users/{test_user["uuid"]}/external/microsoft'),
-            ('POST', f'{base_url}/0.1/users/{test_user["uuid"]}/external/google'),
+            ('POST', 'users'),
+            ('POST', 'users/register'),
+            ('PUT', f'users/{test_user["uuid"]}'),
+            ('PUT', f'users/{test_user["uuid"]}/password'),
+            ('PUT', f'users/{test_user["uuid"]}/emails'),
+            ('POST', f'users/{test_user["uuid"]}/external/mobile'),
+            ('PUT', f'users/{test_user["uuid"]}/external/mobile'),
+            ('POST', f'users/{test_user["uuid"]}/external/microsoft'),
+            ('POST', f'users/{test_user["uuid"]}/external/google'),
         ]
 
-        for url in urls:
-            response = self._make_http_request(url[0], url[1], '')
-            assert response.status_code == 400, f'Error with url: {url}'
+        for method, url in urls:
+            response = self._make_http_request(method, url, '')
+            assert response.status_code == 400, f'Error with url: ({method}) {url}'
 
-            response = self._make_http_request(url[0], url[1], None)
-            assert response.status_code == 400, f'Error with url: {url}'
+            response = self._make_http_request(method, url, None)
+            assert response.status_code == 400, f'Error with url: ({method}) {url}'
 
     @fixtures.http.user(username='username', password='pass')
     @fixtures.http.token(username='username', password='pass')
     def test_empty_body_for_token_requests(self, _, test_token):
-        base_url = f'http://127.0.0.1:{self.auth_port()}'
         urls = [
-            ('POST', f'{base_url}/0.1/token/{test_token["token"]}/scopes/check'),
-            ('POST', f'{base_url}/0.1/token'),
+            ('POST', 'token'),
+            ('POST', f'token/{test_token["token"]}/scopes/check'),
         ]
 
-        for url in urls:
-            response = self._make_http_request(url[0], url[1], '')
-            assert response.status_code == 400, f'Error with url: {url}'
+        for method, url in urls:
+            response = self._make_http_request(method, url, '')
+            assert response.status_code == 400, f'Error with url: ({method}) {url}'
 
-            response = self._make_http_request(url[0], url[1], None)
-            assert response.status_code == 400, f'Error with url: {url}'
+            response = self._make_http_request(method, url, None)
+            assert response.status_code == 400, f'Error with url: ({method}) {url}'
 
     @fixtures.http.policy()
     def test_empty_body_for_policy_requests(self, test_policy):
-        base_url = f'http://127.0.0.1:{self.auth_port()}'
         urls = [
-            ('POST', f'{base_url}/0.1/policies'),
-            ('PUT', f'{base_url}/0.1/policies/{test_policy["uuid"]}'),
+            ('POST', 'policies'),
+            ('PUT', f'policies/{test_policy["uuid"]}'),
         ]
 
-        for url in urls:
-            response = self._make_http_request(url[0], url[1], '')
-            assert response.status_code == 400, f'Error with url: {url}'
+        for method, url in urls:
+            response = self._make_http_request(method, url, '')
+            assert response.status_code == 400, f'Error with url: ({method}) {url}'
 
-            response = self._make_http_request(url[0], url[1], None)
-            assert response.status_code == 400, f'Error with url: {url}'
+            response = self._make_http_request(method, url, None)
+            assert response.status_code == 400, f'Error with url: ({method}) {url}'
 
     def test_that_empty_body_for_request_returns_400(self):
-        base_url = f'http://127.0.0.1:{self.auth_port()}'
         urls = [
-            ('PATCH', f'{base_url}/0.1/config'),
-            ('POST', f'{base_url}/0.1/external/google/config'),
-            ('PUT', f'{base_url}/0.1/external/google/config'),
-            ('POST', f'{base_url}/0.1/saml/sso'),
-            ('PUT', f'{base_url}/0.1/idp/saml/users'),
-            ('PUT', f'{base_url}/0.1/backends/ldap'),
+            ('PATCH', 'config'),
+            ('POST', 'external/google/config'),
+            ('PUT', 'external/google/config'),
+            ('POST', 'saml/sso'),
+            ('PUT', 'idp/saml/users'),
+            ('PUT', 'backends/ldap'),
         ]
 
-        for url in urls:
-            response = self._make_http_request(url[0], url[1], '')
-            assert response.status_code == 400, f'Error with url: {url}'
+        for method, url in urls:
+            response = self._make_http_request(method, url, '')
+            assert response.status_code == 400, f'Error with url: ({method}) {url}'
 
-            response = self._make_http_request(url[0], url[1], None)
-            assert response.status_code == 400, f'Error with url: {url}'
+            response = self._make_http_request(method, url, None)
+            assert response.status_code == 400, f'Error with url: ({method}) {url}'
 
     def test_the_expiration_argument(self):
         token_data = self._post_token('foo', 'bar', expiration=2)
