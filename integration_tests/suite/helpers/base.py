@@ -1,4 +1,4 @@
-# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -376,6 +376,40 @@ class APIIntegrationTest(BaseIntegrationTest):
     asset_cls = APIAssetLaunchingTestCase
     username = 'admin'
     password = 's3cre7'
+
+    def _make_http_request(
+        self, verb: str, endpoint: str, body: str | None, headers: dict = None
+    ):
+        base_url = f'http://127.0.0.1:{self.auth_port()}/0.1/'
+        default_headers = {
+            'X-Auth-Token': self.admin_token,
+        }
+        req_headers = default_headers if not headers else headers
+
+        match verb.lower():
+            case 'patch':
+                call = requests.patch
+            case 'post':
+                call = requests.post
+            case 'put':
+                call = requests.put
+            case _:
+                raise ValueError('An unexpected http verb was given')
+
+        return call(
+            base_url + endpoint,
+            headers=req_headers,
+            data=body,
+            verify=False,
+        )
+
+    def assert_empty_body_returns_400(self, urls: list[tuple[str, str]]):
+        for method, url in urls:
+            response = self._make_http_request(method, url, '')
+            assert response.status_code == 400, f'Error with url: ({method}) {url}'
+
+            response = self._make_http_request(method, url, None)
+            assert response.status_code == 400, f'Error with url: ({method}) {url}'
 
     def assert_last_email(
         self,
