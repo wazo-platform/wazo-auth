@@ -1,4 +1,4 @@
-# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -143,45 +143,13 @@ class TestCore(base.APIIntegrationTest):
 
         assert_that(response.status_code, equal_to(400))
 
-    def _make_http_request(
-        self, verb: str, endpoint: str, body: str | None, headers: dict = None
-    ):
-        base_url = f'http://127.0.0.1:{self.auth_port()}/0.1/'
-        default_headers = {
-            'X-Auth-Token': self.admin_token,
-        }
-        req_headers = default_headers if not headers else headers
-
-        match verb.lower():
-            case 'patch':
-                call = requests.patch
-            case 'post':
-                call = requests.post  # type: ignore
-            case 'put':
-                call = requests.put  # type: ignore
-            case _:
-                raise ValueError('An unexpected http verb was given')
-
-        return call(
-            base_url + endpoint,
-            headers=req_headers,
-            data=body,
-            verify=False,
-        )
-
     @fixtures.http.group()
     def test_empty_body_for_group_requests(self, test_group):
         urls = [
             ('POST', 'groups'),
             ('PUT', f'groups/{test_group["uuid"]}'),
         ]
-
-        for method, url in urls:
-            response = self._make_http_request(method, url, '')
-            assert response.status_code == 400, f'Error with url: ({method}) {url}'
-
-            response = self._make_http_request(method, url, None)
-            assert response.status_code == 400, f'Error with url: ({method}) {url}'
+        self.assert_empty_body_returns_400(urls)
 
     @fixtures.http.tenant()
     def test_empty_body_for_tenant_requests(self, test_tenant):
@@ -189,13 +157,7 @@ class TestCore(base.APIIntegrationTest):
             ('POST', 'tenants'),
             ('PUT', f'tenants/{test_tenant["uuid"]}'),
         ]
-
-        for method, url in urls:
-            response = self._make_http_request(method, url, '')
-            assert response.status_code == 400, f'Error with url: ({method}) {url}'
-
-            response = self._make_http_request(method, url, None)
-            assert response.status_code == 400, f'Error with url: ({method}) {url}'
+        self.assert_empty_body_returns_400(urls)
 
     @fixtures.http.user()
     def test_empty_body_for_user_requests(self, test_user):
@@ -210,13 +172,7 @@ class TestCore(base.APIIntegrationTest):
             ('POST', f'users/{test_user["uuid"]}/external/microsoft'),
             ('POST', f'users/{test_user["uuid"]}/external/google'),
         ]
-
-        for method, url in urls:
-            response = self._make_http_request(method, url, '')
-            assert response.status_code == 400, f'Error with url: ({method}) {url}'
-
-            response = self._make_http_request(method, url, None)
-            assert response.status_code == 400, f'Error with url: ({method}) {url}'
+        self.assert_empty_body_returns_400(urls)
 
     @fixtures.http.user(username='username', password='pass')
     @fixtures.http.token(username='username', password='pass')
@@ -225,13 +181,7 @@ class TestCore(base.APIIntegrationTest):
             ('POST', 'token'),
             ('POST', f'token/{test_token["token"]}/scopes/check'),
         ]
-
-        for method, url in urls:
-            response = self._make_http_request(method, url, '')
-            assert response.status_code == 400, f'Error with url: ({method}) {url}'
-
-            response = self._make_http_request(method, url, None)
-            assert response.status_code == 400, f'Error with url: ({method}) {url}'
+        self.assert_empty_body_returns_400(urls)
 
     @fixtures.http.policy()
     def test_empty_body_for_policy_requests(self, test_policy):
@@ -239,13 +189,7 @@ class TestCore(base.APIIntegrationTest):
             ('POST', 'policies'),
             ('PUT', f'policies/{test_policy["uuid"]}'),
         ]
-
-        for method, url in urls:
-            response = self._make_http_request(method, url, '')
-            assert response.status_code == 400, f'Error with url: ({method}) {url}'
-
-            response = self._make_http_request(method, url, None)
-            assert response.status_code == 400, f'Error with url: ({method}) {url}'
+        self.assert_empty_body_returns_400(urls)
 
     def test_that_empty_body_for_request_returns_400(self):
         urls = [
@@ -256,13 +200,7 @@ class TestCore(base.APIIntegrationTest):
             ('PUT', 'idp/saml/users'),
             ('PUT', 'backends/ldap'),
         ]
-
-        for method, url in urls:
-            response = self._make_http_request(method, url, '')
-            assert response.status_code == 400, f'Error with url: ({method}) {url}'
-
-            response = self._make_http_request(method, url, None)
-            assert response.status_code == 400, f'Error with url: ({method}) {url}'
+        self.assert_empty_body_returns_400(urls)
 
     def test_the_expiration_argument(self):
         token_data = self._post_token('foo', 'bar', expiration=2)
