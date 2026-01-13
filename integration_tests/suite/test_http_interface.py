@@ -207,16 +207,23 @@ class TestCore(base.APIIntegrationTest):
         ]
         self.assert_empty_body_returns_400(urls)
 
-    def test_that_empty_body_for_request_returns_400(self):
-        urls = [
-            ('PATCH', 'config'),
-            ('POST', 'external/google/config'),
-            ('PUT', 'external/google/config'),
-            ('POST', 'saml/sso'),
-            ('PUT', 'idp/saml/users'),
-            ('PUT', 'backends/ldap'),
-        ]
-        self.assert_empty_body_returns_400(urls)
+    def test_that_empty_body_when_patch_config_returns_400(self):
+        self.assert_empty_body_returns_400([('PATCH', 'config')])
+
+    def test_that_empty_body_when_post_google_config_returns_400(self):
+        self.assert_empty_body_returns_400([('POST', 'external/google/config')])
+
+    def test_that_empty_body_when_put_google_config_returns_400(self):
+        self.assert_empty_body_returns_400([('PUT', 'external/google/config')])
+
+    def test_that_empty_body_when_post_saml_sso_returns_400(self):
+        self.assert_empty_body_returns_400([('POST', 'saml/sso')])
+
+    def test_that_empty_body_when_put_saml_user_returns_400(self):
+        self.assert_empty_body_returns_400([('PUT', 'idp/saml/users')])
+
+    def test_that_empty_body_when_put_ldap_request_returns_400(self):
+        self.assert_empty_body_returns_400([('PUT', 'backends/ldap')])
 
     def test_the_expiration_argument(self):
         token_data = self._post_token('foo', 'bar', expiration=2)
