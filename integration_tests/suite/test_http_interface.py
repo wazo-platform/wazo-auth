@@ -144,7 +144,7 @@ class TestCore(base.APIIntegrationTest):
         assert_that(response.status_code, equal_to(400))
 
     @fixtures.http.group()
-    def test_empty_body_for_group_requests(self, test_group):
+    def test_empty_body_for_group_requests_returns_400(self, test_group):
         urls = [
             ('POST', 'groups'),
             ('PUT', f'groups/{test_group["uuid"]}'),
@@ -152,7 +152,7 @@ class TestCore(base.APIIntegrationTest):
         self.assert_empty_body_returns_400(urls)
 
     @fixtures.http.tenant()
-    def test_empty_body_for_tenant_requests(self, test_tenant):
+    def test_empty_body_for_tenant_requests_returns_400(self, test_tenant):
         urls = [
             ('POST', 'tenants'),
             ('PUT', f'tenants/{test_tenant["uuid"]}'),
@@ -160,7 +160,7 @@ class TestCore(base.APIIntegrationTest):
         self.assert_empty_body_returns_400(urls)
 
     @fixtures.http.user()
-    def test_empty_body_for_user_requests(self, test_user):
+    def test_empty_body_for_user_requests_returns_400(self, test_user):
         urls = [
             ('POST', 'users'),
             ('POST', 'users/register'),
@@ -176,7 +176,7 @@ class TestCore(base.APIIntegrationTest):
 
     @fixtures.http.user(username='username', password='pass')
     @fixtures.http.token(username='username', password='pass')
-    def test_empty_body_for_token_requests(self, _, test_token):
+    def test_empty_body_for_token_requests_returns_400(self, _, test_token):
         urls = [
             ('POST', 'token'),
             ('POST', f'token/{test_token["token"]}/scopes/check'),
@@ -184,7 +184,7 @@ class TestCore(base.APIIntegrationTest):
         self.assert_empty_body_returns_400(urls)
 
     @fixtures.http.policy()
-    def test_empty_body_for_policy_requests(self, test_policy):
+    def test_empty_body_for_policy_requests_returns_400(self, test_policy):
         urls = [
             ('POST', 'policies'),
             ('PUT', f'policies/{test_policy["uuid"]}'),
