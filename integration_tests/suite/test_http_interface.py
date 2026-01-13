@@ -152,25 +152,36 @@ class TestCore(base.APIIntegrationTest):
         self.assert_empty_body_returns_400(urls)
 
     @fixtures.http.tenant()
-    def test_empty_body_for_tenant_requests_returns_400(self, test_tenant):
+    def test_empty_body_for_update_tenant_requests_returns_400(self, test_tenant):
         urls = [
-            ('POST', 'tenants'),
             ('PUT', f'tenants/{test_tenant["uuid"]}'),
         ]
         self.assert_empty_body_returns_400(urls)
 
+    def test_empty_body_for_create_tenant_requests_returns_400(self):
+        urls = [
+            ('POST', 'tenants'),
+        ]
+        self.assert_empty_body_returns_400(urls)
+
     @fixtures.http.user()
-    def test_empty_body_for_user_requests_returns_400(self, test_user):
+    def test_empty_body_for_create_user_requests_returns_400(self, test_user):
         urls = [
             ('POST', 'users'),
             ('POST', 'users/register'),
+            ('POST', f'users/{test_user["uuid"]}/external/mobile'),
+            ('POST', f'users/{test_user["uuid"]}/external/microsoft'),
+            ('POST', f'users/{test_user["uuid"]}/external/google'),
+        ]
+        self.assert_empty_body_returns_400(urls)
+
+    @fixtures.http.user()
+    def test_empty_body_for_update_user_requests_returns_400(self, test_user):
+        urls = [
             ('PUT', f'users/{test_user["uuid"]}'),
             ('PUT', f'users/{test_user["uuid"]}/password'),
             ('PUT', f'users/{test_user["uuid"]}/emails'),
-            ('POST', f'users/{test_user["uuid"]}/external/mobile'),
             ('PUT', f'users/{test_user["uuid"]}/external/mobile'),
-            ('POST', f'users/{test_user["uuid"]}/external/microsoft'),
-            ('POST', f'users/{test_user["uuid"]}/external/google'),
         ]
         self.assert_empty_body_returns_400(urls)
 
@@ -183,10 +194,15 @@ class TestCore(base.APIIntegrationTest):
         ]
         self.assert_empty_body_returns_400(urls)
 
-    @fixtures.http.policy()
-    def test_empty_body_for_policy_requests_returns_400(self, test_policy):
+    def test_empty_body_for_create_policy_requests_returns_400(self):
         urls = [
             ('POST', 'policies'),
+        ]
+        self.assert_empty_body_returns_400(urls)
+
+    @fixtures.http.policy()
+    def test_empty_body_for_update_policy_requests_returns_400(self, test_policy):
+        urls = [
             ('PUT', f'policies/{test_policy["uuid"]}'),
         ]
         self.assert_empty_body_returns_400(urls)
