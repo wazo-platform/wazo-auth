@@ -225,6 +225,9 @@ class TestCore(base.APIIntegrationTest):
     def test_that_empty_body_when_put_ldap_request_returns_400(self):
         self.assert_empty_body_returns_400([('PUT', 'backends/ldap')])
 
+    def test_that_empty_body_when_post_password_reset_request_returns_400(self):
+        self.assert_empty_body_returns_400([('POST', 'users/password/reset')])
+
     def test_the_expiration_argument(self):
         token_data = self._post_token('foo', 'bar', expiration=2)
 
