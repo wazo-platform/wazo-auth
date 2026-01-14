@@ -16,9 +16,9 @@ services:
       - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--entryPoints.websecure.address=:443"
+      - "--entryPoints.websecure.address=:8443"
     ports:
-      - "443:443"
+      - "8443:8443"
     links:
       - "samlwebapp:app.wazo.local"
       - "auth:stack.wazo.local"
