@@ -7,17 +7,17 @@
 
 <body>
 
-<h1>Wazo SAML login</h1>
+	<h1>Wazo SAML login</h1>
 
-	<form id="saml", name="saml" method="post" action="https://stack.wazo.local/api/auth/0.1/saml/sso">
-        <input id="redirect-url" name="redirect_url" value="https://app.wazo.local/postacs.html"/>
-		<input id="domain" name="domain" value="example.com"/>
+	<form id="saml" , name="saml" method="post" action="https://stack.wazo.local:8443/api/auth/0.1/saml/sso">
+		<input id="redirect-url" name="redirect_url" value="https://app.wazo.local:8443/postacs.html" />
+		<input id="domain" name="domain" value="example.com" />
 		<input id="login_btn" type="submit" value="Login par ici" />
 	</form>
 
 	<script>
 		let form = document.getElementById("saml");
-		form.addEventListener("submit", (e)=>{
+		form.addEventListener("submit", (e) => {
 			e.preventDefault();
 			const body = {
 				"redirect_url": document.getElementById("redirect-url").value,
@@ -26,10 +26,10 @@
 			console.log(body);
 			fetch(
 				form.getAttribute("action"), {
-					method: 'POST',
-					headers: {'Content-Type': 'application/json'},
-					body: JSON.stringify(body),
-				}
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(body),
+			}
 			).then(
 				response => response.json()
 			).then(
@@ -43,4 +43,5 @@
 	</script>
 
 </body>
+
 </html>
