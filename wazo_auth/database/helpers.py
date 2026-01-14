@@ -42,11 +42,12 @@ def commit_or_rollback():
 
 
 @contextmanager
-def db_session():
+def db_session(read_only=True):
     """Context manager that ensures the session is properly committed or rolled back."""
     try:
         yield Session()
-        Session.commit()
+        if not read_only:
+            Session.commit()
     except Exception:
         Session.rollback()
         raise
