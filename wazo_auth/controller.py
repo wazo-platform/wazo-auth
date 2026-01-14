@@ -23,7 +23,7 @@ from wazo_auth.services.idp import HARDCODED_IDP_TYPES
 from . import bootstrap, http, services, token
 from .bus import BusPublisher
 from .database import queries
-from .database.helpers import Session, db_ready, init_db
+from .database.helpers import db_ready, db_session, init_db
 from .flask_helpers import Tenant, Token
 from .http_server import CoreRestApi, api
 from .plugin_helpers import utils as plugin_utils
@@ -336,9 +336,10 @@ class Controller:
         return [backend.name for backend in backends]
 
     def _update_policy_on_startup(self):
-        top_tenant_uuid = self.dao.tenant.find_top_tenant()
-        visible_tenants = self.dao.tenant.list_visible_tenants(top_tenant_uuid)
-        tenant_uuids = [tenant.uuid for tenant in visible_tenants]
+        with db_session():
+            top_tenant_uuid = self.dao.tenant.find_top_tenant()
+            visible_tenants = self.dao.tenant.list_visible_tenants(top_tenant_uuid)
+            tenant_uuids = [tenant.uuid for tenant in visible_tenants]
 
         self._default_policy_service.update_policies(top_tenant_uuid)
         self._all_users_service.update_policies(tenant_uuids)
@@ -369,17 +370,15 @@ class Controller:
             len(available_authentication_methods),
         )
 
-        # fetch tenants
-        tenants = self.dao.tenant.get_missing_auth_methods(
-            available_methods=available_authentication_methods
-        )
-
-        # fetch users
-        users = self.dao.user.get_missing_auth_methods(
-            available_methods=available_authentication_methods
-        )
-        # ensure transaction is closed to avoid connection leak
-        Session.remove()
+        with db_session():
+            # fetch tenants
+            tenants = self.dao.tenant.get_missing_auth_methods(
+                available_methods=available_authentication_methods
+            )
+            # fetch users
+            users = self.dao.user.get_missing_auth_methods(
+                available_methods=available_authentication_methods
+            )
 
         tenants_authentication_methods = {
             tenant['default_authentication_method'] for tenant in tenants

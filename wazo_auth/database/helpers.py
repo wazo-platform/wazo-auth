@@ -1,4 +1,4 @@
-# Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -39,6 +39,20 @@ def commit_or_rollback():
         raise
     finally:
         Session.close()
+
+
+@contextmanager
+def db_session(read_only=True):
+    """Context manager that ensures the session is properly committed or rolled back."""
+    try:
+        yield Session()
+        if not read_only:
+            Session.commit()
+    except Exception:
+        Session.rollback()
+        raise
+    finally:
+        Session.remove()
 
 
 @contextmanager
