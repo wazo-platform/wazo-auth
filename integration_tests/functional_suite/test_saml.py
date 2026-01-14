@@ -29,10 +29,10 @@ class RedactedValue:
 @base.use_asset('saml')
 class TestSamlService(SAMLIntegrationTest):
 
-    STACK_URN = 'stack.wazo.local:8443'
-    STACK_URL = 'https://' + STACK_URN
-    APP_URN = 'app.wazo.local:8443'
-    APP_URL = 'https://' + APP_URN
+    STACK_NETLOC = 'stack.wazo.local:8443'
+    STACK_URL = f'https://{STACK_NETLOC}'
+    APP_NETLOC = 'app.wazo.local:8443'
+    APP_URL = f'https://{APP_NETLOC}'
 
     @pytest.fixture(autouse=True)
     def setup(self, page: Page) -> None:
@@ -78,7 +78,7 @@ class TestSamlService(SAMLIntegrationTest):
 
     def _configure_saml(self, domain_name: str) -> None:
         acs_url_template: str = self.client.saml_config.get_acs_template()['acs_url']
-        acs_url: str = acs_url_template.replace('{{STACK_URL}}', self.STACK_URN)
+        acs_url: str = acs_url_template.replace('{{STACK_URL}}', self.STACK_NETLOC)
         domain_uuid: str = self.client.tenants.get_domains(self.tenant['uuid'])[
             'items'
         ][0]['uuid']
