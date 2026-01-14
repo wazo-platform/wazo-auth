@@ -1,4 +1,4 @@
-# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -28,6 +28,12 @@ class RedactedValue:
 
 @base.use_asset('saml')
 class TestSamlService(SAMLIntegrationTest):
+
+    STACK_NETLOC = 'stack.wazo.local:8443'
+    STACK_URL = f'https://{STACK_NETLOC}'
+    APP_NETLOC = 'app.wazo.local:8443'
+    APP_URL = f'https://{APP_NETLOC}'
+
     @pytest.fixture(autouse=True)
     def setup(self, page: Page) -> None:
         self.page = page
@@ -72,7 +78,7 @@ class TestSamlService(SAMLIntegrationTest):
 
     def _configure_saml(self, domain_name: str) -> None:
         acs_url_template: str = self.client.saml_config.get_acs_template()['acs_url']
-        acs_url: str = acs_url_template.replace('{{STACK_URL}}', 'stack.wazo.local')
+        acs_url: str = acs_url_template.replace('{{STACK_URL}}', self.STACK_NETLOC)
         domain_uuid: str = self.client.tenants.get_domains(self.tenant['uuid'])[
             'items'
         ][0]['uuid']
@@ -104,13 +110,13 @@ class TestSamlService(SAMLIntegrationTest):
         self.session.commit()
 
     def _accept_self_signed_certificate_on_stack(self) -> None:
-        self.page.goto("https://stack.wazo.local/api/auth/0.1/tokens")
+        self.page.goto(f"{self.STACK_URL}/api/auth/0.1/tokens")
 
     def _reload_saml_config(self) -> None:
         self.restart_auth()
 
     def _click_login(self, page) -> None:
-        page.goto("https://app.wazo.local/")
+        page.goto(f"{self.APP_URL}/")
         expect(page.locator("h1"), "Error while opening the test page").to_contain_text(
             "Wazo SAML login"
         )
@@ -166,7 +172,7 @@ class TestSamlService(SAMLIntegrationTest):
 
         self._logout(self.page)
         expect(self.page).to_have_url(
-            'https://app.wazo.local/postacs.html?logged_out=true', timeout=20000
+            f'{self.APP_URL}/postacs.html?logged_out=true', timeout=20000
         )
         expect(self.page.locator("#token")).to_contain_text("Failed")
         expect(self.page.locator("#refresh")).to_contain_text("Failed")
@@ -191,7 +197,7 @@ class TestSamlService(SAMLIntegrationTest):
         self._renew_token(self.page)
         self._logout(self.page)
         expect(self.page).to_have_url(
-            'https://app.wazo.local/postacs.html?logged_out=true', timeout=20000
+            f'{self.APP_URL}/postacs.html?logged_out=true', timeout=20000
         )
         expect(self.page.locator("#token")).to_contain_text("Failed")
         expect(self.page.locator("#refresh")).to_contain_text("Failed")
@@ -257,7 +263,7 @@ class TestSamlService(SAMLIntegrationTest):
         self.restart_auth()
         self._logout(self.page)
         expect(self.page).to_have_url(
-            'https://app.wazo.local/postacs.html?logged_out=true', timeout=20000
+            f'{self.APP_URL}/postacs.html?logged_out=true', timeout=20000
         )
         expect(self.page.locator("#token")).to_contain_text("Failed")
         expect(self.page.locator("#refresh")).to_contain_text("Failed")
