@@ -37,9 +37,13 @@
 
 
 	<script type="text/javascript">
+		const BASE_URL = "https://stack.wazo.local:8443/api/auth/0.1";
+		const TOKEN_URL = `${BASE_URL}/token`;
+		const LOGOUT_URL = `${BASE_URL}/saml/logout`;
+
 		function get_token() {
 			let saml_session_id = localStorage.getItem("wazo-saml-session-id");
-			fetch("https://stack.wazo.local:8443/api/auth/0.1/token", {
+			fetch(TOKEN_URL, {
 				method: "POST",
 				body: JSON.stringify({
 					'saml_session_id': saml_session_id,
@@ -69,7 +73,7 @@
 
 		function logout() {
 			fetch(
-				"https://stack.wazo.local:8443/api/auth/0.1/saml/logout", {
+				LOGOUT_URL, {
 				method: 'GET',
 				redirect: 'follow',
 				headers: { 'X-Auth-Token': localStorage.getItem('token') },
@@ -87,7 +91,7 @@
 		};
 
 		function renew_token() {
-			fetch("https://stack.wazo.local:8443/api/auth/0.1/token", {
+			fetch(TOKEN_URL, {
 				method: "POST",
 				body: JSON.stringify({
 					'refresh_token': localStorage.getItem('refresh_token'),
@@ -114,7 +118,7 @@
 		}
 
 		function get_token_custom_saml_session_id() {
-			fetch("https://stack.wazo.local:8443/api/auth/0.1/token", {
+			fetch(TOKEN_URL, {
 				method: "POST",
 				body: JSON.stringify({
 					'refresh_token': document.getElementById('custom_saml_session_id').value,
