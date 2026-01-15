@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -43,7 +43,7 @@ class GoogleAuth(http.AuthResource):
     @http.required_acl('auth.users.{user_uuid}.external.google.create')
     def post(self, user_uuid):
         try:
-            args = GoogleSchema().load(request.get_json())
+            args = GoogleSchema().load(request.get_json(force=True))
         except ValidationError as e:
             raise UserParamException.from_errors(e.messages)
 

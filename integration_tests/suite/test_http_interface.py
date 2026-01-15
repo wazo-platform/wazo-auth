@@ -1,4 +1,4 @@
-# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -142,6 +142,91 @@ class TestCore(base.APIIntegrationTest):
         response = s.post(url, verify=False)
 
         assert_that(response.status_code, equal_to(400))
+
+    @fixtures.http.group()
+    def test_empty_body_for_group_requests_returns_400(self, test_group):
+        urls = [
+            ('POST', 'groups'),
+            ('PUT', f'groups/{test_group["uuid"]}'),
+        ]
+        self.assert_empty_body_returns_400(urls)
+
+    @fixtures.http.tenant()
+    def test_empty_body_for_update_tenant_requests_returns_400(self, test_tenant):
+        urls = [
+            ('PUT', f'tenants/{test_tenant["uuid"]}'),
+        ]
+        self.assert_empty_body_returns_400(urls)
+
+    def test_empty_body_for_create_tenant_requests_returns_400(self):
+        urls = [
+            ('POST', 'tenants'),
+        ]
+        self.assert_empty_body_returns_400(urls)
+
+    @fixtures.http.user()
+    def test_empty_body_for_create_user_requests_returns_400(self, test_user):
+        urls = [
+            ('POST', 'users'),
+            ('POST', 'users/register'),
+            ('POST', f'users/{test_user["uuid"]}/external/mobile'),
+            ('POST', f'users/{test_user["uuid"]}/external/microsoft'),
+            ('POST', f'users/{test_user["uuid"]}/external/google'),
+        ]
+        self.assert_empty_body_returns_400(urls)
+
+    @fixtures.http.user()
+    def test_empty_body_for_update_user_requests_returns_400(self, test_user):
+        urls = [
+            ('PUT', f'users/{test_user["uuid"]}'),
+            ('PUT', f'users/{test_user["uuid"]}/password'),
+            ('PUT', f'users/{test_user["uuid"]}/emails'),
+            ('PUT', f'users/{test_user["uuid"]}/external/mobile'),
+        ]
+        self.assert_empty_body_returns_400(urls)
+
+    @fixtures.http.user(username='username', password='pass')
+    @fixtures.http.token(username='username', password='pass')
+    def test_empty_body_for_token_requests_returns_400(self, _, test_token):
+        urls = [
+            ('POST', 'token'),
+            ('POST', f'token/{test_token["token"]}/scopes/check'),
+        ]
+        self.assert_empty_body_returns_400(urls)
+
+    def test_empty_body_for_create_policy_requests_returns_400(self):
+        urls = [
+            ('POST', 'policies'),
+        ]
+        self.assert_empty_body_returns_400(urls)
+
+    @fixtures.http.policy()
+    def test_empty_body_for_update_policy_requests_returns_400(self, test_policy):
+        urls = [
+            ('PUT', f'policies/{test_policy["uuid"]}'),
+        ]
+        self.assert_empty_body_returns_400(urls)
+
+    def test_that_empty_body_when_patch_config_returns_400(self):
+        self.assert_empty_body_returns_400([('PATCH', 'config')])
+
+    def test_that_empty_body_when_post_google_config_returns_400(self):
+        self.assert_empty_body_returns_400([('POST', 'external/google/config')])
+
+    def test_that_empty_body_when_put_google_config_returns_400(self):
+        self.assert_empty_body_returns_400([('PUT', 'external/google/config')])
+
+    def test_that_empty_body_when_post_saml_sso_returns_400(self):
+        self.assert_empty_body_returns_400([('POST', 'saml/sso')])
+
+    def test_that_empty_body_when_put_saml_user_returns_400(self):
+        self.assert_empty_body_returns_400([('PUT', 'idp/saml/users')])
+
+    def test_that_empty_body_when_put_ldap_request_returns_400(self):
+        self.assert_empty_body_returns_400([('PUT', 'backends/ldap')])
+
+    def test_that_empty_body_when_post_password_reset_request_returns_400(self):
+        self.assert_empty_body_returns_400([('POST', 'users/password/reset')])
 
     def test_the_expiration_argument(self):
         token_data = self._post_token('foo', 'bar', expiration=2)

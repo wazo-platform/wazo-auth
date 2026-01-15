@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import marshmallow
@@ -19,7 +19,7 @@ class Register(http.ErrorCatchingResource):
 
     def post(self):
         try:
-            args = UserRegisterPostSchema().load(request.get_json())
+            args = UserRegisterPostSchema().load(request.get_json(force=True))
         except marshmallow.ValidationError as e:
             raise exceptions.UserParamException.from_errors(e.messages)
 
