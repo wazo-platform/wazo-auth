@@ -173,4 +173,7 @@ class TenantService(BaseService):
         if str(parent_tenant_uuid) not in visible_tenants:
             raise exceptions.UnknownTenantException(parent_tenant_uuid)
 
+        if self._dao.tenant.is_subtenant(str(parent_tenant_uuid), str(tenant_uuid)):
+            raise exceptions.DescendentTenantException(tenant_uuid, parent_tenant_uuid)
+
         self._dao.tenant.update_parent(str(tenant_uuid), str(parent_tenant_uuid))

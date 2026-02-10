@@ -594,6 +594,15 @@ class TestTenants(base.APIIntegrationTest):
                 new_parent_uuid,
             )
 
+            # From master, loop detection
+            new_parent_uuid = sub_tenant['uuid']
+            assert_http_error(
+                409,
+                self.client.tenants.update_parent,
+                tenant['uuid'],
+                new_parent_uuid,
+            )
+
     @fixtures.http.tenant()
     def test_put_parent(self, tenant):
         with self.client_in_subtenant() as (client, _, sub_tenant):

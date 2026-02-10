@@ -1,4 +1,4 @@
-# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from urllib.parse import urlencode
@@ -174,6 +174,13 @@ class UnauthorizedTenantwithChildrenDelete(APIException):
         )
         details = {'uuid': str(tenant_uuid)}
         super().__init__(400, msg, details, 'tenants')
+
+
+class DescendentTenantException(APIException):
+    def __init__(self, tenant_uuid, parent_uuid):
+        msg = f'Parent ({parent_uuid}) is a descendent of tenant: "{tenant_uuid}"'
+        details = {'uuid': str(tenant_uuid), 'parent_uuid': str(parent_uuid)}
+        super().__init__(409, msg, 'conflict', details, 'tenants')
 
 
 class UnknownEmailException(APIException):
