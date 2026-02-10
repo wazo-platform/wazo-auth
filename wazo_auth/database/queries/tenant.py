@@ -1,4 +1,4 @@
-# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, text
@@ -231,6 +231,11 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 if constraint == 'auth_tenant_domain_name_key':
                     raise exceptions.DomainAlreadyExistException(domain_names)
             raise
+
+    def update_parent(self, tenant_uuid, parent_uuid):
+        tenant = self.session.get(Tenant, str(tenant_uuid))
+        tenant.parent_uuid = parent_uuid
+        self.session.flush()
 
     def _tenant_query(self, top_tenant_uuid, scoping_tenant_uuid=None):
         if scoping_tenant_uuid is None:

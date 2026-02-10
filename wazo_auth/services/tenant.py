@@ -1,4 +1,4 @@
-# Copyright 2018-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -164,3 +164,13 @@ class TenantService(BaseService):
 
         domains = self._dao.domain.get(str(tenant_uuid))
         return [{'name': domain.name, 'uuid': domain.uuid} for domain in domains]
+
+    def update_parent(self, scoping_tenant_uuid, tenant_uuid, parent_tenant_uuid):
+        visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
+        if str(tenant_uuid) not in visible_tenants:
+            raise exceptions.UnknownTenantException(tenant_uuid)
+
+        if str(parent_tenant_uuid) not in visible_tenants:
+            raise exceptions.UnknownTenantException(parent_tenant_uuid)
+
+        self._dao.tenant.update_parent(str(tenant_uuid), str(parent_tenant_uuid))
