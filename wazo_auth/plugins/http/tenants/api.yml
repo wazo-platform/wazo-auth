@@ -180,7 +180,7 @@ paths:
         - $ref: '#/parameters/tenant_uuid'
         - $ref: '#/parameters/parent_tenant_uuid'
       responses:
-        '201':
+        '204':
           description: Parent updated
         '404':
           description: Tenant or Parent not found

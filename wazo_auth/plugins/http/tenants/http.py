@@ -135,4 +135,4 @@ class TenantParent(BaseResource):
         self.tenant_service.update_parent(
             scoping_tenant.uuid, tenant_uuid, parent_tenant_uuid
         )
-        return '', 201
+        return '', 204
