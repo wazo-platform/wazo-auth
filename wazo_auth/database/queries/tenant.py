@@ -143,14 +143,15 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             return True
 
         parent_tenants = (
-            self.session.query(Tenant.uuid)
+            self.session.query(Tenant.uuid.label('uuid'))
             .filter(Tenant.uuid == str(child_uuid))
             .cte(recursive=True)
         )
         parent_tenants = parent_tenants.union_all(
-            self.session.query(Tenant.parent_uuid).filter(
+            self.session.query(Tenant.parent_uuid.label('uuid'))
+            .join(parent_tenants, Tenant.uuid == parent_tenants.c.uuid)
+            .filter(
                 and_(
-                    Tenant.uuid == parent_tenants.c.uuid,
                     Tenant.uuid != parent_uuid,  # stop recursion on expected parent
                     Tenant.uuid != Tenant.parent_uuid,  # stop recursion on top tenant
                 )
