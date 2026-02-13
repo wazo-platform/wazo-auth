@@ -166,11 +166,14 @@ class TenantService(BaseService):
         return [{'name': domain.name, 'uuid': domain.uuid} for domain in domains]
 
     def update_parent(self, scoping_tenant_uuid, tenant_uuid, parent_tenant_uuid):
-        visible_tenants = self.list_sub_tenants(scoping_tenant_uuid)
-        if str(tenant_uuid) not in visible_tenants:
+        if not self._dao.tenant.is_subtenant(
+            str(tenant_uuid), str(scoping_tenant_uuid)
+        ):
             raise exceptions.UnknownTenantException(tenant_uuid)
 
-        if str(parent_tenant_uuid) not in visible_tenants:
+        if not self._dao.tenant.is_subtenant(
+            str(parent_tenant_uuid), str(scoping_tenant_uuid)
+        ):
             raise exceptions.UnknownTenantException(parent_tenant_uuid)
 
         if self._dao.tenant.is_subtenant(str(parent_tenant_uuid), str(tenant_uuid)):
