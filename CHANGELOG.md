@@ -1,5 +1,9 @@
 # Changelog
 
+## 26.03
+
+* Added API `PUT /0.1/tenants/<tenant_uuid>/parent/<new_parent_uuid>`
+
 ## 25.14
 
 * `PUT /0.1/users/<user_uuid>/external/mobile`: now creates the resource if it does not already exist

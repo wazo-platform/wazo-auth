@@ -163,7 +163,29 @@ paths:
           description: System related error
           schema:
             $ref: '#/definitions/Error'
-
+  /tenants/{tenant_uuid}/parent/{parent_tenant_uuid}:
+    put:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      summary: Update tenant's parent
+      description: '**Required ACL:** `auth.tenants.{tenant_uuid}.parent.{parent_tenant_uuid}.update`'
+      operationId: updateTenantParent
+      tags:
+      - tenants
+      security:
+      - wazo_auth_token: []
+      parameters:
+        - $ref: '#/parameters/tenant_uuid'
+        - $ref: '#/parameters/parent_tenant_uuid'
+      responses:
+        '204':
+          description: Parent updated
+        '404':
+          description: Tenant or Parent not found
+          schema:
+            $ref: '#/definitions/Error'
 
 parameters:
   tenant_uuid:
@@ -171,6 +193,12 @@ parameters:
     in: path
     type: string
     description: The UUID of the tenant
+    required: true
+  parent_tenant_uuid:
+    name: parent_tenant_uuid
+    in: path
+    type: string
+    description: The UUID of the new parent tenant
     required: true
 definitions:
   TenantPostResponse:

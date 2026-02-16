@@ -1,4 +1,4 @@
-# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, text
@@ -143,14 +143,15 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             return True
 
         parent_tenants = (
-            self.session.query(Tenant.uuid)
+            self.session.query(Tenant.uuid.label('uuid'))
             .filter(Tenant.uuid == str(child_uuid))
             .cte(recursive=True)
         )
         parent_tenants = parent_tenants.union_all(
-            self.session.query(Tenant.parent_uuid).filter(
+            self.session.query(Tenant.parent_uuid.label('uuid'))
+            .join(parent_tenants, Tenant.uuid == parent_tenants.c.uuid)
+            .filter(
                 and_(
-                    Tenant.uuid == parent_tenants.c.uuid,
                     Tenant.uuid != parent_uuid,  # stop recursion on expected parent
                     Tenant.uuid != Tenant.parent_uuid,  # stop recursion on top tenant
                 )
@@ -231,6 +232,11 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                 if constraint == 'auth_tenant_domain_name_key':
                     raise exceptions.DomainAlreadyExistException(domain_names)
             raise
+
+    def update_parent(self, tenant_uuid, parent_uuid):
+        tenant = self.session.get(Tenant, str(tenant_uuid))
+        tenant.parent_uuid = parent_uuid
+        self.session.flush()
 
     def _tenant_query(self, top_tenant_uuid, scoping_tenant_uuid=None):
         if scoping_tenant_uuid is None:

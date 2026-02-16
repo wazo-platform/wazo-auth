@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from uuid import uuid4
@@ -13,6 +13,7 @@ from hamcrest import (
     has_entry,
     has_item,
     is_,
+    not_,
 )
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.uuid_ import uuid_
@@ -571,3 +572,50 @@ class TestTenants(base.APIIntegrationTest):
         assert_that(result['items'], empty())
 
         assert_http_error(404, self.client.tenants.get_domains, UNKNOWN_UUID)
+
+    @fixtures.http.tenant()
+    def test_put_parent_errors(self, tenant):
+        args = {'parent_uuid': tenant['uuid']}
+        with self.client_in_subtenant(**args) as (client, _, sub_tenant):
+            # From sub-tenant, tenant is not found
+            new_parent_uuid = sub_tenant['uuid']
+            assert_http_error(
+                404,
+                client.tenants.update_parent,
+                tenant['uuid'],
+                new_parent_uuid,
+            )
+            # From sub-tenant, new parent is not found
+            new_parent_uuid = tenant['uuid']
+            assert_http_error(
+                404,
+                client.tenants.update_parent,
+                sub_tenant['uuid'],
+                new_parent_uuid,
+            )
+
+            # From master, loop detection
+            new_parent_uuid = sub_tenant['uuid']
+            assert_http_error(
+                409,
+                self.client.tenants.update_parent,
+                tenant['uuid'],
+                new_parent_uuid,
+            )
+
+    @fixtures.http.tenant()
+    def test_put_parent(self, tenant):
+        with self.client_in_subtenant() as (client, _, sub_tenant):
+            new_parent_uuid = tenant['uuid']
+
+            result = self.client.tenants.get(sub_tenant['uuid'])
+            assert_that(result['parent_uuid'], not_(equal_to(new_parent_uuid)))
+
+            assert_no_error(
+                self.client.tenants.update_parent,  # From master tenant
+                sub_tenant['uuid'],
+                new_parent_uuid,
+            )
+
+            result = self.client.tenants.get(sub_tenant['uuid'])
+            assert_that(result['parent_uuid'], equal_to(new_parent_uuid))

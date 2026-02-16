@@ -1,4 +1,4 @@
-# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -126,3 +126,13 @@ class TenantDomains(BaseResource):
         response = {'total': total, 'items': domains}
 
         return response, 200
+
+
+class TenantParent(BaseResource):
+    @http.required_acl('auth.tenants.{tenant_uuid}.parent.{parent_tenant_uuid}.update')
+    def put(self, tenant_uuid, parent_tenant_uuid):
+        scoping_tenant = TenantDetector.autodetect()
+        self.tenant_service.update_parent(
+            scoping_tenant.uuid, tenant_uuid, parent_tenant_uuid
+        )
+        return '', 204
