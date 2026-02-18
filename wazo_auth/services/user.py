@@ -1,10 +1,12 @@
-# Copyright 2018-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import binascii
 import hashlib
 import logging
 import os
+
+from wazo_bus.resources.auth.events import SessionDeletedEvent
 
 from wazo_auth import exceptions
 from wazo_auth.services.helpers import BaseService
@@ -23,8 +25,9 @@ class UnknownUserHash:
 
 
 class UserService(BaseService):
-    def __init__(self, dao, tenant_service=None, encrypter=None):
+    def __init__(self, dao, bus_publisher=None, tenant_service=None, encrypter=None):
         super().__init__(dao)
+        self._bus_publisher = bus_publisher
         self._tenant_service = tenant_service
         self._encrypter = encrypter or PasswordEncrypter()
         self._unknown_user_salt = os.urandom(self._encrypter._salt_len)
@@ -80,6 +83,21 @@ class UserService(BaseService):
         for user in users:
             self._dao.user.change_password(user['uuid'], salt=None, hash_=None)
             return user
+
+    def _publish_session_deleted_events(self, user, sessions):
+        if self._bus_publisher is None:
+            logger.warning(
+                'Publisher is missing, unable to publish session deleted events'
+            )
+            return
+
+        for session in sessions:
+            event = SessionDeletedEvent(
+                session_uuid=session['uuid'],
+                tenant_uuid=user['tenant_uuid'],
+                user_uuid=user['uuid'],
+            )
+            self._bus_publisher.publish(event)
 
     def count_groups(self, user_uuid, **kwargs):
         return self._dao.user.count_groups(user_uuid, **kwargs)
@@ -181,6 +199,12 @@ class UserService(BaseService):
         username = kwargs['username']
         if username and self._dao.user.login_exists(username, ignored_user=user_uuid):
             raise exceptions.UsernameLoginAlreadyExists(username)
+
+        if not kwargs.get('enabled', True):
+            sessions = self._dao.session.delete_by_user(user_uuid)
+            if sessions:
+                user = self.get_user(user_uuid)
+                self._publish_session_deleted_events(user, sessions)
 
         self._dao.user.update(user_uuid, **kwargs)
         return self.get_user(user_uuid)

@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
@@ -20,6 +20,7 @@ from wazo_auth.config import _DEFAULT_CONFIG
 from wazo_auth.services.tenant import TenantService
 
 from .. import exceptions, services
+from ..bus import BusPublisher
 from ..database import queries
 from ..database.queries import (
     address,
@@ -228,9 +229,10 @@ class TestGroupService(BaseServiceTestCase):
 class TestUserService(BaseServiceTestCase):
     def setUp(self):
         super().setUp()
+        self.bus_publisher = Mock(BusPublisher)
         self.tenant_service = Mock(TenantService)
         self.service = services.UserService(
-            self.dao, self.tenant_service, encrypter=self.encrypter
+            self.dao, self.bus_publisher, self.tenant_service, encrypter=self.encrypter
         )
 
     def test_change_password(self):

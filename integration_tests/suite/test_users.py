@@ -1,4 +1,4 @@
-# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -315,6 +315,28 @@ class TestUsers(base.APIIntegrationTest):
         body = {'username': 'foobaz', 'firstname': None, 'lastname': None}
         result = self.client.users.edit(user_uuid, **body)
         assert_that(result, has_entries(**body))
+
+    @fixtures.http.user(username='foo', password='secret', enabled=True)
+    def test_put_disable_remove_sessions(self, user):
+        user_client = self.make_auth_client('foo', 'secret')
+        token = user_client.token.new('wazo_user', expiration=60)['token']
+
+        self.client.users.edit(user['uuid'], enabled=True)
+        assert self.client.token.is_valid(token)
+        assert self.client.users.get_sessions(user['uuid'])['total'] != 0
+
+        self.client.users.edit(user['uuid'], lastname='random-edit')
+        assert self.client.token.is_valid(token)
+        assert self.client.users.get_sessions(user['uuid'])['total'] != 0
+
+        headers = {'name': 'auth_session_deleted'}
+        msg_accumulator = self.bus.accumulator(headers=headers)
+
+        self.client.users.edit(user['uuid'], enabled=False)
+        assert not self.client.token.is_valid(token)
+        assert self.client.users.get_sessions(user['uuid'])['total'] == 0
+        messages = msg_accumulator.accumulate(with_headers=True)
+        assert messages[0]['message']['name'] == headers['name']
 
     @fixtures.http.user()
     @fixtures.http.user(username='u2@example.com')
