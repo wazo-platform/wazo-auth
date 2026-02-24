@@ -1,4 +1,4 @@
-# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
@@ -163,7 +163,11 @@ class Controller:
         group_service = services.GroupService(self.dao)
         policy_service = services.PolicyService(self.dao)
         session_service = services.SessionService(self.dao, self._bus_publisher)
-        self._user_service = services.UserService(self.dao, self._tenant_service)
+        self._user_service = services.UserService(
+            self.dao,
+            self._bus_publisher,
+            self._tenant_service,
+        )
         self._token_service = services.TokenService(
             config, self.dao, self._bus_publisher, self._user_service
         )

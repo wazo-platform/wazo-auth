@@ -112,7 +112,11 @@ paths:
       produces:
         - application/json
       summary: Update an existing user
-      description: "**Required ACL**: `auth.users.{user_uuid}.update`"
+      description: |
+        **Required ACL**: `auth.users.{user_uuid}.update`
+
+        When disabling a user (`enabled: false`), all active sessions (i.e.
+        tokens) will be immediately revoked and can no longer be used.
       operationId: updateUser
       tags:
         - users

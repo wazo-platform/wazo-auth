@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, text
@@ -68,3 +68,16 @@ class SessionDAO(PaginatorMixin, BaseDAO):
         self.session.flush()
 
         return session_result, token_result
+
+    def delete_by_user(self, user_uuid):
+        query = (
+            self.session.query(Session.uuid)
+            .select_from(Token)
+            .join(Token.session)
+            .filter(Token.auth_id == str(user_uuid))
+        )
+        session_uuids = [row[0] for row in query.all()]
+        self.session.query(Session).filter(Session.uuid.in_(session_uuids)).delete()
+        self.session.flush()
+
+        return [{'uuid': uuid} for uuid in session_uuids]
