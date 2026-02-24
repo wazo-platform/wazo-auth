@@ -1,4 +1,4 @@
-# Copyright 2018-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -113,3 +113,29 @@ class TestResetPassword(base.APIIntegrationTest):
             context_str = "'username': 'bob'"
             regex = f"email_notification_logger,send_password_reset,.*{context_str}"
             assert_that(logs, matches_regexp(regex))
+
+    @fixtures.http.user(username='foo', password='secret')
+    def test_set_password_remove_sessions(self, user):
+        user_client = self.make_auth_client('foo', 'secret')
+        token = user_client.token.new('wazo_user', expiration=60)['token']
+        headers = {'name': 'auth_session_deleted'}
+        msg_accumulator = self.bus.accumulator(headers=headers)
+
+        new_password = 'newpass'
+        self.client.users.set_password(user['uuid'], new_password)
+
+        assert not self.client.token.is_valid(token)
+        assert self.client.users.get_sessions(user['uuid'])['total'] == 0
+        messages = msg_accumulator.accumulate(with_headers=True)
+        assert messages[0]['message']['name'] == headers['name']
+
+        # set password to None use a different code path
+        msg_accumulator.reset()
+        user_client.password = new_password
+        token = user_client.token.new('wazo_user', expiration=60)['token']
+        self.client.users.set_password(user['uuid'], None)
+
+        assert not self.client.token.is_valid(token)
+        assert self.client.users.get_sessions(user['uuid'])['total'] == 0
+        messages = msg_accumulator.accumulate(with_headers=True)
+        assert messages[0]['message']['name'] == headers['name']

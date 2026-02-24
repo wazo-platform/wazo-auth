@@ -149,7 +149,11 @@ paths:
         - users
       security:
         - wazo_auth_token: []
-      description: "**Required ACL**: `auth.users.{user_uuid}.password.update`"
+      description: |
+        **Required ACL**: `auth.users.{user_uuid}.password.update`
+
+        All active sessions (i.e. tokens) will be immediately revoked and can no longer be used.
+        Existing refresh tokens are not affected and remain valid.
       summary: "Change the user's password"
       parameters:
         - $ref: '#/parameters/user_uuid'
