@@ -87,6 +87,19 @@ class SAMLConfigService(BaseService):
         )
         return etree_metadata
 
+    def get_sp_metadata(self, tenant_uuid: str) -> str:
+        config = self._dao.saml_config.get(tenant_uuid)
+        domains = self._dao.domain.list(tenant_uuid=tenant_uuid)
+        domain_name = next(
+            (d.name for d in domains if d.uuid == config['domain_uuid']), None
+        )
+        if not domain_name:
+            raise SAMLConfigParameterException(
+                tenant_uuid, 'No matching domain found', 404
+            )
+        client = self._saml_service.get_client(domain_name)
+        return client.create_metadata_string()
+
     def get_acs_url_template(self) -> dict[str, str]:
         return {'acs_url': self._acs_url_template}
 

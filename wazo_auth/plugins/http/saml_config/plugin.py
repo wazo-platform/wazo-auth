@@ -22,6 +22,12 @@ class Plugin:
         )
 
         api.add_resource(
+            http.SAMLSPMetadata,
+            '/backends/saml/sp-metadata',
+            resource_class_args=args,
+        )
+
+        api.add_resource(
             http.SAMLAcsUrlTemplate,
             '/backends/saml/acs_url_template',
             resource_class_args=args,

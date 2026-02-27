@@ -163,6 +163,29 @@ class SAMLMetadata(BaseResource):
             )
 
 
+class SAMLSPMetadata(BaseResource):
+    @http.required_acl('auth.backends.saml.read')
+    def get(self):
+        scoping_tenant: Tenant = Tenant.autodetect()
+        try:
+            metadata_xml = self._saml_config_service.get_sp_metadata(
+                scoping_tenant.uuid
+            )
+            response = make_response(metadata_xml)
+            response.headers['Content-Type'] = 'application/xml'
+            response.headers['Content-Disposition'] = 'attachment'
+            return response
+        except exceptions.APIException as e:
+            raise e
+        except Exception as e:
+            logger.exception(
+                f"An error occurred while getting SP metadata for tenant {scoping_tenant.uuid}."
+            )
+            raise SAMLConfigParameterException(
+                scoping_tenant.uuid, f'Internal server error({e})', 500
+            )
+
+
 class SAMLAcsUrlTemplate(BaseResource):
     @http.required_acl('auth.backends.saml.read')
     def get(self):

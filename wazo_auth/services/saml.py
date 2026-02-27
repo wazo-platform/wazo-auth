@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any, NamedTuple, NoReturn, TypedDict
 from urllib.parse import unquote
 from uuid import UUID
 
-from saml2 import BINDING_HTTP_POST
+from saml2 import BINDING_HTTP_POST, BINDING_HTTP_REDIRECT
 from saml2.client import Saml2Client
 from saml2.config import Config as SAMLConfig
 from saml2.response import AuthnResponse, VerificationError
@@ -116,6 +116,7 @@ class SAMLService(BaseService):
         )
 
     def _prepare_saml_config(self, db_config, filename, globals) -> RawSAMLConfig:
+        sls_url = db_config['acs_url'].replace('/saml/acs', '/saml/sls')
         return {
             'entityid': db_config['entity_id'],
             'service': {
@@ -128,7 +129,11 @@ class SAMLService(BaseService):
                                 db_config['acs_url'],
                                 BINDING_HTTP_POST,
                             )
-                        ]
+                        ],
+                        'single_logout_service': [
+                            (sls_url, BINDING_HTTP_REDIRECT),
+                            (sls_url, BINDING_HTTP_POST),
+                        ],
                     },
                 }
             },
