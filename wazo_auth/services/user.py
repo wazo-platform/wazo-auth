@@ -65,6 +65,8 @@ class UserService(BaseService):
 
         salt, hash_ = self._encrypter.encrypt_password(new_password)
         self._dao.user.change_password(user_uuid, salt, hash_)
+        sessions = self._dao.session.delete_by_user(user_uuid)
+        self._publish_session_deleted_events(user, sessions)
 
     def _find_main_email(self, user):
         for email in user['emails']:
@@ -82,6 +84,8 @@ class UserService(BaseService):
 
         for user in users:
             self._dao.user.change_password(user['uuid'], salt=None, hash_=None)
+            sessions = self._dao.session.delete_by_user(user['uuid'])
+            self._publish_session_deleted_events(user, sessions)
             return user
 
     def _publish_session_deleted_events(self, user, sessions):

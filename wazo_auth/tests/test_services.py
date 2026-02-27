@@ -236,6 +236,7 @@ class TestUserService(BaseServiceTestCase):
         )
 
     def test_change_password(self):
+        self.session_dao.delete_by_user.return_value = []
         self.user_dao.list_.return_value = []
         assert_that(
             calling(self.service.change_password).with_args(s.uuid, s.old, s.new),
@@ -259,6 +260,7 @@ class TestUserService(BaseServiceTestCase):
         self.user_dao.change_password.assert_called_once_with(s.uuid, s.salt, s.hash_)
 
     def test_change_password_external_auth(self):
+        self.session_dao.delete_by_user.return_value = []
         self.user_dao.list_.return_value = [
             {'username': 'foobar', 'uuid': s.uuid, 'authentication_method': 'saml'}
         ]
@@ -301,6 +303,7 @@ class TestUserService(BaseServiceTestCase):
         self.user_dao.change_password.assert_called_once_with(s.uuid, s.salt, s.hash_)
 
     def test_delete_password(self):
+        self.session_dao.delete_by_user.return_value = []
         self.user_dao.list_.return_value = []
         assert_that(
             calling(self.service.delete_password).with_args(

@@ -34,7 +34,10 @@ paths:
       description: |
         **Required ACL**: `auth.users.password.reset.{user_uuid}.create`
 
-        Set a new password for the user after the user used the GET on the reset URL
+        Set a new password for the user after the user used the GET on the reset URL.
+
+        All active sessions (i.e. tokens) will be immediately revoked and can no longer be used.
+        Existing refresh tokens are not affected and remain valid.
       operationId: reset_password_change
       tags:
         - users
