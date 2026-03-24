@@ -162,6 +162,10 @@ class MetadataAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
     asset = 'metadata'
 
 
+class BootstrapAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
+    asset = 'bootstrap'
+
+
 class DAOTestCase(unittest.TestCase):
     unknown_uuid = '00000000-0000-0000-0000-000000000000'
     asset_cls = DBAssetLaunchingTestCase
@@ -566,6 +570,14 @@ class SAMLIntegrationTest(BaseIntegrationTest):
     asset_cls = SAMLAssetLaunchingTestCase
     username = 'admin'
     password = 's3cre7'
+
+
+class BootstrapIntegrationTest(unittest.TestCase):
+    asset_cls = BootstrapAssetLaunchingTestCase
+
+    @classmethod
+    def make_auth_client(cls, *args, **kwargs):
+        return cls.asset_cls.make_auth_client(*args, **kwargs)
 
 
 @contextmanager

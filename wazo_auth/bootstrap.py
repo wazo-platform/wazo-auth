@@ -1,4 +1,4 @@
-# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import argparse
@@ -112,6 +112,26 @@ def bootstrap_initial_user(
     create_initial_user(username, password, purpose, authentication_method, policy_slug)
 
 
+def reset_or_create_initial_user(
+    username, password, purpose, authentication_method, policy_slug
+):
+    dao = queries.DAO.from_defaults()
+    user_service = services.UserService(dao)
+
+    users = user_service.list_users(username=username)
+    if users:
+        encrypter = services.PasswordEncrypter()
+        user_uuid = users[0]['uuid']
+        salt, hash_ = encrypter.encrypt_password(password)
+        dao.user.change_password(user_uuid, salt, hash_)
+        dao.session.delete_by_user(user_uuid)
+        commit_or_rollback()
+    else:
+        create_initial_user(
+            username, password, purpose, authentication_method, policy_slug
+        )
+
+
 def create_initial_user(
     username, password, purpose, authentication_method, policy_slug
 ):
@@ -155,8 +175,8 @@ def complete():
         )
     else:
         password = random_string(28)
-        bootstrap_initial_user(
-            database_uri,
+        init_db(database_uri)
+        reset_or_create_initial_user(
             USERNAME,
             password,
             PURPOSE,

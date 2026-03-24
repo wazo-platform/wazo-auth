@@ -1,4 +1,4 @@
-# Copyright 2021-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import pytest
@@ -58,6 +58,15 @@ def metadata():
         yield
     finally:
         asset.MetadataAssetLaunchingTestCase.tearDownClass()
+
+
+@pytest.fixture(scope='package')
+def bootstrap():
+    asset.BootstrapAssetLaunchingTestCase.setUpClass()
+    try:
+        yield
+    finally:
+        asset.BootstrapAssetLaunchingTestCase.tearDownClass()
 
 
 @pytest.fixture(autouse=True, scope='function')
