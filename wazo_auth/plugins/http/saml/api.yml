@@ -129,19 +129,23 @@ paths:
       description: |
         Processes the IdP response to logout request and confirms the logout by
         a redirect to the `redirect_url` provided during the login phase
-        with logout confirmation un the URL's query param.
+        with logout confirmation in the URL's query param.
       summary: Handles the logout response from the IDP
       operationId: samlLogoutResponse
       tags:
       - token
       - saml
       parameters:
-      - description: SAML SSO Logout data
-        in: body
-        name: body
+      - in: query
         required: true
-        schema:
-          $ref: '#/definitions/SAMLIdpLogoutResponse'
+        name: SAMLResponse
+        type: string
+        description: Encoded SAML XML response to logout request
+      - in: query
+        required: true
+        name: RelayState
+        type: string
+        description: Relay state parameter
       responses:
         '201':
           description: |
@@ -199,16 +203,3 @@ definitions:
         description: |
           The URL that the client should open to complete the logout.
         type: string
-
-  SAMLIdpLogoutResponse:
-    properties:
-      SAMLLogoutResponse:
-        description: Encoded SAML XML response to logout request
-        type: string
-      RelayState:
-        description: Relay state parameter
-        type: string
-    required:
-    - SAMLLogoutResponse
-    - RelayState
-    type: object
