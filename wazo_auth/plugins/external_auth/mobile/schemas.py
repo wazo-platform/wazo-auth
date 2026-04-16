@@ -19,8 +19,8 @@ class MobileSchema(schemas.BaseSchema):
         allow_none=True, validate=Length(max=512), load_default=None
     )
     apns_call_topic = fields.String(
-        allow_none=True, validate=Length(max=512), load_default=None
+        allow_none=True, validate=Length(max=512), load_default=None, dump_default=None
     )
     apns_default_topic = fields.String(
-        allow_none=True, validate=Length(max=512), load_default=None
+        allow_none=True, validate=Length(max=512), load_default=None, dump_default=None
     )
