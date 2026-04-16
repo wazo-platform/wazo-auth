@@ -185,8 +185,8 @@ class TestExternalAuthMobile(base.ExternalAuthIntegrationTest):
 
     @fixtures.http.tenant(uuid=TENANT_UUID)
     @fixtures.http.user(
-        username='one', password='pass', tenant_uuid=TENANT_UUID
-    )  # NOSONAR
+        username='one', password='pass', tenant_uuid=TENANT_UUID  # NOSONAR
+    )
     @fixtures.http.token(username='one', password='pass', expiration=30)  # NOSONAR
     def test_backward_compatibility_without_topics(self, tenant, user, token):
         client = self.make_auth_client(
