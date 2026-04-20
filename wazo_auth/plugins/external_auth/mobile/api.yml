@@ -131,3 +131,9 @@ definitions:
       apns_voip_token:
         type: string
         description: APNs VoIP device token.
+      apns_call_topic:
+        type: string
+        description: APNs topic for VoIP call notifications (e.g. com.example.app.voip). When set, overrides the server-wide mobile_apns_call_topic configuration.
+      apns_default_topic:
+        type: string
+        description: APNs topic for non-call notifications such as messages, voicemails, and missed calls (e.g. com.example.app). When set, overrides the server-wide mobile_apns_default_topic configuration.
