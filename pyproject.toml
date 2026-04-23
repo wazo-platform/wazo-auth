@@ -20,3 +20,32 @@ py_version = 311
 
 [tool.pytest]
 testpaths = ["wazo_auth"]
+
+[tool.mypy]
+python_version = "3.11"
+plugins = ["sqlalchemy.ext.mypy.plugin"]
+follow_imports = "silent"
+ignore_missing_imports = true
+show_error_codes = true
+check_untyped_defs = true
+warn_unused_configs = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+warn_unused_ignores = true
+strict_equality = true
+extra_checks = true
+no_warn_no_return = true
+
+# avoid conflicts between modules of the same name e.g. setup.py
+explicit_package_bases = true
+
+# opt-in mode, disable when everything is sufficiently typed
+ignore_errors = true
+
+# extend as modules are typed, eventually remove or replace with exclusions
+[[tool.mypy.overrides]]
+module = [
+    "wazo_auth.database.queries.token",
+]
+ignore_errors = false
