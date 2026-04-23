@@ -1,4 +1,4 @@
-# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -8,7 +8,8 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Bundle
 from sqlalchemy.sql import cast
 
-from ... import exceptions
+from wazo_auth import exceptions
+
 from ..models import Session, Tenant
 from ..models import Token as TokenModel
 from .base import BaseDAO
