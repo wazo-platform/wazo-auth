@@ -1,4 +1,4 @@
-# Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import re
@@ -17,6 +17,7 @@ from hamcrest import (
     equal_to,
     has_entries,
     has_entry,
+    has_item,
     has_key,
     has_properties,
     not_,
@@ -281,6 +282,182 @@ class TestTokens(base.APIIntegrationTest):
             )
 
         until.assert_(bus_received_msg, tries=10, interval=0.25)
+
+    @fixtures.http.user(username='foo', password='bar')
+    def test_new_mobile_refresh_token_terminates_incumbent(self, user):
+        first_client_id = 'mobile-device-1'
+        second_client_id = 'mobile-device-2'
+        first_token = self._post_token(
+            'foo',
+            'bar',
+            session_type='Mobile',
+            access_type='offline',
+            client_id=first_client_id,
+        )
+        first_session_uuid = first_token['session_uuid']
+
+        refresh_token_deleted_accumulator = self.bus.accumulator(
+            headers={'name': 'auth_refresh_token_deleted'},
+        )
+        session_deleted_accumulator = self.bus.accumulator(
+            headers={'name': 'auth_session_deleted'},
+        )
+
+        self._post_token(
+            'foo',
+            'bar',
+            session_type='Mobile',
+            access_type='offline',
+            client_id=second_client_id,
+        )
+
+        def bus_received_refresh_token_deleted():
+            assert_that(
+                refresh_token_deleted_accumulator.accumulate(with_headers=True),
+                contains_exactly(
+                    has_entries(
+                        message=has_entries(
+                            data={
+                                'client_id': first_client_id,
+                                'user_uuid': user['uuid'],
+                                'tenant_uuid': user['tenant_uuid'],
+                                'mobile': True,
+                            }
+                        ),
+                        headers=has_entries(
+                            name='auth_refresh_token_deleted',
+                            tenant_uuid=user['tenant_uuid'],
+                        ),
+                    ),
+                ),
+            )
+
+        def bus_received_session_deleted():
+            assert_that(
+                session_deleted_accumulator.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries(
+                            data=has_entries(
+                                uuid=first_session_uuid,
+                                user_uuid=user['uuid'],
+                                tenant_uuid=user['tenant_uuid'],
+                            )
+                        ),
+                        headers=has_entries(
+                            name='auth_session_deleted',
+                            tenant_uuid=user['tenant_uuid'],
+                        ),
+                    ),
+                ),
+            )
+
+        until.assert_(bus_received_refresh_token_deleted, tries=10, interval=0.25)
+        until.assert_(bus_received_session_deleted, tries=10, interval=0.25)
+
+        result = self.client.token.list(user_uuid=user['uuid'])
+        assert_that(
+            result,
+            has_entries(
+                items=contains_exactly(
+                    has_entries(client_id=second_client_id, mobile=True),
+                ),
+            ),
+        )
+
+        sessions = self.client.users.get_sessions(user['uuid'])
+        assert_that(
+            sessions['items'],
+            contains_exactly(has_entries(mobile=True)),
+        )
+        assert_that(
+            sessions['items'][0]['uuid'],
+            not_(equal_to(first_session_uuid)),
+        )
+
+    @fixtures.http.user(username='foo', password='bar')
+    def test_new_mobile_refresh_token_does_not_terminate_non_mobile(self, user):
+        web_client_id = 'web-client'
+        first_mobile = 'mobile-device-1'
+        second_mobile = 'mobile-device-2'
+        self._post_token('foo', 'bar', access_type='offline', client_id=web_client_id)
+        self._post_token(
+            'foo',
+            'bar',
+            session_type='Mobile',
+            access_type='offline',
+            client_id=first_mobile,
+        )
+        self._post_token(
+            'foo',
+            'bar',
+            session_type='Mobile',
+            access_type='offline',
+            client_id=second_mobile,
+        )
+
+        result = self.client.token.list(user_uuid=user['uuid'])
+        assert_that(
+            result,
+            has_entries(
+                items=contains_inanyorder(
+                    has_entries(client_id=web_client_id, mobile=False),
+                    has_entries(client_id=second_mobile, mobile=True),
+                ),
+            ),
+        )
+
+    @fixtures.http.user(username='alice', password='alice-pw')
+    @fixtures.http.user(username='bob', password='bob-pw')
+    def test_new_mobile_refresh_token_does_not_affect_other_users(self, alice, bob):
+        self._post_token(
+            'alice',
+            'alice-pw',
+            session_type='Mobile',
+            access_type='offline',
+            client_id='alice-mobile',
+        )
+        self._post_token(
+            'bob',
+            'bob-pw',
+            session_type='Mobile',
+            access_type='offline',
+            client_id='bob-mobile',
+        )
+
+        alice_tokens = self.client.token.list(user_uuid=alice['uuid'])
+        assert_that(
+            alice_tokens,
+            has_entries(
+                items=contains_exactly(
+                    has_entries(client_id='alice-mobile', mobile=True),
+                ),
+            ),
+        )
+
+    @fixtures.http.user(username='foo', password='bar')
+    def test_new_non_mobile_refresh_token_does_not_terminate_mobile(self, user):
+        mobile_client_id = 'mobile-device-1'
+        web_client_id = 'web-client'
+        self._post_token(
+            'foo',
+            'bar',
+            session_type='Mobile',
+            access_type='offline',
+            client_id=mobile_client_id,
+        )
+        self._post_token('foo', 'bar', access_type='offline', client_id=web_client_id)
+
+        result = self.client.token.list(user_uuid=user['uuid'])
+        assert_that(
+            result,
+            has_entries(
+                items=contains_inanyorder(
+                    has_entries(client_id=mobile_client_id, mobile=True),
+                    has_entries(client_id=web_client_id, mobile=False),
+                ),
+            ),
+        )
 
     def test_that_only_one_refresh_token_exist_for_each_user_uuid_client_id(self):
         client_id = 'two-refresh-token'
