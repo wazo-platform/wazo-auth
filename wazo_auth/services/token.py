@@ -1,4 +1,4 @@
-# Copyright 2018-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -161,6 +161,11 @@ class TokenService(BaseService):
             token_payload['refresh_token'] = refresh_token
             token_payload['metadata'] = persistent_metadata | token_payload['metadata']
 
+            if args.get('mobile'):
+                self._terminate_incumbent_mobile_sessions(
+                    metadata['uuid'], args['client_id']
+                )
+
         token_uuid, session_uuid = self._dao.token.create(
             token_payload,
             session_payload,
@@ -178,6 +183,34 @@ class TokenService(BaseService):
         self._bus_publisher.publish(event)
 
         return token
+
+    def _terminate_incumbent_mobile_sessions(self, user_uuid, new_client_id):
+        existing = self._dao.refresh_token.list_(user_uuid=user_uuid, mobile=True)
+        for incumbent in existing:
+            if incumbent['client_id'] == new_client_id:
+                continue
+            tokens = self._dao.token.list_by_refresh_token(incumbent['uuid'])
+            for token in tokens:
+                token_data, session_data = self._dao.token.delete(token['uuid'])
+                if session_data:
+                    self._bus_publisher.publish(
+                        SessionDeletedEvent(
+                            session_data['uuid'],
+                            session_data['tenant_uuid'],
+                            token_data['auth_id'],
+                        )
+                    )
+            self._dao.refresh_token.delete(
+                [incumbent['tenant_uuid']], user_uuid, incumbent['client_id']
+            )
+            self._bus_publisher.publish(
+                RefreshTokenDeletedEvent(
+                    incumbent['client_id'],
+                    True,
+                    incumbent['tenant_uuid'],
+                    user_uuid,
+                )
+            )
 
     def new_token_internal(self, expiration=None, acl=None):
         expiration = expiration if expiration is not None else self._default_expiration
