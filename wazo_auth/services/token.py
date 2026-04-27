@@ -13,7 +13,7 @@ from wazo_bus.resources.auth.events import (
 
 from wazo_auth.interfaces import BaseAuthenticationBackend
 from wazo_auth.services.helpers import BaseService
-from wazo_auth.token import Token
+from wazo_auth.token import Token, token_redacted
 
 from ..exceptions import (
     DuplicatedRefreshTokenException,
@@ -45,31 +45,68 @@ class TokenService(BaseService):
         )
         return self._dao.refresh_token.count(**search_params)
 
-    def delete_refresh_token(self, scoping_tenant_uuid, user_uuid, client_id):
+    def delete_refresh_token(
+        self,
+        scoping_tenant_uuid,
+        user_uuid: str,
+        client_id: str,
+        revoke_sessions: bool = False,
+    ) -> None:
         tenant_uuids = self._get_scoped_tenant_uuids(scoping_tenant_uuid, True)
         refresh_token = self._dao.refresh_token.get_by_user(
             tenant_uuids=tenant_uuids,
             user_uuid=user_uuid,
             client_id=client_id,
         )
-
-        event = RefreshTokenDeletedEvent(
-            client_id, refresh_token['mobile'], refresh_token['tenant_uuid'], user_uuid
+        self._delete_refresh_token(
+            refresh_token, tenant_uuids, revoke_sessions=revoke_sessions
         )
-        self._bus_publisher.publish(event)
-        self._dao.refresh_token.delete(tenant_uuids, user_uuid, client_id)
 
-    def delete_refresh_token_by_uuid(self, uuid):
+    def delete_refresh_token_by_uuid(
+        self, uuid: str, revoke_sessions: bool = False
+    ) -> None:
         refresh_token = self._dao.refresh_token.get_by_uuid(uuid)
-        event = RefreshTokenDeletedEvent(
-            refresh_token['client_id'],
-            refresh_token['mobile'],
-            refresh_token['tenant_uuid'],
-            refresh_token['user_uuid'],
+        self._delete_refresh_token(
+            refresh_token,
+            [refresh_token['tenant_uuid']],
+            revoke_sessions=revoke_sessions,
         )
-        self._bus_publisher.publish(event)
+
+    def _delete_refresh_token(
+        self,
+        refresh_token: dict,
+        tenant_uuids: list[str],
+        revoke_sessions: bool = False,
+    ) -> None:
+        if revoke_sessions:
+            # TODO: make this the default/only behavior?
+            tokens = self._dao.token.list_by_refresh_token(refresh_token['uuid'])
+            logger.debug(
+                "revoking %d sessions from refresh token %s (user %s, client_id %s)",
+                len(tokens),
+                token_redacted(refresh_token['uuid']),
+                refresh_token['user_uuid'],
+                refresh_token['client_id'],
+            )
+            for token in tokens:
+                self.remove_token(token['uuid'])
+
+        self._bus_publisher.publish(
+            RefreshTokenDeletedEvent(
+                refresh_token['client_id'],
+                refresh_token['mobile'],
+                refresh_token['tenant_uuid'],
+                refresh_token['user_uuid'],
+            )
+        )
+        logger.debug(
+            "revoking refresh token %s (user %s, client_id %s)",
+            token_redacted(refresh_token['uuid']),
+            refresh_token['user_uuid'],
+            refresh_token['client_id'],
+        )
         self._dao.refresh_token.delete(
-            refresh_token['tenant_uuid'],
+            tenant_uuids,
             refresh_token['user_uuid'],
             refresh_token['client_id'],
         )

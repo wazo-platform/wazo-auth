@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from unittest import TestCase
-from unittest.mock import Mock, patch
+from unittest.mock import ANY, Mock, patch
 from unittest.mock import sentinel as s
 
 from hamcrest import (
@@ -14,6 +14,7 @@ from hamcrest import (
     not_,
     raises,
 )
+from wazo_bus.resources.auth.events import RefreshTokenDeletedEvent, SessionDeletedEvent
 from xivo.mallow import fields
 
 from wazo_auth.config import _DEFAULT_CONFIG
@@ -432,3 +433,144 @@ class TestTenantService(BaseServiceTestCase):
         result = self.service.get_by_uuid_or_slug(None, 'slug2')
         self.service._get.assert_called_with('2345-uuid')
         assert_that(result, equal_to(self.service._get.return_value))
+
+
+class TestTokenServiceDeleteRefreshToken(BaseServiceTestCase):
+    SCOPING_TENANT = 'scoping-tenant-uuid'
+    USER_UUID = 'user-uuid'
+    CLIENT_ID = 'my-client'
+    REFRESH_TOKEN_UUID = 'refresh-token-uuid'
+    TENANT_UUID = 'rt-tenant-uuid'
+
+    def setUp(self):
+        super().setUp()
+        self.bus_publisher = Mock(BusPublisher)
+        self.user_service = Mock()
+        config = {
+            'default_token_lifetime': 7200,
+            'max_user_concurrent_sessions': 50,
+            'backend_policies': {},
+            'default_user_policy': None,
+        }
+        self.service = services.TokenService(
+            config, self.dao, self.bus_publisher, self.user_service
+        )
+        # _get_scoped_tenant_uuids(_, recurse=True) -> [tenant.uuid for tenant in
+        # list_visible_tenants(scoping)]
+        self.tenant_dao.list_visible_tenants.return_value = [
+            Mock(uuid=self.TENANT_UUID),
+        ]
+        self.refresh_token = {
+            'uuid': self.REFRESH_TOKEN_UUID,
+            'client_id': self.CLIENT_ID,
+            'user_uuid': self.USER_UUID,
+            'tenant_uuid': self.TENANT_UUID,
+            'mobile': True,
+        }
+        self.refresh_token_dao.get_by_user.return_value = self.refresh_token
+        self.refresh_token_dao.get_by_uuid.return_value = self.refresh_token
+
+    def _expected_refresh_token_deleted_event(self):
+        return RefreshTokenDeletedEvent(
+            self.CLIENT_ID, True, self.TENANT_UUID, self.USER_UUID
+        )
+
+    def test_delete_refresh_token_does_not_revoke_sessions_by_default(self):
+        self.service.delete_refresh_token(
+            self.SCOPING_TENANT, self.USER_UUID, self.CLIENT_ID
+        )
+
+        self.token_dao.list_by_refresh_token.assert_not_called()
+        self.token_dao.delete.assert_not_called()
+        self.refresh_token_dao.delete.assert_called_once_with(
+            [self.TENANT_UUID], self.USER_UUID, self.CLIENT_ID
+        )
+        self.bus_publisher.publish.assert_called_once_with(
+            self._expected_refresh_token_deleted_event()
+        )
+
+    def test_delete_refresh_token_revokes_sessions_when_requested(self):
+        self.token_dao.list_by_refresh_token.return_value = [
+            {'uuid': 'token-1', 'auth_id': 'auth-1'},
+            {'uuid': 'token-2', 'auth_id': 'auth-2'},
+        ]
+        self.token_dao.delete.side_effect = [
+            (
+                {'uuid': 'token-1', 'auth_id': 'auth-1'},
+                {'uuid': 'session-1', 'tenant_uuid': self.TENANT_UUID},
+            ),
+            (
+                {'uuid': 'token-2', 'auth_id': 'auth-2'},
+                {'uuid': 'session-2', 'tenant_uuid': self.TENANT_UUID},
+            ),
+        ]
+
+        self.service.delete_refresh_token(
+            self.SCOPING_TENANT,
+            self.USER_UUID,
+            self.CLIENT_ID,
+            revoke_sessions=True,
+        )
+
+        self.token_dao.list_by_refresh_token.assert_called_once_with(
+            self.REFRESH_TOKEN_UUID
+        )
+        assert_that(
+            self.token_dao.delete.call_args_list,
+            contains_exactly(
+                ANY,  # call('token-1')
+                ANY,  # call('token-2')
+            ),
+        )
+        self.refresh_token_dao.delete.assert_called_once_with(
+            [self.TENANT_UUID], self.USER_UUID, self.CLIENT_ID
+        )
+        # 2 SessionDeletedEvent + 1 RefreshTokenDeletedEvent
+        assert_that(
+            self.bus_publisher.publish.call_args_list,
+            contains_exactly(
+                ((SessionDeletedEvent('session-1', self.TENANT_UUID, 'auth-1'),),),
+                ((SessionDeletedEvent('session-2', self.TENANT_UUID, 'auth-2'),),),
+                ((self._expected_refresh_token_deleted_event(),),),
+            ),
+        )
+
+    def test_delete_refresh_token_by_uuid_does_not_revoke_sessions_by_default(self):
+        self.service.delete_refresh_token_by_uuid(self.REFRESH_TOKEN_UUID)
+
+        self.token_dao.list_by_refresh_token.assert_not_called()
+        self.token_dao.delete.assert_not_called()
+        self.refresh_token_dao.delete.assert_called_once_with(
+            [self.TENANT_UUID], self.USER_UUID, self.CLIENT_ID
+        )
+        self.bus_publisher.publish.assert_called_once_with(
+            self._expected_refresh_token_deleted_event()
+        )
+
+    def test_delete_refresh_token_by_uuid_revokes_sessions_when_requested(self):
+        self.token_dao.list_by_refresh_token.return_value = [
+            {'uuid': 'token-1', 'auth_id': 'auth-1'},
+        ]
+        self.token_dao.delete.return_value = (
+            {'uuid': 'token-1', 'auth_id': 'auth-1'},
+            {'uuid': 'session-1', 'tenant_uuid': self.TENANT_UUID},
+        )
+
+        self.service.delete_refresh_token_by_uuid(
+            self.REFRESH_TOKEN_UUID, revoke_sessions=True
+        )
+
+        self.token_dao.list_by_refresh_token.assert_called_once_with(
+            self.REFRESH_TOKEN_UUID
+        )
+        self.token_dao.delete.assert_called_once_with('token-1')
+        self.refresh_token_dao.delete.assert_called_once_with(
+            [self.TENANT_UUID], self.USER_UUID, self.CLIENT_ID
+        )
+        assert_that(
+            self.bus_publisher.publish.call_args_list,
+            contains_exactly(
+                ((SessionDeletedEvent('session-1', self.TENANT_UUID, 'auth-1'),),),
+                ((self._expected_refresh_token_deleted_event(),),),
+            ),
+        )
