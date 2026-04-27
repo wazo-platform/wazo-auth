@@ -1,4 +1,4 @@
-# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -15,6 +15,10 @@ from wazo_auth.database.helpers import Session
 logger = logging.getLogger(__name__)
 
 DEFAULT_XIVO_UUID = os.getenv('XIVO_UUID')
+
+
+def token_redacted(token_id: str) -> str:
+    return f'XXXXXXXX-XXXX-XXXX-XXXX-XXXX{token_id[-8:]}'
 
 
 class Token:
@@ -106,7 +110,7 @@ class Token:
         return self._access_check.matches_required_access(required_access)
 
     def token_redacted(self):
-        return 'XXXXXXXX-XXXX-XXXX-XXXX-XXXX' + self.token[-8:]
+        return token_redacted(self.token)
 
 
 class ExpiredTokenRemover:
