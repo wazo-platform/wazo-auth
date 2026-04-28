@@ -92,6 +92,11 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         query = self.session.query(RefreshToken).filter(RefreshToken.uuid == uuid)
         for refresh_token in query.all():
             return {
+                'uuid': refresh_token.uuid,
+                'client_id': refresh_token.client_id,
+                'user_uuid': refresh_token.user_uuid,
+                'tenant_uuid': refresh_token.tenant_uuid,
+                'mobile': refresh_token.mobile,
                 'backend_name': refresh_token.backend,
                 'login': refresh_token.login,
             }

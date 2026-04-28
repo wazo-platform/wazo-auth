@@ -217,8 +217,12 @@ class TokenService(BaseService):
             token_payload['metadata'] = persistent_metadata | token_payload['metadata']
 
             if args.get('mobile'):
+                logger.debug(
+                    "mobile offline login: cleaning up existing mobile sessions for user %s",
+                    metadata['uuid'],
+                )
                 self._terminate_incumbent_mobile_sessions(
-                    metadata['uuid'], args['client_id']
+                    metadata['uuid'], refresh_token
                 )
 
         token_uuid, session_uuid = self._dao.token.create(
@@ -252,33 +256,15 @@ class TokenService(BaseService):
         )
         return refresh_token
 
-    def _terminate_incumbent_mobile_sessions(self, user_uuid, new_client_id):
+    def _terminate_incumbent_mobile_sessions(
+        self, user_uuid: str, new_refresh_token_uuid: str
+    ) -> None:
         existing = self._dao.refresh_token.list_(user_uuid=user_uuid, mobile=True)
+        logger.debug("%d mobile refresh tokens for user %s", len(existing), user_uuid)
         for incumbent in existing:
-            if incumbent['client_id'] == new_client_id:
+            if incumbent['uuid'] == new_refresh_token_uuid:
                 continue
-            tokens = self._dao.token.list_by_refresh_token(incumbent['uuid'])
-            for token in tokens:
-                token_data, session_data = self._dao.token.delete(token['uuid'])
-                if session_data:
-                    self._bus_publisher.publish(
-                        SessionDeletedEvent(
-                            session_data['uuid'],
-                            session_data['tenant_uuid'],
-                            token_data['auth_id'],
-                        )
-                    )
-            self._dao.refresh_token.delete(
-                [incumbent['tenant_uuid']], user_uuid, incumbent['client_id']
-            )
-            self._bus_publisher.publish(
-                RefreshTokenDeletedEvent(
-                    incumbent['client_id'],
-                    True,
-                    incumbent['tenant_uuid'],
-                    user_uuid,
-                )
-            )
+            self.delete_refresh_token_by_uuid(incumbent['uuid'], revoke_sessions=True)
 
     def new_token_internal(self, expiration=None, acl=None):
         expiration = expiration if expiration is not None else self._default_expiration
