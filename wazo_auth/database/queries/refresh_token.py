@@ -40,8 +40,9 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return self.session.query(RefreshToken).filter(filter_).count()
 
     def create(self, body):
-        body['metadata_'] = body.pop('metadata', {})
-        refresh_token = RefreshToken(**body)
+        fields = {**body}
+        fields['metadata_'] = fields.pop('metadata', {})
+        refresh_token = RefreshToken(**fields)
         self.session.add(refresh_token)
         try:
             self.session.flush()
