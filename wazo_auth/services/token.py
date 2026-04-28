@@ -183,18 +183,36 @@ class TokenService(BaseService):
                 'metadata': persistent_metadata,
             }
             try:
-                refresh_token = self._dao.refresh_token.create(body)
+                refresh_token = self._create_refresh_token(body, tenant_uuid)
             except DuplicatedRefreshTokenException:
-                refresh_token = self._dao.refresh_token.get_existing_refresh_token(
-                    args['client_id'],
-                    metadata['uuid'],
-                )
-            else:
-                # TODO: add persistent metadata to event?
-                event = RefreshTokenCreatedEvent(
-                    body['client_id'], body['mobile'], tenant_uuid, body['user_uuid']
-                )
-                self._bus_publisher.publish(event)
+                # TODO: offer this behavior for all clients through query param,
+                # or make it the default
+                if args.get('mobile'):
+                    # for mobile, ensure a new refresh token is created
+                    logger.debug(
+                        "offline mobile login: refreshing existing refresh token "
+                        "(user %s, client_id %s)",
+                        body['user_uuid'],
+                        body['client_id'],
+                    )
+                    self.delete_refresh_token(
+                        tenant_uuid,
+                        body['user_uuid'],
+                        body['client_id'],
+                        revoke_sessions=True,
+                    )
+                    refresh_token = self._create_refresh_token(body, tenant_uuid)
+                else:
+                    logger.debug(
+                        "offline login: returning existing refresh token "
+                        "for (user %s, client_id %s)",
+                        body['user_uuid'],
+                        body['client_id'],
+                    )
+                    refresh_token = self._dao.refresh_token.get_existing_refresh_token(
+                        args['client_id'],
+                        metadata['uuid'],
+                    )
             token_payload['refresh_token'] = refresh_token
             token_payload['metadata'] = persistent_metadata | token_payload['metadata']
 
@@ -220,6 +238,19 @@ class TokenService(BaseService):
         self._bus_publisher.publish(event)
 
         return token
+
+    def _create_refresh_token(self, body: dict, tenant_uuid: str | None) -> str:
+        # TODO: add persistent metadata to event?
+        refresh_token = self._dao.refresh_token.create(body)
+        self._bus_publisher.publish(
+            RefreshTokenCreatedEvent(
+                body['client_id'],
+                body['mobile'],
+                tenant_uuid,
+                body['user_uuid'],
+            )
+        )
+        return refresh_token
 
     def _terminate_incumbent_mobile_sessions(self, user_uuid, new_client_id):
         existing = self._dao.refresh_token.list_(user_uuid=user_uuid, mobile=True)

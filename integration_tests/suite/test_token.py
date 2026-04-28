@@ -237,7 +237,6 @@ class TestTokens(base.APIIntegrationTest):
         self._post_token(
             'foo',
             user['password'],
-            session_type='Mobile',
             access_type='offline',
             client_id=client_id,
         )
@@ -248,11 +247,11 @@ class TestTokens(base.APIIntegrationTest):
             }
         )
 
-        # The same same refresh token is returned, not a new one
+        # For non-mobile clients, re-login with same client_id reuses the
+        # existing refresh token (no new RT created).
         self._post_token(
             'foo',
             user['password'],
-            session_type='Mobile',
             access_type='offline',
             client_id=client_id,
         )
@@ -373,6 +372,109 @@ class TestTokens(base.APIIntegrationTest):
         assert_that(
             sessions['items'][0]['uuid'],
             not_(equal_to(first_session_uuid)),
+        )
+
+    @fixtures.http.user(username='foo', password='bar')
+    def test_new_mobile_offline_login_with_same_client_id_creates_fresh_refresh_token(
+        self, user
+    ):
+        client_id = 'mobile-device'
+        first_token = self._post_token(
+            'foo',
+            'bar',
+            session_type='Mobile',
+            access_type='offline',
+            client_id=client_id,
+        )
+        first_session_uuid = first_token['session_uuid']
+
+        refresh_token_deleted_accumulator = self.bus.accumulator(
+            headers={'name': 'auth_refresh_token_deleted'},
+        )
+        refresh_token_created_accumulator = self.bus.accumulator(
+            headers={'name': 'auth_refresh_token_created'},
+        )
+        session_deleted_accumulator = self.bus.accumulator(
+            headers={'name': 'auth_session_deleted'},
+        )
+
+        second_token = self._post_token(
+            'foo',
+            'bar',
+            session_type='Mobile',
+            access_type='offline',
+            client_id=client_id,
+        )
+        second_session_uuid = second_token['session_uuid']
+
+        assert_that(
+            second_session_uuid,
+            not_(equal_to(first_session_uuid)),
+        )
+
+        def bus_received_refresh_token_events():
+            assert_that(
+                refresh_token_deleted_accumulator.accumulate(with_headers=True),
+                contains_exactly(
+                    has_entries(
+                        message=has_entries(
+                            data={
+                                'client_id': client_id,
+                                'user_uuid': user['uuid'],
+                                'tenant_uuid': user['tenant_uuid'],
+                                'mobile': True,
+                            }
+                        ),
+                        headers=has_entries(name='auth_refresh_token_deleted'),
+                    ),
+                ),
+            )
+            assert_that(
+                refresh_token_created_accumulator.accumulate(with_headers=True),
+                contains_exactly(
+                    has_entries(
+                        message=has_entries(
+                            data={
+                                'client_id': client_id,
+                                'user_uuid': user['uuid'],
+                                'tenant_uuid': user['tenant_uuid'],
+                                'mobile': True,
+                            }
+                        ),
+                        headers=has_entries(name='auth_refresh_token_created'),
+                    ),
+                ),
+            )
+
+        def bus_received_session_deleted():
+            assert_that(
+                session_deleted_accumulator.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries(
+                            data=has_entries(uuid=first_session_uuid),
+                        ),
+                    ),
+                ),
+            )
+
+        until.assert_(bus_received_refresh_token_events, tries=10, interval=0.25)
+        until.assert_(bus_received_session_deleted, tries=10, interval=0.25)
+
+        result = self.client.token.list(user_uuid=user['uuid'])
+        assert_that(
+            result,
+            has_entries(
+                items=contains_exactly(
+                    has_entries(client_id=client_id, mobile=True),
+                ),
+            ),
+        )
+
+        sessions = self.client.users.get_sessions(user['uuid'])
+        assert_that(
+            sessions['items'],
+            contains_exactly(has_entries(uuid=second_session_uuid, mobile=True)),
         )
 
     @fixtures.http.user(username='foo', password='bar')
