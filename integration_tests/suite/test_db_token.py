@@ -8,7 +8,6 @@ from hamcrest import (
     all_of,
     assert_that,
     contains_exactly,
-    contains_inanyorder,
     empty,
     equal_to,
     has_entries,
@@ -88,53 +87,6 @@ class TestTokenDAO(base.DAOTestCase):
             exceptions.UnknownTokenException, self._token_dao.get, token['uuid']
         )
         self._token_dao.delete(token['uuid'])  # No error on delete unknown
-
-    @fixtures.db.token()
-    @fixtures.db.refresh_token()
-    def test_delete_by_refresh_token_uuid(self, refresh_token_uuid, unrelated_token):
-        body_a = self._get_token_body()
-        body_b = self._get_token_body()
-        token_a_uuid, session_a_uuid = self._token_dao.create(
-            {'refresh_token_uuid': refresh_token_uuid, **body_a}, {}
-        )
-        token_b_uuid, session_b_uuid = self._token_dao.create(
-            {'refresh_token_uuid': refresh_token_uuid, **body_b}, {}
-        )
-
-        deleted = self._token_dao.delete_by_refresh_token_uuid(refresh_token_uuid)
-
-        assert_that(
-            deleted,
-            contains_inanyorder(
-                contains_exactly(
-                    has_entries(uuid=token_a_uuid, auth_id=body_a['auth_id']),
-                    has_entries(uuid=session_a_uuid),
-                ),
-                contains_exactly(
-                    has_entries(uuid=token_b_uuid, auth_id=body_b['auth_id']),
-                    has_entries(uuid=session_b_uuid),
-                ),
-            ),
-        )
-
-        remaining_tokens = self.session.query(models.Token).all()
-        assert_that(
-            remaining_tokens,
-            contains_exactly(has_properties(uuid=unrelated_token['uuid'])),
-        )
-        remaining_sessions = self.session.query(models.Session).all()
-        assert_that(
-            remaining_sessions,
-            contains_exactly(
-                has_properties(uuid=unrelated_token['session_uuid']),
-            ),
-        )
-
-    @fixtures.db.refresh_token()
-    def test_delete_by_refresh_token_uuid_when_no_sessions(self, refresh_token_uuid):
-        deleted = self._token_dao.delete_by_refresh_token_uuid(refresh_token_uuid)
-
-        assert_that(deleted, empty())
 
     @fixtures.db.token()
     @fixtures.db.token(expiration=0)

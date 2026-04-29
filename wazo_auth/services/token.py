@@ -105,18 +105,20 @@ class TokenService(BaseService):
 
     def _purge_refresh_token_and_sessions(self, refresh_token: dict) -> None:
         rt_uuid = refresh_token['uuid']
-        deleted = self._dao.token.delete_by_refresh_token_uuid(rt_uuid)
+        deleted_session_uuids = self._dao.session.delete_by_refresh_token_uuid(rt_uuid)
         logger.debug(
             "purging refresh token %s with %d session(s) (user %s, client_id %s)",
             token_redacted(rt_uuid),
-            len(deleted),
+            len(deleted_session_uuids),
             refresh_token['user_uuid'],
             refresh_token['client_id'],
         )
-        for token, session in deleted:
+        for session_uuid in deleted_session_uuids:
             self._bus_publisher.publish(
                 SessionDeletedEvent(
-                    session['uuid'], session['tenant_uuid'], token['auth_id']
+                    session_uuid,
+                    refresh_token['tenant_uuid'],
+                    refresh_token['user_uuid'],
                 )
             )
         self._dao.refresh_token.delete(

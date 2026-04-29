@@ -1,6 +1,7 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import time
 import uuid
 
 from hamcrest import (
@@ -11,7 +12,10 @@ from hamcrest import (
     equal_to,
     has_entries,
     has_items,
+    has_properties,
 )
+
+from wazo_auth.database import models
 
 from .helpers import base, fixtures
 
@@ -88,3 +92,49 @@ class TestSessionDAO(base.DAOTestCase):
 
         result = self._session_dao.count(tenant_uuids=[])
         assert_that(result, equal_to(0))
+
+    @fixtures.db.token()
+    @fixtures.db.refresh_token()
+    def test_delete_by_refresh_token_uuid(self, refresh_token_uuid, unrelated_token):
+        now = int(time.time())
+        token_a_body = {
+            'auth_id': 'auth-a',
+            'pbx_user_uuid': str(uuid.uuid4()),
+            'xivo_uuid': str(uuid.uuid4()),
+            'issued_t': now,
+            'expire_t': now + 120,
+            'acl': [],
+            'metadata': {},
+            'user_agent': '',
+            'remote_addr': '',
+        }
+        token_b_body = {**token_a_body, 'auth_id': 'auth-b'}
+        _, session_a_uuid = self._token_dao.create(
+            {'refresh_token_uuid': refresh_token_uuid, **token_a_body}, {}
+        )
+        _, session_b_uuid = self._token_dao.create(
+            {'refresh_token_uuid': refresh_token_uuid, **token_b_body}, {}
+        )
+
+        deleted = self._session_dao.delete_by_refresh_token_uuid(refresh_token_uuid)
+
+        assert_that(deleted, contains_inanyorder(session_a_uuid, session_b_uuid))
+
+        remaining_tokens = self.session.query(models.Token).all()
+        assert_that(
+            remaining_tokens,
+            contains_exactly(has_properties(uuid=unrelated_token['uuid'])),
+        )
+        remaining_sessions = self.session.query(models.Session).all()
+        assert_that(
+            remaining_sessions,
+            contains_exactly(
+                has_properties(uuid=unrelated_token['session_uuid']),
+            ),
+        )
+
+    @fixtures.db.refresh_token()
+    def test_delete_by_refresh_token_uuid_when_no_sessions(self, refresh_token_uuid):
+        deleted = self._session_dao.delete_by_refresh_token_uuid(refresh_token_uuid)
+
+        assert_that(deleted, empty())

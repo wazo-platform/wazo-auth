@@ -478,7 +478,7 @@ class TestTokenServiceDeleteRefreshToken(BaseServiceTestCase):
             self.SCOPING_TENANT, self.USER_UUID, self.CLIENT_ID
         )
 
-        self.token_dao.delete_by_refresh_token_uuid.assert_not_called()
+        self.session_dao.delete_by_refresh_token_uuid.assert_not_called()
         self.token_dao.delete.assert_not_called()
         self.refresh_token_dao.delete.assert_called_once_with(
             [self.TENANT_UUID], self.USER_UUID, self.CLIENT_ID
@@ -490,7 +490,7 @@ class TestTokenServiceDeleteRefreshToken(BaseServiceTestCase):
     def test_delete_refresh_token_by_uuid(self):
         self.service.delete_refresh_token_by_uuid(self.REFRESH_TOKEN_UUID)
 
-        self.token_dao.delete_by_refresh_token_uuid.assert_not_called()
+        self.session_dao.delete_by_refresh_token_uuid.assert_not_called()
         self.token_dao.delete.assert_not_called()
         self.refresh_token_dao.delete.assert_called_once_with(
             [self.TENANT_UUID], self.USER_UUID, self.CLIENT_ID
@@ -537,15 +537,9 @@ class TestTokenServicePurgeRefreshTokenAndSessions(BaseServiceTestCase):
         )
 
     def test_purge_refresh_token_and_sessions_bulk_deletes_sessions(self):
-        self.token_dao.delete_by_refresh_token_uuid.return_value = [
-            (
-                {'uuid': 'token-1', 'auth_id': 'auth-1'},
-                {'uuid': 'session-1', 'tenant_uuid': self.TENANT_UUID},
-            ),
-            (
-                {'uuid': 'token-2', 'auth_id': 'auth-2'},
-                {'uuid': 'session-2', 'tenant_uuid': self.TENANT_UUID},
-            ),
+        self.session_dao.delete_by_refresh_token_uuid.return_value = [
+            'session-1',
+            'session-2',
         ]
 
         self.service.purge_refresh_token_and_sessions(self.REFRESH_TOKEN_UUID)
@@ -553,7 +547,7 @@ class TestTokenServicePurgeRefreshTokenAndSessions(BaseServiceTestCase):
         self.refresh_token_dao.get_by_uuid.assert_called_once_with(
             self.REFRESH_TOKEN_UUID
         )
-        self.token_dao.delete_by_refresh_token_uuid.assert_called_once_with(
+        self.session_dao.delete_by_refresh_token_uuid.assert_called_once_with(
             self.REFRESH_TOKEN_UUID
         )
         # legacy per-token delete must NOT be used
@@ -565,18 +559,30 @@ class TestTokenServicePurgeRefreshTokenAndSessions(BaseServiceTestCase):
         assert_that(
             self.bus_publisher.publish.call_args_list,
             contains_exactly(
-                ((SessionDeletedEvent('session-1', self.TENANT_UUID, 'auth-1'),),),
-                ((SessionDeletedEvent('session-2', self.TENANT_UUID, 'auth-2'),),),
+                (
+                    (
+                        SessionDeletedEvent(
+                            'session-1', self.TENANT_UUID, self.USER_UUID
+                        ),
+                    ),
+                ),
+                (
+                    (
+                        SessionDeletedEvent(
+                            'session-2', self.TENANT_UUID, self.USER_UUID
+                        ),
+                    ),
+                ),
                 ((self._expected_refresh_token_deleted_event(),),),
             ),
         )
 
     def test_purge_refresh_token_and_sessions_with_no_active_sessions(self):
-        self.token_dao.delete_by_refresh_token_uuid.return_value = []
+        self.session_dao.delete_by_refresh_token_uuid.return_value = []
 
         self.service.purge_refresh_token_and_sessions(self.REFRESH_TOKEN_UUID)
 
-        self.token_dao.delete_by_refresh_token_uuid.assert_called_once_with(
+        self.session_dao.delete_by_refresh_token_uuid.assert_called_once_with(
             self.REFRESH_TOKEN_UUID
         )
         self.refresh_token_dao.delete.assert_called_once_with(
@@ -587,12 +593,7 @@ class TestTokenServicePurgeRefreshTokenAndSessions(BaseServiceTestCase):
         )
 
     def test_purge_refresh_token_and_sessions_by_client_id(self):
-        self.token_dao.delete_by_refresh_token_uuid.return_value = [
-            (
-                {'uuid': 'token-1', 'auth_id': 'auth-1'},
-                {'uuid': 'session-1', 'tenant_uuid': self.TENANT_UUID},
-            ),
-        ]
+        self.session_dao.delete_by_refresh_token_uuid.return_value = ['session-1']
 
         self.service.purge_refresh_token_and_sessions_by_client_id(
             self.USER_UUID, self.CLIENT_ID
@@ -604,7 +605,7 @@ class TestTokenServicePurgeRefreshTokenAndSessions(BaseServiceTestCase):
         self.refresh_token_dao.get_by_uuid.assert_called_once_with(
             self.REFRESH_TOKEN_UUID
         )
-        self.token_dao.delete_by_refresh_token_uuid.assert_called_once_with(
+        self.session_dao.delete_by_refresh_token_uuid.assert_called_once_with(
             self.REFRESH_TOKEN_UUID
         )
         self.token_dao.delete.assert_not_called()
@@ -614,7 +615,13 @@ class TestTokenServicePurgeRefreshTokenAndSessions(BaseServiceTestCase):
         assert_that(
             self.bus_publisher.publish.call_args_list,
             contains_exactly(
-                ((SessionDeletedEvent('session-1', self.TENANT_UUID, 'auth-1'),),),
+                (
+                    (
+                        SessionDeletedEvent(
+                            'session-1', self.TENANT_UUID, self.USER_UUID
+                        ),
+                    ),
+                ),
                 ((self._expected_refresh_token_deleted_event(),),),
             ),
         )
@@ -628,6 +635,6 @@ class TestTokenServicePurgeRefreshTokenAndSessions(BaseServiceTestCase):
             ).with_args(self.USER_UUID, self.CLIENT_ID),
             raises(exceptions.UnknownRefreshToken),
         )
-        self.token_dao.delete_by_refresh_token_uuid.assert_not_called()
+        self.session_dao.delete_by_refresh_token_uuid.assert_not_called()
         self.refresh_token_dao.delete.assert_not_called()
         self.bus_publisher.publish.assert_not_called()
