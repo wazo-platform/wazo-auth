@@ -165,7 +165,9 @@ class TokenDAO(BaseDAO):
                 uuid=result.token.uuid,
                 auth_id=result.token.auth_id,
                 session_uuid=result.token.session_uuid,
-                metadata=result.token.metadata,
+                metadata=result.token.metadata
+                if result.token.metadata is not None
+                else {},
             )
             for result in results
         ]
