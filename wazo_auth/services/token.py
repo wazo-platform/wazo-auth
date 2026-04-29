@@ -207,8 +207,6 @@ class TokenService(BaseService):
             try:
                 refresh_token = self._create_refresh_token(body, tenant_uuid)
             except DuplicatedRefreshTokenException:
-                # TODO: offer this behavior for all clients through query param,
-                # or make it the default
                 if args.get('mobile'):
                     # for mobile, ensure a new refresh token is created
                     logger.debug(
@@ -263,7 +261,6 @@ class TokenService(BaseService):
         return token
 
     def _create_refresh_token(self, body: dict, tenant_uuid: str | None) -> str:
-        # TODO: add persistent metadata to event?
         refresh_token = self._dao.refresh_token.create(body)
         self._bus_publisher.publish(
             RefreshTokenCreatedEvent(

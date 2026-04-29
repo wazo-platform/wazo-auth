@@ -455,8 +455,6 @@ class TestTokenServiceDeleteRefreshToken(BaseServiceTestCase):
         self.service = services.TokenService(
             config, self.dao, self.bus_publisher, self.user_service
         )
-        # _get_scoped_tenant_uuids(_, recurse=True) -> [tenant.uuid for tenant in
-        # list_visible_tenants(scoping)]
         self.tenant_dao.list_visible_tenants.return_value = [
             Mock(uuid=self.TENANT_UUID),
         ]
