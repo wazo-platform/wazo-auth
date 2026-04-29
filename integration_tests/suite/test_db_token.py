@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -164,6 +164,29 @@ class TestTokenDAO(base.DAOTestCase):
         assert_that(
             db_tokens,
             empty(),
+        )
+
+    def test_expiring_query_returns_empty_dict_when_metadata_is_null(self):
+        session = models.Session(tenant_uuid=self.top_tenant_uuid)
+        self.session.add(session)
+        self.session.flush()
+        token = models.Token(
+            auth_id='test',
+            session_uuid=session.uuid,
+            issued_t=int(time.time()),
+            expire_t=int(time.time()) - 1,
+            metadata_=None,
+        )
+        self.session.add(token)
+        self.session.flush()
+
+        tokens, _ = next(
+            self._token_dao.get_tokens_and_sessions_about_to_expire(0, batch_size=10)
+        )
+
+        assert_that(
+            tokens,
+            has_items(has_entries(uuid=token.uuid, metadata=equal_to({}))),
         )
 
     @fixtures.db.token(expiration=0)
