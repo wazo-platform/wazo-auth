@@ -112,6 +112,38 @@ class TokenDAO(BaseDAO):
             for token in query.all()
         ]
 
+    def delete_by_refresh_token_uuid(
+        self, refresh_token_uuid: str
+    ) -> list[tuple[TokenIdentity, SessionIdentity]]:
+        query = (
+            self.session.query(
+                TokenModel.uuid.label('token_uuid'),
+                TokenModel.auth_id,
+                Session.uuid.label('session_uuid'),
+                Session.tenant_uuid,
+            )
+            .join(Session, TokenModel.session_uuid == Session.uuid)
+            .filter(TokenModel.refresh_token_uuid == str(refresh_token_uuid))
+        )
+        rows = query.all()
+        if not rows:
+            return []
+
+        session_uuids = [row.session_uuid for row in rows]
+        # FK auth_token.session_uuid ON DELETE CASCADE removes matching tokens.
+        self.session.query(Session).filter(Session.uuid.in_(session_uuids)).delete(
+            synchronize_session=False
+        )
+        self.session.flush()
+
+        return [
+            (
+                TokenIdentity(uuid=row.token_uuid, auth_id=row.auth_id),
+                SessionIdentity(uuid=row.session_uuid, tenant_uuid=row.tenant_uuid),
+            )
+            for row in rows
+        ]
+
     # TODO: change type signature, use None instead of {} when token not found
     def delete(
         self, token_uuid: str

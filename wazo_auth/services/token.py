@@ -20,6 +20,7 @@ from ..exceptions import (
     MaxConcurrentSessionsReached,
     MissingAccessTokenException,
     MissingTenantTokenException,
+    UnknownRefreshToken,
     UnknownTokenException,
 )
 from ..helpers import is_uuid
@@ -50,7 +51,6 @@ class TokenService(BaseService):
         scoping_tenant_uuid,
         user_uuid: str,
         client_id: str,
-        revoke_sessions: bool = False,
     ) -> None:
         tenant_uuids = self._get_scoped_tenant_uuids(scoping_tenant_uuid, True)
         refresh_token = self._dao.refresh_token.get_by_user(
@@ -58,47 +58,17 @@ class TokenService(BaseService):
             user_uuid=user_uuid,
             client_id=client_id,
         )
-        self._delete_refresh_token(
-            refresh_token, tenant_uuids, revoke_sessions=revoke_sessions
-        )
+        self._delete_refresh_token(refresh_token, tenant_uuids)
 
-    def delete_refresh_token_by_uuid(
-        self, uuid: str, revoke_sessions: bool = False
-    ) -> None:
+    def delete_refresh_token_by_uuid(self, uuid: str) -> None:
         refresh_token = self._dao.refresh_token.get_by_uuid(uuid)
-        self._delete_refresh_token(
-            refresh_token,
-            [refresh_token['tenant_uuid']],
-            revoke_sessions=revoke_sessions,
-        )
+        self._delete_refresh_token(refresh_token, [refresh_token['tenant_uuid']])
 
     def _delete_refresh_token(
         self,
         refresh_token: dict,
         tenant_uuids: list[str],
-        revoke_sessions: bool = False,
     ) -> None:
-        if revoke_sessions:
-            # TODO: make this the default/only behavior?
-            tokens = self._dao.token.list_by_refresh_token(refresh_token['uuid'])
-            logger.debug(
-                "revoking %d sessions from refresh token %s (user %s, client_id %s)",
-                len(tokens),
-                token_redacted(refresh_token['uuid']),
-                refresh_token['user_uuid'],
-                refresh_token['client_id'],
-            )
-            for token in tokens:
-                self.remove_token(token['uuid'])
-
-        self._bus_publisher.publish(
-            RefreshTokenDeletedEvent(
-                refresh_token['client_id'],
-                refresh_token['mobile'],
-                refresh_token['tenant_uuid'],
-                refresh_token['user_uuid'],
-            )
-        )
         logger.debug(
             "revoking refresh token %s (user %s, client_id %s)",
             token_redacted(refresh_token['uuid']),
@@ -109,6 +79,58 @@ class TokenService(BaseService):
             tenant_uuids,
             refresh_token['user_uuid'],
             refresh_token['client_id'],
+        )
+        self._bus_publisher.publish(
+            RefreshTokenDeletedEvent(
+                refresh_token['client_id'],
+                refresh_token['mobile'],
+                refresh_token['tenant_uuid'],
+                refresh_token['user_uuid'],
+            )
+        )
+
+    def purge_refresh_token_and_sessions(self, refresh_token_uuid: str) -> None:
+        refresh_token = self._dao.refresh_token.get_by_uuid(refresh_token_uuid)
+        self._purge_refresh_token_and_sessions(refresh_token)
+
+    def purge_refresh_token_and_sessions_by_client_id(
+        self, user_uuid: str, client_id: str
+    ) -> None:
+        refresh_token_uuid = self._dao.refresh_token.get_existing_refresh_token(
+            client_id, user_uuid
+        )
+        if not refresh_token_uuid:
+            raise UnknownRefreshToken(client_id)
+        self.purge_refresh_token_and_sessions(refresh_token_uuid)
+
+    def _purge_refresh_token_and_sessions(self, refresh_token: dict) -> None:
+        rt_uuid = refresh_token['uuid']
+        deleted = self._dao.token.delete_by_refresh_token_uuid(rt_uuid)
+        logger.debug(
+            "purging refresh token %s with %d session(s) (user %s, client_id %s)",
+            token_redacted(rt_uuid),
+            len(deleted),
+            refresh_token['user_uuid'],
+            refresh_token['client_id'],
+        )
+        for token, session in deleted:
+            self._bus_publisher.publish(
+                SessionDeletedEvent(
+                    session['uuid'], session['tenant_uuid'], token['auth_id']
+                )
+            )
+        self._dao.refresh_token.delete(
+            [refresh_token['tenant_uuid']],
+            refresh_token['user_uuid'],
+            refresh_token['client_id'],
+        )
+        self._bus_publisher.publish(
+            RefreshTokenDeletedEvent(
+                refresh_token['client_id'],
+                refresh_token['mobile'],
+                refresh_token['tenant_uuid'],
+                refresh_token['user_uuid'],
+            )
         )
 
     def list_refresh_tokens(
@@ -195,11 +217,8 @@ class TokenService(BaseService):
                         body['user_uuid'],
                         body['client_id'],
                     )
-                    self.delete_refresh_token(
-                        tenant_uuid,
-                        body['user_uuid'],
-                        body['client_id'],
-                        revoke_sessions=True,
+                    self.purge_refresh_token_and_sessions_by_client_id(
+                        body['user_uuid'], body['client_id']
                     )
                     refresh_token = self._create_refresh_token(body, tenant_uuid)
                 else:
@@ -264,7 +283,7 @@ class TokenService(BaseService):
         for incumbent in existing:
             if incumbent['uuid'] == new_refresh_token_uuid:
                 continue
-            self.delete_refresh_token_by_uuid(incumbent['uuid'], revoke_sessions=True)
+            self.purge_refresh_token_and_sessions(incumbent['uuid'])
 
     def new_token_internal(self, expiration=None, acl=None):
         expiration = expiration if expiration is not None else self._default_expiration
