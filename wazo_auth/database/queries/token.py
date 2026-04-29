@@ -82,7 +82,7 @@ class TokenDAO(BaseDAO):
 
     def _get_default_tenant_uuid(self) -> str:
         filter_ = Tenant.uuid == Tenant.parent_uuid
-        return self.session.query(Tenant).filter(filter_).first().uuid
+        return self.session.query(Tenant).filter(filter_).one().uuid
 
     def get(self, token_uuid: str) -> TokenRecord:
         token = self.session.get(TokenModel, str(token_uuid))
