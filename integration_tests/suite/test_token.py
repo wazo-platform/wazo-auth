@@ -203,7 +203,7 @@ class TestTokens(base.APIIntegrationTest):
         self._post_token(
             'foo',
             user['password'],
-            session_type='Mobile',
+            session_type='mobile',
             access_type='offline',
             client_id=client_id,
         )
@@ -289,7 +289,7 @@ class TestTokens(base.APIIntegrationTest):
         first_token = self._post_token(
             'foo',
             'bar',
-            session_type='Mobile',
+            session_type='mobile',
             access_type='offline',
             client_id=first_client_id,
         )
@@ -305,7 +305,7 @@ class TestTokens(base.APIIntegrationTest):
         self._post_token(
             'foo',
             'bar',
-            session_type='Mobile',
+            session_type='mobile',
             access_type='offline',
             client_id=second_client_id,
         )
@@ -382,7 +382,7 @@ class TestTokens(base.APIIntegrationTest):
         first_token = self._post_token(
             'foo',
             'bar',
-            session_type='Mobile',
+            session_type='mobile',
             access_type='offline',
             client_id=client_id,
         )
@@ -401,7 +401,7 @@ class TestTokens(base.APIIntegrationTest):
         second_token = self._post_token(
             'foo',
             'bar',
-            session_type='Mobile',
+            session_type='mobile',
             access_type='offline',
             client_id=client_id,
         )
@@ -486,14 +486,14 @@ class TestTokens(base.APIIntegrationTest):
         self._post_token(
             'foo',
             'bar',
-            session_type='Mobile',
+            session_type='mobile',
             access_type='offline',
             client_id=first_mobile,
         )
         self._post_token(
             'foo',
             'bar',
-            session_type='Mobile',
+            session_type='mobile',
             access_type='offline',
             client_id=second_mobile,
         )
@@ -515,14 +515,14 @@ class TestTokens(base.APIIntegrationTest):
         self._post_token(
             'alice',
             'alice-pw',
-            session_type='Mobile',
+            session_type='mobile',
             access_type='offline',
             client_id='alice-mobile',
         )
         self._post_token(
             'bob',
             'bob-pw',
-            session_type='Mobile',
+            session_type='mobile',
             access_type='offline',
             client_id='bob-mobile',
         )
@@ -554,7 +554,7 @@ class TestTokens(base.APIIntegrationTest):
         self._post_token(
             'foo',
             'bar',
-            session_type='Mobile',
+            session_type='mobile',
             access_type='offline',
             client_id=mobile_client_id,
         )
@@ -840,7 +840,7 @@ class TestTokens(base.APIIntegrationTest):
         password='bar',
         access_type='offline',
         client_id='foobaz',
-        session_type='Mobile',
+        session_type='mobile',
     )
     def test_list_all_refresh_tokens(self, sub_tenant, user, token_1, token_2, token_3):
         result = self.client.refresh_tokens.list()
