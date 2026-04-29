@@ -93,8 +93,8 @@ class TestSessionDAO(base.DAOTestCase):
         result = self._session_dao.count(tenant_uuids=[])
         assert_that(result, equal_to(0))
 
-    @fixtures.db.token()
     @fixtures.db.refresh_token()
+    @fixtures.db.token()
     def test_delete_by_refresh_token_uuid(self, refresh_token_uuid, unrelated_token):
         now = int(time.time())
         token_a_body = {
@@ -110,10 +110,10 @@ class TestSessionDAO(base.DAOTestCase):
         }
         token_b_body = {**token_a_body, 'auth_id': 'auth-b'}
         _, session_a_uuid = self._token_dao.create(
-            {'refresh_token_uuid': refresh_token_uuid, **token_a_body}, {}
+            token_a_body, {}, refresh_token_uuid=refresh_token_uuid
         )
         _, session_b_uuid = self._token_dao.create(
-            {'refresh_token_uuid': refresh_token_uuid, **token_b_body}, {}
+            token_b_body, {}, refresh_token_uuid=refresh_token_uuid
         )
 
         deleted = self._session_dao.delete_by_refresh_token_uuid(refresh_token_uuid)
