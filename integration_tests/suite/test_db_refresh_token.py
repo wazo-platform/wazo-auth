@@ -1,4 +1,4 @@
-# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import datetime
@@ -146,3 +146,19 @@ class TestRefreshTokenDAO(base.DAOTestCase):
         assert_that(
             result, has_item(has_entries(uuid=token_4, metadata={"foo": "bar"}))
         )
+
+    @fixtures.db.tenant(uuid=TENANT_UUID)
+    @fixtures.db.user(uuid=ALICE_UUID, username='alice', tenant_uuid=TENANT_UUID)
+    def test_create_does_not_mutate_input(self, tenant, alice_uuid):
+        body = {
+            'user_uuid': ALICE_UUID,
+            'client_id': 'test-client',
+            'backend': 'wazo_user',
+            'login': 'alice',
+            'metadata': {'foo': 'bar'},
+        }
+        original_body = dict(body)
+
+        self._refresh_token_dao.create(body)
+
+        assert_that(body, equal_to(original_body))

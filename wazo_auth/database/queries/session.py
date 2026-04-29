@@ -81,3 +81,20 @@ class SessionDAO(PaginatorMixin, BaseDAO):
         self.session.flush()
 
         return [{'uuid': uuid} for uuid in session_uuids]
+
+    def delete_by_refresh_token_uuid(self, refresh_token_uuid: str) -> list[str]:
+        query = (
+            self.session.query(Session.uuid)
+            .select_from(Token)
+            .join(Token.session)
+            .filter(Token.refresh_token_uuid == str(refresh_token_uuid))
+        )
+        session_uuids = [row[0] for row in query.all()]
+        if not session_uuids:
+            return []
+
+        # FK auth_token.session_uuid ON DELETE CASCADE removes matching tokens.
+        self.session.query(Session).filter(Session.uuid.in_(session_uuids)).delete()
+        self.session.flush()
+
+        return session_uuids

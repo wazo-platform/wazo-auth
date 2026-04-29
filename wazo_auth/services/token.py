@@ -1,4 +1,4 @@
-# Copyright 2018-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -13,13 +13,14 @@ from wazo_bus.resources.auth.events import (
 
 from wazo_auth.interfaces import BaseAuthenticationBackend
 from wazo_auth.services.helpers import BaseService
-from wazo_auth.token import Token
+from wazo_auth.token import Token, token_redacted
 
 from ..exceptions import (
     DuplicatedRefreshTokenException,
     MaxConcurrentSessionsReached,
     MissingAccessTokenException,
     MissingTenantTokenException,
+    UnknownRefreshToken,
     UnknownTokenException,
 )
 from ..helpers import is_uuid
@@ -45,33 +46,93 @@ class TokenService(BaseService):
         )
         return self._dao.refresh_token.count(**search_params)
 
-    def delete_refresh_token(self, scoping_tenant_uuid, user_uuid, client_id):
+    def delete_refresh_token(
+        self,
+        scoping_tenant_uuid,
+        user_uuid: str,
+        client_id: str,
+    ) -> None:
         tenant_uuids = self._get_scoped_tenant_uuids(scoping_tenant_uuid, True)
         refresh_token = self._dao.refresh_token.get_by_user(
             tenant_uuids=tenant_uuids,
             user_uuid=user_uuid,
             client_id=client_id,
         )
+        self._delete_refresh_token(refresh_token, tenant_uuids)
 
-        event = RefreshTokenDeletedEvent(
-            client_id, refresh_token['mobile'], refresh_token['tenant_uuid'], user_uuid
-        )
-        self._bus_publisher.publish(event)
-        self._dao.refresh_token.delete(tenant_uuids, user_uuid, client_id)
-
-    def delete_refresh_token_by_uuid(self, uuid):
+    def delete_refresh_token_by_uuid(self, uuid: str) -> None:
         refresh_token = self._dao.refresh_token.get_by_uuid(uuid)
-        event = RefreshTokenDeletedEvent(
-            refresh_token['client_id'],
-            refresh_token['mobile'],
-            refresh_token['tenant_uuid'],
+        self._delete_refresh_token(refresh_token, [refresh_token['tenant_uuid']])
+
+    def _delete_refresh_token(
+        self,
+        refresh_token: dict,
+        tenant_uuids: list[str],
+    ) -> None:
+        logger.debug(
+            "revoking refresh token %s (user %s, client_id %s)",
+            token_redacted(refresh_token['uuid']),
             refresh_token['user_uuid'],
+            refresh_token['client_id'],
         )
-        self._bus_publisher.publish(event)
         self._dao.refresh_token.delete(
-            refresh_token['tenant_uuid'],
+            tenant_uuids,
             refresh_token['user_uuid'],
             refresh_token['client_id'],
+        )
+        self._bus_publisher.publish(
+            RefreshTokenDeletedEvent(
+                refresh_token['client_id'],
+                refresh_token['mobile'],
+                refresh_token['tenant_uuid'],
+                refresh_token['user_uuid'],
+            )
+        )
+
+    def purge_refresh_token_and_sessions(self, refresh_token_uuid: str) -> None:
+        refresh_token = self._dao.refresh_token.get_by_uuid(refresh_token_uuid)
+        self._purge_refresh_token_and_sessions(refresh_token)
+
+    def purge_refresh_token_and_sessions_by_client_id(
+        self, user_uuid: str, client_id: str
+    ) -> None:
+        refresh_token_uuid = self._dao.refresh_token.get_existing_refresh_token(
+            client_id, user_uuid
+        )
+        if not refresh_token_uuid:
+            raise UnknownRefreshToken(client_id)
+        self.purge_refresh_token_and_sessions(refresh_token_uuid)
+
+    def _purge_refresh_token_and_sessions(self, refresh_token: dict) -> None:
+        rt_uuid = refresh_token['uuid']
+        deleted_session_uuids = self._dao.session.delete_by_refresh_token_uuid(rt_uuid)
+        logger.debug(
+            "purging refresh token %s with %d session(s) (user %s, client_id %s)",
+            token_redacted(rt_uuid),
+            len(deleted_session_uuids),
+            refresh_token['user_uuid'],
+            refresh_token['client_id'],
+        )
+        for session_uuid in deleted_session_uuids:
+            self._bus_publisher.publish(
+                SessionDeletedEvent(
+                    session_uuid,
+                    refresh_token['tenant_uuid'],
+                    refresh_token['user_uuid'],
+                )
+            )
+        self._dao.refresh_token.delete(
+            [refresh_token['tenant_uuid']],
+            refresh_token['user_uuid'],
+            refresh_token['client_id'],
+        )
+        self._bus_publisher.publish(
+            RefreshTokenDeletedEvent(
+                refresh_token['client_id'],
+                refresh_token['mobile'],
+                refresh_token['tenant_uuid'],
+                refresh_token['user_uuid'],
+            )
         )
 
     def list_refresh_tokens(
@@ -146,20 +207,42 @@ class TokenService(BaseService):
                 'metadata': persistent_metadata,
             }
             try:
-                refresh_token = self._dao.refresh_token.create(body)
+                refresh_token = self._create_refresh_token(body, tenant_uuid)
             except DuplicatedRefreshTokenException:
-                refresh_token = self._dao.refresh_token.get_existing_refresh_token(
-                    args['client_id'],
-                    metadata['uuid'],
-                )
-            else:
-                # TODO: add persistent metadata to event?
-                event = RefreshTokenCreatedEvent(
-                    body['client_id'], body['mobile'], tenant_uuid, body['user_uuid']
-                )
-                self._bus_publisher.publish(event)
+                if args.get('mobile'):
+                    # for mobile, ensure a new refresh token is created
+                    logger.debug(
+                        "offline mobile login: refreshing existing refresh token "
+                        "(user %s, client_id %s)",
+                        body['user_uuid'],
+                        body['client_id'],
+                    )
+                    self.purge_refresh_token_and_sessions_by_client_id(
+                        body['user_uuid'], body['client_id']
+                    )
+                    refresh_token = self._create_refresh_token(body, tenant_uuid)
+                else:
+                    logger.debug(
+                        "offline login: returning existing refresh token "
+                        "for (user %s, client_id %s)",
+                        body['user_uuid'],
+                        body['client_id'],
+                    )
+                    refresh_token = self._dao.refresh_token.get_existing_refresh_token(
+                        args['client_id'],
+                        metadata['uuid'],
+                    )
             token_payload['refresh_token'] = refresh_token
             token_payload['metadata'] = persistent_metadata | token_payload['metadata']
+
+            if args.get('mobile'):
+                logger.debug(
+                    "mobile offline login: cleaning up existing mobile sessions for user %s",
+                    metadata['uuid'],
+                )
+                self._terminate_incumbent_mobile_sessions(
+                    metadata['uuid'], refresh_token
+                )
 
         token_uuid, session_uuid = self._dao.token.create(
             token_payload,
@@ -178,6 +261,28 @@ class TokenService(BaseService):
         self._bus_publisher.publish(event)
 
         return token
+
+    def _create_refresh_token(self, body: dict, tenant_uuid: str | None) -> str:
+        refresh_token = self._dao.refresh_token.create(body)
+        self._bus_publisher.publish(
+            RefreshTokenCreatedEvent(
+                body['client_id'],
+                body['mobile'],
+                tenant_uuid,
+                body['user_uuid'],
+            )
+        )
+        return refresh_token
+
+    def _terminate_incumbent_mobile_sessions(
+        self, user_uuid: str, new_refresh_token_uuid: str
+    ) -> None:
+        existing = self._dao.refresh_token.list_(user_uuid=user_uuid, mobile=True)
+        logger.debug("%d mobile refresh tokens for user %s", len(existing), user_uuid)
+        for incumbent in existing:
+            if incumbent['uuid'] == new_refresh_token_uuid:
+                continue
+            self.purge_refresh_token_and_sessions(incumbent['uuid'])
 
     def new_token_internal(self, expiration=None, acl=None):
         expiration = expiration if expiration is not None else self._default_expiration

@@ -104,6 +104,14 @@ class TokenDAO(BaseDAO):
 
         raise exceptions.UnknownTokenException()
 
+    def list_by_refresh_token(self, refresh_token_uuid: str) -> list[TokenIdentity]:
+        filter_ = TokenModel.refresh_token_uuid == str(refresh_token_uuid)
+        query = self.session.query(TokenModel).filter(filter_)
+        return [
+            TokenIdentity(uuid=token.uuid, auth_id=token.auth_id)
+            for token in query.all()
+        ]
+
     # TODO: change type signature, use None instead of {} when token not found
     def delete(
         self, token_uuid: str

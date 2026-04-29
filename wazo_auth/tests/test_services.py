@@ -14,6 +14,7 @@ from hamcrest import (
     not_,
     raises,
 )
+from wazo_bus.resources.auth.events import RefreshTokenDeletedEvent, SessionDeletedEvent
 from xivo.mallow import fields
 
 from wazo_auth.config import _DEFAULT_CONFIG
@@ -432,3 +433,208 @@ class TestTenantService(BaseServiceTestCase):
         result = self.service.get_by_uuid_or_slug(None, 'slug2')
         self.service._get.assert_called_with('2345-uuid')
         assert_that(result, equal_to(self.service._get.return_value))
+
+
+class TestTokenServiceDeleteRefreshToken(BaseServiceTestCase):
+    SCOPING_TENANT = 'scoping-tenant-uuid'
+    USER_UUID = 'user-uuid'
+    CLIENT_ID = 'my-client'
+    REFRESH_TOKEN_UUID = 'refresh-token-uuid'
+    TENANT_UUID = 'rt-tenant-uuid'
+
+    def setUp(self):
+        super().setUp()
+        self.bus_publisher = Mock(BusPublisher)
+        self.user_service = Mock()
+        config = {
+            'default_token_lifetime': 7200,
+            'max_user_concurrent_sessions': 50,
+            'backend_policies': {},
+            'default_user_policy': None,
+        }
+        self.service = services.TokenService(
+            config, self.dao, self.bus_publisher, self.user_service
+        )
+        self.tenant_dao.list_visible_tenants.return_value = [
+            Mock(uuid=self.TENANT_UUID),
+        ]
+        self.refresh_token = {
+            'uuid': self.REFRESH_TOKEN_UUID,
+            'client_id': self.CLIENT_ID,
+            'user_uuid': self.USER_UUID,
+            'tenant_uuid': self.TENANT_UUID,
+            'mobile': True,
+        }
+        self.refresh_token_dao.get_by_user.return_value = self.refresh_token
+        self.refresh_token_dao.get_by_uuid.return_value = self.refresh_token
+
+    def _expected_refresh_token_deleted_event(self):
+        return RefreshTokenDeletedEvent(
+            self.CLIENT_ID, True, self.TENANT_UUID, self.USER_UUID
+        )
+
+    def test_delete_refresh_token(self):
+        self.service.delete_refresh_token(
+            self.SCOPING_TENANT, self.USER_UUID, self.CLIENT_ID
+        )
+
+        self.session_dao.delete_by_refresh_token_uuid.assert_not_called()
+        self.token_dao.delete.assert_not_called()
+        self.refresh_token_dao.delete.assert_called_once_with(
+            [self.TENANT_UUID], self.USER_UUID, self.CLIENT_ID
+        )
+        self.bus_publisher.publish.assert_called_once_with(
+            self._expected_refresh_token_deleted_event()
+        )
+
+    def test_delete_refresh_token_by_uuid(self):
+        self.service.delete_refresh_token_by_uuid(self.REFRESH_TOKEN_UUID)
+
+        self.session_dao.delete_by_refresh_token_uuid.assert_not_called()
+        self.token_dao.delete.assert_not_called()
+        self.refresh_token_dao.delete.assert_called_once_with(
+            [self.TENANT_UUID], self.USER_UUID, self.CLIENT_ID
+        )
+        self.bus_publisher.publish.assert_called_once_with(
+            self._expected_refresh_token_deleted_event()
+        )
+
+
+class TestTokenServicePurgeRefreshTokenAndSessions(BaseServiceTestCase):
+    USER_UUID = 'user-uuid'
+    CLIENT_ID = 'my-client'
+    REFRESH_TOKEN_UUID = 'refresh-token-uuid'
+    TENANT_UUID = 'rt-tenant-uuid'
+
+    def setUp(self):
+        super().setUp()
+        self.bus_publisher = Mock(BusPublisher)
+        self.user_service = Mock()
+        config = {
+            'default_token_lifetime': 7200,
+            'max_user_concurrent_sessions': 50,
+            'backend_policies': {},
+            'default_user_policy': None,
+        }
+        self.service = services.TokenService(
+            config, self.dao, self.bus_publisher, self.user_service
+        )
+        self.refresh_token = {
+            'uuid': self.REFRESH_TOKEN_UUID,
+            'client_id': self.CLIENT_ID,
+            'user_uuid': self.USER_UUID,
+            'tenant_uuid': self.TENANT_UUID,
+            'mobile': True,
+        }
+        self.refresh_token_dao.get_by_uuid.return_value = self.refresh_token
+        self.refresh_token_dao.get_existing_refresh_token.return_value = (
+            self.REFRESH_TOKEN_UUID
+        )
+
+    def _expected_refresh_token_deleted_event(self):
+        return RefreshTokenDeletedEvent(
+            self.CLIENT_ID, True, self.TENANT_UUID, self.USER_UUID
+        )
+
+    def test_purge_refresh_token_and_sessions_bulk_deletes_sessions(self):
+        self.session_dao.delete_by_refresh_token_uuid.return_value = [
+            'session-1',
+            'session-2',
+        ]
+
+        self.service.purge_refresh_token_and_sessions(self.REFRESH_TOKEN_UUID)
+
+        self.refresh_token_dao.get_by_uuid.assert_called_once_with(
+            self.REFRESH_TOKEN_UUID
+        )
+        self.session_dao.delete_by_refresh_token_uuid.assert_called_once_with(
+            self.REFRESH_TOKEN_UUID
+        )
+        # legacy per-token delete must NOT be used
+        self.token_dao.delete.assert_not_called()
+        self.refresh_token_dao.delete.assert_called_once_with(
+            [self.TENANT_UUID], self.USER_UUID, self.CLIENT_ID
+        )
+        # 2 SessionDeletedEvent + 1 RefreshTokenDeletedEvent
+        assert_that(
+            self.bus_publisher.publish.call_args_list,
+            contains_exactly(
+                (
+                    (
+                        SessionDeletedEvent(
+                            'session-1', self.TENANT_UUID, self.USER_UUID
+                        ),
+                    ),
+                ),
+                (
+                    (
+                        SessionDeletedEvent(
+                            'session-2', self.TENANT_UUID, self.USER_UUID
+                        ),
+                    ),
+                ),
+                ((self._expected_refresh_token_deleted_event(),),),
+            ),
+        )
+
+    def test_purge_refresh_token_and_sessions_with_no_active_sessions(self):
+        self.session_dao.delete_by_refresh_token_uuid.return_value = []
+
+        self.service.purge_refresh_token_and_sessions(self.REFRESH_TOKEN_UUID)
+
+        self.session_dao.delete_by_refresh_token_uuid.assert_called_once_with(
+            self.REFRESH_TOKEN_UUID
+        )
+        self.refresh_token_dao.delete.assert_called_once_with(
+            [self.TENANT_UUID], self.USER_UUID, self.CLIENT_ID
+        )
+        self.bus_publisher.publish.assert_called_once_with(
+            self._expected_refresh_token_deleted_event()
+        )
+
+    def test_purge_refresh_token_and_sessions_by_client_id(self):
+        self.session_dao.delete_by_refresh_token_uuid.return_value = ['session-1']
+
+        self.service.purge_refresh_token_and_sessions_by_client_id(
+            self.USER_UUID, self.CLIENT_ID
+        )
+
+        self.refresh_token_dao.get_existing_refresh_token.assert_called_once_with(
+            self.CLIENT_ID, self.USER_UUID
+        )
+        self.refresh_token_dao.get_by_uuid.assert_called_once_with(
+            self.REFRESH_TOKEN_UUID
+        )
+        self.session_dao.delete_by_refresh_token_uuid.assert_called_once_with(
+            self.REFRESH_TOKEN_UUID
+        )
+        self.token_dao.delete.assert_not_called()
+        self.refresh_token_dao.delete.assert_called_once_with(
+            [self.TENANT_UUID], self.USER_UUID, self.CLIENT_ID
+        )
+        assert_that(
+            self.bus_publisher.publish.call_args_list,
+            contains_exactly(
+                (
+                    (
+                        SessionDeletedEvent(
+                            'session-1', self.TENANT_UUID, self.USER_UUID
+                        ),
+                    ),
+                ),
+                ((self._expected_refresh_token_deleted_event(),),),
+            ),
+        )
+
+    def test_purge_refresh_token_and_sessions_by_client_id_when_unknown(self):
+        self.refresh_token_dao.get_existing_refresh_token.return_value = None
+
+        assert_that(
+            calling(
+                self.service.purge_refresh_token_and_sessions_by_client_id
+            ).with_args(self.USER_UUID, self.CLIENT_ID),
+            raises(exceptions.UnknownRefreshToken),
+        )
+        self.session_dao.delete_by_refresh_token_uuid.assert_not_called()
+        self.refresh_token_dao.delete.assert_not_called()
+        self.bus_publisher.publish.assert_not_called()

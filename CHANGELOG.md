@@ -1,5 +1,11 @@
 # Changelog
 
+## 26.04
+
+* `POST /0.1/token` (`Wazo-Session-Type: mobile`, `access_type=offline`):
+    * now revokes any pre-existing mobile refresh tokens and their sessions for the user, in order to guarantee a single active mobile client per user;
+    * always issues a new refresh token, revoking any existing refresh token (and associated sessions) for the provided client_id (non-mobile requests may still return an existing refresh token)
+
 ## 26.03
 
 * Added API `PUT /0.1/tenants/<tenant_uuid>/parent/<new_parent_uuid>`

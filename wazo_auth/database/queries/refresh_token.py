@@ -1,4 +1,4 @@
-# Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, text
@@ -40,8 +40,9 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         return self.session.query(RefreshToken).filter(filter_).count()
 
     def create(self, body):
-        body['metadata_'] = body.pop('metadata', {})
-        refresh_token = RefreshToken(**body)
+        fields = {**body}
+        fields['metadata_'] = fields.pop('metadata', {})
+        refresh_token = RefreshToken(**fields)
         self.session.add(refresh_token)
         try:
             self.session.flush()
@@ -92,6 +93,11 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         query = self.session.query(RefreshToken).filter(RefreshToken.uuid == uuid)
         for refresh_token in query.all():
             return {
+                'uuid': refresh_token.uuid,
+                'client_id': refresh_token.client_id,
+                'user_uuid': refresh_token.user_uuid,
+                'tenant_uuid': refresh_token.tenant_uuid,
+                'mobile': refresh_token.mobile,
                 'backend_name': refresh_token.backend,
                 'login': refresh_token.login,
             }
@@ -106,10 +112,17 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         )
 
         query = self.session.query(
-            RefreshToken.tenant_uuid, RefreshToken.mobile
+            RefreshToken.uuid,
+            RefreshToken.client_id,
+            RefreshToken.user_uuid,
+            RefreshToken.tenant_uuid,
+            RefreshToken.mobile,
         ).filter(filter_)
         for refresh_token in query.all():
             return {
+                'uuid': refresh_token.uuid,
+                'client_id': refresh_token.client_id,
+                'user_uuid': refresh_token.user_uuid,
                 'tenant_uuid': refresh_token.tenant_uuid,
                 'mobile': refresh_token.mobile,
             }
