@@ -79,6 +79,10 @@ paths:
           description: "The created token's data"
           schema:
             $ref: '#/definitions/Token'
+          headers:
+            Wazo-Sessions-Revoked:
+              description: Number of pre-existing sessions revoked as a side effect of this login.
+              type: integer
         '400':
           description: Invalid expiration or missing field
           schema:

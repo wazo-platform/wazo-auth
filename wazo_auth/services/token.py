@@ -89,21 +89,21 @@ class TokenService(BaseService):
             )
         )
 
-    def purge_refresh_token_and_sessions(self, refresh_token_uuid: str) -> None:
+    def purge_refresh_token_and_sessions(self, refresh_token_uuid: str) -> int:
         refresh_token = self._dao.refresh_token.get_by_uuid(refresh_token_uuid)
-        self._purge_refresh_token_and_sessions(refresh_token)
+        return self._purge_refresh_token_and_sessions(refresh_token)
 
     def purge_refresh_token_and_sessions_by_client_id(
         self, user_uuid: str, client_id: str
-    ) -> None:
+    ) -> int:
         refresh_token_uuid = self._dao.refresh_token.get_existing_refresh_token(
             client_id, user_uuid
         )
         if not refresh_token_uuid:
             raise UnknownRefreshToken(client_id)
-        self.purge_refresh_token_and_sessions(refresh_token_uuid)
+        return self.purge_refresh_token_and_sessions(refresh_token_uuid)
 
-    def _purge_refresh_token_and_sessions(self, refresh_token: dict) -> None:
+    def _purge_refresh_token_and_sessions(self, refresh_token: dict) -> int:
         rt_uuid = refresh_token['uuid']
         deleted_session_uuids = self._dao.session.delete_by_refresh_token_uuid(rt_uuid)
         logger.debug(
@@ -134,6 +134,7 @@ class TokenService(BaseService):
                 refresh_token['user_uuid'],
             )
         )
+        return len(deleted_session_uuids)
 
     def list_refresh_tokens(
         self, scoping_tenant_uuid=None, recurse=False, **search_params
@@ -144,6 +145,8 @@ class TokenService(BaseService):
         return self._dao.refresh_token.list_(**search_params)
 
     def new_token(self, backend: BaseAuthenticationBackend, login, args):
+        revoked_sessions_count = 0
+
         metadata = backend.get_metadata(login, args)
         logger.debug('fresh token metadata for %s: %s', login, metadata)
 
@@ -217,8 +220,10 @@ class TokenService(BaseService):
                         body['user_uuid'],
                         body['client_id'],
                     )
-                    self.purge_refresh_token_and_sessions_by_client_id(
-                        body['user_uuid'], body['client_id']
+                    revoked_sessions_count += (
+                        self.purge_refresh_token_and_sessions_by_client_id(
+                            body['user_uuid'], body['client_id']
+                        )
                     )
                     refresh_token = self._create_refresh_token(body, tenant_uuid)
                 else:
@@ -240,7 +245,7 @@ class TokenService(BaseService):
                     "mobile offline login: cleaning up existing mobile sessions for user %s",
                     metadata['uuid'],
                 )
-                self._terminate_incumbent_mobile_sessions(
+                revoked_sessions_count += self._terminate_incumbent_mobile_sessions(
                     metadata['uuid'], refresh_token
                 )
 
@@ -260,7 +265,7 @@ class TokenService(BaseService):
         )
         self._bus_publisher.publish(event)
 
-        return token
+        return token, revoked_sessions_count
 
     def _create_refresh_token(self, body: dict, tenant_uuid: str | None) -> str:
         refresh_token = self._dao.refresh_token.create(body)
@@ -276,13 +281,17 @@ class TokenService(BaseService):
 
     def _terminate_incumbent_mobile_sessions(
         self, user_uuid: str, new_refresh_token_uuid: str
-    ) -> None:
+    ) -> int:
         existing = self._dao.refresh_token.list_(user_uuid=user_uuid, mobile=True)
         logger.debug("%d mobile refresh tokens for user %s", len(existing), user_uuid)
+        revoked_sessions_count = 0
         for incumbent in existing:
             if incumbent['uuid'] == new_refresh_token_uuid:
                 continue
-            self.purge_refresh_token_and_sessions(incumbent['uuid'])
+            revoked_sessions_count += self.purge_refresh_token_and_sessions(
+                incumbent['uuid']
+            )
+        return revoked_sessions_count
 
     def new_token_internal(self, expiration=None, acl=None):
         expiration = expiration if expiration is not None else self._default_expiration

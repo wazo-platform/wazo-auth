@@ -547,6 +547,76 @@ class TestTokens(base.APIIntegrationTest):
             ),
         )
 
+    def _post_token_raw(
+        self,
+        username,
+        password,
+        session_type=None,
+        **body,
+    ):
+        encoded_credentials = b64encode(f'{username}:{password}'.encode())
+        headers = {
+            'Authorization': b'Basic ' + encoded_credentials,
+            'Content-Type': 'application/json',
+        }
+        if session_type is not None:
+            headers['Wazo-Session-Type'] = session_type
+        return requests.post(
+            self.client.token.base_url,
+            headers=headers,
+            json=body,
+        )
+
+    @fixtures.http.user(username='foo', password='bar')
+    def test_sessions_revoked_header_zero_on_vanilla_login(self, user):
+        response = self._post_token_raw('foo', 'bar', expiration=1)
+
+        assert_that(response.status_code, equal_to(200))
+        assert_that(response.headers, has_entry('Wazo-Sessions-Revoked', '0'))
+
+    @fixtures.http.user(username='foo', password='bar')
+    def test_sessions_revoked_header_one_on_cross_client_mobile_incumbent(self, user):
+        self._post_token(
+            'foo',
+            'bar',
+            session_type='mobile',
+            access_type='offline',
+            client_id='mobile-device-1',
+        )
+
+        response = self._post_token_raw(
+            'foo',
+            'bar',
+            session_type='mobile',
+            access_type='offline',
+            client_id='mobile-device-2',
+        )
+
+        assert_that(response.status_code, equal_to(200))
+        assert_that(response.headers, has_entry('Wazo-Sessions-Revoked', '1'))
+
+    @fixtures.http.user(username='foo', password='bar')
+    def test_sessions_revoked_header_one_on_same_client_id_mobile_relogin(self, user):
+        client_id = 'mobile-device'
+        self._post_token(
+            'foo',
+            'bar',
+            session_type='mobile',
+            access_type='offline',
+            client_id=client_id,
+        )
+
+        response = self._post_token_raw(
+            'foo',
+            'bar',
+            session_type='mobile',
+            access_type='offline',
+            client_id=client_id,
+        )
+
+        assert_that(response.status_code, equal_to(200))
+        assert_that(response.headers, has_entry('Wazo-Sessions-Revoked', '1'))
+
     @fixtures.http.user(username='foo', password='bar')
     def test_new_non_mobile_refresh_token_does_not_terminate_mobile(self, user):
         mobile_client_id = 'mobile-device-1'
