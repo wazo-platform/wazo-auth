@@ -542,8 +542,11 @@ class TestTokenServicePurgeRefreshTokenAndSessions(BaseServiceTestCase):
             'session-2',
         ]
 
-        self.service.purge_refresh_token_and_sessions(self.REFRESH_TOKEN_UUID)
+        revoked_count = self.service.purge_refresh_token_and_sessions(
+            self.REFRESH_TOKEN_UUID
+        )
 
+        assert_that(revoked_count, equal_to(2))
         self.refresh_token_dao.get_by_uuid.assert_called_once_with(
             self.REFRESH_TOKEN_UUID
         )
@@ -580,8 +583,11 @@ class TestTokenServicePurgeRefreshTokenAndSessions(BaseServiceTestCase):
     def test_purge_refresh_token_and_sessions_with_no_active_sessions(self):
         self.session_dao.delete_by_refresh_token_uuid.return_value = []
 
-        self.service.purge_refresh_token_and_sessions(self.REFRESH_TOKEN_UUID)
+        revoked_count = self.service.purge_refresh_token_and_sessions(
+            self.REFRESH_TOKEN_UUID
+        )
 
+        assert_that(revoked_count, equal_to(0))
         self.session_dao.delete_by_refresh_token_uuid.assert_called_once_with(
             self.REFRESH_TOKEN_UUID
         )
@@ -595,10 +601,11 @@ class TestTokenServicePurgeRefreshTokenAndSessions(BaseServiceTestCase):
     def test_purge_refresh_token_and_sessions_by_client_id(self):
         self.session_dao.delete_by_refresh_token_uuid.return_value = ['session-1']
 
-        self.service.purge_refresh_token_and_sessions_by_client_id(
+        revoked_count = self.service.purge_refresh_token_and_sessions_by_client_id(
             self.USER_UUID, self.CLIENT_ID
         )
 
+        assert_that(revoked_count, equal_to(1))
         self.refresh_token_dao.get_existing_refresh_token.assert_called_once_with(
             self.CLIENT_ID, self.USER_UUID
         )

@@ -1,4 +1,4 @@
-# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -217,7 +217,9 @@ class Tokens(BaseResource):
             logger.debug('authentication failed: %s', e)
             return http._error(401, 'Authentication Failed')
 
-        token = self._token_service.new_token(backend, login, args)
+        token, revoked_sessions_count = self._token_service.new_token(
+            backend, login, args
+        )
         logger.info(
             'Successful login: %s got token %s from %s using agent "%s"',
             login,
@@ -231,7 +233,11 @@ class Tokens(BaseResource):
             )
             self._saml_service.invalidate_saml_session_id(args.get('saml_session_id'))
 
-        return {'data': token.to_dict()}, 200
+        return (
+            {'data': token.to_dict()},
+            200,
+            {'Wazo-Sessions-Revoked': str(revoked_sessions_count)},
+        )
 
 
 class Token(BaseResource):
