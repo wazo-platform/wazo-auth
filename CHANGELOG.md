@@ -5,7 +5,7 @@
 * `POST /0.1/token` (`Wazo-Session-Type: mobile`, `access_type=offline`):
     * now revokes any pre-existing mobile refresh tokens and their sessions for the user, in order to guarantee a single active mobile client per user;
     * always issues a new refresh token, revoking any existing refresh token (and associated sessions) for the provided client_id (non-mobile requests may still return an existing refresh token)
-* `POST /0.1/token`: response now includes a `Wazo-Sessions-Revoked` header reporting the number of pre-existing sessions revoked by this login
+* `POST /0.1/token`: response now includes a `Wazo-Sessions-Revoked` header reporting the number of pre-existing sessions revoked by this login (currently may only be non-zero for mobile offline logins)
 
 ## 26.03
 
