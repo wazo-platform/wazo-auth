@@ -7,7 +7,7 @@ from typing import Any
 
 import marshmallow
 from flask import redirect, request
-from saml2 import BINDING_HTTP_REDIRECT
+from saml2 import BINDING_HTTP_POST, BINDING_HTTP_REDIRECT
 from werkzeug.wrappers.response import Response
 
 from wazo_auth import exceptions, http
@@ -118,6 +118,23 @@ class SAMLSLS(http.ErrorCatchingResource):
                 message, relay_state, BINDING_HTTP_REDIRECT
             )
             return redirect(location)
+        except Exception as e:
+            raise exceptions.SAMLProcessingError(
+                f'Unable to process logout request response ({e})'
+            )
+
+    def post(self) -> Response:
+        try:
+            message = request.form.get('SAMLResponse')
+            relay_state = request.form.get('RelayState')
+            if not message or not relay_state:
+                raise exceptions.SAMLParamException('SAMLResponse and/or RelayState')
+            location = self._saml_service.process_logout_request_response(
+                message, relay_state, BINDING_HTTP_POST
+            )
+            return redirect(location)
+        except exceptions.SAMLParamException:
+            raise
         except Exception as e:
             raise exceptions.SAMLProcessingError(
                 f'Unable to process logout request response ({e})'
