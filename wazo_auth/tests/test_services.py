@@ -14,7 +14,13 @@ from hamcrest import (
     not_,
     raises,
 )
-from wazo_bus.resources.auth.events import RefreshTokenDeletedEvent, SessionDeletedEvent
+from wazo_bus.resources.auth.events import (
+    ExternalAuthAddedEvent,
+    ExternalAuthDeletedEvent,
+    ExternalAuthUpdatedEvent,
+    RefreshTokenDeletedEvent,
+    SessionDeletedEvent,
+)
 from xivo.mallow import fields
 
 from wazo_auth.config import _DEFAULT_CONFIG
@@ -94,7 +100,40 @@ class TestExternalAuthService(BaseServiceTestCase):
 
     def setUp(self):
         super().setUp()
-        self.service = services.ExternalAuthService(self.dao, _DEFAULT_CONFIG)
+        self.bus_publisher = Mock(BusPublisher)
+        self.service = services.ExternalAuthService(
+            self.dao, _DEFAULT_CONFIG, self.bus_publisher
+        )
+
+    def test_create_config_publishes_added_event(self):
+        self.service.create_config(s.auth_type, s.data, s.tenant_uuid)
+
+        self.external_auth_dao.create_config.assert_called_once_with(
+            s.auth_type, s.data, s.tenant_uuid
+        )
+        self.bus_publisher.publish.assert_called_once_with(
+            ExternalAuthAddedEvent(s.auth_type, s.tenant_uuid)
+        )
+
+    def test_update_config_publishes_updated_event(self):
+        self.service.update_config(s.auth_type, s.data, s.tenant_uuid)
+
+        self.external_auth_dao.update_config.assert_called_once_with(
+            s.auth_type, s.data, s.tenant_uuid
+        )
+        self.bus_publisher.publish.assert_called_once_with(
+            ExternalAuthUpdatedEvent(s.auth_type, s.tenant_uuid)
+        )
+
+    def test_delete_config_publishes_deleted_event(self):
+        self.service.delete_config(s.auth_type, s.tenant_uuid)
+
+        self.external_auth_dao.delete_config.assert_called_once_with(
+            s.auth_type, s.tenant_uuid
+        )
+        self.bus_publisher.publish.assert_called_once_with(
+            ExternalAuthDeletedEvent(s.auth_type, s.tenant_uuid)
+        )
 
     def test_list_external_auth(self):
         # No safe model registered for any auth type
