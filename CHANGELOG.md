@@ -1,5 +1,12 @@
 # Changelog
 
+## 26.06
+
+* The following events have been added on tenant-scoped external auth config changes:
+    * `auth_external_auth_added` on `POST /0.1/external/<auth_type>/config`
+    * `auth_external_auth_updated` on `PUT /0.1/external/<auth_type>/config`
+    * `auth_external_auth_deleted` on `DELETE /0.1/external/<auth_type>/config`
+
 ## 26.04
 
 * `POST /0.1/token` (`Wazo-Session-Type: mobile`, `access_type=offline`):

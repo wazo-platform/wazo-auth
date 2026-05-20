@@ -1,4 +1,4 @@
-# Copyright 2018-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2018-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -9,6 +9,9 @@ from functools import partial
 import marshmallow
 import websocket
 from wazo_bus.resources.auth.events import (
+    ExternalAuthAddedEvent,
+    ExternalAuthDeletedEvent,
+    ExternalAuthUpdatedEvent,
     UserExternalAuthAddedEvent,
     UserExternalAuthAuthorizedEvent,
     UserExternalAuthDeletedEvent,
@@ -113,7 +116,10 @@ class ExternalAuthService(BaseService):
         return result
 
     def create_config(self, auth_type, data, tenant_uuid):
-        return self._dao.external_auth.create_config(auth_type, data, tenant_uuid)
+        result = self._dao.external_auth.create_config(auth_type, data, tenant_uuid)
+        event = ExternalAuthAddedEvent(auth_type, tenant_uuid)
+        self._bus_publisher.publish(event)
+        return result
 
     def delete(self, user_uuid, auth_type):
         self._dao.external_auth.delete(user_uuid, auth_type)
@@ -123,6 +129,8 @@ class ExternalAuthService(BaseService):
 
     def delete_config(self, auth_type, tenant_uuid):
         self._dao.external_auth.delete_config(auth_type, tenant_uuid)
+        event = ExternalAuthDeletedEvent(auth_type, tenant_uuid)
+        self._bus_publisher.publish(event)
 
     def get(self, user_uuid, auth_type):
         return self._dao.external_auth.get(user_uuid, auth_type)
@@ -197,4 +205,7 @@ class ExternalAuthService(BaseService):
             return self.create(user_uuid, auth_type, data)
 
     def update_config(self, auth_type, data, tenant_uuid):
-        return self._dao.external_auth.update_config(auth_type, data, tenant_uuid)
+        result = self._dao.external_auth.update_config(auth_type, data, tenant_uuid)
+        event = ExternalAuthUpdatedEvent(auth_type, tenant_uuid)
+        self._bus_publisher.publish(event)
+        return result

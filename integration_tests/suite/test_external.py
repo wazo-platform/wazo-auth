@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -291,6 +291,9 @@ class TestExternalAuthConfigAPI(base.ExternalAuthIntegrationTest):
         )
 
     def test_given_create_config_when_get_config_then_ok(self):
+        headers = {'name': 'auth_external_auth_added'}
+        msg_accumulator = self.bus.accumulator(headers=headers)
+
         self.client.external.create_config(
             auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET
         )
@@ -298,6 +301,26 @@ class TestExternalAuthConfigAPI(base.ExternalAuthIntegrationTest):
         response = self.client.external.get_config(self.EXTERNAL_AUTH_TYPE)
 
         assert_that(response, has_entries(self.SECRET))
+
+        def bus_received_msg():
+            assert_that(
+                msg_accumulator.accumulate(with_headers=True),
+                contains_exactly(
+                    has_entries(
+                        message=has_entries(
+                            data=has_entries(
+                                external_auth_name=self.EXTERNAL_AUTH_TYPE,
+                            )
+                        ),
+                        headers=has_entries(
+                            name='auth_external_auth_added',
+                            tenant_uuid=self.top_tenant_uuid,
+                        ),
+                    )
+                ),
+            )
+
+        until.assert_(bus_received_msg, tries=10, interval=0.25)
 
     def test_given_config_when_create_same_config_then_conflict(self):
         self.client.external.create_config(
@@ -315,6 +338,38 @@ class TestExternalAuthConfigAPI(base.ExternalAuthIntegrationTest):
         base.assert_http_error(
             404, self.client.external.delete_config, self.EXTERNAL_AUTH_TYPE
         )
+
+    def test_given_config_when_delete_config_then_event_emitted(self):
+        self.client.external.create_config(
+            auth_type=self.EXTERNAL_AUTH_TYPE, data=self.SECRET
+        )
+
+        headers = {'name': 'auth_external_auth_deleted'}
+        msg_accumulator = self.bus.accumulator(headers=headers)
+
+        base.assert_no_error(
+            self.client.external.delete_config, self.EXTERNAL_AUTH_TYPE
+        )
+
+        def bus_received_msg():
+            assert_that(
+                msg_accumulator.accumulate(with_headers=True),
+                contains_exactly(
+                    has_entries(
+                        message=has_entries(
+                            data=has_entries(
+                                external_auth_name=self.EXTERNAL_AUTH_TYPE,
+                            )
+                        ),
+                        headers=has_entries(
+                            name='auth_external_auth_deleted',
+                            tenant_uuid=self.top_tenant_uuid,
+                        ),
+                    )
+                ),
+            )
+
+        until.assert_(bus_received_msg, tries=10, interval=0.25)
 
     def test_given_config_when_get_config_from_wrong_tenant_then_not_found(self):
         self.client.external.create_config(
@@ -335,6 +390,9 @@ class TestExternalAuthConfigAPI(base.ExternalAuthIntegrationTest):
         new_secret = dict(self.SECRET)
         new_secret['secret'] = 'secret'
 
+        headers = {'name': 'auth_external_auth_updated'}
+        msg_accumulator = self.bus.accumulator(headers=headers)
+
         base.assert_no_error(
             self.client.external.update_config, self.EXTERNAL_AUTH_TYPE, new_secret
         )
@@ -342,6 +400,26 @@ class TestExternalAuthConfigAPI(base.ExternalAuthIntegrationTest):
         response = self.client.external.get_config(self.EXTERNAL_AUTH_TYPE)
 
         assert_that(response, has_entries(new_secret))
+
+        def bus_received_msg():
+            assert_that(
+                msg_accumulator.accumulate(with_headers=True),
+                contains_exactly(
+                    has_entries(
+                        message=has_entries(
+                            data=has_entries(
+                                external_auth_name=self.EXTERNAL_AUTH_TYPE,
+                            )
+                        ),
+                        headers=has_entries(
+                            name='auth_external_auth_updated',
+                            tenant_uuid=self.top_tenant_uuid,
+                        ),
+                    )
+                ),
+            )
+
+        until.assert_(bus_received_msg, tries=10, interval=0.25)
 
     def test_given_no_config_when_update_config_then_not_found(self):
         base.assert_http_error(
