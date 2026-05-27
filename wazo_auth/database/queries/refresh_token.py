@@ -84,6 +84,7 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
             return {
                 'backend_name': refresh_token.backend,
                 'login': refresh_token.login,
+                'user_uuid': refresh_token.user_uuid,
                 'metadata': refresh_token.metadata_,
             }
 

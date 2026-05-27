@@ -49,13 +49,7 @@ class UserService(BaseService):
 
     def change_password(self, user_uuid, old_password, new_password, reset=False):
         user = self.get_user(user_uuid)
-        login = user['username']
-        if not login:
-            login = self._find_main_email(user)
-
-        if not login:
-            logger.warning('User %s does not have login (username or email)', user_uuid)
-            raise exceptions.AuthenticationFailedException()
+        login = self._resolve_login(user)
 
         if not self.verify_password(login, old_password, reset):
             raise exceptions.AuthenticationFailedException()
@@ -72,6 +66,18 @@ class UserService(BaseService):
         for email in user['emails']:
             if email['main'] and email['confirmed']:
                 return email['address']
+
+    def _resolve_login(self, user):
+        login = user['username'] or self._find_main_email(user)
+        if not login:
+            logger.warning(
+                'User %s does not have login (username or email)', user['uuid']
+            )
+            raise exceptions.AuthenticationFailedException()
+        return login
+
+    def get_login_by_uuid(self, user_uuid):
+        return self._resolve_login(self.get_user(user_uuid))
 
     def delete_password(self, **kwargs):
         search_params = {k: v for k, v in kwargs.items() if v}
