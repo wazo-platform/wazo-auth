@@ -116,9 +116,6 @@ class RefreshTokenIDP(BaseIDP):
             client_id,
         )
 
-        # The login stored on the refresh token is frozen at creation time and
-        # goes stale when the user's username or emails change. Resolve a fresh,
-        # currently-valid login from the (stable) user_uuid instead.
         login = self._user_service.get_login_by_uuid(refresh_token_data['user_uuid'])
         args['login'] = login
 
