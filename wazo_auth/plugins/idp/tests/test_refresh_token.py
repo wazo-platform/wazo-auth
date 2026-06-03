@@ -1,4 +1,4 @@
-# Copyright 2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2025-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
@@ -75,10 +75,13 @@ def test_verify_auth_ok(refresh_token_idp: RefreshTokenIDP):
     user.uuid = 'user_uuid'
     user.authentication_method = 'native'
     refresh_token_idp._user_service.get_user_by_login.return_value = user
+    # the current login is resolved live from the token's user_uuid
+    refresh_token_idp._user_service.get_login_by_uuid.return_value = s.login
 
-    # assume refresh token exists and is valid
+    # assume refresh token exists and is valid; its stored login is ignored
     refresh_token_idp._token_service.get_refresh_token_info.return_value = {
-        'login': s.login,
+        'login': s.stale_login,
+        'user_uuid': 'user_uuid',
         'backend': 'native',
         'metadata': {'foo': 'bar'},
     }
@@ -86,6 +89,9 @@ def test_verify_auth_ok(refresh_token_idp: RefreshTokenIDP):
     backend, login = refresh_token_idp.verify_auth(args)
     assert backend
     assert login == s.login
+    refresh_token_idp._user_service.get_login_by_uuid.assert_called_once_with(
+        'user_uuid'
+    )
     assert args['persistent_metadata'] == {'foo': 'bar'}
 
 
@@ -97,6 +103,13 @@ def test_verify_auth_bad_auth_method(refresh_token_idp: RefreshTokenIDP):
     user.uuid = 'user_uuid'
     user.authentication_method = 'something'
     refresh_token_idp._user_service.get_user_by_login.return_value = user
+    refresh_token_idp._user_service.get_login_by_uuid.return_value = s.login
+
+    refresh_token_idp._token_service.get_refresh_token_info.return_value = {
+        'login': s.stale_login,
+        'user_uuid': 'user_uuid',
+        'metadata': {'foo': 'bar'},
+    }
 
     with pytest.raises(UnauthorizedAuthenticationMethod):
         refresh_token_idp.verify_auth(args)
@@ -122,9 +135,11 @@ def test_verify_auth_idp_auth_method(refresh_token_idp: RefreshTokenIDP):
     user.uuid = 'user_uuid'
     user.authentication_method = 'custom'
     refresh_token_idp._user_service.get_user_by_login.return_value = user
+    refresh_token_idp._user_service.get_login_by_uuid.return_value = s.login
 
     refresh_token_idp._token_service.get_refresh_token_info.return_value = {
-        'login': s.login,
+        'login': s.stale_login,
+        'user_uuid': 'user_uuid',
         'metadata': {'foo': 'bar'},
     }
 

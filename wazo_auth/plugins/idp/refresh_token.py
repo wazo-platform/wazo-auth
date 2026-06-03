@@ -1,4 +1,4 @@
-# Copyright 2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2025-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -116,7 +116,7 @@ class RefreshTokenIDP(BaseIDP):
             client_id,
         )
 
-        login = refresh_token_data['login']
+        login = self._user_service.get_login_by_uuid(refresh_token_data['user_uuid'])
         args['login'] = login
 
         # persistent_metadata is consumed by TokenService.new_token

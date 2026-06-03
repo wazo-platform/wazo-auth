@@ -194,6 +194,72 @@ class TestTokens(base.APIIntegrationTest):
         )
         assert_that(result, not_(has_key('refresh_token')))
 
+    @fixtures.http.user(username='to-rename', password='secret')
+    def test_refresh_token_login_works_after_username_change(self, user):
+        client_id = 'rt-username-change'
+        user_client = self.make_auth_client('to-rename', 'secret')
+
+        created = user_client.token.new(
+            'wazo_user', access_type='offline', client_id=client_id
+        )
+        refresh_token = created['refresh_token']
+        assert_that(refresh_token, not_(None))
+
+        self.client.users.edit(user['uuid'], username='renamed')
+
+        refreshed = user_client.token.new(
+            refresh_token=refresh_token, client_id=client_id
+        )
+        assert_that(refreshed, has_entries(metadata=has_entries(uuid=user['uuid'])))
+
+    @fixtures.http.user(
+        username=None, email_address='old@example.com', password='secret'
+    )
+    def test_refresh_token_login_works_after_email_change(self, user):
+        client_id = 'rt-email-change'
+        user_client = self.make_auth_client('old@example.com', 'secret')
+
+        created = user_client.token.new(
+            'wazo_user', access_type='offline', client_id=client_id
+        )
+        refresh_token = created['refresh_token']
+        assert_that(refresh_token, not_(None))
+
+        # The email the refresh token was created with is replaced by a new
+        # confirmed one (admin endpoint, so it is immediately a valid login)
+        new_email = {'address': 'new@example.com', 'main': True, 'confirmed': True}
+        self.client.admin.update_user_emails(user['uuid'], [new_email])
+
+        # The refresh token must still resolve to the user despite the email change
+        refreshed = user_client.token.new(
+            refresh_token=refresh_token, client_id=client_id
+        )
+        assert_that(refreshed, has_entries(metadata=has_entries(uuid=user['uuid'])))
+
+    @fixtures.http.user(
+        username=None, email_address='temp@example.com', password='secret'
+    )
+    def test_refresh_token_login_fails_cleanly_when_user_has_no_valid_login(self, user):
+        client_id = 'rt-no-login'
+        user_client = self.make_auth_client('temp@example.com', 'secret')
+        created = user_client.token.new(
+            'wazo_user', access_type='offline', client_id=client_id
+        )
+        refresh_token = created['refresh_token']
+
+        # Leave the user with no valid login: no username, main email unconfirmed
+        self.client.admin.update_user_emails(
+            user['uuid'],
+            [{'address': 'temp@example.com', 'main': True, 'confirmed': False}],
+        )
+
+        assert_http_error(
+            401,
+            user_client.token.new,
+            refresh_token=refresh_token,
+            client_id=client_id,
+        )
+
     @fixtures.http.user(username='foo')
     def test_refresh_token_created_event(self, user):
         msg_accumulator = self.bus.accumulator(
