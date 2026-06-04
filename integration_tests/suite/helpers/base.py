@@ -134,11 +134,31 @@ class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
 
     @classmethod
     def restart_auth(cls):
+        has_worker = cls._has_auth_worker()
+        if has_worker:
+            cls.stop_service('auth-worker')
         cls.restart_service('auth')
+        if has_worker:
+            cls.start_service('auth-worker')
         auth = cls.make_auth_client()
         logging.getLogger('wazo_test_helpers').setLevel(logging.INFO)
         until.return_(auth.status.check, timeout=30)
         logging.getLogger('wazo_test_helpers').setLevel(logging.DEBUG)
+
+    @classmethod
+    def _has_auth_worker(cls):
+        try:
+            return bool(cls._container_id('auth-worker'))
+        except NoSuchService:
+            return False
+
+    @classmethod
+    def service_logs(cls, service_name=None, since=None):
+        name = service_name or cls.service
+        logs = super().service_logs(name, since=since)
+        if name == 'auth' and cls._has_auth_worker():
+            logs += super().service_logs('auth-worker', since=since)
+        return logs
 
 
 class DBAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
