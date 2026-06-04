@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -31,7 +31,7 @@ def main():
     if config['user']:
         change_user(config['user'])
 
-    if config["db_upgrade_on_startup"]:
+    if config["db_upgrade_on_startup"] and not config['http_worker']:
         database.upgrade(config["db_uri"])
 
     try:
@@ -39,6 +39,9 @@ def main():
     except UUIDNotFound:
         if config['service_discovery']['enabled']:
             raise
+
+    worker_suffix = ' (http worker)' if config['http_worker'] else ''
+    logger.info('Launching wazo-auth%s...', worker_suffix)
 
     controller = Controller(config)
     controller.run()

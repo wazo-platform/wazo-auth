@@ -96,6 +96,7 @@ class Controller:
     def __init__(self, config):
         init_db(config['db_uri'], pool_size=config['rest_api']['max_threads'])
         self._config = config
+        self._http_worker = config.get('http_worker', False)
         self._stopping_thread = None
         _check_required_config_for_other_threads(config)
         self._service_discovery_args = [
@@ -306,6 +307,12 @@ class Controller:
         signal.signal(signal.SIGTERM, partial(_signal_handler, self))
         signal.signal(signal.SIGINT, partial(_signal_handler, self))
 
+        if self._http_worker:
+            self._run_as_worker()
+        else:
+            self._run()
+
+    def _run(self):
         with db_ready(timeout=self._config['db_connect_retry_timeout_seconds']):
             if self._config['update_policy_on_startup']:
                 self._update_policy_on_startup()
@@ -328,9 +335,19 @@ class Controller:
             if self._stopping_thread:
                 self._stopping_thread.join()
 
+    def _run_as_worker(self):
+        with db_ready(timeout=self._config['db_connect_retry_timeout_seconds']):
+            http.init_top_tenant(self.dao)
+        try:
+            self._rest_api.run()
+        finally:
+            if self._stopping_thread:
+                self._stopping_thread.join()
+
     def stop(self, reason):
         logger.warning('Stopping wazo-auth: %s', reason)
-        self._expired_token_remover.stop()
+        if not self._http_worker:
+            self._expired_token_remover.stop()
         self._stopping_thread = threading.Thread(
             target=self._rest_api.stop, name=reason
         )
