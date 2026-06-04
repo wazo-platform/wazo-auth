@@ -2,6 +2,9 @@
 
 ## 26.07
 
+* Added a `--http-worker` flag to spawn extra HTTP-only wazo-auth instances, enabled on demand with `systemctl enable --now wazo-auth-worker@<N>`. All instances share port 9497 via `SO_REUSEPORT`; the primary `wazo-auth` keeps the background work (token cleanup, bootstrap, service discovery).
+    * Known limitation: `PATCH /0.1/config` (`debug`/`profiling_enabled`) only affects the instance that handled the request.
+
 * `POST /0.1/token` (`refresh_token` grant): the login is now resolved live from the refresh token's `user_uuid` (current username, falling back to main confirmed email) instead of the value frozen at creation. Refresh tokens keep working after a username or confirmed-email change; the stored `login` is no longer used for authentication.
 
 ## 26.06
