@@ -109,7 +109,7 @@ class TestResetPassword(base.APIIntegrationTest):
             test_start = time.time()
             self.client.users.reset_password(username='bob')
 
-            logs = self.service_logs(service_name='auth', since=test_start)
+            logs = self.auth_logs(since=test_start)
             context_str = "'username': 'bob'"
             regex = f"email_notification_logger,send_password_reset,.*{context_str}"
             assert_that(logs, matches_regexp(regex))

@@ -134,12 +134,14 @@ class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
 
     @classmethod
     def restart_auth(cls):
-        has_worker = cls._has_auth_worker()
-        if has_worker:
+        if has_worker := cls._has_auth_worker():
             cls.stop_service('auth-worker')
+
         cls.restart_service('auth')
+
         if has_worker:
             cls.start_service('auth-worker')
+
         auth = cls.make_auth_client()
         logging.getLogger('wazo_test_helpers').setLevel(logging.INFO)
         until.return_(auth.status.check, timeout=30)
@@ -153,11 +155,10 @@ class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
             return False
 
     @classmethod
-    def service_logs(cls, service_name=None, since=None):
-        name = service_name or cls.service
-        logs = super().service_logs(name, since=since)
-        if name == 'auth' and cls._has_auth_worker():
-            logs += super().service_logs('auth-worker', since=since)
+    def auth_logs(cls, since=None):
+        logs = cls.service_logs('auth', since=since)
+        if cls._has_auth_worker():
+            logs += cls.service_logs('auth-worker', since=since)
         return logs
 
 
@@ -299,6 +300,10 @@ class BaseIntegrationTest(unittest.TestCase):
     @classmethod
     def service_logs(cls, *args, **kwargs):
         return cls.asset_cls.service_logs(*args, **kwargs)
+
+    @classmethod
+    def auth_logs(cls, since=None):
+        return cls.asset_cls.auth_logs(since=since)
 
     @classmethod
     def stop_service(cls, *args, **kwargs):
