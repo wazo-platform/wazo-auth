@@ -9,7 +9,7 @@ import shutil
 import string
 import unittest
 from concurrent.futures import Future
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 
@@ -186,6 +186,13 @@ class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
             yield result
         finally:
             result.set_result(cls.auth_logs(since=time_start))
+
+    @classmethod
+    def _exec_in_container(cls, container_id):
+        def execute(command, service_name=None, **kwargs):
+            return run_command(['docker', 'exec', container_id, *command])
+
+        return execute
 
 
 class DBAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
@@ -403,16 +410,21 @@ class BaseIntegrationTest(unittest.TestCase):
     @classmethod
     @contextmanager
     def auth_with_config(cls, config):
-        filesystem = FileSystemClient(
-            execute=cls.asset_cls.docker_exec,
-            service_name='auth',
-            root=True,
-        )
+        container_ids = [
+            cls.asset_cls._container_id('auth'),
+            *cls.asset_cls._auth_worker_container_ids(),
+        ]
         name = ''.join(random.choice(string.ascii_lowercase) for _ in range(6))
         config_file = f'/etc/wazo-auth/conf.d/10-{name}.yml'
         content = yaml.dump(config)
         try:
-            with filesystem.file_(config_file, content=content):
+            with ExitStack() as stack:
+                for container_id in container_ids:
+                    filesystem = FileSystemClient(
+                        execute=cls.asset_cls._exec_in_container(container_id),
+                        root=True,
+                    )
+                    stack.enter_context(filesystem.file_(config_file, content=content))
                 cls.restart_auth()
                 yield
         finally:
