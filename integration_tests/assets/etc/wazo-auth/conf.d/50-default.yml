@@ -2,6 +2,7 @@ debug: true
 
 rest_api:
   listen: 0.0.0.0
+  reuse_port: true
 
 db_uri: postgresql://wazo-auth:Secr7t@postgres:5432
 

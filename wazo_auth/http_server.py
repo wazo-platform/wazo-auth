@@ -37,6 +37,9 @@ class ReusePortWSGIServer(wsgi.WSGIServer):
         nodelay: bool,
         ssl_adapter: Any,
     ) -> socket.socket:
+        """Set SO_REUSEPORT so several wazo-auth processes can bind the same
+        port and let the kernel load-balance connections across them."""
+
         sock = wsgi.WSGIServer.prepare_socket(
             bind_addr, family, type_, proto, nodelay, ssl_adapter
         )
@@ -103,7 +106,7 @@ class CoreRestApi:
         )
         server_class = (
             ReusePortWSGIServer
-            if self.config.get('reuse_port', True)
+            if self.config.get('reuse_port', False)
             else wsgi.WSGIServer
         )
         self.server = server_class(

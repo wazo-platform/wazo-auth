@@ -92,7 +92,7 @@ _DEFAULT_CONFIG = {
         'num_proxies': 1,
         'listen': '127.0.0.1',
         'port': _DEFAULT_HTTP_PORT,
-        'reuse_port': True,
+        'reuse_port': False,
         'certificate': None,  # Deprecated
         'private_key': None,  # Deprecated
         'cors': {
@@ -178,8 +178,7 @@ def _parse_cli_args(argv):
         '--http-worker',
         action='store_true',
         default=False,
-        help='Run as an additional HTTP-only worker (skips the once-only '
-        'maintenance work owned by the primary wazo-auth process)',
+        help='Run as an additional HTTP-only worker',
     )
     parser.add_argument(
         '--log-file',
