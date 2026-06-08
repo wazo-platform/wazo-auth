@@ -28,6 +28,8 @@ services:
     volumes: *auth-volumes
     depends_on:
       - auth
+    deploy:
+      replicas: ${INTEGRATION_TEST_AUTH_WORKERS:-0}
 
   oauth2sync:
     image: oauth2-synchronization-service

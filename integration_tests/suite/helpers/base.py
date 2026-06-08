@@ -33,6 +33,7 @@ from wazo_test_helpers.asset_launching_test_case import (
     NoSuchService,
     WrongClient,
 )
+from wazo_test_helpers.asset_launching_test_case import _run_cmd as run_command
 from wazo_test_helpers.bus import BusClient
 from wazo_test_helpers.filesystem import FileSystemClient
 from wazo_test_helpers.hamcrest.raises import raises
@@ -133,14 +134,22 @@ class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
         helpers.init_db(database.uri)
 
     @classmethod
+    def _docker_compose(cls, *args, **kwargs):
+        return run_command(
+            ['docker', 'compose', *cls._docker_compose_options(), *args],
+            **kwargs,
+        )
+
+    @classmethod
     def restart_auth(cls):
-        if has_worker := cls._has_auth_worker():
-            cls.stop_service('auth-worker')
+        has_worker = cls._has_auth_worker()
+        if has_worker:
+            cls._docker_compose('stop', 'auth-worker')
 
         cls.restart_service('auth')
 
         if has_worker:
-            cls.start_service('auth-worker')
+            cls._docker_compose('start', 'auth-worker')
 
         auth = cls.make_auth_client()
         logging.getLogger('wazo_test_helpers').setLevel(logging.INFO)
@@ -148,18 +157,24 @@ class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
         logging.getLogger('wazo_test_helpers').setLevel(logging.DEBUG)
 
     @classmethod
+    def _auth_worker_container_ids(cls):
+        result = cls._docker_compose('ps', '-aq', 'auth-worker', stderr=False)
+        return result.stdout.decode('utf-8').split()
+
+    @classmethod
     def _has_auth_worker(cls):
-        try:
-            return bool(cls._container_id('auth-worker'))
-        except NoSuchService:
-            return False
+        return bool(cls._auth_worker_container_ids())
+
+    @classmethod
+    def worker_logs(cls, since=None):
+        args = ['logs', '--no-log-prefix', 'auth-worker']
+        if since is not None:
+            args.append(f'--since={since}')
+        return cls._docker_compose(*args).stdout.decode('utf-8')
 
     @classmethod
     def auth_logs(cls, since=None):
-        logs = cls.service_logs('auth', since=since)
-        if cls._has_auth_worker():
-            logs += cls.service_logs('auth-worker', since=since)
-        return logs
+        return cls.service_logs('auth', since=since) + cls.worker_logs(since=since)
 
 
 class DBAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
@@ -304,6 +319,10 @@ class BaseIntegrationTest(unittest.TestCase):
     @classmethod
     def auth_logs(cls, since=None):
         return cls.asset_cls.auth_logs(since=since)
+
+    @classmethod
+    def worker_logs(cls, since=None):
+        return cls.asset_cls.worker_logs(since=since)
 
     @classmethod
     def stop_service(cls, *args, **kwargs):

@@ -11,14 +11,18 @@ from .helpers import base
 
 @base.use_asset('base')
 class TestHttpWorker(base.APIIntegrationTest):
+    def setUp(self):
+        if not self.asset_cls._has_auth_worker():
+            self.skipTest('requires INTEGRATION_TEST_AUTH_WORKERS >= 1')
+
     def test_requests_are_load_balanced_across_primary_and_worker(self):
         url = f'http://127.0.0.1:{self.auth_port()}/0.1/backends'
 
         def both_instances_served():
             requests.get(url, headers={'Connection': 'close'})
-            return all(
-                '/0.1/backends' in self.service_logs(service_name)
-                for service_name in ('auth', 'auth-worker')
+            return (
+                '/0.1/backends' in self.service_logs('auth')
+                and '/0.1/backends' in self.worker_logs()
             )
 
         until.true(
@@ -37,8 +41,7 @@ class TestHttpWorker(base.APIIntegrationTest):
             message='The primary never ran the ExpiredTokenRemover',
         )
 
-        worker_logs = self.service_logs('auth-worker')
-        assert 'ExpiredTokenRemover took' not in worker_logs
+        assert 'ExpiredTokenRemover took' not in self.worker_logs()
 
     def test_restarting_auth_also_cycles_the_worker(self):
         self.restart_auth()
@@ -47,10 +50,9 @@ class TestHttpWorker(base.APIIntegrationTest):
 
         def both_instances_served_after_restart():
             requests.get(url, headers={'Connection': 'close'})
-            return all(
-                '/0.1/backends' in self.service_logs(service_name, since=restarted_at)
-                for service_name in ('auth', 'auth-worker')
-            )
+            return '/0.1/backends' in self.service_logs(
+                'auth', since=restarted_at
+            ) and '/0.1/backends' in self.worker_logs(since=restarted_at)
 
         until.true(
             both_instances_served_after_restart,
