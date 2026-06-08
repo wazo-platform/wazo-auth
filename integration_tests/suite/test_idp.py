@@ -96,7 +96,7 @@ class TestAuthenticationMethods(base.APIIntegrationTest):
                 'broken_verify_auth_replacement': {'enabled': False},
             }
         }
-        with self.asset_cls.capture_logs('auth') as result:
+        with self.asset_cls.capture_auth_logs() as result:
             with self.auth_with_config(idp_priority_config):
                 pass
 

@@ -8,6 +8,7 @@ import re
 import shutil
 import string
 import unittest
+from concurrent.futures import Future
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
@@ -175,6 +176,16 @@ class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
     @classmethod
     def auth_logs(cls, since=None):
         return cls.service_logs('auth', since=since) + cls.worker_logs(since=since)
+
+    @classmethod
+    @contextmanager
+    def capture_auth_logs(cls):
+        time_start = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        result = Future()
+        try:
+            yield result
+        finally:
+            result.set_result(cls.auth_logs(since=time_start))
 
 
 class DBAssetLaunchingTestCase(BaseAssetLaunchingTestCase):

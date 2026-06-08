@@ -90,7 +90,7 @@ class TestResetPassword(base.APIIntegrationTest):
     def test_set_password_does_not_log_password(self, user):
         new_password = '5ecr37'
 
-        with self.asset_cls.capture_logs(service_name='auth') as logs:
+        with self.asset_cls.capture_auth_logs() as logs:
             self.client.users.set_password(user['uuid'], new_password)
 
         assert_that(logs.result(), not_(contains_string(new_password)))
