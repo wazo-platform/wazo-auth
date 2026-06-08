@@ -32,6 +32,8 @@ from .service_discovery import self_check
 
 logger = logging.getLogger(__name__)
 
+MISCONFIGURATION_EXIT_CODE = 78
+
 
 def _signal_handler(controller, signum, frame):
     controller.stop(reason=signal.Signals(signum).name)
@@ -308,6 +310,13 @@ class Controller:
         signal.signal(signal.SIGINT, partial(_signal_handler, self))
 
         if self._http_worker:
+            if not self._config['rest_api']['reuse_port']:
+                logger.error(
+                    'Cannot start as an HTTP worker: rest_api.reuse_port must be '
+                    'enabled so the worker can share the listen port with the '
+                    'primary wazo-auth process'
+                )
+                sys.exit(MISCONFIGURATION_EXIT_CODE)
             self._run_as_worker()
         else:
             self._run()
