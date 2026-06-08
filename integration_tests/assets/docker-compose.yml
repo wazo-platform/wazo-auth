@@ -23,14 +23,7 @@ services:
   auth-worker:
     image: wazoplatform/wazo-auth-tests
     network_mode: "service:auth"
-    command:
-      - sh
-      - -ec
-      - |
-        python -c 'import socket, time
-        while socket.socket().connect_ex(("127.0.0.1", 9497)) != 0:
-            time.sleep(1)'
-        exec wazo-auth --http-worker
+    command: ["sh", "-ec", "wazo-auth-wait; exec wazo-auth --http-worker"]
     environment: *auth-environment
     volumes: *auth-volumes
     depends_on:

@@ -6,9 +6,10 @@ StartLimitBurst=15
 StartLimitIntervalSec=150
 
 [Service]
+ExecStartPre=/usr/bin/wazo-auth-wait
 ExecStart=/usr/bin/wazo-auth --http-worker
-ExecStartPost=/usr/bin/wazo-auth-wait
 Restart=on-failure
+RestartPreventExitStatus=78
 RestartSec=5
 SyslogIdentifier=wazo-auth-worker@%i
 
