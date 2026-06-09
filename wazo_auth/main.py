@@ -31,7 +31,7 @@ def main():
     if config['user']:
         change_user(config['user'])
 
-    if config["db_upgrade_on_startup"] and not config['http_worker']:
+    if config["db_upgrade_on_startup"] and not config.get('http_worker'):
         database.upgrade(config["db_uri"])
 
     try:
@@ -40,7 +40,7 @@ def main():
         if config['service_discovery']['enabled']:
             raise
 
-    worker_suffix = ' (http worker)' if config['http_worker'] else ''
+    worker_suffix = ' (http worker)' if config.get('http_worker') else ''
     logger.info('Launching wazo-auth%s...', worker_suffix)
 
     controller = Controller(config)
