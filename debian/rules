@@ -11,5 +11,5 @@ override_dh_installinit:
 	dh_installinit --noscripts
 
 override_dh_installsystemd:
-	dh_installsystemd --no-enable --no-start wazo-auth-worker@.service
-	dh_installsystemd wazo-auth.service
+	dh_installsystemd --no-enable --no-start --name wazo-auth-worker@
+	dh_installsystemd
