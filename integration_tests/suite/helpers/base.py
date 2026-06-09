@@ -159,7 +159,7 @@ class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
 
     @classmethod
     def _auth_worker_container_ids(cls):
-        result = cls._docker_compose('ps', '-aq', 'auth-worker', stderr=False)
+        result = cls._docker_compose('ps', '-q', 'auth-worker', stderr=False)
         return result.stdout.decode('utf-8').split()
 
     @classmethod
@@ -175,7 +175,10 @@ class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
 
     @classmethod
     def auth_logs(cls, since=None):
-        return cls.service_logs('auth', since=since) + cls.worker_logs(since=since)
+        logs = cls.service_logs('auth', since=since)
+        if cls._has_auth_worker():
+            logs += cls.worker_logs(since=since)
+        return logs
 
     @classmethod
     @contextmanager

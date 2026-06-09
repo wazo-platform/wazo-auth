@@ -301,6 +301,9 @@ class Controller:
 
         self._rest_api = CoreRestApi(config, self._token_service, self._user_service)
 
+        if self._http_worker:
+            return
+
         self._expired_token_remover = token.ExpiredTokenRemover(
             config, self.dao, self._bus_publisher, self._saml_service
         )
