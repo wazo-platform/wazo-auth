@@ -45,6 +45,40 @@ class TestUsers(base.APIIntegrationTest):
         assert_no_error(self.client.users.delete, alice['uuid'])
         assert_http_error(404, self.client.users.delete, alice['uuid'])
 
+    @fixtures.http.user(username='to_delete', password='secret')
+    def test_delete_event(self, user):
+        user_client = self.make_auth_client('to_delete', 'secret')
+        token = user_client.token.new('wazo_user', expiration=60)['token']
+
+        headers = {'name': 'auth_user_deleted'}
+        msg_accumulator = self.bus.accumulator(headers=headers)
+
+        self.client.users.delete(user['uuid'])
+
+        def bus_received_msg():
+            assert_that(
+                msg_accumulator.accumulate(with_headers=True),
+                has_item(
+                    has_entries(
+                        message=has_entries(
+                            data={
+                                'uuid': user['uuid'],
+                                'tenant_uuid': user['tenant_uuid'],
+                            }
+                        ),
+                        headers=has_entries(
+                            {
+                                'tenant_uuid': user['tenant_uuid'],
+                                f'user_uuid:{user["uuid"]}': True,
+                            }
+                        ),
+                    )
+                ),
+            )
+
+        until.assert_(bus_received_msg, tries=10, interval=0.25)
+        assert not self.client.token.is_valid(token)
+
     @fixtures.http.user(username='foobar', email_address='foobar@example.com')
     @fixtures.http.user(username='foobaz', email_address='foobaz@example.com')
     def test_password_reset_does_not_disable_old_password(self, foobar, foobaz):

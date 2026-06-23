@@ -6,7 +6,7 @@ import hashlib
 import logging
 import os
 
-from wazo_bus.resources.auth.events import SessionDeletedEvent
+from wazo_bus.resources.auth.events import SessionDeletedEvent, UserDeletedEvent
 
 from wazo_auth import exceptions
 from wazo_auth.services.helpers import BaseService
@@ -128,7 +128,22 @@ class UserService(BaseService):
 
     def delete_user(self, scoping_tenant_uuid, user_uuid):
         self.assert_user_in_subtenant(scoping_tenant_uuid, user_uuid)
+        user = self.get_user(user_uuid)
+        sessions = self._dao.session.delete_by_user(user_uuid)
         self._dao.user.delete(user_uuid)
+        self._publish_session_deleted_events(user, sessions)
+        self._publish_user_deleted_event(user)
+
+    def _publish_user_deleted_event(self, user):
+        if self._bus_publisher is None:
+            logger.warning('Publisher is missing, unable to publish user deleted event')
+            return
+
+        event = UserDeletedEvent(
+            tenant_uuid=user['tenant_uuid'],
+            user_uuid=user['uuid'],
+        )
+        self._bus_publisher.publish(event)
 
     def get_acl(self, user_uuid):
         users = self._dao.user.list_(uuid=user_uuid, limit=1)

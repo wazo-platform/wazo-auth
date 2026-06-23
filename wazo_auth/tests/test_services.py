@@ -20,6 +20,7 @@ from wazo_bus.resources.auth.events import (
     ExternalAuthUpdatedEvent,
     RefreshTokenDeletedEvent,
     SessionDeletedEvent,
+    UserDeletedEvent,
 )
 from xivo.mallow import fields
 
@@ -373,6 +374,27 @@ class TestUserService(BaseServiceTestCase):
             user_uuid, salt=None, hash_=None
         )
         assert_that(result, has_entries(uuid=user_uuid))
+
+    def test_delete_user(self):
+        tenant_uuid = 'tenant-uuid'
+        user_uuid = 'user-uuid'
+        user = {'uuid': user_uuid, 'tenant_uuid': tenant_uuid}
+        self.user_dao.list_.return_value = [user]
+        self.user_dao.exists.return_value = True
+        self.tenant_dao.list_visible_tenants.return_value = []
+        self.session_dao.delete_by_user.return_value = [{'uuid': 'session-1'}]
+
+        self.service.delete_user('scoping-tenant', user_uuid)
+
+        self.session_dao.delete_by_user.assert_called_once_with(user_uuid)
+        self.user_dao.delete.assert_called_once_with(user_uuid)
+        assert_that(
+            self.bus_publisher.publish.call_args_list,
+            contains_exactly(
+                ((SessionDeletedEvent('session-1', tenant_uuid, user_uuid),),),
+                ((UserDeletedEvent(tenant_uuid=tenant_uuid, user_uuid=user_uuid),),),
+            ),
+        )
 
     def test_remove_policy(self):
         def when(nb_deleted, user_exists=True, policy_exists=True):
