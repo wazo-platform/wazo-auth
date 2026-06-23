@@ -45,7 +45,7 @@ class TestUsers(base.APIIntegrationTest):
         assert_no_error(self.client.users.delete, alice['uuid'])
         assert_http_error(404, self.client.users.delete, alice['uuid'])
 
-    @fixtures.http.user(username='to_delete', password='secret')
+    @fixtures.http.user(username='to_delete', password='secret')  # NOSONAR
     def test_delete_event(self, user):
         user_client = self.make_auth_client('to_delete', 'secret')
         token = user_client.token.new('wazo_user', expiration=60)['token']
