@@ -2,79 +2,27 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import pytest
+from wazo_test_helpers.pytest_asset import (
+    asset_fixture,
+    enable_mark_logs_fixture,
+    register,
+)
 
 from .helpers import base as asset
 
 
-def pytest_collection_modifyitems(session, config, items):
-    # item == test method
-    # item.parent == test class
-    # item.parent.own_markers == pytest markers of the test class
-    # item.parent.own_markers[0].args[0] == name of the asset
-    # It also remove the run-order pytest feature (--ff, --nf)
-    items.sort(key=lambda item: item.parent.own_markers[0].args[0])
+def pytest_configure(config):
+    register(config)
 
 
-@pytest.fixture(scope='package')
-def base():
-    asset.APIAssetLaunchingTestCase.setUpClass()
-    try:
-        yield
-    finally:
-        asset.APIAssetLaunchingTestCase.tearDownClass()
+base = asset_fixture(asset.APIAssetLaunchingTestCase)
+saml = asset_fixture(asset.SAMLAssetLaunchingTestCase)
+database = asset_fixture(asset.DBAssetLaunchingTestCase)
+external_auth = asset_fixture(asset.ExternalAuthAssetLaunchingTestCase)
+metadata = asset_fixture(asset.MetadataAssetLaunchingTestCase)
+bootstrap = asset_fixture(asset.BootstrapAssetLaunchingTestCase)
 
-
-@pytest.fixture(scope='package')
-def saml():
-    asset.SAMLAssetLaunchingTestCase.setUpClass()
-    try:
-        yield
-    finally:
-        asset.SAMLAssetLaunchingTestCase.tearDownClass()
-
-
-@pytest.fixture(scope='package')
-def database():
-    asset.DBAssetLaunchingTestCase.setUpClass()
-    try:
-        yield
-    finally:
-        asset.DBAssetLaunchingTestCase.tearDownClass()
-
-
-@pytest.fixture(scope='package')
-def external_auth():
-    asset.ExternalAuthAssetLaunchingTestCase.setUpClass()
-    try:
-        yield
-    finally:
-        asset.ExternalAuthAssetLaunchingTestCase.tearDownClass()
-
-
-@pytest.fixture(scope='package')
-def metadata():
-    asset.MetadataAssetLaunchingTestCase.setUpClass()
-    try:
-        yield
-    finally:
-        asset.MetadataAssetLaunchingTestCase.tearDownClass()
-
-
-@pytest.fixture(scope='package')
-def bootstrap():
-    asset.BootstrapAssetLaunchingTestCase.setUpClass()
-    try:
-        yield
-    finally:
-        asset.BootstrapAssetLaunchingTestCase.tearDownClass()
-
-
-@pytest.fixture(autouse=True, scope='function')
-def mark_logs(request):
-    test_name = f'{request.cls.__name__}.{request.function.__name__}'
-    request.cls.asset_cls.mark_logs_test_start(test_name)
-    yield
-    request.cls.asset_cls.mark_logs_test_end(test_name)
+mark_logs = enable_mark_logs_fixture()
 
 
 @pytest.fixture(scope="session")
