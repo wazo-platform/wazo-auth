@@ -16,8 +16,10 @@ logger = logging.getLogger(__name__)
 Session = scoped_session(sessionmaker())
 
 
-def init_db(db_uri, pool_size=16):
-    engine = create_engine(db_uri, pool_size=pool_size, pool_pre_ping=True)
+def init_db(db_uri, pool_size=16, max_overflow=10):
+    engine = create_engine(
+        db_uri, pool_size=pool_size, max_overflow=max_overflow, pool_pre_ping=True
+    )
     Session.configure(bind=engine)
 
 

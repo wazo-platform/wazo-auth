@@ -27,7 +27,7 @@ app = Flask('wazo-auth')
 api = Api(app, prefix=f'/{VERSION}')
 
 
-class ReusePortWSGIServer(wsgi.WSGIServer):
+class ReusePortWSGIServer(wsgi.DynamicWSGIServer):
     @staticmethod
     def prepare_socket(
         bind_addr: Any,
@@ -107,12 +107,13 @@ class CoreRestApi:
         server_class = (
             ReusePortWSGIServer
             if self.config.get('reuse_port', False)
-            else wsgi.WSGIServer
+            else wsgi.DynamicWSGIServer
         )
         self.server = server_class(
             bind_addr=bind_addr,
             wsgi_app=wsgi_app,
-            numthreads=self.config['max_threads'],
+            numthreads=self.config['min_threads'],
+            max=self.config['max_threads'],
         )
         if self.config['certificate'] and self.config['private_key']:
             logger.warning(

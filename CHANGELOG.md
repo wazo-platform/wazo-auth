@@ -3,6 +3,9 @@
 ## 26.08
 
 * Added `--http-worker` flag to start HTTP-only wazo-auth instance
+* New `rest_api.min_threads` option: threads kept ready at all times.
+  `max_threads` is now a ceiling the pool grows to under load, not a fixed
+  thread count.
 
 ## 26.07
 
