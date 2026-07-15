@@ -15,6 +15,15 @@ logger = logging.getLogger(__name__)
 
 Session = scoped_session(sessionmaker())
 
+# wazo-auth shares its PostgreSQL database with other Wazo services and
+# advisory lock keys are database-wide, so the two-int32 key form of
+# pg_advisory_lock is used to namespace wazo-auth locks:
+# - classid identifies wazo-auth: zlib.crc32(b'wazo-auth') & 0x7FFFFFFF
+#   (hardcoded so the value is explicit and greppable in pg_locks)
+# - objid identifies the lock within wazo-auth
+ADVISORY_LOCK_CLASSID = 1073458317
+STARTUP_LOCK_OBJID = 1
+
 
 def init_db(db_uri, pool_size=16, max_overflow=10):
     engine = create_engine(
@@ -78,3 +87,47 @@ def db_ready(timeout):
 def ping_db():
     with get_db_session().get_bind().connect() as conn:
         conn.execute(text('SELECT 1'))
+
+
+@contextmanager
+def startup_lock(engine):
+    """Serialize startup tasks across wazo-auth instances.
+
+    Holds a PostgreSQL session-level advisory lock for the duration of the
+    context, blocking until it is acquired. The lock connection uses
+    AUTOCOMMIT so it never holds a transaction open while the caller works:
+    an idle-in-transaction lock connection could be killed by
+    idle_in_transaction_session_timeout, releasing the lock mid-work.
+    """
+    params = {'classid': ADVISORY_LOCK_CLASSID, 'objid': STARTUP_LOCK_OBJID}
+    connection = engine.connect().execution_options(isolation_level='AUTOCOMMIT')
+    try:
+        acquired = connection.execute(
+            text('SELECT pg_try_advisory_lock(:classid, :objid)'), params
+        ).scalar()
+        if not acquired:
+            logger.info(
+                'waiting for the wazo-auth startup lock held by another instance'
+            )
+            connection.execute(
+                text('SELECT pg_advisory_lock(:classid, :objid)'), params
+            )
+        yield
+    finally:
+        # Session-level advisory locks survive connection.close() because the
+        # DBAPI connection goes back to the pool still holding them: unlock
+        # explicitly, and drop the DBAPI connection if the unlock cannot be
+        # issued (a dead connection has already released the lock server-side,
+        # and any body exception must propagate unmasked).
+        try:
+            connection.execute(
+                text('SELECT pg_advisory_unlock(:classid, :objid)'), params
+            )
+        except Exception:
+            logger.warning(
+                'could not release the wazo-auth startup lock, '
+                'dropping its connection'
+            )
+            connection.invalidate()
+        finally:
+            connection.close()
