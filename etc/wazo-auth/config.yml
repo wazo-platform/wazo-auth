@@ -5,6 +5,15 @@
 # Directory in which to place config overrides
 extra_config_files: /etc/wazo-auth/conf.d/
 
+# Roles this process runs. Default: all of them.
+# api: serve the REST API
+# scheduler: run periodic tasks (expired token removal)
+# init: run one-shot startup tasks (policy update, bootstrap user, ...)
+# roles:
+#   - api
+#   - scheduler
+#   - init
+
 update_policy_on_startup: True
 
 log_filename: /var/log/wazo-auth.log

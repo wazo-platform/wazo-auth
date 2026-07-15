@@ -6,6 +6,7 @@ import logging
 import signal
 import sys
 import threading
+import time
 from collections import OrderedDict, UserDict
 from functools import partial
 
@@ -13,7 +14,6 @@ from stevedore import driver
 from stevedore.extension import Extension
 from stevedore.named import NamedExtensionManager
 from xivo import plugin_helpers
-from xivo.consul_helpers import ServiceCatalogRegistration
 from xivo.status import StatusAggregator
 
 from wazo_auth.plugins.idp.native import NativeIDP
@@ -21,8 +21,9 @@ from wazo_auth.plugins.idp.refresh_token import RefreshTokenIDP
 
 from . import http, services, startup, token
 from .bus import BusPublisher
+from .components import ServiceDiscoveryComponent
 from .database import queries
-from .database.helpers import db_ready, init_db
+from .database.helpers import Session, db_ready, init_db
 from .flask_helpers import Tenant, Token
 from .http_server import CoreRestApi, api
 from .plugin_helpers import utils as plugin_utils
@@ -101,16 +102,18 @@ class Controller:
             max_overflow=max_threads - min_threads,
         )
         self._config = config
+        self._roles = set(config['roles'])
         self._stopping_thread = None
+        self._stopped = threading.Event()
         _check_required_config_for_other_threads(config)
-        self._service_discovery_args = [
+        self._service_discovery = ServiceDiscoveryComponent(
             'wazo-auth',
             config.get('uuid'),
             config['consul'],
             config['service_discovery'],
             config['amqp'],
             partial(self_check, config),
-        ]
+        )
 
         self.status_aggregator = StatusAggregator()
         template_formatter = services.helpers.TemplateFormatter(config)
@@ -311,35 +314,79 @@ class Controller:
         signal.signal(signal.SIGTERM, partial(_signal_handler, self))
         signal.signal(signal.SIGINT, partial(_signal_handler, self))
 
+        init_enabled = 'init' in self._roles
         with db_ready(timeout=self._config['db_connect_retry_timeout_seconds']):
-            if self._config['update_policy_on_startup']:
-                startup.update_policy_on_startup(
-                    self.dao,
-                    self._default_policy_service,
-                    self._all_users_service,
-                    self._default_group_service,
-                )
-            http.init_top_tenant(self.dao)
-            if self._config['bootstrap_user_on_startup']:
-                startup.create_initial_user(self._config)
-            startup.check_unavailable_authentication_methods(
-                self.dao, self._idp_plugins
+            # every role needs the top tenant, but only the init role runs
+            # the migration that creates it
+            self._wait_for_top_tenant(
+                timeout=self._config['db_connect_retry_timeout_seconds']
             )
+            if init_enabled:
+                if self._config['update_policy_on_startup']:
+                    startup.update_policy_on_startup(
+                        self.dao,
+                        self._default_policy_service,
+                        self._all_users_service,
+                        self._default_group_service,
+                    )
+                if self._config['bootstrap_user_on_startup']:
+                    startup.create_initial_user(self._config)
+                startup.check_unavailable_authentication_methods(
+                    self.dao, self._idp_plugins
+                )
+            else:
+                for flag in ('update_policy_on_startup', 'bootstrap_user_on_startup'):
+                    if self._config[flag]:
+                        logger.warning(
+                            '%s is enabled but this instance has no init role: '
+                            'skipping',
+                            flag,
+                        )
+
+        if not self._roles & {'api', 'scheduler'}:
+            logger.info('no long-running roles enabled, exiting')
+            return
+
         try:
-            with ServiceCatalogRegistration(*self._service_discovery_args):
+            if 'api' in self._roles:
+                self._service_discovery.start()
+            if 'scheduler' in self._roles:
                 self._expired_token_remover.start()
+            if 'api' in self._roles:
                 self._rest_api.run()
+            else:
+                self._stopped.wait()
         finally:
+            if 'api' in self._roles:
+                self._service_discovery.stop()
             if self._stopping_thread:
                 self._stopping_thread.join()
 
     def stop(self, reason):
         logger.warning('Stopping wazo-auth: %s', reason)
-        self._expired_token_remover.stop()
-        self._stopping_thread = threading.Thread(
-            target=self._rest_api.stop, name=reason
-        )
-        self._stopping_thread.start()
+        if 'scheduler' in self._roles:
+            self._expired_token_remover.stop()
+        if 'api' in self._roles:
+            self._stopping_thread = threading.Thread(
+                target=self._rest_api.stop, name=reason
+            )
+            self._stopping_thread.start()
+        self._stopped.set()
+
+    def _wait_for_top_tenant(self, timeout):
+        end_time = time.monotonic() + timeout
+        while True:
+            try:
+                http.init_top_tenant(self.dao)
+                return
+            except Exception as e:
+                if time.monotonic() >= end_time:
+                    raise
+                logger.warning(
+                    'the database is not initialized yet (%s), retrying...', e
+                )
+                Session.remove()
+                time.sleep(2)
 
     def _loaded_plugins_names(self, backends):
         return [backend.name for backend in backends]

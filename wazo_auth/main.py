@@ -1,4 +1,4 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -8,7 +8,7 @@ from xivo import xivo_logging
 from xivo.config_helper import UUIDNotFound, set_xivo_uuid
 from xivo.user_rights import change_user
 
-from wazo_auth.config import get_config
+from wazo_auth.config import VALID_ROLES, get_config
 from wazo_auth.controller import Controller
 from wazo_auth.database import database
 
@@ -28,11 +28,20 @@ def main():
         log_level=config['log_level'],
     )
 
+    if set(config['roles']) != set(VALID_ROLES):
+        logger.info('Starting wazo-auth with roles: %s', ', '.join(config['roles']))
+
     if config['user']:
         change_user(config['user'])
 
     if config["db_upgrade_on_startup"]:
-        database.upgrade(config["db_uri"])
+        if 'init' in config['roles']:
+            database.upgrade(config["db_uri"])
+        else:
+            logger.warning(
+                'db_upgrade_on_startup is enabled but this instance has '
+                'no init role: skipping'
+            )
 
     try:
         set_xivo_uuid(config, logger)

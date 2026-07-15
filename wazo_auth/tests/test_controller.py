@@ -1,4 +1,9 @@
-from unittest.mock import patch
+# Copyright 2026 The Wazo Authors  (see the AUTHORS file)
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+import logging
+from types import SimpleNamespace
+from unittest.mock import Mock, call, patch
 from uuid import uuid4
 
 import pytest
@@ -7,22 +12,185 @@ from ..config import _DEFAULT_CONFIG
 from ..controller import Controller
 
 
-@patch('wazo_auth.database.helpers.Session')
-def test_create_controller(mock_session):
-    config = dict(_DEFAULT_CONFIG, uuid=uuid4())
-    controller = Controller(config)
-    assert controller._config
+@pytest.fixture
+def make_controller():
+    def _make(**config_overrides):
+        config = dict(_DEFAULT_CONFIG, uuid=str(uuid4()), **config_overrides)
+        return Controller(config)
+
+    with (
+        patch('wazo_auth.database.helpers.Session'),
+        patch('wazo_auth.controller.CoreRestApi'),
+        patch('wazo_auth.token.ExpiredTokenRemover'),
+        patch('wazo_auth.controller.ServiceDiscoveryComponent'),
+    ):
+        yield _make
 
 
 @pytest.fixture
-@patch('wazo_auth.database.helpers.Session')
-def controller(mock_session):
-    config = dict(_DEFAULT_CONFIG, uuid=uuid4())
-    return Controller(config)
+def run_environment():
+    with (
+        patch('wazo_auth.controller.db_ready'),
+        patch('wazo_auth.controller.http') as http,
+        patch('wazo_auth.controller.startup') as startup,
+        patch('wazo_auth.controller.signal'),
+    ):
+        yield SimpleNamespace(http=http, startup=startup)
 
 
-@patch('wazo_auth.database.helpers.Session')
-@patch('wazo_auth.http_server.CoreRestApi')
-@patch('wazo_auth.token.ExpiredTokenRemover')
-def test_controller_run(mock_session, mock_rest_api, controller: Controller):
+def test_create_controller(make_controller):
+    controller = make_controller()
+
+    assert controller._config
+    assert controller._roles == {'api', 'scheduler', 'init'}
+
+
+def test_run_default_roles_order(make_controller, run_environment):
+    controller = make_controller()
+    parent = Mock()
+    parent.attach_mock(controller._service_discovery.start, 'sd_start')
+    parent.attach_mock(controller._service_discovery.stop, 'sd_stop')
+    parent.attach_mock(controller._expired_token_remover.start, 'remover_start')
+    parent.attach_mock(controller._rest_api.run, 'rest_api_run')
+
     controller.run()
+
+    assert parent.mock_calls == [
+        call.sd_start(),
+        call.remover_start(),
+        call.rest_api_run(),
+        call.sd_stop(),
+    ]
+    run_environment.startup.update_policy_on_startup.assert_called_once()
+    run_environment.http.init_top_tenant.assert_called_once_with(controller.dao)
+    run_environment.startup.create_initial_user.assert_not_called()
+    run_environment.startup.check_unavailable_authentication_methods.assert_called_once()
+
+
+def test_run_default_roles_gating_flags(make_controller, run_environment):
+    controller = make_controller(
+        update_policy_on_startup=False,
+        bootstrap_user_on_startup=True,
+    )
+
+    controller.run()
+
+    run_environment.startup.update_policy_on_startup.assert_not_called()
+    run_environment.startup.create_initial_user.assert_called_once_with(
+        controller._config
+    )
+
+
+def test_run_api_only(make_controller, run_environment):
+    controller = make_controller(roles=['api'])
+
+    controller.run()
+
+    controller._service_discovery.start.assert_called_once()
+    controller._rest_api.run.assert_called_once()
+    controller._service_discovery.stop.assert_called_once()
+    controller._expired_token_remover.start.assert_not_called()
+    run_environment.http.init_top_tenant.assert_called_once_with(controller.dao)
+    run_environment.startup.update_policy_on_startup.assert_not_called()
+    run_environment.startup.check_unavailable_authentication_methods.assert_not_called()
+
+
+def test_run_without_init_role_warns_about_skipped_startup_tasks(
+    make_controller, run_environment, caplog
+):
+    controller = make_controller(
+        roles=['api'],
+        update_policy_on_startup=True,
+        bootstrap_user_on_startup=True,
+    )
+
+    with caplog.at_level(logging.WARNING):
+        controller.run()
+
+    assert 'update_policy_on_startup is enabled' in caplog.text
+    assert 'bootstrap_user_on_startup is enabled' in caplog.text
+
+
+def test_run_scheduler_only(make_controller, run_environment):
+    controller = make_controller(roles=['scheduler'])
+    controller._stopped.set()  # unblock run() immediately
+
+    controller.run()
+
+    controller._expired_token_remover.start.assert_called_once()
+    controller._service_discovery.start.assert_not_called()
+    controller._rest_api.run.assert_not_called()
+    run_environment.http.init_top_tenant.assert_called_once_with(controller.dao)
+
+
+def test_run_retries_until_the_top_tenant_exists(make_controller, run_environment):
+    controller = make_controller(roles=['api'])
+    run_environment.http.init_top_tenant.side_effect = [
+        Exception('relation "auth_tenant" does not exist'),
+        Exception('no top tenant yet'),
+        None,
+    ]
+
+    with patch('wazo_auth.controller.time') as time_mock:
+        time_mock.monotonic.side_effect = [0, 1, 2]
+        controller.run()
+
+    assert run_environment.http.init_top_tenant.call_count == 3
+    controller._rest_api.run.assert_called_once()
+
+
+def test_run_gives_up_waiting_for_the_top_tenant(make_controller, run_environment):
+    controller = make_controller(roles=['api'])
+    run_environment.http.init_top_tenant.side_effect = Exception('still no schema')
+
+    with patch('wazo_auth.controller.time') as time_mock:
+        time_mock.monotonic.side_effect = [0, 400]
+        with pytest.raises(Exception):
+            controller.run()
+
+    controller._rest_api.run.assert_not_called()
+
+
+def test_run_init_only(make_controller, run_environment):
+    controller = make_controller(roles=['init'])
+
+    controller.run()
+
+    run_environment.startup.update_policy_on_startup.assert_called_once()
+    run_environment.http.init_top_tenant.assert_called_once_with(controller.dao)
+    run_environment.startup.check_unavailable_authentication_methods.assert_called_once()
+    controller._service_discovery.start.assert_not_called()
+    controller._expired_token_remover.start.assert_not_called()
+    controller._rest_api.run.assert_not_called()
+
+
+def test_stop_default_roles(make_controller):
+    controller = make_controller()
+
+    controller.stop('TEST')
+
+    controller._stopping_thread.join()
+    controller._expired_token_remover.stop.assert_called_once()
+    controller._rest_api.stop.assert_called_once()
+    assert controller._stopped.is_set()
+
+
+def test_stop_api_only(make_controller):
+    controller = make_controller(roles=['api'])
+
+    controller.stop('TEST')
+
+    controller._stopping_thread.join()
+    controller._expired_token_remover.stop.assert_not_called()
+    controller._rest_api.stop.assert_called_once()
+
+
+def test_stop_scheduler_only(make_controller):
+    controller = make_controller(roles=['scheduler'])
+
+    controller.stop('TEST')
+
+    assert controller._stopping_thread is None
+    controller._expired_token_remover.stop.assert_called_once()
+    controller._rest_api.stop.assert_not_called()
+    assert controller._stopped.is_set()
