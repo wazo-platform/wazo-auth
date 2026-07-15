@@ -3,13 +3,14 @@
 
 import logging
 from types import SimpleNamespace
-from unittest.mock import Mock, call, patch
+from unittest.mock import ANY, Mock, call, patch
 from uuid import uuid4
 
 import pytest
 
 from ..config import _DEFAULT_CONFIG
 from ..controller import Controller
+from ..database.helpers import StartupLockInterrupted
 
 
 @pytest.fixture
@@ -33,9 +34,11 @@ def run_environment():
         patch('wazo_auth.controller.db_ready'),
         patch('wazo_auth.controller.http') as http,
         patch('wazo_auth.controller.startup') as startup,
+        patch('wazo_auth.controller.startup_lock') as startup_lock,
+        patch('wazo_auth.controller.Session'),
         patch('wazo_auth.controller.signal'),
     ):
-        yield SimpleNamespace(http=http, startup=startup)
+        yield SimpleNamespace(http=http, startup=startup, startup_lock=startup_lock)
 
 
 def test_create_controller(make_controller):
@@ -65,6 +68,7 @@ def test_run_default_roles_order(make_controller, run_environment):
     run_environment.http.init_top_tenant.assert_called_once_with(controller.dao)
     run_environment.startup.create_initial_user.assert_not_called()
     run_environment.startup.check_unavailable_authentication_methods.assert_called_once()
+    run_environment.startup_lock.assert_called_once()
 
 
 def test_run_default_roles_gating_flags(make_controller, run_environment):
@@ -93,6 +97,7 @@ def test_run_api_only(make_controller, run_environment):
     run_environment.http.init_top_tenant.assert_called_once_with(controller.dao)
     run_environment.startup.update_policy_on_startup.assert_not_called()
     run_environment.startup.check_unavailable_authentication_methods.assert_not_called()
+    run_environment.startup_lock.assert_not_called()
 
 
 def test_run_without_init_role_warns_about_skipped_startup_tasks(
@@ -113,7 +118,8 @@ def test_run_without_init_role_warns_about_skipped_startup_tasks(
 
 def test_run_scheduler_only(make_controller, run_environment):
     controller = make_controller(roles=['scheduler'])
-    controller._stopped.set()  # unblock run() immediately
+    # unblock the _stopped.wait() as soon as the components are up
+    controller._expired_token_remover.start.side_effect = controller._stopped.set
 
     controller.run()
 
@@ -121,6 +127,7 @@ def test_run_scheduler_only(make_controller, run_environment):
     controller._service_discovery.start.assert_not_called()
     controller._rest_api.run.assert_not_called()
     run_environment.http.init_top_tenant.assert_called_once_with(controller.dao)
+    run_environment.startup_lock.assert_not_called()
 
 
 def test_run_retries_until_the_top_tenant_exists(make_controller, run_environment):
@@ -151,6 +158,53 @@ def test_run_gives_up_waiting_for_the_top_tenant(make_controller, run_environmen
     controller._rest_api.run.assert_not_called()
 
 
+def test_run_aborts_when_stopped_during_the_top_tenant_wait(
+    make_controller, run_environment
+):
+    controller = make_controller()
+
+    def fail_and_request_shutdown(dao):
+        controller._stopped.set()
+        raise Exception('relation "auth_tenant" does not exist')
+
+    run_environment.http.init_top_tenant.side_effect = fail_and_request_shutdown
+
+    with patch('wazo_auth.controller.time') as time_mock:
+        time_mock.monotonic.side_effect = [0, 1]
+        controller.run()
+
+    run_environment.startup.update_policy_on_startup.assert_not_called()
+    controller._service_discovery.start.assert_not_called()
+    controller._expired_token_remover.start.assert_not_called()
+    controller._rest_api.run.assert_not_called()
+
+
+def test_run_aborts_when_stopped_during_the_one_shots(make_controller, run_environment):
+    controller = make_controller()
+    run_environment.startup.check_unavailable_authentication_methods.side_effect = (
+        lambda *args: controller._stopped.set()
+    )
+
+    controller.run()
+
+    controller._service_discovery.start.assert_not_called()
+    controller._expired_token_remover.start.assert_not_called()
+    controller._rest_api.run.assert_not_called()
+
+
+def test_run_stops_cleanly_when_interrupted_waiting_for_the_lock(
+    make_controller, run_environment
+):
+    controller = make_controller(roles=['init', 'api'])
+    run_environment.startup_lock.side_effect = StartupLockInterrupted()
+
+    controller.run()
+
+    run_environment.startup.update_policy_on_startup.assert_not_called()
+    controller._service_discovery.start.assert_not_called()
+    controller._rest_api.run.assert_not_called()
+
+
 def test_run_init_only(make_controller, run_environment):
     controller = make_controller(roles=['init'])
 
@@ -159,9 +213,33 @@ def test_run_init_only(make_controller, run_environment):
     run_environment.startup.update_policy_on_startup.assert_called_once()
     run_environment.http.init_top_tenant.assert_called_once_with(controller.dao)
     run_environment.startup.check_unavailable_authentication_methods.assert_called_once()
+    run_environment.startup_lock.assert_called_once()
     controller._service_discovery.start.assert_not_called()
     controller._expired_token_remover.start.assert_not_called()
     controller._rest_api.run.assert_not_called()
+
+
+def test_run_init_one_shots_run_inside_the_lock(make_controller, run_environment):
+    controller = make_controller(roles=['init'], bootstrap_user_on_startup=True)
+    parent = Mock()
+    parent.attach_mock(run_environment.startup_lock, 'lock')
+    parent.attach_mock(run_environment.startup.update_policy_on_startup, 'policies')
+    parent.attach_mock(run_environment.startup.create_initial_user, 'bootstrap')
+    parent.attach_mock(
+        run_environment.startup.check_unavailable_authentication_methods,
+        'check_methods',
+    )
+
+    controller.run()
+
+    assert parent.mock_calls == [
+        call.lock(ANY, stop_event=controller._stopped),
+        call.lock(ANY, stop_event=controller._stopped).__enter__(),
+        call.policies(ANY, ANY, ANY, ANY),
+        call.bootstrap(controller._config),
+        call.check_methods(controller.dao, ANY),
+        call.lock(ANY, stop_event=controller._stopped).__exit__(None, None, None),
+    ]
 
 
 def test_stop_default_roles(make_controller):

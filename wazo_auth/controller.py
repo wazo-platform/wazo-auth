@@ -23,7 +23,13 @@ from . import http, services, startup, token
 from .bus import BusPublisher
 from .components import ServiceDiscoveryComponent
 from .database import queries
-from .database.helpers import Session, db_ready, init_db
+from .database.helpers import (
+    Session,
+    StartupLockInterrupted,
+    db_ready,
+    init_db,
+    startup_lock,
+)
 from .flask_helpers import Tenant, Token
 from .http_server import CoreRestApi, api
 from .plugin_helpers import utils as plugin_utils
@@ -321,19 +327,29 @@ class Controller:
             self._wait_for_top_tenant(
                 timeout=self._config['db_connect_retry_timeout_seconds']
             )
+            if self._stopped.is_set():
+                logger.warning('shutdown requested during startup, exiting')
+                return
             if init_enabled:
-                if self._config['update_policy_on_startup']:
-                    startup.update_policy_on_startup(
-                        self.dao,
-                        self._default_policy_service,
-                        self._all_users_service,
-                        self._default_group_service,
+                try:
+                    with startup_lock(Session.get_bind(), stop_event=self._stopped):
+                        if self._config['update_policy_on_startup']:
+                            startup.update_policy_on_startup(
+                                self.dao,
+                                self._default_policy_service,
+                                self._all_users_service,
+                                self._default_group_service,
+                            )
+                        if self._config['bootstrap_user_on_startup']:
+                            startup.create_initial_user(self._config)
+                        startup.check_unavailable_authentication_methods(
+                            self.dao, self._idp_plugins
+                        )
+                except StartupLockInterrupted:
+                    logger.warning(
+                        'shutdown requested while waiting for the startup lock'
                     )
-                if self._config['bootstrap_user_on_startup']:
-                    startup.create_initial_user(self._config)
-                startup.check_unavailable_authentication_methods(
-                    self.dao, self._idp_plugins
-                )
+                    return
             else:
                 for flag in ('update_policy_on_startup', 'bootstrap_user_on_startup'):
                     if self._config[flag]:
@@ -342,6 +358,12 @@ class Controller:
                             'skipping',
                             flag,
                         )
+
+        # stop() may have run during the one-shots: do not bring components
+        # up after a shutdown was requested, nothing would stop them again
+        if self._stopped.is_set():
+            logger.warning('shutdown requested during startup, exiting')
+            return
 
         if not self._roles & {'api', 'scheduler'}:
             logger.info('no long-running roles enabled, exiting')
@@ -386,7 +408,9 @@ class Controller:
                     'the database is not initialized yet (%s), retrying...', e
                 )
                 Session.remove()
-                time.sleep(2)
+                if self._stopped.wait(2):
+                    # shutdown requested during the wait
+                    return
 
     def _loaded_plugins_names(self, backends):
         return [backend.name for backend in backends]

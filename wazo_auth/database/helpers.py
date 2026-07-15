@@ -89,17 +89,27 @@ def ping_db():
         conn.execute(text('SELECT 1'))
 
 
+class StartupLockInterrupted(Exception):
+    pass
+
+
 @contextmanager
-def startup_lock(engine):
+def startup_lock(engine, stop_event=None):
     """Serialize startup tasks across wazo-auth instances.
 
     Holds a PostgreSQL session-level advisory lock for the duration of the
-    context, blocking until it is acquired. The lock connection uses
-    AUTOCOMMIT so it never holds a transaction open while the caller works:
-    an idle-in-transaction lock connection could be killed by
-    idle_in_transaction_session_timeout, releasing the lock mid-work.
+    context, polling until it is acquired. Polling instead of a blocking
+    pg_advisory_lock keeps the wait interruptible: Python defers signal
+    handlers while blocked inside a libpq call, so a blocking wait would
+    ignore SIGTERM until killed. When stop_event is given and gets set
+    during the wait, StartupLockInterrupted is raised instead of running
+    the body. The lock connection uses AUTOCOMMIT so it never holds a
+    transaction open while the caller works: an idle-in-transaction lock
+    connection could be killed by idle_in_transaction_session_timeout,
+    releasing the lock mid-work.
     """
     params = {'classid': ADVISORY_LOCK_CLASSID, 'objid': STARTUP_LOCK_OBJID}
+    acquired = False
     connection = engine.connect().execution_options(isolation_level='AUTOCOMMIT')
     try:
         acquired = connection.execute(
@@ -109,9 +119,14 @@ def startup_lock(engine):
             logger.info(
                 'waiting for the wazo-auth startup lock held by another instance'
             )
-            connection.execute(
-                text('SELECT pg_advisory_lock(:classid, :objid)'), params
-            )
+        while not acquired:
+            if stop_event is None:
+                time.sleep(2)
+            elif stop_event.wait(2):
+                raise StartupLockInterrupted()
+            acquired = connection.execute(
+                text('SELECT pg_try_advisory_lock(:classid, :objid)'), params
+            ).scalar()
         yield
     finally:
         # Session-level advisory locks survive connection.close() because the
@@ -120,9 +135,10 @@ def startup_lock(engine):
         # issued (a dead connection has already released the lock server-side,
         # and any body exception must propagate unmasked).
         try:
-            connection.execute(
-                text('SELECT pg_advisory_unlock(:classid, :objid)'), params
-            )
+            if acquired:
+                connection.execute(
+                    text('SELECT pg_advisory_unlock(:classid, :objid)'), params
+                )
         except Exception:
             logger.warning(
                 'could not release the wazo-auth startup lock, '

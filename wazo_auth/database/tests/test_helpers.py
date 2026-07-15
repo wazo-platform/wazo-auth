@@ -2,11 +2,16 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
-from ..helpers import ADVISORY_LOCK_CLASSID, STARTUP_LOCK_OBJID, startup_lock
+from ..helpers import (
+    ADVISORY_LOCK_CLASSID,
+    STARTUP_LOCK_OBJID,
+    StartupLockInterrupted,
+    startup_lock,
+)
 
 LOCK_PARAMS = {'classid': ADVISORY_LOCK_CLASSID, 'objid': STARTUP_LOCK_OBJID}
 
@@ -46,8 +51,13 @@ def test_lock_uncontended(engine, connection):
     connection.close.assert_called_once()
 
 
-def test_lock_contended_blocks_and_logs(engine, connection, caplog):
-    connection.execute.return_value.scalar.return_value = False
+@patch('wazo_auth.database.helpers.time')
+def test_lock_contended_polls_and_logs(time_mock, engine, connection, caplog):
+    connection.execute.side_effect = [
+        Mock(scalar=Mock(return_value=False)),
+        Mock(scalar=Mock(return_value=True)),
+        Mock(),
+    ]
 
     with caplog.at_level(logging.INFO):
         with startup_lock(engine):
@@ -55,10 +65,27 @@ def test_lock_contended_blocks_and_logs(engine, connection, caplog):
 
     assert executed_statements(connection) == [
         'SELECT pg_try_advisory_lock(:classid, :objid)',
-        'SELECT pg_advisory_lock(:classid, :objid)',
+        'SELECT pg_try_advisory_lock(:classid, :objid)',
         'SELECT pg_advisory_unlock(:classid, :objid)',
     ]
     assert 'waiting for the wazo-auth startup lock' in caplog.text
+    time_mock.sleep.assert_called_once_with(2)
+
+
+def test_lock_wait_interrupted_by_stop_event(engine, connection):
+    connection.execute.return_value.scalar.return_value = False
+    stop_event = Mock()
+    stop_event.wait.return_value = True
+
+    with pytest.raises(StartupLockInterrupted):
+        with startup_lock(engine, stop_event=stop_event):
+            raise AssertionError('the body must not run')
+
+    # the lock was never acquired: no unlock, but the connection is closed
+    assert executed_statements(connection) == [
+        'SELECT pg_try_advisory_lock(:classid, :objid)',
+    ]
+    connection.close.assert_called_once()
 
 
 def test_lock_released_when_body_raises(engine, connection):
