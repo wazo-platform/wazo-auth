@@ -1,4 +1,4 @@
-# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import argparse
@@ -9,10 +9,12 @@ from xivo.xivo_logging import get_log_level_by_name
 
 TWO_HOURS = 60 * 60 * 2
 _DEFAULT_HTTP_PORT = 9497
+VALID_ROLES = ('api', 'scheduler', 'init')
 _DEFAULT_CONFIG = {
     'user': 'wazo-auth',
     'config_file': '/etc/wazo-auth/config.yml',
     'extra_config_files': '/etc/wazo-auth/conf.d',
+    'roles': list(VALID_ROLES),
     'update_policy_on_startup': True,
     'debug': False,
     'log_level': 'info',
@@ -179,6 +181,14 @@ def _parse_cli_args(argv):
         action='store',
         help='The log filename to log to',
     )
+    parser.add_argument(
+        '--role',
+        action='append',
+        dest='roles',
+        choices=VALID_ROLES,
+        help='Restrict this process to the given role (repeatable). '
+        'Default: all roles (api, scheduler, init)',
+    )
     parsed_args = parser.parse_args(argv)
 
     result = {}
@@ -196,8 +206,22 @@ def _parse_cli_args(argv):
         result['log_level'] = parsed_args.log_level
     if parsed_args.db_upgrade_on_startup:
         result['db_upgrade_on_startup'] = parsed_args.db_upgrade_on_startup
+    if parsed_args.roles:
+        result['roles'] = parsed_args.roles
 
     return result
+
+
+def _normalize_roles(roles):
+    if not isinstance(roles, list):
+        raise ValueError(f'roles must be a list of role names, got {roles!r}')
+    roles = sorted(set(roles))
+    unknown = [role for role in roles if role not in VALID_ROLES]
+    if unknown:
+        raise ValueError(f'invalid roles {unknown}, must be one of {list(VALID_ROLES)}')
+    if not roles:
+        raise ValueError('roles must contain at least one role')
+    return roles
 
 
 def _get_reinterpreted_raw_values(config):
@@ -206,6 +230,8 @@ def _get_reinterpreted_raw_values(config):
     log_level = config.get('log_level')
     if log_level:
         result['log_level'] = get_log_level_by_name(log_level)
+
+    result['roles'] = _normalize_roles(config['roles'])
 
     return result
 
