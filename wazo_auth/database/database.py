@@ -1,4 +1,4 @@
-# Copyright 2021-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2021-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -9,6 +9,8 @@ import alembic.config
 import alembic.migration
 from sqlalchemy import create_engine
 from tenacity import after_log, before_log, retry, stop_after_attempt, wait_fixed
+
+from .helpers import startup_lock
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +39,10 @@ def upgrade(uri):
 
     logger.info('Upgrading database')
     engine = create_engine(uri)
-    wait_is_ready(engine)
-    alembic.command.upgrade(config, 'head')
+    try:
+        wait_is_ready(engine)
+        with startup_lock(engine):
+            alembic.command.upgrade(config, 'head')
+    finally:
+        engine.dispose()
     logger.info('Database upgraded')
