@@ -23,6 +23,7 @@ Session = scoped_session(sessionmaker())
 # - objid identifies the lock within wazo-auth
 ADVISORY_LOCK_CLASSID = 1073458317
 STARTUP_LOCK_OBJID = 1
+SCHEDULER_LOCK_OBJID = 2
 
 
 def init_db(db_uri, pool_size=16, max_overflow=10):
@@ -147,3 +148,84 @@ def startup_lock(engine, stop_event=None):
             connection.invalidate()
         finally:
             connection.close()
+
+
+class SchedulerLeaderLock:
+    """Elect a single scheduler leader across wazo-auth instances.
+
+    Non-blocking counterpart to startup_lock: the leader acquires a
+    session-level advisory lock once and keeps its dedicated AUTOCOMMIT
+    connection open across scheduler ticks, so its behavior is identical to
+    a single process. PostgreSQL ties the lock to that connection: if the
+    leader dies or its connection drops, the lock is released server-side
+    and another instance can take over on its next tick.
+    """
+
+    _params = {'classid': ADVISORY_LOCK_CLASSID, 'objid': SCHEDULER_LOCK_OBJID}
+
+    def __init__(self, engine):
+        self._engine = engine
+        self._connection = None
+
+    def hold(self):
+        """Acquire leadership or confirm it still holds; called every tick.
+
+        Exceptions propagate so the caller decides how to survive a database
+        outage; no half-open connection is kept behind.
+        """
+        if self._connection is not None:
+            # a session-level advisory lock lives exactly as long as its
+            # backend session: if this connection still answers, the lock is
+            # still granted
+            try:
+                self._connection.execute(text('SELECT 1'))
+                return True
+            except Exception:
+                logger.warning(
+                    'lost the wazo-auth scheduler leader lock: '
+                    'its connection died, dropping leadership'
+                )
+                self._connection.invalidate()
+                self._connection.close()
+                self._connection = None
+                # the lock is free again server-side: fall through and try
+                # to retake it on a fresh connection right away
+
+        connection = self._engine.connect().execution_options(
+            isolation_level='AUTOCOMMIT'
+        )
+        try:
+            acquired = connection.execute(
+                text('SELECT pg_try_advisory_lock(:classid, :objid)'), self._params
+            ).scalar()
+        except Exception:
+            connection.invalidate()
+            connection.close()
+            raise
+        if not acquired:
+            connection.close()
+            logger.debug('another wazo-auth instance holds the scheduler leader lock')
+            return False
+        self._connection = connection
+        logger.info('acquired the wazo-auth scheduler leader lock')
+        return True
+
+    def release(self):
+        if self._connection is None:
+            return
+        # see startup_lock: unlock explicitly so the lock does not leak into
+        # the pool; drop the connection if the unlock cannot be issued (a
+        # dead connection has already released the lock server-side)
+        try:
+            self._connection.execute(
+                text('SELECT pg_advisory_unlock(:classid, :objid)'), self._params
+            )
+        except Exception:
+            logger.warning(
+                'could not release the wazo-auth scheduler leader lock, '
+                'dropping its connection'
+            )
+            self._connection.invalidate()
+        finally:
+            self._connection.close()
+            self._connection = None

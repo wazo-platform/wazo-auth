@@ -8,12 +8,18 @@ import pytest
 
 from ..helpers import (
     ADVISORY_LOCK_CLASSID,
+    SCHEDULER_LOCK_OBJID,
     STARTUP_LOCK_OBJID,
+    SchedulerLeaderLock,
     StartupLockInterrupted,
     startup_lock,
 )
 
 LOCK_PARAMS = {'classid': ADVISORY_LOCK_CLASSID, 'objid': STARTUP_LOCK_OBJID}
+SCHEDULER_LOCK_PARAMS = {
+    'classid': ADVISORY_LOCK_CLASSID,
+    'objid': SCHEDULER_LOCK_OBJID,
+}
 
 
 @pytest.fixture
@@ -107,6 +113,118 @@ def test_unlock_failure_invalidates_connection(engine, connection):
 
     with startup_lock(engine):
         pass
+
+    connection.invalidate.assert_called_once()
+    connection.close.assert_called_once()
+
+
+@pytest.fixture
+def leader_lock(engine):
+    return SchedulerLeaderLock(engine)
+
+
+def test_scheduler_hold_acquires_on_first_call(engine, connection, leader_lock, caplog):
+    with caplog.at_level(logging.INFO):
+        assert leader_lock.hold() is True
+
+    engine.connect.return_value.execution_options.assert_called_once_with(
+        isolation_level='AUTOCOMMIT'
+    )
+    assert executed_statements(connection) == [
+        'SELECT pg_try_advisory_lock(:classid, :objid)',
+    ]
+    assert executed_params(connection) == [SCHEDULER_LOCK_PARAMS]
+    connection.close.assert_not_called()
+    assert 'acquired the wazo-auth scheduler leader lock' in caplog.text
+
+
+def test_scheduler_hold_contended_returns_false_and_closes(
+    engine, connection, leader_lock
+):
+    connection.execute.return_value.scalar.return_value = False
+
+    assert leader_lock.hold() is False
+    assert leader_lock.hold() is False
+
+    connection.close.assert_called()
+    assert engine.connect.call_count == 2  # reconnects on every attempt
+
+
+def test_scheduler_hold_when_leader_pings_only(engine, connection, leader_lock):
+    assert leader_lock.hold() is True
+    assert leader_lock.hold() is True
+
+    assert executed_statements(connection) == [
+        'SELECT pg_try_advisory_lock(:classid, :objid)',
+        'SELECT 1',
+    ]
+    assert engine.connect.call_count == 1
+
+
+def test_scheduler_hold_dead_connection_reacquires(
+    engine, connection, leader_lock, caplog
+):
+    connection.execute.side_effect = [
+        Mock(scalar=Mock(return_value=True)),
+        Exception('connection is dead'),
+        Mock(scalar=Mock(return_value=True)),
+    ]
+
+    assert leader_lock.hold() is True
+    with caplog.at_level(logging.WARNING):
+        assert leader_lock.hold() is True
+
+    connection.invalidate.assert_called_once()
+    assert engine.connect.call_count == 2
+    assert 'lost the wazo-auth scheduler leader lock' in caplog.text
+
+
+def test_scheduler_hold_acquire_error_closes_and_raises(
+    engine, connection, leader_lock
+):
+    connection.execute.side_effect = Exception('database is unreachable')
+
+    with pytest.raises(Exception):
+        leader_lock.hold()
+
+    connection.invalidate.assert_called_once()
+    connection.close.assert_called_once()
+
+
+def test_scheduler_release_unlocks_and_closes(engine, connection, leader_lock):
+    leader_lock.hold()
+
+    leader_lock.release()
+
+    assert executed_statements(connection)[-1] == (
+        'SELECT pg_advisory_unlock(:classid, :objid)'
+    )
+    connection.close.assert_called_once()
+
+
+def test_scheduler_release_is_idempotent(engine, connection, leader_lock):
+    leader_lock.hold()
+
+    leader_lock.release()
+    leader_lock.release()
+
+    connection.close.assert_called_once()
+
+
+def test_scheduler_release_when_never_held_is_a_noop(engine, leader_lock):
+    leader_lock.release()
+
+    engine.connect.assert_not_called()
+
+
+def test_scheduler_release_failure_invalidates(engine, connection, leader_lock):
+    connection.execute.side_effect = [
+        Mock(scalar=Mock(return_value=True)),
+        Exception('connection is dead'),
+    ]
+    leader_lock.hold()
+
+    leader_lock.release()
 
     connection.invalidate.assert_called_once()
     connection.close.assert_called_once()
