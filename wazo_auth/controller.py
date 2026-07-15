@@ -313,7 +313,11 @@ class Controller:
         self._rest_api = CoreRestApi(config, self._token_service, self._user_service)
 
         self._expired_token_remover = token.ExpiredTokenRemover(
-            config, self.dao, self._bus_publisher, self._saml_service
+            config,
+            self.dao,
+            self._bus_publisher,
+            self._saml_service,
+            Session.get_bind(),
         )
 
     def run(self):

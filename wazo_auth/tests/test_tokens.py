@@ -1,11 +1,16 @@
-# Copyright 2015-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import logging
 import time
 import unittest
 import uuid
+from unittest.mock import Mock, call, patch
+
+import pytest
 
 from wazo_auth import token
+from wazo_auth.token import ExpiredTokenRemover
 
 
 def new_uuid():
@@ -60,3 +65,129 @@ class TestToken(unittest.TestCase):
         self.token.expire_t = None
 
         self.assertFalse(self.token.is_expired())
+
+
+def make_remover(token_cleanup_interval=60):
+    config = {
+        'token_cleanup_interval': token_cleanup_interval,
+        'token_cleanup_batch_size': 5000,
+        'debug': False,
+    }
+    return ExpiredTokenRemover(config, Mock(), Mock(), Mock(), Mock())
+
+
+@pytest.fixture
+def remover():
+    remover = make_remover()
+    remover._leader_lock = Mock()
+    remover._purge_expired_sessions = Mock()
+    remover._purge_expired_saml_sessions = Mock()
+    remover._notify_expire_soon = Mock()
+    return remover
+
+
+def test_run_once_runs_cleanups_in_order(remover):
+    parent = Mock()
+    parent.attach_mock(remover._purge_expired_sessions, 'purge_sessions')
+    parent.attach_mock(remover._purge_expired_saml_sessions, 'purge_saml')
+    parent.attach_mock(remover._notify_expire_soon, 'notify')
+
+    remover._run_once()
+
+    assert parent.mock_calls == [
+        call.purge_sessions(),
+        call.purge_saml(),
+        call.notify(),
+    ]
+
+
+def test_loop_skips_cleanups_when_not_leader(remover, caplog):
+    def not_leader_and_stop():
+        remover._tombstone.set()
+        return False
+
+    remover._leader_lock.hold.side_effect = not_leader_and_stop
+
+    with caplog.at_level(logging.DEBUG):
+        remover._loop()
+
+    remover._purge_expired_sessions.assert_not_called()
+    remover._purge_expired_saml_sessions.assert_not_called()
+    remover._notify_expire_soon.assert_not_called()
+    assert 'ExpiredTokenRemover took' not in caplog.text
+
+
+def test_loop_survives_lock_errors(remover):
+    def fail_and_stop():
+        remover._tombstone.set()
+        raise Exception('database is unreachable')
+
+    remover._leader_lock.hold.side_effect = fail_and_stop
+
+    remover._loop()
+
+    remover._purge_expired_sessions.assert_not_called()
+
+
+@patch('wazo_auth.token.Session')
+def test_run_once_survives_cleanup_errors(session, remover):
+    remover._purge_expired_sessions.side_effect = Exception('boom')
+
+    remover._run_once()
+
+    session.close.assert_called_once()
+
+
+def test_loop_releases_lock_on_exit(remover):
+    remover._tombstone.set()
+
+    remover._loop()
+
+    remover._leader_lock.release.assert_called_once()
+    remover._leader_lock.hold.assert_not_called()
+
+
+def test_loop_ticks_then_releases(remover):
+    def become_leader_and_stop():
+        remover._tombstone.set()
+        return True
+
+    remover._leader_lock.hold.side_effect = become_leader_and_stop
+
+    remover._loop()
+
+    remover._purge_expired_sessions.assert_called_once()
+    remover._leader_lock.release.assert_called_once()
+
+
+def test_disabled_when_interval_below_one():
+    remover = make_remover(token_cleanup_interval=0)
+
+    remover.start()
+    remover.stop()
+
+
+@patch('wazo_auth.token.Session')
+def test_leadership_released_after_consecutive_failures(session, remover):
+    remover._purge_expired_sessions.side_effect = Exception('boom')
+
+    for _ in range(ExpiredTokenRemover.MAX_CONSECUTIVE_FAILURES):
+        remover._run_once()
+
+    remover._leader_lock.release.assert_called_once()
+
+
+@patch('wazo_auth.token.Session')
+def test_a_successful_tick_resets_the_failure_count(session, remover):
+    failures = ExpiredTokenRemover.MAX_CONSECUTIVE_FAILURES - 1
+
+    remover._purge_expired_sessions.side_effect = Exception('boom')
+    for _ in range(failures):
+        remover._run_once()
+    remover._purge_expired_sessions.side_effect = None
+    remover._run_once()
+    remover._purge_expired_sessions.side_effect = Exception('boom')
+    for _ in range(failures):
+        remover._run_once()
+
+    remover._leader_lock.release.assert_not_called()

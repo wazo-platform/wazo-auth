@@ -21,6 +21,7 @@ def make_controller():
 
     with (
         patch('wazo_auth.database.helpers.Session'),
+        patch('wazo_auth.controller.Session'),
         patch('wazo_auth.controller.CoreRestApi'),
         patch('wazo_auth.token.ExpiredTokenRemover'),
         patch('wazo_auth.controller.ServiceDiscoveryComponent'),
