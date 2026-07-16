@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -299,7 +299,7 @@ class TestSessions(base.APIIntegrationTest):
         session_uuid = self._create_generic_token(expiration=3)
 
         def assert_log_message():
-            logs = self.service_logs(service_name='auth', since=test_start)
+            logs = self.auth_logs(since=test_start)
             assert_that(logs, contains_string(session_uuid))
 
         until.assert_(assert_log_message, tries=10, interval=0.5)

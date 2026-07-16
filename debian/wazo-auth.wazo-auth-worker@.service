@@ -1,0 +1,17 @@
+[Unit]
+Description=wazo-auth HTTP worker %i
+After=network.target postgresql.service wazo-auth.service
+PartOf=wazo-auth.service
+StartLimitBurst=15
+StartLimitIntervalSec=150
+
+[Service]
+ExecStartPre=/usr/bin/wazo-auth-wait
+ExecStart=/usr/bin/wazo-auth --http-worker
+Restart=on-failure
+RestartPreventExitStatus=78
+RestartSec=5
+SyslogIdentifier=wazo-auth-worker@%i
+
+[Install]
+WantedBy=wazo-auth.service

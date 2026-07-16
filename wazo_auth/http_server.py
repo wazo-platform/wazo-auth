@@ -1,10 +1,14 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
+
+from __future__ import annotations
 
 import logging
 import os
+import socket
 from datetime import timedelta
 from functools import partial
+from typing import Any
 
 from flask import Flask
 from flask_cors import CORS
@@ -21,6 +25,26 @@ VERSION = 0.1
 logger = logging.getLogger(__name__)
 app = Flask('wazo-auth')
 api = Api(app, prefix=f'/{VERSION}')
+
+
+class ReusePortWSGIServer(wsgi.WSGIServer):
+    @staticmethod
+    def prepare_socket(
+        bind_addr: Any,
+        family: int,
+        type_: int,
+        proto: int,
+        nodelay: bool,
+        ssl_adapter: Any,
+    ) -> socket.socket:
+        """Set SO_REUSEPORT so several wazo-auth processes can bind the same
+        port and let the kernel load-balance connections across them."""
+
+        sock = wsgi.WSGIServer.prepare_socket(
+            bind_addr, family, type_, proto, nodelay, ssl_adapter
+        )
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        return sock
 
 
 def teardown_appcontext(response_or_exc):
@@ -80,7 +104,12 @@ class CoreRestApi:
                 x_host=num_proxies,
             ),
         )
-        self.server = wsgi.WSGIServer(
+        server_class = (
+            ReusePortWSGIServer
+            if self.config.get('reuse_port', False)
+            else wsgi.WSGIServer
+        )
+        self.server = server_class(
             bind_addr=bind_addr,
             wsgi_app=wsgi_app,
             numthreads=self.config['max_threads'],

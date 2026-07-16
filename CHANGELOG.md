@@ -1,5 +1,9 @@
 # Changelog
 
+## 26.08
+
+* Added `--http-worker` flag to start HTTP-only wazo-auth instance
+
 ## 26.07
 
 * `POST /0.1/token` (`refresh_token` grant): the login is now resolved live from the refresh token's `user_uuid` (current username, falling back to main confirmed email) instead of the value frozen at creation. Refresh tokens keep working after a username or confirmed-email change; the stored `login` is no longer used for authentication.

@@ -120,7 +120,7 @@ class TestTokens(base.APIIntegrationTest):
         client.username = 'u1@example.com'
         client.password = u1['password'][2:]  # invalid password
 
-        with self.asset_cls.capture_logs(service_name='auth') as auth_logs:
+        with self.asset_cls.capture_auth_logs() as auth_logs:
             assert_http_error(401, client.token.new, expiration=1)
 
         assert re.search(
@@ -134,7 +134,7 @@ class TestTokens(base.APIIntegrationTest):
         client.username = 'u1@example.com'
         client.password = u1['password']
 
-        with self.asset_cls.capture_logs(service_name='auth') as auth_logs:
+        with self.asset_cls.capture_auth_logs() as auth_logs:
             token_data = client.token.new(expiration=1)
 
         token_id = 'XXXXXXXX-XXXX-XXXX-XXXX-XXXX' + token_data['token'][-8:]
