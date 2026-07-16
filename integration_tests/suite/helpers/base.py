@@ -223,6 +223,10 @@ class BootstrapAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
     asset = 'bootstrap'
 
 
+class KernelWorkersAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
+    asset = 'kernel_workers'
+
+
 class DAOTestCase(unittest.TestCase):
     unknown_uuid = '00000000-0000-0000-0000-000000000000'
     asset_cls = DBAssetLaunchingTestCase
@@ -638,6 +642,12 @@ class APIIntegrationTest(BaseIntegrationTest):
 
 class SAMLIntegrationTest(BaseIntegrationTest):
     asset_cls = SAMLAssetLaunchingTestCase
+    username = 'admin'
+    password = 's3cre7'
+
+
+class KernelWorkersIntegrationTest(BaseIntegrationTest):
+    asset_cls = KernelWorkersAssetLaunchingTestCase
     username = 'admin'
     password = 's3cre7'
 

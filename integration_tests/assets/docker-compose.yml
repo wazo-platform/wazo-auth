@@ -8,28 +8,17 @@ services:
     image: wazoplatform/wazo-auth-tests
     ports:
       - "9497"
-    environment: &auth-environment
+    environment:
       TZ: UTC+1
       XIVO_UUID: the-predefined-xivo-uuid
       OAUTHLIB_INSECURE_TRANSPORT: 1
       SQLALCHEMY_WARN_20: 1
-    volumes: &auth-volumes
+    volumes:
       - "../..:/usr/src/wazo-auth"
       - "./etc/wazo-auth/conf.d/50-default.yml:/etc/wazo-auth/conf.d/50-default.yml"
       - "./var/lib/wazo-auth/saml:/var/lib/wazo-auth/saml:ro"
       # - "${LOCAL_GIT_REPOS}/xivo-lib-python/xivo:/opt/venv/lib/python3.11/site-packages/xivo"
       # - "${LOCAL_GIT_REPOS}/wazo-bus/wazo_bus:/opt/venv/lib/python3.11/site-packages/wazo_bus"
-
-  auth-worker:
-    image: wazoplatform/wazo-auth-tests
-    network_mode: "service:auth"
-    command: ["sh", "-ec", "wazo-auth-wait; exec wazo-auth --http-worker"]
-    environment: *auth-environment
-    volumes: *auth-volumes
-    depends_on:
-      - auth
-    deploy:
-      replicas: ${INTEGRATION_TEST_AUTH_WORKERS:-0}
 
   oauth2sync:
     image: oauth2-synchronization-service

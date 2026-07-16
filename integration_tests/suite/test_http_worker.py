@@ -9,8 +9,8 @@ from wazo_test_helpers import until
 from .helpers import base
 
 
-@base.use_asset('base')
-class TestHttpWorker(base.APIIntegrationTest):
+@base.use_asset('kernel_workers')
+class TestHttpWorker(base.KernelWorkersIntegrationTest):
     def setUp(self):
         if not self.asset_cls._has_auth_worker():
             self.skipTest('requires INTEGRATION_TEST_AUTH_WORKERS >= 1')

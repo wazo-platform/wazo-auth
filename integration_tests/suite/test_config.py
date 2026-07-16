@@ -15,11 +15,6 @@ class TestConfig(base.APIIntegrationTest):
         assert_that(result, has_key('rest_api'))
 
     def test_update_config(self):
-        if self.asset_cls._has_auth_worker():
-            self.skipTest(
-                'PATCH /config updates one instance in-memory and is not '
-                'propagated across HTTP workers (known limitation)'
-            )
         previous_value = self.client.config.get()['debug']
         patch_data = [
             {
