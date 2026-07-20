@@ -9,3 +9,7 @@ export PYBUILD_DISABLE=test
 
 override_dh_installinit:
 	dh_installinit --noscripts
+
+override_dh_installsystemd:
+	dh_installsystemd --no-enable --no-start --name wazo-auth-worker@
+	dh_installsystemd
