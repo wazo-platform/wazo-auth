@@ -174,6 +174,7 @@ def _parse_cli_args(argv):
     parser.add_argument(
         '--listen-port',
         action='store',
+        type=int,
         help='Port on which the rest API will listen',
     )
     parser.add_argument(
@@ -192,8 +193,8 @@ def _parse_cli_args(argv):
     parsed_args = parser.parse_args(argv)
 
     result = {}
-    if parsed_args.listen_port:
-        result['rest_api'] = {'listen': parsed_args.listen_port}
+    if parsed_args.listen_port is not None:
+        result['rest_api'] = {'port': parsed_args.listen_port}
     if parsed_args.log_file:
         result['log_filename'] = parsed_args.log_file
     if parsed_args.config_file:

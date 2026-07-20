@@ -34,6 +34,28 @@ def test_cli_unknown_role_is_rejected():
         _parse_cli_args(['--role', 'bogus'])
 
 
+def test_cli_listen_port_sets_the_rest_api_port():
+    result = _parse_cli_args(['--listen-port', '9498'])
+
+    assert result['rest_api'] == {'port': 9498}
+
+
+def test_cli_no_listen_port_leaves_rest_api_unset():
+    result = _parse_cli_args([])
+
+    assert 'rest_api' not in result
+
+
+@patch('wazo_auth.config.read_config_file_hierarchy_accumulating_list')
+def test_cli_listen_port_overrides_file_port_but_keeps_listen(read_config_files):
+    read_config_files.return_value = {'rest_api': {'port': 9497, 'listen': '0.0.0.0'}}
+
+    config = get_config(['--listen-port', '9498'])
+
+    assert config['rest_api']['port'] == 9498
+    assert config['rest_api']['listen'] == '0.0.0.0'
+
+
 def test_normalize_roles_dedupes_and_sorts():
     assert _normalize_roles(['scheduler', 'api', 'scheduler']) == ['api', 'scheduler']
 
