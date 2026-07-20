@@ -1,5 +1,22 @@
 # Changelog
 
+## 26.08
+
+* wazo-auth can be scaled to multiple processes or replicas:
+    * New `roles` config (`api`, `scheduler`, `init`) and repeatable
+      `--role` CLI option; default unchanged (all roles, one process)
+    * Migrations and startup tasks are serialized across instances with a
+      PostgreSQL advisory lock; the token cleanup elects a single leader
+    * New `wazo-auth-worker@.service` template:
+      `systemctl enable --now wazo-auth-worker@9498` adds an API-only
+      process on port 9498. See `contribs/scaling/README.md`
+* `service_discovery.advertise_port` defaults to `rest_api.port` instead
+  of a static 9497; set it explicitly to advertise a different port
+* `--listen-port` now sets the REST API port as documented; it previously
+  overwrote the listen address
+* `wazo-auth-wait` accepts `--port` (default: the configured
+  `rest_api.port`)
+
 ## 26.07
 
 * `POST /0.1/token` (`refresh_token` grant): the login is now resolved live from the refresh token's `user_uuid` (current username, falling back to main confirmed email) instead of the value frozen at creation. Refresh tokens keep working after a username or confirmed-email change; the stored `login` is no longer used for authentication.
