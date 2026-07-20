@@ -75,11 +75,13 @@ class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
     service = 'auth'
 
     @classmethod
-    def make_auth_client(cls, username=None, password=None, **kwargs):
+    def make_auth_client(
+        cls, username=None, password=None, service_name='auth', **kwargs
+    ):
         try:
-            port = cls.service_port(9497, service_name='auth')
+            port = cls.service_port(9497, service_name=service_name)
         except (NoSuchService, NoSuchPort):
-            return WrongClient('auth')
+            return WrongClient(service_name)
 
         kwargs.update({'port': port, 'prefix': '', 'https': False})
         if username and password:
@@ -164,6 +166,10 @@ class MetadataAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
 
 class BootstrapAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
     asset = 'bootstrap'
+
+
+class ClusterAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
+    asset = 'cluster'
 
 
 class DAOTestCase(unittest.TestCase):
