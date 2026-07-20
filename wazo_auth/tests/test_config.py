@@ -56,6 +56,48 @@ def test_cli_listen_port_overrides_file_port_but_keeps_listen(read_config_files)
     assert config['rest_api']['listen'] == '0.0.0.0'
 
 
+@patch('wazo_auth.config.read_config_file_hierarchy_accumulating_list')
+def test_advertise_port_defaults_to_the_rest_api_port(read_config_files):
+    read_config_files.return_value = {}
+
+    config = get_config([])
+
+    assert config['service_discovery']['advertise_port'] == 9497
+    # the derivation must not clobber the other service_discovery keys
+    assert config['service_discovery']['advertise_address'] == 'auto'
+    assert config['service_discovery']['ttl_interval'] == 30
+
+
+@patch('wazo_auth.config.read_config_file_hierarchy_accumulating_list')
+def test_advertise_port_follows_a_file_configured_port(read_config_files):
+    read_config_files.return_value = {'rest_api': {'port': 9600}}
+
+    config = get_config([])
+
+    assert config['service_discovery']['advertise_port'] == 9600
+
+
+@patch('wazo_auth.config.read_config_file_hierarchy_accumulating_list')
+def test_advertise_port_follows_the_cli_port(read_config_files):
+    read_config_files.return_value = {}
+
+    config = get_config(['--listen-port', '9498'])
+
+    assert config['service_discovery']['advertise_port'] == 9498
+
+
+@patch('wazo_auth.config.read_config_file_hierarchy_accumulating_list')
+def test_explicit_advertise_port_is_respected(read_config_files):
+    read_config_files.return_value = {
+        'rest_api': {'port': 9600},
+        'service_discovery': {'advertise_port': 12345},
+    }
+
+    config = get_config([])
+
+    assert config['service_discovery']['advertise_port'] == 12345
+
+
 def test_normalize_roles_dedupes_and_sorts():
     assert _normalize_roles(['scheduler', 'api', 'scheduler']) == ['api', 'scheduler']
 
