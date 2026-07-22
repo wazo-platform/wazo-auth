@@ -160,8 +160,9 @@ def test_loop_ticks_then_releases(remover):
     remover._leader_lock.release.assert_called_once()
 
 
-def test_disabled_when_interval_below_one():
-    remover = make_remover(token_cleanup_interval=0)
+@pytest.mark.parametrize('interval', [0, 0.5])
+def test_disabled_when_interval_below_one(interval):
+    remover = make_remover(token_cleanup_interval=interval)
 
     remover.start()
     remover.stop()

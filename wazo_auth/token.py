@@ -135,14 +135,16 @@ class ExpiredTokenRemover:
         self._saml_service = saml_service
 
     def start(self):
-        if self._cleanup_interval > 0:
-            self._thread.start()
+        if self._cleanup_interval < 1:
+            return
+        self._thread.start()
 
     def stop(self):
-        if self._cleanup_interval > 0:
-            self._tombstone.set()
-            self._thread.join()
-            self._tombstone.clear()
+        if self._cleanup_interval < 1:
+            return
+        self._tombstone.set()
+        self._thread.join()
+        self._tombstone.clear()
 
     def _loop(self):
         try:
