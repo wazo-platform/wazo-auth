@@ -8,8 +8,8 @@
     * Migrations and startup tasks are serialized across instances with a
       PostgreSQL advisory lock; the token cleanup elects a single leader
     * New `wazo-auth-worker@.service` template:
-      `systemctl enable --now wazo-auth-worker@9498` adds an API-only
-      process on port 9498. See `contribs/scaling/README.md`
+      `systemctl enable --now wazo-auth-worker@19497` adds an API-only
+      process on port 19497. See `contribs/scaling/README.md`
 * `service_discovery.advertise_port` defaults to `rest_api.port` instead
   of a static 9497; set it explicitly to advertise a different port
 * `--listen-port` now sets the REST API port as documented; it previously

@@ -26,33 +26,31 @@ Start additional API-only processes with the systemd template, using the
 instance name as the port:
 
 ```sh
-systemctl enable --now wazo-auth-worker@9498 wazo-auth-worker@9499
+systemctl enable --now wazo-auth-worker@19497 wazo-auth-worker@29497
 ```
 
 Workers are tied to the main unit (`PartOf=wazo-auth.service`): they stop and
 restart with it. Each worker advertises its own port in Consul automatically
 (`service_discovery.advertise_port` defaults to the real listening port).
 
-To spread the API traffic across the workers, declare an nginx upstream in an
-http-context file, e.g. `/etc/nginx/conf.d/wazo-auth-upstream.conf`:
+nginx already routes the API through the `wazo-auth` upstream defined in
+`/etc/nginx/conf.d/wazo-auth-upstream.conf`. To spread the traffic across
+the workers, add one server line per worker and reload nginx:
 
 ```nginx
 upstream wazo-auth {
-    server 127.0.0.1:9497;   # main instance (all roles)
-    server 127.0.0.1:9498;   # wazo-auth-worker@9498
-    server 127.0.0.1:9499;   # wazo-auth-worker@9499
+    server 127.0.0.1:9497;    # main instance (all roles)
+    server 127.0.0.1:19497;   # wazo-auth-worker@19497
+    server 127.0.0.1:29497;   # wazo-auth-worker@29497
 }
 ```
 
-then edit `/etc/nginx/locations/https-available/wazo-auth`, replacing
-`127.0.0.1:9497` with `wazo-auth` in the four `proxy_pass` lines (e.g.
-`proxy_pass http://wazo-auth/;`), and `systemctl reload nginx`.
-
-Note: that location file is a dpkg conffile; future wazo-auth upgrades will
-ask about the local modification (keep the local version).
+```sh
+nginx -t && systemctl reload nginx
+```
 
 All instances share `/var/log/wazo-auth.log`. Per-instance streams are
-available through journald (`journalctl -t wazo-auth-worker@9498`); pass
+available through journald (`journalctl -t wazo-auth-worker@19497`); pass
 `--log-file` in a unit override if separate files are preferred.
 
 ## Topology 3: containers, N identical replicas
