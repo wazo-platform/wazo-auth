@@ -168,6 +168,10 @@ def test_disabled_when_interval_below_one(interval):
     remover.stop()
 
 
+def test_stop_before_start_is_a_noop(remover):
+    remover.stop()
+
+
 @patch('wazo_auth.token.Session')
 def test_leadership_released_after_consecutive_failures(session, remover):
     remover._purge_expired_sessions.side_effect = Exception('boom')
