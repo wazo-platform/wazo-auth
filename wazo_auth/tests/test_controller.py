@@ -49,6 +49,24 @@ def test_create_controller(make_controller):
     assert controller._roles == {'api', 'scheduler', 'init'}
 
 
+def test_pool_reserves_a_connection_for_the_scheduler_leader(make_controller):
+    min_threads = _DEFAULT_CONFIG['rest_api']['min_threads']
+    max_threads = _DEFAULT_CONFIG['rest_api']['max_threads']
+    overflow = max_threads - min_threads
+
+    with patch('wazo_auth.controller.init_db') as init_db:
+        make_controller()
+        init_db.assert_called_once_with(
+            ANY, pool_size=min_threads + 2, max_overflow=overflow
+        )
+
+    with patch('wazo_auth.controller.init_db') as init_db:
+        make_controller(roles=['api'])
+        init_db.assert_called_once_with(
+            ANY, pool_size=min_threads, max_overflow=overflow
+        )
+
+
 def test_run_default_roles_order(make_controller, run_environment):
     controller = make_controller()
     parent = Mock()

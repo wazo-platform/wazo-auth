@@ -102,10 +102,13 @@ class Controller:
     def __init__(self, config):
         min_threads = config['rest_api']['min_threads']
         max_threads = config['rest_api']['max_threads']
+        max_overflow = max_threads - min_threads
+        if 'scheduler' in config['roles']:
+            min_threads += 2  # leader advisory lock + its cleanup session
         init_db(
             config['db_uri'],
             pool_size=min_threads,
-            max_overflow=max_threads - min_threads,
+            max_overflow=max_overflow,
         )
         self._config = config
         self._roles = set(config['roles'])
