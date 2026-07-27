@@ -33,6 +33,7 @@ from .service_discovery import self_check
 logger = logging.getLogger(__name__)
 
 MISCONFIGURATION_EXIT_CODE = 78
+DB_POOL_SPARE_CONN = 10
 
 
 def _signal_handler(controller, signum, frame):
@@ -96,7 +97,13 @@ def _load_idp_plugins(
 
 class Controller:
     def __init__(self, config):
-        init_db(config['db_uri'], pool_size=config['rest_api']['max_threads'])
+        min_threads = config['rest_api']['min_threads']
+        max_threads = config['rest_api']['max_threads']
+        init_db(
+            config['db_uri'],
+            pool_size=min_threads,
+            max_overflow=max_threads - min_threads + DB_POOL_SPARE_CONN,
+        )
         self._config = config
         self._http_worker = config.get('http_worker', False)
         self._stopping_thread = None

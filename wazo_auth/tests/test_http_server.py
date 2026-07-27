@@ -29,7 +29,7 @@ def _core_rest_api(reuse_port):
     return CoreRestApi(config, Mock(), Mock())
 
 
-@patch('wazo_auth.http_server.wsgi.WSGIServer')
+@patch('wazo_auth.http_server.wsgi.DynamicWSGIServer')
 @patch('wazo_auth.http_server.ReusePortWSGIServer')
 def test_run_uses_reuse_port_server_when_enabled(mock_reuse_server, mock_plain_server):
     _core_rest_api(reuse_port=True).run()
@@ -38,7 +38,7 @@ def test_run_uses_reuse_port_server_when_enabled(mock_reuse_server, mock_plain_s
     mock_plain_server.assert_not_called()
 
 
-@patch('wazo_auth.http_server.wsgi.WSGIServer')
+@patch('wazo_auth.http_server.wsgi.DynamicWSGIServer')
 @patch('wazo_auth.http_server.ReusePortWSGIServer')
 def test_run_uses_plain_server_when_reuse_port_disabled(
     mock_reuse_server, mock_plain_server

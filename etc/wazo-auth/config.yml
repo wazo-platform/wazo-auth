@@ -31,8 +31,14 @@ password_reset_email_subject_template: '/var/lib/wazo-auth/templates/password_re
 # REST API server
 rest_api:
 
-  # The maximum number of threads in the webserver thread pool
-  max_threads: 25
+  # Minimum of concurrent threads processing requests. This many threads
+  # (and database connections) are kept ready at all times.
+  min_threads: 25
+
+  # Maximum of concurrent threads processing requests. The number of threads
+  # (and database connections) scales with demand between min_threads and
+  # max_threads.
+  max_threads: 200
 
   listen: 127.0.0.1
   port: 9497
