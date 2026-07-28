@@ -12,6 +12,8 @@
     * New `wazo-auth-worker@.service` template:
       `systemctl enable --now wazo-auth-worker@19497` adds an API-only
       process on port 19497. See `contribs/scaling/README.md`
+    * nginx serves the API on its internal entry point as well, so other
+      services reach wazo-auth through `http://localhost/api/auth`
 * `service_discovery.advertise_port` defaults to `rest_api.port` instead
   of a static 9497; set it explicitly to advertise a different port
 * `--listen-port` now sets the REST API port as documented; it previously
