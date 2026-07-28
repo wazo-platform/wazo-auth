@@ -8,8 +8,7 @@ import re
 import shutil
 import string
 import unittest
-from concurrent.futures import Future
-from contextlib import ExitStack, contextmanager
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 
@@ -34,7 +33,6 @@ from wazo_test_helpers.asset_launching_test_case import (
     NoSuchService,
     WrongClient,
 )
-from wazo_test_helpers.asset_launching_test_case import _run_cmd as run_command
 from wazo_test_helpers.bus import BusClient
 from wazo_test_helpers.filesystem import FileSystemClient
 from wazo_test_helpers.hamcrest.raises import raises
@@ -135,67 +133,12 @@ class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
         helpers.init_db(database.uri)
 
     @classmethod
-    def _docker_compose(cls, *args, **kwargs):
-        return run_command(
-            ['docker', 'compose', *cls._docker_compose_options(), *args],
-            **kwargs,
-        )
-
-    @classmethod
     def restart_auth(cls):
-        has_worker = cls._has_auth_worker()
-        if has_worker:
-            cls._docker_compose('stop', 'auth-worker')
-
         cls.restart_service('auth')
-
-        if has_worker:
-            cls._docker_compose('start', 'auth-worker')
-
         auth = cls.make_auth_client()
         logging.getLogger('wazo_test_helpers').setLevel(logging.INFO)
         until.return_(auth.status.check, timeout=30)
         logging.getLogger('wazo_test_helpers').setLevel(logging.DEBUG)
-
-    @classmethod
-    def _auth_worker_container_ids(cls):
-        result = cls._docker_compose('ps', '-q', 'auth-worker', stderr=False)
-        return result.stdout.decode('utf-8').split()
-
-    @classmethod
-    def _has_auth_worker(cls):
-        return bool(cls._auth_worker_container_ids())
-
-    @classmethod
-    def worker_logs(cls, since=None):
-        args = ['logs', '--no-log-prefix', 'auth-worker']
-        if since is not None:
-            args.append(f'--since={since}')
-        return cls._docker_compose(*args).stdout.decode('utf-8')
-
-    @classmethod
-    def auth_logs(cls, since=None):
-        logs = cls.service_logs('auth', since=since)
-        if cls._has_auth_worker():
-            logs += cls.worker_logs(since=since)
-        return logs
-
-    @classmethod
-    @contextmanager
-    def capture_auth_logs(cls):
-        time_start = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-        result = Future()
-        try:
-            yield result
-        finally:
-            result.set_result(cls.auth_logs(since=time_start))
-
-    @classmethod
-    def _exec_in_container(cls, container_id):
-        def execute(command, service_name=None, **kwargs):
-            return run_command(['docker', 'exec', container_id, *command])
-
-        return execute
 
 
 class DBAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
@@ -221,10 +164,6 @@ class MetadataAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
 
 class BootstrapAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
     asset = 'bootstrap'
-
-
-class KernelWorkersAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
-    asset = 'kernel_workers'
 
 
 class DAOTestCase(unittest.TestCase):
@@ -342,14 +281,6 @@ class BaseIntegrationTest(unittest.TestCase):
         return cls.asset_cls.service_logs(*args, **kwargs)
 
     @classmethod
-    def auth_logs(cls, since=None):
-        return cls.asset_cls.auth_logs(since=since)
-
-    @classmethod
-    def worker_logs(cls, since=None):
-        return cls.asset_cls.worker_logs(since=since)
-
-    @classmethod
     def stop_service(cls, *args, **kwargs):
         return cls.asset_cls.stop_service(*args, **kwargs)
 
@@ -417,21 +348,16 @@ class BaseIntegrationTest(unittest.TestCase):
     @classmethod
     @contextmanager
     def auth_with_config(cls, config):
-        container_ids = [
-            cls.asset_cls._container_id('auth'),
-            *cls.asset_cls._auth_worker_container_ids(),
-        ]
+        filesystem = FileSystemClient(
+            execute=cls.asset_cls.docker_exec,
+            service_name='auth',
+            root=True,
+        )
         name = ''.join(random.choice(string.ascii_lowercase) for _ in range(6))
         config_file = f'/etc/wazo-auth/conf.d/10-{name}.yml'
         content = yaml.dump(config)
         try:
-            with ExitStack() as stack:
-                for container_id in container_ids:
-                    filesystem = FileSystemClient(
-                        execute=cls.asset_cls._exec_in_container(container_id),
-                        root=True,
-                    )
-                    stack.enter_context(filesystem.file_(config_file, content=content))
+            with filesystem.file_(config_file, content=content):
                 cls.restart_auth()
                 yield
         finally:
@@ -642,12 +568,6 @@ class APIIntegrationTest(BaseIntegrationTest):
 
 class SAMLIntegrationTest(BaseIntegrationTest):
     asset_cls = SAMLAssetLaunchingTestCase
-    username = 'admin'
-    password = 's3cre7'
-
-
-class KernelWorkersIntegrationTest(BaseIntegrationTest):
-    asset_cls = KernelWorkersAssetLaunchingTestCase
     username = 'admin'
     password = 's3cre7'
 

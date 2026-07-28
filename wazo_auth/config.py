@@ -1,4 +1,4 @@
-# Copyright 2015-2026 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2015-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import argparse
@@ -93,7 +93,6 @@ _DEFAULT_CONFIG = {
         'num_proxies': 1,
         'listen': '127.0.0.1',
         'port': _DEFAULT_HTTP_PORT,
-        'reuse_port': False,
         'certificate': None,  # Deprecated
         'private_key': None,  # Deprecated
         'cors': {
@@ -176,12 +175,6 @@ def _parse_cli_args(argv):
         help='Port on which the rest API will listen',
     )
     parser.add_argument(
-        '--http-worker',
-        action='store_true',
-        default=False,
-        help='Run as an additional HTTP-only worker',
-    )
-    parser.add_argument(
         '--log-file',
         action='store',
         help='The log filename to log to',
@@ -203,7 +196,6 @@ def _parse_cli_args(argv):
         result['log_level'] = parsed_args.log_level
     if parsed_args.db_upgrade_on_startup:
         result['db_upgrade_on_startup'] = parsed_args.db_upgrade_on_startup
-    result['http_worker'] = parsed_args.http_worker
 
     return result
 
@@ -223,7 +215,6 @@ def get_config(argv):
     file_config = read_config_file_hierarchy_accumulating_list(
         ChainMap(cli_config, _DEFAULT_CONFIG)
     )
-    file_config.pop('http_worker', None)
     reinterpreted_config = _get_reinterpreted_raw_values(
         ChainMap(cli_config, file_config, _DEFAULT_CONFIG)
     )

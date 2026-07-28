@@ -90,7 +90,7 @@ class TestResetPassword(base.APIIntegrationTest):
     def test_set_password_does_not_log_password(self, user):
         new_password = '5ecr37'
 
-        with self.asset_cls.capture_auth_logs() as logs:
+        with self.asset_cls.capture_logs(service_name='auth') as logs:
             self.client.users.set_password(user['uuid'], new_password)
 
         assert_that(logs.result(), not_(contains_string(new_password)))
@@ -109,7 +109,7 @@ class TestResetPassword(base.APIIntegrationTest):
             test_start = time.time()
             self.client.users.reset_password(username='bob')
 
-            logs = self.auth_logs(since=test_start)
+            logs = self.service_logs(service_name='auth', since=test_start)
             context_str = "'username': 'bob'"
             regex = f"email_notification_logger,send_password_reset,.*{context_str}"
             assert_that(logs, matches_regexp(regex))

@@ -219,7 +219,7 @@ class TestUsers(base.APIIntegrationTest):
             'password': 's3cr37',
         }
 
-        with self.asset_cls.capture_auth_logs() as logs:
+        with self.asset_cls.capture_logs(service_name='auth') as logs:
             with self.user(self.client, **args):
                 pass
 
@@ -410,7 +410,7 @@ class TestUsers(base.APIIntegrationTest):
             'password': 's3cr37',
         }
 
-        with self.asset_cls.capture_auth_logs() as logs:
+        with self.asset_cls.capture_logs(service_name='auth') as logs:
             with self.user(self.client, register=True, **args):
                 pass
 
@@ -496,7 +496,7 @@ class TestUsers(base.APIIntegrationTest):
         old_password = 'secret'
         new_password = 'NewPass'
 
-        with self.asset_cls.capture_auth_logs() as logs:
+        with self.asset_cls.capture_logs(service_name='auth') as logs:
             self.client.users.change_password(
                 user['uuid'],
                 old_password=old_password,

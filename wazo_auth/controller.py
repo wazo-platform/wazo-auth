@@ -32,9 +32,6 @@ from .service_discovery import self_check
 
 logger = logging.getLogger(__name__)
 
-MISCONFIGURATION_EXIT_CODE = 78
-DB_POOL_SPARE_CONN = 10
-
 
 def _signal_handler(controller, signum, frame):
     controller.stop(reason=signal.Signals(signum).name)
@@ -102,10 +99,9 @@ class Controller:
         init_db(
             config['db_uri'],
             pool_size=min_threads,
-            max_overflow=max_threads - min_threads + DB_POOL_SPARE_CONN,
+            max_overflow=max_threads - min_threads,
         )
         self._config = config
-        self._http_worker = config.get('http_worker', False)
         self._stopping_thread = None
         _check_required_config_for_other_threads(config)
         self._service_discovery_args = [
@@ -308,9 +304,6 @@ class Controller:
 
         self._rest_api = CoreRestApi(config, self._token_service, self._user_service)
 
-        if self._http_worker:
-            return
-
         self._expired_token_remover = token.ExpiredTokenRemover(
             config, self.dao, self._bus_publisher, self._saml_service
         )
@@ -319,19 +312,6 @@ class Controller:
         signal.signal(signal.SIGTERM, partial(_signal_handler, self))
         signal.signal(signal.SIGINT, partial(_signal_handler, self))
 
-        if self._http_worker:
-            if not self._config['rest_api']['reuse_port']:
-                logger.error(
-                    'Cannot start as an HTTP worker: rest_api.reuse_port must be '
-                    'enabled so the worker can share the listen port with the '
-                    'primary wazo-auth process'
-                )
-                sys.exit(MISCONFIGURATION_EXIT_CODE)
-            self._run_as_worker()
-        else:
-            self._run()
-
-    def _run(self):
         with db_ready(timeout=self._config['db_connect_retry_timeout_seconds']):
             if self._config['update_policy_on_startup']:
                 self._update_policy_on_startup()
@@ -354,19 +334,9 @@ class Controller:
             if self._stopping_thread:
                 self._stopping_thread.join()
 
-    def _run_as_worker(self):
-        with db_ready(timeout=self._config['db_connect_retry_timeout_seconds']):
-            http.init_top_tenant(self.dao)
-        try:
-            self._rest_api.run()
-        finally:
-            if self._stopping_thread:
-                self._stopping_thread.join()
-
     def stop(self, reason):
         logger.warning('Stopping wazo-auth: %s', reason)
-        if not self._http_worker:
-            self._expired_token_remover.stop()
+        self._expired_token_remover.stop()
         self._stopping_thread = threading.Thread(
             target=self._rest_api.stop, name=reason
         )
