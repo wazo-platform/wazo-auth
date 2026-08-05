@@ -28,6 +28,17 @@ def make_config(**overrides):
     return dict(_DEFAULT_CONFIG, uuid=str(uuid4()), **overrides)
 
 
+def test_invalid_configuration_exits_with_ex_config(environment, capsys):
+    get_config, _ = environment
+    get_config.side_effect = ValueError('invalid roles')
+
+    with pytest.raises(SystemExit) as raised:
+        main()
+
+    assert raised.value.code == 78
+    assert 'invalid configuration: invalid roles' in capsys.readouterr().err
+
+
 def test_db_upgrade_runs_with_the_init_role(environment):
     get_config, database = environment
     get_config.return_value = make_config(db_upgrade_on_startup=True)

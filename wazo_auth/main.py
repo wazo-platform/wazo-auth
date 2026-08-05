@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
+import os
 import sys
 
 from xivo import xivo_logging
@@ -20,7 +21,11 @@ logger = logging.getLogger(__name__)
 def main():
     xivo_logging.silence_loggers(SPAMMY_LOGGERS, logging.WARNING)
 
-    config = get_config(sys.argv[1:])
+    try:
+        config = get_config(sys.argv[1:])
+    except ValueError as e:
+        print(f'invalid configuration: {e}', file=sys.stderr)  # journald gets stderr
+        sys.exit(os.EX_CONFIG)  # 78: matches RestartPreventExitStatus in the units
 
     xivo_logging.setup_logging(
         config['log_filename'],
