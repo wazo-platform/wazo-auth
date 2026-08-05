@@ -6,7 +6,8 @@ StartLimitIntervalSec=150
 
 [Service]
 ExecStart=/usr/bin/wazo-auth
-ExecStartPost=/usr/bin/wazo-auth-wait
+ExecStartPost=/usr/bin/wazo-auth-wait --timeout 600
+TimeoutStartSec=600
 Restart=on-failure
 RestartSec=5
 SyslogIdentifier=wazo-auth

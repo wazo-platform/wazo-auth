@@ -7,7 +7,8 @@ StartLimitIntervalSec=150
 
 [Service]
 ExecStart=/usr/bin/wazo-auth --role api --listen-port %i
-ExecStartPost=/usr/bin/wazo-auth-wait --port %i
+ExecStartPost=/usr/bin/wazo-auth-wait --port %i --timeout 600
+TimeoutStartSec=600
 Restart=on-failure
 RestartSec=5
 SyslogIdentifier=wazo-auth-worker@%i
