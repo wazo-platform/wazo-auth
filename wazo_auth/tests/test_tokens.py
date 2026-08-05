@@ -168,8 +168,19 @@ def test_disabled_when_interval_below_one(interval):
     remover.stop()
 
 
-def test_stop_before_start_is_a_noop(remover):
+def test_stop_before_start_does_not_raise_and_sets_the_tombstone(remover):
     remover.stop()
+
+    assert remover._tombstone.is_set()
+
+
+def test_start_after_stop_exits_immediately(remover):
+    remover.stop()
+    remover.start()
+
+    remover._thread.join(timeout=5)
+    assert not remover._thread.is_alive()
+    remover._purge_expired_sessions.assert_not_called()
 
 
 @patch('wazo_auth.token.Session')

@@ -142,13 +142,10 @@ class ExpiredTokenRemover:
     def stop(self):
         if self._cleanup_interval < 1:
             return
-        if not self._thread.is_alive():
-            # the signal handler can call stop() before run() reached
-            # start(): joining a never-started thread raises
-            return
+        # set first so a thread started after stop() exits immediately
         self._tombstone.set()
-        self._thread.join()
-        self._tombstone.clear()
+        if self._thread.is_alive():
+            self._thread.join()
 
     def _loop(self):
         try:
