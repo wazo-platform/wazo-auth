@@ -339,7 +339,11 @@ class Controller:
                 return
             if init_enabled:
                 try:
-                    with startup_lock(Session.get_bind(), stop_event=self._stopped):
+                    with startup_lock(
+                        Session.get_bind(),
+                        timeout=self._config['db_connect_retry_timeout_seconds'],
+                        stop_event=self._stopped,
+                    ):
                         if self._config['update_policy_on_startup']:
                             startup.update_policy_on_startup(
                                 self.dao,

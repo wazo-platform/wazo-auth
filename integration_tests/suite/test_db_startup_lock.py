@@ -10,6 +10,7 @@ from sqlalchemy import create_engine, text
 from wazo_auth.database.helpers import (
     ADVISORY_LOCK_CLASSID,
     STARTUP_LOCK_OBJID,
+    StartupLockTimeout,
     startup_lock,
 )
 
@@ -59,20 +60,20 @@ class TestStartupLock(unittest.TestCase):
         )
 
     def test_lock_is_held_inside_context(self):
-        with startup_lock(self.engine):
+        with startup_lock(self.engine, timeout=10):
             with self.observer.connect() as connection:
                 assert self._try_lock(connection) is False
             assert self._granted_locks() == 1
 
     def test_lock_is_released_on_exit(self):
-        with startup_lock(self.engine):
+        with startup_lock(self.engine, timeout=10):
             pass
 
         assert self._granted_locks() == 0
 
     def test_lock_is_released_after_exception(self):
         with self.assertRaises(RuntimeError):
-            with startup_lock(self.engine):
+            with startup_lock(self.engine, timeout=10):
                 raise RuntimeError('boom')
 
         assert self._granted_locks() == 0
@@ -81,9 +82,9 @@ class TestStartupLock(unittest.TestCase):
         # a session-level advisory lock survives connection.close() when the
         # DBAPI connection returns to the pool: two consecutive contexts on a
         # single-connection pool prove the explicit unlock
-        with startup_lock(self.engine):
+        with startup_lock(self.engine, timeout=10):
             pass
-        with startup_lock(self.engine):
+        with startup_lock(self.engine, timeout=10):
             pass
 
         assert self._granted_locks() == 0
@@ -92,7 +93,7 @@ class TestStartupLock(unittest.TestCase):
         events = []
 
         def enter_lock():
-            with startup_lock(self.engine):
+            with startup_lock(self.engine, timeout=10):
                 events.append('entered')
 
         with self.observer.connect() as connection:
@@ -108,3 +109,15 @@ class TestStartupLock(unittest.TestCase):
 
         assert events == ['entered']
         assert self._granted_locks() == 0
+
+    def test_contended_acquisition_times_out_and_names_the_holder(self):
+        with self.observer.connect() as connection:
+            assert self._try_lock(connection) is True
+            try:
+                with self.assertRaises(StartupLockTimeout) as raised:
+                    with startup_lock(self.engine, timeout=0):
+                        raise AssertionError('the body must not run')
+            finally:
+                self._unlock(connection)
+
+        assert 'held by pid' in str(raised.exception)

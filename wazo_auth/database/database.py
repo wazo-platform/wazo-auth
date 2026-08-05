@@ -30,7 +30,7 @@ def wait_is_ready(connection):
         raise
 
 
-def upgrade(uri):
+def upgrade(uri, lock_timeout):
     current_dir = os.path.dirname(__file__)
     config = alembic.config.Config(f'{current_dir}/alembic.ini')
     config.set_main_option('script_location', f'{current_dir}/alembic')
@@ -41,7 +41,7 @@ def upgrade(uri):
     engine = create_engine(uri)
     try:
         wait_is_ready(engine)
-        with startup_lock(engine):
+        with startup_lock(engine, lock_timeout):
             alembic.command.upgrade(config, 'head')
     finally:
         engine.dispose()

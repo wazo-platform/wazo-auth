@@ -36,7 +36,10 @@ def main():
 
     if config["db_upgrade_on_startup"]:
         if 'init' in config['roles']:
-            database.upgrade(config["db_uri"])
+            database.upgrade(
+                config["db_uri"],
+                lock_timeout=config['db_connect_retry_timeout_seconds'],
+            )
         else:
             logger.warning(
                 'db_upgrade_on_startup is enabled but this instance has '
@@ -55,4 +58,7 @@ def main():
 
 def upgrade_db():
     conf = get_config(sys.argv[1:])
-    database.upgrade(conf["db_uri"])
+    database.upgrade(
+        conf["db_uri"],
+        lock_timeout=conf['db_connect_retry_timeout_seconds'],
+    )

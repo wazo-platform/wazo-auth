@@ -25,12 +25,12 @@ def environment():
 
 
 def test_upgrade_runs_alembic_under_the_lock(environment):
-    upgrade('postgresql://example')
+    upgrade('postgresql://example', lock_timeout=300)
 
     engine = environment.create_engine.return_value
     assert environment.mock_calls == [
         call.wait_is_ready(engine),
-        call.startup_lock(engine),
+        call.startup_lock(engine, 300),
         call.startup_lock().__enter__(),
         call.alembic_upgrade(ANY, 'head'),
         call.startup_lock().__exit__(None, None, None),
@@ -42,6 +42,6 @@ def test_upgrade_disposes_engine_on_failure(environment):
     environment.alembic_upgrade.side_effect = RuntimeError('migration failed')
 
     with pytest.raises(RuntimeError):
-        upgrade('postgresql://example')
+        upgrade('postgresql://example', lock_timeout=300)
 
     environment.create_engine.return_value.dispose.assert_called_once()

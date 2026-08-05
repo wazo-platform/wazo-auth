@@ -251,13 +251,14 @@ def test_run_init_one_shots_run_inside_the_lock(make_controller, run_environment
 
     controller.run()
 
+    lock_call = call.lock(ANY, timeout=ANY, stop_event=controller._stopped)
     assert parent.mock_calls == [
-        call.lock(ANY, stop_event=controller._stopped),
-        call.lock(ANY, stop_event=controller._stopped).__enter__(),
+        lock_call,
+        lock_call.__enter__(),
         call.policies(ANY, ANY, ANY, ANY),
         call.bootstrap(controller._config),
         call.check_methods(controller.dao, ANY),
-        call.lock(ANY, stop_event=controller._stopped).__exit__(None, None, None),
+        lock_call.__exit__(None, None, None),
     ]
 
 
