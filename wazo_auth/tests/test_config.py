@@ -15,8 +15,8 @@ from ..config import (
 
 
 def test_default_config_roles():
-    assert _DEFAULT_CONFIG['roles'] == ['api', 'scheduler', 'init']
-    assert _DEFAULT_CONFIG['roles'] == list(VALID_ROLES)
+    assert _DEFAULT_CONFIG['roles'] == {'api': True, 'scheduler': True, 'init': True}
+    assert set(_DEFAULT_CONFIG['roles']) == set(VALID_ROLES)
 
 
 def test_cli_no_role_leaves_roles_unset():
@@ -24,9 +24,9 @@ def test_cli_no_role_leaves_roles_unset():
     assert 'roles' not in result
 
 
-def test_cli_role_is_repeatable():
+def test_cli_role_is_repeatable_and_disables_the_others():
     result = _parse_cli_args(['--role', 'api', '--role', 'scheduler'])
-    assert result['roles'] == ['api', 'scheduler']
+    assert result['roles'] == {'api': True, 'scheduler': True, 'init': False}
 
 
 def test_cli_unknown_role_is_rejected():
@@ -98,39 +98,45 @@ def test_explicit_advertise_port_is_respected(read_config_files):
     assert config['service_discovery']['advertise_port'] == 12345
 
 
-def test_normalize_roles_dedupes_and_sorts():
-    assert _normalize_roles(['scheduler', 'api', 'scheduler']) == ['api', 'scheduler']
+def test_normalize_roles_keeps_enabled_roles_sorted():
+    roles = {'scheduler': True, 'api': True, 'init': False}
+    assert _normalize_roles(roles) == ['api', 'scheduler']
 
 
 def test_normalize_roles_rejects_unknown_role():
     with pytest.raises(ValueError):
-        _normalize_roles(['api', 'bogus'])
+        _normalize_roles({'api': True, 'bogus': True})
 
 
-def test_normalize_roles_rejects_empty_list():
+def test_normalize_roles_rejects_all_roles_disabled():
     with pytest.raises(ValueError):
-        _normalize_roles([])
+        _normalize_roles({'api': False, 'scheduler': False, 'init': False})
+
+
+def test_normalize_roles_rejects_a_list():
+    with pytest.raises(ValueError, match='must be a map'):
+        _normalize_roles(['api'])
 
 
 def test_normalize_roles_rejects_a_scalar_string():
-    with pytest.raises(ValueError, match='must be a list'):
+    with pytest.raises(ValueError, match='must be a map'):
         _normalize_roles('api')
 
 
 def test_normalize_roles_rejects_none():
-    with pytest.raises(ValueError, match='must be a list'):
+    with pytest.raises(ValueError, match='must be a map'):
         _normalize_roles(None)
 
 
 @patch('wazo_auth.config.read_config_file_hierarchy_accumulating_list')
 def test_cli_roles_override_file_roles(read_config_files):
-    read_config_files.return_value = {'roles': ['api']}
+    read_config_files.return_value = {'roles': {'api': True}}
     config = get_config(['--role', 'scheduler'])
     assert config['roles'] == ['scheduler']
 
 
 @patch('wazo_auth.config.read_config_file_hierarchy_accumulating_list')
-def test_file_roles_override_default_roles(read_config_files):
-    read_config_files.return_value = {'roles': ['api']}
+def test_file_roles_merge_per_key_with_default_roles(read_config_files):
+    read_config_files.return_value = {'roles': {'scheduler': False, 'init': False}}
     config = get_config([])
     assert config['roles'] == ['api']

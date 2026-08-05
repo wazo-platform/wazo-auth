@@ -1,7 +1,8 @@
 # Scaling wazo-auth
 
 wazo-auth splits its work into three roles, selectable per process with the
-repeatable `--role` option or the `roles` configuration key:
+repeatable `--role` option or the `roles` configuration key (a map of role
+name to boolean — disable a role explicitly, e.g. `scheduler: false`):
 
 - `api`: serve the REST API (and register in Consul when service discovery is
   enabled)

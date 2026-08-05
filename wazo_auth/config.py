@@ -14,7 +14,7 @@ _DEFAULT_CONFIG = {
     'user': 'wazo-auth',
     'config_file': '/etc/wazo-auth/config.yml',
     'extra_config_files': '/etc/wazo-auth/conf.d',
-    'roles': list(VALID_ROLES),
+    'roles': {role: True for role in VALID_ROLES},  # dict: lists accumulate in conf.d
     'update_policy_on_startup': True,
     'debug': False,
     'log_level': 'info',
@@ -208,21 +208,21 @@ def _parse_cli_args(argv):
     if parsed_args.db_upgrade_on_startup:
         result['db_upgrade_on_startup'] = parsed_args.db_upgrade_on_startup
     if parsed_args.roles:
-        result['roles'] = parsed_args.roles
+        result['roles'] = {role: role in parsed_args.roles for role in VALID_ROLES}
 
     return result
 
 
 def _normalize_roles(roles):
-    if not isinstance(roles, list):
-        raise ValueError(f'roles must be a list of role names, got {roles!r}')
-    roles = sorted(set(roles))
-    unknown = [role for role in roles if role not in VALID_ROLES]
+    if not isinstance(roles, dict):
+        raise ValueError(f'roles must be a map of role name to boolean, got {roles!r}')
+    unknown = sorted(set(roles) - set(VALID_ROLES))
     if unknown:
         raise ValueError(f'invalid roles {unknown}, must be one of {list(VALID_ROLES)}')
-    if not roles:
-        raise ValueError('roles must contain at least one role')
-    return roles
+    enabled = sorted(role for role, is_enabled in roles.items() if is_enabled)
+    if not enabled:
+        raise ValueError('roles must contain at least one enabled role')
+    return enabled
 
 
 def _get_reinterpreted_raw_values(config):
