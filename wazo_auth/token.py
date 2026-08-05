@@ -174,9 +174,10 @@ class ExpiredTokenRemover:
     def _hold_leadership(self):
         try:
             return self._leader_lock.hold()
-        except Exception:
+        except Exception as e:
             logger.warning(
-                'unable to determine scheduler leadership',
+                'unable to determine scheduler leadership: %s',
+                e,
                 exc_info=self._debug,
             )
             return False
@@ -187,10 +188,11 @@ class ExpiredTokenRemover:
             self._purge_expired_saml_sessions()
             self._notify_expire_soon()
             self._consecutive_failures = 0
-        except Exception:
+        except Exception as e:
             logger.warning(
-                '%s: an exception occured during execution',
+                '%s: an exception occured during execution: %s',
                 self.__class__.__name__,
+                e,
                 exc_info=self._debug,
             )
             Session.close()
@@ -221,10 +223,11 @@ class ExpiredTokenRemover:
             ):
                 try:
                     Session.commit()
-                except Exception:
+                except Exception as e:
                     Session.rollback()
                     logger.warning(
-                        'failed to remove expired tokens and sessions',
+                        'failed to remove expired tokens and sessions: %s',
+                        e,
                         exc_info=self._debug,
                     )
                     raise
