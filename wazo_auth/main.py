@@ -62,7 +62,12 @@ def main():
 
 
 def upgrade_db():
-    conf = get_config(sys.argv[1:])
+    try:
+        conf = get_config(sys.argv[1:])
+    except ValueError as e:
+        print(f'invalid configuration: {e}', file=sys.stderr)  # apt gets stderr
+        sys.exit(os.EX_CONFIG)  # 78: same contract as main()
+
     database.upgrade(
         conf["db_uri"],
         lock_timeout=conf['db_connect_retry_timeout_seconds'],
