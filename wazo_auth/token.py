@@ -117,6 +117,9 @@ class ExpiredTokenRemover:
     # a leader whose cleanup keeps failing for a local reason must hand
     # leadership over so a healthy instance can take the work
     MAX_CONSECUTIVE_FAILURES = 3
+    # ticks to sit out after a failure-triggered release, so a healthy
+    # instance can win the lock before this one re-contends
+    FAILURE_BACKOFF_TICKS = 2
 
     def __init__(self, config, dao, bus_publisher, saml_service, engine):
         self._dao = dao
@@ -128,6 +131,7 @@ class ExpiredTokenRemover:
             return
 
         self._consecutive_failures = 0
+        self._backoff_ticks = 0
         self._leader_lock = SchedulerLeaderLock(engine)
         self._tombstone = threading.Event()
         self._thread = threading.Thread(target=self._loop)
@@ -150,6 +154,11 @@ class ExpiredTokenRemover:
     def _loop(self):
         try:
             while not self._tombstone.is_set():
+                if self._backoff_ticks > 0:
+                    self._backoff_ticks -= 1
+                    self._tombstone.wait(self._cleanup_interval)
+                    continue
+
                 if not self._hold_leadership():
                     self._tombstone.wait(self._cleanup_interval)
                     continue
@@ -205,6 +214,7 @@ class ExpiredTokenRemover:
                 )
                 self._leader_lock.release()
                 self._consecutive_failures = 0
+                self._backoff_ticks = self.FAILURE_BACKOFF_TICKS
 
     def _notify_expire_soon(self):
         generator = self._dao.token.get_tokens_and_sessions_about_to_expire(

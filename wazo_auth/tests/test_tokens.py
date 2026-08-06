@@ -194,6 +194,31 @@ def test_leadership_released_after_consecutive_failures(session, remover):
 
 
 @patch('wazo_auth.token.Session')
+def test_failure_release_starts_a_backoff(session, remover):
+    remover._purge_expired_sessions.side_effect = Exception('boom')
+
+    for _ in range(ExpiredTokenRemover.MAX_CONSECUTIVE_FAILURES):
+        remover._run_once()
+
+    assert remover._backoff_ticks == ExpiredTokenRemover.FAILURE_BACKOFF_TICKS
+
+
+def test_loop_does_not_contend_for_leadership_during_backoff(remover):
+    remover._backoff_ticks = 2
+    remover._tombstone = Mock()
+    # two backoff ticks, one leader tick, then exit
+    remover._tombstone.is_set.side_effect = [False, False, False, True]
+    remover._tombstone.wait.return_value = False
+    remover._leader_lock.hold.return_value = True
+
+    remover._loop()
+
+    remover._leader_lock.hold.assert_called_once()
+    remover._purge_expired_sessions.assert_called_once()
+    assert remover._backoff_ticks == 0
+
+
+@patch('wazo_auth.token.Session')
 def test_a_successful_tick_resets_the_failure_count(session, remover):
     failures = ExpiredTokenRemover.MAX_CONSECUTIVE_FAILURES - 1
 
