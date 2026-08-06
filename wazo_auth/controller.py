@@ -408,6 +408,7 @@ class Controller:
 
     def _wait_for_top_tenant(self, timeout):
         end_time = time.monotonic() + timeout
+        first_failure = True
         while True:
             try:
                 http.init_top_tenant(self.dao)
@@ -416,8 +417,11 @@ class Controller:
                 if time.monotonic() >= end_time:
                     raise
                 logger.warning(
-                    'the database is not initialized yet (%s), retrying...', e
+                    'the database is not initialized yet (%s), retrying...',
+                    e,
+                    exc_info=first_failure,
                 )
+                first_failure = False
                 Session.remove()
                 if self._stopped.wait(2):
                     # shutdown requested during the wait
