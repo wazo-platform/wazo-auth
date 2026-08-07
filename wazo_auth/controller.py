@@ -6,6 +6,7 @@ import logging
 import signal
 import sys
 import threading
+import time
 from collections import OrderedDict, UserDict
 from functools import partial
 
@@ -13,17 +14,22 @@ from stevedore import driver
 from stevedore.extension import Extension
 from stevedore.named import NamedExtensionManager
 from xivo import plugin_helpers
-from xivo.consul_helpers import ServiceCatalogRegistration
 from xivo.status import StatusAggregator
 
 from wazo_auth.plugins.idp.native import NativeIDP
 from wazo_auth.plugins.idp.refresh_token import RefreshTokenIDP
-from wazo_auth.services.idp import HARDCODED_IDP_TYPES
 
-from . import bootstrap, http, services, token
+from . import http, services, startup, token
 from .bus import BusPublisher
+from .components import ServiceDiscoveryComponent
 from .database import queries
-from .database.helpers import db_ready, db_session, init_db
+from .database.helpers import (
+    Session,
+    StartupLockInterrupted,
+    db_ready,
+    init_db,
+    startup_lock,
+)
 from .flask_helpers import Tenant, Token
 from .http_server import CoreRestApi, api
 from .plugin_helpers import utils as plugin_utils
@@ -31,9 +37,6 @@ from .purpose import Purposes
 from .service_discovery import self_check
 
 logger = logging.getLogger(__name__)
-
-MISCONFIGURATION_EXIT_CODE = 78
-DB_POOL_SPARE_CONN = 10
 
 
 def _signal_handler(controller, signum, frame):
@@ -99,23 +102,27 @@ class Controller:
     def __init__(self, config):
         min_threads = config['rest_api']['min_threads']
         max_threads = config['rest_api']['max_threads']
+        max_overflow = max_threads - min_threads
+        if 'scheduler' in config['roles']:
+            min_threads += 2  # leader advisory lock + its cleanup session
         init_db(
             config['db_uri'],
             pool_size=min_threads,
-            max_overflow=max_threads - min_threads + DB_POOL_SPARE_CONN,
+            max_overflow=max_overflow,
         )
         self._config = config
-        self._http_worker = config.get('http_worker', False)
+        self._roles = set(config['roles'])
         self._stopping_thread = None
+        self._stopped = threading.Event()
         _check_required_config_for_other_threads(config)
-        self._service_discovery_args = [
+        self._service_discovery = ServiceDiscoveryComponent(
             'wazo-auth',
             config.get('uuid'),
             config['consul'],
             config['service_discovery'],
             config['amqp'],
             partial(self_check, config),
-        ]
+        )
 
         self.status_aggregator = StatusAggregator()
         template_formatter = services.helpers.TemplateFormatter(config)
@@ -308,178 +315,120 @@ class Controller:
 
         self._rest_api = CoreRestApi(config, self._token_service, self._user_service)
 
-        if self._http_worker:
-            return
-
         self._expired_token_remover = token.ExpiredTokenRemover(
-            config, self.dao, self._bus_publisher, self._saml_service
+            config,
+            self.dao,
+            self._bus_publisher,
+            self._saml_service,
+            Session.get_bind(),
         )
 
     def run(self):
         signal.signal(signal.SIGTERM, partial(_signal_handler, self))
         signal.signal(signal.SIGINT, partial(_signal_handler, self))
 
-        if self._http_worker:
-            if not self._config['rest_api']['reuse_port']:
-                logger.error(
-                    'Cannot start as an HTTP worker: rest_api.reuse_port must be '
-                    'enabled so the worker can share the listen port with the '
-                    'primary wazo-auth process'
-                )
-                sys.exit(MISCONFIGURATION_EXIT_CODE)
-            self._run_as_worker()
-        else:
-            self._run()
-
-    def _run(self):
+        init_enabled = 'init' in self._roles
         with db_ready(timeout=self._config['db_connect_retry_timeout_seconds']):
-            if self._config['update_policy_on_startup']:
-                self._update_policy_on_startup()
-            http.init_top_tenant(self.dao)
-            if self._config['bootstrap_user_on_startup']:
-                bootstrap.create_initial_user(
-                    self._config['bootstrap_user_username'],
-                    self._config['bootstrap_user_password'],
-                    self._config.get('bootstrap_user_purpose') or bootstrap.PURPOSE,
-                    bootstrap.AUTHENTICATION_METHOD,
-                    self._config.get('bootstrap_user_policy_slug')
-                    or bootstrap.DEFAULT_POLICY_SLUG,
-                )
-            self._check_unavailable_authentication_methods()
+            # every role needs the top tenant, but only the init role runs
+            # the migration that creates it
+            self._wait_for_top_tenant(
+                timeout=self._config['db_connect_retry_timeout_seconds']
+            )
+            if self._stopped.is_set():
+                logger.warning('shutdown requested during startup, exiting')
+                return
+            if init_enabled:
+                try:
+                    with startup_lock(
+                        Session.get_bind(),
+                        timeout=self._config['db_connect_retry_timeout_seconds'],
+                        stop_event=self._stopped,
+                    ):
+                        if self._config['update_policy_on_startup']:
+                            startup.update_policy_on_startup(
+                                self.dao,
+                                self._default_policy_service,
+                                self._all_users_service,
+                                self._default_group_service,
+                            )
+                        if self._config['bootstrap_user_on_startup']:
+                            startup.create_initial_user(self._config)
+                        startup.check_unavailable_authentication_methods(
+                            self.dao, self._idp_plugins
+                        )
+                except StartupLockInterrupted:
+                    logger.warning(
+                        'shutdown requested while waiting for the startup lock'
+                    )
+                    return
+            else:
+                for flag in ('update_policy_on_startup', 'bootstrap_user_on_startup'):
+                    if self._config[flag]:
+                        logger.warning(
+                            '%s is enabled but this instance has no init role: '
+                            'skipping',
+                            flag,
+                        )
+
+        # stop() may have run during the one-shots: do not bring components
+        # up after a shutdown was requested, nothing would stop them again
+        if self._stopped.is_set():
+            logger.warning('shutdown requested during startup, exiting')
+            return
+
+        if not self._roles & {'api', 'scheduler'}:
+            logger.info('no long-running roles enabled, exiting')
+            return
+
         try:
-            with ServiceCatalogRegistration(*self._service_discovery_args):
+            if 'api' in self._roles:
+                self._service_discovery.start()
+            if 'scheduler' in self._roles:
                 self._expired_token_remover.start()
+            if 'api' in self._roles:
                 self._rest_api.run()
+            else:
+                self._stopped.wait()
         finally:
-            if self._stopping_thread:
-                self._stopping_thread.join()
-
-    def _run_as_worker(self):
-        with db_ready(timeout=self._config['db_connect_retry_timeout_seconds']):
-            http.init_top_tenant(self.dao)
-        try:
-            self._rest_api.run()
-        finally:
+            if 'api' in self._roles:
+                self._service_discovery.stop()
             if self._stopping_thread:
                 self._stopping_thread.join()
 
     def stop(self, reason):
         logger.warning('Stopping wazo-auth: %s', reason)
-        if not self._http_worker:
+        if 'scheduler' in self._roles:
             self._expired_token_remover.stop()
-        self._stopping_thread = threading.Thread(
-            target=self._rest_api.stop, name=reason
-        )
-        self._stopping_thread.start()
+        if 'api' in self._roles:
+            self._stopping_thread = threading.Thread(
+                target=self._rest_api.stop, name=reason
+            )
+            self._stopping_thread.start()
+        self._stopped.set()
+
+    def _wait_for_top_tenant(self, timeout):
+        end_time = time.monotonic() + timeout
+        first_failure = True
+        while True:
+            try:
+                http.init_top_tenant(self.dao)
+                return
+            except Exception as e:
+                if time.monotonic() >= end_time:
+                    raise
+                logger.warning(
+                    'the database is not initialized yet (%s), retrying...',
+                    e,
+                    exc_info=first_failure,
+                )
+                first_failure = False
+                Session.remove()
+                if self._stopped.wait(2):
+                    # shutdown requested during the wait
+                    return
 
     def _loaded_plugins_names(self, backends):
         return [backend.name for backend in backends]
-
-    def _update_policy_on_startup(self):
-        with db_session():
-            top_tenant_uuid = self.dao.tenant.find_top_tenant()
-            visible_tenants = self.dao.tenant.list_visible_tenants(top_tenant_uuid)
-            tenant_uuids = [tenant.uuid for tenant in visible_tenants]
-
-        self._default_policy_service.update_policies(top_tenant_uuid)
-        self._all_users_service.update_policies(tenant_uuids)
-        self._default_group_service.update_groups(tenant_uuids)
-        self._default_policy_service.delete_orphan_policies()
-
-    def _check_unavailable_authentication_methods(self):
-        """
-        Detect missing implementations for authentication methods
-        assigned to tenants and users
-        """
-        logger.info(
-            'Checking configured authentication methods for missing implementations'
-        )
-
-        # compute available authentication methods from loaded idp plugins and hardcoded methods
-        available_authentication_methods = (
-            {
-                getattr(extension.obj, 'authentication_method', None)
-                for name, extension in self._idp_plugins.items()
-            }
-            if self._idp_plugins
-            else set()
-        )
-        available_authentication_methods |= HARDCODED_IDP_TYPES
-        logger.debug(
-            '%d authentication methods are available',
-            len(available_authentication_methods),
-        )
-
-        with db_session():
-            # fetch tenants
-            tenants = self.dao.tenant.get_missing_auth_methods(
-                available_methods=available_authentication_methods
-            )
-            # fetch users
-            users = self.dao.user.get_missing_auth_methods(
-                available_methods=available_authentication_methods
-            )
-
-        tenants_authentication_methods = {
-            tenant['default_authentication_method'] for tenant in tenants
-        }
-        tenants_missing_authentication_method = [
-            tenant
-            for tenant in tenants
-            if tenant['default_authentication_method']
-            not in available_authentication_methods
-        ]
-        logger.debug(
-            '%d tenants have no available idp implementation',
-            len(tenants_missing_authentication_method),
-        )
-
-        users_authentication_methods = {user['authentication_method'] for user in users}
-        users_missing_authentication_method = [
-            user
-            for user in users
-            if user['authentication_method'] not in available_authentication_methods
-        ]
-        logger.debug(
-            '%d users have no available idp implementation',
-            len(users_missing_authentication_method),
-        )
-
-        # compute in-use authentication methods
-        all_authentication_methods = (
-            tenants_authentication_methods | users_authentication_methods - {'default'}
-        )
-        logger.debug(
-            '%d authentication methods are in use', len(all_authentication_methods)
-        )
-
-        missing_authentication_methods = (
-            all_authentication_methods - available_authentication_methods
-        )
-        if missing_authentication_methods:
-            logger.warning(
-                '%d authentication methods have no available idp implementation',
-                len(missing_authentication_methods),
-            )
-            for method in missing_authentication_methods:
-                logger.warning(
-                    'Authentication method %s is in use but is not available', method
-                )
-
-        for tenant in tenants_missing_authentication_method:
-            logger.warning(
-                'Tenant (uuid=%s) has no available idp implementation '
-                'for default authentication method %s',
-                tenant['uuid'],
-                tenant['default_authentication_method'],
-            )
-        for user in users_missing_authentication_method:
-            logger.warning(
-                'User (uuid=%s) has no available idp implementation '
-                'for authentication method %s',
-                user['uuid'],
-                user['authentication_method'],
-            )
 
 
 class BackendsProxy(UserDict[str, Extension]):

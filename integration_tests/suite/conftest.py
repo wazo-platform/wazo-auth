@@ -21,8 +21,7 @@ database = asset_fixture(asset.DBAssetLaunchingTestCase)
 external_auth = asset_fixture(asset.ExternalAuthAssetLaunchingTestCase)
 metadata = asset_fixture(asset.MetadataAssetLaunchingTestCase)
 bootstrap = asset_fixture(asset.BootstrapAssetLaunchingTestCase)
-kernel_workers = asset_fixture(asset.KernelWorkersAssetLaunchingTestCase)
-
+cluster = asset_fixture(asset.ClusterAssetLaunchingTestCase)
 
 mark_logs = enable_mark_logs_fixture()
 

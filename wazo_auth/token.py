@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from wazo_bus.resources.auth.events import SessionDeletedEvent, SessionExpireSoonEvent
 from xivo.auth_verifier import AccessCheck
 
-from wazo_auth.database.helpers import Session
+from wazo_auth.database.helpers import SchedulerLeaderLock, Session
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +114,14 @@ class Token:
 
 
 class ExpiredTokenRemover:
-    def __init__(self, config, dao, bus_publisher, saml_service):
+    # a leader whose cleanup keeps failing for a local reason must hand
+    # leadership over so a healthy instance can take the work
+    MAX_CONSECUTIVE_FAILURES = 3
+    # ticks to sit out after a failure-triggered release, so a healthy
+    # instance can win the lock before this one re-contends
+    FAILURE_BACKOFF_TICKS = 2
+
+    def __init__(self, config, dao, bus_publisher, saml_service, engine):
         self._dao = dao
         self._bus_publisher = bus_publisher
         self._cleanup_interval = config['token_cleanup_interval']
@@ -123,47 +130,91 @@ class ExpiredTokenRemover:
         if self._cleanup_interval < 1:
             return
 
+        self._consecutive_failures = 0
+        self._backoff_ticks = 0
+        self._leader_lock = SchedulerLeaderLock(engine)
         self._tombstone = threading.Event()
         self._thread = threading.Thread(target=self._loop)
         self._thread.daemon = True
         self._saml_service = saml_service
 
     def start(self):
-        if self._cleanup_interval > 0:
-            self._thread.start()
+        if self._cleanup_interval < 1:
+            return
+        self._thread.start()
 
     def stop(self):
-        if self._cleanup_interval > 0:
-            self._tombstone.set()
+        if self._cleanup_interval < 1:
+            return
+        # set first so a thread started after stop() exits immediately
+        self._tombstone.set()
+        if self._thread.is_alive():
             self._thread.join()
-            self._tombstone.clear()
 
     def _loop(self):
-        while not self._tombstone.is_set():
-            started = time.monotonic()
+        try:
+            while not self._tombstone.is_set():
+                if self._backoff_ticks > 0:
+                    self._backoff_ticks -= 1
+                    self._tombstone.wait(self._cleanup_interval)
+                    continue
 
-            try:
-                self._purge_expired_sessions()
-                self._purge_expired_saml_sessions()
-                self._notify_expire_soon()
-            except Exception:
+                if not self._hold_leadership():
+                    self._tombstone.wait(self._cleanup_interval)
+                    continue
+
+                started = time.monotonic()
+
+                self._run_once()
+
+                elapsed = time.monotonic() - started
+
+                if elapsed >= self._cleanup_interval:
+                    log_level = logging.WARNING
+                else:
+                    log_level = logging.DEBUG
+                logger.log(log_level, "ExpiredTokenRemover took %.5f seconds", elapsed)
+
+                if elapsed < self._cleanup_interval:
+                    self._tombstone.wait(self._cleanup_interval - elapsed)
+        finally:
+            self._leader_lock.release()
+
+    def _hold_leadership(self):
+        try:
+            return self._leader_lock.hold()
+        except Exception as e:
+            logger.warning(
+                'unable to determine scheduler leadership: %s',
+                e,
+                exc_info=self._debug,
+            )
+            return False
+
+    def _run_once(self):
+        try:
+            self._purge_expired_sessions()
+            self._purge_expired_saml_sessions()
+            self._notify_expire_soon()
+            self._consecutive_failures = 0
+        except Exception as e:
+            logger.warning(
+                '%s: an exception occured during execution: %s',
+                self.__class__.__name__,
+                e,
+                exc_info=self._debug,
+            )
+            Session.close()
+            self._consecutive_failures += 1
+            if self._consecutive_failures >= self.MAX_CONSECUTIVE_FAILURES:
                 logger.warning(
-                    '%s: an exception occured during execution',
-                    self.__class__.__name__,
-                    exc_info=self._debug,
+                    'releasing the scheduler leader lock after %d '
+                    'consecutive failures',
+                    self._consecutive_failures,
                 )
-                Session.close()
-
-            elapsed = time.monotonic() - started
-
-            if elapsed >= self._cleanup_interval:
-                log_level = logging.WARNING
-            else:
-                log_level = logging.DEBUG
-            logger.log(log_level, "ExpiredTokenRemover took %.5f seconds", elapsed)
-
-            if elapsed < self._cleanup_interval:
-                self._tombstone.wait(self._cleanup_interval - elapsed)
+                self._leader_lock.release()
+                self._consecutive_failures = 0
+                self._backoff_ticks = self.FAILURE_BACKOFF_TICKS
 
     def _notify_expire_soon(self):
         generator = self._dao.token.get_tokens_and_sessions_about_to_expire(
@@ -182,10 +233,11 @@ class ExpiredTokenRemover:
             ):
                 try:
                     Session.commit()
-                except Exception:
+                except Exception as e:
                     Session.rollback()
                     logger.warning(
-                        'failed to remove expired tokens and sessions',
+                        'failed to remove expired tokens and sessions: %s',
+                        e,
                         exc_info=self._debug,
                     )
                     raise

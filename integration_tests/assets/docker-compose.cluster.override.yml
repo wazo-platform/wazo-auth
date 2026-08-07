@@ -1,0 +1,28 @@
+services:
+  sync:
+    depends_on:
+      - auth
+      - auth2
+      - postgres
+      - rabbitmq
+    environment:
+      TARGETS: "auth:9497 auth2:9497 postgres:5432 rabbitmq:5672"
+
+  auth:
+    volumes:
+      - "./etc/wazo-auth/conf.d/asset.cluster.yml:/etc/wazo-auth/conf.d/asset.cluster.yml"
+
+  auth2:
+    image: wazoplatform/wazo-auth-tests
+    ports:
+      - "9497"
+    environment:
+      TZ: UTC+1
+      XIVO_UUID: the-predefined-xivo-uuid
+      OAUTHLIB_INSECURE_TRANSPORT: 1
+      SQLALCHEMY_WARN_20: 1
+    volumes:
+      - "../..:/usr/src/wazo-auth"
+      - "./etc/wazo-auth/conf.d/50-default.yml:/etc/wazo-auth/conf.d/50-default.yml"
+      - "./etc/wazo-auth/conf.d/asset.cluster.yml:/etc/wazo-auth/conf.d/asset.cluster.yml"
+      - "./var/lib/wazo-auth/saml:/var/lib/wazo-auth/saml:ro"

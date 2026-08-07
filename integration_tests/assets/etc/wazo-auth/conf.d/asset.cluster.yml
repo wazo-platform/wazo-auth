@@ -1,0 +1,8 @@
+# short interval so scheduler leader election is observable within seconds
+token_cleanup_interval: 1.0
+
+# both replicas run the bootstrap one-shot concurrently on purpose: this
+# exercises the startup advisory lock on a cold start
+bootstrap_user_on_startup: true
+bootstrap_user_username: admin
+bootstrap_user_password: s3cre7

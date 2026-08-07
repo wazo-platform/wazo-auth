@@ -1,4 +1,4 @@
-# Copyright 2024-2026 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2024-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import re
@@ -81,7 +81,7 @@ class TestAuthenticationMethods(base.APIIntegrationTest):
             r'.*\(INFO\).*?Checking configured authentication methods '
             'for missing implementations'
         ]
-        logs = self.asset_cls.auth_logs()
+        logs = self.asset_cls.service_logs('auth')
         unexpected_log = [
             r'.*\(WARNING\).*?Authentication method broken_verify_auth is in use '
             'but is not available'
@@ -96,7 +96,7 @@ class TestAuthenticationMethods(base.APIIntegrationTest):
                 'broken_verify_auth_replacement': {'enabled': False},
             }
         }
-        with self.asset_cls.capture_auth_logs() as result:
+        with self.asset_cls.capture_logs('auth') as result:
             with self.auth_with_config(idp_priority_config):
                 pass
 

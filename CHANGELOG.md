@@ -1,5 +1,23 @@
 # Changelog
 
+## 26.09
+
+* wazo-auth can be scaled to multiple processes or replicas:
+    * New `roles` config (map of `api`, `scheduler`, `init` to booleans)
+      and repeatable `--role` CLI option; default unchanged (all roles,
+      one process)
+    * The `--http-worker` flag has been removed; use `--role api` instead
+    * Migrations and startup tasks are serialized across instances with a
+      PostgreSQL advisory lock; the token cleanup elects a single leader
+    * New `wazo-auth-worker@.service` template:
+      `systemctl enable --now wazo-auth-worker@19497` adds an API-only
+      process on port 19497. See `contribs/scaling/README.md`
+* `service_discovery.advertise_port` defaults to `rest_api.port` instead
+  of a static 9497; set it explicitly to advertise a different port
+* `--listen-port` now sets the REST API port as documented; it previously
+  overwrote the listen address
+* `wazo-auth-wait` accepts `--port` and `--timeout`
+
 ## 26.08
 
 * Added `--http-worker` flag to start HTTP-only wazo-auth instance

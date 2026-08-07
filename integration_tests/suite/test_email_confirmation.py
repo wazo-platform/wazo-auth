@@ -1,4 +1,4 @@
-# Copyright 2017-2026 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
@@ -119,7 +119,7 @@ class TestEmailConfirmation(base.APIIntegrationTest):
             test_start = time.time()
             self.client.users.request_confirmation_email(user['uuid'], email_uuid)
 
-            logs = self.auth_logs(since=test_start)
+            logs = self.service_logs(service_name='auth', since=test_start)
             context_str = f"'email_uuid': '{email_uuid}'"
             regex = f"email_notification_logger,send_confirmation,.*{context_str}"
             assert_that(logs, matches_regexp(regex))

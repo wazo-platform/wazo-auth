@@ -9,10 +9,12 @@ from xivo.xivo_logging import get_log_level_by_name
 
 TWO_HOURS = 60 * 60 * 2
 _DEFAULT_HTTP_PORT = 9497
+VALID_ROLES = ('api', 'scheduler', 'init')
 _DEFAULT_CONFIG = {
     'user': 'wazo-auth',
     'config_file': '/etc/wazo-auth/config.yml',
     'extra_config_files': '/etc/wazo-auth/conf.d',
+    'roles': {role: True for role in VALID_ROLES},  # dict: lists accumulate in conf.d
     'update_policy_on_startup': True,
     'debug': False,
     'log_level': 'info',
@@ -93,7 +95,6 @@ _DEFAULT_CONFIG = {
         'num_proxies': 1,
         'listen': '127.0.0.1',
         'port': _DEFAULT_HTTP_PORT,
-        'reuse_port': False,
         'certificate': None,  # Deprecated
         'private_key': None,  # Deprecated
         'cors': {
@@ -115,7 +116,7 @@ _DEFAULT_CONFIG = {
         'enabled': False,
         'advertise_address': 'auto',
         'advertise_address_interface': 'eth0',
-        'advertise_port': _DEFAULT_HTTP_PORT,
+        'advertise_port': None,  # None: advertise rest_api.port
         'ttl_interval': 30,
         'refresh_interval': 27,
         'retry_interval': 2,
@@ -173,24 +174,27 @@ def _parse_cli_args(argv):
     parser.add_argument(
         '--listen-port',
         action='store',
+        type=int,
         help='Port on which the rest API will listen',
-    )
-    parser.add_argument(
-        '--http-worker',
-        action='store_true',
-        default=False,
-        help='Run as an additional HTTP-only worker',
     )
     parser.add_argument(
         '--log-file',
         action='store',
         help='The log filename to log to',
     )
+    parser.add_argument(
+        '--role',
+        action='append',
+        dest='roles',
+        choices=VALID_ROLES,
+        help='Restrict this process to the given role (repeatable). '
+        'Default: all roles (api, scheduler, init)',
+    )
     parsed_args = parser.parse_args(argv)
 
     result = {}
-    if parsed_args.listen_port:
-        result['rest_api'] = {'listen': parsed_args.listen_port}
+    if parsed_args.listen_port is not None:
+        result['rest_api'] = {'port': parsed_args.listen_port}
     if parsed_args.log_file:
         result['log_filename'] = parsed_args.log_file
     if parsed_args.config_file:
@@ -203,9 +207,22 @@ def _parse_cli_args(argv):
         result['log_level'] = parsed_args.log_level
     if parsed_args.db_upgrade_on_startup:
         result['db_upgrade_on_startup'] = parsed_args.db_upgrade_on_startup
-    result['http_worker'] = parsed_args.http_worker
+    if parsed_args.roles:
+        result['roles'] = {role: role in parsed_args.roles for role in VALID_ROLES}
 
     return result
+
+
+def _normalize_roles(roles):
+    if not isinstance(roles, dict):
+        raise ValueError(f'roles must be a map of role name to boolean, got {roles!r}')
+    unknown = sorted(set(roles) - set(VALID_ROLES))
+    if unknown:
+        raise ValueError(f'invalid roles {unknown}, must be one of {list(VALID_ROLES)}')
+    enabled = sorted(role for role, is_enabled in roles.items() if is_enabled)
+    if not enabled:
+        raise ValueError('roles must contain at least one enabled role')
+    return enabled
 
 
 def _get_reinterpreted_raw_values(config):
@@ -215,6 +232,13 @@ def _get_reinterpreted_raw_values(config):
     if log_level:
         result['log_level'] = get_log_level_by_name(log_level)
 
+    result['roles'] = _normalize_roles(config['roles'])
+
+    if config['service_discovery']['advertise_port'] is None:
+        result['service_discovery'] = {
+            'advertise_port': config['rest_api']['port'],
+        }
+
     return result
 
 
@@ -223,7 +247,6 @@ def get_config(argv):
     file_config = read_config_file_hierarchy_accumulating_list(
         ChainMap(cli_config, _DEFAULT_CONFIG)
     )
-    file_config.pop('http_worker', None)
     reinterpreted_config = _get_reinterpreted_raw_values(
         ChainMap(cli_config, file_config, _DEFAULT_CONFIG)
     )

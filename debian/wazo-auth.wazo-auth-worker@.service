@@ -1,13 +1,14 @@
 [Unit]
-Description=wazo-auth HTTP worker %i
+Description=wazo-auth HTTP worker on port %i
 After=network.target postgresql.service wazo-auth.service
 PartOf=wazo-auth.service
 StartLimitBurst=15
 StartLimitIntervalSec=150
 
 [Service]
-ExecStartPre=/usr/bin/wazo-auth-wait
-ExecStart=/usr/bin/wazo-auth --http-worker
+ExecStart=/usr/bin/wazo-auth --role api --listen-port %i
+ExecStartPost=/usr/bin/wazo-auth-wait --port %i --timeout 600
+TimeoutStartSec=600
 Restart=on-failure
 RestartPreventExitStatus=78
 RestartSec=5
