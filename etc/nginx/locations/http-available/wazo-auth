@@ -1,0 +1,6 @@
+# Unlike the https location, the unauthenticated endpoints are not split out to
+# be rate limited: every internal client shares 127.0.0.1.
+location ^~ /api/auth/ {
+    proxy_pass http://wazo-auth/;
+    include /etc/nginx/wazo-auth-shared.conf;
+}
