@@ -92,6 +92,7 @@ _DEFAULT_CONFIG = {
     'rest_api': {
         'min_threads': 25,
         'max_threads': 200,
+        'keep_alive_conn_limit': 256,
         'num_proxies': 1,
         'listen': '127.0.0.1',
         'port': _DEFAULT_HTTP_PORT,

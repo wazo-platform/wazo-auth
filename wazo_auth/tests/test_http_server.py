@@ -17,6 +17,7 @@ def rest_api():
             'num_proxies': 1,
             'min_threads': 1,
             'max_threads': 1,
+            'keep_alive_conn_limit': 256,
             'certificate': None,
             'private_key': None,
             'cors': {'enabled': False},
