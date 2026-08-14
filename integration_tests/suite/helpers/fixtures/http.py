@@ -1,4 +1,4 @@
-# Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import random
@@ -93,15 +93,15 @@ def bulk_tenants(**tenant_args):
                     f': API = {api_diff * 5000}, DB = {db_diff}'
                 )
 
+                # refresh planner statistics and clean dead tuples left by previous
+                # tests, otherwise queries on the injected rows may run ~200x slower
+                sql = '''VACUUM ANALYZE;'''
+                db.inject_sql_raw(sql)
+
                 result = decorated(self, *args, **kwargs)
             finally:
                 sql = '''DELETE FROM "auth_tenant" WHERE name LIKE 'bulk-tenants-%%';'''
                 db.inject_sql(sql)
-
-                # after large deletions, Postgres may run VACUUM during the next queries,
-                # which may slow them down significantly (2000 ms instead of 40 ms)
-                sql = '''VACUUM;'''
-                db.inject_sql_raw(sql)
 
                 final_diff = db.current_summary().diff(before)
                 assert (
