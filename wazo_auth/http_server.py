@@ -88,6 +88,8 @@ class CoreRestApi:
             numthreads=self.config['min_threads'],
             max=self.config['max_threads'],
         )
+        # cheroot only exposes this as a class attribute, not a kwarg
+        self.server.keep_alive_conn_limit = self.config['keep_alive_conn_limit']
         if self.config['certificate'] and self.config['private_key']:
             logger.warning(
                 'Using service SSL configuration is deprecated. Please use NGINX instead.'
