@@ -10,6 +10,9 @@
     * refresh tokens now expose `last_used_at`, updated each time the refresh
       token produces a new access token (`null` until first use). The list can
       be sorted on `last_used_at`
+* `POST /0.1/token` and `GET /0.1/token/<token_uuid>`: `user_agent` and
+  `remote_addr` are now documented in the API spec. They were already
+  returned, the spec just did not list them
 * wazo-auth can be scaled to multiple processes or replicas:
     * New `roles` config (map of `api`, `scheduler`, `init` to booleans)
       and repeatable `--role` CLI option; default unchanged (all roles,

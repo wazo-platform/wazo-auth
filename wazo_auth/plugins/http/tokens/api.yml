@@ -411,6 +411,12 @@ definitions:
             description: The list of allowed accesses for this token
           session_uuid:
             type: string
+          user_agent:
+            type: string
+            description: The `User-Agent` of the client that created this token
+          remote_addr:
+            type: string
+            description: The IP address of the client that created this token
 
   ScopeList:
     type: object
