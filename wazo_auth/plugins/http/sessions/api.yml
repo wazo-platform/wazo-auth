@@ -74,8 +74,8 @@ definitions:
     type: object
     description: |
       A session is a proxy for the token that created it: it exposes the
-      metadata of that token without exposing the token itself. When many
-      tokens share the same session, the most recent one is used.
+      metadata of that token without exposing the token itself. A session
+      references exactly one token.
     properties:
       uuid:
         type: string

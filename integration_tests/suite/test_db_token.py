@@ -15,6 +15,7 @@ from hamcrest import (
     has_properties,
     not_,
 )
+from sqlalchemy.exc import IntegrityError
 
 from wazo_auth import exceptions
 from wazo_auth.database import models
@@ -69,6 +70,34 @@ class TestTokenDAO(base.DAOTestCase):
                 **refresh_body,
             ),
         )
+
+    def test_create_uses_a_distinct_session_for_each_token(self):
+        session = {}
+        _, session_uuid_1 = self._token_dao.create(self._get_token_body(), session)
+        _, session_uuid_2 = self._token_dao.create(self._get_token_body(), session)
+
+        assert_that(session_uuid_1, not_(equal_to(session_uuid_2)))
+
+    @fixtures.db.token()
+    def test_a_session_cannot_reference_more_than_one_token(self, token):
+        body = self._get_token_body()
+        duplicate = models.Token(
+            session_uuid=token['session_uuid'],
+            auth_id=body['auth_id'],
+            issued_t=body['issued_t'],
+            expire_t=body['expire_t'],
+            acl=body['acl'],
+            user_agent=body['user_agent'],
+            remote_addr=body['remote_addr'],
+            metadata_='{}',
+        )
+
+        self.session.begin_nested()
+        try:
+            self.session.add(duplicate)
+            self.assertRaises(IntegrityError, self.session.flush)
+        finally:
+            self.session.rollback()
 
     @fixtures.db.token()
     @fixtures.db.token()

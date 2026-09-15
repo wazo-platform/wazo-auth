@@ -210,45 +210,6 @@ class TestSessionDAO(base.DAOTestCase):
             ),
         )
 
-    @fixtures.db.tenant(uuid=TENANT_UUID_1)
-    def test_list_uses_the_most_recent_token_of_a_session(self, tenant_uuid):
-        now = int(time.time())
-        oldest = new_token_body(
-            issued_t=now,
-            expire_t=now + 120,
-            user_agent='oldest-user-agent',
-            acl=['oldest.#'],
-        )
-        _, session_uuid = self._token_dao.create(oldest, {'tenant_uuid': TENANT_UUID_1})
-        newest = models.Token(
-            session_uuid=session_uuid,
-            auth_id=oldest['auth_id'],
-            issued_t=now + 60,
-            expire_t=now + 180,
-            acl=['newest.#'],
-            user_agent='newest-user-agent',
-            remote_addr='10.9.8.7',
-            metadata_='{}',
-        )
-        self.session.add(newest)
-        self.session.flush()
-
-        result = self._session_dao.list_(tenant_uuids=[TENANT_UUID_1])
-        assert_that(
-            result,
-            contains_exactly(
-                has_entries(
-                    uuid=session_uuid,
-                    user_agent='newest-user-agent',
-                    acl=contains_exactly('newest.#'),
-                    issued_at=datetime.fromtimestamp(now + 60, timezone.utc),
-                )
-            ),
-        )
-
-        result = self._session_dao.count(tenant_uuids=[TENANT_UUID_1])
-        assert_that(result, equal_to(1))
-
     @fixtures.db.tenant(uuid=TENANT_UUID_2)
     def test_list_sorting_on_token_columns(self, tenant_uuid):
         now = int(time.time())

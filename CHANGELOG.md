@@ -10,8 +10,10 @@
 * `GET /0.1/sessions` and `GET /0.1/users/{user_uuid}/sessions` accept
   `user_agent`, `remote_addr`, `issued_at`, `expires_at` and `client_id` as
   sort columns, in addition to `mobile`
-* A session referencing more than one token is now listed once, with the
-  metadata of its most recent token, and counted once
+* A session references exactly one token, which is now enforced by a unique
+  constraint on `auth_token.session_uuid`. Tokens that shared a session
+  before the constraint are migrated to a session of their own instead of
+  being revoked.
 
 ## 26.09
 

@@ -61,24 +61,13 @@ class SessionDAO(PaginatorMixin, BaseDAO):
         if user_uuid is not None:
             filter_ = and_(filter_, Token.auth_id == str(user_uuid))
 
-        # a session may reference more than one token: the most recent one is
-        # the one describing the session, and it keeps one row per session
+        # a session references a single token, enforced by a unique constraint
         return (
             self.session.query(Session, Token, RefreshToken.client_id)
             .select_from(Session)
-            .join(Token, Token.uuid == self._most_recent_token_uuid())
+            .join(Token)
             .outerjoin(RefreshToken, RefreshToken.uuid == Token.refresh_token_uuid)
             .filter(filter_)
-        )
-
-    def _most_recent_token_uuid(self):
-        return (
-            self.session.query(Token.uuid)
-            .filter(Token.session_uuid == Session.uuid)
-            .order_by(Token.issued_t.desc(), Token.uuid)
-            .limit(1)
-            .correlate(Session)
-            .scalar_subquery()
         )
 
     @staticmethod
@@ -97,10 +86,8 @@ class SessionDAO(PaginatorMixin, BaseDAO):
         if not session:
             return {}, {}
 
-        token_result = {}
-        for token in session.tokens:
-            token_result = {'uuid': token.uuid, 'auth_id': token.auth_id}
-            break
+        token = session.token
+        token_result = {'uuid': token.uuid, 'auth_id': token.auth_id} if token else {}
 
         session_result = {'uuid': session.uuid, 'tenant_uuid': session.tenant_uuid}
         self.session.query(Session).filter(filter_).delete(synchronize_session=False)

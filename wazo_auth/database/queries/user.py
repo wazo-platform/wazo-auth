@@ -130,14 +130,7 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         filter_ = Token.auth_id == str(user_uuid)
 
-        # a session may reference more than one token: it is listed once
-        return (
-            self.session.query(func.count(distinct(Session.uuid)))
-            .select_from(Session)
-            .join(Token)
-            .filter(filter_)
-            .scalar()
-        )
+        return self.session.query(Session).join(Token).filter(filter_).count()
 
     def count_policies(self, user_uuid, **kwargs):
         filtered = kwargs.get('filtered')
