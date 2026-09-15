@@ -91,23 +91,23 @@ definitions:
         description: Whether the session has been created from a mobile application
       user_agent:
         type: string
-        description: The user agent of the request that created the token
+        description: The user agent of the client that created this session
       remote_addr:
         type: string
-        description: The IP address of the request that created the token
+        description: The IP address of the client that created this session
       acl:
         type: array
         items:
           type: string
-        description: The access control list of the token
+        description: The access control list of the token of this session
       issued_at:
         type: string
         format: date-time
-        description: The date and time at which the token has been issued, in UTC
+        description: The date and time at which the token of this session has been issued, in UTC
       expires_at:
         type: string
         format: date-time
-        description: The date and time at which the token expires, in UTC
+        description: The date and time at which the token of this session expires, in UTC
       client_id:
         type: string
-        description: The `client_id` of the refresh token that created the token, `null` when the token has been created without a refresh token
+        description: The `client_id` of the refresh token that created this session, `null` when the session has been created without a refresh token
