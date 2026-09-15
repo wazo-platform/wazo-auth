@@ -10,6 +10,9 @@
 * `GET /0.1/sessions` and `GET /0.1/users/{user_uuid}/sessions` accept
   `user_agent`, `remote_addr`, `issued_at`, `expires_at` and `client_id` as
   sort columns, in addition to `mobile`
+* `GET /0.1/tokens`, `GET /0.1/users/{user_uuid}/tokens` and
+  `GET /0.1/users/me/tokens` expose the `user_agent` of the client that created
+  the refresh token. It was already stored, the schema just did not expose it
 * A session references exactly one token, which is now enforced by a unique
   constraint on `auth_token.session_uuid`. Tokens that shared a session
   before the constraint are migrated to a session of their own instead of

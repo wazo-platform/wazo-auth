@@ -1,13 +1,14 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from datetime import datetime, timezone
 from unittest import TestCase
 
-from hamcrest import assert_that, calling, has_key, has_properties, not_
+from hamcrest import assert_that, calling, has_entries, has_key, has_properties, not_
 from marshmallow.exceptions import ValidationError
 from wazo_test_helpers.hamcrest.raises import raises
 
-from ..schemas import TokenRequestSchema
+from ..schemas import RefreshTokenSchema, TokenRequestSchema
 
 
 class TestTokenRequestSchema(TestCase):
@@ -73,3 +74,31 @@ class TestTokenRequestSchema(TestCase):
             calling(self.schema.load).with_args(body),
             raises(ValidationError).matching(has_properties(field_name='_schema')),
         )
+
+
+class TestRefreshTokenSchema(TestCase):
+    def setUp(self):
+        self.schema = RefreshTokenSchema()
+        # as returned by RefreshTokenDAO.list_()
+        self.refresh_token = {
+            'uuid': 'the-secret-refresh-token',
+            'user_uuid': 'a014e8f7-f305-492a-9350-51f149ca8f27',
+            'tenant_uuid': '007ca8d5-d361-42de-a0ed-8680105596b0',
+            'client_id': 'wazo-shift-android',
+            'mobile': True,
+            'created_at': datetime(2026, 9, 10, 15, 8, 9, tzinfo=timezone.utc),
+            'user_agent': 'wazo-shift/2.4.1 (Android 14)',
+            'remote_addr': '203.0.113.7',
+            'metadata': {},
+        }
+
+    def test_that_the_user_agent_is_exposed(self):
+        result = self.schema.dump(self.refresh_token)
+
+        assert_that(result, has_entries(user_agent='wazo-shift/2.4.1 (Android 14)'))
+
+    def test_that_the_refresh_token_is_not_exposed(self):
+        # auth_refresh_token.uuid is the refresh token given to the client
+        result = self.schema.dump(self.refresh_token)
+
+        assert_that(result, not_(has_key('uuid')))
