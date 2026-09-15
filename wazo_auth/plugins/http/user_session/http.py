@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
@@ -27,9 +27,11 @@ class UserSessions(http.AuthResource):
         except marshmallow.ValidationError as e:
             raise exceptions.InvalidListParamException(e.messages)
 
+        sessions = self.user_service.list_sessions(user_uuid, **list_params)
+
         return (
             {
-                'items': self.user_service.list_sessions(user_uuid, **list_params),
+                'items': schemas.session_schema.dump(sessions, many=True),
                 'total': self.user_service.count_sessions(
                     user_uuid, filtered=False, **list_params
                 ),

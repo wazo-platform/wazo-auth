@@ -1,4 +1,4 @@
-# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, distinct, exc, func, or_, text
@@ -130,7 +130,14 @@ class UserDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
 
         filter_ = Token.auth_id == str(user_uuid)
 
-        return self.session.query(Session).join(Token).filter(filter_).count()
+        # a session may reference more than one token: it is listed once
+        return (
+            self.session.query(func.count(distinct(Session.uuid)))
+            .select_from(Session)
+            .join(Token)
+            .filter(filter_)
+            .scalar()
+        )
 
     def count_policies(self, user_uuid, **kwargs):
         filtered = kwargs.get('filtered')
