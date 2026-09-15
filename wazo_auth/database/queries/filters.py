@@ -1,4 +1,4 @@
-# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, or_, text
@@ -133,6 +133,7 @@ refresh_token_strict_filter = StrictFilter(
     ('client_id', RefreshToken.client_id, None),
     ('created_at', RefreshToken.created_at, None),
     ('mobile', RefreshToken.mobile, None),
+    ('user_agent', RefreshToken.user_agent, None),
 )
 tenant_strict_filter = _TenantStrictFilter(
     ('uuid', Tenant.uuid, str),
@@ -168,7 +169,9 @@ user_search_filter = SearchFilter(
     User.username,
     AnyIlike(User.emails, Email.address),
 )
-refresh_token_search_filter = SearchFilter(RefreshToken.client_id)
+refresh_token_search_filter = SearchFilter(
+    RefreshToken.client_id, RefreshToken.user_agent
+)
 saml_pysaml2_cache_search_filter = SearchFilter(
     SAMLPysaml2Cache.name_id,
     SAMLPysaml2Cache.entity_id,

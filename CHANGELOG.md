@@ -2,6 +2,10 @@
 
 ## 26.09
 
+* `GET /0.1/tokens`, `GET /0.1/users/<user_uuid>/tokens` and
+  `GET /0.1/users/me/tokens`: refresh tokens now expose the `user_agent` of the
+  client that created them. The list can also be filtered on `user_agent` and
+  `user_uuid`, and `user_agent` is matched by the `search` parameter
 * wazo-auth can be scaled to multiple processes or replicas:
     * New `roles` config (map of `api`, `scheduler`, `init` to booleans)
       and repeatable `--role` CLI option; default unchanged (all roles,

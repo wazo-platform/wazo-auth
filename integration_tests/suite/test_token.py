@@ -21,6 +21,7 @@ from hamcrest import (
     has_key,
     has_properties,
     not_,
+    not_none,
 )
 from requests.exceptions import HTTPError
 from wazo_auth_client import Client
@@ -1083,6 +1084,38 @@ class TestTokens(base.APIIntegrationTest):
                 )
             ),
         )
+
+    @fixtures.http.user(username='foo', password='bar')
+    @fixtures.http.token(
+        username='foo', password='bar', access_type='offline', client_id='client1'
+    )
+    def test_list_refresh_tokens_exposes_the_user_agent(self, user, token):
+        result = self.client.refresh_tokens.list(client_id='client1')
+
+        assert_that(
+            result,
+            has_entries(
+                items=contains_exactly(
+                    has_entries(client_id='client1', user_agent=not_none())
+                )
+            ),
+        )
+
+        # remote_addr is stored but deliberately not exposed over the API
+        assert_that(result['items'][0], not_(has_key('remote_addr')))
+
+        user_agent = result['items'][0]['user_agent']
+
+        result = self.client.refresh_tokens.list(user_agent=user_agent)
+        assert_that(
+            result,
+            has_entries(
+                items=contains_exactly(has_entries(client_id='client1')), filtered=1
+            ),
+        )
+
+        result = self.client.refresh_tokens.list(user_agent='not-a-known-user-agent')
+        assert_that(result, has_entries(items=empty(), filtered=0))
 
     @fixtures.http.tenant(name='sub')
     def test_that_a_user_can_list_tokens_from_subtenants(self, sub):

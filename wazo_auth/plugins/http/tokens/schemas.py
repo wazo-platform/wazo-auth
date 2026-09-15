@@ -1,4 +1,4 @@
-# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from marshmallow import validates_schema
@@ -74,7 +74,13 @@ class TokenRequestSchema(BaseSchema):
 class RefreshTokenListSchema(BaseListSchema):
     sort_columns = ['created_at', 'client_id', 'mobile']
     default_sort_column = 'created_at'
-    searchable_columns = ['created_at', 'client_id', 'mobile']
+    searchable_columns = [
+        'created_at',
+        'client_id',
+        'mobile',
+        'user_uuid',
+        'user_agent',
+    ]
 
 
 class RefreshTokenSchema(BaseSchema):
@@ -83,6 +89,7 @@ class RefreshTokenSchema(BaseSchema):
     mobile = fields.Boolean()
     user_uuid = fields.String()
     tenant_uuid = fields.String()
+    user_agent = fields.String()
     metadata = fields.Dict()
 
 
