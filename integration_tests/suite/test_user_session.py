@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -8,12 +8,18 @@ from hamcrest import (
     assert_that,
     calling,
     contains_exactly,
+    contains_inanyorder,
+    empty,
+    ends_with,
     greater_than_or_equal_to,
     has_entries,
     has_entry,
     has_item,
     has_items,
+    has_key,
     has_length,
+    is_not,
+    not_,
 )
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.raises import raises
@@ -66,6 +72,52 @@ class TestUserSession(base.APIIntegrationTest):
                 items=contains_exactly(has_entries(uuid=token['session_uuid'])),
             ),
         )
+
+    @fixtures.http.policy(acl=['auth.sessions.read'])
+    @fixtures.http.user(username='user-session-metadata', password='pass')
+    def test_list_token_metadata(self, policy, user):
+        self.client.users.add_policy(user['uuid'], policy['uuid'])
+        client = self.make_auth_client('user-session-metadata', 'pass')
+        token = client.token.new(
+            expiration=60,
+            access_type='offline',
+            client_id='my-client-id',
+            user_agent='my-user-agent',
+        )
+        try:
+            response = self.client.users.get_sessions(user['uuid'])
+
+            # the assertion on the ACL is only meaningful for a non-empty ACL
+            assert_that(token['acl'], not_(empty()))
+            assert_that(
+                response,
+                has_entries(
+                    items=contains_exactly(
+                        has_entries(
+                            uuid=token['session_uuid'],
+                            user_uuid=user['uuid'],
+                            user_agent='my-user-agent',
+                            # Docker host address are always X.X.X.1
+                            remote_addr=ends_with('.1'),
+                            acl=contains_inanyorder(*token['acl']),
+                            client_id='my-client-id',
+                            issued_at=is_not(None),
+                            expires_at=is_not(None),
+                        )
+                    )
+                ),
+            )
+
+            # a session must never expose the token nor the refresh token
+            session = response['items'][0]
+            assert_that(session, is_not(has_key('token')))
+            assert_that(session, is_not(has_key('refresh_token')))
+            assert_that(list(session.values()), is_not(has_item(token['token'])))
+            assert_that(
+                list(session.values()), is_not(has_item(token['refresh_token']))
+            )
+        finally:
+            self.client.token.revoke(token['token'])
 
     @fixtures.http.user(username='username', password='pass')
     @fixtures.http.token(username='username', password='pass')

@@ -1,28 +1,30 @@
 # Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from datetime import datetime, timezone
+
 from sqlalchemy import and_, text
 
 from ...helpers import is_uuid
-from ..models import Session, Token
+from ..models import RefreshToken, Session, Token
 from .base import BaseDAO, PaginatorMixin
 
 
 class SessionDAO(PaginatorMixin, BaseDAO):
-    column_map = {'mobile': Session.mobile}
+    column_map = {
+        'mobile': Session.mobile,
+        'issued_at': Token.issued_t,
+        'expires_at': Token.expire_t,
+        'user_agent': Token.user_agent,
+        'remote_addr': Token.remote_addr,
+        'client_id': RefreshToken.client_id,
+    }
 
     def list_(self, tenant_uuids=None, user_uuid=None, **kwargs):
-        filter_ = text('true')
-        if tenant_uuids is not None:
-            if not tenant_uuids:
-                return []
+        query = self._session_query(tenant_uuids, user_uuid)
+        if query is None:
+            return []
 
-            filter_ = and_(filter_, Session.tenant_uuid.in_(tenant_uuids))
-
-        if user_uuid is not None:
-            filter_ = and_(filter_, Token.auth_id == str(user_uuid))
-
-        query = self.session.query(Session, Token).join(Token).filter(filter_)
         query = self._paginator.update_query(query, **kwargs)
 
         return [
@@ -31,22 +33,48 @@ class SessionDAO(PaginatorMixin, BaseDAO):
                 'mobile': r.Session.mobile,
                 'tenant_uuid': r.Session.tenant_uuid,
                 'user_uuid': r.Token.auth_id if is_uuid(r.Token.auth_id) else None,
+                'user_agent': r.Token.user_agent,
+                'remote_addr': r.Token.remote_addr,
+                'acl': r.Token.acl,
+                'issued_at': self._to_datetime(r.Token.issued_t),
+                'expires_at': self._to_datetime(r.Token.expire_t),
+                'client_id': r.client_id,
             }
             for r in query.all()
         ]
 
     def count(self, tenant_uuids=None, user_uuid=None, **kwargs):
-        filter_ = text('true')
+        query = self._session_query(tenant_uuids, user_uuid)
+        if query is None:
+            return 0
 
+        return query.count()
+
+    def _session_query(self, tenant_uuids, user_uuid):
+        filter_ = text('true')
         if tenant_uuids is not None:
             if not tenant_uuids:
-                return 0
+                return None
+
             filter_ = and_(filter_, Session.tenant_uuid.in_(tenant_uuids))
 
         if user_uuid is not None:
-            filter_ = and_(filter_, Session.tokens.any(auth_id=str(user_uuid)))
+            filter_ = and_(filter_, Token.auth_id == str(user_uuid))
 
-        return self.session.query(Session).join(Token).filter(filter_).count()
+        # a session references a single token, enforced by a unique constraint
+        return (
+            self.session.query(Session, Token, RefreshToken.client_id)
+            .select_from(Session)
+            .join(Token)
+            .outerjoin(RefreshToken, RefreshToken.uuid == Token.refresh_token_uuid)
+            .filter(filter_)
+        )
+
+    @staticmethod
+    def _to_datetime(timestamp):
+        if timestamp is None:
+            return None
+        return datetime.fromtimestamp(timestamp, timezone.utc)
 
     def delete(self, session_uuid, tenant_uuids):
         filter_ = Session.uuid == str(session_uuid)
@@ -58,10 +86,8 @@ class SessionDAO(PaginatorMixin, BaseDAO):
         if not session:
             return {}, {}
 
-        token_result = {}
-        for token in session.tokens:
-            token_result = {'uuid': token.uuid, 'auth_id': token.auth_id}
-            break
+        token = session.token
+        token_result = {'uuid': token.uuid, 'auth_id': token.auth_id} if token else {}
 
         session_result = {'uuid': session.uuid, 'tenant_uuid': session.tenant_uuid}
         self.session.query(Session).filter(filter_).delete(synchronize_session=False)

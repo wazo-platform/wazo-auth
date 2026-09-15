@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from xivo import mallow_helpers as mallow
@@ -95,12 +95,37 @@ class UserPolicyListSchema(BaseListSchema):
     searchable_columns = ['uuid', 'name', 'user_uuid', 'group_uuid', 'tenant_uuid']
 
 
+class SessionSchema(BaseSchema):
+    uuid = fields.String(dump_only=True)
+    tenant_uuid = fields.String(dump_only=True)
+    user_uuid = fields.String(dump_only=True)
+    mobile = fields.Boolean(dump_only=True)
+    user_agent = fields.String(dump_only=True)
+    remote_addr = fields.String(dump_only=True)
+    acl = fields.List(fields.String(), dump_only=True)
+    issued_at = fields.DateTime(dump_only=True)
+    expires_at = fields.DateTime(dump_only=True)
+    client_id = fields.String(dump_only=True)
+
+
+session_schema = SessionSchema()
+
+SESSION_SORT_COLUMNS = [
+    'mobile',
+    'user_agent',
+    'remote_addr',
+    'issued_at',
+    'expires_at',
+    'client_id',
+]
+
+
 class SessionListSchema(BaseListSchema):
-    sort_columns = ['mobile']
+    sort_columns = SESSION_SORT_COLUMNS
 
 
 class UserSessionListSchema(BaseListSchema):
-    sort_columns = ['mobile']
+    sort_columns = SESSION_SORT_COLUMNS
 
 
 class UserListSchema(BaseListSchema):
