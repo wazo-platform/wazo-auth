@@ -256,6 +256,10 @@ class TokenService(BaseService):
         )
         token = Token(token_uuid, session_uuid=session_uuid, **token_payload)
 
+        # only an existing refresh token is "used": a fresh one has created_at
+        if args.get('refresh_token'):
+            self._dao.refresh_token.update_last_used(args['refresh_token'])
+
         user_uuid = auth_id if is_uuid(auth_id) else None
         event = SessionCreatedEvent(
             session_uuid,

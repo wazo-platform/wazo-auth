@@ -72,7 +72,7 @@ class TokenRequestSchema(BaseSchema):
 
 
 class RefreshTokenListSchema(BaseListSchema):
-    sort_columns = ['created_at', 'client_id', 'mobile']
+    sort_columns = ['created_at', 'client_id', 'mobile', 'last_used_at']
     default_sort_column = 'created_at'
     searchable_columns = [
         'created_at',
@@ -90,6 +90,7 @@ class RefreshTokenSchema(BaseSchema):
     user_uuid = fields.String()
     tenant_uuid = fields.String()
     user_agent = fields.String()
+    last_used_at = fields.DateTime()
     metadata = fields.Dict()
 
 

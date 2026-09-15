@@ -11,6 +11,8 @@ from hamcrest import (
     equal_to,
     has_entries,
     has_item,
+    none,
+    not_none,
 )
 
 from .helpers import base, fixtures
@@ -162,3 +164,21 @@ class TestRefreshTokenDAO(base.DAOTestCase):
         self._refresh_token_dao.create(body)
 
         assert_that(body, equal_to(original_body))
+
+    @fixtures.db.tenant(uuid=TENANT_UUID)
+    @fixtures.db.user(uuid=ALICE_UUID, username='alice', tenant_uuid=TENANT_UUID)
+    @fixtures.db.refresh_token(user_uuid=ALICE_UUID, client_id='mobile-client')
+    def test_update_last_used(self, tenant, alice_uuid, token_uuid):
+        result = self._refresh_token_dao.list_(user_uuid=ALICE_UUID)
+        assert_that(
+            result,
+            contains_inanyorder(has_entries(uuid=token_uuid, last_used_at=none())),
+        )
+
+        self._refresh_token_dao.update_last_used(token_uuid)
+
+        result = self._refresh_token_dao.list_(user_uuid=ALICE_UUID)
+        assert_that(
+            result,
+            contains_inanyorder(has_entries(uuid=token_uuid, last_used_at=not_none())),
+        )

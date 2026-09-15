@@ -1,7 +1,7 @@
 # Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from sqlalchemy import and_, exc, text
+from sqlalchemy import and_, exc, func, text
 
 from wazo_auth import exceptions
 
@@ -18,6 +18,7 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         'client_id': RefreshToken.client_id,
         'mobile': RefreshToken.mobile,
         'metadata': RefreshToken.metadata_,
+        'last_used_at': RefreshToken.last_used_at,
     }
 
     def count(self, user_uuid=None, tenant_uuids=None, filtered=False, **search_params):
@@ -161,10 +162,20 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
                     'created_at': refresh_token.created_at,
                     'user_agent': refresh_token.user_agent,
                     'remote_addr': refresh_token.remote_addr,
+                    'last_used_at': refresh_token.last_used_at,
                     'metadata': refresh_token.metadata_,
                 }
             )
         return refresh_tokens
+
+    def update_last_used(self, refresh_token_uuid):
+        self.session.query(RefreshToken).filter(
+            RefreshToken.uuid == refresh_token_uuid
+        ).update(
+            {RefreshToken.last_used_at: func.now()},
+            synchronize_session=False,
+        )
+        self.session.flush()
 
     def get_existing_refresh_token(self, client_id, user_uuid):
         filter_ = and_(

@@ -89,6 +89,7 @@ class TestRefreshTokenSchema(TestCase):
             'created_at': datetime(2026, 9, 10, 15, 8, 9, tzinfo=timezone.utc),
             'user_agent': 'wazo-shift/2.4.1 (Android 14)',
             'remote_addr': '203.0.113.7',
+            'last_used_at': datetime(2026, 9, 15, 8, 12, 44, tzinfo=timezone.utc),
             'metadata': {},
         }
 
@@ -96,6 +97,11 @@ class TestRefreshTokenSchema(TestCase):
         result = self.schema.dump(self.refresh_token)
 
         assert_that(result, has_entry('user_agent', 'wazo-shift/2.4.1 (Android 14)'))
+
+    def test_that_the_last_used_at_is_exposed(self):
+        result = self.schema.dump(self.refresh_token)
+
+        assert_that(result, has_entry('last_used_at', '2026-09-15T08:12:44+00:00'))
 
     def test_that_the_remote_addr_is_not_exposed(self):
         result = self.schema.dump(self.refresh_token)
@@ -122,3 +128,8 @@ class TestRefreshTokenListSchema(TestCase):
         result = self.schema.load({'order': 'client_id'})
 
         assert_that(result, has_entry('order', 'client_id'))
+
+    def test_that_the_list_can_be_sorted_by_last_used_at(self):
+        result = self.schema.load({'order': 'last_used_at'})
+
+        assert_that(result, has_entry('order', 'last_used_at'))

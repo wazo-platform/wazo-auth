@@ -684,3 +684,76 @@ class TestTokenServicePurgeRefreshTokenAndSessions(BaseServiceTestCase):
         self.session_dao.delete_by_refresh_token_uuid.assert_not_called()
         self.refresh_token_dao.delete.assert_not_called()
         self.bus_publisher.publish.assert_not_called()
+
+
+class TestTokenServiceRefreshTokenUsage(BaseServiceTestCase):
+    USER_UUID = '9c1e1b4a-8f4a-4f1e-9a1d-2f6a0f9a1b2c'
+    TENANT_UUID = 'rt-tenant-uuid'
+    CLIENT_ID = 'my-client'
+    REFRESH_TOKEN_UUID = 'refresh-token-uuid'
+    USER_AGENT = 'wazo-shift/2.5.0 (Android 14)'
+
+    def setUp(self):
+        super().setUp()
+        self.bus_publisher = Mock(BusPublisher)
+        self.user_service = Mock()
+        config = {
+            'default_token_lifetime': 7200,
+            'max_user_concurrent_sessions': 50,
+            'backend_policies': {},
+            'default_user_policy': None,
+        }
+        self.service = services.TokenService(
+            config, self.dao, self.bus_publisher, self.user_service
+        )
+        self.backend = Mock()
+        self.backend.get_metadata.return_value = {
+            'auth_id': self.USER_UUID,
+            'uuid': self.USER_UUID,
+            'pbx_user_uuid': self.USER_UUID,
+            'xivo_uuid': 'xivo-uuid',
+            'tenant_uuid': self.TENANT_UUID,
+            'purpose': 'user',
+        }
+        self.backend.get_acl.return_value = []
+        self.backend.get_persistent_metadata.return_value = {}
+        self.session_dao.count.return_value = 0
+        self.token_dao.create.return_value = ('token-uuid', 'session-uuid')
+        self.refresh_token_dao.create.return_value = self.REFRESH_TOKEN_UUID
+
+    def _args(self, **kwargs):
+        args = {
+            'backend': 'wazo_user',
+            'login': 'foo',
+            'user_agent': self.USER_AGENT,
+            'remote_addr': '127.0.0.1',
+            'mobile': False,
+        }
+        args.update(kwargs)
+        return args
+
+    def test_that_logging_in_with_a_refresh_token_records_its_usage(self):
+        args = self._args(
+            refresh_token=self.REFRESH_TOKEN_UUID, client_id=self.CLIENT_ID
+        )
+
+        self.service.new_token(self.backend, 'foo', args)
+
+        self.refresh_token_dao.update_last_used.assert_called_once_with(
+            self.REFRESH_TOKEN_UUID
+        )
+
+    def test_that_creating_a_refresh_token_does_not_record_a_usage(self):
+        # a brand new refresh token has never been used: created_at says it all
+        args = self._args(access_type='offline', client_id=self.CLIENT_ID)
+
+        self.service.new_token(self.backend, 'foo', args)
+
+        self.refresh_token_dao.update_last_used.assert_not_called()
+
+    def test_that_a_password_login_does_not_record_a_usage(self):
+        args = self._args()
+
+        self.service.new_token(self.backend, 'foo', args)
+
+        self.refresh_token_dao.update_last_used.assert_not_called()

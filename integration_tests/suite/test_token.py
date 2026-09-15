@@ -20,6 +20,7 @@ from hamcrest import (
     has_item,
     has_key,
     has_properties,
+    none,
     not_,
     not_none,
 )
@@ -179,6 +180,30 @@ class TestTokens(base.APIIntegrationTest):
 
         get_result = self.client.token.get(post_result['token'])
         assert_that(get_result, has_entries(user_agent=ua, remote_addr=ends_with('.1')))
+
+    def test_refresh_token_login_records_the_usage(self):
+        client_id = 'rt-usage'
+
+        result = self.client.token.new(
+            expiration=30, access_type='offline', client_id=client_id
+        )
+        refresh_token = result['refresh_token']
+
+        listed = self.client.refresh_tokens.list(client_id=client_id)
+        assert_that(
+            listed['items'],
+            contains_exactly(has_entries(last_used_at=none())),
+        )
+
+        self.client.token.new(
+            expiration=30, refresh_token=refresh_token, client_id=client_id
+        )
+
+        listed = self.client.refresh_tokens.list(client_id=client_id)
+        assert_that(
+            listed['items'],
+            contains_exactly(has_entries(last_used_at=not_none())),
+        )
 
     def test_refresh_token(self):
         client_id = 'my-test'
