@@ -333,6 +333,14 @@ definitions:
       tenant_uuid:
         type: string
         description: The tenant UUID of the user which created this refresh token
+      user_agent:
+        type: string
+        description: The `User-Agent` of the client that created this refresh token
+      last_used_at:
+        type: string
+        description: |
+          The time at which this refresh token last produced an access token.
+          `null` if it has not been used since it was created.
       metadata:
         type: object
         description: the persistent metadata tied to this refresh token
@@ -403,6 +411,12 @@ definitions:
             description: The list of allowed accesses for this token
           session_uuid:
             type: string
+          user_agent:
+            type: string
+            description: The `User-Agent` of the client that created this token
+          remote_addr:
+            type: string
+            description: The IP address of the client that created this token
 
   ScopeList:
     type: object

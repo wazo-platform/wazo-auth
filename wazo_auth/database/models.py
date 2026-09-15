@@ -1,4 +1,4 @@
-# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import (
@@ -251,6 +251,7 @@ class RefreshToken(Base):
     user_agent = Column(Text)
     remote_addr = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=text('NOW()'))
+    last_used_at = Column(DateTime(timezone=True))
     mobile = Column(Boolean, nullable=False, default=False)
     metadata_ = Column(JSON(), nullable=False, server_default='{}', name='metadata')
     user = relationship('User', viewonly=True)
