@@ -93,6 +93,17 @@ class TestSessionDAO(base.DAOTestCase):
         result = self._session_dao.count(tenant_uuids=[])
         assert_that(result, equal_to(0))
 
+    @fixtures.db.tenant(uuid=TENANT_UUID_1)
+    @fixtures.db.token(session={'tenant_uuid': TENANT_UUID_1})
+    @fixtures.db.token()
+    def test_count_by_user(self, tenant_uuid, token_1, token_2):
+        # a login counts the sessions of the user before creating one
+        result = self._session_dao.count(user_uuid=token_1['auth_id'])
+        assert_that(result, equal_to(1))
+
+        result = self._session_dao.count(user_uuid=self.unknown_uuid)
+        assert_that(result, equal_to(0))
+
     @fixtures.db.refresh_token()
     @fixtures.db.token()
     def test_delete_by_refresh_token_uuid(self, refresh_token_uuid, unrelated_token):
