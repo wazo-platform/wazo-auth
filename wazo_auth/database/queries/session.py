@@ -58,10 +58,8 @@ class SessionDAO(PaginatorMixin, BaseDAO):
         if not session:
             return {}, {}
 
-        token_result = {}
-        for token in session.tokens:
-            token_result = {'uuid': token.uuid, 'auth_id': token.auth_id}
-            break
+        token = session.token
+        token_result = {'uuid': token.uuid, 'auth_id': token.auth_id} if token else {}
 
         session_result = {'uuid': session.uuid, 'tenant_uuid': session.tenant_uuid}
         self.session.query(Session).filter(filter_).delete(synchronize_session=False)

@@ -115,8 +115,9 @@ class TokenDAO(BaseDAO):
         if not token:
             return {}, {}
 
+        # a session references a single token: deleting it ends the session
         session = token.session
-        if len(session.tokens) == 1:
+        if session:
             session_result = SessionIdentity(
                 uuid=session.uuid,
                 tenant_uuid=session.tenant_uuid,

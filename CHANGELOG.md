@@ -1,5 +1,12 @@
 # Changelog
 
+## 26.10
+
+* A session references exactly one token, which is now enforced by a unique
+  constraint on `auth_token.session_uuid`. Tokens that shared a session
+  before the constraint are migrated to a session of their own instead of
+  being revoked.
+
 ## 26.09
 
 * wazo-auth can be scaled to multiple processes or replicas:
