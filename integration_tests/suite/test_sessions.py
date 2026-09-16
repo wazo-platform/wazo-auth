@@ -1,19 +1,26 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
 import uuid
+from datetime import datetime, timezone
 
 from hamcrest import (
     assert_that,
     contains_exactly,
+    contains_inanyorder,
     contains_string,
     empty,
+    equal_to,
     greater_than_or_equal_to,
     has_entries,
     has_entry,
+    has_item,
     has_items,
+    has_key,
     has_length,
+    is_not,
+    none,
     not_,
 )
 from wazo_test_helpers import until
@@ -112,6 +119,90 @@ class TestSessions(base.APIIntegrationTest):
                 items=contains_exactly(has_entries(uuid=session_2['uuid'])),
             ),
         )
+
+    @fixtures.http.policy(acl=['auth.sessions.read'])
+    @fixtures.http.user(username='session-metadata-user', password='pass')
+    def test_list_token_metadata(self, policy, user):
+        self.client.users.add_policy(user['uuid'], policy['uuid'])
+        client = self.make_auth_client('session-metadata-user', 'pass')
+        token = client.token.new(
+            expiration=60,
+            access_type='offline',
+            client_id='my-client-id',
+            user_agent='my-user-agent',
+        )
+        try:
+            session = self._get_session(token['session_uuid'])
+
+            # the assertion on the ACL is only meaningful for a non-empty ACL
+            assert_that(token['acl'], not_(empty()))
+            assert_that(
+                session,
+                has_entries(
+                    uuid=token['session_uuid'],
+                    user_uuid=user['uuid'],
+                    tenant_uuid=user['tenant_uuid'],
+                    mobile=False,
+                    user_agent='my-user-agent',
+                    acl=contains_inanyorder(*token['acl']),
+                    client_id='my-client-id',
+                ),
+            )
+            assert_that(
+                datetime.fromisoformat(session['issued_at']),
+                equal_to(self._utc_datetime(token['utc_issued_at'])),
+            )
+            assert_that(
+                datetime.fromisoformat(session['expires_at']),
+                equal_to(self._utc_datetime(token['utc_expires_at'])),
+            )
+
+            # the remote address is not exposed: behind a reverse proxy the
+            # recorded value may be the proxy's
+            assert_that(session, is_not(has_key('remote_addr')))
+
+            # a session must never expose the token nor the refresh token
+            assert_that(session, is_not(has_key('token')))
+            assert_that(session, is_not(has_key('refresh_token')))
+            assert_that(list(session.values()), is_not(has_item(token['token'])))
+            assert_that(
+                list(session.values()), is_not(has_item(token['refresh_token']))
+            )
+        finally:
+            self.client.token.revoke(token['token'])
+
+    @fixtures.http.user(username='online-session-user', password='pass')
+    def test_list_token_metadata_without_refresh_token(self, user):
+        client = self.make_auth_client('online-session-user', 'pass')
+        token = client.token.new(expiration=60)
+        try:
+            session = self._get_session(token['session_uuid'])
+            assert_that(
+                session,
+                has_entries(acl=contains_inanyorder(*token['acl']), client_id=none()),
+            )
+        finally:
+            self.client.token.revoke(token['token'])
+
+    @fixtures.http.session()
+    def test_list_sorting_on_token_columns(self, session):
+        for column in ('issued_at', 'expires_at', 'user_agent'):
+            for direction in ('asc', 'desc'):
+                response = base.assert_no_error(
+                    self.client.sessions.list, order=column, direction=direction
+                )
+                assert_that(response['items'], not_(empty()), column)
+
+    def _get_session(self, session_uuid):
+        sessions = self.client.sessions.list(recurse=True)['items']
+        matching = [session for session in sessions if session['uuid'] == session_uuid]
+        assert_that(matching, has_length(1), f'session {session_uuid} not found')
+        return matching[0]
+
+    @staticmethod
+    def _utc_datetime(raw):
+        # the token's issued_t/expire_t are truncated to the second in the database
+        return datetime.fromisoformat(raw).replace(microsecond=0, tzinfo=timezone.utc)
 
     @fixtures.http.session()
     @fixtures.http.session()

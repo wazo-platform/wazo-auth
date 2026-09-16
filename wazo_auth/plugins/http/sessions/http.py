@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import marshmallow
@@ -26,7 +26,11 @@ class Sessions(http.AuthResource):
         total = self.session_service.count(filtered=False, **list_params)
         filtered = self.session_service.count(filtered=True, **list_params)
 
-        response = {'filtered': filtered, 'total': total, 'items': sessions}
+        response = {
+            'filtered': filtered,
+            'total': total,
+            'items': schemas.session_schema.dump(sessions, many=True),
+        }
 
         return response, 200
 

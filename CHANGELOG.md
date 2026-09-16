@@ -1,5 +1,16 @@
 # Changelog
 
+## 26.10
+
+* The `Session` objects returned by `GET /0.1/sessions` and
+  `GET /0.1/users/{user_uuid}/sessions` expose the metadata of the token they
+  are a proxy for: `user_agent`, `acl`, `issued_at`, `expires_at` and the
+  `client_id` of the refresh token that created the token (`null` when there
+  is none).
+* `GET /0.1/sessions` and `GET /0.1/users/{user_uuid}/sessions` accept
+  `user_agent`, `issued_at`, `expires_at` and `client_id` as sort columns, in
+  addition to `mobile`
+
 ## 26.09
 
 * wazo-auth can be scaled to multiple processes or replicas:

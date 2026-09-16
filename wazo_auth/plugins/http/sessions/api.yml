@@ -13,6 +13,8 @@ paths:
       parameters:
       - $ref: '#/parameters/tenantuuid'
       - $ref: '#/parameters/recurse'
+      - $ref: '#/parameters/order'
+      - $ref: '#/parameters/direction'
       - $ref: '#/parameters/limit'
       - $ref: '#/parameters/offset'
       responses:
@@ -70,12 +72,39 @@ definitions:
     - items
   SessionResult:
     type: object
+    description: |
+      A session is a proxy for the token that created it: it exposes the
+      metadata of that token without exposing the token itself. A session
+      references exactly one token.
     properties:
       uuid:
         type: string
+        description: The UUID of the session
       user_uuid:
         type: string
+        description: The UUID of the user that owns the session, `null` when the token is not associated to a user
       tenant_uuid:
         type: string
+        description: The UUID of the tenant of the session
       mobile:
         type: boolean
+        description: Whether the session has been created from a mobile application
+      user_agent:
+        type: string
+        description: The user agent of the client that created this session
+      acl:
+        type: array
+        items:
+          type: string
+        description: The access control list of the token of this session
+      issued_at:
+        type: string
+        format: date-time
+        description: The date and time at which the token of this session has been issued, in UTC
+      expires_at:
+        type: string
+        format: date-time
+        description: The date and time at which the token of this session expires, in UTC
+      client_id:
+        type: string
+        description: The `client_id` of the refresh token that created this session, `null` when the session has been created without a refresh token
