@@ -1,4 +1,4 @@
-# Copyright 2019-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import uuid
@@ -13,7 +13,9 @@ from hamcrest import (
     has_entry,
     has_item,
     has_items,
+    has_key,
     has_length,
+    is_not,
 )
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.raises import raises
@@ -66,6 +68,52 @@ class TestUserSession(base.APIIntegrationTest):
                 items=contains_exactly(has_entries(uuid=token['session_uuid'])),
             ),
         )
+
+    @fixtures.http.policy(acl=['auth.sessions.read'])
+    @fixtures.http.user(username='user-session-metadata', password='pass')
+    def test_list_token_metadata(self, policy, user):
+        self.client.users.add_policy(user['uuid'], policy['uuid'])
+        client = self.make_auth_client('user-session-metadata', 'pass')
+        token = client.token.new(
+            expiration=60,
+            access_type='offline',
+            client_id='my-client-id',
+            user_agent='my-user-agent',
+        )
+        try:
+            response = self.client.users.get_sessions(user['uuid'])
+
+            assert_that(
+                response,
+                has_entries(
+                    items=contains_exactly(
+                        has_entries(
+                            uuid=token['session_uuid'],
+                            user_uuid=user['uuid'],
+                            user_agent='my-user-agent',
+                            refresh_token_client_id='my-client-id',
+                            created_at=is_not(None),
+                            expires_at=is_not(None),
+                        )
+                    )
+                ),
+            )
+
+            session = response['items'][0]
+
+            # the remote address is not exposed: behind a reverse proxy the
+            # recorded value may be the proxy's
+            assert_that(session, is_not(has_key('remote_addr')))
+
+            # a session must never expose the token nor the refresh token
+            assert_that(session, is_not(has_key('token')))
+            assert_that(session, is_not(has_key('refresh_token')))
+            assert_that(list(session.values()), is_not(has_item(token['token'])))
+            assert_that(
+                list(session.values()), is_not(has_item(token['refresh_token']))
+            )
+        finally:
+            self.client.token.revoke(token['token'])
 
     @fixtures.http.user(username='username', password='pass')
     @fixtures.http.token(username='username', password='pass')

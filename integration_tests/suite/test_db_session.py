@@ -3,6 +3,7 @@
 
 import time
 import uuid
+from datetime import datetime, timezone
 
 from hamcrest import (
     assert_that,
@@ -13,6 +14,7 @@ from hamcrest import (
     has_entries,
     has_items,
     has_properties,
+    none,
 )
 
 from wazo_auth.database import models
@@ -20,8 +22,26 @@ from wazo_auth.database import models
 from .helpers import base, fixtures
 
 TENANT_UUID_1 = str(uuid.uuid4())
+TENANT_UUID_2 = str(uuid.uuid4())
 SESSION_UUID_1 = str(uuid.uuid4())
 SESSION_UUID_2 = str(uuid.uuid4())
+
+
+def new_token_body(**kwargs):
+    now = int(time.time())
+    body = {
+        'auth_id': str(uuid.uuid4()),
+        'pbx_user_uuid': str(uuid.uuid4()),
+        'xivo_uuid': str(uuid.uuid4()),
+        'issued_t': now,
+        'expire_t': now + 120,
+        'acl': [],
+        'metadata': {},
+        'user_agent': '',
+        'remote_addr': '',
+    }
+    body.update(kwargs)
+    return body
 
 
 @base.use_asset('database')
@@ -148,3 +168,92 @@ class TestSessionDAO(base.DAOTestCase):
         deleted = self._session_dao.delete_by_refresh_token_uuid(refresh_token_uuid)
 
         assert_that(deleted, empty())
+
+    @fixtures.db.tenant(uuid=TENANT_UUID_1)
+    @fixtures.db.refresh_token(client_id='my-client-id')
+    def test_list_token_metadata(self, tenant_uuid, refresh_token_uuid):
+        now = int(time.time())
+        token_body = new_token_body(
+            issued_t=now,
+            expire_t=now + 120,
+            acl=['auth.#', 'confd.#'],
+            user_agent='my-user-agent',
+        )
+        _, session_uuid = self._token_dao.create(
+            token_body,
+            {'tenant_uuid': TENANT_UUID_1},
+            refresh_token_uuid=refresh_token_uuid,
+        )
+
+        result = self._session_dao.list_(tenant_uuids=[TENANT_UUID_1])
+        assert_that(
+            result,
+            contains_exactly(
+                has_entries(
+                    uuid=session_uuid,
+                    tenant_uuid=TENANT_UUID_1,
+                    user_uuid=token_body['auth_id'],
+                    mobile=False,
+                    user_agent='my-user-agent',
+                    refresh_token_client_id='my-client-id',
+                    created_at=datetime.fromtimestamp(now, timezone.utc),
+                    expires_at=datetime.fromtimestamp(now + 120, timezone.utc),
+                )
+            ),
+        )
+
+    @fixtures.db.tenant(uuid=TENANT_UUID_1)
+    def test_list_token_metadata_without_refresh_token(self, tenant_uuid):
+        token_body = new_token_body()
+        _, session_uuid = self._token_dao.create(
+            token_body, {'tenant_uuid': TENANT_UUID_1}
+        )
+
+        result = self._session_dao.list_(tenant_uuids=[TENANT_UUID_1])
+        assert_that(
+            result,
+            contains_exactly(
+                has_entries(uuid=session_uuid, refresh_token_client_id=none())
+            ),
+        )
+
+    @fixtures.db.tenant(uuid=TENANT_UUID_2)
+    def test_list_sorting_on_token_columns(self, tenant_uuid):
+        now = int(time.time())
+        oldest = new_token_body(
+            issued_t=now, expire_t=now + 60, user_agent='aaa-user-agent'
+        )
+        newest = new_token_body(
+            issued_t=now + 60, expire_t=now + 300, user_agent='zzz-user-agent'
+        )
+        _, oldest_session_uuid = self._token_dao.create(
+            oldest, {'tenant_uuid': TENANT_UUID_2}
+        )
+        _, newest_session_uuid = self._token_dao.create(
+            newest, {'tenant_uuid': TENANT_UUID_2}
+        )
+
+        for column in ('created_at', 'expires_at', 'user_agent'):
+            result = self._session_dao.list_(
+                tenant_uuids=[TENANT_UUID_2], order=column, direction='asc'
+            )
+            assert_that(
+                result,
+                contains_exactly(
+                    has_entries(uuid=oldest_session_uuid),
+                    has_entries(uuid=newest_session_uuid),
+                ),
+                column,
+            )
+
+            result = self._session_dao.list_(
+                tenant_uuids=[TENANT_UUID_2], order=column, direction='desc'
+            )
+            assert_that(
+                result,
+                contains_exactly(
+                    has_entries(uuid=newest_session_uuid),
+                    has_entries(uuid=oldest_session_uuid),
+                ),
+                column,
+            )

@@ -10,6 +10,8 @@ paths:
       parameters:
       - $ref: '#/parameters/user_uuid'
       - $ref: '#/parameters/tenantuuid'
+      - $ref: '#/parameters/order'
+      - $ref: '#/parameters/direction'
       - $ref: '#/parameters/limit'
       - $ref: '#/parameters/offset'
       summary: Retrieves the list of sessions associated to a user
