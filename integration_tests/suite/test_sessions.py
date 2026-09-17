@@ -151,11 +151,8 @@ class TestSessions(base.APIIntegrationTest):
                 equal_to(self._utc_datetime(token['utc_expires_at'])),
             )
 
-            # the remote address is not exposed: behind a reverse proxy the
-            # recorded value may be the proxy's
             assert_that(session, is_not(has_key('remote_addr')))
 
-            # a session must never expose the token nor the refresh token
             assert_that(session, is_not(has_key('token')))
             assert_that(session, is_not(has_key('refresh_token')))
             assert_that(list(session.values()), is_not(has_item(token['token'])))
@@ -220,7 +217,6 @@ class TestSessions(base.APIIntegrationTest):
 
     @staticmethod
     def _utc_datetime(raw):
-        # the token's issued_t/expire_t are truncated to the second in the database
         return datetime.fromisoformat(raw).replace(microsecond=0, tzinfo=timezone.utc)
 
     @fixtures.http.session()

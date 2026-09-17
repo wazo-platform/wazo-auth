@@ -79,7 +79,6 @@ class TestTokenRequestSchema(TestCase):
 class TestRefreshTokenSchema(TestCase):
     def setUp(self):
         self.schema = RefreshTokenSchema()
-        # as returned by RefreshTokenDAO.list_()
         self.refresh_token = {
             'uuid': 'the-secret-refresh-token',
             'user_uuid': 'a014e8f7-f305-492a-9350-51f149ca8f27',
@@ -98,7 +97,6 @@ class TestRefreshTokenSchema(TestCase):
         assert_that(result, has_entries(user_agent='wazo-shift/2.4.1 (Android 14)'))
 
     def test_that_the_refresh_token_is_not_exposed(self):
-        # auth_refresh_token.uuid is the refresh token given to the client
         result = self.schema.dump(self.refresh_token)
 
         assert_that(result, not_(has_key('uuid')))
