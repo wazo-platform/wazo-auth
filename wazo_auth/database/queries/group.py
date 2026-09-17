@@ -1,4 +1,4 @@
-# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, text
@@ -15,6 +15,7 @@ class GroupDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     search_filter = filters.group_search_filter
     strict_filter = filters.group_strict_filter
     column_map = {'name': Group.name, 'uuid': Group.uuid}
+    tiebreaker_columns = [Group.uuid]
 
     def add_policy(self, group_uuid, policy_uuid):
         group_policy = GroupPolicy(

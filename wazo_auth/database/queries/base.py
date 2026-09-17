@@ -1,4 +1,4 @@
-# Copyright 2017-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from ... import exceptions
@@ -8,8 +8,9 @@ from .. import helpers
 class QueryPaginator:
     _valid_directions = ['asc', 'desc']
 
-    def __init__(self, column_map):
+    def __init__(self, column_map, tiebreaker_columns):
         self._column_map = column_map
+        self._tiebreaker_columns = tiebreaker_columns
 
     def update_query(
         self, query, limit=None, offset=None, order=None, direction=None, **ignored
@@ -25,7 +26,12 @@ class QueryPaginator:
             order_clause = (
                 order_field.asc() if direction == 'asc' else order_field.desc()
             )
-            query = query.order_by(order_clause)
+            tiebreaker_clauses = [
+                column.asc()
+                for column in self._tiebreaker_columns
+                if column is not order_field
+            ]
+            query = query.order_by(order_clause, *tiebreaker_clauses)
 
         if limit is not None:
             limit = self._check_valid_limit_or_offset(
@@ -61,10 +67,11 @@ class QueryPaginator:
 
 class PaginatorMixin:
     column_map = {}
+    tiebreaker_columns = []
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._paginator = QueryPaginator(self.column_map)
+        self._paginator = QueryPaginator(self.column_map, self.tiebreaker_columns)
 
 
 class BaseDAO:

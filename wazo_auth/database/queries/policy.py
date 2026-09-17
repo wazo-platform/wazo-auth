@@ -1,4 +1,4 @@
-# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import and_, exc, or_, text
@@ -19,6 +19,7 @@ class PolicyDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         'description': Policy.description,
         'uuid': Policy.uuid,
     }
+    tiebreaker_columns = [Policy.uuid]
 
     def associate_access(self, policy_uuid, access):
         self._associate_acl(policy_uuid, [access])

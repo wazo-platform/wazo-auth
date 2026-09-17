@@ -18,6 +18,7 @@ class SessionDAO(PaginatorMixin, BaseDAO):
         'user_agent': Token.user_agent,
         'refresh_token_client_id': RefreshToken.client_id,
     }
+    tiebreaker_columns = [Session.uuid]
 
     def list_(self, tenant_uuids=None, user_uuid=None, **kwargs):
         query = self._session_query(tenant_uuids, user_uuid)

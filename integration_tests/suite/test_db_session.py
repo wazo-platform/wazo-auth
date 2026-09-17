@@ -23,6 +23,7 @@ from .helpers import base, fixtures
 
 TENANT_UUID_1 = str(uuid.uuid4())
 TENANT_UUID_2 = str(uuid.uuid4())
+TENANT_UUID_3 = str(uuid.uuid4())
 SESSION_UUID_1 = str(uuid.uuid4())
 SESSION_UUID_2 = str(uuid.uuid4())
 
@@ -257,3 +258,19 @@ class TestSessionDAO(base.DAOTestCase):
                 ),
                 column,
             )
+
+    @fixtures.db.tenant(uuid=TENANT_UUID_3)
+    def test_list_sorting_ties_are_broken_by_the_session_uuid(self, tenant_uuid):
+        now = int(time.time())
+        for _ in range(4):
+            self._token_dao.create(
+                new_token_body(issued_t=now, expire_t=now + 60, user_agent='same'),
+                {'tenant_uuid': TENANT_UUID_3},
+            )
+
+        for direction in ('asc', 'desc'):
+            result = self._session_dao.list_(
+                tenant_uuids=[TENANT_UUID_3], order='user_agent', direction=direction
+            )
+            session_uuids = [session['uuid'] for session in result]
+            assert_that(session_uuids, equal_to(sorted(session_uuids)), direction)
