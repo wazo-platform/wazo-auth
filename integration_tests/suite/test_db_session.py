@@ -97,7 +97,6 @@ class TestSessionDAO(base.DAOTestCase):
     @fixtures.db.token(session={'tenant_uuid': TENANT_UUID_1})
     @fixtures.db.token()
     def test_count_by_user(self, tenant_uuid, token_1, token_2):
-        # a login counts the sessions of the user before creating one
         result = self._session_dao.count(user_uuid=token_1['auth_id'])
         assert_that(result, equal_to(1))
 

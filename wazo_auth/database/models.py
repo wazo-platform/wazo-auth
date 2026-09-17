@@ -203,8 +203,6 @@ class Domain(Base):
 
 class Token(Base):
     __tablename__ = 'auth_token'
-    # a session is a proxy for a single token: the unique constraint is the
-    # invariant, and its index also serves the lookups by session
     __table_args__ = (
         UniqueConstraint('session_uuid', name='auth_token_session_uuid_key'),
     )
