@@ -69,10 +69,8 @@ class TestUserSession(base.APIIntegrationTest):
             ),
         )
 
-    @fixtures.http.policy(acl=['auth.sessions.read'])
     @fixtures.http.user(username='user-session-metadata', password='pass')
-    def test_list_token_metadata(self, policy, user):
-        self.client.users.add_policy(user['uuid'], policy['uuid'])
+    def test_list_token_metadata(self, user):
         client = self.make_auth_client('user-session-metadata', 'pass')
         token = client.token.new(
             expiration=60,
