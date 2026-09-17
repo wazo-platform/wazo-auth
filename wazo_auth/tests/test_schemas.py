@@ -12,8 +12,6 @@ from wazo_auth.schemas import SessionSchema
 class TestSessionSchema(TestCase):
     def setUp(self):
         self.schema = SessionSchema()
-        # as returned by SessionDAO.list_(), with the token fields that must
-        # not leak into the payload
         self.session = {
             'uuid': '6a2b7c5e-5f27-4f5e-9d6c-2f0a9b8c7d61',
             'tenant_uuid': '007ca8d5-d361-42de-a0ed-8680105596b0',
@@ -42,8 +40,6 @@ class TestSessionSchema(TestCase):
         )
 
     def test_that_the_remote_addr_is_not_exposed(self):
-        # behind a reverse proxy the recorded address may be the proxy's, so
-        # the value is not exposed until it can be trusted
         result = self.schema.dump(self.session)
 
         assert_that(result, not_(has_key('remote_addr')))
@@ -65,8 +61,6 @@ class TestSessionSchema(TestCase):
         assert_that(result, has_entries(refresh_token_client_id=none()))
 
     def test_that_the_token_is_not_exposed(self):
-        # a session is a proxy for its token: neither the token, the refresh
-        # token (the bearer secret) nor the token metadata may leak
         session = {
             **self.session,
             'token_uuid': 'the-token',

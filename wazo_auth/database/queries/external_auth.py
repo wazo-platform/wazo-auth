@@ -1,4 +1,4 @@
-# Copyright 2016-2024 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -21,6 +21,7 @@ class ExternalAuthDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     search_filter = filters.external_auth_search_filter
     strict_filter = filters.external_auth_strict_filter
     column_map = {'type': ExternalAuthType.name}
+    tiebreaker_columns = [ExternalAuthType.uuid]
 
     def count(self, user_uuid, **kwargs):
         filtered = kwargs.get('filtered')

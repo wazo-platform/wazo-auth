@@ -19,6 +19,7 @@ class RefreshTokenDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
         'mobile': RefreshToken.mobile,
         'metadata': RefreshToken.metadata_,
     }
+    tiebreaker_columns = [RefreshToken.client_id, RefreshToken.user_uuid]
 
     def count(self, user_uuid=None, tenant_uuids=None, filtered=False, **search_params):
         filter_ = text('true')

@@ -119,10 +119,8 @@ class TestSessions(base.APIIntegrationTest):
             ),
         )
 
-    @fixtures.http.policy(acl=['auth.sessions.read'])
     @fixtures.http.user(username='session-metadata-user', password='pass')
-    def test_list_token_metadata(self, policy, user):
-        self.client.users.add_policy(user['uuid'], policy['uuid'])
+    def test_list_token_metadata(self, user):
         client = self.make_auth_client('session-metadata-user', 'pass')
         token = client.token.new(
             expiration=60,
@@ -153,11 +151,8 @@ class TestSessions(base.APIIntegrationTest):
                 equal_to(self._utc_datetime(token['utc_expires_at'])),
             )
 
-            # the remote address is not exposed: behind a reverse proxy the
-            # recorded value may be the proxy's
             assert_that(session, is_not(has_key('remote_addr')))
 
-            # a session must never expose the token nor the refresh token
             assert_that(session, is_not(has_key('token')))
             assert_that(session, is_not(has_key('refresh_token')))
             assert_that(list(session.values()), is_not(has_item(token['token'])))
@@ -177,14 +172,42 @@ class TestSessions(base.APIIntegrationTest):
         finally:
             self.client.token.revoke(token['token'])
 
-    @fixtures.http.session()
-    def test_list_sorting_on_token_columns(self, session):
-        for column in ('created_at', 'expires_at', 'user_agent'):
-            for direction in ('asc', 'desc'):
-                response = base.assert_no_error(
-                    self.client.sessions.list, order=column, direction=direction
+    @fixtures.http.user(username='sorted-sessions-user', password='pass')
+    def test_list_sorting_on_token_columns(self, user):
+        client = self.make_auth_client('sorted-sessions-user', 'pass')
+        first = client.token.new(
+            expiration=60,
+            access_type='offline',
+            client_id='aaa-client-id',
+            user_agent='aaa-user-agent',
+        )
+        time.sleep(1)
+        second = client.token.new(expiration=120, user_agent='zzz-user-agent')
+        try:
+            for column in (
+                'created_at',
+                'expires_at',
+                'user_agent',
+                'refresh_token_client_id',
+            ):
+                self._assert_session_order(
+                    column, 'asc', first['session_uuid'], second['session_uuid']
                 )
-                assert_that(response['items'], not_(empty()), column)
+                self._assert_session_order(
+                    column, 'desc', second['session_uuid'], first['session_uuid']
+                )
+        finally:
+            self.client.token.revoke(first['token'])
+            self.client.token.revoke(second['token'])
+
+    def _assert_session_order(self, column, direction, *session_uuids):
+        sessions = self.client.sessions.list(
+            recurse=True, order=column, direction=direction
+        )['items']
+        listed_uuids = [session['uuid'] for session in sessions]
+        positions = [listed_uuids.index(session_uuid) for session_uuid in session_uuids]
+
+        assert_that(positions, equal_to(sorted(positions)), f'{column} {direction}')
 
     def _get_session(self, session_uuid):
         sessions = self.client.sessions.list(recurse=True)['items']
@@ -194,7 +217,6 @@ class TestSessions(base.APIIntegrationTest):
 
     @staticmethod
     def _utc_datetime(raw):
-        # the token's issued_t/expire_t are truncated to the second in the database
         return datetime.fromisoformat(raw).replace(microsecond=0, tzinfo=timezone.utc)
 
     @fixtures.http.session()

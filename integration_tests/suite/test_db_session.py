@@ -23,6 +23,7 @@ from .helpers import base, fixtures
 
 TENANT_UUID_1 = str(uuid.uuid4())
 TENANT_UUID_2 = str(uuid.uuid4())
+TENANT_UUID_3 = str(uuid.uuid4())
 SESSION_UUID_1 = str(uuid.uuid4())
 SESSION_UUID_2 = str(uuid.uuid4())
 
@@ -218,7 +219,8 @@ class TestSessionDAO(base.DAOTestCase):
         )
 
     @fixtures.db.tenant(uuid=TENANT_UUID_2)
-    def test_list_sorting_on_token_columns(self, tenant_uuid):
+    @fixtures.db.refresh_token(client_id='aaa-client-id')
+    def test_list_sorting_on_token_columns(self, tenant_uuid, refresh_token_uuid):
         now = int(time.time())
         oldest = new_token_body(
             issued_t=now, expire_t=now + 60, user_agent='aaa-user-agent'
@@ -227,13 +229,20 @@ class TestSessionDAO(base.DAOTestCase):
             issued_t=now + 60, expire_t=now + 300, user_agent='zzz-user-agent'
         )
         _, oldest_session_uuid = self._token_dao.create(
-            oldest, {'tenant_uuid': TENANT_UUID_2}
+            oldest,
+            {'tenant_uuid': TENANT_UUID_2},
+            refresh_token_uuid=refresh_token_uuid,
         )
         _, newest_session_uuid = self._token_dao.create(
             newest, {'tenant_uuid': TENANT_UUID_2}
         )
 
-        for column in ('created_at', 'expires_at', 'user_agent'):
+        for column in (
+            'created_at',
+            'expires_at',
+            'user_agent',
+            'refresh_token_client_id',
+        ):
             result = self._session_dao.list_(
                 tenant_uuids=[TENANT_UUID_2], order=column, direction='asc'
             )
@@ -257,3 +266,19 @@ class TestSessionDAO(base.DAOTestCase):
                 ),
                 column,
             )
+
+    @fixtures.db.tenant(uuid=TENANT_UUID_3)
+    def test_list_sorting_ties_are_broken_by_the_session_uuid(self, tenant_uuid):
+        now = int(time.time())
+        for _ in range(4):
+            self._token_dao.create(
+                new_token_body(issued_t=now, expire_t=now + 60, user_agent='same'),
+                {'tenant_uuid': TENANT_UUID_3},
+            )
+
+        for direction in ('asc', 'desc'):
+            result = self._session_dao.list_(
+                tenant_uuids=[TENANT_UUID_3], order='user_agent', direction=direction
+            )
+            session_uuids = [session['uuid'] for session in result]
+            assert_that(session_uuids, equal_to(sorted(session_uuids)), direction)

@@ -21,6 +21,7 @@ class TenantDAO(filters.FilterMixin, PaginatorMixin, BaseDAO):
     search_filter = filters.tenant_search_filter
     strict_filter = filters.tenant_strict_filter
     column_map = {'name': Tenant.name, 'slug': Tenant.slug}
+    tiebreaker_columns = [Tenant.uuid]
 
     def exists(self, tenant_uuid):
         return bool(

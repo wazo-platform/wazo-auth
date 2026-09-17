@@ -18,12 +18,20 @@ class SessionDAO(PaginatorMixin, BaseDAO):
         'user_agent': Token.user_agent,
         'refresh_token_client_id': RefreshToken.client_id,
     }
+    tiebreaker_columns = [Session.uuid]
 
     def list_(self, tenant_uuids=None, user_uuid=None, **kwargs):
-        query = self._session_query(tenant_uuids, user_uuid)
-        if query is None:
+        filter_ = self._session_filter(tenant_uuids, user_uuid)
+        if filter_ is None:
             return []
 
+        query = (
+            self.session.query(Session, Token, RefreshToken.client_id)
+            .select_from(Session)
+            .join(Token)
+            .outerjoin(RefreshToken, RefreshToken.uuid == Token.refresh_token_uuid)
+            .filter(filter_)
+        )
         query = self._paginator.update_query(query, **kwargs)
 
         return [
@@ -41,13 +49,13 @@ class SessionDAO(PaginatorMixin, BaseDAO):
         ]
 
     def count(self, tenant_uuids=None, user_uuid=None, **kwargs):
-        query = self._session_query(tenant_uuids, user_uuid)
-        if query is None:
+        filter_ = self._session_filter(tenant_uuids, user_uuid)
+        if filter_ is None:
             return 0
 
-        return query.count()
+        return self.session.query(Session).join(Token).filter(filter_).count()
 
-    def _session_query(self, tenant_uuids, user_uuid):
+    def _session_filter(self, tenant_uuids, user_uuid):
         filter_ = text('true')
         if tenant_uuids is not None:
             if not tenant_uuids:
@@ -58,14 +66,7 @@ class SessionDAO(PaginatorMixin, BaseDAO):
         if user_uuid is not None:
             filter_ = and_(filter_, Token.auth_id == str(user_uuid))
 
-        # a session references a single token, enforced by a unique constraint
-        return (
-            self.session.query(Session, Token, RefreshToken.client_id)
-            .select_from(Session)
-            .join(Token)
-            .outerjoin(RefreshToken, RefreshToken.uuid == Token.refresh_token_uuid)
-            .filter(filter_)
-        )
+        return filter_
 
     @staticmethod
     def _to_datetime(timestamp):
