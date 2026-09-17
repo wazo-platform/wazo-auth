@@ -219,7 +219,8 @@ class TestSessionDAO(base.DAOTestCase):
         )
 
     @fixtures.db.tenant(uuid=TENANT_UUID_2)
-    def test_list_sorting_on_token_columns(self, tenant_uuid):
+    @fixtures.db.refresh_token(client_id='aaa-client-id')
+    def test_list_sorting_on_token_columns(self, tenant_uuid, refresh_token_uuid):
         now = int(time.time())
         oldest = new_token_body(
             issued_t=now, expire_t=now + 60, user_agent='aaa-user-agent'
@@ -228,13 +229,20 @@ class TestSessionDAO(base.DAOTestCase):
             issued_t=now + 60, expire_t=now + 300, user_agent='zzz-user-agent'
         )
         _, oldest_session_uuid = self._token_dao.create(
-            oldest, {'tenant_uuid': TENANT_UUID_2}
+            oldest,
+            {'tenant_uuid': TENANT_UUID_2},
+            refresh_token_uuid=refresh_token_uuid,
         )
         _, newest_session_uuid = self._token_dao.create(
             newest, {'tenant_uuid': TENANT_UUID_2}
         )
 
-        for column in ('created_at', 'expires_at', 'user_agent'):
+        for column in (
+            'created_at',
+            'expires_at',
+            'user_agent',
+            'refresh_token_client_id',
+        ):
             result = self._session_dao.list_(
                 tenant_uuids=[TENANT_UUID_2], order=column, direction='asc'
             )

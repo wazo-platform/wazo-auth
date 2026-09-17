@@ -179,7 +179,12 @@ class TestSessions(base.APIIntegrationTest):
 
     @fixtures.http.session()
     def test_list_sorting_on_token_columns(self, session):
-        for column in ('created_at', 'expires_at', 'user_agent'):
+        for column in (
+            'created_at',
+            'expires_at',
+            'user_agent',
+            'refresh_token_client_id',
+        ):
             for direction in ('asc', 'desc'):
                 response = base.assert_no_error(
                     self.client.sessions.list, order=column, direction=direction
