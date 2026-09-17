@@ -116,7 +116,7 @@ class TokenDAO(BaseDAO):
             return {}, {}
 
         session = token.session
-        if len(session.tokens) == 1:
+        if session:
             session_result = SessionIdentity(
                 uuid=session.uuid,
                 tenant_uuid=session.tenant_uuid,

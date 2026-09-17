@@ -1,4 +1,4 @@
-# Copyright 2017-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2017-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from sqlalchemy import (
@@ -203,7 +203,9 @@ class Domain(Base):
 
 class Token(Base):
     __tablename__ = 'auth_token'
-    __table_args__ = (Index('auth_token__idx__session_uuid', 'session_uuid'),)
+    __table_args__ = (
+        UniqueConstraint('session_uuid', name='auth_token_session_uuid_key'),
+    )
 
     uuid = Column(
         String(38), server_default=text('uuid_generate_v4()'), primary_key=True
@@ -230,7 +232,7 @@ class Token(Base):
         cascade='all, delete-orphan',
         passive_deletes=True,
         single_parent=True,
-        backref=backref('tokens', cascade='all, delete'),
+        backref=backref('token', uselist=False, cascade='all, delete'),
     )
 
 
