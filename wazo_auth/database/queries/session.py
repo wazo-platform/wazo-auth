@@ -13,10 +13,10 @@ from .base import BaseDAO, PaginatorMixin
 class SessionDAO(PaginatorMixin, BaseDAO):
     column_map = {
         'mobile': Session.mobile,
-        'issued_at': Token.issued_t,
+        'created_at': Token.issued_t,
         'expires_at': Token.expire_t,
         'user_agent': Token.user_agent,
-        'client_id': RefreshToken.client_id,
+        'refresh_token_client_id': RefreshToken.client_id,
     }
 
     def list_(self, tenant_uuids=None, user_uuid=None, **kwargs):
@@ -33,10 +33,9 @@ class SessionDAO(PaginatorMixin, BaseDAO):
                 'tenant_uuid': r.Session.tenant_uuid,
                 'user_uuid': r.Token.auth_id if is_uuid(r.Token.auth_id) else None,
                 'user_agent': r.Token.user_agent,
-                'acl': r.Token.acl,
-                'issued_at': self._to_datetime(r.Token.issued_t),
+                'created_at': self._to_datetime(r.Token.issued_t),
                 'expires_at': self._to_datetime(r.Token.expire_t),
-                'client_id': r.client_id,
+                'refresh_token_client_id': r.client_id,
             }
             for r in query.all()
         ]

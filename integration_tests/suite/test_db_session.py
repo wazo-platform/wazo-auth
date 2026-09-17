@@ -195,9 +195,8 @@ class TestSessionDAO(base.DAOTestCase):
                     user_uuid=token_body['auth_id'],
                     mobile=False,
                     user_agent='my-user-agent',
-                    acl=contains_inanyorder('auth.#', 'confd.#'),
-                    client_id='my-client-id',
-                    issued_at=datetime.fromtimestamp(now, timezone.utc),
+                    refresh_token_client_id='my-client-id',
+                    created_at=datetime.fromtimestamp(now, timezone.utc),
                     expires_at=datetime.fromtimestamp(now + 120, timezone.utc),
                 )
             ),
@@ -214,7 +213,7 @@ class TestSessionDAO(base.DAOTestCase):
         assert_that(
             result,
             contains_exactly(
-                has_entries(uuid=session_uuid, client_id=none(), acl=empty())
+                has_entries(uuid=session_uuid, refresh_token_client_id=none())
             ),
         )
 
@@ -234,7 +233,7 @@ class TestSessionDAO(base.DAOTestCase):
             newest, {'tenant_uuid': TENANT_UUID_2}
         )
 
-        for column in ('issued_at', 'expires_at', 'user_agent'):
+        for column in ('created_at', 'expires_at', 'user_agent'):
             result = self._session_dao.list_(
                 tenant_uuids=[TENANT_UUID_2], order=column, direction='asc'
             )

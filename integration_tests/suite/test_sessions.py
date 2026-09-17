@@ -8,7 +8,6 @@ from datetime import datetime, timezone
 from hamcrest import (
     assert_that,
     contains_exactly,
-    contains_inanyorder,
     contains_string,
     empty,
     equal_to,
@@ -134,8 +133,6 @@ class TestSessions(base.APIIntegrationTest):
         try:
             session = self._get_session(token['session_uuid'])
 
-            # the assertion on the ACL is only meaningful for a non-empty ACL
-            assert_that(token['acl'], not_(empty()))
             assert_that(
                 session,
                 has_entries(
@@ -144,12 +141,11 @@ class TestSessions(base.APIIntegrationTest):
                     tenant_uuid=user['tenant_uuid'],
                     mobile=False,
                     user_agent='my-user-agent',
-                    acl=contains_inanyorder(*token['acl']),
-                    client_id='my-client-id',
+                    refresh_token_client_id='my-client-id',
                 ),
             )
             assert_that(
-                datetime.fromisoformat(session['issued_at']),
+                datetime.fromisoformat(session['created_at']),
                 equal_to(self._utc_datetime(token['utc_issued_at'])),
             )
             assert_that(
@@ -177,16 +173,13 @@ class TestSessions(base.APIIntegrationTest):
         token = client.token.new(expiration=60)
         try:
             session = self._get_session(token['session_uuid'])
-            assert_that(
-                session,
-                has_entries(acl=contains_inanyorder(*token['acl']), client_id=none()),
-            )
+            assert_that(session, has_entries(refresh_token_client_id=none()))
         finally:
             self.client.token.revoke(token['token'])
 
     @fixtures.http.session()
     def test_list_sorting_on_token_columns(self, session):
-        for column in ('issued_at', 'expires_at', 'user_agent'):
+        for column in ('created_at', 'expires_at', 'user_agent'):
             for direction in ('asc', 'desc'):
                 response = base.assert_no_error(
                     self.client.sessions.list, order=column, direction=direction

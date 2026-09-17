@@ -92,19 +92,14 @@ definitions:
       user_agent:
         type: string
         description: The user agent of the client that created this session
-      acl:
-        type: array
-        items:
-          type: string
-        description: The access control list of the token of this session
-      issued_at:
+      created_at:
         type: string
         format: date-time
-        description: The date and time at which the token of this session has been issued, in UTC
+        description: The date and time at which this session has been created, in UTC
       expires_at:
         type: string
         format: date-time
-        description: The date and time at which the token of this session expires, in UTC
-      client_id:
+        description: The date and time at which this session expires, in UTC
+      refresh_token_client_id:
         type: string
         description: The `client_id` of the refresh token that created this session, `null` when the session has been created without a refresh token

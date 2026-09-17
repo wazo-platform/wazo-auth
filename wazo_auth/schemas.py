@@ -101,10 +101,9 @@ class SessionSchema(BaseSchema):
     user_uuid = fields.String(dump_only=True)
     mobile = fields.Boolean(dump_only=True)
     user_agent = fields.String(dump_only=True)
-    acl = fields.List(fields.String(), dump_only=True)
-    issued_at = fields.DateTime(dump_only=True)
+    created_at = fields.DateTime(dump_only=True)
     expires_at = fields.DateTime(dump_only=True)
-    client_id = fields.String(dump_only=True)
+    refresh_token_client_id = fields.String(dump_only=True)
 
 
 session_schema = SessionSchema()
@@ -112,9 +111,9 @@ session_schema = SessionSchema()
 SESSION_SORT_COLUMNS = [
     'mobile',
     'user_agent',
-    'issued_at',
+    'created_at',
     'expires_at',
-    'client_id',
+    'refresh_token_client_id',
 ]
 
 

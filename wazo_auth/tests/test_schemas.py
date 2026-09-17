@@ -4,15 +4,7 @@
 from datetime import datetime, timezone
 from unittest import TestCase
 
-from hamcrest import (
-    assert_that,
-    contains_exactly,
-    has_entries,
-    has_item,
-    has_key,
-    none,
-    not_,
-)
+from hamcrest import assert_that, has_entries, has_item, has_key, none, not_
 
 from wazo_auth.schemas import SessionSchema
 
@@ -20,7 +12,8 @@ from wazo_auth.schemas import SessionSchema
 class TestSessionSchema(TestCase):
     def setUp(self):
         self.schema = SessionSchema()
-        # as returned by SessionDAO.list_()
+        # as returned by SessionDAO.list_(), with the token fields that must
+        # not leak into the payload
         self.session = {
             'uuid': '6a2b7c5e-5f27-4f5e-9d6c-2f0a9b8c7d61',
             'tenant_uuid': '007ca8d5-d361-42de-a0ed-8680105596b0',
@@ -28,10 +21,9 @@ class TestSessionSchema(TestCase):
             'mobile': True,
             'user_agent': 'wazo-shift/2.4.1 (Android 14)',
             'remote_addr': '203.0.113.7',
-            'acl': ['auth.sessions.read', 'confd.#'],
-            'issued_at': datetime(2026, 9, 15, 8, 12, 44, tzinfo=timezone.utc),
+            'created_at': datetime(2026, 9, 15, 8, 12, 44, tzinfo=timezone.utc),
             'expires_at': datetime(2026, 9, 15, 10, 12, 44, tzinfo=timezone.utc),
-            'client_id': 'wazo-shift-android',
+            'refresh_token_client_id': 'wazo-shift-android',
         }
 
     def test_that_the_token_metadata_is_exposed(self):
@@ -45,8 +37,7 @@ class TestSessionSchema(TestCase):
                 user_uuid='a014e8f7-f305-492a-9350-51f149ca8f27',
                 mobile=True,
                 user_agent='wazo-shift/2.4.1 (Android 14)',
-                acl=contains_exactly('auth.sessions.read', 'confd.#'),
-                client_id='wazo-shift-android',
+                refresh_token_client_id='wazo-shift-android',
             ),
         )
 
@@ -63,15 +54,15 @@ class TestSessionSchema(TestCase):
         assert_that(
             result,
             has_entries(
-                issued_at='2026-09-15T08:12:44+00:00',
+                created_at='2026-09-15T08:12:44+00:00',
                 expires_at='2026-09-15T10:12:44+00:00',
             ),
         )
 
     def test_that_a_session_without_a_refresh_token_has_no_client_id(self):
-        result = self.schema.dump({**self.session, 'client_id': None})
+        result = self.schema.dump({**self.session, 'refresh_token_client_id': None})
 
-        assert_that(result, has_entries(client_id=none()))
+        assert_that(result, has_entries(refresh_token_client_id=none()))
 
     def test_that_the_token_is_not_exposed(self):
         # a session is a proxy for its token: neither the token, the refresh

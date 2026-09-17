@@ -8,8 +8,6 @@ from hamcrest import (
     assert_that,
     calling,
     contains_exactly,
-    contains_inanyorder,
-    empty,
     greater_than_or_equal_to,
     has_entries,
     has_entry,
@@ -18,7 +16,6 @@ from hamcrest import (
     has_key,
     has_length,
     is_not,
-    not_,
 )
 from wazo_test_helpers import until
 from wazo_test_helpers.hamcrest.raises import raises
@@ -86,8 +83,6 @@ class TestUserSession(base.APIIntegrationTest):
         try:
             response = self.client.users.get_sessions(user['uuid'])
 
-            # the assertion on the ACL is only meaningful for a non-empty ACL
-            assert_that(token['acl'], not_(empty()))
             assert_that(
                 response,
                 has_entries(
@@ -96,9 +91,8 @@ class TestUserSession(base.APIIntegrationTest):
                             uuid=token['session_uuid'],
                             user_uuid=user['uuid'],
                             user_agent='my-user-agent',
-                            acl=contains_inanyorder(*token['acl']),
-                            client_id='my-client-id',
-                            issued_at=is_not(None),
+                            refresh_token_client_id='my-client-id',
+                            created_at=is_not(None),
                             expires_at=is_not(None),
                         )
                     )
