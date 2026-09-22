@@ -2,6 +2,7 @@ location ^~ /api/auth/0.1/backends {
     proxy_pass http://wazo-auth/0.1/backends;
     include /etc/nginx/wazo-auth-shared.conf;
     include /etc/nginx/wazo-no-auth-shared[.]conf;
+    include /etc/nginx/cors[.]conf;
 }
 
 location ^~ /api/auth/0.1/status {
@@ -14,9 +15,11 @@ location ^~ /api/auth/0.1/saml {
     proxy_pass http://wazo-auth/0.1/saml;
     include /etc/nginx/wazo-auth-shared.conf;
     include /etc/nginx/wazo-no-auth-shared[.]conf;
+    include /etc/nginx/cors[.]conf;
 }
 
 location ^~ /api/auth/ {
     proxy_pass http://wazo-auth/;
     include /etc/nginx/wazo-auth-shared.conf;
+    include /etc/nginx/cors[.]conf;
 }
