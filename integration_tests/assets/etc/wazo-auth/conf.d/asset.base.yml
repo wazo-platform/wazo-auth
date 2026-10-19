@@ -1,5 +1,8 @@
 token_cleanup_interval: 2.0
 
+enabled_http_plugins:
+  metrics: true
+
 enabled_backend_plugins:
   broken_init: true
   broken_verify_password: true

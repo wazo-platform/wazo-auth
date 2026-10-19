@@ -7,7 +7,6 @@ from unittest.mock import ANY, Mock, call, patch
 from uuid import uuid4
 
 import pytest
-from xivo import plugin_helpers
 
 from ..config import _DEFAULT_CONFIG
 from ..controller import Controller
@@ -24,7 +23,6 @@ def make_controller():
         patch('wazo_auth.database.helpers.Session'),
         patch('wazo_auth.controller.Session'),
         patch('wazo_auth.controller.CoreRestApi'),
-        patch('wazo_auth.controller.init_metrics'),
         patch('wazo_auth.token.ExpiredTokenRemover'),
         patch('wazo_auth.controller.ServiceDiscoveryComponent'),
     ):
@@ -49,27 +47,6 @@ def test_create_controller(make_controller):
 
     assert controller._config
     assert controller._roles == {'api', 'scheduler', 'init'}
-
-
-def test_metrics_are_initialised_before_the_http_plugins(make_controller):
-    calls = []
-    load = plugin_helpers.load
-
-    def recording_load(namespace, *args, **kwargs):
-        calls.append(namespace)
-        return load(namespace, *args, **kwargs)
-
-    with (
-        patch('wazo_auth.controller.plugin_helpers.load', side_effect=recording_load),
-        patch(
-            'wazo_auth.controller.init_metrics',
-            side_effect=lambda config: calls.append('metrics'),
-        ) as init_metrics,
-    ):
-        controller = make_controller()
-
-    init_metrics.assert_called_once_with(controller._config)
-    assert calls.index('metrics') < calls.index('wazo_auth.http')
 
 
 def test_pool_reserves_a_connection_for_the_scheduler_leader(make_controller):
