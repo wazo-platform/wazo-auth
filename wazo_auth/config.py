@@ -48,6 +48,7 @@ _DEFAULT_CONFIG = {
         'group_policy': True,
         'groups': True,
         'ldap_config': True,
+        'metrics': False,
         'password_reset': True,
         'policies': True,
         'sessions': True,
@@ -149,9 +150,6 @@ _DEFAULT_CONFIG = {
         'xml_files_dir': '/var/lib/wazo-auth/saml/',
     },
     'max_user_concurrent_sessions': 100,
-    'metrics': {
-        'enabled': True,
-    },
 }
 
 

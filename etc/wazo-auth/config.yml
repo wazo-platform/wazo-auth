@@ -65,6 +65,7 @@ rest_api:
     max_age: 7200
 
 enabled_http_plugins:
+  metrics: false
   user_registration: false
 
 enabled_external_auth_plugins:
