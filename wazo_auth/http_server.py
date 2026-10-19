@@ -13,6 +13,7 @@ from flask_restful import Api
 from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.middleware.proxy_fix import ProxyFix
 from xivo import http_helpers, wsgi
+from xivo.flask.metrics import init_flask_metrics
 from xivo.http_helpers import ReverseProxied
 
 from wazo_auth.database.helpers import Session
@@ -37,6 +38,11 @@ def teardown_appcontext(response_or_exc):
         Session.remove()
 
     return response_or_exc
+
+
+def init_metrics(global_config):
+    if global_config['metrics']['enabled']:
+        init_flask_metrics(app, api)
 
 
 class CoreRestApi:

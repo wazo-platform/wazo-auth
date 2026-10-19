@@ -31,7 +31,7 @@ from .database.helpers import (
     startup_lock,
 )
 from .flask_helpers import Tenant, Token
-from .http_server import CoreRestApi, api
+from .http_server import CoreRestApi, api, init_metrics
 from .plugin_helpers import utils as plugin_utils
 from .purpose import Purposes
 from .service_discovery import self_check
@@ -296,6 +296,9 @@ class Controller:
         Tenant.setup(self._token_service, self._user_service, self._tenant_service)
         Token.setup(self._token_service)
 
+        # Before the HTTP plugins: the wazo-prometheus-exporter plugin, if still
+        # installed, then fails on the duplicate metrics instead of wazo-auth
+        init_metrics(config)
         plugin_helpers.load(
             namespace='wazo_auth.http',
             names=config['enabled_http_plugins'],

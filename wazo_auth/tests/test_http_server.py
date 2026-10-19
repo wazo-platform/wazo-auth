@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from wazo_auth.http_server import CoreRestApi
+from wazo_auth.http_server import CoreRestApi, api, app, init_metrics
 
 
 @pytest.fixture
@@ -46,3 +46,17 @@ def test_stop_after_run_stops_the_server(wsgi, rest_api):
     rest_api.stop()
 
     wsgi.DynamicWSGIServer.return_value.stop.assert_called_once_with()
+
+
+@patch('wazo_auth.http_server.init_flask_metrics')
+def test_init_metrics_enabled_instruments_the_app(init_flask_metrics):
+    init_metrics({'metrics': {'enabled': True}})
+
+    init_flask_metrics.assert_called_once_with(app, api)
+
+
+@patch('wazo_auth.http_server.init_flask_metrics')
+def test_init_metrics_disabled_does_not_instrument_the_app(init_flask_metrics):
+    init_metrics({'metrics': {'enabled': False}})
+
+    init_flask_metrics.assert_not_called()
