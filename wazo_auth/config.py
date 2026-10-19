@@ -149,6 +149,9 @@ _DEFAULT_CONFIG = {
         'xml_files_dir': '/var/lib/wazo-auth/saml/',
     },
     'max_user_concurrent_sessions': 100,
+    'metrics': {
+        'enabled': True,
+    },
 }
 
 

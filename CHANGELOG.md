@@ -1,5 +1,13 @@
 # Changelog
 
+## 26.11
+
+* wazo-auth now serves Prometheus metrics itself at `GET /0.1/metrics`, on its
+  REST API port (127.0.0.1:9497). The route has no authentication and is not
+  exposed through nginx. It replaces the route added by the
+  wazo-prometheus-exporter plugin, at the same URL. Disable it with
+  `metrics.enabled: false`.
+
 ## 26.10
 
 * The `Session` objects returned by `GET /0.1/sessions` and
