@@ -62,6 +62,7 @@ rest_api:
     allow_headers: [Content-Type, Authorization, X-Auth-Token, Wazo-Tenant, Wazo-Session-Type]
 
 enabled_http_plugins:
+  metrics: false
   user_registration: false
 
 enabled_external_auth_plugins:
