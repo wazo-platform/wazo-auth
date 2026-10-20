@@ -45,7 +45,7 @@ setup(
             'group_policy = wazo_auth.plugins.http.group_policy.plugin:Plugin',
             'groups = wazo_auth.plugins.http.groups.plugin:Plugin',
             'ldap_config = wazo_auth.plugins.http.ldap_config.plugin:Plugin',
-            'metrics = wazo_auth.plugins.http.metrics.plugin:Plugin',
+            'metrics = xivo.flask.metrics:Plugin',
             'password_reset = wazo_auth.plugins.http.password_reset.plugin:Plugin',
             'policies = wazo_auth.plugins.http.policies.plugin:Plugin',
             'sessions = wazo_auth.plugins.http.sessions.plugin:Plugin',

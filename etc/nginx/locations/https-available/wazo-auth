@@ -1,8 +1,3 @@
-# Metrics are not authenticated: only serve them on 127.0.0.1:9497
-location = /api/auth/0.1/metrics {
-    deny all;
-}
-
 location ^~ /api/auth/0.1/backends {
     proxy_pass http://wazo-auth/0.1/backends;
     include /etc/nginx/wazo-auth-shared.conf;
@@ -22,6 +17,11 @@ location ^~ /api/auth/0.1/saml {
 }
 
 location ^~ /api/auth/ {
+    # Not authenticated: metrics are only served on 127.0.0.1:9497
+    location = /api/auth/0.1/metrics {
+        deny all;
+    }
+
     proxy_pass http://wazo-auth/;
     include /etc/nginx/wazo-auth-shared.conf;
 }
