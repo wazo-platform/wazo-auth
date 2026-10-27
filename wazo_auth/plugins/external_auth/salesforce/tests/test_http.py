@@ -1,6 +1,8 @@
 # Copyright 2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import base64
+import hashlib
 from unittest import TestCase
 from unittest.mock import Mock, patch
 from urllib.parse import parse_qs, urlparse
@@ -18,6 +20,7 @@ from hamcrest import (
     has_entries,
     has_entry,
     has_key,
+    has_length,
     not_,
     raises,
     starts_with,
@@ -26,6 +29,7 @@ from hamcrest import (
 from wazo_auth.exceptions import (
     ExternalAuthAlreadyExists,
     ExternalAuthConfigNotFound,
+    UnknownExternalAuthException,
     UnknownUserException,
 )
 
@@ -46,6 +50,7 @@ from .helpers import (
 
 USER_UUID = '7a7d3c4e-4b1f-4bd4-8f5e-8b2a7c6d0001'
 TENANT_UUID = '7a7d3c4e-4b1f-4bd4-8f5e-8b2a7c6d0002'
+OTHER_TENANT_UUID = '7a7d3c4e-4b1f-4bd4-8f5e-8b2a7c6d0004'
 URL = f'/0.1/users/{USER_UUID}/external/salesforce'
 NOW = 1_800_000_000
 MODULE = 'wazo_auth.plugins.external_auth.salesforce.http'
@@ -59,6 +64,8 @@ class SalesforceResourceTestCase(TestCase):
             'client_secret': CLIENT_SECRET,
         }
         self.user_service = Mock()
+        # Mock refuses attributes named assert_*, unless set
+        self.user_service.assert_user_in_subtenant = Mock()
         app = Flask('wazo-auth')
         app.config['token_service'] = Mock()
         app.config['user_service'] = self.user_service
@@ -162,12 +169,24 @@ class TestPost(SalesforceResourceTestCase):
         self.mocks['RelayListener'].assert_not_called()
 
     def test_unknown_user_is_refused_before_the_relay(self):
-        self.user_service.get_user.side_effect = UnknownUserException(USER_UUID)
+        self.user_service.assert_user_in_subtenant.side_effect = UnknownUserException(
+            USER_UUID
+        )
 
         response = self.post({})
 
         assert_that(response.status_code, equal_to(404))
+        self.user_service.assert_user_in_subtenant.assert_called_once_with(
+            TENANT_UUID, UUID(USER_UUID)
+        )
         self.mocks['RelayListener'].assert_not_called()
+
+    def test_asks_salesforce_for_a_pkce_challenge(self):
+        response = self.post({})
+
+        query = parse_qs(urlparse(response.json['authorization_url']).query)
+        assert_that(query, has_entry('code_challenge_method', ['S256']))
+        assert_that(query['code_challenge'][0], has_length(43))
 
 
 class TestLinkCompletion(SalesforceResourceTestCase):
@@ -191,9 +210,11 @@ class TestLinkCompletion(SalesforceResourceTestCase):
                 'token_expiration': NOW + 7200,
                 'scope': 'api refresh_token id',
                 'instance_url': INSTANCE_URL,
+                'app_tenant_uuid': TENANT_UUID,
             },
         )
         self.mocks['commit_or_rollback'].assert_called_once_with()
+        assert_that(endpoint.timeouts, equal_to([10]))
         request = endpoint.requests[0]
         assert_that(request.url, equal_to(TOKEN_URL))
         body = parse_qs(request.body)
@@ -206,6 +227,31 @@ class TestLinkCompletion(SalesforceResourceTestCase):
                 client_secret=[CLIENT_SECRET],
             ),
         )
+
+    def test_the_code_exchange_proves_the_pkce_challenge(self):
+        response = self.post({})
+        on_code = self.mocks['RelayListener'].call_args.args[2]
+        endpoint = FakeTokenEndpoint((200, salesforce_token_body()))
+        with endpoint.serving():
+            on_code(CODE)
+
+        query = parse_qs(urlparse(response.json['authorization_url']).query)
+        verifier = parse_qs(endpoint.requests[0].body)['code_verifier'][0]
+        digest = hashlib.sha256(verifier.encode()).digest()
+        challenge = base64.urlsafe_b64encode(digest).decode().rstrip('=')
+        assert_that(query['code_challenge'], equal_to([challenge]))
+
+    def test_a_link_that_cannot_be_stored_is_logged_and_does_not_raise(self):
+        self.external_auth_service.create.side_effect = UnknownUserException(USER_UUID)
+        endpoint = FakeTokenEndpoint((200, salesforce_token_body()))
+
+        with self.assertLogs(MODULE, level='ERROR') as logs:
+            self.deliver_code(endpoint)
+
+        assert_that(logs.output[0], contains_string(USER_UUID))
+        assert_that(logs.output[0], contains_string(TENANT_UUID))
+        assert_that(logs.output[0], contains_string('UnknownUserException'))
+        self.mocks['commit_or_rollback'].assert_called_once_with()
 
     def test_each_callback_stores_for_its_own_user_whatever_the_order(self):
         other_user = '7a7d3c4e-4b1f-4bd4-8f5e-8b2a7c6d0003'
@@ -363,6 +409,7 @@ class TestGet(SalesforceResourceTestCase):
                 'instance_url': INSTANCE_URL,
             },
         )
+        assert_that(endpoint.timeouts, equal_to([10]))
         body = parse_qs(endpoint.requests[0].body)
         assert_that(
             body,
@@ -373,6 +420,87 @@ class TestGet(SalesforceResourceTestCase):
                 client_secret=[CLIENT_SECRET],
             ),
         )
+
+    def test_the_refresh_uses_the_app_that_issued_the_link(self):
+        self.stored(
+            access_token=ACCESS_TOKEN,
+            refresh_token=REFRESH_TOKEN,
+            token_expiration=NOW - 1,
+            app_tenant_uuid=OTHER_TENANT_UUID,
+        )
+        refresh = (200, salesforce_token_body(access_token=NEW_ACCESS_TOKEN))
+
+        with FakeTokenEndpoint(refresh).serving():
+            response = self.get()
+
+        assert_that(response.status_code, equal_to(200))
+        assert_that(response.json, not_(has_key('app_tenant_uuid')))
+        self.external_auth_service.get_config.assert_called_once_with(
+            'salesforce', OTHER_TENANT_UUID
+        )
+
+    def test_a_link_without_its_app_tenant_refreshes_with_the_callers(self):
+        self.stored(
+            access_token=ACCESS_TOKEN,
+            refresh_token=REFRESH_TOKEN,
+            token_expiration=NOW - 1,
+        )
+        refresh = (200, salesforce_token_body(access_token=NEW_ACCESS_TOKEN))
+
+        with FakeTokenEndpoint(refresh).serving():
+            self.get()
+
+        self.external_auth_service.get_config.assert_called_once_with(
+            'salesforce', TENANT_UUID
+        )
+
+    def test_expires_in_sent_as_text_on_refresh(self):
+        self.stored(
+            access_token=ACCESS_TOKEN,
+            refresh_token=REFRESH_TOKEN,
+            token_expiration=NOW - 1,
+        )
+        body = salesforce_token_body(access_token=NEW_ACCESS_TOKEN, expires_in='3600')
+
+        with FakeTokenEndpoint((200, body)).serving():
+            response = self.get()
+
+        assert_that(response.status_code, equal_to(200))
+        assert_that(response.json, has_entry('token_expiration', NOW + 3600))
+
+    def test_a_link_replaced_during_the_refresh_still_answers_the_new_token(self):
+        for error in (
+            UnknownExternalAuthException('salesforce'),
+            ExternalAuthAlreadyExists('salesforce'),
+        ):
+            self.stored(
+                access_token=ACCESS_TOKEN,
+                refresh_token=REFRESH_TOKEN,
+                token_expiration=NOW - 1,
+            )
+            self.external_auth_service.update.side_effect = error
+            refresh = (200, salesforce_token_body(access_token=NEW_ACCESS_TOKEN))
+
+            with FakeTokenEndpoint(refresh).serving():
+                response = self.get()
+
+            assert_that(response.status_code, equal_to(200), error)
+            assert_that(
+                response.json, has_entry('access_token', NEW_ACCESS_TOKEN), error
+            )
+
+    def test_a_user_outside_the_callers_tenants_is_refused(self):
+        self.user_service.assert_user_in_subtenant.side_effect = UnknownUserException(
+            USER_UUID
+        )
+
+        response = self.get()
+
+        assert_that(response.status_code, equal_to(404))
+        self.user_service.assert_user_in_subtenant.assert_called_once_with(
+            TENANT_UUID, UUID(USER_UUID)
+        )
+        self.external_auth_service.get.assert_not_called()
 
     def test_an_expired_token_without_refresh_token_answers_link_expired(self):
         self.stored(access_token=ACCESS_TOKEN, token_expiration=NOW - 1)
@@ -477,6 +605,19 @@ class TestDelete(SalesforceResourceTestCase):
         self.external_auth_service.delete.assert_called_once_with(
             UUID(USER_UUID), 'salesforce'
         )
+
+    def test_a_user_outside_the_callers_tenants_is_refused(self):
+        self.user_service.assert_user_in_subtenant.side_effect = UnknownUserException(
+            USER_UUID
+        )
+
+        response = self.client.delete(URL, headers={'X-Auth-Token': 'x'})
+
+        assert_that(response.status_code, equal_to(404))
+        self.user_service.assert_user_in_subtenant.assert_called_once_with(
+            TENANT_UUID, UUID(USER_UUID)
+        )
+        self.external_auth_service.delete.assert_not_called()
 
 
 class TestFakeTokenEndpoint(TestCase):

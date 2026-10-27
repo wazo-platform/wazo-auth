@@ -1,26 +1,52 @@
 # Copyright 2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import os
+import tempfile
 from unittest import TestCase
 from unittest.mock import Mock
 
-from hamcrest import assert_that, contains_exactly, contains_string, empty, is_, not_
+import yaml
+from hamcrest import (
+    assert_that,
+    contains_exactly,
+    contains_string,
+    empty,
+    equal_to,
+    is_,
+    not_,
+)
+
+from wazo_auth.config import get_config
 
 from ..plugin import SalesforcePlugin
 from .helpers import CONFIG
 
+PACKAGED_CONFIG = os.path.join(
+    os.path.dirname(__file__), '../../../../../etc/wazo-auth/config.yml'
+)
+PLUGIN_LOGGER = 'wazo_auth.plugins.external_auth.salesforce'
+
 
 def _load(section):
+    return _load_config({'salesforce': section})
+
+
+def _load_config(config):
     api = Mock()
     SalesforcePlugin().load(
         {
             'api': api,
-            'config': {'salesforce': section},
+            'config': config,
             'external_auth_service': Mock(),
             'user_service': Mock(),
         }
     )
     return api
+
+
+def _resource_section(api):
+    return api.add_resource.call_args.kwargs['resource_class_args'][2]
 
 
 class TestLoad(TestCase):
@@ -54,8 +80,7 @@ class TestLoad(TestCase):
             [r for r in logs.records if 'old-client-secret' in r.getMessage()],
             is_(empty()),
         )
-        resource_config = api.add_resource.call_args.kwargs['resource_class_args'][2]
-        assert_that(resource_config, not_(contains_string('old-client')))
+        assert_that(_resource_section(api), equal_to(CONFIG['salesforce']))
 
     def test_one_credential_key_alone_also_warns(self):
         section = dict(CONFIG['salesforce'], client_secret='old-client-secret')
@@ -72,3 +97,47 @@ class TestLoad(TestCase):
             'wazo_auth.plugins.external_auth.salesforce', level='WARNING'
         ):
             _load(dict(CONFIG['salesforce']))
+
+    def test_the_old_package_file_merged_over_the_packaged_config(self):
+        with tempfile.TemporaryDirectory() as directory:
+            conf_d = os.path.join(directory, 'conf.d')
+            os.mkdir(conf_d)
+            with open(PACKAGED_CONFIG) as f:
+                packaged = yaml.safe_load(f)
+            packaged['extra_config_files'] = conf_d
+            main_file = os.path.join(directory, 'config.yml')
+            with open(main_file, 'w') as f:
+                yaml.safe_dump(packaged, f)
+            old_package_file = {
+                'enabled_external_auth_plugins': {'salesforce': True},
+                'salesforce': {
+                    'client_id': 'old-client-id',
+                    'client_secret': 'old-client-secret',
+                },
+            }
+            with open(os.path.join(conf_d, '050-wazo-salesforce-plugin.yml'), 'w') as f:
+                yaml.safe_dump(old_package_file, f)
+            config = get_config(['-c', main_file])
+
+        with self.assertLogs(PLUGIN_LOGGER, level='WARNING') as logs:
+            api = _load_config(config)
+
+        assert_that(logs.records, contains_exactly(not_(None)))
+        assert_that(_resource_section(api), equal_to(packaged['salesforce']))
+
+
+class TestAccessTokenLifetime(TestCase):
+    def lifetime_loaded(self, value):
+        api = _load(dict(CONFIG['salesforce'], access_token_lifetime=value))
+        return _resource_section(api)['access_token_lifetime']
+
+    def test_a_number_as_text_is_read_as_seconds(self):
+        assert_that(self.lifetime_loaded('3600'), equal_to(3600))
+
+    def test_an_unusable_lifetime_falls_back_to_two_hours_with_a_warning(self):
+        for value in ('soon', None, 30, 0, -5):
+            with self.assertLogs(PLUGIN_LOGGER, level='WARNING') as logs:
+                lifetime = self.lifetime_loaded(value)
+
+            assert_that(lifetime, equal_to(7200), value)
+            assert_that(logs.output[0], contains_string('access_token_lifetime'), value)

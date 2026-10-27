@@ -23,7 +23,7 @@ SCRIPT = textwrap.dedent(
     assert 'wazo_auth.plugins.external_auth.microsoft.http' not in sys.modules
     session = OAuth2Session('id', scope=['api'], redirect_uri='https://r.example.com')
     with FakeTokenEndpoint((200, salesforce_token_body())).serving():
-        token = http.fetch_first_token(session, TOKEN_URL, 'secret', 'code')
+        token = http.fetch_first_token(session, TOKEN_URL, 'secret', 'code', 'v' * 43)
     print(' '.join(token['scope']))
     '''
 )

@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
+import logging
+import threading
 from unittest import TestCase
 from unittest.mock import Mock, patch
 
@@ -49,3 +51,30 @@ class TestRelayListener(TestCase):
 
         assert_that(logs.output[0], contains_string('ValueError'))
         assert_that(logs.output[0], not_(contains_string(CODE)))
+
+    def test_the_message_holding_the_code_is_not_logged(self, websocket):
+        relay = RelayListener('wss://oauth.example.com', 'the-state', Mock())
+        relay.run()
+        on_message = websocket.WebSocketApp.call_args.kwargs['on_message']
+        root = logging.getLogger()
+        previous_level = root.level
+        root.setLevel(logging.DEBUG)
+        self.addCleanup(root.setLevel, previous_level)
+
+        with self.assertLogs(level='DEBUG') as logs:
+            logging.getLogger('canary').debug('seen')
+            on_message(Mock(), json.dumps({'code': CODE, 'state': 'the-state'}))
+
+        assert_that([line for line in logs.output if CODE in line], equal_to([]))
+
+    def test_stops_waiting_when_no_code_comes(self, websocket):
+        ws = websocket.WebSocketApp.return_value
+        closed = threading.Event()
+        ws.close.side_effect = lambda: closed.set()
+        closed_while_waiting = []
+        ws.run_forever.side_effect = lambda: closed_while_waiting.append(closed.wait(1))
+        relay = RelayListener('wss://oauth.example.com', 'the-state', Mock(), 0.05)
+
+        relay.run()
+
+        assert_that(closed_while_waiting, equal_to([True]))

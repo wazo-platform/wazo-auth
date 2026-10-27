@@ -49,9 +49,11 @@ class FakeTokenEndpoint:
     def __init__(self, *answers):
         self.answers = list(answers)
         self.requests = []
+        self.timeouts = []
 
     def send(self, adapter, request, **kwargs):
         self.requests.append(request)
+        self.timeouts.append(kwargs.get('timeout'))
         answer = self.answers.pop(0)
         if isinstance(answer, Exception):
             raise answer

@@ -8,7 +8,7 @@ import time
 import marshmallow
 import requests
 from flask import request
-from oauthlib.oauth2 import OAuth2Error
+from oauthlib.oauth2 import OAuth2Error, WebApplicationClient
 from requests_oauthlib import OAuth2Session
 
 from wazo_auth import http
@@ -16,6 +16,7 @@ from wazo_auth.database.helpers import commit_or_rollback
 from wazo_auth.exceptions import (
     APIException,
     ExternalAuthAlreadyExists,
+    UnknownExternalAuthException,
     UserParamException,
 )
 from wazo_auth.flask_helpers import Tenant
@@ -34,6 +35,9 @@ os.environ['OAUTHLIB_IGNORE_SCOPE_CHANGE'] = '1'
 TOKEN_REQUEST_TIMEOUT = 10
 # What requests-oauthlib raises on a token endpoint that refuses, fails or is gone
 TOKEN_ERRORS = (OAuth2Error, requests.RequestException, ValueError)
+# What a concurrent request replacing the same link makes `update` raise
+REPLACED_ERRORS = (ExternalAuthAlreadyExists, UnknownExternalAuthException)
+PKCE_VERIFIER_LENGTH = 64
 
 
 class SalesforceLinkExpired(APIException):
@@ -50,11 +54,12 @@ class SalesforceRefreshFailed(APIException):
         super().__init__(502, msg, 'salesforce-refresh-failed', details, 'users')
 
 
-def fetch_first_token(oauth2, token_url, client_secret, code):
+def fetch_first_token(oauth2, token_url, client_secret, code, code_verifier):
     return oauth2.fetch_token(
         token_url,
         client_secret=client_secret,
         code=code,
+        code_verifier=code_verifier,
         include_client_id=True,
         timeout=TOKEN_REQUEST_TIMEOUT,
     )
@@ -63,8 +68,7 @@ def fetch_first_token(oauth2, token_url, client_secret, code):
 class SalesforceAuth(http.AuthResource):
     auth_type = 'salesforce'
 
-    def __init__(self, external_auth_service, user_service, config):
-        section = config[self.auth_type]
+    def __init__(self, external_auth_service, user_service, section):
         self.authorization_base_url = section['authorization_base_url']
         self.redirect_uri = section['redirect_uri']
         self.scope = section['scope']
@@ -81,19 +85,26 @@ class SalesforceAuth(http.AuthResource):
         except marshmallow.ValidationError as e:
             raise UserParamException.from_errors(e.messages)
 
-        tenant_uuid = Tenant.autodetect().uuid
+        tenant_uuid = self._assert_user_visible(user_uuid)
         client_id, client_secret = self._get_app_credentials(tenant_uuid)
-        self.user_service.get_user(user_uuid)
 
+        client = WebApplicationClient(client_id)
+        code_verifier = client.create_code_verifier(PKCE_VERIFIER_LENGTH)
         oauth2 = OAuth2Session(
-            client_id,
+            client=client,
             scope=args.get('scope') or self.scope,
             redirect_uri=self.redirect_uri,
         )
-        authorization_url, state = oauth2.authorization_url(self.authorization_base_url)
+        authorization_url, state = oauth2.authorization_url(
+            self.authorization_base_url,
+            code_challenge=client.create_code_challenge(code_verifier, 'S256'),
+            code_challenge_method='S256',
+        )
 
         def on_code(code):
-            self._complete_link(oauth2, client_secret, user_uuid, tenant_uuid, code)
+            self._complete_link(
+                oauth2, client_secret, code_verifier, user_uuid, tenant_uuid, code
+            )
 
         RelayListener(self.websocket_host, state, on_code).start()
         logger.info(
@@ -105,6 +116,7 @@ class SalesforceAuth(http.AuthResource):
 
     @http.required_acl('auth.users.{user_uuid}.external.salesforce.read')
     def get(self, user_uuid):
+        self._assert_user_visible(user_uuid)
         link = self.external_auth_service.get(user_uuid, self.auth_type)
         if is_expired(link.get('token_expiration'), time.time()):
             link = self._refresh(user_uuid, link)
@@ -112,12 +124,18 @@ class SalesforceAuth(http.AuthResource):
 
     @http.required_acl('auth.users.{user_uuid}.external.salesforce.delete')
     def delete(self, user_uuid):
+        self._assert_user_visible(user_uuid)
         self.external_auth_service.delete(user_uuid, self.auth_type)
         return '', 204
 
-    def _complete_link(self, oauth2, client_secret, user_uuid, tenant_uuid, code):
+    def _complete_link(
+        self, oauth2, client_secret, code_verifier, user_uuid, tenant_uuid, code
+    ):
         try:
-            token_data = fetch_first_token(oauth2, self.token_url, client_secret, code)
+            token_data = fetch_first_token(
+                oauth2, self.token_url, client_secret, code, code_verifier
+            )
+            link = new_link(token_data, self.access_token_lifetime, time.time())
         except TOKEN_ERRORS as e:
             logger.warning(
                 'User(%s) of tenant %s: Salesforce refused the code (%s)',
@@ -125,12 +143,24 @@ class SalesforceAuth(http.AuthResource):
                 tenant_uuid,
                 type(e).__name__,
             )
-        else:
-            link = new_link(token_data, self.access_token_lifetime, time.time())
+            commit_or_rollback()
+            return
+
+        # the link remembers its app, so a refresh uses the same one
+        link['app_tenant_uuid'] = tenant_uuid
+        try:
             try:
                 self.external_auth_service.create(user_uuid, self.auth_type, link)
             except ExternalAuthAlreadyExists:
                 self.external_auth_service.update(user_uuid, self.auth_type, link)
+        except Exception as e:
+            logger.error(
+                'User(%s) of tenant %s: Salesforce link not stored (%s)',
+                user_uuid,
+                tenant_uuid,
+                type(e).__name__,
+            )
+        else:
             logger.info(
                 'User(%s) of tenant %s linked a Salesforce account',
                 user_uuid,
@@ -140,7 +170,7 @@ class SalesforceAuth(http.AuthResource):
             commit_or_rollback()
 
     def _refresh(self, user_uuid, link):
-        tenant_uuid = Tenant.autodetect().uuid
+        tenant_uuid = link.get('app_tenant_uuid') or Tenant.autodetect().uuid
         if not link.get('refresh_token'):
             logger.info(
                 'User(%s) of tenant %s: Salesforce link expired, no refresh token',
@@ -168,11 +198,25 @@ class SalesforceAuth(http.AuthResource):
             raise SalesforceRefreshFailed(user_uuid)
 
         link = refreshed_link(link, token_data, self.access_token_lifetime, time.time())
-        self.external_auth_service.update(user_uuid, self.auth_type, link)
+        try:
+            self.external_auth_service.update(user_uuid, self.auth_type, link)
+        except REPLACED_ERRORS:
+            # another request replaced the link meanwhile; this token is valid too
+            logger.info(
+                'User(%s) of tenant %s: Salesforce link replaced during the refresh',
+                user_uuid,
+                tenant_uuid,
+            )
+            return link
         logger.info(
             'User(%s) of tenant %s: Salesforce token refreshed', user_uuid, tenant_uuid
         )
         return link
+
+    def _assert_user_visible(self, user_uuid):
+        tenant_uuid = Tenant.autodetect().uuid
+        self.user_service.assert_user_in_subtenant(tenant_uuid, user_uuid)
+        return tenant_uuid
 
     def _get_app_credentials(self, tenant_uuid):
         config = self.external_auth_service.get_config(self.auth_type, tenant_uuid)

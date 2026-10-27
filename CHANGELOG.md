@@ -9,8 +9,7 @@
 * New config key `enabled_external_auth_plugins.salesforce` (default `false`)
   and new config section `salesforce` (`authorization_base_url`, `token_url`,
   `redirect_uri`, `scope`, `websocket_host`, `access_token_lifetime`, default
-  `7200`). Remove any other package providing a `salesforce` external auth
-  before enabling it
+  `7200`)
 
 ## 26.10
 

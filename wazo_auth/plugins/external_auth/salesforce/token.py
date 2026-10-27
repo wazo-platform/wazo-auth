@@ -33,7 +33,7 @@ def refreshed_link(link, token_data, lifetime, now):
 
 def _expiration(token_data, lifetime, now):
     # Salesforce sends no expires_in: the lifetime comes from the config
-    return int(now + token_data.get('expires_in', lifetime))
+    return int(now + int(token_data.get('expires_in', lifetime)))
 
 
 def _scope_text(scope):

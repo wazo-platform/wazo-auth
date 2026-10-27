@@ -22,6 +22,12 @@ class TestNewLink(TestCase):
 
         assert_that(link['token_expiration'], equal_to(NOW + 900))
 
+    def test_expires_in_sent_as_text_is_a_number_of_seconds(self):
+        # oauthlib checks int(expires_in) but leaves the text in the token
+        link = new_link({'access_token': 'a', 'expires_in': '900'}, LIFETIME, NOW)
+
+        assert_that(link['token_expiration'], equal_to(NOW + 900))
+
     def test_keeps_the_fields_a_caller_needs(self):
         token_data = {
             'access_token': 'a',
