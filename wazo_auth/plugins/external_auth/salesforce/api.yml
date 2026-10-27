@@ -1,0 +1,131 @@
+paths:
+  /users/{user_uuid}/external/salesforce:
+    get:
+      summary: Get the Salesforce token of a user
+      description:
+        "**Required ACL**: `auth.users.{user_uuid}.external.salesforce.read`\n\n
+        An expired token is refreshed before it is returned."
+      tags:
+        - users
+        - salesforce
+      parameters:
+        - $ref: '#/parameters/user_uuid'
+      responses:
+        '200':
+          description: The user's Salesforce token
+          schema:
+            $ref: '#/definitions/SalesforceGetResult'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/APIError'
+        '404':
+          description:
+            "No link for this user, no app configured for the tenant, or the token expired
+            with no refresh token (`error_id`: `salesforce-link-expired`): the user links again"
+          schema:
+            $ref: '#/definitions/APIError'
+        '502':
+          description:
+            "Salesforce refused or did not answer the refresh
+            (`error_id`: `salesforce-refresh-failed`)"
+          schema:
+            $ref: '#/definitions/APIError'
+    post:
+      summary: Start linking a Salesforce account
+      description:
+        "**Required ACL**: `auth.users.{user_uuid}.external.salesforce.create`\n\n
+        The app's `client_id` and `client_secret` are read from the tenant's
+        `/external/salesforce/config`. The user opens `authorization_url`; the link is
+        stored once Salesforce redirects to the relay."
+      tags:
+        - users
+        - salesforce
+      parameters:
+        - $ref: '#/parameters/user_uuid'
+        - name: body
+          in: body
+          schema:
+            $ref: '#/definitions/SalesforcePost'
+      responses:
+        '201':
+          description: Authorization URL
+          schema:
+            $ref: '#/definitions/SalesforcePostResult'
+        '400':
+          description: Invalid body
+          schema:
+            $ref: '#/definitions/APIError'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/APIError'
+        '404':
+          description: No Salesforce app configured for the tenant, or no such user
+          schema:
+            $ref: '#/definitions/APIError'
+    delete:
+      summary: Remove the Salesforce link of a user
+      description: "**Required ACL**: `auth.users.{user_uuid}.external.salesforce.delete`"
+      tags:
+        - users
+        - salesforce
+      parameters:
+        - $ref: '#/parameters/user_uuid'
+      responses:
+        '204':
+          description: No content
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/APIError'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/APIError'
+
+definitions:
+  SalesforceGetResult:
+    type: object
+    properties:
+      access_token:
+        type: string
+        description: Salesforce access token
+      token_expiration:
+        type: integer
+        description: Expiration of the access token, in seconds since the epoch
+      scope:
+        type: string
+        description: Space-separated scopes granted by Salesforce
+        x-nullable: true
+      instance_url:
+        type: string
+        description: Base URL of the user's Salesforce org, to call its APIs
+        x-nullable: true
+    required:
+      - access_token
+      - token_expiration
+      - scope
+      - instance_url
+  SalesforcePost:
+    type: object
+    properties:
+      scope:
+        description: Scopes requested, replacing the configured ones
+        type: array
+        items:
+          type: string
+          minLength: 1
+          maxLength: 512
+  SalesforcePostResult:
+    type: object
+    properties:
+      authorization_url:
+        type: string
+        description: The URL where the user authorizes the Salesforce app
+      state:
+        type: string
+        description: The OAuth2 state of this authorization
+    required:
+      - authorization_url
+      - state

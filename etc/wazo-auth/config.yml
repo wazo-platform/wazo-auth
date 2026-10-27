@@ -71,6 +71,7 @@ enabled_external_auth_plugins:
   google: true
   microsoft: true
   mobile: true
+  salesforce: false
 
 idp_plugins:
   saml:
@@ -100,6 +101,19 @@ google:
     ]
   token_url: 'https://www.googleapis.com/oauth2/v4/token'
   websocket_host: 'wss://oauth.wazo.io'
+
+# Salesforce app credentials are per tenant, in /0.1/external/salesforce/config
+salesforce:
+  authorization_base_url: 'https://login.salesforce.com/services/oauth2/authorize'
+  redirect_uri: 'https://oauth.wazo.io/salesforce/authorize'
+  scope: [
+        'api',
+        'refresh_token'
+    ]
+  token_url: 'https://login.salesforce.com/services/oauth2/token'
+  websocket_host: 'wss://oauth.wazo.io'
+  # Salesforce answers no expires_in: seconds a token is held valid
+  access_token_lifetime: 7200
 
 amqp:
   uri: amqp://guest:guest@localhost:5672/

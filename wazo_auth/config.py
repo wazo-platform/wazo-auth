@@ -77,6 +77,7 @@ _DEFAULT_CONFIG = {
         'google': True,
         'microsoft': True,
         'mobile': True,
+        'salesforce': False,
     },
     'idp_plugins': {
         'saml': {

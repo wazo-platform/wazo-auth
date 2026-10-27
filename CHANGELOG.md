@@ -1,5 +1,17 @@
 # Changelog
 
+## 26.11
+
+* New Salesforce external auth, off by default: `POST`, `GET` and `DELETE`
+  `/0.1/users/{user_uuid}/external/salesforce`. Each tenant sets its
+  Salesforce app's `client_id` and `client_secret` with
+  `/0.1/external/salesforce/config`
+* New config key `enabled_external_auth_plugins.salesforce` (default `false`)
+  and new config section `salesforce` (`authorization_base_url`, `token_url`,
+  `redirect_uri`, `scope`, `websocket_host`, `access_token_lifetime`, default
+  `7200`). Remove any other package providing a `salesforce` external auth
+  before enabling it
+
 ## 26.10
 
 * The `Session` objects returned by `GET /0.1/sessions` and

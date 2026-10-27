@@ -1,9 +1,11 @@
 # Copyright 2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import os
 from unittest.mock import patch
 
 import pytest
+import yaml
 
 from ..config import (
     _DEFAULT_CONFIG,
@@ -140,3 +142,23 @@ def test_file_roles_merge_per_key_with_default_roles(read_config_files):
     read_config_files.return_value = {'roles': {'scheduler': False, 'init': False}}
     config = get_config([])
     assert config['roles'] == ['api']
+
+
+def test_salesforce_external_auth_is_off_by_default():
+    assert _DEFAULT_CONFIG['enabled_external_auth_plugins']['salesforce'] is False
+
+
+def test_packaged_config_keeps_salesforce_off_and_configured():
+    path = os.path.join(os.path.dirname(__file__), '../../etc/wazo-auth/config.yml')
+    with open(path) as f:
+        packaged = yaml.safe_load(f)
+
+    assert packaged['enabled_external_auth_plugins']['salesforce'] is False
+    assert packaged['salesforce'] == {
+        'authorization_base_url': 'https://login.salesforce.com/services/oauth2/authorize',
+        'token_url': 'https://login.salesforce.com/services/oauth2/token',
+        'redirect_uri': 'https://oauth.wazo.io/salesforce/authorize',
+        'scope': ['api', 'refresh_token'],
+        'websocket_host': 'wss://oauth.wazo.io',
+        'access_token_lifetime': 7200,
+    }

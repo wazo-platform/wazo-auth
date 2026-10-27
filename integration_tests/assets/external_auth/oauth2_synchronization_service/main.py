@@ -1,4 +1,4 @@
-# Copyright 2019-2020 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
@@ -43,6 +43,8 @@ def authorize(service, state):
 def get_microsoft_token(service):
     global counter
     counter = counter + 1
+    if service == 'salesforce':
+        return jsonify(_salesforce_token(counter)), 200
     body = {
         'access_token': 'access_token',
         'expires_in': counter,
@@ -50,3 +52,17 @@ def get_microsoft_token(service):
         'scope': 'scope',
     }
     return jsonify(body), 200
+
+
+def _salesforce_token(counter):
+    # Salesforce answers no expires_in and a scope of its own
+    return {
+        'access_token': f'access_token-{counter}',
+        'refresh_token': 'refresh_token',
+        'instance_url': 'https://example.my.salesforce.com',
+        'id': 'https://login.salesforce.com/id/00D000000000001/005000000000001',
+        'token_type': 'Bearer',
+        'issued_at': str(int(time.time() * 1000)),
+        'signature': 'c2lnbmF0dXJl',
+        'scope': 'api refresh_token id',
+    }

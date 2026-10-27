@@ -20,6 +20,7 @@ saml = asset_fixture(asset.SAMLAssetLaunchingTestCase)
 database = asset_fixture(asset.DBAssetLaunchingTestCase)
 external_auth = asset_fixture(asset.ExternalAuthAssetLaunchingTestCase)
 metadata = asset_fixture(asset.MetadataAssetLaunchingTestCase)
+salesforce = asset_fixture(asset.SalesforceAssetLaunchingTestCase)
 bootstrap = asset_fixture(asset.BootstrapAssetLaunchingTestCase)
 cluster = asset_fixture(asset.ClusterAssetLaunchingTestCase)
 

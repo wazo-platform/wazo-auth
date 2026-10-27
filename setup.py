@@ -1,4 +1,4 @@
-# Copyright 2016-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2016-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from setuptools import find_packages, setup
@@ -64,6 +64,7 @@ setup(
             'google = wazo_auth.plugins.external_auth.google.plugin:GooglePlugin',
             'microsoft = wazo_auth.plugins.external_auth.microsoft.plugin:MicrosoftPlugin',
             'mobile = wazo_auth.plugins.external_auth.mobile.plugin:Plugin',
+            'salesforce = wazo_auth.plugins.external_auth.salesforce.plugin:SalesforcePlugin',  # noqa
         ],
         'wazo_auth.metadata': [
             'default_user = wazo_auth.plugins.metadata.default_user:DefaultUser',

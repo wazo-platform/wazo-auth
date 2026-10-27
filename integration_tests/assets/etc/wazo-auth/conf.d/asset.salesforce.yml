@@ -1,0 +1,10 @@
+enabled_external_auth_plugins:
+  salesforce: true
+
+# scope comes from the packaged config: lists accumulate across files
+salesforce:
+  authorization_base_url: 'https://login.salesforce.com/services/oauth2/authorize'
+  redirect_uri: 'http://oauth2sync:80/salesforce/authorize'
+  token_url: 'http://oauth2sync:80/salesforce/token'
+  websocket_host: 'ws://oauth2sync:80'
+  access_token_lifetime: 7200

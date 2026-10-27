@@ -164,6 +164,10 @@ class MetadataAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
     asset = 'metadata'
 
 
+class SalesforceAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
+    asset = 'salesforce'
+
+
 class BootstrapAssetLaunchingTestCase(BaseAssetLaunchingTestCase):
     asset = 'bootstrap'
 
