@@ -230,6 +230,13 @@ class TestLinkCompletion(SalesforceResourceTestCase):
         self.external_auth_service.update.assert_not_called()
         self.mocks['commit_or_rollback'].assert_called_once_with()
 
+    def test_a_malformed_expires_in_stores_nothing(self):
+        endpoint = FakeTokenEndpoint((200, salesforce_token_body(expires_in='soon')))
+
+        self.deliver_code(endpoint)
+
+        self.external_auth_service.create.assert_not_called()
+
     def test_an_unreachable_token_endpoint_stores_nothing(self):
         endpoint = FakeTokenEndpoint(requests.ConnectionError('refused'))
 
@@ -388,6 +395,20 @@ class TestGet(SalesforceResourceTestCase):
         endpoint = FakeTokenEndpoint(
             (503, '<html><body>Down: maintenance</body></html>')
         )
+
+        with endpoint.serving():
+            response = self.get()
+
+        self.assert_refresh_failed(response)
+
+    def test_a_malformed_expires_in_answers_502(self):
+        self.stored(
+            access_token=ACCESS_TOKEN,
+            refresh_token=REFRESH_TOKEN,
+            token_expiration=NOW - 1,
+        )
+        body = salesforce_token_body(access_token=NEW_ACCESS_TOKEN, expires_in='soon')
+        endpoint = FakeTokenEndpoint((200, body))
 
         with endpoint.serving():
             response = self.get()
