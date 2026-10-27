@@ -207,6 +207,34 @@ class TestLinkCompletion(SalesforceResourceTestCase):
             ),
         )
 
+    def test_each_callback_stores_for_its_own_user_whatever_the_order(self):
+        other_user = '7a7d3c4e-4b1f-4bd4-8f5e-8b2a7c6d0003'
+        self.post({})
+        self.client.post(
+            f'/0.1/users/{other_user}/external/salesforce',
+            json={},
+            headers={'X-Auth-Token': 'x'},
+        )
+        first, second = (c.args[2] for c in self.mocks['RelayListener'].call_args_list)
+        endpoint = FakeTokenEndpoint(
+            (200, salesforce_token_body(access_token='second-token')),
+            (200, salesforce_token_body(access_token='first-token')),
+        )
+
+        with endpoint.serving():
+            second('second-code')
+            first('first-code')
+
+        stored = {
+            str(c.args[0]): c.args[2]['access_token']
+            for c in self.external_auth_service.create.call_args_list
+        }
+        assert_that(
+            stored, equal_to({other_user: 'second-token', USER_UUID: 'first-token'})
+        )
+        codes = [parse_qs(r.body)['code'] for r in endpoint.requests]
+        assert_that(codes, contains_exactly(['second-code'], ['first-code']))
+
     def test_an_existing_link_is_replaced(self):
         self.external_auth_service.create.side_effect = ExternalAuthAlreadyExists(
             'salesforce'
