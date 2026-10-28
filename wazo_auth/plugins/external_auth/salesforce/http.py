@@ -8,7 +8,7 @@ import time
 import marshmallow
 import requests
 from flask import request
-from oauthlib.oauth2 import OAuth2Error, WebApplicationClient
+from oauthlib.oauth2 import InvalidGrantError, OAuth2Error, WebApplicationClient
 from requests_oauthlib import OAuth2Session
 
 from wazo_auth import http
@@ -188,6 +188,8 @@ class SalesforceAuth(http.AuthResource):
                 client_secret=client_secret,
                 timeout=TOKEN_REQUEST_TIMEOUT,
             )
+        except InvalidGrantError:
+            return self._refresh_token_refused(user_uuid, tenant_uuid, link)
         except TOKEN_ERRORS as e:
             logger.warning(
                 'User(%s) of tenant %s: Salesforce token refresh failed (%s)',
@@ -212,6 +214,21 @@ class SalesforceAuth(http.AuthResource):
             'User(%s) of tenant %s: Salesforce token refreshed', user_uuid, tenant_uuid
         )
         return link
+
+    def _refresh_token_refused(self, user_uuid, tenant_uuid, link):
+        # a concurrent refresh may have spent a rotated refresh token and stored its own
+        try:
+            stored = self.external_auth_service.get(user_uuid, self.auth_type)
+        except UnknownExternalAuthException:
+            stored = link
+        if not is_expired(stored.get('token_expiration'), time.time()):
+            return stored
+        logger.info(
+            'User(%s) of tenant %s: Salesforce refused the refresh token, link again',
+            user_uuid,
+            tenant_uuid,
+        )
+        raise SalesforceLinkExpired(user_uuid)
 
     def _assert_user_visible(self, user_uuid):
         tenant_uuid = Tenant.autodetect().uuid

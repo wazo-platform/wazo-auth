@@ -53,6 +53,8 @@ class TestNoSecretInTheLogs(SalesforceResourceTestCase):
         with FakeTokenEndpoint(refresh).serving():
             assert_that(self.get().status_code, equal_to(200))
         with FakeTokenEndpoint((400, {'error': 'invalid_grant'})).serving():
+            assert_that(self.get().status_code, equal_to(404))
+        with FakeTokenEndpoint((400, {'error': 'invalid_client'})).serving():
             assert_that(self.get().status_code, equal_to(502))
         with FakeTokenEndpoint(requests.ConnectionError(ACCESS_TOKEN)).serving():
             assert_that(self.get().status_code, equal_to(502))

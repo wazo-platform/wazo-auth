@@ -514,7 +514,7 @@ class TestGet(SalesforceResourceTestCase):
         )
         self.external_auth_service.update.assert_not_called()
 
-    def test_a_refused_refresh_answers_502_without_the_token(self):
+    def test_a_revoked_refresh_token_answers_link_expired(self):
         self.stored(
             access_token=ACCESS_TOKEN,
             refresh_token=REFRESH_TOKEN,
@@ -523,6 +523,61 @@ class TestGet(SalesforceResourceTestCase):
         endpoint = FakeTokenEndpoint(
             (400, {'error': 'invalid_grant', 'error_description': 'expired'})
         )
+
+        with endpoint.serving():
+            response = self.get()
+
+        assert_that(response.status_code, equal_to(404))
+        assert_that(response.json, has_entry('error_id', 'salesforce-link-expired'))
+        assert_that(
+            response.get_data(as_text=True), not_(contains_string(ACCESS_TOKEN))
+        )
+        self.external_auth_service.update.assert_not_called()
+
+    def test_a_link_deleted_during_a_refused_refresh_answers_link_expired(self):
+        expired = {
+            'access_token': ACCESS_TOKEN,
+            'refresh_token': REFRESH_TOKEN,
+            'token_expiration': NOW - 1,
+        }
+        self.external_auth_service.get.side_effect = [
+            expired,
+            UnknownExternalAuthException('salesforce'),
+        ]
+
+        with FakeTokenEndpoint((400, {'error': 'invalid_grant'})).serving():
+            response = self.get()
+
+        assert_that(response.status_code, equal_to(404))
+        assert_that(response.json, has_entry('error_id', 'salesforce-link-expired'))
+
+    def test_a_refresh_token_spent_by_a_concurrent_refresh_answers_the_stored_token(
+        self,
+    ):
+        expired = {
+            'access_token': ACCESS_TOKEN,
+            'refresh_token': REFRESH_TOKEN,
+            'token_expiration': NOW - 1,
+        }
+        refreshed = dict(
+            expired, access_token=NEW_ACCESS_TOKEN, token_expiration=NOW + 3600
+        )
+        self.external_auth_service.get.side_effect = [expired, refreshed]
+
+        with FakeTokenEndpoint((400, {'error': 'invalid_grant'})).serving():
+            response = self.get()
+
+        assert_that(response.status_code, equal_to(200))
+        assert_that(response.json, has_entry('access_token', NEW_ACCESS_TOKEN))
+        self.external_auth_service.update.assert_not_called()
+
+    def test_a_refusal_other_than_invalid_grant_answers_502_without_the_token(self):
+        self.stored(
+            access_token=ACCESS_TOKEN,
+            refresh_token=REFRESH_TOKEN,
+            token_expiration=NOW - 1,
+        )
+        endpoint = FakeTokenEndpoint((400, {'error': 'invalid_client'}))
 
         with endpoint.serving():
             response = self.get()

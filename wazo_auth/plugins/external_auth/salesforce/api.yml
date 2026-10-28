@@ -22,12 +22,13 @@ paths:
         '404':
           description:
             "No link for this user, no app configured for the tenant, or the token expired
-            with no refresh token (`error_id`: `salesforce-link-expired`): the user links again"
+            and cannot be refreshed: no refresh token, or Salesforce refused it as
+            `invalid_grant` (`error_id`: `salesforce-link-expired`): the user links again"
           schema:
             $ref: '#/definitions/APIError'
         '502':
           description:
-            "Salesforce refused or did not answer the refresh
+            "Salesforce refused the refresh for another reason or did not answer it
             (`error_id`: `salesforce-refresh-failed`)"
           schema:
             $ref: '#/definitions/APIError'
