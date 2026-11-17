@@ -201,7 +201,10 @@ class ExternalAuthService(BaseService):
     def update_or_create(self, user_uuid, auth_type, data):
         try:
             return self.update(user_uuid, auth_type, data)
-        except exceptions.UnknownExternalAuthException:
+        except (
+            exceptions.UnknownExternalAuthException,
+            exceptions.UnknownExternalAuthTypeException,
+        ):
             return self.create(user_uuid, auth_type, data)
 
     def update_config(self, auth_type, data, tenant_uuid):

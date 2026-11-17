@@ -20,6 +20,8 @@ from wazo_bus.resources.auth.events import (
     ExternalAuthUpdatedEvent,
     RefreshTokenDeletedEvent,
     SessionDeletedEvent,
+    UserExternalAuthAddedEvent,
+    UserExternalAuthUpdatedEvent,
 )
 from xivo.mallow import fields
 
@@ -134,6 +136,64 @@ class TestExternalAuthService(BaseServiceTestCase):
         self.bus_publisher.publish.assert_called_once_with(
             ExternalAuthDeletedEvent(s.auth_type, s.tenant_uuid)
         )
+
+    def test_update_or_create_creates_when_the_auth_type_is_unknown(self):
+        self.user_dao.list_.return_value = [{'tenant_uuid': s.tenant_uuid}]
+        self.external_auth_dao.update.side_effect = (
+            exceptions.UnknownExternalAuthTypeException('mobile')
+        )
+
+        result = self.service.update_or_create(s.user_uuid, 'mobile', s.data)
+
+        assert_that(result, equal_to(self.external_auth_dao.create.return_value))
+        self.external_auth_dao.create.assert_called_once_with(
+            s.user_uuid, 'mobile', s.data
+        )
+        self.bus_publisher.publish.assert_called_once_with(
+            UserExternalAuthAddedEvent('mobile', s.tenant_uuid, s.user_uuid)
+        )
+
+    def test_update_or_create_creates_when_the_external_auth_is_unknown(self):
+        self.user_dao.list_.return_value = [{'tenant_uuid': s.tenant_uuid}]
+        self.external_auth_dao.update.side_effect = (
+            exceptions.UnknownExternalAuthException('mobile')
+        )
+
+        result = self.service.update_or_create(s.user_uuid, 'mobile', s.data)
+
+        assert_that(result, equal_to(self.external_auth_dao.create.return_value))
+        self.external_auth_dao.create.assert_called_once_with(
+            s.user_uuid, 'mobile', s.data
+        )
+        self.bus_publisher.publish.assert_called_once_with(
+            UserExternalAuthAddedEvent('mobile', s.tenant_uuid, s.user_uuid)
+        )
+
+    def test_update_or_create_updates_an_existing_external_auth(self):
+        self.user_dao.list_.return_value = [{'tenant_uuid': s.tenant_uuid}]
+        self.external_auth_dao.update.return_value = s.updated
+
+        result = self.service.update_or_create(s.user_uuid, 'mobile', s.data)
+
+        assert_that(result, equal_to(s.updated))
+        self.external_auth_dao.create.assert_not_called()
+        self.bus_publisher.publish.assert_called_once_with(
+            UserExternalAuthUpdatedEvent('mobile', s.tenant_uuid, s.user_uuid)
+        )
+
+    def test_update_or_create_propagates_an_unknown_user(self):
+        self.external_auth_dao.update.side_effect = exceptions.UnknownUserException(
+            s.user_uuid
+        )
+
+        assert_that(
+            calling(self.service.update_or_create).with_args(
+                s.user_uuid, 'mobile', s.data
+            ),
+            raises(exceptions.UnknownUserException),
+        )
+        self.external_auth_dao.create.assert_not_called()
+        self.bus_publisher.publish.assert_not_called()
 
     def test_list_external_auth(self):
         # No safe model registered for any auth type
