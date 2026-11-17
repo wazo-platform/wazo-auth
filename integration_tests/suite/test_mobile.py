@@ -1,18 +1,22 @@
-# Copyright 2019-2025 The Wazo Authors  (see the AUTHORS file)
+# Copyright 2019-2026 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import pytest
 import requests
 from hamcrest import (
     assert_that,
     calling,
+    equal_to,
     has_entries,
     has_entry,
     has_properties,
     has_property,
 )
+from sqlalchemy import text
 from wazo_test_helpers.hamcrest.raises import raises
 
 from .helpers import base, fixtures
+from .helpers.constants import UNKNOWN_UUID
 
 TENANT_UUID = 'ad235675-053d-482a-9e07-6d36de6a48b5'
 
@@ -186,6 +190,42 @@ class TestExternalAuthMobile(base.ExternalAuthIntegrationTest):
     @fixtures.http.tenant(uuid=TENANT_UUID)
     @fixtures.http.user(username='one', password='pass', tenant_uuid=TENANT_UUID)
     @fixtures.http.token(username='one', password='pass', expiration=30)
+    def test_update_when_the_auth_type_row_is_missing_should_create(
+        self, tenant, user, token
+    ):
+        self._delete_auth_type_row()
+        client = self.make_auth_client(
+            token=token['token'],
+            tenant=tenant['uuid'],
+        )
+
+        response = client.external.update(
+            self.EXTERNAL_AUTH_TYPE,
+            user['uuid'],
+            {'token': 'TOKEN'},
+        )
+        assert_that(response, has_entries(token='TOKEN'))
+
+        response = client.external.get(self.EXTERNAL_AUTH_TYPE, user['uuid'])
+        assert_that(response, has_entries(token='TOKEN'))
+
+    def test_update_of_an_unknown_user_when_the_auth_type_row_is_missing(self):
+        self._delete_auth_type_row()
+
+        with pytest.raises(requests.HTTPError) as excinfo:
+            self.client.external.update(
+                self.EXTERNAL_AUTH_TYPE,
+                UNKNOWN_UUID,
+                {'token': 'TOKEN'},
+            )
+
+        assert_that(excinfo.value.response.status_code, equal_to(404))
+        assert_that(excinfo.value.response.json(), has_entries(error_id='unknown-user'))
+        assert_that(self._auth_type_rows(), equal_to([]))
+
+    @fixtures.http.tenant(uuid=TENANT_UUID)
+    @fixtures.http.user(username='one', password='pass', tenant_uuid=TENANT_UUID)
+    @fixtures.http.token(username='one', password='pass', expiration=30)
     def test_backward_compatibility_without_topics(self, tenant, user, token):
         client = self.make_auth_client(
             token=token['token'],
@@ -220,6 +260,35 @@ class TestExternalAuthMobile(base.ExternalAuthIntegrationTest):
                 apns_default_topic=None,
             ),
         )
+
+    def _delete_auth_type_row(self):
+        self.addCleanup(self._restore_auth_type_row)
+        with self.Session() as session:
+            session.execute(
+                text('DELETE FROM auth_external_auth_type WHERE name = :name'),
+                {'name': self.EXTERNAL_AUTH_TYPE},
+            )
+            session.commit()
+
+    def _restore_auth_type_row(self):
+        with self.Session() as session:
+            session.execute(
+                text(
+                    'INSERT INTO auth_external_auth_type (name, enabled) '
+                    'VALUES (:name, true) '
+                    'ON CONFLICT (name) DO UPDATE SET enabled = true'
+                ),
+                {'name': self.EXTERNAL_AUTH_TYPE},
+            )
+            session.commit()
+
+    def _auth_type_rows(self):
+        with self.Session() as session:
+            rows = session.execute(
+                text('SELECT enabled FROM auth_external_auth_type WHERE name = :name'),
+                {'name': self.EXTERNAL_AUTH_TYPE},
+            )
+            return [tuple(row) for row in rows]
 
     def get_sender_id(self, user):
         # NOTE(sileht): client doesn't have this endpoints has its specific to
