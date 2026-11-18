@@ -86,6 +86,9 @@ def test_run_default_roles_order(make_controller, run_environment):
     run_environment.startup.update_policy_on_startup.assert_called_once()
     run_environment.http.init_top_tenant.assert_called_once_with(controller.dao)
     run_environment.startup.create_initial_user.assert_not_called()
+    run_environment.startup.enable_external_auth_types.assert_called_once_with(
+        controller.dao, ['google', 'microsoft', 'mobile']
+    )
     run_environment.startup.check_unavailable_authentication_methods.assert_called_once()
     run_environment.startup_lock.assert_called_once()
 
@@ -104,6 +107,40 @@ def test_run_default_roles_gating_flags(make_controller, run_environment):
     )
 
 
+def test_run_enables_external_auth_types_whatever_the_startup_flags(
+    make_controller, run_environment
+):
+    controller = make_controller(
+        update_policy_on_startup=False,
+        bootstrap_user_on_startup=False,
+    )
+
+    controller.run()
+
+    run_environment.startup.update_policy_on_startup.assert_not_called()
+    run_environment.startup.create_initial_user.assert_not_called()
+    run_environment.startup.enable_external_auth_types.assert_called_once_with(
+        controller.dao, ['google', 'microsoft', 'mobile']
+    )
+
+
+def test_run_does_not_serve_when_enabling_external_auth_types_fails(
+    make_controller, run_environment
+):
+    controller = make_controller()
+    run_environment.startup.enable_external_auth_types.side_effect = RuntimeError(
+        'boom'
+    )
+
+    with pytest.raises(RuntimeError, match='boom'):
+        controller.run()
+
+    run_environment.startup.check_unavailable_authentication_methods.assert_not_called()
+    controller._service_discovery.start.assert_not_called()
+    controller._expired_token_remover.start.assert_not_called()
+    controller._rest_api.run.assert_not_called()
+
+
 def test_run_api_only(make_controller, run_environment):
     controller = make_controller(roles=['api'])
 
@@ -115,6 +152,7 @@ def test_run_api_only(make_controller, run_environment):
     controller._expired_token_remover.start.assert_not_called()
     run_environment.http.init_top_tenant.assert_called_once_with(controller.dao)
     run_environment.startup.update_policy_on_startup.assert_not_called()
+    run_environment.startup.enable_external_auth_types.assert_not_called()
     run_environment.startup.check_unavailable_authentication_methods.assert_not_called()
     run_environment.startup_lock.assert_not_called()
 
@@ -239,11 +277,22 @@ def test_run_init_only(make_controller, run_environment):
 
 
 def test_run_init_one_shots_run_inside_the_lock(make_controller, run_environment):
-    controller = make_controller(roles=['init'], bootstrap_user_on_startup=True)
+    controller = make_controller(
+        roles=['init'],
+        bootstrap_user_on_startup=True,
+        enabled_external_auth_plugins={
+            'google': True,
+            'microsoft': False,
+            'mobile': True,
+        },
+    )
     parent = Mock()
     parent.attach_mock(run_environment.startup_lock, 'lock')
     parent.attach_mock(run_environment.startup.update_policy_on_startup, 'policies')
     parent.attach_mock(run_environment.startup.create_initial_user, 'bootstrap')
+    parent.attach_mock(
+        run_environment.startup.enable_external_auth_types, 'external_auth_types'
+    )
     parent.attach_mock(
         run_environment.startup.check_unavailable_authentication_methods,
         'check_methods',
@@ -257,6 +306,7 @@ def test_run_init_one_shots_run_inside_the_lock(make_controller, run_environment
         lock_call.__enter__(),
         call.policies(ANY, ANY, ANY, ANY),
         call.bootstrap(controller._config),
+        call.external_auth_types(controller.dao, ['google', 'mobile']),
         call.check_methods(controller.dao, ANY),
         lock_call.__exit__(None, None, None),
     ]
