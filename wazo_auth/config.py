@@ -48,6 +48,7 @@ _DEFAULT_CONFIG = {
         'group_policy': True,
         'groups': True,
         'ldap_config': True,
+        'metrics': False,
         'password_reset': True,
         'policies': True,
         'sessions': True,
