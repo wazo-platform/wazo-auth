@@ -70,20 +70,12 @@ class _OAuth2Synchronizer:
 
 
 class ExternalAuthService(BaseService):
-    def __init__(self, dao, config, bus_publisher=None, enabled_external_auth=None):
+    def __init__(self, dao, config, bus_publisher=None):
         super().__init__(dao)
         self._bus_publisher = bus_publisher
         self._safe_models = {}
-        self._enabled_external_auth = enabled_external_auth or []
-        self._enabled_external_auth_populated = False
         self._url_tpl = config['oauth2_synchronization_redirect_url_template']
         self._oauth2_synchronizer = _OAuth2Synchronizer(config, bus_publisher)
-
-    def _populate_enabled_external_auth(self):
-        if self._enabled_external_auth_populated:
-            return
-        self._dao.external_auth.enable_all(self._enabled_external_auth)
-        self._enabled_external_auth_populated = True
 
     def _get_user_tenant_uuid(self, user_uuid):
         users = self._dao.user.list_(uuid=user_uuid, limit=1)
@@ -93,14 +85,11 @@ class ExternalAuthService(BaseService):
         return user['tenant_uuid']
 
     def count(self, user_uuid, **kwargs):
-        self._populate_enabled_external_auth()
         return self._dao.external_auth.count(user_uuid, **kwargs)
 
     def count_connected_users(
         self, auth_type, scoping_tenant_uuid=None, recurse=False, **kwargs
     ):
-        self._populate_enabled_external_auth()
-
         if scoping_tenant_uuid:
             kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(
                 scoping_tenant_uuid, recurse
@@ -141,8 +130,6 @@ class ExternalAuthService(BaseService):
     def list_connected_users(
         self, auth_type, scoping_tenant_uuid=None, recurse=True, **kwargs
     ):
-        self._populate_enabled_external_auth()
-
         if scoping_tenant_uuid:
             kwargs['tenant_uuids'] = self._get_scoped_tenant_uuids(
                 scoping_tenant_uuid, recurse
@@ -151,7 +138,6 @@ class ExternalAuthService(BaseService):
         return self._dao.external_auth.list_connected_users(auth_type, **kwargs)
 
     def list_(self, user_uuid, **kwargs):
-        self._populate_enabled_external_auth()
         raw_external_auth_info = self._dao.external_auth.list_(user_uuid, **kwargs)
         result = []
         for external_auth in raw_external_auth_info:

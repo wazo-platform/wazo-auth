@@ -175,7 +175,6 @@ class Controller:
             self.dao,
             config,
             self._bus_publisher,
-            self._enabled_external_auth,
         )
         group_service = services.GroupService(self.dao)
         policy_service = services.PolicyService(self.dao)

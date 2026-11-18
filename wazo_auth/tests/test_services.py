@@ -105,6 +105,32 @@ class TestExternalAuthService(BaseServiceTestCase):
             self.dao, _DEFAULT_CONFIG, self.bus_publisher
         )
 
+    def test_list_does_not_enable_external_auth_types(self):
+        self.external_auth_dao.list_.return_value = []
+
+        self.service.list_(s.user_uuid)
+
+        self.external_auth_dao.list_.assert_called_once_with(s.user_uuid)
+        self.external_auth_dao.enable_all.assert_not_called()
+
+    def test_count_does_not_enable_external_auth_types(self):
+        self.service.count(s.user_uuid)
+
+        self.external_auth_dao.count.assert_called_once_with(s.user_uuid)
+        self.external_auth_dao.enable_all.assert_not_called()
+
+    def test_list_connected_users_does_not_enable_external_auth_types(self):
+        self.service.list_connected_users('mobile')
+
+        self.external_auth_dao.list_connected_users.assert_called_once_with('mobile')
+        self.external_auth_dao.enable_all.assert_not_called()
+
+    def test_count_connected_users_does_not_enable_external_auth_types(self):
+        self.service.count_connected_users('mobile')
+
+        self.external_auth_dao.count_connected_users.assert_called_once_with('mobile')
+        self.external_auth_dao.enable_all.assert_not_called()
+
     def test_create_config_publishes_added_event(self):
         self.service.create_config(s.auth_type, s.data, s.tenant_uuid)
 
