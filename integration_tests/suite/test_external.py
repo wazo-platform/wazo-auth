@@ -16,6 +16,7 @@ from hamcrest import (
     has_items,
     has_key,
 )
+from sqlalchemy import text
 from wazo_test_helpers import until
 
 from .helpers import base, fixtures
@@ -267,6 +268,81 @@ class TestExternalAuthAPI(base.ExternalAuthIntegrationTest):
         url = f'http://127.0.0.1:{self.oauth2_port()}/{auth_type}/authorize/{state}'
         result = requests.get(url, params={'access_token': token})
         result.raise_for_status()
+
+
+ALL_TYPES_ENABLED = [
+    ('bar', True),
+    ('foo', True),
+    ('google', True),
+    ('microsoft', True),
+    ('mobile', True),
+]
+
+
+@base.use_asset('external_auth')
+class TestExternalAuthTypesAtStartup(base.ExternalAuthIntegrationTest):
+    def setUp(self):
+        super().setUp()
+        self.addCleanup(self.restart_auth)
+
+    @fixtures.http.user_register()
+    def test_types_are_written_before_the_first_request(self, user):
+        self._execute('DELETE FROM auth_external_auth_type')
+
+        self.restart_auth()
+
+        assert_that(self._auth_types(), contains_exactly(*ALL_TYPES_ENABLED))
+
+        result = self.client.external.update('mobile', user['uuid'], {'token': 'TOKEN'})
+        assert_that(result, has_entries(token='TOKEN'))
+
+        result = self.client.external.get('mobile', user['uuid'])
+        assert_that(result, has_entries(token='TOKEN'))
+
+    def test_type_disabled_in_config_is_disabled_after_restart(self):
+        config = {'enabled_external_auth_plugins': {'bar': False}}
+
+        with self.auth_with_config(config):
+            assert_that(
+                self._auth_types(),
+                contains_exactly(
+                    ('bar', False),
+                    ('foo', True),
+                    ('google', True),
+                    ('microsoft', True),
+                    ('mobile', True),
+                ),
+            )
+
+        assert_that(self._auth_types(), contains_exactly(*ALL_TYPES_ENABLED))
+
+    def test_type_without_enabled_value_is_enabled_after_restart(self):
+        self._execute(
+            "INSERT INTO auth_external_auth_type (name, enabled) VALUES ('foo', NULL)"
+            " ON CONFLICT (name) DO UPDATE SET enabled = NULL"
+        )
+        assert_that(self._auth_types(), has_items(('foo', None)))
+
+        self.restart_auth()
+
+        assert_that(self._auth_types(), contains_exactly(*ALL_TYPES_ENABLED))
+
+    def _execute(self, statement):
+        try:
+            self.session.execute(text(statement))
+            self.session.commit()
+        except Exception:
+            self.session.rollback()
+            raise
+
+    def _auth_types(self):
+        try:
+            rows = self.session.execute(
+                text('SELECT name, enabled FROM auth_external_auth_type ORDER BY name')
+            )
+            return [tuple(row) for row in rows]
+        finally:
+            self.session.rollback()
 
 
 @base.use_asset('external_auth')

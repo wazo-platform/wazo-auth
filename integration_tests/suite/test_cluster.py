@@ -4,6 +4,7 @@
 import unittest
 from datetime import datetime, timezone
 
+from sqlalchemy import text
 from wazo_test_helpers import until
 
 from .helpers import base
@@ -32,6 +33,24 @@ class TestCluster(unittest.TestCase):
             logs = self.asset_cls.service_logs(service)
             for crash in ONE_SHOT_CRASHES:
                 assert crash not in logs, f'{crash} found in {service} logs'
+
+    def test_cold_start_writes_the_external_auth_types_without_collision(self):
+        Session = self.asset_cls.make_db_session()
+        self.addCleanup(Session.remove)
+        self.addCleanup(Session.get_bind().dispose)
+
+        rows = Session.execute(
+            text('SELECT name, enabled FROM auth_external_auth_type ORDER BY name')
+        )
+
+        assert [tuple(row) for row in rows] == [
+            ('google', True),
+            ('microsoft', True),
+            ('mobile', True),
+        ]
+        for service in AUTH_SERVICES:
+            logs = self.asset_cls.service_logs(service)
+            assert 'IntegrityError' not in logs, f'IntegrityError in {service} logs'
 
     def test_api_serves_on_both_instances(self):
         clients = {

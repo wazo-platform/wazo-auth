@@ -166,7 +166,7 @@ class Controller:
             email_driver,
         )
 
-        enabled_external_auth_plugins = [
+        self._enabled_external_auth = [
             name
             for name, value in config['enabled_external_auth_plugins'].items()
             if value is True
@@ -175,7 +175,6 @@ class Controller:
             self.dao,
             config,
             self._bus_publisher,
-            enabled_external_auth_plugins,
         )
         group_service = services.GroupService(self.dao)
         policy_service = services.PolicyService(self.dao)
@@ -353,6 +352,9 @@ class Controller:
                             )
                         if self._config['bootstrap_user_on_startup']:
                             startup.create_initial_user(self._config)
+                        startup.enable_external_auth_types(
+                            self.dao, self._enabled_external_auth
+                        )
                         startup.check_unavailable_authentication_methods(
                             self.dao, self._idp_plugins
                         )

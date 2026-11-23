@@ -36,6 +36,11 @@ def create_initial_user(config):
     )
 
 
+def enable_external_auth_types(dao, enabled_external_auth):
+    with db_session(read_only=False):
+        dao.external_auth.enable_all(enabled_external_auth)
+
+
 def check_unavailable_authentication_methods(dao, idp_plugins):
     """
     Detect missing implementations for authentication methods

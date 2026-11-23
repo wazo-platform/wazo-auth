@@ -1,5 +1,10 @@
 # Changelog
 
+## 26.12
+
+* The enabled external auth types (`enabled_external_auth_plugins`) are
+  written at startup by the `init` role only
+
 ## 26.10
 
 * The `Session` objects returned by `GET /0.1/sessions` and

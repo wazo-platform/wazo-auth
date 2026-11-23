@@ -8,8 +8,9 @@ name to boolean — disable a role explicitly, e.g. `scheduler: false`):
   enabled)
 - `scheduler`: run periodic tasks (expired token and session cleanup)
 - `init`: run one-shot startup tasks (schema upgrade gate, policy update,
-  bootstrap user) then keep going with the other enabled roles — or exit if
-  none is enabled
+  bootstrap user, external auth types) then keep going with the other enabled
+  roles — or exit if none is enabled. `enabled_external_auth_plugins` is read
+  from the `init` instance's config.
 
 The default is all three roles in one process. Instances coordinate through
 PostgreSQL advisory locks: startup one-shots and migrations are serialized
