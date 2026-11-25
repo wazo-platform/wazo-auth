@@ -124,20 +124,20 @@ class TestSamlService(SAMLIntegrationTest):
         page.wait_for_selector(search_login_btn)
         page.click(search_login_btn)
         expect(page, "Unable to get Microsoft login page").to_have_title(
-            "Sign in to your account"
+            "Sign in to your account", timeout=20000
         )
 
     def _login(self, page, login, password) -> None:
         page.locator('xpath=//*[@id="i0116"]').fill(login._value)
         page.get_by_role("button", name="Next").click()
         expect(page.get_by_role("heading"), "Failed to submit login").to_contain_text(
-            "Enter password"
+            "Enter password", timeout=20000
         )
         page.get_by_placeholder("Password").fill(password._value)
         page.get_by_role("button", name="Sign in").click()
         expect(
             page.get_by_role("heading"), "Failed to submit password"
-        ).to_contain_text("Stay signed in?")
+        ).to_contain_text("Stay signed in?", timeout=20000)
         page.get_by_role("button", name="No").click()
 
     def _renew_token(self, page) -> None:
