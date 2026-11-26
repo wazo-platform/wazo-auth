@@ -96,7 +96,7 @@ google:
   redirect_uri: 'https://oauth.wazo.io/google/authorize'
   scope: [
         'https://www.googleapis.com/auth/userinfo.profile',
-        'https://www.googleapis.com/auth/contacts'
+        'https://www.googleapis.com/auth/contacts.readonly'
     ]
   token_url: 'https://www.googleapis.com/oauth2/v4/token'
   websocket_host: 'wss://oauth.wazo.io'
