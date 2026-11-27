@@ -91,7 +91,7 @@ definitions:
           type: string
         default:
           - https://www.googleapis.com/auth/userinfo.profile
-          - https://www.googleapis.com/auth/contacts
+          - https://www.googleapis.com/auth/contacts.readonly
   GooglePostResult:
     type: object
     required:

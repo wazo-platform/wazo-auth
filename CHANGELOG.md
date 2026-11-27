@@ -4,6 +4,10 @@
 
 * The enabled external auth types (`enabled_external_auth_plugins`) are
   written at startup by the `init` role only
+* The default `google.scope` config, also used by
+  `POST /0.1/users/{user_uuid}/external/google` when no `scope` is given,
+  requests `https://www.googleapis.com/auth/contacts.readonly` instead of
+  `https://www.googleapis.com/auth/contacts`
 
 ## 26.10
 
